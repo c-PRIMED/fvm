@@ -11,10 +11,6 @@ from build_utils import *
 
 # abstract superclass
 class MemosaPkg:
-    srcdir = ""
-    blddir = ""
-    insdir = ""
-    logdir = ""
     def __init__(self, dir):
         self.dir = self.srcdir+'/'+dir
 
@@ -52,7 +48,7 @@ class MemosaPkg:
 
     def install(self):
         self.logfile = self.logdir+"/"+self.name+"-install.log"
-        pmess("INSTALL",self.name,self.dir)
+        pmess("INSTALL",self.name,self.blddir)
         chdir(self.dir)
         self.pstatus(self._install())
         chdir(self.blddir);
