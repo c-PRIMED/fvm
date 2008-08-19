@@ -16,10 +16,7 @@
 #include "Generator.h"
 #include "Field.h"
 #include "Context.h"
-
-#if !defined(HAVE_NO_PARSER)
-#include "Parser.h"
-#endif
+#include "Partition.h"
 
 #if !defined(HAVE_NO_POST)
 #include "PluginManager.h"
@@ -32,12 +29,6 @@ int GmshInitialize(int argc, char **argv)
   // Initialize messages (parallel stuff, etc.)
   Msg::Init(argc, argv);
 
-#if !defined(HAVE_NO_POST)
-  // Initialize the symbol tree that will hold variable names in the
-  // parser
-  InitSymbols();
-#endif
-  
   // Load default options
   Init_Options(0);
 
@@ -104,6 +95,10 @@ int GmshBatch()
   }
   else if(CTX.batch > 0) {
     GModel::current()->mesh(CTX.batch);
+#if defined(HAVE_CHACO) || defined(HAVE_METIS)
+    if(CTX.batchAfterMesh == 1)
+       PartitionMesh(GModel::current(), CTX.mesh.partition_options);
+#endif
     CreateOutputFile(CTX.output_filename, CTX.mesh.format);
   }
   else if(CTX.batch == -1)

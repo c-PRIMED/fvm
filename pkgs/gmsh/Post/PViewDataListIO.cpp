@@ -2,9 +2,6 @@
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
-//
-// Contributor(s):
-// 
 
 #include <string.h>
 #include <set>
@@ -442,7 +439,7 @@ static void writeElementMSH(FILE *fp, int num, int nbnod, pVertex nod[8],
 {
   switch(dim){
   case 0:
-    fprintf(fp, "%d 15 0 %d\n", num, nod[0].Num);
+    fprintf(fp, "%d 15 2 0 %d %d\n", num, num, nod[0].Num);
     break;
   case 1:
     fprintf(fp, "%d 1 0 %d %d\n", num, nod[0].Num, nod[1].Num);

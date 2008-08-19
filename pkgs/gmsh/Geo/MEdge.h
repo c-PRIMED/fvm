@@ -17,6 +17,11 @@ class MEdge {
   char _si[2]; // sorted indices
 
  public:
+  MEdge()
+  {
+    _v[0] = _v[1] = 0;
+    _si[0] = _si[1] = 0;
+  }
   MEdge(MVertex *v0, MVertex *v1)
   {
     _v[0] = v0; _v[1] = v1;
@@ -34,6 +39,12 @@ class MEdge {
   inline MVertex *getSortedVertex(const int i) const { return _v[int(_si[i])]; }
   inline MVertex *getMinVertex() const { return _v[int(_si[0])]; }
   inline MVertex *getMaxVertex() const { return _v[int(_si[1])]; }
+  SVector3 scaledTangent() const
+  {
+    return SVector3(_v[1]->x() - _v[0]->x(), 
+                    _v[1]->y() - _v[0]->y(),
+                    _v[1]->z() - _v[0]->z());
+  }
   SVector3 tangent() const
   {
     SVector3 t(_v[1]->x() - _v[0]->x(), 
@@ -68,6 +79,12 @@ class MEdge {
   }
 };
 
+inline bool operator==(const MEdge &e1, const MEdge &e2)
+{
+  return (e1.getMinVertex() == e2.getMinVertex() &&
+          e1.getMaxVertex() == e2.getMaxVertex());
+}
+
 inline bool operator!=(const MEdge &e1, const MEdge &e2)
 {
   return (e1.getMinVertex() != e2.getMinVertex() ||
@@ -77,8 +94,7 @@ inline bool operator!=(const MEdge &e1, const MEdge &e2)
 struct Equal_Edge : public std::binary_function<MEdge, MEdge, bool> {
   bool operator()(const MEdge &e1, const MEdge &e2) const
   {
-    return (e1.getMinVertex() == e2.getMinVertex() &&
-            e1.getMaxVertex() == e2.getMaxVertex());
+    return (e1 == e2);
   }
 };
 

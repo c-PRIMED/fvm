@@ -30,26 +30,29 @@
 #include "gmshSurface.h"
 #include "Field.h"
 #include "BackgroundMesh.h"
-
 #if !defined(HAVE_NO_POST)
 #include "PView.h"
 #include "PViewDataList.h"
 #include "PluginManager.h"
-static PViewDataList *ViewData;
 #endif
-
-Tree_T *Symbol_T = NULL;
 
 extern Context_T CTX;
 
+// Global parser variables
+char gmsh_yyname[256] = "";
+int  gmsh_yyerrorstate = 0;
+int  gmsh_yyviewindex = 0;
+std::map<std::string, std::vector<double> > gmsh_yysymbols;
+
+// Static parser variables (accessible only in this file)
+#if !defined(HAVE_NO_POST)
+static PViewDataList *ViewData;
+#endif
 static ExtrudeParams extr;
-
 static gmshSurface *myGmshSurface = 0;
-
 static List_T *ViewValueList = 0;
 static double ViewCoord[100];
 static int *ViewNumList = 0, ViewCoordIdx = 0;
-
 #define MAX_RECUR_LOOPS 100
 static int ImbricatedLoop = 0;
 static fpos_t yyposImbricatedLoopsTab[MAX_RECUR_LOOPS];
@@ -601,184 +604,130 @@ Affectation :
 
     tSTRING NumericAffectation FExpr tEND
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))){
-	if(!$2){
-	  TheSymbol.val = List_Create(1, 1, sizeof(double));
-	  List_Put(TheSymbol.val, 0, &$3);
-	  Tree_Add(Symbol_T, &TheSymbol);
-	}
-	else{
+      if(!gmsh_yysymbols.count($1)){
+	if(!$2)
+	  gmsh_yysymbols[$1].push_back($3);
+	else
 	  yymsg(0, "Unknown variable '%s'", $1);
-	  Free($1);
-	}
       }
       else{
-	double *pd = (double*)List_Pointer_Fast(pSymbol->val, 0); 
 	switch($2){
-	case 0 : *pd = $3; break;
-	case 1 : *pd += $3; break;
-	case 2 : *pd -= $3; break;
-	case 3 : *pd *= $3; break;
+	case 0 : gmsh_yysymbols[$1][0] = $3; break;
+	case 1 : gmsh_yysymbols[$1][0] += $3; break;
+	case 2 : gmsh_yysymbols[$1][0] -= $3; break;
+	case 3 : gmsh_yysymbols[$1][0] *= $3; break;
 	case 4 : 
-	  if($3) *pd /= $3; 
+	  if($3) gmsh_yysymbols[$1][0] /= $3; 
 	  else yymsg(0, "Division by zero in '%s /= %g'", $1, $3);
 	  break;
 	}
-	Free($1);
       }
+      Free($1);
     }
   | tSTRING '[' FExpr ']' NumericAffectation FExpr tEND
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))){
+      int index = (int)$3;
+      if(!gmsh_yysymbols.count($1)){
 	if(!$5){
-	  TheSymbol.val = List_Create(5, 5, sizeof(double));
-	  List_Put(TheSymbol.val, (int)$3, &$6);
-	  Tree_Add(Symbol_T, &TheSymbol);
+	  gmsh_yysymbols[$1].resize(index + 1, 0.);
+	  gmsh_yysymbols[$1][index] = $6;
 	}
-	else{
+	else
 	  yymsg(0, "Unknown variable '%s'", $1);
-	  Free($1);
-	}
       }
       else{
-	double *pd;
-	if((pd = (double*)List_Pointer_Test(pSymbol->val, (int)$3))){
-	  switch($5){
-	  case 0 : *pd = $6; break;
-	  case 1 : *pd += $6; break;
-	  case 2 : *pd -= $6; break;
-	  case 3 : *pd *= $6; break;
-	  case 4 : 
-	    if($6) *pd /= $6; 
-	    else yymsg(0, "Division by zero in '%s[%d] /= %g'", $1, (int)$3, $6);
-	    break;
-	  }
+	if(gmsh_yysymbols[$1].size() < index + 1)
+	  gmsh_yysymbols[$1].resize(index + 1, 0.);
+	switch($5){
+	case 0 : gmsh_yysymbols[$1][index] = $6; break;
+	case 1 : gmsh_yysymbols[$1][index] += $6; break;
+	case 2 : gmsh_yysymbols[$1][index] -= $6; break;
+	case 3 : gmsh_yysymbols[$1][index] *= $6; break;
+	case 4 : 
+	  if($6) gmsh_yysymbols[$1][index] /= $6; 
+	  else yymsg(0, "Division by zero in '%s[%d] /= %g'", $1, index, $6);
+	  break;
 	}
-	else{
-	  if(!$5)
-	    List_Put(pSymbol->val, (int)$3, &$6);
-	  else
-	    yymsg(0, "Uninitialized variable '%s[%d]'", $1, (int)$3);
-	}
-	Free($1);
       }
+      Free($1);
     }
   | tSTRING '[' '{' RecursiveListOfDouble '}' ']' NumericAffectation ListOfDouble tEND
     {
       if(List_Nbr($4) != List_Nbr($8)){
 	yymsg(0, "Incompatible array dimensions in affectation");
-	Free($1);
       }
       else{
-	Symbol TheSymbol, *pSymbol;
-	TheSymbol.Name = $1;
-	if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))){
+	if(!gmsh_yysymbols.count($1)){
 	  if(!$7){
-	    TheSymbol.val = List_Create(5, 5, sizeof(double));
 	    for(int i = 0; i < List_Nbr($4); i++){
-	      List_Put(TheSymbol.val, (int)(*(double*)List_Pointer($4, i)),
-		       (double*)List_Pointer($8, i));
+	      int index = (int)(*(double*)List_Pointer($4, i));
+	      gmsh_yysymbols[$1].resize(index + 1, 0.);
+	      gmsh_yysymbols[$1][index] = *(double*)List_Pointer($8, i);
 	    }
-	    Tree_Add(Symbol_T, &TheSymbol);
 	  }
-	  else{
+	  else
 	    yymsg(0, "Unknown variable '%s'", $1);
-	    Free($1);
-	  }
 	}
 	else{
 	  for(int i = 0; i < List_Nbr($4); i++){
-	    int j = (int)(*(double*)List_Pointer($4, i));
+	    int index = (int)(*(double*)List_Pointer($4, i));
 	    double d = *(double*)List_Pointer($8, i);
-	    double *pd;
-	    if((pd = (double*)List_Pointer_Test(pSymbol->val, j))){
-	      switch($7){
-	      case 0 : *pd = d; break;
-	      case 1 : *pd += d; break;
-	      case 2 : *pd -= d; break;
-	      case 3 : *pd *= d; break;
-	      case 4 : 
-		if($8) *pd /= d; 
-		else yymsg(0, "Division by zero in '%s[%d] /= %g'", $1, j, d);
-		break;
-	      }
-	    }
-	    else{
-	      if(!$7)
-		List_Put(pSymbol->val, j, &d);
-	      else
-		yymsg(0, "Uninitialized variable '%s[%d]'", $1, j);	  
+	    if(gmsh_yysymbols[$1].size() < index + 1)
+	      gmsh_yysymbols[$1].resize(index + 1, 0.);
+	    switch($7){
+	    case 0 : gmsh_yysymbols[$1][index] = d; break;
+	    case 1 : gmsh_yysymbols[$1][index] += d; break;
+	    case 2 : gmsh_yysymbols[$1][index] -= d; break;
+	    case 3 : gmsh_yysymbols[$1][index] *= d; break;
+	    case 4 : 
+	      if($8) gmsh_yysymbols[$1][index] /= d; 
+	      else yymsg(0, "Division by zero in '%s[%d] /= %g'", $1, index, d);
+	      break;
 	    }
 	  }
-	  Free($1);
 	}
       }
+      Free($1);
       List_Delete($4);
       List_Delete($8);
     }
   | tSTRING '[' ']' tAFFECT ListOfDouble tEND
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))){
-	TheSymbol.val = List_Create(5, 5, sizeof(double));
-	List_Copy($5, TheSymbol.val);
-	Tree_Add(Symbol_T, &TheSymbol);
-      }
-      else{
-	List_Reset(pSymbol->val);
-	List_Copy($5, pSymbol->val);
-	Free($1);
-      }
+      if(gmsh_yysymbols.count($1))
+	gmsh_yysymbols[$1].clear();
+      for(int i = 0; i < List_Nbr($5); i++)
+	gmsh_yysymbols[$1].push_back(*(double*)List_Pointer($5, i));
+      Free($1);
       List_Delete($5);
     }
   | tSTRING '[' ']' tAFFECTPLUS ListOfDouble tEND
     {
       // appends to the list
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))){
-	TheSymbol.val = List_Create(5, 5, sizeof(double));
-	List_Copy($5, TheSymbol.val);
-	Tree_Add(Symbol_T, &TheSymbol);
-      }
-      else{
-	for(int i = 0; i < List_Nbr($5); i++)
-	  List_Add(pSymbol->val, List_Pointer($5, i));
-	Free($1);
-      }
+      for(int i = 0; i < List_Nbr($5); i++)
+	gmsh_yysymbols[$1].push_back(*(double*)List_Pointer($5, i));
+      Free($1);
       List_Delete($5);
     }
   | tSTRING NumericIncrement tEND
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol)))
+      if(!gmsh_yysymbols.count($1))
 	yymsg(0, "Unknown variable '%s'", $1); 
       else
-	*(double*)List_Pointer_Fast(pSymbol->val, 0) += $2;
+	gmsh_yysymbols[$1][0] += $2;
       Free($1);
     }
   | tSTRING '[' FExpr ']' NumericIncrement tEND
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol)))
+      if(!gmsh_yysymbols.count($1))
 	yymsg(0, "Unknown variable '%s'", $1); 
       else{
-	double *pd;
-	if((pd = (double*)List_Pointer_Test(pSymbol->val, (int)$3)))
-	  *pd += $5;
-	else
-	  yymsg(0, "Uninitialized variable '%s[%d]'", $1, (int)$3);
+	int index = (int)$3;
+	if(gmsh_yysymbols[$1].size() < index + 1)
+	  gmsh_yysymbols[$1].resize(index + 1, 0.);
+	gmsh_yysymbols[$1][index] += $5;
       }
       Free($1);
     }
-
   | tSTRING tAFFECT StringExpr tEND 
     { 
       Msg::Warning("Named string expressions not implemented yet");
@@ -914,12 +863,10 @@ Affectation :
 
   | tSTRING tField tAFFECT FExpr tEND
     {
-      if(!strcmp($1,"Background")){
+      if(!strcmp($1,"Background"))
 	GModel::current()->getFields()->background_field = (int)$4;
-      }
-      else{
+      else
 	yymsg(0, "Unknown command %s Field", $1);
-      }
     }
   | tField '[' FExpr ']' tAFFECT tSTRING tEND
     {
@@ -1644,13 +1591,13 @@ ListOfShapes :
 	List_Read($4, i, &d);
 	Shape TheShape;
 	TheShape.Num = (int)d;
-	Vertex *v = FindPoint(TheShape.Num);
+	Vertex *v = FindPoint(std::abs(TheShape.Num));
 	if(v){
 	  TheShape.Type = MSH_POINT;
 	  List_Add($$, &TheShape);
 	}
 	else{
-	  GVertex *gv = GModel::current()->getVertexByTag(TheShape.Num);
+	  GVertex *gv = GModel::current()->getVertexByTag(std::abs(TheShape.Num));
 	  if(gv){
 	    TheShape.Type = MSH_POINT_FROM_GMODEL;
 	    List_Add($$, &TheShape);
@@ -1667,13 +1614,13 @@ ListOfShapes :
 	List_Read($4, i, &d);
 	Shape TheShape;
 	TheShape.Num = (int)d;
-	Curve *c = FindCurve(TheShape.Num);
+	Curve *c = FindCurve(std::abs(TheShape.Num));
 	if(c){
 	  TheShape.Type = c->Typ;
 	  List_Add($$, &TheShape);
 	}
 	else{
-	  GEdge *ge = GModel::current()->getEdgeByTag(TheShape.Num);
+	  GEdge *ge = GModel::current()->getEdgeByTag(std::abs(TheShape.Num));
 	  if(ge){
 	    TheShape.Type = MSH_SEGM_FROM_GMODEL;
 	    List_Add($$, &TheShape);
@@ -1690,13 +1637,13 @@ ListOfShapes :
 	List_Read($4, i, &d);
 	Shape TheShape;
 	TheShape.Num = (int)d;
-	Surface *s = FindSurface(TheShape.Num);
+	Surface *s = FindSurface(std::abs(TheShape.Num));
 	if(s){
 	  TheShape.Type = s->Typ;
 	  List_Add($$, &TheShape);
 	}
 	else{
-	  GFace *gf = GModel::current()->getFaceByTag(TheShape.Num);
+	  GFace *gf = GModel::current()->getFaceByTag(std::abs(TheShape.Num));
 	  if(gf){
 	    TheShape.Type = MSH_SURF_FROM_GMODEL;
 	    List_Add($$, &TheShape);
@@ -1713,13 +1660,13 @@ ListOfShapes :
 	List_Read($4, i, &d);
 	Shape TheShape;
 	TheShape.Num = (int)d;
-	Volume *v = FindVolume(TheShape.Num);
+	Volume *v = FindVolume(std::abs(TheShape.Num));
 	if(v){
 	  TheShape.Type = v->Typ;
 	  List_Add($$, &TheShape);
 	}
 	else{
-	  GRegion *gr = GModel::current()->getRegionByTag(TheShape.Num);
+	  GRegion *gr = GModel::current()->getRegionByTag(std::abs(TheShape.Num));
 	  if(gr){
 	    TheShape.Type = MSH_VOLUME_FROM_GMODEL;
 	    List_Add($$, &TheShape);
@@ -1764,7 +1711,7 @@ Delete :
     }
   | tDelete tSTRING tEND
     {
-      if(!strcmp($2, "Meshes") || !strcmp($2, "All")){
+      if(!strcmp($2, "Model") || !strcmp($2, "Meshes") || !strcmp($2, "All")){
 	GModel::current()->destroy();
 	GModel::current()->getGEOInternals()->destroy();
       }
@@ -1772,8 +1719,15 @@ Delete :
 	GModel::current()->getGEOInternals()->reset_physicals();
 	GModel::current()->deletePhysicalGroups();
       }
-      else
-	yymsg(0, "Unknown command 'Delete %s'", $2);
+      else if(!strcmp($2, "Variables")){
+	gmsh_yysymbols.clear();
+      }
+      else{
+	if(gmsh_yysymbols.count($2))
+	  gmsh_yysymbols.erase($2);
+	else
+	  yymsg(0, "Unknown object or expression to delete '%s'", $2);
+      }
       Free($2);
     }
   | tDelete tSTRING tSTRING tEND
@@ -2044,15 +1998,8 @@ Loop :
       LoopControlVariablesTab[ImbricatedLoop][1] = $7;
       LoopControlVariablesTab[ImbricatedLoop][2] = 1.0;
       LoopControlVariablesNameTab[ImbricatedLoop] = $2;
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $2;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))){
-	TheSymbol.val = List_Create(1, 1, sizeof(double));
-	List_Put(TheSymbol.val, 0, &$5);
-	Tree_Add(Symbol_T, &TheSymbol);
-      }
-      else
-	List_Write(pSymbol->val, 0, &$5);
+      gmsh_yysymbols[$2].resize(1);
+      gmsh_yysymbols[$2][0] = $5;
       fgetpos(gmsh_yyin, &yyposImbricatedLoopsTab[ImbricatedLoop]);
       yylinenoImbricatedLoopsTab[ImbricatedLoop] = gmsh_yylineno;
       if($5 > $7) 
@@ -2070,15 +2017,8 @@ Loop :
       LoopControlVariablesTab[ImbricatedLoop][1] = $7;
       LoopControlVariablesTab[ImbricatedLoop][2] = $9;
       LoopControlVariablesNameTab[ImbricatedLoop] = $2;
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $2;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))){
-	TheSymbol.val = List_Create(1, 1, sizeof(double));
-	List_Put(TheSymbol.val, 0, &$5);
-	Tree_Add(Symbol_T, &TheSymbol);
-      }
-      else
-	List_Write(pSymbol->val, 0, &$5);
+      gmsh_yysymbols[$2].resize(1);
+      gmsh_yysymbols[$2][0] = $5;
       fgetpos(gmsh_yyin, &yyposImbricatedLoopsTab[ImbricatedLoop]);
       yylinenoImbricatedLoopsTab[ImbricatedLoop] = gmsh_yylineno;
       if(($9 > 0. && $5 > $7) || ($9 < 0. && $5 < $7))
@@ -2105,12 +2045,10 @@ Loop :
 	  LoopControlVariablesTab[ImbricatedLoop - 1][0] +=
 	    LoopControlVariablesTab[ImbricatedLoop - 1][2];
 	  if(LoopControlVariablesNameTab[ImbricatedLoop - 1]){
-	    Symbol TheSymbol, *pSymbol;
-	    TheSymbol.Name = LoopControlVariablesNameTab[ImbricatedLoop - 1];
-	    if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol)))
+	    if(!gmsh_yysymbols.count(LoopControlVariablesNameTab[ImbricatedLoop - 1]))
 	      yymsg(0, "Unknown loop variable");
 	    else
-	      *(double*)List_Pointer_Fast(pSymbol->val, 0) += 
+	      gmsh_yysymbols[LoopControlVariablesNameTab[ImbricatedLoop - 1]][0] +=
 		LoopControlVariablesTab[ImbricatedLoop - 1][2];
 	  }
 	  fsetpos(gmsh_yyin, &yyposImbricatedLoopsTab[ImbricatedLoop - 1]);
@@ -2224,20 +2162,6 @@ Extrude :
       ExtrudeShapes(BOUNDARY_LAYER, $3, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
 		    &extr, $$);
       List_Delete($3);
-    }
-  | tExtrude tSTRING '[' FExpr ']' '{' ListOfShapes 
-    {
-      extr.mesh.ExtrudeMesh = extr.mesh.Recombine = false;
-    }
-                       ExtrudeParameters '}'
-    {
-      $$ = List_Create(2, 1, sizeof(Shape));
-      extr.mesh.ViewIndex = (int)$4;
-      ExtrudeShapes(BOUNDARY_LAYER, $7, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-		    &extr, $$);
-      extr.mesh.ViewIndex = -1;
-      Free($2);
-      List_Delete($7);
     }
 
   // Deprecated extrude commands (for backward compatibility)
@@ -2680,7 +2604,7 @@ Transfinite :
 	List_Read($3, i, &d);
 	int j = (int)d;
 	Surface *s = FindSurface(j);
-	if(s) s->TransfiniteSmoothing = $5;
+	if(s) s->TransfiniteSmoothing = (int)$5;
       }
       List_Delete($3);
     }
@@ -2813,14 +2737,12 @@ FExpr_Single :
 
   | tSTRING
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))) {
+      if(!gmsh_yysymbols.count($1)){
 	yymsg(0, "Unknown variable '%s'", $1);
 	$$ = 0.;
       }
       else
-	$$ = *(double*)List_Pointer_Fast(pSymbol->val, 0);
+	$$ = gmsh_yysymbols[$1][0];
       Free($1);
     }
   // This is for GetDP compatibility (we should generalize it so
@@ -2830,76 +2752,62 @@ FExpr_Single :
     {
       char tmpstring[1024];
       sprintf(tmpstring, "%s_%d", $1, (int)$4) ;
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = tmpstring;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))) {
+      if(!gmsh_yysymbols.count(tmpstring)){
 	yymsg(0, "Unknown variable '%s'", tmpstring);
 	$$ = 0.;
       }
       else
-	$$ = *(double*)List_Pointer_Fast(pSymbol->val, 0);
+	$$ = gmsh_yysymbols[tmpstring][0];
       Free($1);
     }
   | tSTRING '[' FExpr ']'
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))) {
+      int index = (int)$3;
+      if(!gmsh_yysymbols.count($1)){
 	yymsg(0, "Unknown variable '%s'", $1);
 	$$ = 0.;
       }
-      else{
-	double *pd;
-	if((pd = (double*)List_Pointer_Test(pSymbol->val, (int)$3)))
-	  $$ = *pd;
-	else{
-	  yymsg(0, "Uninitialized variable '%s[%d]'", $1, (int)$3);
-	  $$ = 0.;
-	}
+      else if(gmsh_yysymbols[$1].size() < index + 1){
+	yymsg(0, "Uninitialized variable '%s[%d]'", $1, index);
+	$$ = 0.;
       }
+      else
+	$$ = gmsh_yysymbols[$1][index];
       Free($1);
     }
   | '#' tSTRING '[' ']'
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $2;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))) {
+      if(!gmsh_yysymbols.count($2)){
 	yymsg(0, "Unknown variable '%s'", $2);
 	$$ = 0.;
       }
       else
-	$$ = List_Nbr(pSymbol->val);
+	$$ = gmsh_yysymbols[$2].size();
       Free($2);
     }
   | tSTRING NumericIncrement
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))) {
+      if(!gmsh_yysymbols.count($1)){
 	yymsg(0, "Unknown variable '%s'", $1);
 	$$ = 0.;
       }
       else
-	$$ = (*(double*)List_Pointer_Fast(pSymbol->val, 0) += $2);
+	$$ = (gmsh_yysymbols[$1][0] += $2);
       Free($1);
     }
   | tSTRING '[' FExpr ']' NumericIncrement
     {
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))) {
+      int index = (int)$3;
+      if(!gmsh_yysymbols.count($1)){
 	yymsg(0, "Unknown variable '%s'", $1);
 	$$ = 0.;
       }
-      else{
-	double *pd;
-	if((pd = (double*)List_Pointer_Test(pSymbol->val, (int)$3)))
-	  $$ = (*pd += $5);
-	else{
-	  yymsg(0, "Uninitialized variable '%s[%d]'", $1, (int)$3);
-	  $$ = 0.;
-	}
+      else if(gmsh_yysymbols[$1].size() < index + 1){
+	yymsg(0, "Uninitialized variable '%s[%d]'", $1, index);
+	$$ = 0.;
       }
+      else
+	$$ = (gmsh_yysymbols[$1][index] += $5);
       Free($1);
     }
 
@@ -3110,37 +3018,25 @@ FExpr_Multi :
   | tSTRING '[' ']'
     {
       $$ = List_Create(2, 1, sizeof(double));
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))) {
+      if(!gmsh_yysymbols.count($1))
 	yymsg(0, "Unknown variable '%s'", $1);
-	double d = 0.0;
-	List_Add($$, &d);
-      }
-      else{
-	for(int i = 0; i < List_Nbr(pSymbol->val); i++)
-	  List_Add($$, (double*)List_Pointer_Fast(pSymbol->val, i));
-      }
+      else
+	for(unsigned int i = 0; i < gmsh_yysymbols[$1].size(); i++)
+	  List_Add($$, &gmsh_yysymbols[$1][i]);
       Free($1);
     }
   | tSTRING '[' '{' RecursiveListOfDouble '}' ']'
     {
       $$ = List_Create(2, 1, sizeof(double));
-      Symbol TheSymbol, *pSymbol;
-      TheSymbol.Name = $1;
-      if(!(pSymbol = (Symbol*)Tree_PQuery(Symbol_T, &TheSymbol))) {
+      if(!gmsh_yysymbols.count($1))
 	yymsg(0, "Unknown variable '%s'", $1);
-	double d = 0.0;
-	List_Add($$, &d);
-      }
       else{
 	for(int i = 0; i < List_Nbr($4); i++){
-	  int j = (int)(*(double*)List_Pointer_Fast($4, i));
-	  double *pd;
-	  if((pd = (double*)List_Pointer_Test(pSymbol->val, j)))
-	    List_Add($$, pd);
+	  int index = (int)(*(double*)List_Pointer_Fast($4, i));
+	  if(gmsh_yysymbols[$1].size() < index + 1)
+	    yymsg(0, "Uninitialized variable '%s[%d]'", $1, index);
 	  else
-	    yymsg(0, "Uninitialized variable '%s[%d]'", $1, j);	  
+	    List_Add($$, &gmsh_yysymbols[$1][index]);
 	}
       }
       Free($1);
@@ -3339,27 +3235,6 @@ StringExpr :
 ;
 
 %%
-
-void DeleteSymbol(void *a, void *b)
-{
-  Symbol *s = (Symbol*)a;
-  Free(s->Name);
-  List_Delete(s->val);
-}
-
-int CompareSymbols (const void *a, const void *b)
-{
-  return(strcmp(((Symbol*)a)->Name, ((Symbol*)b)->Name));
-}
-
-void InitSymbols()
-{
-  if(Symbol_T){
-    Tree_Action(Symbol_T, DeleteSymbol);
-    Tree_Delete(Symbol_T);
-  }
-  Symbol_T = Tree_Create(sizeof(Symbol), CompareSymbols);
-}
 
 int PrintListOfDouble(char *format, List_T *list, char *buffer)
 {

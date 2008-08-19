@@ -43,8 +43,8 @@ int MeshTransfiniteSurface(GFace *gf)
 
   Msg::StatusBar(2, true, "Meshing surface %d (transfinite)", gf->tag());
 
-  std::vector <MVertex *> corners, d_vertices;
-  std::vector <int> indices;
+  std::vector<MVertex*> corners, d_vertices;
+  std::vector<int> indices;
 
   for(unsigned int i = 0; i < gf->meshAttributes.corners.size(); i++)
     corners.push_back(gf->meshAttributes.corners[i]->mesh_vertices[0]);
@@ -53,12 +53,12 @@ int MeshTransfiniteSurface(GFace *gf)
 
   if(corners.size () != 3 && corners.size () != 4){
     Msg::Error("Surface %d is transfinite but has %d corners",
-        gf->tag(), corners.size());
+	       gf->tag(), corners.size());
     return 0;
   }
   if(indices.size () != 2){
     Msg::Error("Surface %d is transfinite but has %d holes",
-        gf->tag(), indices.size() - 2);
+	       gf->tag(), indices.size() - 2);
     return 0;
   }
 
@@ -142,7 +142,7 @@ int MeshTransfiniteSurface(GFace *gf)
     int Hb = m_vertices.size() - N4;
     if(Lb != L || Hb != H){
       Msg::Error("Surface %d cannot be meshed using the transfinite algo", 
-          gf->tag());
+		 gf->tag());
       return 0;
     }
   }
@@ -150,7 +150,7 @@ int MeshTransfiniteSurface(GFace *gf)
     int Lb = m_vertices.size() - N3;      
     if(Lb != L){
       Msg::Error("Surface %d cannot be meshed using the transfinite algo %d != %d", 
-          gf->tag(), L, Lb);
+		 gf->tag(), L, Lb);
       return 0;
     }      
   }

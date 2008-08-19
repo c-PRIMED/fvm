@@ -300,6 +300,9 @@ Context_Item menu_mesh[] = {
 #if defined(HAVE_NETGEN)
   {"Optimize (Netgen)", (Fl_Callback *)mesh_optimize_netgen_cb} , 
 #endif
+#if defined(HAVE_METIS) || defined(HAVE_CHACO)
+  {"Partition", (Fl_Callback *)mesh_partition_cb} ,
+#endif
 #if defined(HAVE_FOURIER_MODEL)
   {"Reparameterize",   (Fl_Callback *)mesh_parameterize_cb} , 
 #endif
@@ -931,8 +934,8 @@ GUI::GUI(int argc, char **argv)
   create_graphic_window();
 
 #if defined(WIN32)
-  g_window->icon((char *)LoadImage(fl_display, MAKEINTRESOURCE(IDI_ICON),
-                                   IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR));
+  g_window->icon((const char*)LoadImage(fl_display, MAKEINTRESOURCE(IDI_ICON),
+					IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR));
 #elif defined(__APPLE__)
   // Nothing to do here
 #else
@@ -949,10 +952,10 @@ GUI::GUI(int argc, char **argv)
     0x08, 0x00, 0xff, 0x1f, 0x08, 0x00, 0xff, 0x1f, 0x04, 0x40, 0xfd, 0x3f,
     0x04, 0xa8, 0xea, 0x3f, 0x02, 0x55, 0x55, 0x7f, 0xa2, 0xaa, 0xaa, 0x7a,
     0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00 };
-  g_window->icon((char*)XCreateBitmapFromData(fl_display, DefaultRootWindow(fl_display),
-                                              gmsh32x32, 32, 32));
-  m_window->icon((char*)XCreateBitmapFromData(fl_display, DefaultRootWindow(fl_display),
-                                              gmsh32x32, 32, 32));
+  g_window->icon((const char*)XCreateBitmapFromData(fl_display, DefaultRootWindow(fl_display),
+						    gmsh32x32, 32, 32));
+  m_window->icon((const char*)XCreateBitmapFromData(fl_display, DefaultRootWindow(fl_display),
+						    gmsh32x32, 32, 32));
 #endif
 
   // open graphics window first for correct non-modal behaviour on windows
@@ -1657,7 +1660,6 @@ void GUI::set_status(const char *msg, int num)
 void GUI::add_multiline_in_browser(Fl_Browser * o, const char *prefix, const char *str)
 {
   int start = 0, len;
-  char *buff;
   if(!str || !strlen(str) || !strcmp(str, "\n")) {
     o->add(" ");
     return;
@@ -1665,7 +1667,7 @@ void GUI::add_multiline_in_browser(Fl_Browser * o, const char *prefix, const cha
   for(unsigned int i = 0; i < strlen(str); i++) {
     if(i == strlen(str) - 1 || str[i] == '\n') {
       len = i - start + (str[i] == '\n' ? 0 : 1);
-      buff = new char[len + strlen(prefix) + 2];
+      char *buff = new char[len + strlen(prefix) + 2];
       strcpy(buff, prefix);
       strncat(buff, &str[start], len);
       buff[len + strlen(prefix)] = '\0';
@@ -2615,6 +2617,7 @@ void GUI::create_option_window()
         {"Gamma", 0, 0, 0},
         {"Eta", 0, 0, 0},
         {"Rho", 0, 0, 0},
+        {"Disto", 0, 0, 0},
         {0}
       };
       mesh_choice[6] = new Fl_Choice(L + 2 * WB + IW / 2, 2 * WB + 8 * BH, IW/2, BH, "Quality range");
@@ -3905,20 +3908,7 @@ FieldDialogBox::FieldDialogBox(Field *f, int x, int y, int width, int height,int
     {
       Fl_Group *g = new Fl_Group(x, y + 2*BH + WB, width, height - 2*BH-3*WB, "Help");
       Fl_Browser *o = new Fl_Browser(x + WB, y + 2*WB + 2*BH, width - 2 * WB, height - 4 * WB - 3 * BH);
-      
-      //    char name[1024], copyright[256], author[256], help[4096];
-      //    p->getName(name);
-      //    p->getInfos(author, copyright, help);
-      
       o->add(" ");
-      //   add_multiline_in_browser(o, "@c@b@.", name);
-      o->add(" ");
-      //  add_multiline_in_browser(o, "", help);
-      o->add(" ");
-      //add_multiline_in_browser(o, "Author: ", author);
-      //add_multiline_in_browser(o, "Copyright (C) ", copyright);
-      o->add(" ");
-      
       g->end();
     }
     o->end();
@@ -4019,7 +4009,7 @@ void GUI::create_statistics_window()
   }
 
   int width = 26 * fontsize;
-  int height = 5 * WB + 17 * BH;
+  int height = 5 * WB + 18 * BH;
 
   stat_window = new Dialog_Window(width, height, CTX.non_modal_windows, "Statistics");
   stat_window->box(GMSH_WINDOW_BOX);
@@ -4056,6 +4046,8 @@ void GUI::create_statistics_window()
       stat_value[num]->tooltip("~ volume^(2/3) / sum_edge_length^2"); num++;
       stat_value[num] = new Fl_Output(2 * WB, 2 * WB + 15 * BH, IW, BH, "Rho");
       stat_value[num]->tooltip("~ min_edge_length / max_edge_length"); num++;
+      stat_value[num] = new Fl_Output(2 * WB, 2 * WB + 16 * BH, IW, BH, "Disto");
+      stat_value[num]->tooltip("~ min (J0/J, J/J0)"); num++;
 
       stat_butt[0] = new Fl_Button(width - BB - 5 * WB, 2 * WB + 13 * BH, BB, BH, "Graph");
       stat_butt[0]->callback(statistics_histogram_cb, (void *)"Gamma");
@@ -4063,6 +4055,8 @@ void GUI::create_statistics_window()
       stat_butt[1]->callback(statistics_histogram_cb, (void *)"Eta");
       stat_butt[2] = new Fl_Button(width - BB - 5 * WB, 2 * WB + 15 * BH, BB, BH, "Graph");
       stat_butt[2]->callback(statistics_histogram_cb, (void *)"Rho");
+      stat_butt[3] = new Fl_Button(width - BB - 5 * WB, 2 * WB + 16 * BH, BB, BH, "Graph");
+      stat_butt[3]->callback(statistics_histogram_cb, (void *)"Disto");
 
       g[1]->end();
     }
@@ -4135,7 +4129,10 @@ void GUI::set_statistics(bool compute_quality)
   sprintf(label[num], "%g", s[15]); stat_value[num]->value(label[num]); num++;
 
   if(!compute_quality){
-    for(int i = 0; i < 3; i++) stat_butt[i]->deactivate();
+    for(int i = 0; i < 4; i++) stat_butt[i]->deactivate();
+    sprintf(label[num], "Press Update");
+    stat_value[num]->deactivate();
+    stat_value[num]->value(label[num]); num++;
     sprintf(label[num], "Press Update");
     stat_value[num]->deactivate();
     stat_value[num]->value(label[num]); num++;
@@ -4147,7 +4144,7 @@ void GUI::set_statistics(bool compute_quality)
     stat_value[num]->value(label[num]); num++;
   }
   else{
-    for(int i = 0; i < 3; i++) stat_butt[i]->activate();
+    for(int i = 0; i < 4; i++) stat_butt[i]->activate();
     sprintf(label[num], "%.4g (%.4g->%.4g)", s[17], s[18], s[19]);
     stat_value[num]->activate();
     stat_value[num]->value(label[num]); num++;
@@ -4155,6 +4152,9 @@ void GUI::set_statistics(bool compute_quality)
     stat_value[num]->activate();
     stat_value[num]->value(label[num]); num++;
     sprintf(label[num], "%.4g (%.4g->%.4g)", s[23], s[24], s[25]);
+    stat_value[num]->activate();
+    stat_value[num]->value(label[num]); num++;
+    sprintf(label[num], "%.4g (%.4g->%.4g)", s[46], s[47], s[48]);
     stat_value[num]->activate();
     stat_value[num]->value(label[num]); num++;
   }

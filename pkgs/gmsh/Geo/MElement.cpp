@@ -18,6 +18,8 @@
 #  include "Message.h"
 #  include "Context.h"
 #  include "qualityMeasures.h"
+#  include "meshGFaceDelaunayInsertion.h"
+#  include "meshGRegionDelaunayInsertion.h"
 #endif
 
 #define SQU(a)      ((a)*(a))
@@ -94,6 +96,51 @@ double MElement::rhoShapeMeasure()
 void MElement::getIntegrationPoints(int pOrder, int *npts, IntPt **pts) const
 {
   Msg::Error("No integration points defined for this type of element");
+}
+
+SPoint3 MTriangle::circumcenter()
+{
+#if defined(HAVE_GMSH_EMBEDDED)
+  return 0.;
+#else
+  double p1[3] = {_v[0]->x(),_v[0]->y(),_v[0]->z()};
+  double p2[3] = {_v[1]->x(),_v[1]->y(),_v[1]->z()};
+  double p3[3] = {_v[2]->x(),_v[2]->y(),_v[2]->z()};
+  double res[3];
+  circumCenterXYZ(p1,p2,p3,res);
+  return SPoint3(res[0],res[1],res[2]);
+#endif
+}
+
+SPoint3 MTetrahedron::circumcenter()
+{
+#if defined(HAVE_GMSH_EMBEDDED)
+  return 0.;
+#else
+  MTet4 t(this,0);
+  double res[3];
+  t.circumcenter(res);
+  return SPoint3(res[0],res[1],res[2]);
+#endif
+}
+
+
+double MTriangle::distoShapeMeasure()
+{
+#if defined(HAVE_GMSH_EMBEDDED)
+  return 1.;
+#else
+  return qmDistorsionOfMapping(this);
+#endif
+}
+
+double MTetrahedron::distoShapeMeasure()
+{
+#if defined(HAVE_GMSH_EMBEDDED)
+  return 1.;
+#else
+  return qmDistorsionOfMapping(this);
+#endif
 }
 
 double MTriangle::gammaShapeMeasure()
@@ -420,7 +467,7 @@ void MElement::writeMSH(FILE *fp, double version, bool binary, int num,
 
 void MElement::writePOS(FILE *fp, bool printElementary, bool printElementNumber, 
                         bool printGamma, bool printEta, bool printRho, 
-                        double scalingFactor, int elementary)
+                        bool printDisto, double scalingFactor, int elementary)
 {
   const char *str = getStringForPOS();
   if(!str) return;
@@ -465,6 +512,13 @@ void MElement::writePOS(FILE *fp, bool printElementary, bool printElementNumber,
     for(int i = 0; i < n; i++){
       if(first) first = false; else fprintf(fp, ",");
       fprintf(fp, "%g", rho);
+    }
+  }
+  if(printDisto){
+    double disto = distoShapeMeasure();
+    for(int i = 0; i < n; i++){
+      if(first) first = false; else fprintf(fp, ",");
+      fprintf(fp, "%g", disto);
     }
   }
   fprintf(fp, "};\n");
@@ -623,6 +677,49 @@ void MElement::writeBDF(FILE *fp, int format, int elementary)
     fprintf(fp, "\n");
   }
 }
+
+int MElement::getInfoMSH(const int typeMSH, const char **const name)
+{
+  switch(typeMSH){
+  case MSH_PNT    : if(name) *name = "Point";           return 1;
+  case MSH_LIN_2  : if(name) *name = "Line 2";          return 2;
+  case MSH_LIN_3  : if(name) *name = "Line 3";          return 2 + 1;
+  case MSH_LIN_4  : if(name) *name = "Line 4";          return 2 + 2;
+  case MSH_LIN_5  : if(name) *name = "Line 5";          return 2 + 3;
+  case MSH_LIN_6  : if(name) *name = "Line 6";          return 2 + 4;
+  case MSH_TRI_3  : if(name) *name = "Triangle 3";      return 3;
+  case MSH_TRI_6  : if(name) *name = "Triangle 6";      return 3 + 3;
+  case MSH_TRI_9  : if(name) *name = "Triangle 9";      return 3 + 6;
+  case MSH_TRI_10 : if(name) *name = "Triangle 10";     return 3 + 6 + 1;
+  case MSH_TRI_12 : if(name) *name = "Triangle 12";     return 3 + 9;
+  case MSH_TRI_15 : if(name) *name = "Triangle 15";     return 3 + 9 + 3;
+  case MSH_TRI_15I: if(name) *name = "Triangle 15I";    return 3 + 12;
+  case MSH_TRI_21 : if(name) *name = "Triangle 21";     return 3 + 12 + 6;
+  case MSH_QUA_4  : if(name) *name = "Quadrilateral 4"; return 4;
+  case MSH_QUA_8  : if(name) *name = "Quadrilateral 8"; return 4 + 4;
+  case MSH_QUA_9  : if(name) *name = "Quadrilateral 9"; return 4 + 4 + 1;
+  case MSH_TET_4  : if(name) *name = "Tetrahedron 4";   return 4;
+  case MSH_TET_10 : if(name) *name = "Tetrahedron 10";  return 4 + 6;
+  case MSH_TET_20 : if(name) *name = "Tetrahedron 20";  return 4 + 12 + 4;
+  case MSH_TET_34 : if(name) *name = "Tetrahedron 34";  return 4 + 18 + 12 + 0;
+  case MSH_TET_35 : if(name) *name = "Tetrahedron 35";  return 4 + 18 + 12 + 1;
+  case MSH_TET_52 : if(name) *name = "Tetrahedron 52";  return 4 + 24 + 24 + 0;
+  case MSH_TET_56 : if(name) *name = "Tetrahedron 56";  return 4 + 24 + 24 + 4;
+  case MSH_HEX_8  : if(name) *name = "Hexahedron 8";    return 8;
+  case MSH_HEX_20 : if(name) *name = "Hexahedron 20";   return 8 + 12;
+  case MSH_HEX_27 : if(name) *name = "Hexahedron 27";   return 8 + 12 + 6 + 1;
+  case MSH_PRI_6  : if(name) *name = "Prism 6";         return 6;
+  case MSH_PRI_15 : if(name) *name = "Prism 15";        return 6 + 9;
+  case MSH_PRI_18 : if(name) *name = "Prism 18";        return 6 + 9 + 3;
+  case MSH_PYR_5  : if(name) *name = "Pyramid 5";       return 5;
+  case MSH_PYR_13 : if(name) *name = "Pyramid 13";      return 5 + 8;
+  case MSH_PYR_14 : if(name) *name = "Pyramid 14";      return 5 + 8 + 1;
+  default: 
+    Msg::Error("Unknown type of element %d", typeMSH); 
+    if(name) *name = "Unknown"; 
+    return 0;
+  }               
+}                 
 
 void MTriangle::jac(int ord, MVertex *vs[], double uu, double vv, double ww,
 		    double j[2][3])
@@ -803,7 +900,7 @@ void MTriangleN::getFaceRep(int num, double *x, double *y, double *z, SVector3 *
   //  on the first layer, we have (numSubEdges-1) * 2 + 1 triangles
   //  on the second layer, we have (numSubEdges-2) * 2 + 1 triangles
   //  on the ith layer, we have (numSubEdges-1-i) * 2 + 1 triangles
-  int ix, iy;
+  int ix = 0, iy = 0;
   int nbt = 0;
   for (int i = 0; i < numSubEdges; i++){
     int nbl = (numSubEdges - i - 1) * 2 + 1;
@@ -899,7 +996,7 @@ MElement *MElementFactory::create(int type, std::vector<MVertex*> &v,
 				  int num, int part)
 {
   switch (type) {
-  case MSH_PNT:    return 0;
+  case MSH_PNT:    return new MPoint(v, num, part);
   case MSH_LIN_2:  return new MLine(v, num, part);
   case MSH_LIN_3:  return new MLine3(v, num, part);
   case MSH_LIN_4:  return new MLineN(v, num, part);

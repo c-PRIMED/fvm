@@ -301,7 +301,7 @@ oriented surfaces (plane surfaces, ruled surfaces, triangulated
 surfaces, @dots{}) and volumes. Compound groups of geometrical entities
 (called ``physical groups'') can also be defined, based on these
 elementary geometric entities. Gmsh's scripting language allows all
-geometrical entities to be fully parameterized.
+geometrical entities to be fully parametrized.
 
 @c -------------------------------------------------------------------------
 @c Mesh: finite element mesh generation
@@ -416,17 +416,16 @@ user-defined functions, loops, conditionals and includes (see
 @ref{User-defined functions}, @ref{Loops and conditionals}, and @ref{General
 commands});
 @item
-parameterize these geometries. Gmsh's scripting language enables all
+parametrize these geometries. Gmsh's scripting language enables all
 commands and command arguments to depend on previous calculations (see
 @ref{Expressions}, and @ref{Geometry commands});
 @item
 import complex models in industry-standard formats like STEP or IGES
 (when Gmsh is built with OpenCascade support);
 @item
-generate 1D, 2D and 3D simplicial (i.e., using line segments, triangles and
-tetrahedra) finite element meshes. The performance of the 1D and 2D
-algorithms is pretty good; the 3D algorithm is still experimental and slow
-(see @ref{Mesh module}, and @ref{Tutorial});
+generate 1D, 2D and 3D simplicial (i.e., using line segments, triangles
+and tetrahedra) finite element meshes (see @ref{Mesh module}, and
+@ref{Tutorial});
 @item
 specify target element sizes accurately. Gmsh provides several
 mechanisms to control the size of the elements in the final mesh:
@@ -1280,11 +1279,18 @@ the views.
 Forces the bounding box of the scene to the given @w{@var{expression}s} (X
 min, X max, Y min, Y max, Z min, Z max).
 
-@item Delete All;
-Deletes all geometrical entities and all currently loaded meshes.
+@item Delete Model;
+Deletes the current model (all geometrical entities and their associated
+meshes).
 
 @item Delete Physicals;
 Deletes all physical groups.
+
+@item Delete Variables;
+Deletes all the expressions.
+
+@item Delete @var{string};
+Deletes the expression @var{string}.
 
 @item Mesh @var{expression};
 Generate @var{expression}-D mesh.
@@ -1743,8 +1749,8 @@ entities in @var{transform-list}.
 
 @example
 @var{transform-list}: 
-  Point | Line | Surface @{ @var{expression-list} @}; @dots{} |
-  Duplicata @{ Point | Line | Surface @{ @var{expression-list} @}; @dots{} @} |
+  Point | Line | Surface | Volume @{ @var{expression-list} @}; @dots{} |
+  Duplicata @{ Point | Line | Surface | Volume @{ @var{expression-list} @}; @dots{} @} |
   @var{transform}
 @end example
 
@@ -1920,26 +1926,31 @@ either in the GUI or on the command line (see @ref{Running Gmsh}, and
 @cindex Mesh, background
 @cindex Background mesh
 
-There are two ways to specify the size of the mesh elements for a given
-geometry:
+There are three ways to specify the size of the mesh elements for a
+given geometry:
 
 @enumerate
 @item
-You can specify characteristic lengths at the points of the geometrical
-model (with the @code{Point} command: see @ref{Points}). The size of the
-mesh elements will then be computed by linearly interpolating these
-characteristic lengths on the initial mesh (see @ref{Mesh}). This might
-sometimes lead to over-refinement in some areas, so that you may have to
-add ``dummy'' geometrical entities in the model in order to get the
-desired element sizes.
+First, if @code{Mesh.CharacteristicLengthFromPoints} is set (it is by
+default), you can simply specify characteristic lengths at the
+geometrical points of the model (with the @code{Point} command: see
+@ref{Points}). The size of the mesh elements will then be computed by
+linearly interpolating these characteristic lengths on the initial mesh
+(see @ref{Mesh}). This might sometimes lead to over-refinement in some
+areas, so that you may have to add ``dummy'' geometrical entities in the
+model in order to get the desired element sizes.
 
 This method works with all the algorithms implemented in the mesh
 module. The final element sizes are of course constrained by the structured
 algorithms for which the element sizes are explicitly specified (e.g.,
 transfinite and extruded grids: see @ref{Structured grids}).
 @item
-You can specify characteristic lengths using mesh size
-``fields''. Various fields exist: 
+Second, if @code{Mesh.CharacteristicLengthFromCurvature} is set (it is
+not by default), the mesh will be adapted with respect to the curvature
+of the geometrical entities.
+@item
+Finally, you can specify general characteristic lengths using mesh size
+``fields''. Various fields exist:
 @itemize @bullet
 @item 
 A @code{PostView} field specifies an explicit background mesh in the
@@ -1970,12 +1981,17 @@ computed using other fields
 @item 
 @dots{}
 @end itemize
-All target element sizes specified by fields can also be constrained by
-the characteristic lengths defined in the geometrical model if the
-@code{Mesh.ConstrainedBackgroundMesh} option is set. 
 
 Fields are supported by all the algorithms except those based on Netgen.
 @end enumerate
+
+The three aforementioned methods can be used simultaneously, in which
+case the smallest element size is selected at any given point. 
+
+All element sizes are further constrained by the
+@code{Mesh.CharacteristicLengthMin}, @code{Mesh.CharacteristicLengthMax}
+and @code{Mesh.CharacteristicLengthFactor} options (@pxref{Mesh
+options})
 
 Here are the mesh commands that are related to the specification of
 characteristic lengths:
@@ -2599,7 +2615,7 @@ see @ref{File formats}, for this.
 
 To learn how to run Gmsh on your computer, see @ref{Running Gmsh}. In
 addition, screencasts that show how to use the graphical user interface
-are available on Gmsh's webpage.
+are available on @uref{http://www.geuz.org/gmsh/screencasts/}.
 
 @menu
 * t1.geo::                      
@@ -2928,6 +2944,11 @@ meshes and associated post-processing datasets. The MSH format exists in
 two flavors: ASCII and binary. The format has a version number
 (currently: 2.0) that is independent of Gmsh's main version number.
 
+(Remember that for small post-processing datasets you can also use the
+human-readable ``parsed'' format described in @ref{Post-processing
+commands}: this format does not require an underlying mesh, and is
+therefore easier to use in some cases.)
+
 @menu
 * MSH ASCII file format::       
 * MSH binary file format::      
@@ -3121,18 +3142,21 @@ the nodes is given in @ref{Node ordering}.
 
 @item @var{number-of-string-tags}
 gives the number of string tags that follow. By default the first
-@var{string-tag} is interpreted as the name of the post-processing view,
-and the second as the name of the interpolation scheme.
+@var{string-tag} is interpreted as the name of the post-processing view.
+@c FIXME and the second as the name of the interpolation scheme.
 
 @item @var{number-of-real-tags}
-gives the number of real number tags that follow.
+gives the number of real number tags that follow. By default the first
+@var{real-tag} is interpreted as a time value associated with the
+dataset.
 
 @item @var{number-of-integer-tags}
 gives the number of integer tags that follow. By default the first
-@var{integer-tag} is interpreted as a time step number, the second as
-the number of field components of the data in the view, the third as the
-number of entities (nodes or elements) in the view, and the fourth as
-the partition index for the view data.
+@var{integer-tag} is interpreted as a time step index (starting at 0),
+the second as the number of field components of the data in the view (1,
+3 or 9), the third as the number of entities (nodes or elements) in the
+view, and the fourth as the partition index for the view data (0 for no
+partition).
 
 @item @var{number-of-nodes-per-elements}
 gives the number of node values for an element in an element-based view.
@@ -3145,6 +3169,45 @@ there are @var{ncomp} values per node (resp. per element), where
 @code{ElementNodeData} views, there are @var{ncomp} times
 @var{number-of-nodes-per-elements} values per element.
 @end table
+
+Below is a small example (a mesh consisting of two quadrangles with an
+associated nodal scalar dataset):
+
+@smallexample
+$MeshFormat
+2.0 0 8
+$EndMeshFormat
+$Nodes
+6                      @emph{six mesh nodes:}
+1 0.0 0.0 0.0          @emph{  node #1: coordinates (0.0, 0.0, 0.0)}
+2 1.0 0.0 0.0          @emph{  node #2: coordinates (1.0, 0.0, 0.0)}
+3 1.0 1.0 0.0          @emph{  etc.}
+4 0.0 1.0 0.0
+5 2.0 0.0 0.0
+6 2.0 1.0 0.0
+$EndNodes
+$Elements
+2                      @emph{two elements:}
+1 3 2 99 2 1 2 3 4     @emph{  quad #1: type 3, physical 99, elementary 2, nodes 1 2 3 4}
+2 3 2 99 2 2 5 6 3     @emph{  quad #2: type 3, physical 99, elementary 2, nodes 2 5 6 3}
+$EndElements 
+$NodeData
+1                      @emph{one string tag:}
+"A scalar view"        @emph{  the name of the view ("A scalar view")}
+1                      @emph{one real tag:}
+0.0                    @emph{  the time value (0.0)}
+3                      @emph{three integer tags:}
+0                      @emph{  the time step (0; time steps always start at 0)}
+1                      @emph{  1-component (scalar) field}
+6                      @emph{  six associated nodal values}
+1 0.0                  @emph{value associated with node #1 (0.0)}
+2 0.1                  @emph{value associated with node #2 (0.1)}
+3 0.2                  @emph{etc.}
+4 0.0
+5 0.2
+6 0.4
+$EndNodeData 
+@end smallexample
 
 @c -------------------------------------------------------------------------
 @c MSH binary file format
@@ -3555,7 +3618,7 @@ element. The ordering of the nodes is given in @ref{Node ordering}.
 @node POS ASCII file format, POS binary file format, MSH file format version 1.0, Legacy formats
 @subsection POS ASCII file format
 
-The POS ASCII file is Gmsh's old native pot-processing format, now
+The POS ASCII file is Gmsh's old native post-processing format, now
 superseded by the format described in @ref{MSH ASCII file format}. It is
 defined as follows:
 
@@ -3814,11 +3877,13 @@ compile Gmsh's source code are included in the distribution. See
 Gmsh's code is structured in several libraries, roughly separated
 between the three main core modules (Geo, Mesh, Post) and associated
 utility libraries (Common, Numeric) on one hand, and graphics (Graphics)
-and interface (Fltk, Box) libraries on the other.
+and interface (Fltk, Parser) libraries on the other.
 
 The geometry and mesh modules are based on an object-oriented model
 class (Geo/GModel.h), built upon abstract geometrical entity classes
-(Geo/GVertex.h, Geo/Gedge.h, Geo/GFace.h and Geo/GRegion.h).
+(Geo/GVertex.h, Geo/Gedge.h, Geo/GFace.h and Geo/GRegion.h). The
+post-processing module is based on the concept of views (Post/PView.h)
+and abstract data containers (derived from Post/PViewData.h).
 
 @c -------------------------------------------------------------------------
 @c Coding style
@@ -3835,9 +3900,11 @@ to make the code easy to read/debug/maintain:
 please enable full warnings for your compiler (e.g., add @code{-Wall} to
 @code{FLAGS} in the @file{variables} file);
 @item
-always use the @code{Msg()} function to print information, errors, @dots{};
+always use the @code{Msg::} class to print information, errors, @dots{};
 @item 
 indent your files using @file{utils/misc/indent.sh};
+@item 
+convert all tabs to spaces.
 @end enumerate
 
 @c -------------------------------------------------------------------------

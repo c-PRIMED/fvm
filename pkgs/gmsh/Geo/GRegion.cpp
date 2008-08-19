@@ -3,6 +3,7 @@
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
+#include <sstream>
 #include "GModel.h"
 #include "GRegion.h"
 #include "GFace.h"
@@ -46,6 +47,29 @@ GRegion::~GRegion()
 unsigned int GRegion::getNumMeshElements()
 { 
   return tetrahedra.size() + hexahedra.size() + prisms.size() + pyramids.size();
+}
+
+void GRegion::getNumMeshElements(unsigned *const c) const
+{
+  c[0] += tetrahedra.size();
+  c[1] += hexahedra.size();
+  c[2] += prisms.size();
+  c[3] += pyramids.size();
+}
+
+MElement *const *GRegion::getStartElementType(int type) const
+{
+  switch(type) {
+  case 0:
+    return reinterpret_cast<MElement *const *>(&tetrahedra[0]);
+  case 1:
+    return reinterpret_cast<MElement *const *>(&hexahedra[0]);
+  case 2:
+    return reinterpret_cast<MElement *const *>(&prisms[0]);
+  case 3:
+    return reinterpret_cast<MElement *const *>(&pyramids[0]);
+  }
+  return 0;
 }
 
 MElement *GRegion::getMeshElement(unsigned int index)
@@ -94,59 +118,21 @@ void GRegion::setVisibility(char val, bool recursive)
   }
 }
 
-void GRegion::recomputeMeshPartitions()
-{
-  for(unsigned int i = 0; i < tetrahedra.size(); i++) {
-    int part = tetrahedra[i]->getPartition();
-    if(part) model()->getMeshPartitions().insert(part);
-  }
-  for(unsigned int i = 0; i < hexahedra.size(); i++) {
-    int part = hexahedra[i]->getPartition();
-    if(part) model()->getMeshPartitions().insert(part);
-  }
-  for(unsigned int i = 0; i < prisms.size(); i++) {
-    int part = prisms[i]->getPartition();
-    if(part) model()->getMeshPartitions().insert(part);
-  }
-  for(unsigned int i = 0; i < pyramids.size(); i++) {
-    int part = pyramids[i]->getPartition();
-    if(part) model()->getMeshPartitions().insert(part);
-  }
-}
-
-void GRegion::deleteMeshPartitions()
-{
-  for(unsigned int i = 0; i < tetrahedra.size(); i++)
-    tetrahedra[i]->setPartition(0);
-  for(unsigned int i = 0; i < hexahedra.size(); i++)
-    hexahedra[i]->setPartition(0);
-  for(unsigned int i = 0; i < prisms.size(); i++)
-    prisms[i]->setPartition(0);
-  for(unsigned int i = 0; i < pyramids.size(); i++)
-    pyramids[i]->setPartition(0);
-}
-
 std::string GRegion::getAdditionalInfoString()
 {
-  if(l_faces.empty()) return std::string("");
-
-  std::string str("{");
-  if(l_faces.size() > 10){
-    char tmp[256];
-    sprintf(tmp, "%d, ..., %d", l_faces.front()->tag(), l_faces.back()->tag());
-    str += tmp;
+  std::ostringstream sstream;
+  if(l_faces.size() > 20){
+    sstream << "{" << l_faces.front()->tag() << ",...," << l_faces.back()->tag() << "}";
   }
-  else{
-    std::list<GFace*>::const_iterator it = l_faces.begin();
-    for(; it != l_faces.end(); it++){
-      if(it != l_faces.begin()) str += ",";
-      char tmp[256];
-      sprintf(tmp, "%d", (*it)->tag());
-      str += tmp;
+  else if(l_faces.size()){
+    sstream << "{";
+    for(std::list<GFace*>::iterator it = l_faces.begin(); it != l_faces.end(); ++it){
+      if(it != l_faces.begin()) sstream << ",";
+      sstream << (*it)->tag();
     }
+    sstream << "}";
   }
-  str += "}";
-  return str;
+  return sstream.str();
 }
 
 std::list<GEdge*> GRegion::edges() const
@@ -158,7 +144,7 @@ std::list<GEdge*> GRegion::edges() const
     e2 = (*it)->edges();
     std::list<GEdge*>::const_iterator it2 = e2.begin();
     while (it2 != e2.end()){
-      if (std::find(e.begin(), e.end(), *it2) == e.end())
+      if(std::find(e.begin(), e.end(), *it2) == e.end())
         e.push_back(*it2);
       ++it2;
     }

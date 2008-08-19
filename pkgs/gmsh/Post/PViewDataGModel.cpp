@@ -2,9 +2,6 @@
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
-//
-// Contributor(s):
-// 
 
 #include "PViewDataGModel.h"
 #include "MElement.h"
@@ -126,6 +123,16 @@ int PViewDataGModel::getNumTensors(int step)
   // to generalize
   if(_steps[0]->getNumComponents() == 9) return getNumElements(0);
   return 0;
+}
+
+int PViewDataGModel::getNumPoints(int step)
+{
+  if(_steps.empty()) return 0;
+  GModel *m = _steps[0]->getModel(); // to generalize
+  int n = 0;
+  for(GModel::viter it = m->firstVertex(); it != m->lastVertex(); ++it)
+    n += (*it)->points.size();
+  return n;
 }
 
 int PViewDataGModel::getNumLines(int step)

@@ -9,6 +9,9 @@
 #include <vector>
 #include <string>
 
+#include "CGNSOptions.h"
+#include "PartitionOptions.h"
+
 // Interface-independent context 
 
 class Context_T {
@@ -61,6 +64,7 @@ class Context_T {
   int file_chooser_position[2]; // position of the file chooser window on the screen
   int system_menu_bar; // use the system menu bar on MacOS?
   int batch; // 0=full gfx; -1=just parse; 1,2,3=batch 1D, 2D, 3D mesh 
+  int batchAfterMesh; // 1=partition
   int initial_context; // 0=automatic; 1=geom; 2=mesh; 3=solver; 4=post 
   int nopopup; // never popup dialogs in scripts (use default values instead)
   int non_modal_windows; // make all windows "non modal"
@@ -156,11 +160,11 @@ class Context_T {
     double quality_inf, quality_sup, radius_inf, radius_sup;
     double scaling_factor, lc_factor, rand_factor, lc_integration_precision, lc_min, lc_max;
     int lc_from_points, lc_from_curvature, lc_extend_from_boundary;
-    int dual, draw_skin_only;
+    int dual, voronoi, draw_skin_only;
     int light, light_two_side, light_lines;
     int format, nb_smoothing, algo2d, algo3d, algo_recombine;
     int order, second_order_linear, second_order_incomplete;
-    int second_order_experimental;
+    int second_order_experimental, mesh_only_visible;
     int smooth_internal_edges, c1_continuity;
     int min_circ_points, min_curv_points;
     double normals, tangents, explode;
@@ -169,6 +173,9 @@ class Context_T {
     int smooth_normals, reverse_all_normals;
     double angle_smooth_normals;
     double allow_swap_edge_angle;
+    int zone_definition;
+    PartitionOptions partition_options;
+    CGNSOptions cgns_options;
   } mesh;
 
   // post processing options 
@@ -195,7 +202,7 @@ class Context_T {
     int jpeg_quality, jpeg_smoothing;
     int gif_dither, gif_sort, gif_interlace, gif_transparent;
     int geo_labels;
-    int pos_elementary, pos_element, pos_gamma, pos_eta, pos_rho;
+    int pos_elementary, pos_element, pos_gamma, pos_eta, pos_rho,pos_disto;
     int text, tex_as_equation;
   } print;
 

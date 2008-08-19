@@ -3,6 +3,7 @@
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
+#include <sstream>
 #include <algorithm>
 #include "GModel.h"
 #include "GEdge.h"
@@ -40,6 +41,16 @@ GEdge::~GEdge()
 unsigned int GEdge::getNumMeshElements()
 { 
   return lines.size();
+}
+
+void GEdge::getNumMeshElements(unsigned *const c) const
+{
+  c[0] += lines.size();
+}
+
+MElement *const *GEdge::getStartElementType(int type) const
+{
+  return reinterpret_cast<MElement *const *>(&lines[0]);
 }
 
 MElement *GEdge::getMeshElement(unsigned int index)
@@ -98,26 +109,11 @@ void GEdge::setVisibility(char val, bool recursive)
   }
 }
 
-void GEdge::recomputeMeshPartitions()
-{
-  for(unsigned int i = 0; i < lines.size(); i++) {
-    int part = lines[i]->getPartition();
-    if(part) model()->getMeshPartitions().insert(part);
-  }
-}
-
-void GEdge::deleteMeshPartitions()
-{
-  for(unsigned int i = 0; i < lines.size(); i++)
-    lines[i]->setPartition(0);
-}
-
 std::string GEdge::getAdditionalInfoString()
 {
-  if(!v0 || !v1) return std::string("");
-  char tmp[256];
-  sprintf(tmp, "{%d,%d}", v0->tag(), v1->tag());
-  return std::string(tmp);
+  std::ostringstream sstream;
+  if(v0 && v1) sstream << "{" << v0->tag() << "," << v1->tag() << "}";
+  return sstream.str();
 }
 
 GPoint GEdge::closestPoint(const SPoint3 & queryPoint) const

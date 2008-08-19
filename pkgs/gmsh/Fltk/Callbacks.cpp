@@ -119,7 +119,7 @@ void redraw_cb(CALLBACK_ARGS)
 void window_cb(CALLBACK_ARGS)
 {
   static int oldx = 0, oldy = 0, oldw = 0, oldh = 0, zoom = 1;
-  char *str = (char*)data;
+  const char *str = (const char*)data;
 
   if(!strcmp(str, "minimize")){
     WID->g_window->iconize();
@@ -176,7 +176,7 @@ void activate_cb(CALLBACK_ARGS)
 
   if(!data) return;
 
-  char *str = (char*)data;
+  const char *str = (const char*)data;
 
   if(!strcmp(str, "fast_redraw")){
     if(WID->gen_butt[2]->value())
@@ -372,7 +372,7 @@ void activate_cb(CALLBACK_ARGS)
 
 void status_xyz1p_cb(CALLBACK_ARGS)
 {
-  char *str = (char*)data;
+  const char *str = (const char*)data;
 
   if(!strcmp(str, "r")){ // rotate 90 degress around axis perp to the screen
     double axis[3] = {0., 0., 1.};
@@ -648,7 +648,7 @@ int _save_msh(const char *name){ return msh_dialog(name); }
 int _save_pos(const char *name){ return pos_dialog(name); }
 int _save_options(const char *name){ return options_dialog(name); }
 int _save_geo(const char *name){ return geo_dialog(name); }
-int _save_cgns(const char *name){ CreateOutputFile(name, FORMAT_CGNS); return 1; }
+int _save_cgns(const char *name){ return cgns_write_dialog(name); }
 int _save_unv(const char *name){ return unv_dialog(name); }
 int _save_vtk(const char *name){ return generic_mesh_dialog(name, "VTK Options", FORMAT_VTK); }
 int _save_med(const char *name){ return generic_mesh_dialog(name, "MED Options", FORMAT_MED); }
@@ -707,9 +707,6 @@ typedef struct{
 
 void file_save_as_cb(CALLBACK_ARGS)
 {
-  int i, nbformats;
-  static char *pat = NULL;
-
 #if defined(HAVE_NATIVE_FILE_CHOOSER)
 #  define TT "\t"
 #  define NN "\n"
@@ -753,12 +750,12 @@ void file_save_as_cb(CALLBACK_ARGS)
     {"YUV" TT "*.yuv", _save_yuv},
   };
 
-  nbformats = sizeof(formats) / sizeof(formats[0]);
-
+  int nbformats = sizeof(formats) / sizeof(formats[0]);
+  static char *pat = NULL;
   if(!pat) {
     pat = (char *)Malloc(nbformats * 256 * sizeof(char));
     strcpy(pat, formats[0].pat);
-    for(i = 1; i < nbformats; i++) {
+    for(int i = 1; i < nbformats; i++) {
       strcat(pat, NN);
       strcat(pat, formats[i].pat);
     }
@@ -776,13 +773,13 @@ void file_save_as_cb(CALLBACK_ARGS)
                       "Cancel", "Replace", NULL, name.c_str()))
           goto test;
     }
-    i = file_chooser_get_filter();
+    int i = file_chooser_get_filter();
     if(i >= 0 && i < nbformats){
-      if(!formats[i].func(name.c_str()))
-        goto test;
+      if(!formats[i].func(name.c_str())) goto test;
     }
-    else // handle any additional automatic fltk filter
-      _save_auto(name.c_str());
+    else{ // handle any additional automatic fltk filter
+      if(!_save_auto(name.c_str())) goto test;
+    }
   }
 }
 
@@ -918,7 +915,7 @@ void general_options_ok_cb(CALLBACK_ARGS)
     }
   }
   if(data){
-    char *name = (char*)data;
+    const char *name = (const char*)data;
     if(!strcmp(name, "rotation_center_coord")){
       CTX.draw_rotation_center = 1;
     }
@@ -1270,7 +1267,7 @@ void view_options_ok_cb(CALLBACK_ARGS)
   activate_cb(NULL, data);
 
   if(data){
-    char *str = (char*)data;
+    const char *str = (const char*)data;
     if(!strcmp(str, "range_min")){
       WID->view_value[31]->value(opt_view_min(WID->view_number, GMSH_GET, 0));
     }
@@ -1841,14 +1838,16 @@ void statistics_update_cb(CALLBACK_ARGS)
 
 void statistics_histogram_cb(CALLBACK_ARGS)
 {
-  char *name = (char*)data;
+  const char *name = (const char*)data;
   int type;
   if(!strcmp(name, "Gamma"))
     type = 0;
   else if(!strcmp(name, "Eta"))
     type = 1;
-  else
+  else if(!strcmp(name, "Rho"))
     type = 2;
+  else
+    type = 3;
   std::vector<double> x, y;
   for(int i = 0; i < 100; i++) y.push_back(WID->quality[type][i]);
   new PView(name, "# Elements", x, y);
@@ -1913,7 +1912,7 @@ void visibility_cb(CALLBACK_ARGS)
 {
   // get the visibility info from the model, and update the browser accordingly
 
-  char *str = (char*)data;
+  const char *str = (const char*)data;
   if(str && !strcmp(str, "redraw_only"))
     WID->create_visibility_window(true);
   else
@@ -2002,7 +2001,7 @@ void visibility_delete_cb(CALLBACK_ARGS)
 
 void visibility_sort_cb(CALLBACK_ARGS)
 {
-  char *str = (char*)data;
+  const char *str = (const char*)data;
   int val;
   if(!strcmp(str, "type"))
     val = 1;
@@ -2159,7 +2158,7 @@ static void _apply_visibility(char mode,
 
 void visibility_interactive_cb(CALLBACK_ARGS)
 {
-  char *str = (char*)data;
+  const char *str = (const char*)data;
   const char *help;
   int what;
   char mode;
@@ -2543,19 +2542,6 @@ void help_command_line_cb(CALLBACK_ARGS)
   WID->create_message_window();
 }
 
-void help_license_cb(CALLBACK_ARGS)
-{
-  extern void print_license();
-  Msg::Direct(" ");
-  print_license();
-  WID->create_message_window();
-}
-
-void help_about_cb(CALLBACK_ARGS)
-{
-  WID->create_about_window();
-}
-
 void _replace_multi_format(const char *in, const char *val, char *out)
 {
   unsigned int i = 0, j = 0;
@@ -2585,18 +2571,31 @@ void _replace_multi_format(const char *in, const char *val, char *out)
 
 void help_online_cb(CALLBACK_ARGS)
 {
-  char prog[1024], cmd[1024];
-  FixWindowsPath(CTX.web_browser, prog);
-  _replace_multi_format(prog, "http://www.geuz.org/gmsh/doc/texinfo/", cmd);
+  std::string prog = FixWindowsPath(CTX.web_browser);
+  char cmd[1024];
+  _replace_multi_format(prog.c_str(), "http://geuz.org/gmsh/doc/texinfo/", cmd);
+  SystemCall(cmd);
+}
+
+void help_license_cb(CALLBACK_ARGS)
+{
+  std::string prog = FixWindowsPath(CTX.web_browser);
+  char cmd[1024];
+  _replace_multi_format(prog.c_str(), "http://geuz.org/gmsh/doc/LICENSE.txt", cmd);
   SystemCall(cmd);
 }
 
 void help_credits_cb(CALLBACK_ARGS)
 {
-  char prog[1024], cmd[1024];
-  FixWindowsPath(CTX.web_browser, prog);
-  _replace_multi_format(prog, "http://www.geuz.org/gmsh/doc/CREDITS", cmd);
+  std::string prog = FixWindowsPath(CTX.web_browser);
+  char cmd[1024];
+  _replace_multi_format(prog.c_str(), "http://geuz.org/gmsh/doc/CREDITS.txt", cmd);
   SystemCall(cmd);
+}
+
+void help_about_cb(CALLBACK_ARGS)
+{
+  WID->create_about_window();
 }
 
 // Module Menu
@@ -2645,10 +2644,10 @@ void geometry_physical_cb(CALLBACK_ARGS)
 
 void geometry_edit_cb(CALLBACK_ARGS)
 {
-  char prog[1024], file[1024], cmd[1024];
-  FixWindowsPath(CTX.editor, prog);
-  FixWindowsPath(CTX.filename, file);
-  _replace_multi_format(prog, file, cmd);
+  std::string prog = FixWindowsPath(CTX.editor);
+  std::string file = FixWindowsPath(CTX.filename);
+  char cmd[1024];
+  _replace_multi_format(prog.c_str(), file.c_str(), cmd);
   SystemCall(cmd);
 }
 
@@ -2698,22 +2697,21 @@ static void _add_new_point()
   Msg::StatusBar(3, false, "");
 }
 
-static void _add_new_multiline(int type)
+static void _add_new_multiline(std::string type)
 {
   std::vector<GVertex*> vertices;
   std::vector<GEdge*> edges;
   std::vector<GFace*> faces;
   std::vector<GRegion*> regions;
   std::vector<MElement*> elements;
-  int p[100];
+  std::vector<int> p;
 
   opt_geometry_points(0, GMSH_SET | GMSH_GUI, 1);
   opt_geometry_lines(0, GMSH_SET | GMSH_GUI, 1);
   Draw();
 
-  int n = 0;
   while(1) {
-    if(n == 0)
+    if(p.empty())
       Msg::StatusBar(3, false, "Select control points\n"
           "[Press 'e' to end selection or 'q' to abort]");
     else
@@ -2723,7 +2721,7 @@ static void _add_new_multiline(int type)
     if(ib == 'l') {
       for(unsigned int i = 0; i < vertices.size(); i++){
         HighlightEntity(vertices[i]);
-        p[n++] = vertices[i]->tag();
+        p.push_back(vertices[i]->tag());
       }
       Draw();
     }
@@ -2731,32 +2729,18 @@ static void _add_new_multiline(int type)
       Msg::Warning("Entity de-selection not supported yet during multi-line creation");
     }
     if(ib == 'e') {
-      if(n >= 2) {
-        switch (type) {
-        case 0:
-          add_multline(n, p, CTX.filename);
-          break;
-        case 1:
-          add_spline(n, p, CTX.filename);
-          break;
-        case 2:
-          add_bspline(n, p, CTX.filename);
-          break;
-        case 3:
-          add_bezier(n, p, CTX.filename);
-          break;
-        }
-      }
+      if(p.size() >= 2)
+	add_multline(type, p, CTX.filename);
       WID->reset_visibility();
       ZeroHighlight();
       Draw();
-      n = 0;
+      p.clear();
     }
     if(ib == 'u') {
-      if(n > 0){
-        ZeroHighlightEntityNum(p[n-1], 0, 0, 0);
+      if(p.size()){
+        ZeroHighlightEntityNum(p.back(), 0, 0, 0);
         Draw();
-        n--;
+        p.pop_back();
       }
     }
     if(ib == 'q') {
@@ -2776,34 +2760,33 @@ static void _add_new_line()
   std::vector<GFace*> faces;
   std::vector<GRegion*> regions;
   std::vector<MElement*> elements;
-  int p[100];
+  std::vector<int> p;
 
   opt_geometry_points(0, GMSH_SET | GMSH_GUI, 1);
   opt_geometry_lines(0, GMSH_SET | GMSH_GUI, 1);
   Draw();
 
-  int n = 0;
   while(1) {
-    if(n == 0)
+    if(p.empty())
       Msg::StatusBar(3, false, "Select start point\n"
           "[Press 'q' to abort]");
-    if(n == 1)
+    if(p.size() == 1)
       Msg::StatusBar(3, false, "Select end point\n"
           "[Press 'u' to undo last selection or 'q' to abort]");
     char ib = SelectEntity(ENT_POINT, vertices, edges, faces, regions, elements);
     if(ib == 'l') {
       HighlightEntity(vertices[0]);
       Draw();
-      p[n++] = vertices[0]->tag();
+      p.push_back(vertices[0]->tag());
     }
     if(ib == 'r') {
       Msg::Warning("Entity de-selection not supported yet during line creation");
     }
     if(ib == 'u') {
-      if(n > 0){
-        ZeroHighlightEntityNum(p[n-1], 0, 0, 0);
+      if(p.size()){
+        ZeroHighlightEntityNum(p.back(), 0, 0, 0);
         Draw();
-        n--;
+        p.pop_back();
       }
     }
     if(ib == 'q') {
@@ -2811,12 +2794,12 @@ static void _add_new_line()
       Draw();
       break;
     }
-    if(n == 2) {
-      add_multline(2, p, CTX.filename);
+    if(p.size() == 2) {
+      add_multline("Line", p, CTX.filename);
       WID->reset_visibility();
       ZeroHighlight();
       Draw();
-      n = 0;
+      p.clear();
     }
   }
 
@@ -2830,37 +2813,36 @@ static void _add_new_circle()
   std::vector<GFace*> faces;
   std::vector<GRegion*> regions;
   std::vector<MElement*> elements;
-  int p[100];
+  std::vector<int> p;
 
   opt_geometry_points(0, GMSH_SET | GMSH_GUI, 1);
   opt_geometry_lines(0, GMSH_SET | GMSH_GUI, 1);
   Draw();
 
-  int n = 0;
   while(1) {
-    if(n == 0)
+    if(p.empty())
       Msg::StatusBar(3, false, "Select start point\n"
           "[Press 'q' to abort]");
-    if(n == 1)
+    if(p.size() == 1)
       Msg::StatusBar(3, false, "Select center point\n"
           "[Press 'u' to undo last selection or 'q' to abort]");
-    if(n == 2)
+    if(p.size() == 2)
       Msg::StatusBar(3, false, "Select end point\n"
           "[Press 'u' to undo last selection or 'q' to abort]");
     char ib = SelectEntity(ENT_POINT, vertices, edges, faces, regions, elements);
     if(ib == 'l') {
       HighlightEntity(vertices[0]);
       Draw();
-      p[n++] = vertices[0]->tag();
+      p.push_back(vertices[0]->tag());
     }
     if(ib == 'r') {
       Msg::Warning("Entity de-selection not supported yet during circle creation");
     }
     if(ib == 'u') {
-      if(n > 0){
-        ZeroHighlightEntityNum(p[n-1], 0, 0, 0);
+      if(p.size()){
+        ZeroHighlightEntityNum(p.back(), 0, 0, 0);
         Draw();
-        n--;
+        p.pop_back();
       }
     }
     if(ib == 'q') {
@@ -2868,12 +2850,12 @@ static void _add_new_circle()
       Draw();
       break;
     }
-    if(n == 3) {
+    if(p.size() == 3) {
       add_circ(p[0], p[1], p[2], CTX.filename); // begin, center, end
       WID->reset_visibility();
       ZeroHighlight();
       Draw();
-      n = 0;
+      p.clear();
     }
   }
 
@@ -2887,40 +2869,39 @@ static void _add_new_ellipse()
   std::vector<GFace*> faces;
   std::vector<GRegion*> regions;
   std::vector<MElement*> elements;
-  int p[100];
+  std::vector<int> p;
 
   opt_geometry_points(0, GMSH_SET | GMSH_GUI, 1);
   opt_geometry_lines(0, GMSH_SET | GMSH_GUI, 1);
   Draw();
 
-  int n = 0;
   while(1) {
-    if(n == 0)
+    if(p.empty())
       Msg::StatusBar(3, false, "Select start point\n"
           "[Press 'q' to abort]");
-    if(n == 1)
+    if(p.size() == 1)
       Msg::StatusBar(3, false, "Select center point\n"
           "[Press 'u' to undo last selection or 'q' to abort]");
-    if(n == 2)
+    if(p.size() == 2)
       Msg::StatusBar(3, false, "Select major axis point\n"
           "[Press 'u' to undo last selection or 'q' to abort]");
-    if(n == 3)
+    if(p.size() == 3)
       Msg::StatusBar(3, false, "Select end point\n"
           "[Press 'u' to undo last selection or 'q' to abort]");
     char ib = SelectEntity(ENT_POINT, vertices, edges, faces, regions, elements);
     if(ib == 'l') {
       HighlightEntity(vertices[0]);
       Draw();
-      p[n++] = vertices[0]->tag();
+      p.push_back(vertices[0]->tag());
     }
     if(ib == 'r') {
       Msg::Warning("Entity de-selection not supported yet during ellipse creation");
     }
     if(ib == 'u') {
-      if(n > 0){
-        ZeroHighlightEntityNum(p[n-1], 0, 0, 0);
+      if(p.size()){
+        ZeroHighlightEntityNum(p.back(), 0, 0, 0);
         Draw();
-        n--;
+        p.pop_back();
       }
     }
     if(ib == 'q') {
@@ -2928,12 +2909,12 @@ static void _add_new_ellipse()
       Draw();
       break;
     }
-    if(n == 4) {
+    if(p.size() == 4) {
       add_ell(p[0], p[1], p[2], p[3], CTX.filename);
       WID->reset_visibility();
       ZeroHighlight();
       Draw();
-      n = 0;
+      p.clear();
     }
   }
 
@@ -3062,8 +3043,8 @@ static void _add_new_surface_volume(int mode)
           }
           if(List_Nbr(List2)) {
             switch (mode) {
-            case 0: add_surf(List2, CTX.filename, 0, 2); break;
-            case 1: add_surf(List2, CTX.filename, 0, 1); break;
+            case 0: add_surf("Plane Surface", List2, CTX.filename); break;
+            case 1: add_surf("Ruled Surface", List2, CTX.filename); break;
             case 2: add_vol(List2, CTX.filename); break;
             }
             WID->reset_visibility();
@@ -3098,9 +3079,9 @@ void geometry_elementary_add_new_cb(CALLBACK_ARGS)
   else if(str == "Line")
     _add_new_line();
   else if(str == "Spline")
-    _add_new_multiline(1);
+    _add_new_multiline(str);
   else if(str == "BSpline")
-    _add_new_multiline(2);
+    _add_new_multiline(str);
   else if(str == "Circle")
     _add_new_circle();
   else if(str == "Ellipse")
@@ -3316,7 +3297,7 @@ static void _action_point_line_surface_volume(int action, int mode, const char *
           delet(List1, CTX.filename, what);
           break;
         case 7:
-          add_physical(List1, CTX.filename, type);
+          add_physical(what, List1, CTX.filename);
           break;
         case 8:
           add_charlength(List1, CTX.filename, WID->context_mesh_input[0]->value());
@@ -3531,7 +3512,7 @@ void mesh_delete_cb(CALLBACK_ARGS)
 
 void mesh_delete_parts_cb(CALLBACK_ARGS)
 {
-  char *str = (char*)data;
+  const char *str = (const char*)data;
   int what;
 
   if(!strcmp(str, "elements")){
@@ -3683,7 +3664,10 @@ void mesh_inspect_cb(CALLBACK_ARGS)
         ZeroHighlight();
         elements[0]->setVisibility(2);
         Msg::Direct("Element %d:", elements[0]->getNum());
-        Msg::Direct("  Type: %d", elements[0]->getTypeForMSH()); 
+	int type = elements[0]->getTypeForMSH();
+	const char *name;
+	MElement::getInfoMSH(type, &name);
+        Msg::Direct("  Type: %d ('%s')", type, name); 
         Msg::Direct("  Dimension: %d", elements[0]->getDim());
         Msg::Direct("  Order: %d", elements[0]->getPolynomialOrder()); 
         Msg::Direct("  Partition: %d", elements[0]->getPartition()); 
@@ -3699,6 +3683,7 @@ void mesh_inspect_cb(CALLBACK_ARGS)
         Msg::Direct("  Rho: %g", elements[0]->rhoShapeMeasure());
         Msg::Direct("  Gamma: %g", elements[0]->gammaShapeMeasure());
         Msg::Direct("  Eta: %g", elements[0]->etaShapeMeasure());
+        Msg::Direct("  Disto: %g", elements[0]->distoShapeMeasure());
         CTX.mesh.changed = ENT_ALL;
         Draw();
         WID->create_message_window();
@@ -3756,6 +3741,12 @@ void mesh_optimize_netgen_cb(CALLBACK_ARGS)
   Msg::StatusBar(2, false, " ");
 }
 
+void mesh_partition_cb(CALLBACK_ARGS)
+{
+#if defined(HAVE_METIS) || defined(HAVE_CHACO)
+  partition_dialog();
+#endif
+}
 
 void mesh_define_length_cb(CALLBACK_ARGS)
 {
@@ -3779,8 +3770,8 @@ static void _add_transfinite(int dim)
   std::vector<GFace*> faces;
   std::vector<GRegion*> regions;
   std::vector<MElement*> elements;
+  std::vector<int> p;
   char ib;
-  int p[100];
 
   opt_geometry_points(0, GMSH_SET | GMSH_GUI, 1);
   switch (dim) {
@@ -3790,11 +3781,10 @@ static void _add_transfinite(int dim)
   }
   Draw();
 
-  int n = 0;
   while(1) {
     switch (dim) {
     case 1:
-      if(n == 0)
+      if(p.empty())
         Msg::StatusBar(3, false, "Select lines\n"
             "[Press 'e' to end selection or 'q' to abort]");
       else
@@ -3817,22 +3807,22 @@ static void _add_transfinite(int dim)
 
     if(ib == 'e') {
       if(dim == 1) {
-        if(n > 0)
-          add_trsfline(n, p, CTX.filename,
+        if(p.size())
+          add_trsfline(p, CTX.filename,
                        WID->context_mesh_choice[0]->text(),
                        WID->context_mesh_input[2]->value(),
                        WID->context_mesh_input[1]->value());
       }
       ZeroHighlight();
       Draw();
-      n = 0;
+      p.clear();
     }
     if(ib == 'u') {
       if(dim == 1) {
-        if(n > 0){
-          ZeroHighlightEntityNum(0, p[n-1], 0, 0);
+        if(p.size()){
+          ZeroHighlightEntityNum(0, p.back(), 0, 0);
           Draw();
-          n--;
+          p.pop_back();
         }
       }
     }
@@ -3849,7 +3839,7 @@ static void _add_transfinite(int dim)
       case 1:
         for(unsigned int i = 0; i < edges.size(); i++){
           HighlightEntity(edges[i]);
-          p[n++] = edges[i]->tag();
+          p.push_back(edges[i]->tag());
         }
         Draw();
         break;
@@ -3858,15 +3848,15 @@ static void _add_transfinite(int dim)
         if(dim == 2){
           HighlightEntity(faces[0]);
           Draw();
-          p[n++] = faces[0]->tag(); 
+          p.push_back(faces[0]->tag());
         }
         else{
           HighlightEntity(regions[0]);
           Draw();
-          p[n++] = regions[0]->tag(); 
+          p.push_back(regions[0]->tag());
         }
         while(1) {
-          if(n == 1)
+          if(p.size() == 1)
             Msg::StatusBar(3, false, "Select (ordered) boundary points\n"
                 "[Press 'e' to end selection or 'q' to abort]");
           else
@@ -3876,13 +3866,13 @@ static void _add_transfinite(int dim)
           if(ib == 'l') {
             HighlightEntity(vertices[0]);
             Draw();
-            p[n++] = vertices[0]->tag();
+            p.push_back(vertices[0]->tag());
           }
           if(ib == 'u') {
-            if(n > 1){
-              ZeroHighlightEntityNum(p[n-1], 0, 0, 0);
+            if(p.size() > 1){
+              ZeroHighlightEntityNum(p.back(), 0, 0, 0);
               Draw();
-              n--;
+              p.pop_back();
             }
           }
           if(ib == 'r') {
@@ -3891,22 +3881,22 @@ static void _add_transfinite(int dim)
           if(ib == 'e') {
             switch (dim) {
             case 2:
-              if(n == 3 + 1 || n == 4 + 1)
-                add_trsfsurf(n, p, CTX.filename,
+              if(p.size() == 3 + 1 || p.size() == 4 + 1)
+                add_trsfsurf(p, CTX.filename,
                              WID->context_mesh_choice[1]->text());
               else
                 Msg::Error("Wrong number of points for transfinite surface");
               break;
             case 3:
-              if(n == 6 + 1 || n == 8 + 1)
-                add_trsfvol(n, p, CTX.filename);
+              if(p.size() == 6 + 1 || p.size() == 8 + 1)
+                add_trsfvol(p, CTX.filename);
               else
                 Msg::Error("Wrong number of points for transfinite volume");
               break;
             }
             ZeroHighlight();
             Draw();
-            n = 0;
+            p.clear();
             break;
           }
           if(ib == 'q') {
@@ -3962,11 +3952,11 @@ void solver_cb(CALLBACK_ARGS)
     WID->solver[num].input[0]->value(file);
   }
   if(SINFO[num].nboptions) {
-    char file[256], tmp[256];
-    FixWindowsPath(WID->solver[num].input[0]->value(), file);
-    sprintf(tmp, "\"%s\"", file);
-    sprintf(file, SINFO[num].name_command, tmp);
-    sprintf(tmp, "%s %s", SINFO[num].option_command, file);           
+    std::string file = FixWindowsPath(WID->solver[num].input[0]->value());
+    char tmp[256], tmp2[256];
+    sprintf(tmp, "\"%s\"", file.c_str());
+    sprintf(tmp2, SINFO[num].name_command, tmp);
+    sprintf(tmp, "%s %s", SINFO[num].option_command, tmp2);
     Solver(num, tmp);
   }
   WID->create_solver_window(num);
@@ -3974,7 +3964,7 @@ void solver_cb(CALLBACK_ARGS)
 
 void solver_file_open_cb(CALLBACK_ARGS)
 {
-  char tmp[256];
+  char tmp[256], tmp2[256];
   int num = (int)(long)data;
   sprintf(tmp, "*%s", SINFO[num].extension);
 
@@ -3983,11 +3973,10 @@ void solver_file_open_cb(CALLBACK_ARGS)
   if(file_chooser(0, 0, "Choose", tmp)) {
     WID->solver[num].input[0]->value(file_chooser_get_name(1).c_str());
     if(SINFO[num].nboptions) {
-      char file[1024];
-      FixWindowsPath(file_chooser_get_name(1).c_str(), file);
-      sprintf(tmp, "\"%s\"", file);
-      sprintf(file, SINFO[num].name_command, tmp);
-      sprintf(tmp, "%s %s", SINFO[num].option_command, file);
+      std::string file = FixWindowsPath(file_chooser_get_name(1).c_str());
+      sprintf(tmp, "\"%s\"", file.c_str());
+      sprintf(tmp2, SINFO[num].name_command, tmp);
+      sprintf(tmp, "%s %s", SINFO[num].option_command, tmp2);
       Solver(num, tmp);
     }
   }
@@ -3995,11 +3984,11 @@ void solver_file_open_cb(CALLBACK_ARGS)
 
 void solver_file_edit_cb(CALLBACK_ARGS)
 {
-  char prog[1024], file[1024], cmd[1024];
   int num = (int)(long)data;
-  FixWindowsPath(CTX.editor, prog);
-  FixWindowsPath(WID->solver[num].input[0]->value(), file);
-  _replace_multi_format(prog, file, cmd);
+  std::string prog = FixWindowsPath(CTX.editor);
+  std::string file = FixWindowsPath(WID->solver[num].input[0]->value());
+  char cmd[1024];
+  _replace_multi_format(prog.c_str(), file.c_str(), cmd);
   SystemCall(cmd);
 }
 
@@ -4024,7 +4013,7 @@ int nbs(char *str)
 
 void solver_command_cb(CALLBACK_ARGS)
 {
-  char tmp[256], arg[512], mesh[256], command[256];
+  char tmp[256], mesh[256], arg[512], command[256];
   int num = ((int *)data)[0];
   int idx = ((int *)data)[1];
   int i, usedopts = 0;
@@ -4033,8 +4022,8 @@ void solver_command_cb(CALLBACK_ARGS)
     WID->create_message_window(true);
 
   if(strlen(WID->solver[num].input[1]->value())) {
-    FixWindowsPath(WID->solver[num].input[1]->value(), mesh);
-    sprintf(tmp, "\"%s\"", mesh);
+    std::string m = FixWindowsPath(WID->solver[num].input[1]->value());
+    sprintf(tmp, "\"%s\"", m.c_str());
     sprintf(mesh, SINFO[num].mesh_command, tmp);
   }
   else {
@@ -4055,8 +4044,8 @@ void solver_command_cb(CALLBACK_ARGS)
     strcpy(command, SINFO[num].button_command[idx]);
   }
 
-  FixWindowsPath(WID->solver[num].input[0]->value(), tmp);
-  sprintf(arg, "\"%s\"", tmp);
+  std::string c = FixWindowsPath(WID->solver[num].input[0]->value());
+  sprintf(arg, "\"%s\"", c.c_str());
   sprintf(tmp, SINFO[num].name_command, arg);
   sprintf(arg, "%s %s %s", tmp, mesh, command);
   Solver(num, arg);

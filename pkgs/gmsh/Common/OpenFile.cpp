@@ -182,7 +182,7 @@ int ParseFile(const char *f, int close, int warn_if_missing)
     gmsh_yyparse();
     if(gmsh_yyerrorstate > 20){
       Msg::Error("Too many errors: aborting...");
-      force_yyflush();
+      gmsh_yyflush();
       break;
     }
   }
@@ -314,14 +314,14 @@ int MergeFile(const char *name, int warn_if_missing)
   else if(!strcmp(ext, ".mesh") || !strcmp(ext, ".MESH")){
     status = m->readMESH(name);
   }
-#if !defined(HAVE_NO_POST)
   else if(!strcmp(ext, ".med") || !strcmp(ext, ".MED") ||
 	  !strcmp(ext, ".mmed") || !strcmp(ext, ".MMED") ||
 	  !strcmp(ext, ".rmed") || !strcmp(ext, ".RMED")){
     status = GModel::readMED(name);
+#if !defined(HAVE_NO_POST)
     if(status > 1) status = PView::readMED(name);
-  }
 #endif
+  }
   else if(!strcmp(ext, ".bdf") || !strcmp(ext, ".BDF") ||
           !strcmp(ext, ".nas") || !strcmp(ext, ".NAS")){
     status = m->readBDF(name);
@@ -402,6 +402,13 @@ void OpenProject(const char *name)
   for(int i = PView::list.size() - 1; i >= 0; i--)
     if(PView::list[i]->getData()->hasModel(GModel::current()))
       delete PView::list[i];
+#endif
+#if !defined(HAVE_NO_PARSER)
+  // reinitialize the variables defined in the parser (only if the
+  // current model is not empty: if it's empty it probably mean we
+  // just launched gmsh, and we don't want to delete variables set
+  // e.g. using the -string command line option)
+  if(GModel::current()->getNumVertices()) gmsh_yysymbols.clear();
 #endif
   GModel::current()->destroy();
   GModel::current()->getGEOInternals()->destroy();

@@ -709,7 +709,7 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
   // vertices
   if(AlgoDelaunay2D(gf)){
     gmshBowyerWatson(gf);
-    laplaceSmoothing(gf);
+    for (int i=0;i<CTX.mesh.nb_smoothing;i++)laplaceSmoothing(gf);
   }
   else if (debug){
     char name[256];
@@ -1297,6 +1297,7 @@ void meshGFace::operator() (GFace *gf)
   if(gf->geomType() == GEntity::BoundaryLayerSurface) return;
   if(gf->geomType() == GEntity::ProjectionFace) return;
   if(gf->meshAttributes.Method == MESH_NONE) return;
+  if(CTX.mesh.mesh_only_visible && !gf->getVisibility()) return;
 
   // destroy the mesh if it exists
   deMeshGFace dem;

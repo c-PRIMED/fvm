@@ -65,6 +65,7 @@ void Print_Usage(const char *name)
   Msg::Direct("  -tol float            Set geometrical tolerance");
   Msg::Direct("Mesh options:");
   Msg::Direct("  -1, -2, -3            Perform 1D, 2D or 3D mesh generation, then exit");
+  Msg::Direct("  -part                 Partition after batch mesh generation");
   Msg::Direct("  -saveall              Save all elements (discard physical group definitions)");
   Msg::Direct("  -o file               Specify mesh output file name");
   Msg::Direct("  -format string        Set output mesh format (msh, msh1, msh2, unv, vrml, stl, mesh,");
@@ -142,6 +143,9 @@ char *Get_BuildOptions(void)
 #if defined(HAVE_METIS)
     strcat(opt, "METIS ");
 #endif
+#if defined(HAVE_CHACO)
+    strcat(opt, "CHACO ");
+#endif
 #if defined(HAVE_ANN)
     strcat(opt, "ANN ");
 #endif
@@ -203,6 +207,10 @@ void Get_Options(int argc, char *argv[])
       }
       else if(!strcmp(argv[i] + 1, "4")) {
         CTX.batch = 4;
+        i++;
+      }
+      else if(!strcmp(argv[i] + 1, "part")) {
+        CTX.batchAfterMesh = 1;
         i++;
       }
       else if(!strcmp(argv[i] + 1, "pid")) {
@@ -527,6 +535,10 @@ void Get_Options(int argc, char *argv[])
       }
       else if(!strcmp(argv[i] + 1, "dual")) {
         CTX.mesh.dual = 1;
+        i++;
+      }
+      else if(!strcmp(argv[i] + 1, "voronoi")) {
+        CTX.mesh.voronoi = 1;
         i++;
       }
       else if(!strcmp(argv[i] + 1, "noview")) {

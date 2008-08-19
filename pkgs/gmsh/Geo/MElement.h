@@ -2,9 +2,9 @@
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
+
 #ifndef _MELEMENT_H_
 #define _MELEMENT_H_
-
 
 #include <stdio.h>
 #include <algorithm>
@@ -114,7 +114,9 @@ class MElement
 
   // get all the vertices on an edge
   virtual void getEdgeVertices(const int num, std::vector<MVertex*> &v) const
-    = 0;
+  {
+    v.resize(0);
+  }
 
   // get the faces
   virtual int getNumFaces() = 0;
@@ -138,12 +140,13 @@ class MElement
   virtual double rhoShapeMeasure();
   virtual double gammaShapeMeasure(){ return 0.; }
   virtual double etaShapeMeasure(){ return 0.; }
+  virtual double distoShapeMeasure() {return 1.0;}
 
   // compute the barycenter
   virtual SPoint3 barycenter();
 
   // revert the orientation of the element
-  virtual void revert() = 0;
+  virtual void revert(){}
 
   // compute and change the orientation of 3D elements to get
   // positive volume
@@ -193,7 +196,7 @@ class MElement
                         int num=0, int elementary=1, int physical=1);
   virtual void writePOS(FILE *fp, bool printElementary, bool printElementNumber, 
                         bool printGamma, bool printEta, bool printRho, 
-                        double scalingFactor=1.0, int elementary=1);
+                        bool printDisto,double scalingFactor=1.0, int elementary=1);
   virtual void writeSTL(FILE *fp, bool binary=false, double scalingFactor=1.0);
   virtual void writeVRML(FILE *fp);
   virtual void writeUNV(FILE *fp, int num=0, int elementary=1, int physical=1);
@@ -208,6 +211,10 @@ class MElement
   virtual int getTypeForVTK(){ return 0; }
   virtual const char *getStringForPOS(){ return 0; }
   virtual const char *getStringForBDF(){ return 0; }
+
+  // return the number of vertices, as well as the element name if
+  // 'name' != 0
+  static int getInfoMSH(const int typeMSH, const char **const name = 0);
 };
 
 class MElementLessThanLexicographic{
@@ -229,6 +236,52 @@ class MElementLessThanLexicographic{
 class MElementFactory{
  public:
   MElement *create(int type, std::vector<MVertex*> &v, int num=0, int part=0);
+};
+
+/*
+ * MPoint
+ *
+ */
+class MPoint : public MElement {
+ protected:
+  MVertex *_v[1];
+ public :
+  MPoint(MVertex *v0, int num=0, int part=0) 
+    : MElement(num, part)
+  {
+    _v[0] = v0;
+  }
+  MPoint(std::vector<MVertex*> &v, int num=0, int part=0) 
+    : MElement(num, part)
+  {
+    _v[0] = v[0];
+  }
+  ~MPoint(){}
+  virtual int getDim(){ return 0; }
+  virtual int getNumVertices(){ return 1; }
+  virtual MVertex *getVertex(int num){ return _v[0]; }
+  virtual int getNumEdges(){ return 0; }
+  virtual MEdge getEdge(int num){ return MEdge(); }
+  virtual int getNumEdgesRep(){ return 0; }
+  virtual void getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n){}
+  virtual int getNumFaces(){ return 0; }
+  virtual MFace getFace(int num){ return MFace(); }
+  virtual int getNumFacesRep(){ return 0; }
+  virtual void getFaceRep(int num, double *x, double *y, double *z, SVector3 *n){}
+  virtual int getTypeForMSH(){ return MSH_PNT; }
+  virtual const char *getStringForPOS(){ return "SP"; }
+  virtual void getShapeFunction(int num, double u, double v, double w, double &s) 
+  {
+    s = 1.;
+  }
+  virtual void getGradShapeFunction(int num, double u, double v, double w, double s[3]) 
+  {
+    s[0] = s[1] = s[2] = 0.;
+  }
+  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  {
+    return true;
+  }
 };
 
 /*
@@ -402,9 +455,10 @@ class MLineN : public MLine {
   {
     v.resize(2 + _vs.size());
     MLine::_getEdgeVertices(v);
-    for(int i = 0; i != _vs.size(); ++i) v[i+2] = _vs[i];
+    for(unsigned int i = 0; i != _vs.size(); ++i) v[i+2] = _vs[i];
   }
-  virtual int getTypeForMSH(){ 
+  virtual int getTypeForMSH()
+  { 
     if(_vs.size() == 2) return MSH_LIN_4; 
     if(_vs.size() == 3) return MSH_LIN_5; 
     if(_vs.size() == 4) return MSH_LIN_6; 
@@ -455,6 +509,7 @@ class MTriangle : public MElement {
   ~MTriangle(){}
   virtual int getDim(){ return 2; }
   virtual double gammaShapeMeasure();
+  virtual double distoShapeMeasure();
   virtual int getNumVertices(){ return 3; }
   virtual MVertex *getVertex(int num){ return _v[num]; }
   virtual MVertex *getVertexMED(int num)
@@ -546,6 +601,7 @@ class MTriangle : public MElement {
     pnt(1, 0, u, v, w, p);
   }
   virtual void getIntegrationPoints(int pOrder, int *npts, IntPt **pts) const;
+  virtual SPoint3 circumcenter();
  private:
   int edges_tri(const int edge, const int vert) const
   {
@@ -721,7 +777,7 @@ class MTriangleN : public MTriangle {
     v.resize(2 + getNumEdgeVertices());
     MTriangle::_getEdgeVertices(num, v);
     int j = 2;
-    const int ie = (num+1)*getNumEdgeVertices();
+    const int ie = (num + 1) * getNumEdgeVertices();
     for(int i = num*getNumEdgeVertices(); i != ie; ++i) v[j++] = _vs[i];
   }
   virtual void getFaceRep(int num, double *x, double *y, double *z, SVector3 *n);
@@ -729,7 +785,7 @@ class MTriangleN : public MTriangle {
   {
     v.resize(3 + _vs.size());
     MTriangle::_getFaceVertices(v);
-    for(int i = 0; i != _vs.size(); ++i) v[i+3] = _vs[i];
+    for(unsigned int i = 0; i != _vs.size(); ++i) v[i + 3] = _vs[i];
   }
   virtual int getTypeForMSH()
   {
@@ -1181,6 +1237,7 @@ class MTetrahedron : public MElement {
   virtual double getVolume();
   virtual int getVolumeSign(){ return (getVolume() >= 0) ? 1 : -1; }
   virtual double gammaShapeMeasure();
+  virtual double distoShapeMeasure();
   virtual double etaShapeMeasure();
   void xyz2uvw(double xyz[3], double uvw[3]);
   virtual void getShapeFunction(int num, double u, double v, double w, double &s) 
@@ -1232,6 +1289,7 @@ class MTetrahedron : public MElement {
     pnt(1, 0, u, v, w, p);
   }
   virtual void getIntegrationPoints(int pOrder, int *npts, IntPt **pts) const;
+  virtual SPoint3 circumcenter();
  private:
   int edges_tetra(const int edge, const int vert) const
   {
@@ -2843,6 +2901,46 @@ struct compareMTriangleLexicographic
     if(_v1[1] > _v2[1]) return false;
     if(_v1[2] < _v2[2]) return true;
     return false;
+  }
+};
+
+// Traits of various elements based on the dimension.  These generally define
+// the faces of 2-D elements as MEdge and 3-D elements as MFace.
+
+template <unsigned DIM> struct DimTr;
+template <> struct DimTr<2>
+{
+  typedef MEdge FaceT;
+  static int getNumFace(MElement *const element)
+  {
+    return element->getNumEdges();
+  }
+  static MEdge getFace(MElement *const element, const int iFace)
+  {
+    return element->getEdge(iFace);
+  }
+  static void getAllFaceVertices(MElement *const element, const int iFace,
+                                 std::vector<MVertex*> &v)
+  {
+    element->getEdgeVertices(iFace, v);
+  }
+};
+
+template <> struct DimTr<3>
+{
+  typedef MFace FaceT;
+  static int getNumFace(MElement *const element)
+  {
+    return element->getNumFaces();
+  }
+  static MFace getFace(MElement *const element, const int iFace)
+  {
+    return element->getFace(iFace);
+  }
+  static void getAllFaceVertices(MElement *const element, const int iFace,
+                                 std::vector<MVertex*> &v)
+  {
+    element->getFaceVertices(iFace, v);
   }
 };
 

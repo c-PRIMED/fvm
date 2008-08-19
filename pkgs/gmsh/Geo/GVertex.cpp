@@ -3,11 +3,11 @@
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
-#include <string.h>
+#include <sstream>
 #include <algorithm>
 #include "GVertex.h"
 #include "GFace.h"
-#include "MVertex.h"
+#include "MElement.h"
 
 #if defined(HAVE_GMSH_EMBEDDED)
 #  include "GmshEmbedded.h"
@@ -23,6 +23,9 @@ GVertex::~GVertex()
 {
   for(unsigned int i = 0; i < mesh_vertices.size(); i++)
     delete mesh_vertices[i];
+
+  for(unsigned int i = 0; i < points.size(); i++)
+    delete points[i];
 }
 
 void GVertex::setPosition(GPoint &p)
@@ -47,13 +50,21 @@ SPoint2 GVertex::reparamOnFace(GFace *gf, int) const
 
 std::string GVertex::getAdditionalInfoString()
 {
-  char str[256];
-  sprintf(str, "{%g,%g,%g}", x(), y(), z());
+  std::ostringstream sstream;
+  sstream << "{" << x() << "," << y() << "," << z() << "}";
   double lc = prescribedMeshSizeAtVertex();
-  if(lc < 1.e22){
-    char str2[256];
-    sprintf(str2, " (cl: %g)", lc);
-    strcat(str, str2);
-  }
-  return std::string(str);
+  if(lc < 1.e22) sstream << " (cl: " << lc << ")";
+  return sstream.str();
+}
+
+unsigned int GVertex::getNumMeshElements()
+{
+  return points.size(); 
+}
+
+MElement *GVertex::getMeshElement(unsigned int index)
+{ 
+  if(index < points.size())
+    return points[index]; 
+  return 0;
 }

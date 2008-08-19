@@ -7,7 +7,7 @@ include variables
 
 GMSH_MAJOR_VERSION = 2
 GMSH_MINOR_VERSION = 2
-GMSH_PATCH_VERSION = 3
+GMSH_PATCH_VERSION = 4
 GMSH_EXTRA_VERSION =
 
 GMSH_VERSION = ${GMSH_MAJOR_VERSION}.${GMSH_MINOR_VERSION}.${GMSH_PATCH_VERSION}${GMSH_EXTRA_VERSION}
@@ -17,14 +17,14 @@ GMSH_SHORT_LICENSE = "GNU General Public License"
 GMSH_VERSION_FILE = Common/GmshVersion.h
 GMSH_DATE = `date "+%Y%m%d"`
 
-GMSH_API = Geo/GModel.h\
-           Geo/GEntity.h Geo/GPoint.h\
+GMSH_API = Geo/GModel.h Geo/GEntity.h Geo/GPoint.h\
            Geo/GVertex.h Geo/GEdge.h Geo/GEdgeLoop.h Geo/GFace.h Geo/GRegion.h\
            Geo/MVertex.h Geo/MEdge.h Geo/MFace.h Geo/MElement.h\
            Geo/discreteVertex.h Geo/discreteEdge.h Geo/discreteFace.h Geo/discreteRegion.h\
            Geo/SPoint2.h Geo/SPoint3.h Geo/SVector3.h Geo/SBoundingBox3d.h\
            Geo/Pair.h Geo/Range.h\
            Post/PView.h Post/PViewData.h Post/PViewDataGModel.h\
+           Common/VertexArray.h\
            Common/Gmsh.h Common/GmshDefines.h Common/GmshVersion.h Common/GmshMatrix.h
 
 GMSH_EMBEDDED = ${GMSH_API} Geo/discrete*.cpp\
@@ -85,6 +85,22 @@ uninstall-lib:
 	rm -rf ${includedir}/gmsh
 	rm -rf ${libdir}/libGmsh${LIBSUFFIX}${LIBEXT}
 
+framework: lib
+	rm -rf Gmsh.framework
+	mkdir -p Gmsh.framework
+	mkdir -p Gmsh.framework/Versions
+	mkdir -p Gmsh.framework/Versions/A
+	mkdir -p Gmsh.framework/Versions/A/Headers
+	mkdir -p Gmsh.framework/Versions/A/Resources
+	cp lib/libGmsh${LIBEXT} Gmsh.framework/Versions/A/Gmsh
+	cp ${GMSH_API} Gmsh.framework/Versions/A/Headers/
+	sed -e "s/GMSH_VERSION/${GMSH_VERSION}/g" utils/misc/Info_framework.plist\
+             > Gmsh.framework/Versions/A/Resources/Info.plist
+	cd Gmsh.framework/Versions && ln -s A Current
+	cd Gmsh.framework && ln -s Versions/Current/Gmsh
+	cd Gmsh.framework && ln -s Versions/Current/Headers
+	cd Gmsh.framework && ln -s Versions/Current/Resources
+
 embed:
 	@if [ -r ../getdp/contrib/gmsh/Makefile ]; then \
           rsync -av ${GMSH_EMBEDDED} ../getdp/contrib/gmsh;\
@@ -136,7 +152,7 @@ clean-fm:
 
 depend: initialtag
 	for i in ${GMSH_DIRS};\
-        do (cd $$i && ${MAKE} depend "FLAGS=-DHAVE_GSL -DHAVE_FLTK"); done
+        do (cd $$i && ${MAKE} depend "FLAGS=-DHAVE_GSL -DHAVE_FLTK -DHAVE_METIS"); done
 
 nodepend:
 	for i in ${GMSH_DIRS} ; do \

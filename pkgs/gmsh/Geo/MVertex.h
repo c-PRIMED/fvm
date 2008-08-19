@@ -74,7 +74,7 @@ class MVertex{
   inline double & x() { return _x; }
   inline double & y() { return _y; }
   inline double & z() { return _z; }
-  inline SPoint3 point() { return SPoint3(_x, _y, _z); }
+  inline SPoint3 point() const { return SPoint3(_x, _y, _z); }
 
   // get/set the parent entity
   inline GEntity* onWhat() const { return _ge; }
@@ -107,8 +107,6 @@ class MVertex{
 
   // IO routines
   void writeMSH(FILE *fp, bool binary=false, double scalingFactor=1.0);
-  void writeMSH(FILE *fp, double version, bool binary, int num, 
-                int elementary, int physical);
   void writeVRML(FILE *fp, double scalingFactor=1.0);
   void writeUNV(FILE *fp, double scalingFactor=1.0);
   void writeVTK(FILE *fp, bool binary=false, double scalingFactor=1.0);

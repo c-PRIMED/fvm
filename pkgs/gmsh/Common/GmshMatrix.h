@@ -2,9 +2,9 @@
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
+
 #ifndef _GMSH_MATRIX_H_
 #define _GMSH_MATRIX_H_
-
 
 template <class SCALAR>
 class Gmsh_Vector
@@ -292,6 +292,11 @@ class GSL_Matrix
   inline void mult(const GSL_Vector &x, GSL_Vector &b)
   {
     gsl_blas_dgemv(CblasNoTrans, 1.0, data, x.data, 1.0, b.data);
+  }
+  inline void blas_dgemm(const GSL_Matrix & x, const GSL_Matrix& b, 
+			 const double c_a = 1.0, const double c_b = 1.0)
+  {      
+    gsl_blas_dgemm(CblasNoTrans,CblasNoTrans, c_a, x.data, b.data, c_b, data);
   }
   inline gsl_matrix_view touchSubmatrix(int i0, int ni, int j0, int nj) 
   {

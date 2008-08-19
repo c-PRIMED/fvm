@@ -2,24 +2,6 @@
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
-// Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA.
-// 
-// Please report all bugs and problems to <gmsh@geuz.org>.
 
 #include "meshGFaceQuadrilateralize.h"
 #include "Message.h"
@@ -350,13 +332,13 @@ bool gmshEdgeFront::formQuad (BDS_Edge *e,
   toUpdate.push_back(pleft);
   toUpdate.push_back(pright);
 
-  for (int i=0;i<toUpdate.size();i++){
+  for (unsigned int i=0;i<toUpdate.size();i++){
     toUpdate[i]->config_modified = true;
     bool done = m->smooth_point_parametric(toUpdate[i], gf);
     //    printf("smooth done %d (g %d)\n",done,toUpdate[i]->g->classif_degree);
   }
 
-  for (int i=0;i<toUpdate.size();i++){
+  for (unsigned int i=0;i<toUpdate.size();i++){
     BDS_Point *p = toUpdate[i];
     for (std::list<BDS_Edge*>::iterator itp = p->edges.begin(); itp != p->edges.end() ; ++ itp){
       if (inFront(*itp)){
@@ -538,8 +520,8 @@ static int numQuads ( BDS_Mesh *m)
   return N;
 }
 
-int gmshQMorph (GFace *gf) {
-
+int gmshQMorph (GFace *gf)
+{
   // assert first that there exist a triangulation of
   // the face  
   if (!gf->triangles.size()){
@@ -586,6 +568,6 @@ int gmshQMorph (GFace *gf) {
   }
   // delete the BDS
   delete pm;
-
+  return 1;
 }
 

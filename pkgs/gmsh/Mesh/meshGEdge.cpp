@@ -3,16 +3,14 @@
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
-#include <stdlib.h>
+#include "GModel.h"
 #include "meshGEdge.h"
 #include "GEdge.h"
 #include "MElement.h"
 #include "BackgroundMesh.h"
 #include "Numeric.h"
 #include "Message.h"
-#include "ListUtils.h"
 #include "Context.h"
-#include "GModel.h"
 
 #define SQU(a)      ((a)*(a))
 
@@ -61,13 +59,13 @@ static void printInterpLc(const char *name)
   fclose(f);
 }
 
-static void buildInterpLc(List_T *lcPoints)
+static void buildInterpLc(const std::vector<IntPoint> &lcPoints)
 {
   IntPoint p;
   interpLc.clear();
-  for(int i = 0; i < List_Nbr(lcPoints); i++){
-    List_Read(lcPoints, i, &p);
-    interpLc.push_back(xi2lc( p.t, p.lc));
+  for(unsigned int i = 0; i < lcPoints.size(); i++){
+    p = lcPoints[i];
+    interpLc.push_back(xi2lc(p.t, p.lc));
   }
 }
 
@@ -143,7 +141,7 @@ static double F_Transfinite(GEdge *ge, double t)
     val = d * coef / ge->length();
   }
   else {
-    switch (abs(type)) {
+    switch (std::abs(type)) {
 
     case 1: // Geometric progression ar^i; Sum of n terms = length = a (r^n-1)/(r-1)
       {
@@ -196,8 +194,9 @@ static double trapezoidal(IntPoint * P1, IntPoint * P2)
   return (0.5 * (P1->lc + P2->lc) * (P2->t - P1->t));
 }
 
-static void RecursiveIntegration(GEdge *ge, IntPoint * from, IntPoint * to,
-				 double (*f) (GEdge *e, double X), List_T * pPoints,
+static void RecursiveIntegration(GEdge *ge, IntPoint *from, IntPoint *to,
+				 double (*f) (GEdge *e, double X), 
+				 std::vector<IntPoint> &Points,
 				 double Prec, int *depth)
 {
   IntPoint P, p1;
@@ -213,17 +212,17 @@ static void RecursiveIntegration(GEdge *ge, IntPoint * from, IntPoint * to,
   double err = fabs(val1 - val2 - val3);
 
   if(((err < Prec) && (*depth > 1)) || (*depth > 25)) {
-    List_Read(pPoints, List_Nbr(pPoints) - 1, &p1);
+    p1=Points.back();
     P.p = p1.p + val2;
-    List_Add(pPoints, &P);
+    Points.push_back(P);
 
-    List_Read(pPoints, List_Nbr(pPoints) - 1, &p1);
+    p1=Points.back();
     to->p = p1.p + val3;
-    List_Add(pPoints, to);
+    Points.push_back(*to);
   }
   else {
-    RecursiveIntegration(ge, from, &P, f, pPoints, Prec, depth);
-    RecursiveIntegration(ge, &P, to, f, pPoints, Prec, depth);
+    RecursiveIntegration(ge, from, &P, f, Points, Prec, depth);
+    RecursiveIntegration(ge, &P, to, f, Points, Prec, depth);
   }
 
   (*depth)--;
@@ -231,7 +230,7 @@ static void RecursiveIntegration(GEdge *ge, IntPoint * from, IntPoint * to,
 
 static double Integration(GEdge *ge, double t1, double t2, 
 			  double (*f) (GEdge *e, double X),
-			  List_T * pPoints, double Prec)
+			  std::vector<IntPoint> &Points, double Prec)
 {
   IntPoint from, to;
 
@@ -240,14 +239,13 @@ static double Integration(GEdge *ge, double t1, double t2,
   from.t = t1;
   from.lc = f(ge, from.t);
   from.p = 0.0;
-  List_Add(pPoints, &from);
+  Points.push_back(from);
 
   to.t = t2;
   to.lc = f(ge, to.t);
-  RecursiveIntegration(ge, &from, &to, f, pPoints, Prec, &depth);
+  RecursiveIntegration(ge, &from, &to, f, Points, Prec, &depth);
 
-  List_Read(pPoints, List_Nbr(pPoints) - 1, &to);
-  return to.p;
+  return Points.back().p;
 }
 
 void deMeshGEdge::operator() (GEdge *ge) 
@@ -271,6 +269,7 @@ void meshGEdge::operator() (GEdge *ge)
   if(ge->geomType() == GEntity::DiscreteCurve) return;
   if(ge->geomType() == GEntity::BoundaryLayerCurve) return;
   if(ge->meshAttributes.Method == MESH_NONE) return;
+  if(CTX.mesh.mesh_only_visible && !ge->getVisibility()) return;
 
   deMeshGEdge dem;
   dem(ge);
@@ -279,24 +278,19 @@ void meshGEdge::operator() (GEdge *ge)
 
   Msg::Info("Meshing curve %d (%s)", ge->tag(), ge->getTypeString().c_str());
 
-  // Create a list of integration points
-  List_T *Points = List_Create(10, 10, sizeof(IntPoint));
-  // Create a list of points for interpolating the LC Field
-  List_T *lcPoints = List_Create(10, 10, sizeof(IntPoint));
-
   // compute bounds
   Range<double> bounds = ge->parBounds(0);
   double t_begin = bounds.low();
   double t_end = bounds.high();
   
   // first compute the length of the curve by integrating one
+  std::vector<IntPoint> Points;
   double length = Integration(ge, t_begin, t_end, F_One, Points, 1.e-8 * CTX.lc);
   ge->setLength(length);
+  Points.clear();
 
   if(length == 0.0)
     Msg::Debug("Curve %d has a zero length", ge->tag());
-  
-  List_Reset(Points);
 
   // Integrate detJ/lc du 
   double a;
@@ -311,6 +305,7 @@ void meshGEdge::operator() (GEdge *ge)
   }
   else{
     if(CTX.mesh.lc_integration_precision > 1.e-8){
+      std::vector<IntPoint> lcPoints;
       Integration(ge, t_begin, t_end, F_Lc_usingInterpLcBis, lcPoints, 
                   CTX.mesh.lc_integration_precision);
       buildInterpLc(lcPoints);
@@ -320,7 +315,8 @@ void meshGEdge::operator() (GEdge *ge)
       a = Integration(ge, t_begin, t_end, F_Lc_usingInterpLc, Points, 1.e-8);
     }
     else{
-      a = Integration(ge, t_begin, t_end, F_Lc, Points, CTX.mesh.lc_integration_precision);
+      a = Integration(ge, t_begin, t_end, F_Lc, Points,
+		      CTX.mesh.lc_integration_precision);
     }
     N = std::max(ge->minimumMeshSegments() + 1, (int)(a + 1.));
   }
@@ -350,8 +346,8 @@ void meshGEdge::operator() (GEdge *ge)
     IntPoint P1, P2;
     ge->mesh_vertices.resize(N - 2);
     while(NUMP < N - 1) {
-      List_Read(Points, count - 1, &P1);
-      List_Read(Points, count, &P2);
+      P1 = Points[count-1];
+      P2 = Points[count];
       const double d = (double)NUMP * b;
       if((fabs(P2.p) >= fabs(d)) && (fabs(P1.p) < fabs(d))) {
         double dt = P2.t - P1.t;
@@ -372,8 +368,6 @@ void meshGEdge::operator() (GEdge *ge)
     }
     ge->mesh_vertices.resize(NUMP - 1);
   }
-  List_Delete(Points);
-  List_Delete(lcPoints);
 
   for(unsigned int i = 0; i < ge->mesh_vertices.size() + 1; i++){
     MVertex *v0 = (i == 0) ? 
