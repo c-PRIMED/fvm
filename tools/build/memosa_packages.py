@@ -82,7 +82,19 @@ class Lammps(MemosaPkg):
 class Gmsh(MemosaPkg):
     name = "gmsh"
     def _configure(self):
-        return system("./configure --prefix=%s &>%s" % (self.blddir,self.logfile))
+        return system("./configure --prefix=%s --with-fltk-prefix=%s &>%s" 
+                      % (self.blddir, self.blddir,self.logfile))
+    def _build(self):
+        return system("make &>" + self.logfile)
+    def _install(self):
+        return system("make install &>" + self.logfile)
+    def _clean(self):
+        return system("make clean")
+
+class Fltk(MemosaPkg):
+    name = "fltk"
+    def _configure(self):
+        return system("./configure --enable-xft --prefix=%s &>%s" % (self.blddir,self.logfile))
     def _build(self):
         return system("make &>" + self.logfile)
     def _install(self):

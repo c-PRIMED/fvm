@@ -40,7 +40,8 @@ parser.add_option("-v", "--verbose",
 
 #system("tools/build/waf configure")
 
-packages = [Gmsh("pkgs/gmsh"),
+packages = [Fltk("pkgs/fltk"),
+            Gmsh("pkgs/gmsh"),
             Lammps("src/lammps/src")]
 
 
