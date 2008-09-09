@@ -1,0 +1,6 @@
+env = DefaultEnvironment()
+Export('env')
+
+env.locateComponents()
+env.constructComponents()
+
