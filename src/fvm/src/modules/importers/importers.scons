@@ -1,0 +1,11 @@
+Import('env')
+
+src = [
+    'Reader.cpp',
+    'SchemeReader.cpp',
+    'FluentReader.cpp',
+    ]
+
+env.createSharedLibrary('importers',src,['rlog','fvmbase'])
+env.createSwigModule('_importers',source=['FluentReader.i'],
+                     deplibs=['fvmbase','importers','rlog'])

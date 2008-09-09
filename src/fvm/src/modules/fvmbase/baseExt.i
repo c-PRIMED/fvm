@@ -1,0 +1,52 @@
+%module fvmbaseExt
+%{
+#include "CException.h"
+#include <rlog/StdioNode.h>
+#include <rlog/RLogChannel.h>
+
+rlog::StdioNode *stdLog;
+%}
+
+%include "std_string.i"
+%include "std_vector.i"
+%include "std_except.i"
+
+namespace std{
+%template(vectorStr) vector<string>;
+ }
+
+
+%exception {
+    try {
+        $action
+    }
+    catch (CException e) {
+        SWIG_exception(SWIG_RuntimeError,e.what());
+    }
+    catch(...) {
+        SWIG_exception(SWIG_RuntimeError,"Unknown exception");
+    }
+}
+
+using namespace std;
+
+%include "Mesh.i"
+ //%include "FluentReader.i"
+
+
+  
+%inline %{
+  
+
+  void enableDebug(const string channel)
+  {
+          stdLog->subscribeTo(rlog::GetGlobalChannel(channel.c_str()));
+  }
+
+
+  %}
+
+%init %{
+stdLog = new rlog::StdioNode();
+
+%}

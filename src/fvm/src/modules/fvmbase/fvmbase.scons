@@ -1,0 +1,19 @@
+Import('env')
+
+srcBase = ['CException.cpp',
+           'RLogInterface.cpp',
+           'StorageSite.cpp',
+           'CRConnectivity.cpp',
+           'OneToOneIndexMap.cpp',
+           'Matrix.cpp',
+           'Mesh.cpp',
+           'Cell.cpp',
+           #'GlobalFields.cpp',
+           #'Discretization.cpp'
+           ]
+
+env.createSharedLibrary('fvmbase',srcBase,['rlog'])
+
+
+env.createSwigModule('_fvmbaseExt',source=['baseExt.i'],
+                     deplibs=['fvmbase','rlog'])
