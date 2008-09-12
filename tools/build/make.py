@@ -9,60 +9,46 @@ This script configures and builds all the MEMOSA
 packages and tools.
 """
 
-import sys, os
+import sys
 from optparse import OptionParser
-from memosa_packages import *
+from build_packages import *
+import build_utils
+import config
+def main(args):
 
 
-# FIXME. Move and simplify all the directory stuff
-srcdir = os.getcwd()
-tmpdir = srcdir + "/build/tmp"
-logdir = srcdir + "/build/log"
-blddir = srcdir + "/build"
-MemosaPkg.srcdir = srcdir
-MemosaPkg.blddir = blddir
-MemosaPkg.tmpdir = tmpdir
-MemosaPkg.logdir = logdir
-os.system("mkdir -p " + blddir)
-os.system("mkdir -p " + logdir)
-os.system("mkdir -p %s/%s" % (blddir,"bin"))
-os.system("mkdir -p %s/%s" % (blddir,"lib"))
-os.system("mkdir -p %s/%s" % (blddir,"lib"))
-os.system("mkdir -p " + tmpdir)
+    BuildPkg.setup()
+
+    parser = OptionParser()
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="verbose output")
+    (options, args) = parser.parse_args()
+    build_utils.verbose = options.verbose
 
 
-parser = OptionParser()
-parser.add_option("-v", "--verbose",
-                  action="store_true", dest="verbose", default=False,
-                  help="verbose output")
-(options, args) = parser.parse_args()
-
-
-#system("tools/build/waf configure")
-
-packages = [Fltk("pkgs/fltk"),
-            Gmsh("pkgs/gmsh"),
-            Lammps("src/lammps/src")]
-
-
-if args == []:
-    args = ["all"]
-
-
-if args[0] == "clean":
-    for p in packages:
-        p.clean()
-elif args[0] == "test":
-    print "Tests are not implemented yet"
-elif args[0] == "all":
-    for p in packages:
-        p.configure()
-        p.build()
-        p.install()
-else:
-    print "Unknown build option", args[0]
-
-# FIXME
-if tmpdir != '':
-    os.system("rm -rf " + tmpdir)
-
+    if len(args) and args[0] == "clean":
+        for p in BuildPkg.packages:
+            p.clean()
+    elif len(args) and args[0] == "test":
+        print "Tests are not implemented yet"
+    else:
+        if len(args) == 0 or args[0] == "" or config.read(args[0]):
+            build_utils.run_commands('before',0)
+            for p in BuildPkg.packages:
+                if config.config(p.name,'skip'):
+                    build_utils.debug ("Skipping " + p.name)
+                    continue
+                p.configure()
+                p.build()
+                p.install()
+            build_utils.run_commands('after',0)
+            print "\nDONE\nYou need to do something like the following to use the build."
+            print "export LD_LIBRARY_PATH="+BuildPkg.libdir
+            print "export PATH=$PATH:"+BuildPkg.bindir
+        else:
+            print "Unknown build option", args[0]
+                
+        
+if __name__ == "__main__":
+    main(sys.argv[1:])

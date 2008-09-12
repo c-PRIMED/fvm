@@ -2,8 +2,9 @@
 build utility functions.
 """
 import sys, os
+from config import config
 
-g_colors = {
+colors = {
     'BOLD'  :'\033[1m',
     'RED'   :'\033[1;31m',
     'GREEN' :'\033[1;32m',
@@ -16,12 +17,12 @@ g_colors = {
 "colors used for printing messages"
 
 
-g_maxlen = 20
-g_verbose = 0
+maxlen = 20
+verbose = False
 
 def _clear_colors():
-    for k in g_colors.keys():
-        g_colors[k]=''
+    for k in colors.keys():
+        colors[k]=''
         
 if (sys.platform=='win32') or ('NOCOLOR' in os.environ) \
         or (os.environ.get('TERM', 'dumb') in ['dumb', 'emacs']) \
@@ -29,19 +30,19 @@ if (sys.platform=='win32') or ('NOCOLOR' in os.environ) \
     _clear_colors()
 
 g_type = {
-    'CONF':"%s%s%s"%(g_colors['BLUE'],"Configuring",g_colors['NORMAL']),
-    'BUILD':"%s%s%s"%(g_colors['BLUE'],"Building",g_colors['NORMAL']),
-    'INSTALL':"%s%s%s"%(g_colors['BLUE'],"Installing",g_colors['NORMAL'])
+    'CONF':"%s%s%s"%(colors['BLUE'],"Configuring",colors['NORMAL']),
+    'BUILD':"%s%s%s"%(colors['BLUE'],"Building",colors['NORMAL']),
+    'INSTALL':"%s%s%s"%(colors['BLUE'],"Installing",colors['NORMAL'])
     }
     
 def cprint(col, str):
-    try: mycol=g_colors[col]
+    try: mycol=colors[col]
     except KeyError: mycol=''
-    print "%s%s%s" % (mycol, str, g_colors['NORMAL'])
+    print "%s%s%s" % (mycol, str, colors['NORMAL'])
 
 def _niceprint(msg, type=''):
     def print_pat(color):
-        print '%s: %s%s%s' % (type, g_colors[color], msg, g_colors['NORMAL'])
+        print '\n%s: %s%s%s' % (type, colors[color], msg, colors['NORMAL'])
     if type == 'ERROR' or type == 'WARNING':
         print_pat('RED')
     elif type=='DEBUG':
@@ -50,12 +51,12 @@ def _niceprint(msg, type=''):
         print_pat('NORMAL')
                       
 def debug(msg):
-    global g_verbose
-    if g_verbose < 2:
+    global verbose
+    if not verbose:
         return
     _niceprint(msg, 'DEBUG')
 
-def warning(msg, zone=0):
+def warning(msg):
     _niceprint(msg, 'WARNING')
 
 def error(msg):
@@ -69,14 +70,29 @@ def fatal(msg, ret=1):
 
 def pmess(type, pkg, dir):
     "print a build message"
-    sr = '%s %s%s%s in %s' % (g_type[type], g_colors['PINK'], pkg, g_colors['NORMAL'], dir)
-    global g_maxlen
-    g_maxlen = max(g_maxlen, len(sr))
-    print "%s :" % sr.ljust(g_maxlen),
+    sr = '%s %s%s%s in %s' % (g_type[type], colors['PINK'], pkg, colors['NORMAL'], dir)
+    global maxlen
+    maxlen = max(maxlen, len(sr))
+    print "%s :" % sr.ljust(maxlen),
     sys.stdout.flush()
 
+def run_commands(section, pkg):
+    if pkg == 0:
+        c = config(section, 0)
+    else:
+        c = config(pkg, section)
+    if c:
+        for cmd in c:
+            s = os.system(cmd)
+            if s:
+                error("While running 'before' commands. Execution of")
+                print cmd
+                print "failed."
+                sys.exit(-1)
+
+
 if __name__ == '__main__':
-    for c in g_colors:
+    for c in colors:
         cprint(c,c)
     print "\n"
 
@@ -94,7 +110,7 @@ if __name__ == '__main__':
     pstatus(0,"(excellent in fact)")
 
     debug("unseen debug message")
-    g_verbose = 2
+    verbose = True
     debug("debug message")
     warning("reactor overheating")
     error("reactor exploding")
