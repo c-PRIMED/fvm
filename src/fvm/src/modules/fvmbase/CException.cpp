@@ -3,6 +3,7 @@
 #ifdef __GNUC__
 #include <execinfo.h> 
 #include <cxxabi.h>
+#include <stdlib.h>
 #endif
 
 using namespace std;
