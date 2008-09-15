@@ -14,6 +14,8 @@ public:
   virtual ~Reader();
   void resetFilePtr();
   string readLine();
+  void close();
+  
 protected:
   const string _fileName; 
   FILE *_fp;

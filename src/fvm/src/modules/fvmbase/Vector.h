@@ -149,6 +149,19 @@ public:
     for(int i=0;i<N;i++) _data[i] = NumTypeTraits<T>::getZero();
   }
   
+  T mag2() const
+  {
+    T r(NumTypeTraits<T>::getZero());
+    for(int i=0; i<N; i++)
+      r+=_data[i]*_data[i];
+    return r;
+  }
+
+  bool operator<(const double tolerance) const
+  {
+    return mag2() < tolerance*tolerance;
+  }
+  
   static Vector getZero()
   {
     Vector z;

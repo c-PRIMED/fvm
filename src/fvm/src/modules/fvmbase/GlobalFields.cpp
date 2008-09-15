@@ -9,7 +9,7 @@ GlobalFields::createField(const FieldLabel& fieldLabel)
   FieldMap::iterator p = fMap.find(&fieldLabel);
   if (p == fMap.end())
   {
-      shared_ptr<Field> f(new Field());
+      shared_ptr<Field> f(new Field(fieldLabel.getName()));
       fMap[&fieldLabel] = f;
       return *f;
   }

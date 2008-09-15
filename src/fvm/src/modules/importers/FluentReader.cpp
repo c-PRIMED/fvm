@@ -585,6 +585,8 @@ FluentReader::readMesh()
 
   _faceNodes->finishAdd();
   _faceCells->finishAdd();
+
+  buildZones();
 }
 
 int
@@ -717,7 +719,7 @@ FluentReader::createMesh(const int cellZoneID)
       faceOffset += thisFZCount;
 
       for(int j=fcRow[fz.iBeg]; j<fcRow[fz.iEnd+1]; j++)
-        if (fcCol[j] > _numCells)
+        if (fcCol[j] >= _numCells)
           boundaryCells.push_back(fcCol[j]);
   }
   
@@ -726,8 +728,10 @@ FluentReader::createMesh(const int cellZoneID)
   Array<int> allFaceArray(allFaceList.size());
   for(unsigned int i=0; i<allFaceList.size(); i++) allFaceArray[i] = allFaceList[i];
   
-  shared_ptr<CRConnectivity> mFaceCells(_faceCells->getSubset(mesh->getFaces(),allFaceArray));
-  shared_ptr<CRConnectivity> mFaceNodes(_faceNodes->getSubset(mesh->getFaces(),allFaceArray));
+  shared_ptr<CRConnectivity> mFaceCells(_faceCells->getSubset(mesh->getFaces(),
+                                                              allFaceArray));
+  shared_ptr<CRConnectivity> mFaceNodes(_faceNodes->getSubset(mesh->getFaces(),
+                                                              allFaceArray));
   
 
   int numMeshCells = cz.iEnd-cz.iBeg+1;
@@ -745,16 +749,18 @@ FluentReader::createMesh(const int cellZoneID)
       StorageSite ifNodesSite(0,0);
       StorageSite ifCellsSite(0,0);
 
-      shared_ptr<CRConnectivity> ifFaceNodes(_faceNodes->getLocalizedSubset(ifFacesSite,
-                                                                            ifNodesSite,
-                                                                            ifFacesArray));
+      shared_ptr<CRConnectivity>
+        ifFaceNodes(_faceNodes->getLocalizedSubset(ifFacesSite,
+                                                   ifNodesSite,
+                                                   ifFacesArray));
 
       const Array<int>& interfaceNodes = ifFaceNodes->getLocalToGlobalMap();
 
       
-      shared_ptr<CRConnectivity> ifNodeCells(getNodeCells().getLocalizedSubset(ifNodesSite,
-                                                                               ifCellsSite,
-                                                                               interfaceNodes));
+      shared_ptr<CRConnectivity>
+        ifNodeCells(getNodeCells().getLocalizedSubset(ifNodesSite,
+                                                      ifCellsSite,
+                                                      interfaceNodes));
 
       const Array<int>& interfaceAllCells = ifNodeCells->getLocalToGlobalMap();
 
@@ -796,15 +802,24 @@ FluentReader::createMesh(const int cellZoneID)
 
   StorageSite tempNodesSite(0,0);
 
-  shared_ptr<CRConnectivity> czAllCellNodes(getCellNodes().getLocalizedSubset(mesh->getCells(),
-                                                                              tempNodesSite,
-                                                                              allCellList));
-  shared_ptr<Array<Vec3> > coords = _coords.getSubset(czAllCellNodes->getLocalToGlobalMap());
+  shared_ptr<CRConnectivity>
+    czAllCellNodes(getCellNodes().getLocalizedSubset(mesh->getCells(),
+                                                     tempNodesSite,
+                                                     allCellList));
+  shared_ptr<Array<Vec3> > coords =
+    _coords.getSubset(czAllCellNodes->getLocalToGlobalMap());
+
+  mesh->setCoordinates(coords);
 
   StorageSite& nodes = mesh->getNodes();
   nodes.setCount(coords->getLength());
   
+  mFaceNodes->localize(czAllCellNodes->getGlobalToLocalMap(),nodes);
+  mesh->setFaceNodes(mFaceNodes);
 
+  mFaceCells->localize(globalToLocalCellMap,mesh->getCells());
+  mesh->setFaceCells(mFaceCells);
+  
   cz.mesh = mesh;
 
   foreach(const CellZonesMap::value_type& pos, _cellZones)
@@ -812,7 +827,7 @@ FluentReader::createMesh(const int cellZoneID)
       const FluentCellZone& ocz = *(pos.second);
       if (&ocz != &cz)
       {
-          OneToOneIndexMap *im = getGhostCellMap(ocz,allCellList);
+          shared_ptr<OneToOneIndexMap> im(getGhostCellMap(ocz,allCellList));
           if (im != 0)
             cz.ghostCellMaps[ocz.ID] = im;
       }
@@ -847,7 +862,7 @@ FluentReader::getMeshList()
   return meshes;
 }
 
-OneToOneIndexMap*
+shared_ptr<OneToOneIndexMap>
 FluentReader::getGhostCellMap(const FluentCellZone& cz, const Array<int>& indices)
 {
   const int iBeg = cz.iBeg;
@@ -860,7 +875,7 @@ FluentReader::getGhostCellMap(const FluentCellZone& cz, const Array<int>& indice
       if (c >= iBeg && c<=iEnd) thisZoneCells++;
   }
 
-  if (thisZoneCells == 0) return 0;
+  if (thisZoneCells == 0) return shared_ptr<OneToOneIndexMap>();
   
   Array<int> *fromPtr = new Array<int>(thisZoneCells);
   Array<int> *toPtr = new Array<int>(thisZoneCells);
@@ -880,7 +895,7 @@ FluentReader::getGhostCellMap(const FluentCellZone& cz, const Array<int>& indice
       }
   }
 
-  OneToOneIndexMap *imap = new OneToOneIndexMap(fromPtr,toPtr);
+  shared_ptr<OneToOneIndexMap> imap(new OneToOneIndexMap(fromPtr,toPtr));
   return imap;
 }
 

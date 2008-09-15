@@ -15,16 +15,18 @@ public:
 
   DEFINE_TYPENAME("Matrix");
 
-  virtual void multiply(IContainer& yB, const IContainer& xB);
-  virtual void multiplyAndAdd(IContainer& yB, const IContainer& xB);
+  virtual void initAssembly() = 0;
+  
+  virtual void multiply(IContainer& yB, const IContainer& xB) const;
+  virtual void multiplyAndAdd(IContainer& yB, const IContainer& xB) const;
   virtual void forwardGS(IContainer& xB, IContainer& bB,
-                         IContainer& residual);
+                         IContainer& residual) const;
   virtual void reverseGS(IContainer& xB, IContainer& bB,
-                         IContainer& residual);
+                         IContainer& residual) const;
   virtual void solveBoundary(IContainer& xB, IContainer& bB,
-                             IContainer& residual);
+                             IContainer& residual) const;
   virtual void computeResidual(const IContainer& xB, const IContainer& bB,
-                               IContainer& residual);
+                               IContainer& residual) const;
 
   virtual int createCoarsening(IContainer& coarseIndex, const int groupSize,
                                const double weighRatioThreshold);

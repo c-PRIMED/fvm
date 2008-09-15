@@ -30,3 +30,9 @@ Reader::readLine()
   return s;
 }
     
+void
+Reader::close()
+{
+  if (_fp)
+    fclose(_fp);
+}

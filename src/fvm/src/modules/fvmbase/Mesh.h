@@ -4,6 +4,8 @@
 #include "Array.h"
 
 #include "StorageSite.h"
+#include "Vector.h"
+
 class CRConnectivity;
 //#include "Field.h"
 #include "FieldLabel.h"
@@ -13,6 +15,7 @@ class Mesh
 {
 public:
 
+  typedef Vector<double,3> VecD3;
   static FieldLabel coordinate;
   static FieldLabel area;
   static FieldLabel areaMag;
@@ -57,6 +60,8 @@ public:
 
   DEFINE_TYPENAME("Mesh");
 
+  int getDimension() const {return _dimension;}
+  
   const StorageSite& getFaces() const {return _faces;}
   const StorageSite& getCells() const {return _cells;}
   const StorageSite& getNodes() const {return _nodes;}
@@ -68,8 +73,11 @@ public:
   //  const CRConnectivity& getConnectivity(const StorageSite& from,
   //                                      const StorageSite& to) const;
 
-  //const CRConnectivity& getAllFaceCells() const;
-  //const CRConnectivity& getFaceCells(const StorageSite& site) const;
+  const CRConnectivity& getAllFaceNodes() const;
+  const CRConnectivity& getAllFaceCells() const;
+  const CRConnectivity& getCellNodes() const;
+  
+  const CRConnectivity& getFaceCells(const StorageSite& site) const;
 
   //const Array<int>& getCellTypes() const;
   //const Array<int>& getCellTypeCount() const;
@@ -93,6 +101,13 @@ public:
                                     const int id);
   const StorageSite& createBoundaryFaceGroup(const int size, const int offset, 
                                        const int id, const string& boundaryType);
+
+  void setCoordinates(shared_ptr<Array<VecD3> > x) {_coordinates = x;}
+  void setFaceNodes(shared_ptr<CRConnectivity> faceNodes);
+  void setFaceCells(shared_ptr<CRConnectivity> faceCells);
+  
+
+  const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
   
 protected:
   const int _dimension;
@@ -103,10 +118,11 @@ protected:
   FaceGroupList _faceGroups;
   FaceGroupList _boundaryGroups;
   FaceGroupList _interfaceGroups;
-  ConnectivityMap _connectivityMap;
-  map<const StorageSite*,const CRConnectivity*> _faceCellsMap;
+  mutable ConnectivityMap _connectivityMap;
+  shared_ptr<Array<VecD3> > _coordinates;
+  
   //mutable Array<int> *_cellTypes;
-  //mutable Array<int> *_cellTypeCount;  
+  //mutable Array<int> *_cellTypeCount;
 };
 
 typedef vector<Mesh*> MeshList;

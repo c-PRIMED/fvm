@@ -10,35 +10,44 @@
 class Field : public IContainer
 {
 public:
-  typedef map<const StorageSite*, ArrayBase*> ArrayMap;
+  typedef map<const StorageSite*, shared_ptr<ArrayBase> > ArrayMap;
   typedef map<const StorageSite*, vector<const StorageSite*>* > ChildSitesMap;
   
-  Field();
+  Field(const string& name);
   
   virtual ~Field();
 
+  DEFINE_TYPENAME("Field");
+
+  Field& operator=(const Field& oField);
+  
   const ArrayBase& operator[](const StorageSite&) const;
   ArrayBase& operator[](const StorageSite&);
 
-  void addArray(const StorageSite&, ArrayBase* a);
+  void addArray(const StorageSite&, shared_ptr<ArrayBase> a);
   void removeArray(const StorageSite&);
   void removeArrays(const StorageSiteList& sites);
   
-  virtual IContainer& operator=(const IContainer& a);
+  virtual void copyFrom(const IContainer& a);
   virtual void zero();
-  virtual void copyFrom(const IContainer& oc);
   
   virtual shared_ptr<IContainer> newCopy() const;
   virtual shared_ptr<IContainer> newClone() const;
 
   bool hasArray(const StorageSite& s) const;
   
-  void syncGather(const StorageSite& s);
+  //  void syncGather(const StorageSite& s);
   //void syncScatter(const StorageSite& s);
+
+  const string& getName() const {return _name;}
   
 private:
-  ArrayMap& _arrays;
+  Field(const Field&);
+  const string _name;
+  ArrayMap _arrays;
   ChildSitesMap _childSitesMap;
+
+  ArrayBase& _create(const StorageSite& site);
 };
 
 #endif

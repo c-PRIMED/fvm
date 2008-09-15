@@ -161,6 +161,26 @@ public:
     return *this;
   }
 
+  virtual bool operator<(const double tolerance) const
+  {
+    if (_length == 1)
+    {
+        return (_data[0] <tolerance);
+    }
+    else
+      throw CException("invalid array for operator<");          
+  }
+
+  virtual void print(ostream& os) const 
+  {
+    if (_length == 1)
+    {
+      os <<_data[0];
+    }
+    else
+      throw CException("invalid array for print");          
+  }
+
   // this += alpha*x
   virtual ArrayBase& saxpy(const ArrayBase& alphabase, const ArrayBase& xbase)
   {
@@ -259,12 +279,11 @@ public:
     }
   }
 
-  virtual IContainer&
-  operator=(const IContainer& oc)
+  virtual void
+  copyFrom(const IContainer& oc)
   {
     const Array& other = dynamic_cast<const Array&>(oc);
     operator=(other);
-    return *this;
   }
 
   virtual void
@@ -307,6 +326,13 @@ public:
   {
     return shared_ptr<Array>(new Array(_length));
   }
+
+  virtual shared_ptr<ArrayBase>
+  newSizedClone(const int size) const
+  {
+    return shared_ptr<Array>(new Array(size));
+  }
+    
 
   virtual shared_ptr<IContainer>
   newCopy() const

@@ -8,7 +8,14 @@ srcBase = ['CException.cpp',
            'Matrix.cpp',
            'Mesh.cpp',
            'Cell.cpp',
-           #'GlobalFields.cpp',
+           'GlobalFields.cpp',
+           'Field.cpp',
+           'Model.cpp',
+           'MultiField.cpp',
+           'MultiFieldReduction.cpp',
+           'MultiFieldMatrix.cpp',
+           'LinearSystem.cpp',
+           'AMG.cpp'
            #'Discretization.cpp'
            ]
 

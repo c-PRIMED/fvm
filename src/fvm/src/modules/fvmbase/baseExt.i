@@ -31,10 +31,9 @@ namespace std{
 using namespace std;
 
 %include "Mesh.i"
- //%include "FluentReader.i"
 
+%include "MeshMetricsCalculator.i"
 
-  
 %inline %{
   
 

@@ -95,7 +95,8 @@ public:
     _col(_conn.getCol()),
     _diag(_conn.getRowDim()),
     _offDiag(_col.getLength()),
-    _pairWiseAssemblers()
+    _pairWiseAssemblers(),
+    _isBoundary(_conn.getRowDim())
   {
     logCtor();
   }
@@ -107,12 +108,19 @@ public:
                   +NumTypeTraits<X>::getTypeName()
              +">");
 
+  virtual void initAssembly()
+  {
+    _diag.zero();
+    _offDiag.zero();
+    _isBoundary = false;
+  }
+
   /**
    * y = this * x
    * 
    */
 
-  virtual void multiply(IContainer& yB, const IContainer& xB)
+  virtual void multiply(IContainer& yB, const IContainer& xB) const
   {
     XArray& y = dynamic_cast<XArray&>(yB);
     const XArray& x = dynamic_cast<const XArray&>(xB);
@@ -134,7 +142,7 @@ public:
    * 
    */
 
-  virtual void multiplyAndAdd(IContainer& yB, const IContainer& xB)
+  virtual void multiplyAndAdd(IContainer& yB, const IContainer& xB) const
   {
     XArray& y = dynamic_cast<XArray&>(yB);
     const XArray& x = dynamic_cast<const XArray&>(xB);
@@ -156,7 +164,7 @@ public:
    * 
    */
 
-  virtual void forwardGS(IContainer& xB, IContainer& bB, IContainer&)
+  virtual void forwardGS(IContainer& xB, IContainer& bB, IContainer&) const
   {
     XArray& x = dynamic_cast<XArray&>(xB);
     const XArray& b = dynamic_cast<const XArray&>(bB);
@@ -181,7 +189,7 @@ public:
    * 
    */
 
-  virtual void reverseGS(IContainer& xB, IContainer& bB, IContainer&)
+  virtual void reverseGS(IContainer& xB, IContainer& bB, IContainer&) const
   {
     XArray& x = dynamic_cast<XArray&>(xB);
     const XArray& b = dynamic_cast<const XArray&>(bB);
@@ -207,7 +215,7 @@ public:
    */
 
   virtual void computeResidual(const IContainer& xB, const IContainer& bB,
-                               IContainer& rB)
+                               IContainer& rB) const
   {
     const XArray& x = dynamic_cast<const XArray&>(xB);
     const XArray& b = dynamic_cast<const XArray&>(bB);
@@ -231,7 +239,7 @@ public:
    * 
    */
 
-  virtual void solveBoundary(IContainer& xB, IContainer& bB, IContainer&)
+  virtual void solveBoundary(IContainer& xB, IContainer& bB, IContainer&) const
   {
     XArray& x = dynamic_cast<XArray&>(xB);
     const XArray& b = dynamic_cast<const XArray&>(bB);
@@ -399,7 +407,7 @@ public:
                            const StorageSite& coarseRowSite,
                            const StorageSite& coarseColSite)
   {
-    const Array<int>&  coarseIndex = dynamic_cast<Array<int>& >(gCoarseIndex);
+    const Array<int>&  coarseIndex = dynamic_cast<const Array<int>& >(gCoarseIndex);
 
     const int nCoarseRows = coarseRowSite.getCount();
     
@@ -497,7 +505,7 @@ public:
                      const CRConnectivity& coarseToFine,
                      const CRConnectivity& coarseConnectivity)
   {
-    const Array<int>&  coarseIndex = dynamic_cast<Array<int>& >(gCoarseIndex);
+    const Array<int>&  coarseIndex = dynamic_cast<const Array<int>& >(gCoarseIndex);
     const int nCoarseRows = coarseConnectivity.getRowDim();
 
     shared_ptr<CRMatrix> coarseMatrix(new CRMatrix(coarseConnectivity));
@@ -590,6 +598,7 @@ private:
   Array<Diag> _diag;
   Array<OffDiag> _offDiag;
   PairWiseAssemblerMap _pairWiseAssemblers;
+  Array<bool> _isBoundary;
 };
 
 

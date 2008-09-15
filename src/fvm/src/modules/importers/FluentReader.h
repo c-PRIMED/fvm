@@ -16,7 +16,7 @@ class FluentReader : public SchemeReader
 public:
 
   typedef Vector<double,3> Vec3;
-  typedef map<int, OneToOneIndexMap*> GhostCellMapsMap;
+  typedef map<int, shared_ptr<OneToOneIndexMap> > GhostCellMapsMap;
   
   struct FluentZone 
   {
@@ -115,7 +115,7 @@ protected:
   // get the cell zone ID for a particular cell
   int getCellZoneID(const int c) const;
 
-  OneToOneIndexMap*
+  shared_ptr<OneToOneIndexMap>
   getGhostCellMap(const FluentCellZone& cz, const Array<int>& indices);
 
   Mesh* createMesh(const int cellZoneID);

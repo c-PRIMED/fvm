@@ -1,14 +1,12 @@
 #include "Field.h"
 #include "ArrayBase.h"
-#include "ArrayCreator.h"
 #include "StorageSite.h"
 #include "Array.h"
-#include "CDict.h"
 #include "OneToOneIndexMap.h"
-#include "myomp.h"
 
-Field::Field():
+Field::Field(const string& name):
   IContainer(),
+  _name(name),
   _arrays()
 {
   logCtor();
@@ -24,7 +22,7 @@ bool
 Field::hasArray(const StorageSite& s) const
 {
   return ((_arrays.find(&s) != _arrays.end()) ||
-          !s.isVarNone("parent"));
+          (s.getParent() && (_arrays.find(s.getParent()) != _arrays.end())));
 }
 
 const ArrayBase&
@@ -48,12 +46,10 @@ Field::operator[](const StorageSite& s)
 
 
 void
-Field::addArray(const StorageSite& s, ArrayBase* a)
+Field::addArray(const StorageSite& s, shared_ptr<ArrayBase> a)
 {
   removeArray(s);
-  _arrays.add(&s,a);
-  //syncScatter(s);
-  //syncGather(s);
+  _arrays[&s]=a;
 }
 
 void
@@ -62,50 +58,41 @@ Field::removeArray(const StorageSite& s)
   if (_childSitesMap.find(&s) != _childSitesMap.end())
   {
       vector<const StorageSite*>& childSites = *_childSitesMap[&s];
-      for (vector<const StorageSite*>::iterator pos = childSites.begin();
-           pos != childSites.end();
-           ++pos)
-        {
-            removeArray(**pos);
-        }
+      foreach (const StorageSite* site,childSites)
+      {
+          removeArray(*site);
+      }
       delete &childSites;
       _childSitesMap.erase(&s);
       
   }
-
-  _arrays.remove(&s);
+  _arrays.erase(&s);
 }
 
 void
-Field::removeArrays(const StorageSiteCList& sites)
+Field::removeArrays(const StorageSiteList& sites)
 {
-  for (StorageSiteCList::const_iterator pos = sites.begin();
-       pos != sites.end();
-       ++pos)
+  foreach(const StorageSite* s, sites)
   {
-      removeArray(**pos);
+      removeArray(*s);
   }
 }
 
 ArrayBase& 
 Field::_create(const StorageSite& s)
 {
-  const int sID = s.getInt("ID");
-
-  if (!s.isVarNone("parent"))
+  const StorageSite* parentSite = s.getParent();
+  if (parentSite)
   {
-      const StorageSite& parentSite = s.getChildRef<StorageSite>("parent");
-      ArrayBase& parent = operator[](parentSite);
-      _arrayStatus[&s] = getThisThreadNum();
-      ArrayBase* anew = parent.createOffsetArray(s.getInt("offset"),
-                                              s.getInt("count"));
-      _arrays.add(&s,anew); 
-      _arrayStatus[&s] = ARRAY_COMPUTED;
+      ArrayBase& parentArray = operator[](*parentSite);
+      shared_ptr<ArrayBase> anew = parentArray.createOffsetArray(s.getOffset(),
+                                                                 s.getCount());
+      _arrays[&s]=anew; 
 
-      if (_childSitesMap.find(&parentSite) == _childSitesMap.end())
-        _childSitesMap[&parentSite] = new vector<const StorageSite*>();
+      if (_childSitesMap.find(parentSite) == _childSitesMap.end())
+        _childSitesMap[parentSite] = new vector<const StorageSite*>();
 
-      vector<const StorageSite*>& childSites = *_childSitesMap[&parentSite];
+      vector<const StorageSite*>& childSites = *_childSitesMap[parentSite];
       childSites.push_back(&s);
       return *anew;
   }
@@ -113,36 +100,33 @@ Field::_create(const StorageSite& s)
   {
       ostringstream e;
       e << "Field::operator[] No array found and no creator defined for "
-        << sID;
+        << &s << endl;
       throw CException(e.str());
   }
 }
 
-IContainer*
+shared_ptr<IContainer>
 Field::newClone() const
 {
-  Field *c = new Field();
+  shared_ptr<Field> c(new Field(_name));
   
-  for(ArrayMap::const_iterator pos = _arrays.begin();
-      pos != _arrays.end();
-      ++pos)
+  foreach(const ArrayMap::value_type& pos, _arrays)
   {
-      c->addArray(*(pos->first),SafeCast<ArrayBase>(pos->second->newClone()));
+      c->addArray(*(pos.first),
+                  dynamic_pointer_cast<ArrayBase>(pos.second->newClone()));
   }
   return c;
 }
 
 
-IContainer*
+shared_ptr<IContainer>
 Field::newCopy() const
 {
-  Field *c = new Field();
-  
-  for(ArrayMap::const_iterator pos = _arrays.begin();
-      pos != _arrays.end();
-      ++pos)
+  shared_ptr<Field> c(new Field(_name));
+  foreach(const ArrayMap::value_type& pos, _arrays)
   {
-      c->addArray(*(pos->first),SafeCast<ArrayBase>(pos->second->newCopy()));
+      c->addArray(*(pos.first),
+                  dynamic_pointer_cast<ArrayBase>(pos.second->newCopy()));
   }
   return c;
 }
@@ -151,27 +135,30 @@ Field::newCopy() const
 void
 Field::zero()
 {
-  for(ArrayMap::iterator pos = _arrays.begin();
-      pos != _arrays.end();
-      ++pos)
+  foreach(ArrayMap::value_type& pos, _arrays)
   {
-      pos->second->zero();
+      pos.second->zero();
   }
+}
+
+Field&
+Field::operator=(const Field& oField)
+{
+  foreach(ArrayMap::value_type& pos, _arrays)
+  {
+      *pos.second = oField[*pos.first];
+  }
+  return *this;
 }
 
 void
 Field::copyFrom(const IContainer& oc)
 {
-  const Field& ofield = SafeCast<Field>(oc);
-  for(ArrayMap::iterator pos = _arrays.begin();
-      pos != _arrays.end();
-      ++pos)
-  {
-      pos->second->copyFrom(ofield[*(pos->first)]);
-  }
+  const Field& other = dynamic_cast<const Field&>(oc);
+  operator=(other);
 }
 
-
+#if 0
 void
 Field::syncGather(const StorageSite& site)
 {
@@ -241,3 +228,4 @@ Field::syncGather(const StorageSite& site)
   while (!allUpdated);
 }
 
+#endif

@@ -4,8 +4,12 @@ src = [
     'Reader.cpp',
     'SchemeReader.cpp',
     'FluentReader.cpp',
+    'MMReader.cpp'
     ]
 
 env.createSharedLibrary('importers',src,['rlog','fvmbase'])
 env.createSwigModule('_importers',source=['FluentReader.i'],
                      deplibs=['fvmbase','importers','rlog'])
+
+env.createExe('testLinearSolver',['testLinearSolver.cpp'],
+              deplibs=['fvmbase','importers','rlog'])

@@ -33,37 +33,37 @@ Matrix::createCoarseMatrix(const IContainer& coarseIndex,
 }
 
 void
-Matrix::multiply(IContainer& yB, const IContainer& xB)
+Matrix::multiply(IContainer& yB, const IContainer& xB) const
 {
   throw CException("multiply not implemented");
 }
 
 void
-Matrix::multiplyAndAdd(IContainer& yB, const IContainer& xB)
+Matrix::multiplyAndAdd(IContainer& yB, const IContainer& xB) const
 {
   throw CException("multiplyAndAdd not implemented");
 }
 
 void Matrix::forwardGS(IContainer& xB, IContainer& bB,
-                       IContainer& residual)
+                       IContainer& residual) const
 {
   throw CException("forwardGS not implemented");
 }
 
 void Matrix::reverseGS(IContainer& xB, IContainer& bB,
-                       IContainer& residual)
+                       IContainer& residual) const
 {
   throw CException("reverseGS not implemented");
 }
 
 void Matrix::solveBoundary(IContainer& xB, IContainer& bB,
-                           IContainer& residual)
+                           IContainer& residual) const
 {
   throw CException("solveBoundary not implemented");
 }
 
 void Matrix::computeResidual(const IContainer& xB, const IContainer& bB,
-                             IContainer& residual)
+                             IContainer& residual) const
 {
   throw CException("computeResidual not implemented");
 }

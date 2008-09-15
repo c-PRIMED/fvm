@@ -3,7 +3,7 @@
 
 #include <map>
 #include <vector>
-
+#include "misc.h"
 #include "RLogInterface.h"
 
 class OneToOneIndexMap;
@@ -13,7 +13,7 @@ class StorageSite
 public:
 
 
-  typedef map<const StorageSite*, const OneToOneIndexMap*> MappersMap;
+  typedef map<const StorageSite*, shared_ptr<OneToOneIndexMap> > MappersMap;
   
   StorageSite(const int selfCount, const int nGhost=0,
               const int offset=0, const StorageSite* parent=0);

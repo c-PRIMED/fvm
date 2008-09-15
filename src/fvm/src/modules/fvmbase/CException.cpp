@@ -28,6 +28,9 @@ CException::CException(const string& what) :
             string s(traceStrings[x]);
             size_t funcNameBegin = s.find("(");
             size_t funcNameEnd = s.find("+");
+            if (funcNameBegin == string::npos) funcNameBegin=0;
+            if (funcNameEnd == string::npos) funcNameEnd=s.size();
+            
             string funcNameMangled(s.begin()+funcNameBegin+1,s.begin()+funcNameEnd);
 
             string fileName(s.begin(),s.begin()+funcNameBegin);

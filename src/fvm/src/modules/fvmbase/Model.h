@@ -3,7 +3,7 @@
 
 
 #include "StorageSite.h"
-#include "Model.h"
+#include "Mesh.h"
 
 class Model
 {
@@ -13,8 +13,10 @@ public:
     
   DEFINE_TYPENAME("Model");
 
+  virtual void init() = 0;
+  
 protected:
-  const MeshList& _meshes;
+  const MeshList _meshes;
   StorageSiteList _varSites;
   StorageSiteList _fluxSites;  
 };

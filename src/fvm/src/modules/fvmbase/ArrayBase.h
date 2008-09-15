@@ -31,12 +31,18 @@ public:
                            const int iBeg, const int iEnd)  =0;
   virtual void zeroPartial(const int iBeg, const int iEnd)  =0;
 
+  virtual shared_ptr<ArrayBase> newSizedClone(const int size) const = 0;
 
-  virtual IContainer& operator=(const IContainer& a) =0;
+  virtual void copyFrom(const IContainer& a) =0;
   virtual ArrayBase& operator+=(const ArrayBase& a) =0;
   virtual ArrayBase& operator-=(const ArrayBase& a) =0;
   virtual ArrayBase& operator/=(const ArrayBase& a) =0;
   virtual ArrayBase& operator*=(const ArrayBase& a) =0;
+
+  virtual bool operator<(const double tolerance) const=0;
+
+  virtual void print(ostream& os) const = 0;
+  
   virtual ArrayBase& saxpy(const ArrayBase& alphabase,
                            const ArrayBase& xbase) = 0;
   virtual ArrayBase& msaxpy(const ArrayBase& alphabase,
