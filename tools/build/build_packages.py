@@ -146,7 +146,7 @@ class Lammps(BuildPkg):
 class Gmsh(BuildPkg):
     name = "gmsh"
     def _configure(self):
-        return self.sys_log("./configure --prefix=%s" % self.blddir)
+        return self.sys_log("./configure --prefix=%s --with-gsl-prefix=%s" % (self.blddir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
