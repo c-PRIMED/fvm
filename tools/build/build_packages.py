@@ -136,7 +136,7 @@ class BuildPkg:
 class Lammps(BuildPkg):
     name = "lammps"
     def _build(self):
-        return self.sys_log("make openmpi");
+        return self.sys_log("make -j4");
     def _clean(self):
         self.sys_log("make clean-all")
         self.sys_log("/bin/rm -f lmp_*")
