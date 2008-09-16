@@ -36,7 +36,9 @@ class BuildPkg:
         BuildPkg.packages = [Gsl("pkgs/gsl", "build"),
                 Fltk("pkgs/fltk"),
                 Gmsh("pkgs/gmsh"),
+                Rlog("pkgs/rlog"),
                 Lammps("src/lammps/src"),
+                Fvm("src/fvm","build"),
                 ]
 
     setup = staticmethod(setup)
@@ -175,6 +177,30 @@ class Gsl(BuildPkg):
     name = "gsl"
     def _configure(self):
         return self.sys_log("../configure --prefix=%s" % self.blddir)
+    def _build(self):
+        return self.sys_log("make -j4")
+    def _install(self):
+        return self.sys_log("make install")
+    def _clean(self):
+        return self.sys_log("make clean")
+    
+
+class Rlog(BuildPkg):
+    name = "rlog"
+    def _configure(self):
+        return self.sys_log("./configure --prefix=%s" % self.blddir)
+    def _build(self):
+        return self.sys_log("make -j4")
+    def _install(self):
+        return self.sys_log("make install")
+    def _clean(self):
+        return self.sys_log("make clean")
+
+class Fvm(BuildPkg):
+    name = "fvm"
+    def _configure(self):
+        os.putenv("PYTHONPATH",path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
+        return self.sys_log("../etc/buildsystem/build -C %s" % self.sdir)
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
