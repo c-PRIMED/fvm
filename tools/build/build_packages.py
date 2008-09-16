@@ -84,7 +84,7 @@ class BuildPkg:
         if self.sdir != self.bdir:
             chdir(self.sdir)
             if path.isdir(self.bdir):            
-                system("/bin/rm -rf " + self.bdir)
+                system("/bin/rm -rf %s/*" % self.bdir)
 
     def build(self):
         self.state = 'build'
