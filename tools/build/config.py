@@ -40,21 +40,22 @@ def set_value(val):
         return False
     if section == 'before' or section == 'after':
         try:
-            _config[section][0].append(val[0])
+            _config[section][0].append(val)
         except:
-            _config[section] = {0: val}
+            _config[section] = {0: [val]}
     else:
+        val = val.split('=')
         if val[0] == 'skip' and len(val) == 1:
             val.append(1)
         if len(val) != 2:
             return False
         if val[0] == 'before' or val[0] == 'after':
-            _config[section][val[0]] = [val[1]]
+            try: 
+                _config[section][val[0]] += [val[1]]
+            except KeyError: 
+                _config[section] = {val[0]:[val[1]]}
         else:
-            try:
-                _config[section][val[0]] = val[1]
-            except:
-                _config[section] = {val[0]:val[1]}
+            _config[section] = {val[0]:val[1]}
     return True
 
 def read(file):
@@ -71,7 +72,7 @@ def read(file):
             continue
         if line[-1] == ':' and set_section(line[:-1]):
             continue
-        if line[0].isspace() and set_value(line.lstrip().split('=')):
+        if line[0].isspace() and set_value(line.lstrip()):
             continue
         print "Cannot parse line %s in %s: %s" % (lnum, file, line)
         return False
