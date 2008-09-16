@@ -1,0 +1,79 @@
+Name: rlog
+Summary: Runtime Logging for C++
+Version: @VERSION@
+Release: 2
+License: LGPL
+Group: Development/Libraries/C and C++
+Source: %{name}-%{version}.tgz
+BuildRoot: %{_tmppath}/build-root-%{name}
+Packager: Valient Gough <vgough at pobox dot com>
+#Distribution: Suse 9.0
+Prefix: /usr
+Url: http://pobox.com/~vgough/rlog
+Provides: librlog
+
+%description
+RLog provides a flexible message logging facility for C++ programs and
+libraries.  It is meant to be fast enough to leave in production code.
+
+%changelog
+* Sun Jul 16 2006 Valient Gough <vgough@pobox.com>
+- enable static build by default
+* Mon Nov 8 2004 Valient Gough <vgough@pobox.com>
+- Release v1.3.5
+- Add initial attempt at Win32 support (due to help from Vadim Zeitlin)
+- Fixes to build on Suse 9.2 (replaced old KDE based autoconf scripts)
+- Add "info" channel, and rInfo() macro.
+* Mon May 31 2004 Valient Gough <vgough@pobox.com>
+- Release v1.3.4
+- Portibility changes to allow rlog to build with older C++ compilers and on
+  non-x86 computers.
+- Add extra ERROR_FMT() macro which allows format string to be passed on Error
+  construction.
+- Add valgrind support to allow valgrind trace from any assert when running
+  under valgrind.
+- Update admin dir.
+* Sat Mar 13 2004 Valient Gough <vgough@pobox.com>
+- Release v1.3.1
+- added pkg-config file librlog.pc
+- changed license to LGPL
+- added rAssertSilent macro
+- fixes for special case checks of printf attribute
+* Sat Feb 8 2004 Valient Gough <vgough@pobox.com>
+- Release v1.3
+
+%prep
+rm -rf $RPM_BUILD_ROOT 
+mkdir $RPM_BUILD_ROOT
+
+%setup -q
+
+%build
+CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" \
+./configure --prefix=%{prefix} --enable-static
+make -j 2
+
+%install
+make DESTDIR=$RPM_BUILD_ROOT install
+
+cd $RPM_BUILD_ROOT
+
+find . -type d -fprint $RPM_BUILD_DIR/file.list.%{name}.dirs
+find . -type f -fprint $RPM_BUILD_DIR/file.list.%{name}.files.tmp
+sed '/\/man\//s/$/.gz/g' $RPM_BUILD_DIR/file.list.%{name}.files.tmp > $RPM_BUILD_DIR/file.list.%{name}.files
+find . -type l -fprint $RPM_BUILD_DIR/file.list.%{name}.libs
+sed '1,2d;s,^\.,\%attr(-\,root\,root) \%dir ,' $RPM_BUILD_DIR/file.list.%{name}.dirs > $RPM_BUILD_DIR/file.list.%{name}
+sed 's,^\.,\%attr(-\,root\,root) ,' $RPM_BUILD_DIR/file.list.%{name}.files >> $RPM_BUILD_DIR/file.list.%{name}
+sed 's,^\.,\%attr(-\,root\,root) ,' $RPM_BUILD_DIR/file.list.%{name}.libs >> $RPM_BUILD_DIR/file.list.%{name}
+
+%clean
+[ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+rm -rf $RPM_BUILD_DIR/file.list.%{name}
+rm -rf $RPM_BUILD_DIR/file.list.%{name}.libs
+rm -rf $RPM_BUILD_DIR/file.list.%{name}.files
+rm -rf $RPM_BUILD_DIR/file.list.%{name}.files.tmp
+rm -rf $RPM_BUILD_DIR/file.list.%{name}.dirs
+
+%files -f ../file.list.%{name}
+
+%defattr(-,root,root,0755)

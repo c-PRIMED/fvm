@@ -1,0 +1,198 @@
+/*! @mainpage RLog - a C++ logging library
+<h3>Copyright &copy; 2002-2004 Valient Gough \< vgough \@ pobox . com \></h3>
+Distributed under the LGPL license, see COPYING for details.
+
+@section introduction Introduction
+
+RLog provides a flexible message logging facility for C++ programs and
+libraries.  It is meant to be fast enough to leave in production code.
+
+RLog provides macros which are similar to Qt's debug macros, which are similar
+to simple printf() statements:
+@code
+void func(int foo)
+{
+    rDebug("foo = %i", foo);
+    int ans = 6 * 9;
+    if(ans != 42)
+	rWarning("ans = %i, expecting 42", ans);
+    rError("I'm sorry %s, I can't do that (error code %i)", name, errno);
+}
+@endcode
+
+The difference to Qt's macros is that the log messages are considered @e
+publishers and there can be any number of @e subscribers to log messages.
+Subscribers may choose which messages they want to receive in a number of
+different ways:
+- subscribe to messages to a particular @e channel. Channels are hierarchical
+  can be easily created. See @ref channel.
+- subscribe to anything from a particular @e component.  See @ref component.
+- subscribe to messages from a particular file name within a component.
+
+If there are no subscribers to a particular logging statement, that statement
+can be said to be @e dormant.  RLog is optimized to minimize overhead of
+dormant logging statements, with the goal of allowing logging to be left in
+release versions of software.  This way if problems show up in production code,
+it is possible to activate logging statements in real time to aid debugging.
+
+As an indication of just how cheap a dormant logging statement is, on a
+Pentium-4 class CPU with g++ 3.3.1, a dormant log in a tight loop adds on the
+order of 2-6 (two to six) clock cycles of overhead (1).  By comparison a simple
+logging function such as Qt's qDebug() adds about 1000 (a thousand) clock
+cycles of overhead - even when messages are being thrown away.
+
+In addition, logging statements in RLog can be individually activated at
+run-time without affecting any other statements, allowing targeted log
+reporting.
+
+<i>(1) The first time a logging statement is encountered, it must be registered
+in order to determine if there are any subscribers.  So there is additional
+overhead the first time a statement is encountered.
+</i>
+
+
+
+@section use Using RLog
+
+In order to begin using RLog in your code, you should do the following:
+- define RLOG_COMPONENT in your build environment.  Eg:  librlog is built with
+  -DRLOG_COMPONENT="rlog".  You should use a unique name for your program or
+  library (do not use "rlog").  If your program is made up of separate
+  components, then you can define RLOG_COMPONENT as a different name for each
+  component.
+- (optional) add a call to RLogInit() in your main program startup code.  This
+  is not a requirement, however not including it may reduce functionality of
+  external rlog modules.
+- link with librlog
+- add subscribers (rlog::StdioNode , rlog::SyslogNode , or your own) to catch
+  any messages you are interested in.
+
+
+@section requirements Requirements
+
+RLog has been tested on the following systems (all releases may not have been
+tested on all systems):
+
+<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">
+    <tr>
+      <th style="width: 104px; text-align: center;"><b>Platform</b><br>
+      </th>
+      <th style="width: 149px; text-align: center;"><b>Operating System</b><br>
+      </th>
+      <th style="width: 126px; text-align: center;"><b>Compiler</b><br>
+      </th>
+      <th style="text-align: center;">Notes<br>
+      </th>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(153, 255, 153);">ix86<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">SuSE
+9.2<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">GNU
+G++ 3.3.4<br>
+      </td>
+      <td>binary RPM available<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(153, 255, 153);"><br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">SuSE 9.0<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">Intel ICC 8.0<br>
+      </td>
+      <td>last test was prior to RLog 1.3.4<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(153, 255, 153);"><br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">RedHat
+7.3<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">GNU
+G++ 2.96<br>
+      </td>
+      <td>binary RPM available</td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(153, 255, 153);"><br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">OpenBSD
+3.4<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">GNU
+G++ 2.95.3<br>
+      </td>
+      <td>Tested with 1.3.5<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(153, 255, 153);"><br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">FreeBSD
+4.10-beta<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">GNU
+G++ 2.95.4<br>
+      </td>
+      <td>Support added in 1.3.6 release<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(153, 255, 153);">sparc<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">Solaris
+5.9<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">GNU
+G++ 3.3.2<br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color: rgb(153, 255, 153);">PowerPC<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">Darwin
+5.5<br>
+      </td>
+      <td style="background-color: rgb(153, 255, 153);">gcc-932.1<br>
+      </td>
+      <td>Support added in 1.3.6 release<br>
+      </td>
+    </tr>
+</table>
+    
+To build development versions, you will also need the GNU autoconf tools
+(with automake and libtool).  Documentation is built using Doxygen.
+
+@section downloads Downloads
+
+RLog is available in source code and RPM packaged binaries for some systems.
+
+RLog Version 1.3.7 - Oct 5, 2005 release.
+    - Tarball: <a href="http://arg0.net/users/vgough/download/rlog-1.3.7.tgz">
+	rlog-1.3.7.tgz</a> 
+	+ 
+	<a href="http://arg0.net/users/vgough/download/rlog-1.3.7.tgz.asc">
+	    tarball GPG signature</a>
+    - Source RPM: <a href="http://arg0.net/users/vgough/download/rlog-1.3.7-1.src.rpm">
+	rlog-1.3.7-1.src.rpm</a>
+
+Binary packages:
+    - SuSE 9.2 i586 RPM: <a href="http://arg0.net/users/vgough/download/rlog-1.3.7-1suse92.i586.rpm">
+	rlog-1.3.7-1suse92.i586.rpm</a>
+    - RedHat 7.3 i386 RPM: <a href="http://arg0.net/users/vgough/download/rlog-1.3.7-1rh73.i386.rpm">
+	rlog-1.3.7-1rh73.i386.rpm</a>
+    
+To check the signature, you can download my public key from a public key
+server, or from the link at the top of <a href="http://arg0.net/users/vgough">
+my homepage</a>.
+
+If you wish to be notified automatically of new releases, you can subscribe to
+new release notifications on the <a href="http://freshmeat.net/projects/rlog/">Freshmeat page</a>.
+
+*/
