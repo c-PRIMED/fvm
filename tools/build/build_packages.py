@@ -113,7 +113,7 @@ class BuildPkg:
         debug(cmd)
         if self.logfile != '':
             cmd = cmd + " &>" + self.logfile
-        return system(cmd)
+        return system("/bin/bash -c '%s'" % cmd)
 
     # subclasses must redefine these
     def _configure(self):
