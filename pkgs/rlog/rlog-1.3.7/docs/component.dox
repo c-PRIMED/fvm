@@ -1,0 +1,12 @@
+/*! @page component RLog Components
+
+An RLog Component is typically a group of files with some shared purpose.  
+
+When programs are built with RLog, the value of RLOG_COMPONENT is used as the
+component name.  If RLOG_COMPONENT is not set at compile time, you may receive
+a compiler warning, and the component will be set to "[unknown]".
+
+For example when rlog is built, it specifies @b -DRLOG_COMPONENT="rlog".
+
+For more detail on how to use components in subscriptions, see @ref channel.
+*/

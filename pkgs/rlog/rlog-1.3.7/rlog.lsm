@@ -1,0 +1,14 @@
+Begin3
+Title:          RLog 
+Version:        1.2
+Entered-date:   
+Description:    C++ logging library
+Keywords:       
+Author:         Valient Gough <vgough@pobox.com> 
+Maintained-by:  Valient Gough <vgough@pobox.com> 
+Primary-site:
+Home-page:      http://pobox.com/~vgough/rlog
+Original-site:
+Platforms:      Linux and other Unices
+Copying-policy: GNU Public License
+End
