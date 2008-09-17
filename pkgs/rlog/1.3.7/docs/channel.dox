@@ -1,0 +1,89 @@
+/*! @page channel RLog Channels
+
+An RLog Channel is a naming method for logging messages.
+
+All logs are associated with a single channel, however there a variety of ways
+of subscribing to a log message.  
+
+@section hierarchy Channel Hierarchy
+
+Channels are hierarchical.  For example, if a log message is published
+on the "debug" channel:
+@code
+    rDebug("hi");
+    // same as
+    static RLogChannel *myChannel = DEF_CHANNEL("debug", Log_Debug);
+    rLog(myChannel, "hi");
+@endcode
+
+In the example above, all subscribers to the "debug" channel receive the
+messages, but @e not subscribers to "debug/foo" or other sub-channels.
+
+If a log is published under "debug/foo/bar":
+@code
+    static RLogChannel *myChannel = DEF_CHANNEL("debug/foo/bar", Log_Debug);
+    rLog(myChannel, "hi");
+@endcode
+
+In that example, all subscribers to "debug/foo/bar", "debug/foo", and "debug"
+will receive the message.
+
+All channels are considered to be derived from a root channel.  It doesn't have
+a true name and is referenced as the empty string "".  So, to capture @e all
+messages:
+@code
+    // capture all messages and log them to stderr
+    StdioNode stdLog( STDERR_FILENO );
+    stdLog.subscribeTo( GetGlobalChannel("") ); // empty string is root channel
+@endcode
+
+@section channelcomponents Channel Components
+
+Or in mathematical terms, the cross product of channels and components.
+
+Channels are componentized.  By default, all log messages using one of the rLog
+type macros is actually published on the component-specific version of the
+channel (the component being the value of RLOG_COMPONENT at compile time).  So,
+instead of just saying a message was published on "debug" channel, we need to
+also say which component it was part of, which we could represent as a pair ( <
+COMPONENT, CHANNEL > ) -- eg <"rlog", "debug">.  
+
+This means that two separate components, both using rDebug() (for example)
+could be subscribed to separately, or together.
+
+There is a way to subscribe to channels in the following ways:
+- <COMPONENT, CHANNEL> : subscribe to a particular channel from a component
+- <COMPONENT, *> : subscribe to all channels from a component
+- <*, CHANNEL> : subscribe to a channel from @e all components
+- <*, *> : subscribe to all channels from all components
+
+@code 
+{
+    // this is published on the channel "debug", and the component
+    // [RLOG_COMPONENT]
+    rDebug("hi"); 
+
+    StdioNode stdLog( STDERR_FILENO );
+
+    // subscribe to a particular channel, from the current component
+    // ([RLOG_COMPONENT])
+    stdLog.subscribeTo( RLOG_CHANNEL("debug/foo") );
+
+    // subscribe to all channels from the current component ([RLOG_COMPONENT])
+    // (the root channel is the empty string "")
+    stdLog.subscribeTo( RLOG_CHANNEL("") );  
+
+    // subscribe to a particular channel from all components
+    stdLog.subscribeTo( GetGlobalChannel("debug/foo") );
+
+    // subscribe to all channels from all components
+    stdLog.subscribeTo( GetGlobalChannel("") );
+} 
+@endcode
+
+As you can see from the pattern above, using the RLOG_CHANNEL() macro limits
+the selection to the current component.  If you want to specify a component
+other then the current component, use GetComponentChannel() which takes the
+component name as the first argument.
+
+*/
