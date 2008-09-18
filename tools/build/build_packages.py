@@ -198,6 +198,25 @@ class Rlog(BuildPkg):
 
 class Fvm(BuildPkg):
     name = "fvm"
+    def _configure(self):
+        # from fvm sources
+        def getArch():
+            if sys.platform == 'linux2':
+                if os.uname()[4] == 'ia64':
+                    return 'lnxia64'
+                elif os.uname()[4] == 'x86_64':
+                    return 'lnx86_64'
+                else:
+                    return 'lnx86'
+            elif sys.platform == 'win32':
+                return 'ntx86'
+            else:
+                return sys.platform
+            
+        pdir = path.join(self.sdir, "packages")
+        self.sys_log("/bin/mkdir -p %s" % pdir)
+        pdir = path.join(pdir, getArch())
+        return self.sys_log("/bin/ln -s %s %s" % (self.blddir, pdir))
     def _build(self):
         os.putenv("PYTHONPATH",path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
         return self.sys_log("../etc/buildsystem/build -C %s" % self.sdir)
