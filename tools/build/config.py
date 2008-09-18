@@ -12,10 +12,9 @@ _config = {
         },
     'gmsh': {
         'configure': '--with-fltk-prefix=BUILDDIR',
-        'requires': 'fltk',
         },
-    'foo': {
-        'skip': 1,
+    'lammps': {
+        'build': 'openmpi',
         },
 }
 
