@@ -188,7 +188,7 @@ class Gsl(BuildPkg):
 class Rlog(BuildPkg):
     name = "rlog"
     def _configure(self):
-        return self.sys_log("./configure --prefix=%s" % self.blddir)
+        return self.sys_log("./configure --disable-docs --disable-valgrind  --prefix=%s" % self.blddir)
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -198,16 +198,9 @@ class Rlog(BuildPkg):
 
 class Fvm(BuildPkg):
     name = "fvm"
-    def _configure(self):
+    def _build(self):
         os.putenv("PYTHONPATH",path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
         return self.sys_log("../etc/buildsystem/build -C %s" % self.sdir)
-    def _build(self):
-        return self.sys_log("make -j4")
-    def _install(self):
-        return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
-    
 
 # self.__class__.__name__
 
