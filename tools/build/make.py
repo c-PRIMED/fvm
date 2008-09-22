@@ -17,8 +17,6 @@ import config
 def main(args):
 
 
-    BuildPkg.setup()
-
     parser = OptionParser()
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
@@ -28,12 +26,15 @@ def main(args):
 
 
     if len(args) and args[0] == "clean":
+        BuildPkg.setup()
         for p in BuildPkg.packages:
             p.clean()
     elif len(args) and args[0] == "test":
         print "Tests are not implemented yet"
     else:
-        if len(args) == 0 or args[0] == "" or config.read(args[0]):
+        ret = config.read(args[0])
+        if ret:
+            BuildPkg.setup(args[0])            
             build_utils.run_commands('before',0)
             for p in BuildPkg.packages:
                 if config.config(p.name,'skip'):

@@ -54,13 +54,17 @@ def set_value(val):
             except KeyError: 
                 _config[section] = {val[0]:[val[1]]}
         else:
-            _config[section] = {val[0]:val[1]}
+            try: 
+                _config[section][val[0]] = [val[1]]
+            except KeyError: 
+                _config[section] = {val[0]:val[1]}
     return True
 
-def read(file):
-    file = os.path.join(os.getcwd(), "config", file)
+def read(filename):
+    if filename == '': return True
+    filename = os.path.join(os.getcwd(), "config", filename)
     lnum = 0
-    f = open(file, 'r')
+    f = open(filename, 'r')
     while True:
         line = f.readline()
         lnum = lnum + 1
@@ -73,7 +77,7 @@ def read(file):
             continue
         if line[0].isspace() and set_value(line.lstrip()):
             continue
-        print "Cannot parse line %s in %s: %s" % (lnum, file, line)
+        print "Cannot parse line %s in %s: %s" % (lnum, filename, line)
         return False
     return  True
         

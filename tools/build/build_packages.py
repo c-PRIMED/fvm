@@ -25,9 +25,11 @@ def create_build_dir():
 # abstract superclass
 class BuildPkg:
 
-    def setup():
+    def setup(cname=''):
         BuildPkg.topdir = getcwd()
-        BuildPkg.blddir = path.join(BuildPkg.topdir, "build")
+        if cname:
+            cname = '-' + cname
+        BuildPkg.blddir = path.join(BuildPkg.topdir, "build%s" % cname)
         BuildPkg.logdir = path.join(BuildPkg.blddir, "log")
         BuildPkg.bindir = path.join(BuildPkg.blddir, "bin")
         BuildPkg.libdir = path.join(BuildPkg.blddir, "lib")
@@ -216,7 +218,7 @@ class Fvm(BuildPkg):
         pdir = path.join(self.sdir, "packages")
         self.sys_log("/bin/mkdir -p %s" % pdir)
         pdir = path.join(pdir, getArch())
-        return self.sys_log("/bin/ln -s %s %s" % (self.blddir, pdir))
+        return self.sys_log("/bin/ln -fs %s %s" % (self.blddir, pdir))
     def _build(self):
         os.putenv("PYTHONPATH",path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
         return self.sys_log("../etc/buildsystem/build -C %s" % self.sdir)
