@@ -32,9 +32,15 @@ def main(args):
     elif len(args) and args[0] == "test":
         print "Tests are not implemented yet"
     else:
-        ret = config.read(args[0])
+        if len(args) == 0:
+            print "No configuration specified. Building defaults."
+            cname = ''
+            ret = True
+        else:
+            ret = config.read(args[0])
+            cname = args[0]
         if ret:
-            BuildPkg.setup(args[0])            
+            BuildPkg.setup(cname)            
             build_utils.run_commands('before',0)
             for p in BuildPkg.packages:
                 if config.config(p.name,'skip'):

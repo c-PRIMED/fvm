@@ -55,7 +55,7 @@ def set_value(val):
                 _config[section] = {val[0]:[val[1]]}
         else:
             try: 
-                _config[section][val[0]] = [val[1]]
+                _config[section][val[0]] = val[1]
             except KeyError: 
                 _config[section] = {val[0]:val[1]}
     return True
