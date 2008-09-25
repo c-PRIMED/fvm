@@ -144,8 +144,7 @@ class Lammps(BuildPkg):
         self.sys_log("/bin/rm -f lmp_*")
         return 0
     def _install(self):
-        bindir = self.blddir+"/bin"
-        return self.sys_log("install lmp_* %s" % bindir)
+        return self.sys_log("install lmp_* %s" % self.bindir)
 
 class Gmsh(BuildPkg):
     name = "gmsh"
