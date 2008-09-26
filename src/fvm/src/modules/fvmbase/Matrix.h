@@ -40,6 +40,8 @@ public:
   createCoarseMatrix(const IContainer& coarseIndex,
                      const CRConnectivity& coarseToFine,
                      const CRConnectivity& coarseConnectivity);
+
+  virtual bool isInvertible() {return false;}
 };
 
 
