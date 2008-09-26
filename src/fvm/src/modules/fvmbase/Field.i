@@ -1,0 +1,5 @@
+class Field
+{
+private:
+  Field();
+};
