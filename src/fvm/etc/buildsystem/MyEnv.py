@@ -8,6 +8,7 @@ import MyTools
 import Packages
 import distutils.sysconfig
 import types
+import re
 
 optionsList = [
   ('VERSION', 'debug', 'Build version (default debug, profile)'),
@@ -19,6 +20,7 @@ optionsList = [
   ('COMPACTOUTPUT', True, 'Use compacted form of build command lines in ouotput'),
  ]
 
+swigre = re.compile('(.*).i')
 
 def setBaseVars(env,cla):
 
@@ -157,7 +159,7 @@ class MyEnvironment(SConsEnvironment):
         nodes = env.Program('$COMPONENTTARGETDIR/'+target, source, **kwargs)
 
         self._addTarget(nodes)
-        self.Alias(target, nodes)
+        #self.Alias(target, nodes)
         for lib in dynlibs:
             atypedLib = '_atyped' in lib
             if atypedLib:
@@ -171,10 +173,11 @@ class MyEnvironment(SConsEnvironment):
     def createSharedLibrary(self, target, sources=[],
                             deplibs=[],
                             createPublicHeader=True,
+                            targetAType=None,
                             **kwargs):
 
         env = self.myClone()
-        env._updateEnv(target, deplibs)
+        env._updateEnv(target, deplibs,targetAType)
         env.AppendUnique(CPPDEFINES='RLOG_COMPONENT=%s' % target)
 
         env.Append(CPPPATH=['$AUTOGENDIR'])
@@ -185,8 +188,8 @@ class MyEnvironment(SConsEnvironment):
         nodes = env.SharedLibrary('$COMPONENTTARGETDIR/'+target, sources, **kwargs)
 
         self._addTarget(nodes)
-        if target not in self._compDirMap.keys():
-            self.Alias(target, nodes)
+#        if target not in self._compDirMap.keys():
+#            self.Alias(target, nodes)
         return nodes
 
     def createATypedSharedLibrary(self, target, sources=[], deplibs=[],
@@ -196,51 +199,66 @@ class MyEnvironment(SConsEnvironment):
         nodes = []
         for atype in self['ATYPES']:
             if atype not in skip:
-                libEnv = self.myClone()
+                libEnv = env.myClone()
                 if Arch.isWindows():
                     libEnv.AppendUnique(CPPDEFINES= CLVar('BUILDING_' + target.upper()))
                 libTarget = '%s_%s' % (target, atype)
-                libEnv.Append(CPPPATH=['$SRCDIR/modules/atypes/%s' % atype])
                 libEnv['SHOBJSUFFIX'] = '_%s%s' % (atype, self['SHOBJSUFFIX'])
                 nodes += libEnv.createSharedLibrary(libTarget, sources, deplibs,
-                                                    createPublicHeader=False, **kwargs)
-
-        ### public header needs to have symbol without atype suffix
-        env['CURRENTLIB'] = target.upper()
-        headerNode = env.createPublicHeaderFile(target)
-        env._addTarget(headerNode)
-        nodes += headerNode + nodes
+                                                    createPublicHeader=False,
+                                                    targetAType=atype,
+                                                    **kwargs)
 
         return nodes
 
  
-    def createSwigModule(self, target, source=[], deplibs=[], **kwargs):
+    def createSwigModule(self, target, sources=[], deplibs=[], atype=None,**kwargs):
 
         env = self.myClone()
 
         env.loadTools(['swig'])
         
         env.Append(CPPPATH=['$AUTOGENDIR'])
-        if Arch.isWindows():
-            pylibdir = distutils.sysconfig.get_config_var('LIBDEST')
-            env['SWIG'] = os.path.join(pylibdir,'site-packages',
-                                          'swig-1.3.31.0002_s-py2.5-win32.egg','swig')
         env['SHLIBPREFIX'] = ""
-        env['SWIGFLAGS'] = '-c++ -python -outdir $COMPONENTTARGETDIR'
-        
+        env.AppendUnique(SWIGFLAGS = CLVar('-c++ -python -module %s' % target))
+        env['SWIGOUTDIR'] = '$COMPONENTTARGETDIR'
+
+
         env.AppendUnique(CPPDEFINES='RLOG_COMPONENT=%s' % target[1:-3])
-        if Arch.isWindows():
-            env.AppendUnique(CPPDEFINES= CLVar('__WIN32__'))
-            env['SHLIBSUFFIX']=".pyd"
-            #env.AppendUnique(SWIGFLAGS = CLVar('-D__WIN32__'))
         deplibs += ['python' ]
-        env._updateEnv(target, deplibs,True)
+        env._updateEnv(target, deplibs,atype,True)
 
-        nodes = env.SharedLibrary('$COMPONENTTARGETDIR/'+target, source, **kwargs)
+#        wrapSources = [ swigre.sub(r'\1_wrap.cc', source) for source in sources]
 
+        nodes = env.SharedLibrary('$COMPONENTTARGETDIR/_'+target, sources, targetAType=atype,**kwargs)
+
+        #self._addTarget(wrapSources)
         self._addTarget(nodes)
         return nodes
 
+    def createATypedSwigModule(self, target, sources=[], deplibs=[],
+                                  skip=[],**kwargs):
+        env = self.myClone()
+        env.loadTools(['swig'])
+
+        nodes = []
+        for atype in self['ATYPES']:
+            if atype not in skip:
+                libEnv = env.myClone()
+                libTarget = '%s_%s' % (target, atype)
+                libEnv.Append(CPPPATH=['$SRCDIR/modules/atypes/%s' % atype])
+                libEnv.AppendUnique(SWIGPATH=['$SRCDIR/modules/atypes/%s' % atype])
+                libEnv.AppendUnique(SWIGFLAGS=CLVar('-module %s_atyped_%s' % (target,atype)))
+                
+                libEnv['SHOBJSUFFIX'] = '_%s%s' % (atype, self['SHOBJSUFFIX'])
+                nodes += libEnv.createSwigModule(libTarget, sources, deplibs,
+                                                 createPublicHeader=False,
+                                                 atype=atype,
+                                                 **kwargs)
+
+        return nodes
+
+ 
     def getAbsPath(self, pathname):
         pathname = self.GetBuildPath(pathname)
         if not os.path.isabs(pathname):
@@ -300,16 +318,17 @@ class MyEnvironment(SConsEnvironment):
         ###options.AddOptions(*CLOptions.optionsList)
         return args
 
-    def _updateEnv(self, target, deplibs, updateSwigPath=False):
-        atypedTarget = False
-        atype = None
+    def _updateEnv(self, target, deplibs, targetAType=None, updateSwigPath=False):
 
-        if target:
-            atypedTarget = '_atyped' in target
+        if targetAType is not None:
+            atypeDir = '$SRCDIR/modules/atypes/%s' % targetAType
+            self.AppendUnique(CPPPATH=[atypeDir])
+            if updateSwigPath:
+                self.AppendUnique(SWIGPATH=[atypeDir])
 
         for dep in deplibs:
-            if atypedTarget and '_atyped' in dep:
-                dep += '_' + atype
+            if targetAType is not None and '_atyped' in dep:
+                dep += '_' + targetAType
 
             if hasattr(Packages, dep):
                 getattr(Packages, dep).generate(self)
@@ -319,6 +338,9 @@ class MyEnvironment(SConsEnvironment):
                     self.AppendUnique(CPPPATH=[depDir])
                     if updateSwigPath:
                         self.AppendUnique(SWIGPATH=[depDir])
+                        if targetAType is not None:
+                            self['SWIGCFILESUFFIX']   = '_wrap_%s$CFILESUFFIX' % targetAType
+                            self['SWIGCXXFILESUFFIX'] = '_wrap_%s$CXXFILESUFFIX' % targetAType
                 self.AppendUnique(LIBS=[dep])
 
         # Update env with the system libs.
