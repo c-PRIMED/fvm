@@ -141,6 +141,19 @@ public:
         fprintf(fp, " ");
     }
   }
+
+  T mag2() const
+  {
+    T r(NumTypeTraits<T>::getZero());
+    for(int i=0; i<3; i++)
+      r+=_data[i]*_data[i];
+    return r;
+  }
+
+  bool operator<(const double tolerance) const
+  {
+    return mag2() < tolerance*tolerance;
+  }
 private:
   T _data[3];
 };
