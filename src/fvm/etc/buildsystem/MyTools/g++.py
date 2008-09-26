@@ -10,7 +10,11 @@ def generate(env):
     cppTool.generate(env)
 
     if not env.get('CXXVERSION'):
-        env['CXXVERSION'] = '4.2.1'
+        try:
+            line = os.popen("/bin/bash -c 'gcc --version 2>&1'").readline()
+            env['CXXVERSION'] = line.split()[2]
+        except:
+            env['CXXVERSION'] = '4.2.1'
 
     env['COMPILER'] = 'gcc-' + env['CXXVERSION']
 
