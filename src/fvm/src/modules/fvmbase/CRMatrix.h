@@ -590,6 +590,10 @@ public:
     logDtor();
   }
 
+  void setBoundary(const int nr)
+  {
+    _isBoundary[nr] = true;
+  }
   
 private:
   const CRConnectivity& _conn;
