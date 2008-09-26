@@ -5,11 +5,9 @@
 #include "Field.h"
 #include "MultiField.h"
 #include "MultiFieldMatrix.h"
-#include "UMesh.h"
+#include "Mesh.h"
 #include "Discretization.h"
 #include "StorageSite.h"
-#include "FieldSet.h"
-#include "ConnectivityField.h"
 #include "DiagonalMatrix.h"
 #include "Gradient.h"
 #include "DiagonalTensor.h"
@@ -45,13 +43,14 @@ public:
 
   typedef Array<XGrad> GradArray;
   
-  DiffusionDiscretization(const Model& model,
-                          const MeshList& meshes,
-                          const FieldLabel& varFieldLabel,
+  DiffusionDiscretization(const MeshList& meshes,
+                          const GeomFields& geomFields,
+                          Field& varField,
                           const Field& diffusivityField,
-                          const Field& varGradientField)
-    Discretization(model,meshes),
-    _varFieldLabel(varFieldLabel),
+                          const Field& varGradientField) :
+    Discretization(meshes),
+    _geomFields(geomFields),
+    _varField(varField),
     _diffusivityField(diffusivityField),
     _varGradientField(varGradientField)
   {}
@@ -61,16 +60,21 @@ public:
   {
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getFaces();
-    const MultiField::ArrayIndex cVarIndex(_varFieldLabel,cells);
-    CCMatrix& matrix = SafeCast<CCMatrix>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
+    const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
+    CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,
+                                                             cVarIndex));
 
-    const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_areaField[faces]);
+    const VectorT3Array& faceArea =
+      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
     
-    const TArray& faceAreaMag = dynamic_cast<const TArray&>(_areaMagField[faces]);
+    const TArray& faceAreaMag =
+      dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
 
-    const VectorT3Array& cellCentroid =dynamic_cast<const VectorT3Array&>(_coordField[cells]);
+    const VectorT3Array& cellCentroid =
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
 
-    const TArray& cellVolume = dynamic_cast<TArray>(_volumeField[cells]);
+    const TArray& cellVolume =
+      dynamic_cast<const TArray&>(_geomFields.volume[cells]);
     
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
 
@@ -80,9 +84,11 @@ public:
     const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]);
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
 
-    const GradArray& xGradCell = dynamic_cast<const GradArray&>(_varGradientField[cells]);
+    const GradArray& xGradCell =
+      dynamic_cast<const GradArray&>(_varGradientField[cells]);
 
-    const TArray& diffCell = dynamic_cast<const TArray&>(_diffusivityField[cells]);
+    // const TArray& diffCell =
+    //  dynamic_cast<const TArray&>(_diffusivityField[cells]);
     
     const int nFaces = faces.getCount();
     for(int f=0; f<nFaces; f++)
@@ -94,14 +100,14 @@ public:
         
         const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
 
-        T_Scalar faceDiffusivity;
-        if (vol0 == 0.)
+        T_Scalar faceDiffusivity(1.0);
+        /*  if (vol0 == 0.)
           faceDiffusivity = diffCell[c1];
         else if (vol1 == 0.)
           faceDiffusivity = diffCell[c0];
         else
           faceDiffusivity = harmonicAverage(diffCell[c0],diffCell[c1]);
-        
+        */
         const T_Scalar diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
         const T_Scalar diffCoeff = faceDiffusivity*diffMetric;
         const VectorT3 secondaryCoeff = faceDiffusivity*(faceArea[f]-ds*diffMetric);
@@ -122,28 +128,11 @@ public:
         diag[c1] -= diffCoeff;
     }
   }
-
-  DECLARE_HT("DiffusionDiscretization<"
-             +NumTypeTraits<X>::getTypeName()+","
-             +NumTypeTraits<Diag>::getTypeName()+","
-             +NumTypeTraits<OffDiag>::getTypeName()
-             +">");
-
 private:
+  const GeomFields& _geomFields;
   Field& _varField;
   const Field& _diffusivityField; 
-  const FieldSet& _geomFields;
   const Field& _varGradientField;
 };
-
-template<class X, class Diag, class OffDiag>
-void
-DiffusionDiscretization<X,Diag,OffDiag>::addMethods()
-{
-  INHERIT_METHODS(Discretization);
-}
-
-REGISTER_HT_TEMPLATE(MULTI_ARG3(<class X, class Diag, class OffDiag>), DiffusionDiscretization,
-                     MULTI_ARG3(<X,Diag,OffDiag>));
 
 #endif
