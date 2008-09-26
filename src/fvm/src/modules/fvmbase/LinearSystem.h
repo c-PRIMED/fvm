@@ -38,5 +38,9 @@ private:
   shared_ptr<MultiField> _residual;
   MultiField _coarseIndex;
   const Field* _coarseningField;
+  shared_ptr<MultiField> _xAux;
+  shared_ptr<MultiField> _bAux;
+  shared_ptr<MultiField> _deltaAux;
+  shared_ptr<MultiField> _residualAux;
 };
 #endif

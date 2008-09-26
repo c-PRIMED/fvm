@@ -25,6 +25,22 @@ LinearSystem::initSolve()
   _residual = dynamic_pointer_cast<MultiField>(_x.newClone());
   _delta->zero();
   _residual->zero();
+
+
+  MultiField::ArrayIndexList indicesToRemove;
+
+  const MultiField::ArrayIndexList& arrayIndices = _b->getArrayIndices();
+  foreach(MultiField::ArrayIndex i, arrayIndices)
+  {
+      if (!_matrix.hasMatrix(i,i) || _matrix.getMatrix(i,i).isInvertible())
+        indicesToRemove.push_back(i);
+  }
+
+  _xAux = _x.extract(indicesToRemove);
+  _bAux = _b->extract(indicesToRemove);
+  _deltaAux = _delta->extract(indicesToRemove);
+  _residualAux = _residual->extract(indicesToRemove);
+  
 }
 
 shared_ptr<LinearSystem>
@@ -175,3 +191,24 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
   
   return coarseLS;
 }
+
+void LinearSystem::postSolve()
+{
+  _matrix.solveBoundary(*_delta,*_b,*_residual);
+
+  if (_xAux)
+  {
+      _x.merge(*_xAux);
+      _b->merge(*_bAux);
+      _delta->merge(*_deltaAux);
+      _residual->merge(*_residualAux);
+
+      _matrix.solveBoundary(*_delta,*_b,*_residual);
+  }
+}
+
+void LinearSystem::updateSolution()
+{
+  _x += *_delta;
+}
+
