@@ -44,6 +44,14 @@ Field::operator[](const StorageSite& s)
   return _create(s);
 }
 
+shared_ptr<ArrayBase>
+Field::getArrayPtr(const StorageSite& s)
+{
+  if (_arrays.find(&s) == _arrays.end())
+    _create(s);
+  
+  return _arrays[&s];
+}
 
 void
 Field::addArray(const StorageSite& s, shared_ptr<ArrayBase> a)

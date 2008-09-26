@@ -24,6 +24,7 @@ public:
   const ArrayBase& operator[](const StorageSite&) const;
   ArrayBase& operator[](const StorageSite&);
 
+  shared_ptr<ArrayBase> getArrayPtr(const StorageSite&);
   void addArray(const StorageSite&, shared_ptr<ArrayBase> a);
   void removeArray(const StorageSite&);
   void removeArrays(const StorageSiteList& sites);
