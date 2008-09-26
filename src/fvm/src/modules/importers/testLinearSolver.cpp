@@ -5,10 +5,9 @@ using namespace std;
 #include "MMReader.h"
 #include "AMG.h"
 
-int main()
+int main(int argc, char *argv[])
 {
-  MMReader reader("/home/sm/tmp/MatrixMarket226.dat",
-                  "/home/sm/tmp/rhs226.dat");
+  MMReader reader(argv[1], argv[2]);
   
   shared_ptr<LinearSystem> ls(reader.getLS());
 
