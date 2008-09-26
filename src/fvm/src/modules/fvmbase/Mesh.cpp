@@ -4,11 +4,6 @@
 #include "StorageSite.h"
 #include "CRConnectivity.h"
 
-FieldLabel Mesh::coordinate("coordinate");
-FieldLabel Mesh::area("area");
-FieldLabel Mesh::areaMag("areaMag");
-FieldLabel Mesh::volume("volume");
-
 Mesh::Mesh(const int dimension):
   _dimension(dimension),
   _cells(0),
@@ -110,6 +105,37 @@ Mesh::getCellNodes() const
 
   return *cellNodes;
 }
+
+const CRConnectivity&
+Mesh::getCellFaces() const
+{
+  SSPair key(&_cells,&_faces);
+  ConnectivityMap::const_iterator pos = _connectivityMap.find(key);
+  if (pos != _connectivityMap.end())
+    return *pos->second;
+
+  const CRConnectivity& faceCells = getAllFaceCells();
+  shared_ptr<CRConnectivity> cellFaces = faceCells.getTranspose();
+
+  _connectivityMap[key] = cellFaces;
+  return *cellFaces;
+}
+
+const CRConnectivity&
+Mesh::getCellCells() const
+{
+  SSPair key(&_cells,&_cells);
+  ConnectivityMap::const_iterator pos = _connectivityMap.find(key);
+  if (pos != _connectivityMap.end())
+    return *pos->second;
+
+  const CRConnectivity& faceCells = getAllFaceCells();
+  const CRConnectivity& cellFaces = getCellFaces();
+  shared_ptr<CRConnectivity> cellCells = cellFaces.multiply(faceCells,true);
+  _connectivityMap[key] = cellCells;
+  return *cellCells;
+}
+
 
 void
 Mesh::setFaceNodes(shared_ptr<CRConnectivity> faceNodes)

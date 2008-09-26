@@ -5,21 +5,36 @@
 
 #include "StorageSite.h"
 #include "Vector.h"
-
-class CRConnectivity;
-//#include "Field.h"
+#include "Field.h"
 #include "FieldLabel.h"
 
+class CRConnectivity;
+
+struct FaceGroup
+{
+  FaceGroup(const int count_,
+            const int offset_,
+            const StorageSite& parent_,
+            const int id_,
+            const string& groupType_) :
+    site(count_,0,offset_,&parent_),
+    id(id_),
+    groupType(groupType_)
+  {}
+  
+  const StorageSite site;
+  const int id;
+  const string groupType;
+};
+
+typedef shared_ptr<FaceGroup> FaceGroupPtr; 
+typedef vector<FaceGroupPtr> FaceGroupList;  
 
 class Mesh 
 {
 public:
 
   typedef Vector<double,3> VecD3;
-  static FieldLabel coordinate;
-  static FieldLabel area;
-  static FieldLabel areaMag;
-  static FieldLabel volume;
   
   typedef pair<const StorageSite*, const StorageSite*> SSPair;
   typedef map<SSPair,shared_ptr<CRConnectivity> > ConnectivityMap;
@@ -35,24 +50,6 @@ public:
       CELL_TYPE_MAX
     } CellType;
   
-  struct FaceGroup
-  {
-    FaceGroup(const int count_,
-              const int offset_,
-              const StorageSite& parent_,
-              const int id_,
-              const string& groupType_) :
-      site(count_,0,offset_,&parent_),
-      id(id_),
-      groupType(groupType_)
-    {}
-    
-    const StorageSite site;
-    const int id;
-    const string groupType;
-  };
-
-  typedef vector<shared_ptr<FaceGroup> > FaceGroupList;  
 
   Mesh(const int dimension);
   
@@ -78,6 +75,8 @@ public:
   const CRConnectivity& getCellNodes() const;
   
   const CRConnectivity& getFaceCells(const StorageSite& site) const;
+  const CRConnectivity& getCellFaces() const;
+  const CRConnectivity& getCellCells() const;
 
   //const Array<int>& getCellTypes() const;
   //const Array<int>& getCellTypeCount() const;
@@ -86,6 +85,10 @@ public:
   int getBoundaryGroupCount() const {return _boundaryGroups.size();}
   int getInterfaceGroupCount() const {return _interfaceGroups.size();}
 
+  const FaceGroupList& getBoundaryFaceGroups() const
+  {return _boundaryGroups;}
+
+#if 0
   const FaceGroup&
   getFaceGroup(const int i) const {return *_faceGroups[i];}
 
@@ -94,7 +97,7 @@ public:
 
   const FaceGroup&
   getInterfaceGroup(const int i) const {return *_interfaceGroups[i];}
-
+#endif
 
   const StorageSite& createInteriorFaceGroup(const int size);
   const StorageSite& createInterfaceGroup(const int size,const int offset, 
