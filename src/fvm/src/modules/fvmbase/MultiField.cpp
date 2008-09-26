@@ -72,8 +72,14 @@ MultiField::newClone() const
   for(int i=0; i<_length; i++)
   {
       const ArrayBase& myArray = *_arrays[i];
-      shared_ptr<ArrayBase> aClone(dynamic_pointer_cast<ArrayBase>(myArray.newClone()));
-      c->addArray(_arrayIndices[i],aClone);
+      shared_ptr<IContainer> aCloneI(myArray.newClone());
+      shared_ptr<ArrayBase> aClone(dynamic_pointer_cast<ArrayBase>(aCloneI));
+      if (aClone)
+        c->addArray(_arrayIndices[i],aClone);
+      else
+      {
+          throw CException("array clone failed");
+      }
   }
   return c;
 }
@@ -319,3 +325,23 @@ MultiField::syncLocal(const ArrayIndex& i)
 }
 
 
+shared_ptr<MultiField>
+MultiField::extract(const ArrayIndexList& indices)
+{
+  shared_ptr<MultiField> r(new MultiField);
+  foreach(ArrayIndex i,indices)
+  {
+      r->addArray(i,getArrayPtr(i));
+      removeArray(i);
+  }
+  return r;
+}
+
+void
+MultiField::merge(const MultiField& other)
+{
+  foreach(const ArrayMap::value_type& pos, other._arrayMap)
+  {
+      addArray(pos.first, other._arrays[pos.second]);
+  }
+}

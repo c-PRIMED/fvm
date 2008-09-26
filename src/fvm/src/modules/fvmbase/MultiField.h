@@ -63,6 +63,9 @@ public:
   shared_ptr<MultiFieldReduction> dotWith(const MultiField& ofield);
 
   const ArrayIndexList& getArrayIndices() const {return _arrayIndices;}
+
+  shared_ptr<MultiField> extract(const ArrayIndexList& indices);
+  void merge(const MultiField& other);
   
 private:
   int _length;
