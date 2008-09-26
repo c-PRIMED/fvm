@@ -2,7 +2,7 @@
 
 AMG::AMG(LinearSystem& ls) :
   nMaxCycles(100),
-  maxCoarseLevels(1),
+  maxCoarseLevels(20),
   nPreSweeps(1),
   nPostSweeps(0),
   coarseGroupSize(2),
