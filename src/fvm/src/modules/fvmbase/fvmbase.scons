@@ -15,12 +15,21 @@ srcBase = ['CException.cpp',
            'MultiFieldReduction.cpp',
            'MultiFieldMatrix.cpp',
            'LinearSystem.cpp',
-           'AMG.cpp'
-           #'Discretization.cpp'
+           'AMG.cpp',
+           'GeomFields.cpp',
+           'ThermalFields.cpp',
+           'Discretization.cpp',
+           'Linearizer.cpp'
            ]
 
 env.createSharedLibrary('fvmbase',srcBase,['rlog'])
 
+env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase'])
 
-env.createSwigModule('_fvmbaseExt',source=['baseExt.i'],
+
+env.createSwigModule('fvmbaseExt',sources=['baseExt.i'],
                      deplibs=['fvmbase','rlog'])
+
+env.createATypedSwigModule('models_atyped',sources=['models.i'],
+                     deplibs=['models_atyped','fvmbase','rlog'])
+

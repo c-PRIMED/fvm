@@ -10,6 +10,8 @@ rlog::StdioNode *stdLog;
 %include "std_string.i"
 %include "std_vector.i"
 %include "std_except.i"
+%include "std_map.i"
+%include "shared_ptr.i"
 
 namespace std{
 %template(vectorStr) vector<string>;
@@ -31,8 +33,6 @@ namespace std{
 using namespace std;
 
 %include "Mesh.i"
-
-%include "MeshMetricsCalculator.i"
 
 %inline %{
   

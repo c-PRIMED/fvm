@@ -8,7 +8,7 @@ src = [
     ]
 
 env.createSharedLibrary('importers',src,['rlog','fvmbase'])
-env.createSwigModule('_importers',source=['FluentReader.i'],
+env.createSwigModule('importers',sources=['FluentReader.i'],
                      deplibs=['fvmbase','importers','rlog'])
 
 env.createExe('testLinearSolver',['testLinearSolver.cpp'],

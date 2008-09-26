@@ -11,49 +11,51 @@
 
 class OneToOneIndexMap;
 
+typedef map<int, shared_ptr<OneToOneIndexMap> > GhostCellMapsMap;
+
+struct FluentZone 
+{
+  int ID;
+  int iBeg;
+  int iEnd;
+  int threadType;
+  string zoneName;
+  string zoneType;
+  string zoneVars;
+};
+
+struct FluentFaceZone : public FluentZone
+{
+  int leftCellZoneId;
+  int rightCellZoneId;
+};
+
+struct FluentCellZone : public FluentZone
+{
+  vector<int> boundaryZoneIds;
+  vector<int> interiorZoneIds;
+  vector<int> interfaceZoneIds;
+
+  Mesh *mesh;
+  GhostCellMapsMap ghostCellMaps;
+};
+
+struct FluentFacePairs
+{
+  int count;
+  int leftID;
+  int rightID;
+};
+
+typedef map<int,FluentFaceZone*> FaceZonesMap;
+typedef map<int,FluentCellZone*> CellZonesMap;
+
 class FluentReader : public SchemeReader
 {
 public:
 
   typedef Vector<double,3> Vec3;
-  typedef map<int, shared_ptr<OneToOneIndexMap> > GhostCellMapsMap;
   
-  struct FluentZone 
-  {
-    int ID;
-    int iBeg;
-    int iEnd;
-    int threadType;
-    string zoneName;
-    string zoneType;
-    string zoneVars;
-  };
-
-  struct FluentFaceZone : public FluentZone
-  {
-    int leftCellZoneId;
-    int rightCellZoneId;
-  };
-
-  struct FluentCellZone : public FluentZone
-  {
-    vector<int> boundaryZoneIds;
-    vector<int> interiorZoneIds;
-    vector<int> interfaceZoneIds;
-
-    Mesh *mesh;
-    GhostCellMapsMap ghostCellMaps;
-  };
-
-  struct FluentFacePairs
-  {
-    int count;
-    int leftID;
-    int rightID;
-  };
-
-  typedef map<int,FluentFaceZone*> FaceZonesMap;
-  typedef map<int,FluentCellZone*> CellZonesMap;
 
   
   FluentReader(const string& fileName);
@@ -61,13 +63,17 @@ public:
 
   void readMesh();
   //void orderCellFacesAndNodes();
-  //  DECLARE_METHOD(getGhostCellMap);
-  // DECLARE_METHOD(coupleCells);
-  //DECLARE_METHOD(_getCellFaces);
+
 
   MeshList getMeshList();
 
   int getNumCells() {return _numCells;}
+
+  string getVars() {return _rpVars;}
+
+  FaceZonesMap& getFaceZones() {return _faceZones;}
+  CellZonesMap& getCellZones() {return _cellZones;}
+  
 protected:
   int _dimension;
   int _numCells;
