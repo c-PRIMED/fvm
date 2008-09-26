@@ -2,7 +2,6 @@
 #define _DISCRETIZATION_H_
 
 #include "misc.h"
-#include "GlobalFields.h"
 #include "Mesh.h"
 
 class MultiFieldMatrix;
@@ -13,7 +12,7 @@ class Discretization
 {
 public:
 
-  Discretization(const Model& model, const MeshList& meshes);
+  Discretization(const MeshList& meshes);
 
   virtual ~Discretization();
 
@@ -22,11 +21,8 @@ public:
 
   DEFINE_TYPENAME("Discretization");
 protected:
-  const Model& _model;
   const MeshList& _meshes;
-  const Field& _coordField;
-  const Field& _areaField;
-  const Field& _areaMagField;
-  const Field& _volumeField;
 };
+
+typedef vector<shared_ptr<Discretization> > DiscrList;
 #endif
