@@ -12,6 +12,12 @@ colors = {
     'PINK'  :'\033[1;35m',
     'BLUE'  :'\033[1;34m',
     'CYAN'  :'\033[1;36m',
+    'DRED'   :'\033[0;31m',
+    'DGREEN' :'\033[0;32m',
+    'DYELLOW':'\033[0;33m',
+    'DPINK'  :'\033[0;35m',
+    'DBLUE'  :'\033[0;34m',
+    'DCYAN'  :'\033[0;36m',
     'NORMAL':'\033[0m'
     }
 "colors used for printing messages"
@@ -30,9 +36,9 @@ if (sys.platform=='win32') or ('NOCOLOR' in os.environ) \
     _clear_colors()
 
 g_type = {
-    'CONF':"%s%s%s"%(colors['BLUE'],"Configuring",colors['NORMAL']),
-    'BUILD':"%s%s%s"%(colors['BLUE'],"Building",colors['NORMAL']),
-    'INSTALL':"%s%s%s"%(colors['BLUE'],"Installing",colors['NORMAL'])
+    'CONF':"%s%s%s"%(colors['BOLD'],"Configuring",colors['NORMAL']),
+    'BUILD':"%s%s%s"%(colors['BOLD'],"Building",colors['NORMAL']),
+    'INSTALL':"%s%s%s"%(colors['BOLD'],"Installing",colors['NORMAL'])
     }
     
 def cprint(col, str):
@@ -46,7 +52,7 @@ def _niceprint(msg, type=''):
     if type == 'ERROR' or type == 'WARNING':
         print_pat('RED')
     elif type=='DEBUG':
-        print_pat('CYAN')
+        print_pat('DCYAN')
     else:
         print_pat('NORMAL')
                       
@@ -70,11 +76,17 @@ def fatal(msg, ret=1, trace=1):
 
 def pmess(type, pkg, dir):
     "print a build message"
-    sr = '%s %s%s%s in %s' % (g_type[type], colors['PINK'], pkg, colors['NORMAL'], dir)
+    sr = '%s %s%s%s in %s' % (g_type[type], colors['DCYAN'], pkg, colors['NORMAL'], dir)
     global maxlen
     maxlen = max(maxlen, len(sr))
     print "%s :" % sr.ljust(maxlen),
     sys.stdout.flush()
+
+def remove_file(name):
+    try:
+        os.remove(name)
+    except OSError:
+        pass
 
 def do_env(c):
     a = c.split('=')
@@ -98,8 +110,9 @@ def fix_path(k, v, prepend, unload):
 
     debug("%s '%s' %s %s" % (s1, v, s2, k))
 
-    try: e = os.environ[k]
-    except KeyError:
+    try:
+        e = os.environ[k]
+    except KeyError: 
         e = ''
         
     if unload:
@@ -184,6 +197,14 @@ if __name__ == '__main__':
     for c in colors:
         cprint(c,c)
     print "\n"
+
+    def pstatus(state, option=''):
+        if state == 0 or state == None:
+            cprint('GREEN', 'ok ' + option)
+        elif isinstance(state, int):
+            cprint('RED', 'failed ' + option)
+        else:
+            cprint('YELLOW', state)
 
 
     pmess("CONF","xyzzy", "/tmp")
