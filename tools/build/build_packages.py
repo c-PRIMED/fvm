@@ -5,7 +5,7 @@
 Build package definitions.
 """
 
-import sys, os
+import sys, os, testing
 from build_utils import *
 from config import config
 
@@ -85,7 +85,7 @@ class BuildPkg:
         self._clean()
         if self.sdir != self.bdir:
             os.chdir(self.sdir)
-            if path.isdir(self.bdir):            
+            if os.path.isdir(self.bdir):            
                 os.system("/bin/rm -rf %s/*" % self.bdir)
 
     def build(self):
@@ -105,6 +105,20 @@ class BuildPkg:
         self.pstatus(self._install())
         run_commands('after',self.name)
 
+    def test(self):
+        self.state = 'testing'
+        self.logfile = os.path.join(self.logdir, self.name+"-test.log")
+        remove_file(self.logfile)
+        pmess("TEST",self.name,self.blddir)
+        errs = testing.do_tests(self.sdir, self.logfile)
+        if errs:
+            terrs = "%s errors" % errs
+        else:
+            terrs = 0
+        self.pstatus(terrs)
+        run_commands('after',self.name)
+        return errs
+        
     def sys_log(self, cmd):
         "Execute a system call and log the result."
         # get configuration variable

@@ -38,7 +38,8 @@ if (sys.platform=='win32') or ('NOCOLOR' in os.environ) \
 g_type = {
     'CONF':"%s%s%s"%(colors['BOLD'],"Configuring",colors['NORMAL']),
     'BUILD':"%s%s%s"%(colors['BOLD'],"Building",colors['NORMAL']),
-    'INSTALL':"%s%s%s"%(colors['BOLD'],"Installing",colors['NORMAL'])
+    'INSTALL':"%s%s%s"%(colors['BOLD'],"Installing",colors['NORMAL']),
+    'TEST':"%s%s%s"%(colors['BOLD'],"Testing",colors['NORMAL'])
     }
     
 def cprint(col, str):

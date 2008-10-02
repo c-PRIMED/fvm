@@ -7,41 +7,84 @@
 """
 This script configures and builds all the MEMOSA
 packages and tools.
+
+Usage: make.py [options] config_name
+Options:
+  -h, --help     show this help message and exit
+  -v, --verbose  verbose output
+  --clean        clean up source directory
+  --rebuild      Remove build directory (if it exists) and build
+  --test         run tests
+  --submit       submit test and build results
+  --all          same as --rebuild --test --submit
+
+Configuration names are stored in the "config" subdirectory.
 """
 
 import sys
 from optparse import OptionParser
 from build_packages import *
-import build_utils
-import config
-def main(args):
+import build_utils, config, testing
 
+def usage():
+    print __doc__
+    sys.exit(-1)
+
+def main(args):
 
     parser = OptionParser()
     parser.add_option("-v", "--verbose",
-                      action="store_true", dest="verbose", default=False,
-                      help="verbose output")
+                      action="store_true", dest="verbose", help="verbose output")
+    parser.add_option("--build (default)",
+                      action="store_true", dest="build",
+                      help="Build sources.")
+    parser.add_option("--rebuild",
+                      action="store_true", dest="rebuild",
+                      help="Remove build directory (if it exists) and build.")
+    parser.add_option("--test",
+                      action="store_true", dest="test",
+                      help="Run tests.")
+    parser.add_option("--submit",
+                      action="store_true", dest="submit",
+                      help="Submit test and build results.")
+    parser.add_option("--all",
+                      action="store_true", dest="all",
+                      help="same as --rebuild --test --submit")
+    parser.add_option("--clean",
+                      action="store_true", dest="clean",
+                      help="Clean up source directory.")
     (options, args) = parser.parse_args()
     build_utils.verbose = options.verbose
 
-
-    if len(args) and args[0] == "clean":
+    if options.clean:
+        if len(args): usage()
         BuildPkg.setup()
         for p in BuildPkg.packages:
             p.clean()
-    elif len(args) and args[0] == "test":
-        print "Tests are not implemented yet"
     else:
-        if len(args) == 0:
-            print "No configuration specified. Building defaults."
-            cname = ''
-            ret = True
-        else:
-            ret = config.read(args[0])
+        cname = ''
+        if len(args) == 1:
             cname = args[0]
-        if ret:
-            BuildPkg.setup(cname)            
-            build_utils.run_commands('before',0)
+        if cname == '' or not config.read(cname):
+            usage()
+    
+        BuildPkg.setup(cname)
+
+        build_utils.run_commands('before',0)
+
+        if options.all:
+            options.rebuild = options.test = options.submit = True
+
+        if options.rebuild:
+            options.build = True
+            os.system("/bin/rm -rf %s" % BuildPkg.blddir)
+            BuildPkg.setup(cname)
+
+        # if no options, default to build
+        if not options.build and not options.test and not options.submit:
+            options.build = True
+
+        if options.build:
             for p in BuildPkg.packages:
                 if config.config(p.name,'skip'):
                     build_utils.debug ("Skipping " + p.name)
@@ -49,13 +92,19 @@ def main(args):
                 p.configure()
                 p.build()
                 p.install()
-            build_utils.run_commands('after',0)
+
+        if options.test:
+            testing.run_all_tests(BuildPkg)
+
+        if options.submit:
+            print "Submit not implemented yet."
+
+        build_utils.run_commands('after',0)
+
+        if options.build:
             print "\nDONE\nYou need to do something like the following to use the build."
             print "export LD_LIBRARY_PATH="+BuildPkg.libdir
             print "export PATH=$PATH:"+BuildPkg.bindir
-        else:
-            print "Unknown build option", args[0]
-                
         
 if __name__ == "__main__":
     main(sys.argv[1:])

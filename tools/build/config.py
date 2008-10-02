@@ -2,7 +2,7 @@
 build configuration utilities
 """
 import os
-from ConfigParser import *
+#from ConfigParser import *
 
 
 # defaults
