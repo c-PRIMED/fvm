@@ -61,6 +61,7 @@ def main(args):
         BuildPkg.setup()
         for p in BuildPkg.packages:
             p.clean()
+
     else:
         cname = ''
         if len(args) == 1:

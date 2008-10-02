@@ -32,7 +32,8 @@ class BuildPkg:
         BuildPkg.logdir = os.path.join(BuildPkg.blddir, "log")
         BuildPkg.bindir = os.path.join(BuildPkg.blddir, "bin")
         BuildPkg.libdir = os.path.join(BuildPkg.blddir, "lib")
-        create_build_dir()
+        if cname:
+            create_build_dir()
 
         BuildPkg.packages = [Gsl("pkgs/gsl", "build"),
                 Fltk("pkgs/fltk"),
@@ -110,14 +111,13 @@ class BuildPkg:
         self.logfile = os.path.join(self.logdir, self.name+"-test.log")
         remove_file(self.logfile)
         pmess("TEST",self.name,self.blddir)
-        errs = testing.do_tests(self.sdir, self.logfile)
+        ok, errs = self._test()
         if errs:
-            terrs = "%s errors" % errs
+            cprint('YELLOW', "%s OK, %s FAIL" % (ok, errs))
         else:
-            terrs = 0
-        self.pstatus(terrs)
+            cprint('GREEN', "%s OK" % ok)
         run_commands('after',self.name)
-        return errs
+        return ok, errs
         
     def sys_log(self, cmd):
         "Execute a system call and log the result."
@@ -145,6 +145,9 @@ class BuildPkg:
         pass
     def _install(self):
         pass
+    def _test(self):
+        return testing.do_tests(self.sdir, self.logfile)
+        
 
 #########################################################
 # PACKAGES 
@@ -205,7 +208,16 @@ class Gsl(BuildPkg):
         return self.sys_log("make install")
     def _clean(self):
         return self.sys_log("make clean")
-    
+    def _test(self):
+        ok = errs = 0
+        os.chdir(self.bdir)
+        self.sys_log("make check")
+        for line in open(self.logfile):
+            if line.find('PASS') == 0:
+                ok += 1
+            elif line.find('FAIL') == 0:
+                errs += 1
+        return ok, errs
 
 class Rlog(BuildPkg):
     name = "rlog"
