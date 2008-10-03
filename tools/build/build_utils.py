@@ -26,21 +26,26 @@ colors = {
 maxlen = 20
 verbose = False
 
-def _clear_colors():
+def _reset_types():
+    global g_type
+    g_type = {
+        'CONF':"%s%s%s"%(colors['BOLD'],"Configuring",colors['NORMAL']),
+        'BUILD':"%s%s%s"%(colors['BOLD'],"Building",colors['NORMAL']),
+        'INSTALL':"%s%s%s"%(colors['BOLD'],"Installing",colors['NORMAL']),
+        'TEST':"%s%s%s"%(colors['BOLD'],"Testing",colors['NORMAL'])
+        }
+
+def clear_colors():
     for k in colors.keys():
         colors[k]=''
+    _reset_types()
+
         
-if (sys.platform=='win32') or ('NOCOLOR' in os.environ) \
+_reset_types()
+if ('NOCOLOR' in os.environ) \
         or (os.environ.get('TERM', 'dumb') in ['dumb', 'emacs']) \
         or (not sys.stdout.isatty()):
-    _clear_colors()
-
-g_type = {
-    'CONF':"%s%s%s"%(colors['BOLD'],"Configuring",colors['NORMAL']),
-    'BUILD':"%s%s%s"%(colors['BOLD'],"Building",colors['NORMAL']),
-    'INSTALL':"%s%s%s"%(colors['BOLD'],"Installing",colors['NORMAL']),
-    'TEST':"%s%s%s"%(colors['BOLD'],"Testing",colors['NORMAL'])
-    }
+    clear_colors()
     
 def cprint(col, str):
     try: mycol=colors[col]

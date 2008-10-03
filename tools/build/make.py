@@ -10,14 +10,13 @@ packages and tools.
 
 Usage: make.py [options] config_name
 Options:
-  -h, --help     show this help message and exit
-  -v, --verbose  verbose output
-  --clean        clean up source directory
-  --rebuild      Remove build directory (if it exists) and build
-  --test         run tests
-  --submit       submit test and build results
-  --all          same as --rebuild --test --submit
-
+  --clean        Clean up source directory.
+  --rebuild      Remove build directory (if it exists) and build.
+  --test         Run tests.
+  --submit       Rubmit test and build results.
+  --all          Same as --rebuild --test --submit.
+  -v, --verbose  Verbose output.
+  --nocolor      Disable color output.
 Configuration names are stored in the "config" subdirectory.
 """
 
@@ -33,8 +32,6 @@ def usage():
 def main(args):
 
     parser = OptionParser()
-    parser.add_option("-v", "--verbose",
-                      action="store_true", dest="verbose", help="verbose output")
     parser.add_option("--build (default)",
                       action="store_true", dest="build",
                       help="Build sources.")
@@ -53,8 +50,15 @@ def main(args):
     parser.add_option("--clean",
                       action="store_true", dest="clean",
                       help="Clean up source directory.")
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", help="verbose output")
+    parser.add_option("--nocolor",
+                      action="store_true", dest="nocolor", help="Disable color output.")
     (options, args) = parser.parse_args()
     build_utils.verbose = options.verbose
+
+    if options.nocolor:
+        build_utils.clear_colors()
 
     if options.clean:
         if len(args): usage()
