@@ -73,7 +73,7 @@ MultiFieldReduction::operator/(const MultiFieldReduction& o)
   foreach(const ArrayMap::value_type& pos, _arrays)
   {
       shared_ptr<ArrayBase> aptr = dynamic_pointer_cast<ArrayBase>(pos.second->newCopy());
-      *aptr /= o[*pos.first];
+      aptr->safeDivide(o[*pos.first]);
       r->addArray(*pos.first,aptr);
   }
   return r;
