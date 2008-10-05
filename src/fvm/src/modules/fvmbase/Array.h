@@ -143,6 +143,19 @@ public:
     return *this;
   }
 
+  virtual ArrayBase& safeDivide(const  ArrayBase& obase)
+  {
+    const Array& o = dynamic_cast<const Array& >(obase);
+    if (_length == 1 && o._length==1)
+    {
+        for(int i=0;i<_length;i++)
+          NumTypeTraits<T>::safeDivide(_data[i], o._data[i]);
+    }
+    else
+      throw CException("invalid array for safeDivide");          
+    return *this;
+  }
+
   virtual ArrayBase& operator*=(const ArrayBase& obase)
   {
     const Array& o = dynamic_cast<const Array& >(obase);

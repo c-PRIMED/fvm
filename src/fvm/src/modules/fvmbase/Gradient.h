@@ -118,6 +118,12 @@ public:
       NumTypeTraits<T>::accumulateDotProduct(sum._data[i],v0._data[i],v1._data[i]);
   }
 
+  static void safeDivide(Gradient& x, const Gradient& y)
+  {
+    for(int i=0; i<3; i++)
+      NumTypeTraits<T>::safeDivide(x._data[i],y._data[i]);
+  }
+
   static Gradient getZero()
   {
     Gradient z;

@@ -39,6 +39,8 @@ public:
   virtual ArrayBase& operator/=(const ArrayBase& a) =0;
   virtual ArrayBase& operator*=(const ArrayBase& a) =0;
 
+  virtual ArrayBase& safeDivide(const ArrayBase& a) =0;
+
   virtual bool operator<(const double tolerance) const=0;
 
   virtual void print(ostream& os) const = 0;

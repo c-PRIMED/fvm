@@ -130,6 +130,19 @@ public:
     for(int i=0;i<N;i++) _data[i] = NumTypeTraits<T>::getZero();
   }
   
+  T mag2() const
+  {
+    T r(NumTypeTraits<T>::getZero());
+    for(int i=0; i<N; i++)
+      r+=_data[i]*_data[i];
+    return r;
+  }
+
+  bool operator<(const double tolerance) const
+  {
+    return mag2() < tolerance*tolerance;
+  }
+
   static DiagonalTensor getZero()
   {
     DiagonalTensor z;
@@ -174,6 +187,12 @@ public:
   {
     for(int i=0; i<N; i++)
       NumTypeTraits<T>::accumulateDotProduct(sum[i],v0[i],v1[i]);
+  }
+
+  static void safeDivide(DiagonalTensor& x, const DiagonalTensor& y)
+  {
+    for(int i=0; i<N; i++)
+      NumTypeTraits<T>::safeDivide(x[i],y[i]);
   }
 
 private:
