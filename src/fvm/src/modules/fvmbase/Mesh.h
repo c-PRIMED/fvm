@@ -51,13 +51,14 @@ public:
     } CellType;
   
 
-  Mesh(const int dimension);
+  Mesh(const int dimension, const int id);
   
   ~Mesh();
 
   DEFINE_TYPENAME("Mesh");
 
   int getDimension() const {return _dimension;}
+  int getID() const {return _id;}
   
   const StorageSite& getFaces() const {return _faces;}
   const StorageSite& getCells() const {return _cells;}
@@ -81,6 +82,8 @@ public:
   //const Array<int>& getCellTypes() const;
   //const Array<int>& getCellTypeCount() const;
 
+  const FaceGroup& getInteriorFaceGroup() const {return *_interiorFaceGroup;}
+  
   int getFaceGroupCount() const {return _faceGroups.size();}
   int getBoundaryGroupCount() const {return _boundaryGroups.size();}
   int getInterfaceGroupCount() const {return _interfaceGroups.size();}
@@ -114,6 +117,8 @@ public:
   
 protected:
   const int _dimension;
+  const int _id;
+  
   StorageSite _cells;
   StorageSite _faces;
   StorageSite _nodes;

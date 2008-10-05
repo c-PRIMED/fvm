@@ -4,8 +4,9 @@
 #include "StorageSite.h"
 #include "CRConnectivity.h"
 
-Mesh::Mesh(const int dimension):
+Mesh::Mesh(const int dimension, const int id):
   _dimension(dimension),
+  _id(id),
   _cells(0),
   _faces(0),
   _nodes(0),

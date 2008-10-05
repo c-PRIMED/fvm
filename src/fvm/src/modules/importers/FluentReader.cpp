@@ -674,7 +674,7 @@ FluentReader::createMesh(const int cellZoneID)
   const Array<int>& fcRow = faceCells.getRow();
   const Array<int>& fcCol = faceCells.getCol();
   
-  Mesh *mesh = new Mesh(_dimension);
+  Mesh *mesh = new Mesh(_dimension, cellZoneID);
   
   FluentCellZone& cz = *(_cellZones[cellZoneID]);
 
