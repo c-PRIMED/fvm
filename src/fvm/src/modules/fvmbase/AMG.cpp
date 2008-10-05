@@ -1,6 +1,6 @@
 #include "AMG.h"
 
-AMG::AMG(LinearSystem& ls) :
+AMG::AMG() :
   nMaxCycles(100),
   maxCoarseLevels(20),
   nPreSweeps(1),
@@ -11,17 +11,15 @@ AMG::AMG(LinearSystem& ls) :
   verbosity(2),
   relativeTolerance(1e-8),
   absoluteTolerance(1e-16),
-  _finestLinearSystem(ls)
-{
-  createCoarseLevels();
-}
+  _finestLinearSystem(0)
+{}
     
 
 void
 AMG::doSweeps(const int nSweeps, const int level)
 {
   LinearSystem& ls = (level == 0) ?
-    _finestLinearSystem : *_coarseLinearSystems[level-1];
+    *_finestLinearSystem : *_coarseLinearSystems[level-1];
 
   const MultiFieldMatrix& m = ls.getMatrix();
   MultiField& delta = ls.getDelta();
@@ -43,7 +41,7 @@ AMG::cycle(const CycleType cycleType, const int level)
   if (level < (int)_coarseLinearSystems.size())
   {
       LinearSystem& fineLS = (level == 0) ?
-        _finestLinearSystem : *_coarseLinearSystems[level-1];
+        *_finestLinearSystem : *_coarseLinearSystems[level-1];
       LinearSystem& coarseLS = *_coarseLinearSystems[level];
 
       MultiFieldMatrix& fineMatrix = fineLS.getMatrix();
@@ -77,7 +75,7 @@ AMG::createCoarseLevels()
   for(int n=0; n<maxCoarseLevels; n++)
   {
       LinearSystem& fineLS = (n == 0) ?
-        _finestLinearSystem : *_coarseLinearSystems[n-1];
+        *_finestLinearSystem : *_coarseLinearSystems[n-1];
 
       shared_ptr<LinearSystem>
         coarseLS(fineLS.createCoarse(coarseGroupSize,weightRatioThreshold));
@@ -94,33 +92,50 @@ AMG::createCoarseLevels()
 }
 
 void
-AMG::solve()
+AMG::cleanup()
 {
-  const MultiFieldMatrix& finestMatrix = _finestLinearSystem.getMatrix();
-  finestMatrix.computeResidual(_finestLinearSystem.getDelta(),
-                               _finestLinearSystem.getB(),
-                               _finestLinearSystem.getResidual());
+  _finestLinearSystem = 0;
+  _coarseLinearSystems.clear();
+}
 
-  MFPtr rNorm0(_finestLinearSystem.getResidual().getOneNorm());
+MFPtr
+AMG::solve(LinearSystem & ls)
+{
+  if (_finestLinearSystem != &ls)
+  {
+      _finestLinearSystem = &ls;
+      createCoarseLevels();
+  }
+  _finestLinearSystem = &ls;
+
+
+  const MultiFieldMatrix& finestMatrix = _finestLinearSystem->getMatrix();
+  finestMatrix.computeResidual(_finestLinearSystem->getDelta(),
+                               _finestLinearSystem->getB(),
+                               _finestLinearSystem->getResidual());
+
+  MFPtr rNorm0(_finestLinearSystem->getResidual().getOneNorm());
 
   if (verbosity >0)
     cout << "0: " << *rNorm0 << endl;
   
   if (*rNorm0 < absoluteTolerance )
-    return;
+    return rNorm0;
   
   for(int i=1; i<nMaxCycles; i++)
   {
       cycle(cycleType,0);
-      finestMatrix.computeResidual(_finestLinearSystem.getDelta(),
-                                   _finestLinearSystem.getB(),
-                                   _finestLinearSystem.getResidual());
+      finestMatrix.computeResidual(_finestLinearSystem->getDelta(),
+                                   _finestLinearSystem->getB(),
+                                   _finestLinearSystem->getResidual());
       
-      MFPtr rNorm(_finestLinearSystem.getResidual().getOneNorm());
+      MFPtr rNorm(_finestLinearSystem->getResidual().getOneNorm());
       MFPtr normRatio((*rNorm)/(*rNorm0));
       if (verbosity >0)
         cout << i << ": " << *rNorm << endl;
       if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance)
         break;
   }
+
+  return rNorm0;
 }

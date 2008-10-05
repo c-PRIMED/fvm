@@ -11,8 +11,8 @@ int main(int argc, char *argv[])
   
   shared_ptr<LinearSystem> ls(reader.getLS());
 
-  AMG solver(*ls);
-  solver.solve();
+  AMG solver();
+  solver.solve(*ls);
   
   return 0;
 }

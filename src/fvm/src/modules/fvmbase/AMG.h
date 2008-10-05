@@ -23,10 +23,11 @@ public:
       F_CYCLE
     };
   
-  AMG(LinearSystem & ls);
-  void solve();
+  AMG();
+  MFPtr solve(LinearSystem & ls);
 
-
+  void cleanup();
+  
   // these parameters can be tuned.
   int nMaxCycles;
   int maxCoarseLevels;
@@ -43,7 +44,7 @@ private:
 
   AMG(const AMG&);
   
-  LinearSystem& _finestLinearSystem;
+  LinearSystem* _finestLinearSystem;
   vector<shared_ptr<LinearSystem> > _coarseLinearSystems;
 
   void createCoarseLevels();

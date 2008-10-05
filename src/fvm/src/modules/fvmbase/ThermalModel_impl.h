@@ -214,8 +214,8 @@ public:
         cout << _niters << ": " << *rNorm << endl;
 
 
-        AMG solver(ls);
-        solver.solve();
+        AMG solver;
+        solver.solve(ls);
         //        solver.cleanUp();
 
         ls.postSolve();
