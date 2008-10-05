@@ -180,6 +180,12 @@ public:
     for(int i=0; i<N; i++)
       sum[i]+=v0[i]*v1[i];
   }
+
+  static void safeDivide(Vector& x, const Vector& y)
+  {
+    for(int i=0; i<N; i++)
+      NumTypeTraits<T>::safeDivide(x[i],y[i]);
+  }
  
 private:
   T _data[N];
