@@ -5,11 +5,9 @@
 #include "Field.h"
 #include "MultiField.h"
 #include "MultiFieldMatrix.h"
-#include "UMesh.h"
+#include "Mesh.h"
 #include "Discretization.h"
 #include "StorageSite.h"
-#include "FieldSet.h"
-#include "ConnectivityField.h"
 #include "Gradient.h"
 
 template<class X, class Diag, class OffDiag>
@@ -31,24 +29,24 @@ public:
 
   typedef Array<XGrad> GradArray;
 
-  
-  ConvectionDiscretization(const Args& args):
-    Discretization(args),
-    _varField(getChildRef<Field>("varField")),
-    _convectingFluxField(getChildRef<Field>("convectingFluxField")),
-    _geomFields(getChildRef<FieldSet>("geomFields")),
-    _coordField(_geomFields.getChildRef<Field>("coordinates")),
-    _areaField(_geomFields.getChildRef<Field>("area")),
-    _areaMagField(_geomFields.getChildRef<Field>("areaMagnitude")),
-    _varGradientField(getChildRef<Field>("varGradientField")),
-    _continuityResidualField(getChildRef<Field>("continuityResidualField"))
+  ConvectionDiscretization(const MeshList& meshes,
+                           const GeomFields& geomFields,
+                           Field& varField,
+                           const Field& convectingFluxField,
+                           const Field& continuityResidualField,
+                           const Field& varGradientField) :
+    Discretization(meshes),
+    _geomFields(geomFields),
+    _varField(varField),
+    _convectingFluxField(convectingFluxField),
+    _continuityResidualField(continuityResidualField),
+    _varGradientField(varGradientField)
   {}
-
-  void discretize(const Mesh& gmesh, MultiFieldMatrix& mfmatrix,
+  
+  void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
                   MultiField& xField, MultiField& rField)
   {
 
-    const UMesh& mesh = SafeCast<UMesh>(gmesh);
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getFaces();
 
@@ -57,21 +55,24 @@ public:
     if (!_convectingFluxField.hasArray(faces))
       return;
 
-    const TArray& convectingFlux = SafeCast<TArray>(_convectingFluxField[faces]);
-    const TArray& continuityResidual = SafeCast<TArray>(_continuityResidualField[cells]);
+    const TArray& convectingFlux =
+      dynamic_cast<const TArray&>(_convectingFluxField[faces]);
+    const TArray& continuityResidual =
+      dynamic_cast<const TArray&>(_continuityResidualField[cells]);
 
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
-    CCMatrix& matrix = SafeCast<CCMatrix>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
+    CCMatrix& matrix =
+      dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
 
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
 
     CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
     DiagArray& diag = matrix.getDiag();
 
-    const XArray& xCell = SafeCast<XArray>(xField[cVarIndex]);
-    XArray& rCell = SafeCast<XArray>(rField[cVarIndex]);
+    const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]);
+    XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
 
-    //const GradArray& xGradCell = SafeCast<GradArray>(_varGradientField[cells]);
+    //const GradArray& xGradCell = dynamic_cast<GradArray>(_varGradientField[cells]);
 
     
     const int nFaces = faces.getCount();
@@ -107,32 +108,12 @@ public:
     }
 
   }
-  DECLARE_HT("ConvectionDiscretization<"
-             +NumTypeTraits<X>::getTypeName()+","
-             +NumTypeTraits<Diag>::getTypeName()+","
-             +NumTypeTraits<OffDiag>::getTypeName()
-             +">");
-
 private:
+  const GeomFields& _geomFields;
   const Field& _varField;
   const Field& _convectingFluxField; 
-  const FieldSet& _geomFields;
-  const Field& _coordField;
-  const Field& _areaField;
-  const Field& _areaMagField;
-  const Field& _varGradientField;
   const Field& _continuityResidualField;
+  const Field& _varGradientField;
 };
-
-template<class X, class Diag, class OffDiag>
-void
-ConvectionDiscretization<X,Diag,OffDiag>::addMethods()
-{
-  INHERIT_METHODS(Discretization);
-}
-
-REGISTER_HT_TEMPLATE(MULTI_ARG3(<class X, class Diag, class OffDiag>), ConvectionDiscretization,
-                     MULTI_ARG3(<X,Diag,OffDiag>));
-
 
 #endif
