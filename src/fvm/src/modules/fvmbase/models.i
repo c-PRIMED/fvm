@@ -13,3 +13,4 @@ using namespace std;
 
 %include "ThermalModel.i"
 
+%include "FlowModel.i"
