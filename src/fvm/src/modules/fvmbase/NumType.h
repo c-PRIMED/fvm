@@ -31,6 +31,8 @@ struct   NumTypeTraits<bool>
   static void accumulateOneNorm(bool& sum, const bool& v) {}
   static void accumulateDotProduct(bool& sum, const bool& v0, const bool& v1)
   {}
+
+  static void safeDivide(bool& x, const bool& y) {}
 };
 
 template<>
@@ -51,6 +53,8 @@ struct   NumTypeTraits<int>
   static void accumulateOneNorm(int& sum, const int& v) { sum += abs(v);}
   static void accumulateDotProduct(int& sum, const int& v0, const int& v1)
   { sum += v0*v1;}
+
+  static void safeDivide(int& x, const int& y) {if (y!=0) x/=y;}
 };
 
 template<>
@@ -73,6 +77,8 @@ struct   NumTypeTraits<double>
   static void accumulateDotProduct(double& sum, const double& v0, const double& v1)
   { sum += v0*v1;}
 
+  static void safeDivide(double& x, const double& y) {if (y!=0) x/=y;}
+
 };
 
 template<>
@@ -94,6 +100,7 @@ struct NumTypeTraits<float>
   static void accumulateOneNorm(float& sum, const float& v) { sum += fabs(v);}
   static void accumulateDotProduct(float& sum, const float& v0, const float& v1)
   { sum += v0*v1;}
+  static void safeDivide(float& x, const float& y) {if (y!=0) x/=y;}
 };
 
 #endif
