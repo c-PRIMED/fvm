@@ -58,8 +58,8 @@ public:
             const TArray& aCell = dynamic_cast<const TArray&>(field[cells]);
 
             fprintf(_fp,"(%d (%d %d 1 0 1 %d %d)\n(",
-                       _sectionID, fluentFieldId, cz.ID,
-                       cz.iBeg+1,cz.iEnd+1);
+                    _sectionID, fluentFieldId, cz.ID,
+                    cz.iBeg+1,cz.iEnd+1);
             writer.write(_fp,aCell,0,cells.getSelfCount());
             closeSection();
             
@@ -72,8 +72,8 @@ public:
                 const CRConnectivity& faceCells = mesh.getFaceCells(faces);
                 
                 fprintf(_fp,"(%d (%d %d 1 0 1 %d %d)\n(",
-                           _sectionID, fluentFieldId, fz.ID,
-                           fz.iBeg+1,fz.iEnd+1);
+                        _sectionID, fluentFieldId, fz.ID,
+                        fz.iBeg+1,fz.iEnd+1);
 
                 int cbeg = faceCells(0,1);
                 
@@ -87,6 +87,53 @@ public:
   
   void writeVectorField(const Field& field,const int fluentFieldId)
   {
+
+    typedef Array<Vector<T,3> > VectorT3Array;
+
+    FaceZonesMap& faceZones = _reader.getFaceZones();
+    CellZonesMap& cellZones = _reader.getCellZones();
+
+    for(int nd=0; nd<3; nd++)
+    {
+        VectorArrayWriter<T,3> writer(_binary,nd,_atypeComponent);
+    
+        foreach(const CellZonesMap::value_type& pos, cellZones)
+        {
+            const FluentCellZone& cz = *pos.second;
+            const Mesh& mesh = *cz.mesh;
+
+            const StorageSite& cells = mesh.getCells();
+
+            if (field.hasArray(cells))
+            {
+                const VectorT3Array& aCell = dynamic_cast<const VectorT3Array&>(field[cells]);
+
+                fprintf(_fp,"(%d (%d %d 1 0 1 %d %d)\n(",
+                        _sectionID, fluentFieldId+nd, cz.ID,
+                        cz.iBeg+1,cz.iEnd+1);
+                writer.write(_fp,aCell,0,cells.getSelfCount());
+                closeSection();
+            
+                foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+                {
+                    const FaceGroup& fg = *fgPtr;
+                    const StorageSite& faces = fg.site;
+
+                    const FluentFaceZone& fz = *faceZones[fg.id];
+                    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+                
+                    fprintf(_fp,"(%d (%d %d 1 0 1 %d %d)\n(",
+                            _sectionID, fluentFieldId+nd, fz.ID,
+                            fz.iBeg+1,fz.iEnd+1);
+
+                    int cbeg = faceCells(0,1);
+                
+                    writer.write(_fp,aCell,cbeg,faces.getSelfCount());
+                    closeSection();
+                }
+            }
+        }
+    }
     
   }
 
