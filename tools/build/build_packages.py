@@ -16,11 +16,11 @@ def create_build_dir():
               BuildPkg.bindir,
               ]:
 
-        try:
-            if not os.path.isdir(p):
+        if not os.path.isdir(p):
+            try:
                 os.makedirs(p)
-        except:
-            fatal("error creating directory " + p)
+            except:
+                fatal("error creating directory " + p)
 
 # abstract superclass
 class BuildPkg:
@@ -52,7 +52,7 @@ class BuildPkg:
             self.bdir = os.path.join(self.sdir, bdir)
             if not os.path.isdir(self.bdir):
                 try: 
-                    makedirs(self.bdir)
+                    os.makedirs(self.bdir)
                 except:
                     fatal("error creating directory " + self.bdir)
         else:
