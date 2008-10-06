@@ -39,7 +39,7 @@ class BuildPkg:
                 Fltk("pkgs/fltk"),
                 Gmsh("pkgs/gmsh"),
                 Rlog("pkgs/rlog"),
-                Lammps("src/lammps/src"),
+                Lammps("src/lammps"),
                 Fvm("src/fvm","build"),
                 ]
 
@@ -160,15 +160,23 @@ class BuildPkg:
 class Lammps(BuildPkg):
     name = "lammps"
     def _build(self):
-        return self.sys_log("make -j4");
+        os.chdir('src')
+        ret = self.sys_log("make -j4");
+        os.chdir('..')
+        return ret
     def _clean(self):
+        os.chdir('src')
         self.sys_log("make clean-all")
         self.sys_log("/bin/rm -f lmp_*")
+        os.chdir('..')
         return 0
     def _install(self):
+        os.chdir('src')
         self.sys_log("install lmp_* %s" % self.bindir)
         # for testing, we want a consistent name for the executable
-        return self.sys_log("/bin/ln -fs %s/lmp_* %s/lammps" % (self.bindir, self.bindir))
+        ret = self.sys_log("/bin/ln -fs %s/lmp_* %s/lammps" % (self.bindir, self.bindir))
+        os.chdir('..')
+        return ret
 
 class Gmsh(BuildPkg):
     name = "gmsh"
