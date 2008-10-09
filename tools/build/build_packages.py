@@ -147,7 +147,7 @@ class BuildPkg:
     def _install(self):
         pass
     def _test(self):
-        return testing.do_tests(self.sdir, self.logfile)
+        return testing.do_tests(self.name, self.sdir, self.logfile)
         
 
 #########################################################

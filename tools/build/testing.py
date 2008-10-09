@@ -20,12 +20,24 @@ def find_tests(startdir):
                 yield root
 
 # run all the tests in a file. return number of errors
-def run_tests(file, logfile):
+def run_tests(pname, file, logfile):
     errs = ok = 0
     for line in open(file):
         line = line.split()
+        if len(line) == 0 or line[0][0] == '#': continue
         tname = line[0]
         cmd = ' '.join(line[1:])
+
+        # special hack for mtest.  append --datafile
+        if line[1].strip("\"") == "mtest.py":
+            pdir = os.path.join(os.path.dirname(logfile),pname)
+            if not os.path.isdir(pdir):
+                try:
+                    os.makedirs(pdir)
+                except:
+                    fatal("error creating directory " + pdir)
+            cmd += " --datafile %s/%s.dat" % (pdir, tname)
+
         debug("Test %s: %s" % (tname, cmd))
         f = open(logfile, 'a')
         print >> f,"%s: EXECUTING: %s" % (tname, cmd)
@@ -33,6 +45,7 @@ def run_tests(file, logfile):
         cmd = cmd + " >>" + logfile + " 2>&1"
         ret = os.system("/bin/bash -c '%s'" % cmd)
         if ret:
+            ret >>= 8
             debug("%s Failed" % line[0])
             f = open(logfile, 'a')
             print >> f, "%s: FAILED: %s" % (tname, ret)
@@ -43,11 +56,11 @@ def run_tests(file, logfile):
     return ok, errs
 
 # run all the tests in a directory.  return number of errors
-def do_tests(startdir, logfile):
+def do_tests(pname, startdir, logfile):
     errs = ok = 0
     for root in find_tests(startdir):
         os.chdir(root)
-        _ok, _errs = run_tests(os.path.join(root,'TESTS'), logfile)
+        _ok, _errs = run_tests(pname, os.path.join(root,'TESTS'), logfile)
         ok += _ok
         errs += _errs
     return ok, errs
@@ -76,7 +89,7 @@ def run_all_tests(bp):
     os.chdir(tdir)
     logfile = os.path.join(bp.logdir, "MEMOSA-test.log")
     remove_file(logfile)
-    tok, terrs = do_tests(tdir, logfile)
+    tok, terrs = do_tests('MEMOSA', tdir, logfile)
     if terrs:
         cprint('YELLOW', "%s OK, %s FAIL" % (tok, terrs))
     else:
