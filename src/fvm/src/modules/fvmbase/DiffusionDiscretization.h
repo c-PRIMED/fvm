@@ -112,7 +112,7 @@ public:
         const T_Scalar diffCoeff = faceDiffusivity*diffMetric;
         const VectorT3 secondaryCoeff = faceDiffusivity*(faceArea[f]-ds*diffMetric);
         
-        const XGrad gradF = (xGradCell[c0]*vol0+xGradCell[c1]*vol1)/T_Scalar(2.0);
+        const XGrad gradF = (xGradCell[c0]*vol0+xGradCell[c1]*vol1)/(vol0+vol1);
 
         const X dFluxSecondary = gradF*secondaryCoeff;
         
