@@ -1,4 +1,30 @@
-test0 "false"
-test1 "true"
+# sample tests to test the test system
+# These will be replaced by real tests of MEMOSA integration.
+
+# format is "test name" "executable" "args"
+# The executable must return 0 for success, nonzero for failure.
+# Quotes are optional except when white space must be preserved.
+
+# these fail
+test0 false
+test00 python -c "import sys; sys.exit(42)"
+
+# these succeed
+test1 true
+test1a python -c "import sys; sys.exit(0)"
 test2 "echo" "Hello World"
-test3 "echo" "Hello World" "Martin"
+test3 echo Hello World
+
+# mtest.py runs an executable and optionally compares the output
+# with a pattern or golden file. 
+
+# fails
+test4 mtest.py false
+
+# OK
+test4a mtest.py echo FOO
+test5 "mtest.py" "echo" "Hello World" "--expect" "Hello World"
+test6 mtest.py echo "Hello World" --expect "[hH]ello World"
+
+# fails because the output doesn't match the regular expression
+test7 "mtest.py" "echo" "Hello" "--expect" "[J-Z]ello"

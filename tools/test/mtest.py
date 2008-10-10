@@ -52,7 +52,7 @@ def main():
     ret = 0
     if options.golden:
         # run the test executable and send stdout and stderr to the data file.
-        cmd = ' '.join(args) + " >>" + datafile + " 2>&1"
+        cmd = ' '.join(args) + " >" + datafile + " 2>&1"
         if os.system("/bin/bash -c '%s'" % cmd):
             cleanup(-1, datafile, delete_datafile)
         count = 0
@@ -77,6 +77,11 @@ def main():
             ret = 1
         if exe.close():
             ret = -1
+    else:
+        cmd = ' '.join(args)
+        ret = os.system(cmd)
+        if ret:
+            ret >>= 8
 
     cleanup(ret, datafile, delete_datafile)
 
