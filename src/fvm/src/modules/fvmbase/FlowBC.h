@@ -38,7 +38,8 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->defineVar("pressureURF",T(0.3));
     this->defineVar("momentumTolerance",T(1e-3));
     this->defineVar("continuityTolerance",T(1e-3));
-    
+    this->printNormalizedResiduals = true;
   }
+  bool printNormalizedResiduals;
 };
 

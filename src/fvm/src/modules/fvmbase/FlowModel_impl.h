@@ -164,9 +164,37 @@ public:
         {
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
-          
-            shared_ptr<VectorT3Array> momFlux(new VectorT3Array(faces.getCount()));
 
+            const FlowBC<T>& bc = *_bcMap[fg.id];
+
+            VectorT3 bVelocity;
+            bVelocity[0] = bc["specifiedXVelocity"];
+            bVelocity[1] = bc["specifiedYVelocity"];
+            bVelocity[2] = bc["specifiedZVelocity"];
+
+            if ((bc.bcType == "NoSlipWall") ||
+                (bc.bcType == "VelocityBoundary"))
+            {
+                // arrays for this face group
+                TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
+                const int nFaces = faces.getCount();
+                const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+                
+                const VectorT3Array& faceArea =
+                  dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+                
+                for(int f=0; f<nFaces; f++)
+                {
+                    const int c0 = faceCells(f,0);
+                    massFlux[f] = density[c0]*dot(bVelocity,faceArea[f]);
+                }
+            }
+            else if ((bc.bcType == "Symmetry"))
+            {
+                TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
+                massFlux.zero();
+            }
+            shared_ptr<VectorT3Array> momFlux(new VectorT3Array(faces.getCount()));
             momFlux->zero();
             _flowFields.momentumFlux.addArray(faces,momFlux);
           
@@ -298,6 +326,11 @@ public:
                         gbc.applyDirichletBC(f,bVelocity);
                     }
                 }
+            }
+            else if ((bc.bcType == "Symmetry"))
+            {
+                VectorT3 zeroFlux(NumTypeTraits<VectorT3>::getZero());
+                gbc.applyNeumannBC(zeroFlux);
             }
             else
               throw CException(bc.bcType + " not implemented for FlowModel");
@@ -1065,11 +1098,20 @@ public:
     { 
         MFPtr mNorm = solveMomentum();
         MFPtr cNorm = solveContinuity();
+
+        if (_niters < 5)
+        {
+            _initialMomentumNorm->setMax(*mNorm);
+            _initialContinuityNorm->setMax(*cNorm);
+        }
         
         MFPtr mNormRatio((*mNorm)/(*_initialMomentumNorm));
         MFPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
-
-        cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
+        
+        if (_options.printNormalizedResiduals)
+          cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
+        else
+          cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;
 
         _niters++;
         if ((*mNormRatio < _options["momentumTolerance"]) &&
