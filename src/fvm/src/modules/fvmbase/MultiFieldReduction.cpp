@@ -80,6 +80,15 @@ MultiFieldReduction::operator/(const MultiFieldReduction& o)
 }
 
 void
+MultiFieldReduction::setMax(const MultiFieldReduction& o)
+{
+  foreach(const ArrayMap::value_type& pos, _arrays)
+  {
+      pos.second->setMax(o[*pos.first]);
+  }
+}
+
+void
 MultiFieldReduction::reduceSum()
 {
   ArrayBase& array0 = *(_arrays.begin()->second);
