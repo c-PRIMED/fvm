@@ -187,6 +187,12 @@ public:
       NumTypeTraits<T>::safeDivide(x[i],y[i]);
   }
  
+  static void setMax(Vector& x, const Vector& y)
+  {
+    for(int i=0; i<N; i++)
+      NumTypeTraits<T>::setMax(x[i],y[i]);
+  }
+ 
 private:
   T _data[N];
 };

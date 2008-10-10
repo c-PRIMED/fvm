@@ -42,6 +42,9 @@ public:
   virtual ArrayBase& safeDivide(const ArrayBase& a) =0;
 
   virtual bool operator<(const double tolerance) const=0;
+  // set self's value to be a's value if the latter is higher. used
+  // for residuals
+  virtual void setMax(const ArrayBase& a) =0;
 
   virtual void print(ostream& os) const = 0;
   

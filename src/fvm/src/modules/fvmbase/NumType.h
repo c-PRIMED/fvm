@@ -33,6 +33,7 @@ struct   NumTypeTraits<bool>
   {}
 
   static void safeDivide(bool& x, const bool& y) {}
+  static void setMax(bool& x, const bool& y) {}
 };
 
 template<>
@@ -55,6 +56,8 @@ struct   NumTypeTraits<int>
   { sum += v0*v1;}
 
   static void safeDivide(int& x, const int& y) {if (y!=0) x/=y;}
+  static void setMax(int& x, const int& y) {if (y>x) x=y;}
+  
 };
 
 template<>
@@ -78,6 +81,7 @@ struct   NumTypeTraits<double>
   { sum += v0*v1;}
 
   static void safeDivide(double& x, const double& y) {if (y!=0) x/=y;}
+  static void setMax(double& x, const double& y) {if (y>x) x=y;}
 
 };
 
@@ -101,6 +105,7 @@ struct NumTypeTraits<float>
   static void accumulateDotProduct(float& sum, const float& v0, const float& v1)
   { sum += v0*v1;}
   static void safeDivide(float& x, const float& y) {if (y!=0) x/=y;}
+  static void setMax(float& x, const float& y) {if (y>x) x=y;}
 };
 
 #endif

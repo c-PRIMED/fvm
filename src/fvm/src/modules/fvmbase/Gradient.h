@@ -124,6 +124,11 @@ public:
       NumTypeTraits<T>::safeDivide(x._data[i],y._data[i]);
   }
 
+  static void setMax(Gradient& x, const Gradient& y)
+  {
+    for(int i=0; i<3; i++)
+      NumTypeTraits<T>::setMax(x._data[i],y._data[i]);
+  }
   static Gradient getZero()
   {
     Gradient z;
