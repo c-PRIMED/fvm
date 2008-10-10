@@ -52,6 +52,7 @@ public:
         const Mesh& mesh = *cz.mesh;
 
         const StorageSite& cells = mesh.getCells();
+        const StorageSite& faces = mesh.getFaces();
 
         if (field.hasArray(cells))
         {
@@ -78,6 +79,38 @@ public:
                 int cbeg = faceCells(0,1);
                 
                 writer.write(_fp,aCell,cbeg,faces.getSelfCount());
+                closeSection();
+            }
+        }
+        if (field.hasArray(faces))
+        {
+            const TArray& aFaces = dynamic_cast<const TArray&>(field[faces]);
+
+            int faceOffset =0;
+            foreach(int fzId, cz.interiorZoneIds)
+            {
+                const FluentFaceZone& fz = *faceZones[fzId];
+                const int count = fz.iEnd-fz.iBeg+1;
+                fprintf(_fp,"(%d (%d %d 1 0 1 %d %d)\n(",
+                        _sectionID, fluentFieldId, fz.ID,
+                        fz.iBeg+1,fz.iEnd+1);
+                writer.write(_fp,aFaces,faceOffset,count);
+                closeSection();
+                faceOffset += count;
+            }
+
+            foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+            {
+                const FaceGroup& fg = *fgPtr;
+                const StorageSite& faces = fg.site;
+
+                const FluentFaceZone& fz = *faceZones[fg.id];
+                
+                fprintf(_fp,"(%d (%d %d 1 0 1 %d %d)\n(",
+                        _sectionID, fluentFieldId, fz.ID,
+                        fz.iBeg+1,fz.iEnd+1);
+
+                writer.write(_fp,aFaces,faces.getOffset(),faces.getSelfCount());
                 closeSection();
             }
         }
