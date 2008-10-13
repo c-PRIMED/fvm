@@ -245,7 +245,7 @@ class Boost(BuildPkg):
     name = 'boost'
     def _install(self):
         idir = os.path.join(self.blddir, "include")
-        return self.sys_log("/bin/cp -pr %s %s" % (self.sdir, idir))
+        return self.sys_log("/bin/ln -fs %s %s" % (self.sdir, idir))
 
 class Fvm(BuildPkg):
     name = "fvm"
