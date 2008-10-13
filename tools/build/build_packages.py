@@ -40,6 +40,7 @@ class BuildPkg:
                 Fltk("pkgs/fltk"),
                 Gmsh("pkgs/gmsh"),
                 Rlog("pkgs/rlog"),
+                Boost("pkgs/boost"),
                 Lammps("src/lammps"),
                 Fvm("src/fvm","build"),
                 ]
@@ -238,6 +239,13 @@ class Rlog(BuildPkg):
         return self.sys_log("make install")
     def _clean(self):
         return self.sys_log("make clean")
+
+# We don't build boost, just use the headers
+class Boost(BuildPkg):
+    name = 'boost'
+    def _install(self):
+        idir = os.path.join(self.blddir, "include")
+        return self.sys_log("/bin/cp -pr %s %s" % (self.sdir, idir))
 
 class Fvm(BuildPkg):
     name = "fvm"
