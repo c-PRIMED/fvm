@@ -25,22 +25,21 @@ def create_build_dir():
 # abstract superclass
 class BuildPkg:
 
-    def setup(cname=''):
-        BuildPkg.topdir = os.getcwd()
-        if cname:
-            cname = '-' + cname
-        BuildPkg.blddir = os.path.join(BuildPkg.topdir, "build%s" % cname)
+    def setup(cname, srcpath, outoftree):
+        BuildPkg.topdir = srcpath
+        BuildPkg.blddir = os.path.join(os.getcwd(), "build-%s" % cname)
         BuildPkg.logdir = os.path.join(BuildPkg.blddir, "log")
         BuildPkg.bindir = os.path.join(BuildPkg.blddir, "bin")
         BuildPkg.libdir = os.path.join(BuildPkg.blddir, "lib")
-        if cname:
-            create_build_dir()
+        BuildPkg.outoftree = outoftree
+        create_build_dir()
 
         BuildPkg.packages = [Gsl("pkgs/gsl", "build"),
                 Fltk("pkgs/fltk"),
                 Gmsh("pkgs/gmsh"),
                 Rlog("pkgs/rlog"),
-                Boost("pkgs/boost"),
+                Boost("pkgs/boost", "None"),
+                Swig("pkgs/swig", "build"),
                 Lammps("src/lammps"),
                 Fvm("src/fvm","build"),
                 ]
@@ -49,15 +48,24 @@ class BuildPkg:
 
     def __init__(self, sdir, bdir=""):
         self.sdir = os.path.join(self.topdir, sdir)
-        if bdir != "":
+        self.copy_sources = False
+        if bdir == "None":
+            self.bdir = self.sdir
+            return
+        if BuildPkg.outoftree:
+            self.bdir = os.path.join(self.blddir, "build", self.name)
+            if bdir == "":
+                self.copy_sources = True
+        elif bdir != "":
             self.bdir = os.path.join(self.sdir, bdir)
-            if not os.path.isdir(self.bdir):
-                try: 
-                    os.makedirs(self.bdir)
-                except:
-                    fatal("error creating directory " + self.bdir)
         else:
             self.bdir = self.sdir
+        if not self.copy_sources and not os.path.isdir(self.bdir): 
+            try: 
+                os.makedirs(self.bdir)
+            except:
+                fatal("error creating directory " + self.bdir)
+
 
     def pstatus(self, state, option=''):
         "update build status"
@@ -77,6 +85,11 @@ class BuildPkg:
         self.logfile = os.path.join(self.logdir, self.name+"-conf.log")
         remove_file(self.logfile)
         pmess("CONF",self.name,self.bdir)
+        if self.copy_sources:
+            # remove and old sources
+            os.system("/bin/rm -rf %s" % self.bdir)            
+            # get new sources
+            copytree(self.sdir, self.bdir)
         os.chdir(self.bdir)
         run_commands('before',self.name)
         self.pstatus(self._configure())
@@ -183,7 +196,7 @@ class Lammps(BuildPkg):
 class Gmsh(BuildPkg):
     name = "gmsh"
     def _configure(self):
-        return self.sys_log("./configure --prefix=%s --with-gsl-prefix=%s" % (self.blddir, self.blddir))
+        return self.sys_log("%s/configure --prefix=%s --with-gsl-prefix=%s" % (self.sdir, self.blddir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -197,7 +210,7 @@ class Gmsh(BuildPkg):
 class Fltk(BuildPkg):
     name = "fltk"
     def _configure(self):
-        return self.sys_log("./configure --prefix=%s" % self.blddir)
+        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -211,7 +224,7 @@ class Fltk(BuildPkg):
 class Gsl(BuildPkg):
     name = "gsl"
     def _configure(self):
-        return self.sys_log("../configure --prefix=%s" % self.blddir)
+        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -232,7 +245,18 @@ class Gsl(BuildPkg):
 class Rlog(BuildPkg):
     name = "rlog"
     def _configure(self):
-        return self.sys_log("./configure --disable-docs --disable-valgrind  --prefix=%s" % self.blddir)
+        return self.sys_log("%s/configure --disable-docs --disable-valgrind  --prefix=%s" % (self.sdir, self.blddir))
+    def _build(self):
+        return self.sys_log("make -j4")
+    def _install(self):
+        return self.sys_log("make install")
+    def _clean(self):
+        return self.sys_log("make clean")
+
+class Swig(BuildPkg):
+    name = "swig"
+    def _configure(self):
+        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -269,7 +293,7 @@ class Fvm(BuildPkg):
         return self.sys_log("/bin/ln -fs %s %s" % (self.blddir, pdir))
     def _build(self):
         os.putenv("PYTHONPATH",os.path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
-        return self.sys_log("../etc/buildsystem/build -C %s" % self.sdir)
+        return self.sys_log("%s/etc/buildsystem/build -C %s" % (self.sdir, self.sdir))
     def _install(self):
         try:
             line = os.popen("/bin/bash -c 'gcc --version 2>&1'").readline()

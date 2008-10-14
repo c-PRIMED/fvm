@@ -198,6 +198,26 @@ def run_commands(section, pkg):
                     print "failed."
                     sys.exit(-1)
 
+def copytree(src, dst):
+    names = os.listdir(src)
+    os.makedirs(dst)
+    errors = []
+    for name in names:
+        srcname = os.path.join(src, name)
+        dstname = os.path.join(dst, name)
+        try:
+            if os.path.islink(srcname):
+                linkto = os.readlink(srcname)
+                os.symlink(linkto, dstname)
+            elif os.path.isdir(srcname):
+                copytree(srcname, dstname)
+            else:
+                os.symlink(srcname, dstname)
+        except (IOError, os.error), why:
+            errors.append((srcname, dstname, str(why)))
+    if errors:
+        raise Error, errors
+
 
 if __name__ == '__main__':
     for c in colors:

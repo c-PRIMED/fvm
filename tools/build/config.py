@@ -60,9 +60,9 @@ def set_value(val):
                 _config[section] = {val[0]:val[1]}
     return True
 
-def read(filename):
+def read(srcpath, filename):
     if filename == '': return True
-    filename = os.path.join(os.getcwd(), "config", filename)
+    filename = os.path.join(srcpath, "config", filename)
     lnum = 0
     f = open(filename, 'r')
     while True:

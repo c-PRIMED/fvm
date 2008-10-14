@@ -17,6 +17,7 @@ Options:
   --all          Same as --rebuild --test --submit.
   -v, --verbose  Verbose output.
   --nocolor      Disable color output.
+  --outoftree        Do not build in source tree.
 Configuration names are stored in the "config" subdirectory.
 """
 
@@ -29,7 +30,7 @@ def usage():
     print __doc__
     sys.exit(-1)
 
-def main(args):
+def main():
 
     parser = OptionParser()
     parser.add_option("--build (default)",
@@ -54,62 +55,71 @@ def main(args):
                       action="store_true", dest="verbose", help="verbose output")
     parser.add_option("--nocolor",
                       action="store_true", dest="nocolor", help="Disable color output.")
+    parser.add_option("--outoftree",
+                      action="store_true", dest="outoftree", help="Do not build in source tree.")
     (options, args) = parser.parse_args()
     build_utils.verbose = options.verbose
+
+    srcpath = os.path.abspath(os.path.dirname(sys.argv[0]))
+    if srcpath != os.getcwd():
+        options.outoftree = True
 
     if options.nocolor:
         build_utils.clear_colors()
 
+    cname = ''
+    if len(args) == 1:
+        cname = args[0]
+    if cname == '' or not config.read(srcpath, cname):
+        usage()
+    
+    BuildPkg.setup(cname, srcpath, options.outoftree)
+    fix_path('PATH', BuildPkg.bindir, 1, 0)
+    fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
+    build_utils.run_commands('before',0)
+
     if options.clean:
-        if len(args): usage()
-        BuildPkg.setup()
+        BuildPkg.setup(cname, srcpath, options.outoftree)
         for p in BuildPkg.packages:
             p.clean()
-
-    else:
-        cname = ''
-        if len(args) == 1:
-            cname = args[0]
-        if cname == '' or not config.read(cname):
-            usage()
     
-        BuildPkg.setup(cname)
+    if options.all:
+        options.rebuild = options.test = options.submit = True
 
-        build_utils.run_commands('before',0)
+    if options.rebuild:
+        options.build = True
+        os.system("/bin/rm -rf %s" % BuildPkg.blddir)
+        BuildPkg.setup(cname, srcpath, options.outoftree)
 
-        if options.all:
-            options.rebuild = options.test = options.submit = True
+    # if no options, default to build
+    if not options.build and not options.test and not options.submit and not options.clean:
+        options.build = True
 
-        if options.rebuild:
-            options.build = True
-            os.system("/bin/rm -rf %s" % BuildPkg.blddir)
-            BuildPkg.setup(cname)
+    if options.build:
+        for p in BuildPkg.packages:
+            if config.config(p.name,'skip'):
+                build_utils.debug ("Skipping " + p.name)
+                continue
+            p.configure()
+            p.build()
+            p.install()
 
-        # if no options, default to build
-        if not options.build and not options.test and not options.submit:
-            options.build = True
+    if options.test:
+        testing.run_all_tests(BuildPkg)
 
-        if options.build:
-            for p in BuildPkg.packages:
-                if config.config(p.name,'skip'):
-                    build_utils.debug ("Skipping " + p.name)
-                    continue
-                p.configure()
-                p.build()
-                p.install()
+    if options.submit:
+        print "Submit not implemented yet."
 
-        if options.test:
-            testing.run_all_tests(BuildPkg)
+    build_utils.run_commands('after',0)
 
-        if options.submit:
-            print "Submit not implemented yet."
+    if options.build:
+        print "\nDONE\nYou need to do something like the following to use the build."
+        print "export LD_LIBRARY_PATH="+BuildPkg.libdir
+        print "export PATH=$PATH:"+BuildPkg.bindir
 
-        build_utils.run_commands('after',0)
+    fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
+    fix_path('PATH', BuildPkg.bindir, 1, 1)
 
-        if options.build:
-            print "\nDONE\nYou need to do something like the following to use the build."
-            print "export LD_LIBRARY_PATH="+BuildPkg.libdir
-            print "export PATH=$PATH:"+BuildPkg.bindir
         
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
