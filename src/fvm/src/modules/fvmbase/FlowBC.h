@@ -36,10 +36,12 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->defineVar("initialPressure",T(0.0));
     this->defineVar("momentumURF",T(0.7));
     this->defineVar("pressureURF",T(0.3));
-    this->defineVar("momentumTolerance",T(1e-3));
-    this->defineVar("continuityTolerance",T(1e-3));
+    this->momentumTolerance=1e-3;
+    this->continuityTolerance=1e-3;
     this->printNormalizedResiduals = true;
   }
   bool printNormalizedResiduals;
+  double momentumTolerance;
+  double continuityTolerance;
 };
 
