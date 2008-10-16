@@ -87,8 +87,8 @@ public:
     const GradArray& xGradCell =
       dynamic_cast<const GradArray&>(_varGradientField[cells]);
 
-    // const TArray& diffCell =
-    //  dynamic_cast<const TArray&>(_diffusivityField[cells]);
+    const TArray& diffCell =
+      dynamic_cast<const TArray&>(_diffusivityField[cells]);
     
     const int nFaces = faces.getCount();
     for(int f=0; f<nFaces; f++)
@@ -101,13 +101,13 @@ public:
         const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
 
         T_Scalar faceDiffusivity(1.0);
-        /*  if (vol0 == 0.)
+        if (vol0 == 0.)
           faceDiffusivity = diffCell[c1];
         else if (vol1 == 0.)
           faceDiffusivity = diffCell[c0];
         else
           faceDiffusivity = harmonicAverage(diffCell[c0],diffCell[c1]);
-        */
+        
         const T_Scalar diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
         const T_Scalar diffCoeff = faceDiffusivity*diffMetric;
         const VectorT3 secondaryCoeff = faceDiffusivity*(faceArea[f]-ds*diffMetric);
