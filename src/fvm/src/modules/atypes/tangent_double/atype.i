@@ -8,6 +8,10 @@
   {
       $1 = Tangent(PyFloat_AsDouble($input));
   }
+  else if (PyInt_Check($input))
+  {
+      $1 = Tangent(double(PyInt_AsLong($input)));
+  }
   else if (PyTuple_Check($input) && (2==PyTuple_Size($input)))
   {
       $1 = Tangent(PyFloat_AsDouble(PyTuple_GetItem($input,0)),
