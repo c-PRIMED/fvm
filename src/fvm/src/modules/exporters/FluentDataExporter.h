@@ -1,6 +1,7 @@
 #ifndef _FLUENTDATAEXPORTER_H_
 #define _FLUENTDATAEXPORTER_H_
 
+#include "atype.h"
 
 #include "FluentReader.h"
 #include "ArrayWriter.h"
@@ -57,7 +58,6 @@ public:
         if (field.hasArray(cells))
         {
             const TArray& aCell = dynamic_cast<const TArray&>(field[cells]);
-
             fprintf(_fp,"(%d (%d %d 1 0 1 %d %d)\n(",
                     _sectionID, fluentFieldId, cz.ID,
                     cz.iBeg+1,cz.iEnd+1);
