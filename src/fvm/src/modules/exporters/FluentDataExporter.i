@@ -1,4 +1,3 @@
-%module exporters
 %{
 #include "FluentDataExporter.h"
 #include "atype.h"
