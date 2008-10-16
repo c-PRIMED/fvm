@@ -23,6 +23,9 @@ struct FlowVC : public FloatVarDict<T>
 template <class T>
 struct FlowModelOptions : public FloatVarDict<T>
 {
+  bool printNormalizedResiduals;
+  double momentumTolerance;
+  double continuityTolerance;
 }; 
 
 
