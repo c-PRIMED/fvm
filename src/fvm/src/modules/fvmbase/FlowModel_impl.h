@@ -12,6 +12,7 @@
 #include "DiagonalMatrix.h"
 #include "GenericBCS.h"
 #include "Vector.h"
+#include "VectorTranspose.h"
 #include "DiffusionDiscretization.h"
 #include "ConvectionDiscretization.h"
 #include "Underrelaxer.h"
@@ -26,6 +27,8 @@ class FlowModel<T>::Impl
 public:
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
+  typedef VectorTranspose<T,3> VectorT3T;
+
   typedef Array<VectorT3> VectorT3Array;
   typedef DiagonalTensor<T,3> DiagTensorT3;
 
@@ -35,6 +38,15 @@ public:
   typedef CRMatrix<T,T,T> PPMatrix;
   typedef typename PPMatrix::DiagArray PPDiagArray;
   typedef typename PPMatrix::PairWiseAssembler PPAssembler;
+
+  typedef CRMatrixRect<VectorT3T,VectorT3,T> PVMatrix;
+  typedef typename PVMatrix::DiagArray PVDiagArray;
+  typedef typename PVMatrix::PairWiseAssembler PVAssembler;
+
+  typedef CRMatrixRect<VectorT3,T,VectorT3> VPMatrix;
+  typedef typename VPMatrix::DiagArray VPDiagArray;
+  typedef typename VPMatrix::PairWiseAssembler VPAssembler;
+
 
   typedef Array<Gradient<T> > PGradArray;
 
@@ -48,6 +60,8 @@ public:
     _flowFields(thermalFields),
     _velocityGradientModel(_meshes,_flowFields.velocity,
                            _flowFields.velocityGradient,_geomFields),
+    _pressureGradientModel(_meshes,_flowFields.pressure,
+                           _flowFields.pressureGradient,_geomFields),
     _initialMomentumNorm(),
     _initialContinuityNorm(),
     _niters(0)
@@ -266,10 +280,11 @@ public:
                                                                _flowFields.velocityGradient));
     shared_ptr<Discretization>
       pd(new MomentumPressureGradientDiscretization<T>(_meshes,_geomFields,
-                                                       _flowFields));
+                                                       _flowFields,
+                                                       _pressureGradientModel));
     shared_ptr<Discretization>
       ud(new Underrelaxer<VectorT3,DiagTensorT3,T>(_meshes,_flowFields.velocity,
-                                                _options["momentumURF"]));
+                                                   _options["momentumURF"]));
     discretizations.push_back(dd);
     discretizations.push_back(cd);
     discretizations.push_back(pd);
@@ -476,11 +491,11 @@ public:
         ppDiag[c1] += pCoeff;
     }
 
-#if 0
+#if 1
     if (mfmatrix.hasMatrix(pIndex,vIndex))
     {
         PVMatrix& pvMatrix =
-          dynamic_cast<PVMatrix>(mfmatrix.getMatrix(pIndex,vIndex));
+          dynamic_cast<PVMatrix&>(mfmatrix.getMatrix(pIndex,vIndex));
         
         PVAssembler& pvAssembler = pvMatrix.getPairWiseAssembler(faceCells);
         PVDiagArray& pvDiag = pvMatrix.getDiag();
@@ -510,7 +525,7 @@ public:
 #endif
   }
 
-  void fixedFluxContinuityBC(const StorageSite& faces,
+  T fixedFluxContinuityBC(const StorageSite& faces,
                              const Mesh& mesh,
                              MultiFieldMatrix& matrix,
                              MultiField& xField,
@@ -537,13 +552,17 @@ public:
 
 
     const int nFaces = faces.getCount();
+
+    T netFlux(0.);
+    
     for(int f=0; f<nFaces; f++)
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
 
         rCell[c0] -= massFlux[f];
-        
+
+        netFlux += massFlux[f];
         ppAssembler.getCoeff01(f) =0;
         ppAssembler.getCoeff10(f) =1;
         ppDiag[c1] = -1;
@@ -571,6 +590,7 @@ public:
         }
     }
 #endif
+    return netFlux;
   }
 
   void correctVelocityInterior(const Mesh& mesh,
@@ -845,11 +865,10 @@ public:
     for(int nb=row[0]; nb<row[1]; nb++)
       ppCoeff[nb] = 0;
     
-#if 0
     if (mfmatrix.hasMatrix(pIndex,vIndex))
     {
         PVMatrix& pvMatrix =
-          dynamic_cast<PVMatrix>(mfmatrix.getMatrix(pIndex,vIndex));
+          dynamic_cast<PVMatrix&>(mfmatrix.getMatrix(pIndex,vIndex));
         
         PVDiagArray& pvDiag = pvMatrix.getDiag();
         PVDiagArray& pvCoeff = pvMatrix.getOffDiag();
@@ -858,8 +877,6 @@ public:
         for(int nb=row[0]; nb<row[1]; nb++)
           pvCoeff[nb] = 0;
     }
-#endif
-    
   }
 
   
@@ -874,6 +891,8 @@ public:
     this->_useReferencePressure = true;
     const int numMeshes = _meshes.size();
 
+    T netFlux(0.);
+    
 #if 0
     for (int n=0; n<numMeshes; n++)
     {
@@ -901,7 +920,18 @@ public:
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
 
-            fixedFluxContinuityBC(faces,mesh,matrix,x,b);
+            const FlowBC<T>& bc = *_bcMap[fg.id];
+            
+            if ((bc.bcType == "NoSlipWall") ||
+                (bc.bcType == "Symmetry") ||
+                (bc.bcType == "VelocityBoundary"))
+            {
+                
+                netFlux += fixedFluxContinuityBC(faces,mesh,matrix,x,b);
+            }
+            else
+              throw CException(bc.bcType + " not implemented for FlowModel");
+            
             MultiField::ArrayIndex mfIndex(&_flowFields.massFlux,&faces);
             typedef DiagonalMatrix<T,T> FFMatrix;
             FFMatrix& dFluxdFlux =
@@ -911,7 +941,36 @@ public:
     }
 
     if (this->_useReferencePressure)
-      setDirichlet(matrix,b);
+    {
+        setDirichlet(matrix,b);
+
+        T volumeSum(0.);
+        
+        for (int n=0; n<numMeshes; n++)
+        {
+            const Mesh& mesh = *_meshes[n];
+            const StorageSite& cells = mesh.getCells();
+            const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+            for(int c=0; c<cells.getSelfCount(); c++) volumeSum += cellVolume[c];
+        }
+
+        netFlux /= volumeSum;
+
+        for (int n=0; n<numMeshes; n++)
+        {
+            const Mesh& mesh = *_meshes[n];
+            const StorageSite& cells = mesh.getCells();
+            const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+            
+            MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
+            TArray& rCell = dynamic_cast<TArray&>(b[pIndex]);
+            
+            for(int c=0; c<cells.getSelfCount(); c++)
+            {
+                rCell[c] += netFlux*cellVolume[c];
+            }
+        }
+    }
   }
 
   void setReferencePP(const MultiField& ppField)
@@ -1114,8 +1173,8 @@ public:
           cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;
 
         _niters++;
-        if ((*mNormRatio < _options["momentumTolerance"]) &&
-            (*cNormRatio < _options["continuityTolerance"]))
+        if ((*mNormRatio < _options.momentumTolerance) &&
+            (*cNormRatio < _options.continuityTolerance))
           break;
     }
   }
@@ -1146,6 +1205,7 @@ private:
   
   FlowModelOptions<T> _options;
   GradientModel<VectorT3> _velocityGradientModel;
+  GradientModel<T> _pressureGradientModel;
   
   MFPtr _initialMomentumNorm;
   MFPtr _initialContinuityNorm;
