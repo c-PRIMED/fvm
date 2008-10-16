@@ -6,7 +6,6 @@
 #include "Array.h"
 #include "StorageSite.h"
 
-class CRPairs;
 
 /**
  * Sparse matrix stored using a compressed row format. The sparsity
