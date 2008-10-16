@@ -19,9 +19,10 @@ struct ThermalModelOptions : public FloatVarDict<T>
   ThermalModelOptions()
   {
     this->defineVar("initialTemperature",T(300.0));
-    this->defineVar("relativeTolerance",T(1e-8));
-    this->defineVar("absoluteTolerance",T(1e-16));
-    
+    this->relativeTolerance=1e-8;
+    this->absoluteTolerance=1e-16;
   }
+  double relativeTolerance;
+  double absoluteTolerance;
 };
 

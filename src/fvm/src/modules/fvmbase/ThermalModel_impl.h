@@ -222,8 +222,8 @@ public:
         ls.updateSolution();
 
         _niters++;
-        if (*rNorm < _options["absoluteTolerance"] ||
-            *normRatio < _options["relativeTolerance"])
+        if (*rNorm < _options.absoluteTolerance ||
+            *normRatio < _options.relativeTolerance)
           break;
     }
   }
