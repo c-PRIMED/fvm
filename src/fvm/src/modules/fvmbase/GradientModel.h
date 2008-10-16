@@ -263,7 +263,7 @@ public:
         }
         else
         {
-            _gradientMatricesMap[&mesh] = getLeastSquaresGradientMatrix2D(mesh);
+            _gradientMatricesMap[&mesh] = getLeastSquaresGradientMatrix3D(mesh);
         }
     }
     return *_gradientMatricesMap[&mesh];
