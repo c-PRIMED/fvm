@@ -12,7 +12,8 @@
 #include "DiagonalMatrix.h"
 #include "Gradient.h"
 #include "GradientMatrix.h"
-  
+#include "CRMatrixRect.h"
+
 template<class X>
 class MomentumPressureGradientDiscretization : public Discretization
 {
@@ -33,15 +34,17 @@ public:
 
   typedef Array<XGrad> GradArray;
 
-  //  typedef CRMatrixRect<VPCoeff,X,VectorT3> VPMatrix;
+  typedef CRMatrixRect<VPCoeff,X,VectorT3> VPMatrix;
   
 
   MomentumPressureGradientDiscretization(const MeshList& meshes,
                                          const GeomFields& geomFields,
-                                         FlowFields& flowFields)  :
+                                         FlowFields& flowFields,
+                                         GradientModel<X>& pressureGradientModel)  :
     Discretization(meshes),
     _geomFields(geomFields),
-    _flowFields(flowFields)
+    _flowFields(flowFields),
+    _pressureGradientModel(pressureGradientModel)
   {}
 
                           
@@ -106,15 +109,15 @@ public:
     }
     
 
-#if 0
-    const MultiField::ArrayIndex pIndex(&_pressureField,&cells);
+#if 1
+    const MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
     if (mfmatrix.hasMatrix(vIndex,pIndex))
     {
         VPMatrix& vpMatrix =
-          dynamic_cast<VPMatrix>(mfmatrix.getMatrix(vIndex,pIndex));
+          dynamic_cast<VPMatrix&>(mfmatrix.getMatrix(vIndex,pIndex));
 
         const GradientMatrix<X>& gradMatrix =
-          dynamic_cast<GradientMatrix<X> > (_geomFields.getGradientMatrix(cells));
+          _pressureGradientModel.getGradientMatrix(mesh);
 
         const Array<VPCoeff>& gradMatrixCoeffs = gradMatrix.getCoeffs();
         Array<VPCoeff>& vpDiag = vpMatrix.getDiag();
@@ -141,6 +144,7 @@ public:
 private:
   const GeomFields& _geomFields;
   FlowFields& _flowFields;
+  GradientModel<X>& _pressureGradientModel;
 };
 
 #endif
