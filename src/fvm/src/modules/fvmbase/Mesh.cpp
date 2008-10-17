@@ -87,6 +87,20 @@ Mesh::getFaceCells(const StorageSite& faces) const
 }
 
 const CRConnectivity&
+Mesh::getFaceNodes(const StorageSite& faces) const
+{
+  SSPair key(&faces,&_cells);
+  ConnectivityMap::const_iterator pos = _connectivityMap.find(key);
+  if (pos != _connectivityMap.end())
+    return *pos->second;
+
+  shared_ptr<CRConnectivity> thisFaceNodes =
+    getAllFaceNodes().createOffset(faces,faces.getOffset(),faces.getCount());
+  _connectivityMap[key] = thisFaceNodes;
+  return *thisFaceNodes;
+}
+
+const CRConnectivity&
 Mesh::getCellNodes() const
 {
   SSPair key(&_cells,&_nodes);

@@ -1,6 +1,7 @@
 #ifndef _UMESHMETRICSCALCULATOR_H_
 #define _UMESHMETRICSCALCULATOR_H_
 
+#include "atype.h"
 #include "Model.h"
 
 #include "NumType.h"
@@ -29,6 +30,9 @@ public:
 
   DEFINE_TYPENAME("MeshMetricsCalculator<"+NumTypeTraits<T>::getTypeName()+">");
 
+#ifdef USING_ATYPE_TANGENT
+  void setTangentCoords(int meshID, int faceZoneID, int dim);
+#endif
 private:
   Field& _coordField;
   Field& _areaField;

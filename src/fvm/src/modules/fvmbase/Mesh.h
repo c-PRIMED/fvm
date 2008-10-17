@@ -76,6 +76,7 @@ public:
   const CRConnectivity& getCellNodes() const;
   
   const CRConnectivity& getFaceCells(const StorageSite& site) const;
+  const CRConnectivity& getFaceNodes(const StorageSite& site) const;
   const CRConnectivity& getCellFaces() const;
   const CRConnectivity& getCellCells() const;
 

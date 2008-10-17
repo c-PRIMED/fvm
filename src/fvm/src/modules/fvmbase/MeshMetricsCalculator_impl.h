@@ -357,3 +357,53 @@ MeshMetricsCalculator<T>::~MeshMetricsCalculator()
   logDtor();
 }
 
+#ifdef USING_ATYPE_TANGENT
+template<class T>
+void
+MeshMetricsCalculator<T>::setTangentCoords(int meshID, int faceGroupID,
+                                           int dim)
+{
+  const Mesh& mesh = *_meshes[meshID];
+
+  VectorT3Array& nodeCoords =
+    dynamic_cast<VectorT3Array&>(_coordField[mesh.getNodes()]);
+  
+  bool found = false;
+  foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      if (fg.id == faceGroupID)
+      {
+          const StorageSite& faces = fg.site;
+          const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+          const int nFaces = faces.getCount();
+          for(int f=0; f<nFaces; f++)
+          {
+              const int nFaceNodes = faceNodes.getCount(f);
+              for(int nf=0; nf<nFaceNodes; nf++)
+              {
+                  VectorT3& xn = nodeCoords[faceNodes(f,nf)];
+                  xn[dim]._dv=1.0;
+              }
+          }
+          found = true;
+      }
+  }
+
+  if (!found)
+    throw CException("setTangentCoords: invalid faceGroupID");
+
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      calculateFaceAreas(mesh);
+      calculateFaceAreaMag(mesh);
+      calculateFaceCentroids(mesh);
+      calculateCellCentroids(mesh);
+      calculateCellVolumes(mesh);
+  }
+
+}
+
+#endif

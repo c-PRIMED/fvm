@@ -15,6 +15,9 @@ class MeshMetricsCalculator : public Model
 public:
   MeshMetricsCalculator(GeomFields& geomFields, const MeshList& meshes);
   virtual void init();
+#ifdef USING_ATYPE_TANGENT
+  void setTangentCoords(int meshID, int faceZoneID, int dim);
+#endif
 };
 
 
