@@ -40,6 +40,12 @@ public:
 
   AMG& getMomentumSolver();
   AMG& getContinuitySolver();
+
+#ifndef USING_ATYPE_TANGENT
+  
+  void dumpContinuityMatrix(const string fileBase);
+  
+#endif
   
 private:
   shared_ptr<Impl> _impl;
