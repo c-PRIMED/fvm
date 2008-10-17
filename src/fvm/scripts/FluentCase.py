@@ -286,6 +286,12 @@ class FluentCase(importers.FluentReader):
                     bc.setVar('specifiedZVelocity',fluentZone.getConstantVar('w'))
                 else:
                     raise TypeError('flow BCType %d not handled' % motionBCType)
+            elif fluentZone.zoneType == 'pressure-outlet':
+                bc.bcType = 'PressureBoundary'
+                bc.setVar('specifiedPressure',fluentZone.getConstantVar('p'))
+            elif fluentZone.zoneType == 'pressure-inlet':
+                bc.bcType = 'PressureBoundary'
+                bc.setVar('specifiedPressure',fluentZone.getConstantVar('p0'))
             elif fluentZone.zoneType == 'symmetry':
                 bc.bcType = 'Symmetry'
             else:
