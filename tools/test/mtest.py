@@ -35,13 +35,19 @@ def main():
                       action="store", dest="golden", help="Golden filename")
     parser.add_option("--datafile",
                       action="store", dest="datafile", help="Data filename")
+    parser.add_option("--compare",
+                      action="store", dest="compare", help="Comparison executable. Default is \"diff\".")
     (options, args) = parser.parse_args()
 
     if options.golden and options.expect:
         print "Cannot have both --golden and --expect."
         usage()
 
-    diff = 'diff'
+    if options.compare:
+        diff = options.compare
+    else:
+        diff = 'diff'
+
     delete_datafile = 0
     datafile = options.datafile
     if not datafile:
@@ -53,6 +59,7 @@ def main():
     if options.golden:
         # run the test executable and send stdout and stderr to the data file.
         cmd = ' '.join(args) + " >" + datafile + " 2>&1"
+        print "cmd=",cmd
         if os.system("/bin/bash -c '%s'" % cmd):
             cleanup(-1, datafile, delete_datafile)
         count = 0

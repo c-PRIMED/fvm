@@ -21,7 +21,7 @@ Options:
 Configuration names are stored in the "config" subdirectory.
 """
 
-import sys
+import sys, cdash, time
 from optparse import OptionParser
 from build_packages import *
 import build_utils, config, testing
@@ -57,6 +57,9 @@ def main():
                       action="store_true", dest="nocolor", help="Disable color output.")
     parser.add_option("--outoftree",
                       action="store_true", dest="outoftree", help="Do not build in source tree.")
+    parser.add_option("--nightly",
+                      action="store_true", dest="nightly", help="Do nightly build and test.")
+
     (options, args) = parser.parse_args()
     build_utils.verbose = options.verbose
 
@@ -77,12 +80,16 @@ def main():
     fix_path('PATH', BuildPkg.bindir, 1, 0)
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
     build_utils.run_commands('before',0)
+    bs = be = ts = te = 0
 
     if options.clean:
         BuildPkg.setup(cname, srcpath, options.outoftree)
         for p in BuildPkg.packages:
             p.clean()
-    
+
+    if options.nightly:
+        options.all = True
+
     if options.all:
         options.rebuild = options.test = options.submit = True
 
@@ -96,6 +103,8 @@ def main():
         options.build = True
 
     if options.build:
+        bs = time.time()
+        open(BuildPkg.logdir+'/StartBuildTime','w').write(str(bs))
         for p in BuildPkg.packages:
             if config.config(p.name,'skip'):
                 build_utils.debug ("Skipping " + p.name)
@@ -103,12 +112,18 @@ def main():
             p.configure()
             p.build()
             p.install()
+        be = time.time()
+        open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
 
     if options.test:
+        ts = time.time()
+        open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
         testing.run_all_tests(BuildPkg)
+        te = time.time()
+        open(BuildPkg.logdir+'/EndTestTime','w').write(str(te))
 
     if options.submit:
-        print "Submit not implemented yet."
+        cdash.submit(BuildPkg, cname, sys.argv, options.nightly)
 
     build_utils.run_commands('after',0)
 
