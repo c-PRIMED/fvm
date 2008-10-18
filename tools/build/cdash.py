@@ -201,7 +201,8 @@ def site_str(BuildName, buildtype):
     (OSName, Name, OSRelease, OSVersion, OSPlatform) = os.uname()
     Hostname = socket.gethostname()
     Generator = "make.py"
-    Is64Bits = 0 if OSPlatform == 'i686' else 1
+    Is64Bits = 0
+    if OSPlatform == 'i686': Is64Bits = 1
     NumberOfPhysicalCPU = 0
 
     for line in open('/proc/cpuinfo', 'r'):
