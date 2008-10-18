@@ -78,6 +78,7 @@ def main():
     
     BuildPkg.setup(cname, srcpath, options.outoftree)
     fix_path('PATH', BuildPkg.bindir, 1, 0)
+    fix_path('PYTHONPATH', BuildPkg.libdir, 1, 0)
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
     build_utils.run_commands('before',0)
     bs = be = ts = te = 0
@@ -130,9 +131,11 @@ def main():
     if options.build:
         print "\nDONE\nYou need to do something like the following to use the build."
         print "export LD_LIBRARY_PATH="+BuildPkg.libdir
-        print "export PATH=$PATH:"+BuildPkg.bindir
+        print "export PYTHONPATH="+BuildPkg.libdir
+        print "export PATH=%s+$PATH" % BuildPkg.bindir
 
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
+    fix_path('PYTHONPATH', BuildPkg.libdir, 1, 1)
     fix_path('PATH', BuildPkg.bindir, 1, 1)
 
         

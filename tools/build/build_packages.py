@@ -318,7 +318,7 @@ class Fvm(BuildPkg):
         pdir = os.path.join(self.sdir, "build", self.getArch(), vers, "debug", "bin")
         os.chdir(pdir)
         self.sys_log("install testLinearSolver %s" % self.bindir)
-        return self.sys_log("install *.so %s" % self.libdir)
+        return self.sys_log("install *.so *.py %s" % self.libdir)
 
 
 # self.__class__.__name__
