@@ -34,16 +34,18 @@ class BuildPkg:
         BuildPkg.outoftree = outoftree
         create_build_dir()
         
-        BuildPkg.packages = [Gsl("pkgs/gsl", "build"),
-                Fltk("pkgs/fltk"),
-                Gmsh("pkgs/gmsh"),
-                Rlog("pkgs/rlog"),
-                Boost("pkgs/boost", "None"),
-                Swig("pkgs/swig", "build"),
-                Lammps("src/lammps"),
-                Fvm("src/fvm","build"),
-                ]
-
+        BuildPkg.packages = [
+            Python("pkgs/python", "build"),
+            Gsl("pkgs/gsl", "build"),            
+            Fltk("pkgs/fltk"),
+            Gmsh("pkgs/gmsh"),
+            Rlog("pkgs/rlog"),
+            Boost("pkgs/boost", "None"),
+            Swig("pkgs/swig", "build"),
+            Lammps("src/lammps"),
+            Fvm("src/fvm","build"),
+            ]
+        
     setup = staticmethod(setup)
 
     def __init__(self, sdir, bdir=""):
@@ -217,7 +219,18 @@ class Fltk(BuildPkg):
         return self.sys_log("make install")
     def _clean(self):
         return self.sys_log("make clean")
-        
+    
+class Python(BuildPkg):
+    name = "python"
+    def _configure(self):
+        return self.sys_log("%s/configure --prefix=%s --enable-shared" % (self.sdir, self.blddir))
+    def _build(self):
+        return self.sys_log("make -j4")
+    def _install(self):
+        return self.sys_log("make install")
+    def _clean(self):
+        return self.sys_log("make clean")
+
 # The GNU Scientific Library (GSL) is a collection of routines for
 # numerical analysis, written in C. 
 # http://www.gnu.org/software/gsl/
