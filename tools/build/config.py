@@ -6,14 +6,15 @@ import os
 
 
 # defaults
-_config = {
-    'fltk': {
-        'configure': '--enable-xft',
-        },
-    'gmsh': {
-        'configure': '--with-fltk-prefix=BUILDDIR',
+
+_config_pkgs = {}
+
+_config_srcs = {
+    'fvm': {
+        'Build': '1',
         },
     'lammps': {
+        'Build': '1',
         'build': 'openmpi',
         },
 }
@@ -60,24 +61,36 @@ def set_value(val):
                 _config[section] = {val[0]:val[1]}
     return True
 
-def read(srcpath, filename):
-    if filename == '': return True
+def read(srcpath, filename, all):
+    global _config
+    if filename == '': return False
     filename = os.path.join(srcpath, "config", filename)
     lnum = 0
-    f = open(filename, 'r')
-    while True:
-        line = f.readline()
-        lnum = lnum + 1
-        if not line:
-            break
-        line = line.rstrip()
-        if line == '' or line[0] in '#;':
-            continue
-        if line[-1] == ':' and set_section(line[:-1]):
-            continue
-        if line[0].isspace() and set_value(line.lstrip()):
-            continue
-        print "Cannot parse line %s in %s: %s" % (lnum, filename, line)
-        return False
+
+    if filename.endswith('-pkgs'):
+        _config = _config_pkgs
+    else:
+        _config = _config_srcs
+
+    filenames = [filename]
+    if all:
+        filenames.append(filename+'-pkgs')
+
+    for fn in filenames:
+        f = open(fn, 'r')
+        while True:
+            line = f.readline()
+            lnum = lnum + 1
+            if not line:
+                break
+            line = line.rstrip()
+            if line == '' or line[0] in '#;':
+                continue
+            if line[-1] == ':' and set_section(line[:-1]):
+                continue
+            if line[0].isspace() and set_value(line.lstrip()):
+                continue
+            print "Cannot parse line %s in %s: %s" % (lnum, fn, line)
+            return False
     return  True
         

@@ -25,7 +25,7 @@ def create_build_dir():
 # abstract superclass
 class BuildPkg:
 
-    def setup(cname, srcpath, outoftree):
+    def setup(cname, srcpath, outoftree=True):
         BuildPkg.topdir = srcpath
         BuildPkg.blddir = os.path.join(os.getcwd(), "build-%s" % cname)
         BuildPkg.logdir = os.path.join(BuildPkg.blddir, "log")
@@ -198,7 +198,8 @@ class Lammps(BuildPkg):
 class Gmsh(BuildPkg):
     name = "gmsh"
     def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s --with-gsl-prefix=%s" % (self.sdir, self.blddir, self.blddir))
+        return self.sys_log("%s/configure --prefix=%s --with-fltk-prefix= %s --with-gsl-prefix=%s" \
+                                % (self.sdir, self.blddir, self.blddir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -212,7 +213,7 @@ class Gmsh(BuildPkg):
 class Fltk(BuildPkg):
     name = "fltk"
     def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
+        return self.sys_log("%s/configure --enable-xft --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -331,8 +332,13 @@ class Fvm(BuildPkg):
         pdir = os.path.join(self.sdir, "build", self.getArch(), vers, "debug", "bin")
         os.chdir(pdir)
         self.sys_log("install testLinearSolver %s" % self.bindir)
-        return self.sys_log("install *.so *.py %s" % self.libdir)
-
+        self.sys_log("install *.so *.py %s" % self.libdir)
+        
+        # install scripts?
+        #pdir = os.path.join(self.sdir, "scripts")
+        #os.chdir(pdir)   
+        #self.sys_log("install *.py %s" % self.bindir)     
+        return 0
 
 # self.__class__.__name__
 
