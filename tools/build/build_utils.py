@@ -1,7 +1,7 @@
 """
 build utility functions.
 """
-import sys, os
+import sys, os, shutil
 from config import config
 
 colors = {
@@ -198,9 +198,11 @@ def run_commands(section, pkg):
                     print "failed."
                     sys.exit(-1)
 
-def copytree(src, dst):
+def copytree(src, dst, ctype):
     names = os.listdir(src)
     os.makedirs(dst)
+    if ctype == 0:
+        return
     errors = []
     for name in names:
         srcname = os.path.join(src, name)
@@ -210,7 +212,9 @@ def copytree(src, dst):
                 linkto = os.readlink(srcname)
                 os.symlink(linkto, dstname)
             elif os.path.isdir(srcname):
-                copytree(srcname, dstname)
+                copytree(srcname, dstname, ctype)
+            elif ctype == 2:
+                shutil.copy2(srcname, dstname)
             else:
                 os.symlink(srcname, dstname)
         except (IOError, os.error), why:

@@ -25,49 +25,32 @@ def create_build_dir():
 # abstract superclass
 class BuildPkg:
 
-    def setup(cname, srcpath, outoftree=True):
+    def setup(cname, srcpath):
         BuildPkg.topdir = srcpath
         BuildPkg.blddir = os.path.join(os.getcwd(), "build-%s" % cname)
         BuildPkg.logdir = os.path.join(BuildPkg.blddir, "log")
         BuildPkg.bindir = os.path.join(BuildPkg.blddir, "bin")
         BuildPkg.libdir = os.path.join(BuildPkg.blddir, "lib")
-        BuildPkg.outoftree = outoftree
         create_build_dir()
         
         BuildPkg.packages = [
-            Python("pkgs/python", "build"),
-            Gsl("pkgs/gsl", "build"),            
-            Fltk("pkgs/fltk"),
-            Gmsh("pkgs/gmsh"),
-            Rlog("pkgs/rlog"),
-            Boost("pkgs/boost", "None"),
-            Swig("pkgs/swig", "build"),
-            Lammps("src/lammps"),
-            Fvm("src/fvm","build"),
+            Python("pkgs/python", 0),
+            Gsl("pkgs/gsl", 0),            
+            Fltk("pkgs/fltk", 1),
+            Gmsh("pkgs/gmsh", 1),
+            Rlog("pkgs/rlog", 2),
+            Boost("pkgs/boost", 0),
+            Swig("pkgs/swig", 0),
+            Lammps("src/lammps", 1),
+            Fvm("src/fvm", 0),
             ]
         
     setup = staticmethod(setup)
 
-    def __init__(self, sdir, bdir=""):
+    def __init__(self, sdir, copytype):
         self.sdir = os.path.join(self.topdir, sdir)
-        self.copy_sources = False
-        if bdir == "None":
-            self.bdir = self.sdir
-            return
-        if BuildPkg.outoftree:
-            self.bdir = os.path.join(self.blddir, "build", self.name)
-            if bdir == "":
-                self.copy_sources = True
-        elif bdir != "":
-            self.bdir = os.path.join(self.sdir, bdir)
-        else:
-            self.bdir = self.sdir
-        if not self.copy_sources and not os.path.isdir(self.bdir): 
-            try: 
-                os.makedirs(self.bdir)
-            except:
-                fatal("error creating directory " + self.bdir)
-
+        self.copy_sources = copytype
+        self.bdir = os.path.join(self.blddir, "build", self.name)
 
     def pstatus(self, state, option=''):
         "update build status"
@@ -87,11 +70,10 @@ class BuildPkg:
         self.logfile = os.path.join(self.logdir, self.name+"-conf.log")
         remove_file(self.logfile)
         pmess("CONF",self.name,self.bdir)
-        if self.copy_sources:
-            # remove and old sources
-            os.system("/bin/rm -rf %s" % self.bdir)            
-            # get new sources
-            copytree(self.sdir, self.bdir)
+        # remove any old sources
+        os.system("/bin/rm -rf %s" % self.bdir)            
+        # get new sources
+        copytree(self.sdir, self.bdir, self.copy_sources)
         os.chdir(self.bdir)
         run_commands('before',self.name)
         self.pstatus(self._configure())
