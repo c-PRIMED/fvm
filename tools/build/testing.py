@@ -85,7 +85,7 @@ def run_all_tests(bp):
 
     # test each package
     for p in bp.packages:
-        if config(p.name,'skip'):
+        if not config(p.name,'Build'):
             debug ("Skipping " + p.name)
             continue
         tok, terrs =  p.test()

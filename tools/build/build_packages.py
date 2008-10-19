@@ -38,7 +38,7 @@ class BuildPkg:
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
-            Rlog("pkgs/rlog", 2),
+            Rlog("pkgs/rlog", 1),
             Boost("pkgs/boost", 0),
             Swig("pkgs/swig", 0),
             Lammps("src/lammps", 1),
@@ -256,7 +256,7 @@ class Gsl(BuildPkg):
 class Rlog(BuildPkg):
     name = "rlog"
     def _configure(self):
-        return self.sys_log("%s/configure --disable-docs --disable-valgrind  --prefix=%s" % (self.sdir, self.blddir))
+        return self.sys_log("%s/configure --disable-docs --disable-valgrind --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
