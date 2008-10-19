@@ -1,0 +1,15 @@
+# config file for steele builds
+
+before:
+	module_load mpich2-gcc
+after:
+	module_unload mpich2-gcc
+
+python:
+	Build=True
+rlog:
+	Build=True
+boost:
+	Build=True
+swig:
+	Build=True

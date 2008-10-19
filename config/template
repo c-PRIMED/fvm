@@ -1,0 +1,43 @@
+# sample config file
+# pkgname:
+#	var=value
+#	skip
+# where var is one of
+# configure - args for configure command
+# build - args for build (usually 'make') command 
+# clean - args for clean command
+# install - args for install command
+# skip - no args. Skip building this package
+#
+# If pkgname is 'before' or 'after',
+# the parser expects a list of commands to execute before
+# and after the build process. Commands must not modify
+# the environment, except for builtins "module_load" and "env".
+# Each line should start with whitespace so there is no confusion
+# with package names.
+
+before:
+#	echo "Here we go!"
+#	env CC=icc
+#	env CC
+#	module_load modules
+
+after:
+#	module_unload modules
+#	echo "Done!!"
+
+# Use my local gsl
+gsl:
+#	skip
+
+# I have fltk too
+fltk:
+#	skip
+#	before=module_load dot
+#	after=echo 'FLTK!'
+#	after=module_unload dot
+
+lammps:
+	build=openmpi
+   
+
