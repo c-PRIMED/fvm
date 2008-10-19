@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 sys.setdlopenflags(0x100|0x2)
 
@@ -11,11 +13,19 @@ import exporters_atyped_double as exporters
 
 from FluentCase import FluentCase
 
+def usage():
+    print "Usage: %s filebase" % sys.argv[0]
+    print "Where filebase.cas is a Fluent case file."
+    print "Output will be in filebase.mat and filebase.rhs"
+    sys.exit(1)
+
 # change as needed
-fileBase = "/home/sm/a/data/wj"
 
+if len(sys.argv) != 2:
+    usage()
+
+fileBase = sys.argv[1]
 reader = FluentCase(fileBase+".cas")
-
 reader.read();
 
 
