@@ -13,15 +13,17 @@ def compare_lines (gline, line):
         return 1
 
     for (val1,val2) in zip(gline,line):
-        print "val1=%s, val2=%s" % (val1, val2)
         if val1 == val2: continue
         try:
             val1 = float(val1)
             val2 = float(val2)
             if val1 == 0.0: return 1
             err = abs(val1 - val2) / val1
-            if err < 1.0e-6: continue
-            return 1
+            if err < 1.0e-4:
+                pass
+            else:
+                print "val1=%s, val2=%s Err=%s" % (val1, val2, err)                
+                return 1
         except:
             return 1
     return 0
@@ -37,7 +39,11 @@ def nextline(f):
         line = line.strip()
         if line == '' or line[0] == '#':
             continue
-        if line.find("time") < 0:
+        elif line.find("time") >= 0:
+            continue
+        elif line.find("(sec)") >= 0:
+            continue
+        else:
             break
     return line
 
@@ -74,6 +80,7 @@ except:
     print "Failed to open output file %s", datafile
     sys.exit(-1)
 
+errs = 0
 while True:
     line = nextline(f)
     gline = nextline(gf)
@@ -81,11 +88,12 @@ while True:
         err = compare_lines(gline, line)
         if err:
             print "ERROR: Got\n%s\nExpected\n%s\n" % (line, gline)
+            errs += 1
     if line == '' or gline == '':
         break
 
-if err:
+if errs:
     print "FAILED"
 else:
     print "OK"
-sys.exit(err)
+sys.exit(errs)
