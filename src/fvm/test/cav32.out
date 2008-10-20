@@ -1,0 +1,14 @@
+reading mesh
+volume sum for Mesh 2 = 1
+0: [flow.velocity : [ 6.400000e+01 0.000000e+00 0.000000e+00 ]];[flow.pressure : 2.962897e-02]
+1: [flow.velocity : [ 4.734109e+01 1.330296e+01 0.000000e+00 ]];[flow.pressure : 4.932153e-02]
+2: [flow.velocity : [ 3.171268e+01 1.320584e+01 0.000000e+00 ]];[flow.pressure : 3.644175e-02]
+3: [flow.velocity : [ 2.255516e+01 1.173251e+01 0.000000e+00 ]];[flow.pressure : 2.559294e-02]
+4: [flow.velocity : [ 1.718148e+01 1.032460e+01 0.000000e+00 ]];[flow.pressure : 1.961912e-02]
+5: [flow.velocity : [ 1.359682e+01 8.895288e+00 0.000000e+00 ]];[flow.pressure : 1.458371e-02]
+6: [flow.velocity : [ 1.134724e+01 7.626706e+00 0.000000e+00 ]];[flow.pressure : 1.069235e-02]
+7: [flow.velocity : [ 9.528299e+00 6.569356e+00 0.000000e+00 ]];[flow.pressure : 7.714216e-03]
+8: [flow.velocity : [ 8.306582e+00 5.674372e+00 0.000000e+00 ]];[flow.pressure : 5.527031e-03]
+9: [flow.velocity : [ 7.256631e+00 4.982468e+00 0.000000e+00 ]];[flow.pressure : 3.844363e-03]
+solution time = 0.247061
+>>>                                                                           
