@@ -181,12 +181,13 @@ def run_commands(section, pkg):
     if c:
         for cmd in c:
             cargs = cmd.split(' ')
-            if cargs[0] == "module_load":
-                for m in cargs[1:]:
-                    module_load(m)
-            elif cargs[0] == "module_unload":
-                for m in cargs[1:]:
-                    module_load(m, 1)
+            if cargs[0] == "module":
+                if cargs[1] == "load":
+                    for m in cargs[2:]:
+                        module_load(m)
+                elif cargs[1] == "unload":
+                    for m in cargs[2:]:
+                        module_load(m, 1)
             elif cargs[0] == 'env':
                 do_env(''.join(cargs[1:]))
             else:

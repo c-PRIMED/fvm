@@ -20,7 +20,7 @@ Options:
 Configuration names are stored in the "config" subdirectory.
 """
 
-import sys, cdash, time
+import sys, cdash, time, pbs
 from optparse import OptionParser
 from build_packages import *
 import build_utils, config, testing
@@ -96,7 +96,7 @@ def main():
         be = time.time()
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
 
-    if options.test:
+    if options.test and not pbs.start(BuildPkg, cname):
         ts = time.time()
         open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
         testing.run_all_tests(BuildPkg)
@@ -109,10 +109,16 @@ def main():
     build_utils.run_commands('after',0)
 
     if options.build:
-        print "\nDONE\nYou need to do something like the following to use the build."
+        f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
+        print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir
+        print >>f, "export PYTHONPATH="+BuildPkg.libdir
+        print >>f, "export PATH=%s:$PATH" % BuildPkg.bindir
+        f.close
+        print "\nDONE\nYou need to do the following to use the build."
         print "export LD_LIBRARY_PATH="+BuildPkg.libdir
         print "export PYTHONPATH="+BuildPkg.libdir
         print "export PATH=%s:$PATH" % BuildPkg.bindir
+        print "OR source env.sh"
 
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
     fix_path('PYTHONPATH', BuildPkg.libdir, 1, 1)

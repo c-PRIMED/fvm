@@ -10,6 +10,11 @@ import os
 _config_pkgs = {}
 
 _config_srcs = {
+    'Testing': {
+        'queue': 'standby',
+        'cpus' : '8',
+        'nodes': '1',
+        },
     'fvm': {
         'Build': '1',
         },
