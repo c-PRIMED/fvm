@@ -1,9 +1,9 @@
 # config file for steele builds
 
 before:
-	module_load mpich2-gcc
+	module load mpich2-gcc
 after:
-	module_unload mpich2-gcc
+	module unload mpich2-gcc
 
 python:
 	Build=True
