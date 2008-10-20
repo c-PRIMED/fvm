@@ -299,7 +299,7 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
   for(int c=0; c<cells.getSelfCount(); c++)
     volumeSum += cellVolume[c];
 
-  cout << "volume sum for Mesh " << &mesh << " = " << volumeSum << endl;
+  cout << "volume sum for Mesh " << mesh.getID() << " = " << volumeSum << endl;
 
 
   // update boundary cells with adjacent interior cells values
@@ -384,6 +384,7 @@ MeshMetricsCalculator<T>::setTangentCoords(int meshID, int faceGroupID,
               {
                   VectorT3& xn = nodeCoords[faceNodes(f,nf)];
                   xn[dim]._dv=1.0;
+                  //xn[dim]._v=1e-7;
               }
           }
           found = true;
