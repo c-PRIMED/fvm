@@ -3,8 +3,8 @@
 AMG::AMG() :
   nMaxCycles(100),
   maxCoarseLevels(20),
-  nPreSweeps(1),
-  nPostSweeps(0),
+  nPreSweeps(0),
+  nPostSweeps(1),
   coarseGroupSize(2),
   weightRatioThreshold(0.65),
   cycleType(V_CYCLE),
