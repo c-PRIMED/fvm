@@ -70,10 +70,10 @@ def main():
         cname = cname[0:where]
         
     BuildPkg.setup(cname, srcpath)
+    build_utils.run_commands('before',0)
     fix_path('PATH', BuildPkg.bindir, 1, 0)
     fix_path('PYTHONPATH', BuildPkg.libdir, 1, 0)
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
-    build_utils.run_commands('before',0)
     bs = be = ts = te = 0
 
     if options.nightly:
