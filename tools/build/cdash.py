@@ -358,9 +358,13 @@ def submit(bp, cname, cmd, nightly):
     be = float(open(bp.logdir+'/EndBuildTime').read())
     bs = build_str(bp, bs, be, cmd)
 
-    ts = float(open(bp.logdir+'/StartTestTime').read())
-    te = float(open(bp.logdir+'/EndTestTime').read())
-    ts = test_str(bp, ts, te)
+    tests = True
+    try:
+       ts = float(open(bp.logdir+'/StartTestTime').read())
+       te = float(open(bp.logdir+'/EndTestTime').read())
+       ts = test_str(bp, ts, te)
+    except:
+       tests = False
 
     fname = os.path.join(bp.logdir, "Build.xml")
     f = open(fname, 'w')
@@ -371,12 +375,12 @@ def submit(bp, cname, cmd, nightly):
     if ret[0] != 200:
        build_utils.warning("http put returned %s" % ret[0])
 
-    fname = os.path.join(bp.logdir, "Test.xml")
-    f = open(fname, 'w')
-    f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    f.write("<Site %s\n>\n<Testing>\n%s\n</Testing>\n</Site>" % (ss, ts))
-    f.close()
-
-    ret = putname(fname, "http://dash.prism.nanohub.org/cdash/submit.php?project=MEMOSA")
-    if ret[0] != 200:
-       build_utils.warning("http put returned %s" % ret[0])
+    if tests:
+       fname = os.path.join(bp.logdir, "Test.xml")
+       f = open(fname, 'w')
+       f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+       f.write("<Site %s\n>\n<Testing>\n%s\n</Testing>\n</Site>" % (ss, ts))
+       f.close()
+       ret = putname(fname, "http://dash.prism.nanohub.org/cdash/submit.php?project=MEMOSA")
+       if ret[0] != 200:
+          build_utils.warning("http put returned %s" % ret[0])
