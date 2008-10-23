@@ -83,23 +83,35 @@ def main():
     if not options.build and not options.test and not options.submit:
         options.build = True
 
+    failed = 0
+
     if options.build:
+        # first, remove all test results.  They are now invalid
+        os.system("/bin/rm -f %s/*.xml" % BuildPkg.logdir)
+
         bs = time.time()
         open(BuildPkg.logdir+'/StartBuildTime','w').write(str(bs))
         for p in BuildPkg.packages:
             if not config.config(p.name,'Build'):
                 build_utils.debug ("Skipping " + p.name)
                 continue
-            p.configure()
-            p.build()
-            p.install()
+            try:
+                p.configure()
+                p.build()
+                p.install()
+            except:
+                failed = 1
+                break
         be = time.time()
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
 
-    if options.test and not pbs.start(BuildPkg, cname):
+    if not failed and options.test and not pbs.start(BuildPkg, cname):
         ts = time.time()
         open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
-        testing.run_all_tests(BuildPkg)
+        try:
+            testing.run_all_tests(BuildPkg)
+        except:
+            pass
         te = time.time()
         open(BuildPkg.logdir+'/EndTestTime','w').write(str(te))
 
@@ -108,7 +120,7 @@ def main():
 
     build_utils.run_commands('after',0)
 
-    if options.build:
+    if options.build and not failed:
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
         print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir
         print >>f, "export PYTHONPATH="+BuildPkg.libdir

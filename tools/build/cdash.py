@@ -2,7 +2,7 @@
 Functions to submit build and test information to CDash
 """
 
-import cgi, time, datetime, os, socket
+import cgi, time, datetime, os, socket, config
 import sys, httplib, urlparse, build_utils
 
 def barf(msg):
@@ -57,7 +57,7 @@ def putfile(f, uri, username=None, password=None):
          h.putheader('Authorization', authorization)
       h.endheaders()
 
-# Chunked transfer encoding
+      # Chunked transfer encoding
       # Cf. 'All HTTP/1.1 applications MUST be able to receive and
       # decode the "chunked" transfer-coding'
       # - http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html
@@ -229,7 +229,59 @@ def site_str(BuildName, buildtype):
         ss += "\t%s=\"%s\"\n" % (v, eval(v))
     return ss
 
-def build_str(bstart, bstop, BuildCommand):
+
+def parse_line(line):
+   lparen = line.find('(')
+   if lparen > 0:
+      # Intel format
+      rparen = line.find(')')
+      file = line[0:lparen]
+      lnum = line[lparen+1:rparen]
+   else:
+      # GNU format
+      lcolon = line.find(':')
+      rcolon = line.find(':',lcolon+1)
+      file = line[0:lcolon]
+      lnum = line[lcolon+1:rcolon]
+   return file, lnum
+
+def parse_builds(bp, fname):
+   global numwarn
+   ostr = ''
+   try:
+      for line in open(fname):
+         error = warning = 0
+         where = line.find('error:')
+         if where > 0:
+            error = 1
+         #elif config.config(bp.name,'Build'):
+         else:
+            where = line.find('warning:')
+            # things to ignore
+            if line.find('openmpi'): where = 0
+            if where > 0:
+               warning = 1
+
+         if error or warning:
+            if error:
+               ostr += "<Error>\n"
+            else:
+               ostr += "<Warning>\n"
+            ostr += "\t<Text>%s</Text>\n" % cgi.escape(line)
+            file, lnum = parse_line(line[0:where])
+            # fixme. could fix up path here if file is not absolute
+            ostr += "\t<SourceFile>%s</SourceFile>\n" % file
+            ostr += "\t<SourceLineNumber>%s</SourceLineNumber>\n" % lnum
+            ostr += "<PreContext></PreContext><PostContext></PostContext><RepeatCount>0</RepeatCount><BuildLogLine>0</BuildLogLine>\n"
+            if error:
+               ostr += "</Error>\n"
+            else:
+               ostr += "</Warning>\n"
+   except:
+      pass
+   return ostr
+
+def build_str(bp, bstart, bstop, BuildCommand):
     StartDateTime = time.strftime("%b %d %H:%M %Z", time.localtime(bstart))
     StartBuildTime = bstart
     EndDateTime = time.strftime("%b %d %H:%M %Z", time.localtime(bstop))
@@ -238,7 +290,11 @@ def build_str(bstart, bstop, BuildCommand):
     bs = ""
     for v in ("StartDateTime", "StartBuildTime", "BuildCommand"):
         bs += "\t<%s>%s</%s>\n" % (v, eval(v), v)
-        # warnings and errors go here
+
+    # warnings and errors go here
+    for p in bp.packages:
+        bs += parse_builds(p, os.path.join(bp.logdir, "%s-build.log" % p.name))
+    bs += "\t<Log Encoding=\"base64\" Compression=\"/bin/gzip\"></Log>\n"
 
     for v in ("EndDateTime", "EndBuildTime"):
         bs += "\t<%s>%s</%s>\n" % (v, eval(v), v)
@@ -261,7 +317,8 @@ def test_str(bp, tstart, tstop):
     testlist = []
     for p in bp.packages:
         testlist += parse_tests(os.path.join(bp.logdir, "%s-test.xml" % p.name))
-    testlist += parse_tests(os.path.join(bp.logdir, "MEMOSA-test.xml"))
+    if os.path.isfile(os.path.join(bp.logdir, "MEMOSA-test.xml")):
+       testlist += parse_tests(os.path.join(bp.logdir, "MEMOSA-test.xml"))
 
     StartDateTime = time.strftime("%b %d %H:%M %Z", time.localtime(tstart))
     StartTestTime = tstart
@@ -278,8 +335,10 @@ def test_str(bp, tstart, tstop):
         try:
             ts += open(os.path.join(bp.logdir, "%s-test.xml" % p.name)).read()
         except:
-           pass    
-    ts += open(os.path.join(bp.logdir, "MEMOSA-test.xml")).read()
+           pass
+
+    if os.path.isfile(os.path.join(bp.logdir, "MEMOSA-test.xml")):
+       ts += open(os.path.join(bp.logdir, "MEMOSA-test.xml")).read()
 
     EndDateTime = time.strftime("%b %d %H:%M %Z", time.localtime(tstop))
     EndTestTime = tstop
@@ -297,7 +356,7 @@ def submit(bp, cname, cmd, nightly):
 
     bs = float(open(bp.logdir+'/StartBuildTime').read())
     be = float(open(bp.logdir+'/EndBuildTime').read())
-    bs = build_str(bs, be, cmd)
+    bs = build_str(bp, bs, be, cmd)
 
     ts = float(open(bp.logdir+'/StartTestTime').read())
     te = float(open(bp.logdir+'/EndTestTime').read())
@@ -305,6 +364,7 @@ def submit(bp, cname, cmd, nightly):
 
     fname = os.path.join(bp.logdir, "Build.xml")
     f = open(fname, 'w')
+    f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     f.write("<Site %s\n>\n<Build>\n%s\n</Build>\n</Site>" % (ss, bs))
     f.close()
     ret = putname(fname, "http://dash.prism.nanohub.org/cdash/submit.php?project=MEMOSA")
@@ -313,8 +373,10 @@ def submit(bp, cname, cmd, nightly):
 
     fname = os.path.join(bp.logdir, "Test.xml")
     f = open(fname, 'w')
+    f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     f.write("<Site %s\n>\n<Testing>\n%s\n</Testing>\n</Site>" % (ss, ts))
     f.close()
+
     ret = putname(fname, "http://dash.prism.nanohub.org/cdash/submit.php?project=MEMOSA")
     if ret[0] != 200:
        build_utils.warning("http put returned %s" % ret[0])
