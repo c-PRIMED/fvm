@@ -4,6 +4,7 @@ Functions to submit build and test information to CDash
 
 import cgi, time, datetime, os, socket, config
 import sys, httplib, urlparse, build_utils
+from sets import Set
 
 def barf(msg):
    print >> sys.stderr, "Error! %s" % msg
@@ -34,9 +35,9 @@ def putfile(f, uri, username=None, password=None):
    """HTTP PUT the file f to uri, with optional auth data."""
    host, port, path = parseuri(uri)
 
-   redirect = set([301, 302, 307])
-   authenticate = set([401])
-   okay = set([200, 201, 204])
+   redirect = Set([301, 302, 307])
+   authenticate = Set([401])
+   okay = Set([200, 201, 204])
 
    authorized = False
    authorization = None
@@ -254,13 +255,12 @@ def parse_builds(bp, fname):
          where = line.find('error:')
          if where > 0:
             error = 1
-         #elif config.config(bp.name,'Build'):
-         else:
+         elif config.config(bp.name,'Build'):
             where = line.find('warning:')
-            # things to ignore
-            if line.find('openmpi'): where = 0
             if where > 0:
-               warning = 1
+               warning = 1               
+               # things to ignore
+               if line.find('openmpi') > 0: warning = 0
 
          if error or warning:
             if error:
