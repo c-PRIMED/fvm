@@ -29,6 +29,7 @@ def start(bp, cname):
 
 # write pbs batch file and submit it
 def qsub(bp, cname):
+    os.chdir(bp.topdir)
 
     # first remove any old results
     os.system('/bin/rm -f run_tests.pbs.*')
@@ -60,7 +61,13 @@ def qsub(bp, cname):
 
     state = ''
     while True:
-        time.sleep(15)
+        try:
+            time.sleep(15)
+        except KeyboardInterrupt:
+            print "\nInterrupted. Job will continue in the background."
+            print "It you want to cancel it, do \"qdel %s\"\n" % job
+            return
+
         st = os.popen("qstat %s &> /dev/null" % job)
         try:
             newstate = st.read().split('\n')[2].split()[4]
