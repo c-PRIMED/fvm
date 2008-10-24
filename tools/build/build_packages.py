@@ -41,6 +41,7 @@ class BuildPkg:
             Rlog("pkgs/rlog", 1),
             Boost("pkgs/boost", 0),
             Swig("pkgs/swig", 0),
+            Fftw("pkgs/fftw", 0),
             Lammps("src/lammps", 1),
             Fvm("src/fvm", 0),
             ]
@@ -266,6 +267,17 @@ class Rlog(BuildPkg):
 
 class Swig(BuildPkg):
     name = "swig"
+    def _configure(self):
+        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
+    def _build(self):
+        return self.sys_log("make -j4")
+    def _install(self):
+        return self.sys_log("make install")
+    def _clean(self):
+        return self.sys_log("make clean")
+
+class Fftw(BuildPkg):
+    name = "fftw"
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
