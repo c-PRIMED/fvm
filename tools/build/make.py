@@ -59,6 +59,9 @@ def main():
     if options.nocolor:
         build_utils.clear_colors()
 
+    if options.nightly:
+        options.build = options.test = options.submit = True
+
     cname = ''
     if len(args) == 1:
         cname = args[0]
@@ -74,10 +77,8 @@ def main():
     fix_path('PATH', BuildPkg.bindir, 1, 0)
     fix_path('PYTHONPATH', BuildPkg.libdir, 1, 0)
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
+    os.environ['MEMOSA_HOME'] = BuildPkg.blddir
     bs = be = ts = te = 0
-
-    if options.nightly:
-        options.build = options.test = options.submit = True
 
     # if no options, default to build
     if not options.build and not options.test and not options.submit:
