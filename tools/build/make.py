@@ -13,7 +13,7 @@ Options:
   --build        Build sources. This is the default.
   --test         Run tests.
   --submit       Submit test and build results.
-  --all          Build config and config-pkgs.
+  --all          Removes build directory then builds config and config-pkgs.
   -v, --verbose  Verbose output.
   --nocolor      Disable color output.
 
@@ -43,7 +43,7 @@ def main():
                       help="Submit test and build results.")
     parser.add_option("--all",
                       action="store_true", dest="all",
-                      help="same as --rebuild --test --submit")
+                      help="Removes build directory then builds config and config-pkgs.")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", help="verbose output")
     parser.add_option("--nocolor",
@@ -60,8 +60,11 @@ def main():
         build_utils.clear_colors()
 
     if options.nightly:
-        options.build = options.test = options.submit = True
+        options.all = options.test = options.submit = True
 
+    if options.all:
+        options.build = True
+        
     cname = ''
     if len(args) == 1:
         cname = args[0]
@@ -71,6 +74,9 @@ def main():
     if cname.endswith('-pkgs'):
         where = cname.find("-pkgs")
         cname = cname[0:where]
+
+    if options.all:
+        os.system("/bin/rm -rf %s" % os.path.join(os.getcwd(), "build-%s" % cname))
         
     BuildPkg.setup(cname, srcpath)
     build_utils.run_commands('before',0)
@@ -87,7 +93,7 @@ def main():
     failed = 0
 
     if options.build:
-        # first, remove all test results.  They are now invalid
+        # Remove all test results.  They are now invalid
         os.system("/bin/rm -f %s/*.xml" % BuildPkg.logdir)
 
         bs = time.time()
