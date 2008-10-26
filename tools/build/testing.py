@@ -77,6 +77,9 @@ def do_tests(pname, startdir, logfile):
 def run_all_tests(bp):
     errs = ok = 0
 
+    # run any before commands
+    run_commands('before', 'Testing')
+    
     # add some dirs to our path
     tooldir = os.path.join(bp.topdir, "tools", "test")
     fix_path('PATH', tooldir, 1, 0)
