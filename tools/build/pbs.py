@@ -43,7 +43,7 @@ def qsub(bp, cname):
     cpus = config.config('Testing', 'cpus')
     nodes = config.config('Testing', 'nodes')
     f.write('#PBS -l select=%s:ncpus=%s:mpiprocs=%s\n' % (nodes,cpus,cpus))
-    f.write('#PBS -l walltime=1:00:00\n')
+    f.write('#PBS -l walltime=%s\n' % config.config('Testing', 'walltime'))
 
     f.write('cd  $PBS_O_WORKDIR\n')
     f.write('source env.sh\n')
@@ -68,7 +68,7 @@ def qsub(bp, cname):
             print "It you want to cancel it, do \"qdel %s\"\n" % job
             return
 
-        st = os.popen("qstat %s &> /dev/null" % job)
+        st = os.popen("qstat %s 2> /dev/null" % job)
         try:
             newstate = st.read().split('\n')[2].split()[4]
             if newstate != state:

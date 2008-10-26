@@ -14,6 +14,7 @@ _config_srcs = {
         'queue': 'standby',
         'cpus' : '8',
         'nodes': '1',
+        'walltime': '1:00:00',
         },
     'fvm': {
         'Build': '1',
@@ -55,10 +56,13 @@ def set_value(val):
         if len(val) != 2:
             return False
         if val[0] == 'before' or val[0] == 'after':
-            try: 
-                _config[section][val[0]] += [val[1]]
-            except KeyError: 
-                _config[section] = {val[0]:[val[1]]}
+            try:
+                _config[section][val[0]].append(val[1])
+            except:
+                try: 
+                    _config[section][val[0]] = [val[1]]
+                except KeyError: 
+                    _config[section] = {val[0]:[val[1]]}
         else:
             try: 
                 _config[section][val[0]] = val[1]
