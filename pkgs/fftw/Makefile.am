@@ -1,4 +1,4 @@
-SUBDIRS = fftw rfftw tests threads mpi
+SUBDIRS = fftw rfftw tests doc threads mpi
 EXTRA_DIST = README.hacks bootstrap.sh COPYRIGHT acx_pthread.m4 acx_mpi.m4
 
 extradist = fortran gensrc matlab cilk FAQ
