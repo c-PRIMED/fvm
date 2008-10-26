@@ -68,10 +68,13 @@ except:
     print "Failed to open golden file %s" % args[4]
     sys.exit(-1)
 
-cmd = "mpirun %s %s -log %s < %s > /dev/null" % (args[2], args[1], datafile, args[3])
-ret = os.system(cmd)
-if ret:
-    print "ERROR: execution of mpirun failed: %s" % ret
+filename = os.popen("which %s" % args[1]).read().strip()
+cmd = "mpirun %s %s -log %s < %s > /dev/null" % (args[2], filename, datafile, args[3])
+exe = os.popen(cmd)
+retstr = exe.read()
+if exe.close():
+    print "ERROR: execution of mpirun cmd: \"%s\" failed.\n" % cmd
+    print retstr
     sys.exit(-1)
 
 try:
