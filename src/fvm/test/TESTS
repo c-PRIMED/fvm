@@ -1,3 +1,4 @@
 Fvm001 mtest.py testLinearSolver MatrixMarket226.dat rhs226.dat --golden testLinearSolver.out
+#Fvm001 mtest.py testLinearSolver MatrixMarket226.dat rhs226.dat --golden cav32-prism.dat.gold
 
 

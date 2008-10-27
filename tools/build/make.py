@@ -68,12 +68,18 @@ def main():
     cname = ''
     if len(args) == 1:
         cname = args[0]
-    if cname == '' or not config.read(srcpath, cname, options.all):
-        usage()
 
+    packages = options.all
     if cname.endswith('-pkgs'):
         where = cname.find("-pkgs")
         cname = cname[0:where]
+        packages = True
+        sources = False
+    else:
+        sources = True
+
+    if cname == '' or not config.read(srcpath, cname, sources, packages):
+        usage()
 
     if options.all:
         os.system("/bin/rm -rf %s" % os.path.join(os.getcwd(), "build-%s" % cname))
@@ -92,6 +98,7 @@ def main():
 
     failed = 0
 
+    # BUILDING
     if options.build:
         # Remove all test results.  They are now invalid
         os.system("/bin/rm -f %s/*.xml" % BuildPkg.logdir)
@@ -112,6 +119,11 @@ def main():
         be = time.time()
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
 
+    # reread config file because we don't test or report compile errors on packages, only memosa sources
+    if packages:
+        config.read(srcpath, cname, True, False)
+
+    # TESTING
     if not failed and options.test and not pbs.start(BuildPkg, cname):
         ts = time.time()
         open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
@@ -122,6 +134,7 @@ def main():
         te = time.time()
         open(BuildPkg.logdir+'/EndTestTime','w').write(str(te))
 
+    # SUBMIT
     if options.submit:
         cdash.submit(BuildPkg, cname, sys.argv, options.nightly)
 

@@ -246,6 +246,22 @@ def parse_line(line):
       lnum = line[lcolon+1:rcolon]
    return file, lnum
 
+# given a partial path, find it in the sources and return
+# the complete path relative to the toplevel sources directory.
+def find_file(bp, fpath):
+   where = len(bp.topdir)+1
+   if os.path.isabs(fpath):
+      return fpath
+   fpath = os.path.normpath(fpath)
+   for root, dirs, files in os.walk(bp.sdir):
+      for x in files:
+            f = os.path.join(root, x)
+            if f.endswith(fpath):
+               if f.startswith(bp.topdir):
+                  f = f[where:]
+               return f
+   return fpath
+
 def parse_builds(bp, fname):
    global numwarn
    ostr = ''
@@ -269,7 +285,7 @@ def parse_builds(bp, fname):
                ostr += "<Warning>\n"
             ostr += "\t<Text>%s</Text>\n" % cgi.escape(line)
             file, lnum = parse_line(line[0:where])
-            # fixme. could fix up path here if file is not absolute
+            file = find_file(bp, file)
             ostr += "\t<SourceFile>%s</SourceFile>\n" % file
             ostr += "\t<SourceLineNumber>%s</SourceLineNumber>\n" % lnum
             ostr += "<PreContext></PreContext><PostContext></PostContext><RepeatCount>0</RepeatCount><BuildLogLine>0</BuildLogLine>\n"

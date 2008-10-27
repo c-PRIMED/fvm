@@ -2,8 +2,6 @@
 build configuration utilities
 """
 import os
-#from ConfigParser import *
-
 
 # defaults
 
@@ -27,6 +25,7 @@ _config_srcs = {
 
 def config(x,y):
     try:
+        #print "GET %s %s -> %s" % (x, y, _config[x][y])
         return _config[x][y]
     except:
         return ''
@@ -41,6 +40,7 @@ def set_section(sec):
 
 def set_value(val):
     global section
+    #print "SET %s %s" %(section, val)
     if section == '':
         print "Error: No section set."
         return False
@@ -70,22 +70,24 @@ def set_value(val):
                 _config[section] = {val[0]:val[1]}
     return True
 
-def read(srcpath, filename, all):
+def read(srcpath, filename, sources, packages):
     global _config
+
     if filename == '': return False
-    filename = os.path.join(srcpath, "config", filename)
-    lnum = 0
-
-    if filename.endswith('-pkgs'):
-        _config = _config_pkgs
+    if sources:
+        _config = _config_srcs.copy()
     else:
-        _config = _config_srcs
+        _config = _config_pkgs.copy()
 
-    filenames = [filename]
-    if all:
+    filename = os.path.join(srcpath, "config", filename)
+    filenames = []
+    if sources:
+        filenames.append(filename)
+    if packages:
         filenames.append(filename+'-pkgs')
 
     for fn in filenames:
+        lnum = 0
         f = open(fn, 'r')
         while True:
             line = f.readline()
