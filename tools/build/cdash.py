@@ -252,7 +252,7 @@ def find_file(bp, fpath):
    where = len(bp.topdir)+1
    if os.path.isabs(fpath):
       return fpath
-   fpath = os.path.normpath(fpath)
+   fpath = os.path.normpath('/'+fpath)
    for root, dirs, files in os.walk(bp.sdir):
       for x in files:
             f = os.path.join(root, x)
