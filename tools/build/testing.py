@@ -85,6 +85,7 @@ def run_all_tests(bp):
     fix_path('PATH', tooldir, 1, 0)
     fix_path('PATH', bp.bindir, 1, 0)
     fix_path('LD_LIBRARY_PATH', bp.libdir, 1, 0)
+    fix_path('PYTHONPATH', bp.libdir, 1, 0)
 
     # test each package
     for p in bp.packages:
@@ -117,6 +118,7 @@ def run_all_tests(bp):
 
 
     # restore paths
+    fix_path('PYTHONPATH', bp.libdir, 1, 1)
     fix_path('LD_LIBRARY_PATH', bp.libdir, 1, 1)
     fix_path('PATH', bp.bindir, 1, 1)
     fix_path('PATH', tooldir, 1, 1)
