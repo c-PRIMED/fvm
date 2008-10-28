@@ -27,25 +27,27 @@ numIterations = 10
 #fileBase = "/home/sm/a/data/wj"
 
 def usage():
-    print "Usage: %s filebase" % sys.argv[0]
+    print "Usage: %s filebase [outfilename]" % sys.argv[0]
     print "Where filebase.cas is a Fluent case file."
-    print "Output will be in filebase-prism.dat"
+    print "Output will be in filebase-prism.dat if it is not specified."
     sys.exit(1)
 
-# change as needed
 
+outfile = None
 if __name__ == '__main__' and fileBase is None:
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         usage()
-
     fileBase = sys.argv[1]
+    if len(sys.argv) == 3:
+        outfile = sys.argv[2]
 
-
+if outfile == None:
+    outfile = fileBase+"-prism.dat"
+    
 reader = FluentCase(fileBase+".cas")
 
 #import debug
 reader.read();
-
 
 meshes = reader.getMeshList()
 
@@ -98,10 +100,10 @@ fmodel.init()
 fmodel.advance(numIterations)
 
 t1 = time.time()
+if outfile != '/dev/stdout':
+    print '\nsolution time = %f' % (t1-t0)
 
-print 'solution time = %f' % (t1-t0)
-
-writer = exporters.FluentDataExporterA(reader,fileBase+"-prism.dat",False,0)
+writer = exporters.FluentDataExporterA(reader,outfile,False,0)
 writer.init()
 writer.writeScalarField(flowFields.pressure,1)
 writer.writeVectorField(flowFields.velocity,111)
@@ -115,3 +117,5 @@ if (atype=='tangent'):
     writer.writeVectorField(flowFields.velocity,111)
     writer.writeScalarField(flowFields.massFlux,18)
     writer.finish()
+
+

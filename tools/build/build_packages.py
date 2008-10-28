@@ -328,10 +328,10 @@ class Fvm(BuildPkg):
         self.sys_log("install testLinearSolver %s" % self.bindir)
         self.sys_log("install *.so *.py %s" % self.libdir)
         
-        # install scripts?
-        #pdir = os.path.join(self.sdir, "scripts")
-        #os.chdir(pdir)   
-        #self.sys_log("install *.py %s" % self.bindir)     
+        # install scripts
+        pdir = os.path.join(self.sdir, "scripts")
+        os.chdir(pdir)   
+        self.sys_log("install *.py %s" % self.bindir)     
         return 0
 
 # self.__class__.__name__
