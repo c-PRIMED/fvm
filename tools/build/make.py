@@ -100,6 +100,10 @@ def main():
     if not options.build and not options.test and not options.submit:
         options.build = True
 
+    if options.build:
+        # Remove all test results.  They are now invalid
+        os.system("/bin/rm -f %s/*.xml" % BuildPkg.logdir)
+
     # UPDATE
     if options.update:
         update.update(BuildPkg, cname, options.nightly)
@@ -107,9 +111,6 @@ def main():
     # BUILDING
     build_failed = 0
     if options.build:
-        # Remove all test results.  They are now invalid
-        os.system("/bin/rm -f %s/*.xml" % BuildPkg.logdir)
-
         bs = time.time()
         open(BuildPkg.logdir+'/StartBuildTime','w').write(str(bs))
         for p in BuildPkg.packages:
