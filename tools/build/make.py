@@ -13,6 +13,7 @@ Options:
   --build        Build sources. This is the default.
   --test         Run tests.
   --submit       Submit test and build results.
+  --update       Update sources from the subversion repository.
   --all          Removes build directory then builds config and config-pkgs.
   -v, --verbose  Verbose output.
   --nocolor      Disable color output.
@@ -20,7 +21,7 @@ Options:
 Configuration names are stored in the "config" subdirectory.
 """
 
-import sys, cdash, time, pbs
+import sys, cdash, time, pbs, update
 from optparse import OptionParser
 from build_packages import *
 import build_utils, config, testing
@@ -38,6 +39,9 @@ def main():
     parser.add_option("--test",
                       action="store_true", dest="test",
                       help="Run tests.")
+    parser.add_option("--update",
+                      action="store_true", dest="update",
+                      help="Update sources from the subversion repository.")
     parser.add_option("--submit",
                       action="store_true", dest="submit",
                       help="Submit test and build results.")
@@ -60,7 +64,7 @@ def main():
         build_utils.clear_colors()
 
     if options.nightly:
-        options.all = options.test = options.submit = True
+        options.all = options.update = options.test = options.submit = True
 
     if options.all:
         options.build = True
@@ -96,9 +100,12 @@ def main():
     if not options.build and not options.test and not options.submit:
         options.build = True
 
-    failed = 0
+    # UPDATE
+    if options.update:
+        update.update(BuildPkg, cname, options.nightly)
 
     # BUILDING
+    build_failed = 0
     if options.build:
         # Remove all test results.  They are now invalid
         os.system("/bin/rm -f %s/*.xml" % BuildPkg.logdir)
@@ -114,7 +121,7 @@ def main():
                 p.build()
                 p.install()
             except:
-                failed = 1
+                build_failed = 1
                 break
         be = time.time()
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
@@ -124,7 +131,7 @@ def main():
         config.read(srcpath, cname, True, False)
 
     # TESTING
-    if not failed and options.test and not pbs.start(BuildPkg, cname):
+    if not build_failed and options.test and not pbs.start(BuildPkg, cname):
         ts = time.time()
         open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
         try:
@@ -140,7 +147,7 @@ def main():
 
     build_utils.run_commands('after',0)
 
-    if options.build and not failed:
+    if options.build and not build_failed:
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
         print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir
         print >>f, "export PYTHONPATH="+BuildPkg.libdir
