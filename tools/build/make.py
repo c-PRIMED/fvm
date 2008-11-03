@@ -126,7 +126,7 @@ def main():
         be = time.time()
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
 
-    # reread config file because we don't test or report compile errors on packages, only memosa sources
+    # Reread config file because we don't test or report compile errors on packages, only memosa sources
     if packages:
         config.read(srcpath, cname, True, False)
 
