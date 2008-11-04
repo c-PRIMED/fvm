@@ -23,28 +23,33 @@ def write_update(f, fname='', status=''):
    print "%s: %s" % (fname, status)
    f.write("<%s>\n\t<File Directory=\"%s\">%s</File>\n" % (status, dname, bname))
 
-   # Get more info on the file
-   for line in os.popen("svn info %s" % fname):
-      if line.startswith('Revision:'):
-         Revision = line.split(':')[1].strip()
-      elif line.startswith('Last Changed Author:'):
-         Author = line.split(':')[1].strip()
-      elif line.startswith('Last Changed Rev:'):
-         PriorRevision = line.split(':')[1].strip()
-      elif line.startswith('Last Changed Date:'):
-         CheckinDate = line[len('Last Chanegd Date:'):].strip()
-
-   if status == "Modified":
-      Log = "Locally modified file"
+   Author = CheckinDate = Revision = PriorRevision = 'unknown'
+   if status == 'Deleted':
+      Log = "Deleted file"
    else:
-      for line in os.popen("svn log --xml -r %s" % Revision):
-         start = line.find("<msg>")
-         if start >= 0:
-            start += len("<msg>")
-            stop = line.find("</msg>")
-            if stop >= 0:
-               Log = line[start:stop]
-               break
+      Log = ''
+      # Get more info on the file
+      for line in os.popen("svn info %s" % fname):
+         if line.startswith('Revision:'):
+            Revision = line.split(':')[1].strip()
+         elif line.startswith('Last Changed Author:'):
+            Author = line.split(':')[1].strip()
+         elif line.startswith('Last Changed Rev:'):
+            PriorRevision = line.split(':')[1].strip()
+         elif line.startswith('Last Changed Date:'):
+            CheckinDate = line[len('Last Chanegd Date:'):].strip()
+            
+      if status == "Modified":
+         Log = "Locally modified file"
+      else:
+         for line in os.popen("svn log --xml -r %s" % Revision):
+            start = line.find("<msg>")
+            if start >= 0:
+               start += len("<msg>")
+               stop = line.find("</msg>")
+               if stop >= 0:
+                  Log = line[start:stop]
+                  break
 
    Directory = dname
    FullName = fname
@@ -57,8 +62,10 @@ def svn_up(f):
 
    exe = os.popen("svn update")
    for line in exe:
-      if line[0] == 'U':
+      if line[0] == 'U' or (line[0] == 'A' and line[1] == ' '):
          write_update(f, line.split()[1], "Updated")
+      elif line[0] == 'D':
+         write_update(f, line.split()[1], "Deleted")
    ret = exe.close()
    if ret:
       debug("\"svn update\" Failed. Return code %s" % ret >> 8)
