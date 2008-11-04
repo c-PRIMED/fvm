@@ -114,7 +114,8 @@ def main():
         bs = time.time()
         open(BuildPkg.logdir+'/StartBuildTime','w').write(str(bs))
         for p in BuildPkg.packages:
-            if not config.config(p.name,'Build'):
+            x = config.config(p.name,'Build')
+            if x == '' or not eval(x):
                 build_utils.debug ("Skipping " + p.name)
                 continue
             try:
