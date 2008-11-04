@@ -97,7 +97,7 @@ def main():
     bs = be = ts = te = 0
 
     # if no options, default to build
-    if not options.build and not options.test and not options.submit:
+    if not options.build and not options.test and not options.submit and not options.update:
         options.build = True
 
     if options.build:

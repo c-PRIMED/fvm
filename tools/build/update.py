@@ -2,12 +2,77 @@
 Do subversion update and write out xml file.
 """
 
-import cgi, time, datetime, os, socket, config
-import sys, httplib, urlparse, build_utils
+import cgi, time, datetime, os, socket
+
+Dirname=None
+
+def write_update(f, fname='', status=''):
+   global Dirname
+   dname = os.path.dirname(fname)
+   bname = os.path.basename(fname)
+   if fname == '' and Dirname:
+      f.write("</Directory>\n")
+      return
+   if Dirname and Dirname != dname:
+      f.write("</Directory>\n")
+      Dirname = None
+   if not Dirname:
+      Dirname = dname
+      f.write("<Directory>\n\t<Name>%s</Name>\n" % cgi.escape(dname))
+        
+   print "%s: %s" % (fname, status)
+   f.write("<%s>\n\t<File Directory=\"%s\">%s</File>\n" % (status, dname, bname))
+
+   # Get more info on the file
+   for line in os.popen("svn info %s" % fname):
+      if line.startswith('Revision:'):
+         Revision = line.split(':')[1].strip()
+      elif line.startswith('Last Changed Author:'):
+         Author = line.split(':')[1].strip()
+      elif line.startswith('Last Changed Rev:'):
+         PriorRevision = line.split(':')[1].strip()
+      elif line.startswith('Last Changed Date:'):
+         CheckinDate = line[len('Last Chanegd Date:'):].strip()
+
+   if status == "Modified":
+      Log = "Locally modified file"
+   else:
+      for line in os.popen("svn log --xml -r %s" % Revision):
+         start = line.find("<msg>")
+         if start >= 0:
+            start += len("<msg>")
+            stop = line.find("</msg>")
+            if stop >= 0:
+               Log = line[start:stop]
+               break
+
+   Directory = dname
+   FullName = fname
+
+   for v in ("Directory", "FullName", "CheckinDate","Author","Log","Revision","PriorRevision"):
+      f.write("\t<%s>%s</%s>\n" % (v, eval(v), v))
+   f.write("</%s>\n" % status)
 
 def svn_up(f):
-   
-   pass
+
+   exe = os.popen("svn update")
+   for line in exe:
+      if line[0] == 'U':
+         write_update(f, line.split()[1], "Updated")
+   ret = exe.close()
+   if ret:
+      debug("\"svn update\" Failed. Return code %s" % ret >> 8)
+
+   exe = os.popen("svn status")
+   for line in exe:
+      if line[0] == 'M':
+         write_update(f, line.split()[1], "Modified")
+      elif line[0] == 'C':
+         write_update(f, line.split()[1], "Conflicting")
+   ret = exe.close()
+   if ret:
+      debug("\"svn status\" Failed. Return code %s" % ret >> 8)
+   write_update(f)
 
 def update(bp, cname, nightly):
    if nightly:
@@ -32,6 +97,6 @@ def update(bp, cname, nightly):
                 "UpdateCommand", "UpdateType"): 
       f.write("\t<%s>%s</%s>\n" % (v, eval(v), v))
       
-   #svn_up(f)
+   svn_up(f)
    f.write("</Update>\n")
    f.close()

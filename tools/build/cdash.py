@@ -400,3 +400,11 @@ def submit(bp, cname, cmd, nightly):
        ret = putname(fname, "http://dash.prism.nanohub.org/cdash/submit.php?project=MEMOSA")
        if ret[0] != 200:
           build_utils.warning("http put returned %s" % ret[0])
+
+    fname = os.path.join(bp.logdir, "Update.xml")
+    if os.path.isfile(fname):
+       ret = putname(fname, "http://dash.prism.nanohub.org/cdash/submit.php?project=MEMOSA")
+       if ret[0] != 200:
+          build_utils.warning("http put returned %s" % ret[0])
+
+
