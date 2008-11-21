@@ -1,8 +1,11 @@
+%include "LinearSolver.i"
 
-class AMG
+class AMG : public LinearSolver
 {
 public:
 
+  AMG();
+  
   enum CycleType
     {
       V_CYCLE,
@@ -10,21 +13,13 @@ public:
       F_CYCLE
     };
   
-  // these parameters can be tuned.
-  int nMaxCycles;
   int maxCoarseLevels;
   int nPreSweeps;
   int nPostSweeps;
   int coarseGroupSize;
   double weightRatioThreshold;
   CycleType cycleType;
-  int verbosity;
-  double relativeTolerance;
-  double absoluteTolerance;
-  
 private:
-
-  AMG();
   AMG(const AMG&);
 };
 

@@ -1,19 +1,21 @@
 #include "AMG.h"
 
 AMG::AMG() :
-  nMaxCycles(100),
   maxCoarseLevels(20),
   nPreSweeps(0),
   nPostSweeps(1),
   coarseGroupSize(2),
   weightRatioThreshold(0.65),
   cycleType(V_CYCLE),
-  verbosity(2),
-  relativeTolerance(1e-8),
-  absoluteTolerance(1e-16),
   _finestLinearSystem(0)
-{}
-    
+{
+  logCtor();
+}
+
+AMG::~AMG()
+{
+  logDtor();
+}
 
 void
 AMG::doSweeps(const int nSweeps, const int level)
@@ -72,6 +74,7 @@ AMG::cycle(const CycleType cycleType, const int level)
 void
 AMG::createCoarseLevels()
 {
+  _coarseLinearSystems.clear();
   for(int n=0; n<maxCoarseLevels; n++)
   {
       LinearSystem& fineLS = (n == 0) ?
@@ -98,7 +101,7 @@ AMG::cleanup()
   _coarseLinearSystems.clear();
 }
 
-MFPtr
+MFRPtr
 AMG::solve(LinearSystem & ls)
 {
   if (_finestLinearSystem != &ls)
@@ -114,7 +117,7 @@ AMG::solve(LinearSystem & ls)
                                _finestLinearSystem->getB(),
                                _finestLinearSystem->getResidual());
 
-  MFPtr rNorm0(_finestLinearSystem->getResidual().getOneNorm());
+  MFRPtr rNorm0(_finestLinearSystem->getResidual().getOneNorm());
 
   if (verbosity >0)
     cout << "0: " << *rNorm0 << endl;
@@ -122,15 +125,15 @@ AMG::solve(LinearSystem & ls)
   if (*rNorm0 < absoluteTolerance )
     return rNorm0;
   
-  for(int i=1; i<nMaxCycles; i++)
+  for(int i=1; i<nMaxIterations; i++)
   {
       cycle(cycleType,0);
       finestMatrix.computeResidual(_finestLinearSystem->getDelta(),
                                    _finestLinearSystem->getB(),
                                    _finestLinearSystem->getResidual());
       
-      MFPtr rNorm(_finestLinearSystem->getResidual().getOneNorm());
-      MFPtr normRatio((*rNorm)/(*rNorm0));
+      MFRPtr rNorm(_finestLinearSystem->getResidual().getOneNorm());
+      MFRPtr normRatio((*rNorm)/(*rNorm0));
       if (verbosity >0)
         cout << i << ": " << *rNorm << endl;
       if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance)
@@ -138,4 +141,17 @@ AMG::solve(LinearSystem & ls)
   }
 
   return rNorm0;
+}
+
+void
+AMG::smooth(LinearSystem & ls)
+{
+  if (_finestLinearSystem != &ls)
+  {
+      _finestLinearSystem = &ls;
+      createCoarseLevels();
+  }
+  _finestLinearSystem = &ls;
+
+  cycle(cycleType,0);
 }

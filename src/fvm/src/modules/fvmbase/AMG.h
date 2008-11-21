@@ -3,6 +3,8 @@
 
 #include <vector>
 #include "LinearSystem.h"
+#include "LinearSolver.h"
+
 #include "MultiFieldReduction.h"
 
 using namespace std;
@@ -12,7 +14,7 @@ using namespace std;
  * 
  */
 
-class AMG
+class AMG : public LinearSolver
 {
 public:
 
@@ -24,22 +26,22 @@ public:
     };
   
   AMG();
-  MFPtr solve(LinearSystem & ls);
+  virtual ~AMG();
 
-  void cleanup();
+  DEFINE_TYPENAME("AMG");
+  
+  virtual MFRPtr solve(LinearSystem & ls);
+  virtual void smooth(LinearSystem & ls);
+
+  virtual void cleanup();
   
   // these parameters can be tuned.
-  int nMaxCycles;
   int maxCoarseLevels;
   int nPreSweeps;
   int nPostSweeps;
   int coarseGroupSize;
   double weightRatioThreshold;
   CycleType cycleType;
-  int verbosity;
-  double relativeTolerance;
-  double absoluteTolerance;
-  
 private:
 
   AMG(const AMG&);
