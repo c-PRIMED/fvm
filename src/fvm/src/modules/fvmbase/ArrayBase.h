@@ -55,6 +55,8 @@ public:
   
   virtual shared_ptr<ArrayBase>  getOneNorm() const=0;
   virtual shared_ptr<ArrayBase>  dotWith(const ArrayBase& a) const=0;
+  virtual shared_ptr<ArrayBase>  reduceSum() const=0;
+  virtual void setSum(const ArrayBase& sumBase) = 0;
 };
 
 #endif

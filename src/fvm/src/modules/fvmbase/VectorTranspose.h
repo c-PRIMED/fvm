@@ -9,6 +9,7 @@ template<class T, int N>
 class VectorTranspose
 {
 public:
+  typedef VectorTranspose<T,N> This_T;
   typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
   typedef typename NumTypeTraits<T>::T_BuiltIn T_BuiltIn;
   typedef T T_NumType;
@@ -125,6 +126,17 @@ public:
     return z;
   }
 
+  bool operator<(const double tolerance) const
+  {
+    return _v < tolerance;
+  }
+
+  void printFromC(ostream &os) const
+  {
+    _v.printFromC(os);
+    os << "^T";
+  }
+
   static void accumulateOneNorm(VectorTranspose& sum, const VectorTranspose& v)
   {
     Vector<T,N>::accumulateOneNorm(sum._v,v._v);
@@ -135,6 +147,21 @@ public:
                                    const VectorTranspose& v1)
   {
     Vector<T,N>::accumulateDotProduct(sum._v, v0._v, v1._v);
+  }
+
+  static void safeDivide(VectorTranspose& x, const VectorTranspose& y)
+  {
+    Vector<T,N>::safeDivide(x._v,y._v);
+  }
+
+  static void setMax(VectorTranspose& x, const VectorTranspose& y)
+  {
+    Vector<T,N>::setMax(x._v,y._v);
+  }
+
+  static void reduceSum(T_Scalar& sum, const This_T& x)
+  {
+    Vector<T,N>::reduceSum(sum,x._v);
   }
 
 private:
@@ -207,6 +234,14 @@ VectorTranspose<T,N>
 operator/(const VectorTranspose<T,N>& a, const VectorTranspose<T,N>& b)
 {
   return VectorTranspose<T,N>(a) /= b;
+}
+
+template<class T, int N>
+inline ostream& operator<<(ostream &os,
+                           const VectorTranspose<T,N> &v)
+{
+  v.printFromC(os);
+  return os;
 }
 
 #endif

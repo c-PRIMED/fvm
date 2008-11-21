@@ -14,6 +14,7 @@ struct NumTypeTraits : public T
 template<>
 struct   NumTypeTraits<bool>
 {
+  typedef bool This_T;
   typedef bool T_Scalar;
   typedef bool T_BuiltIn;
 
@@ -32,6 +33,8 @@ struct   NumTypeTraits<bool>
   static void accumulateDotProduct(bool& sum, const bool& v0, const bool& v1)
   {}
 
+  static void reduceSum(T_Scalar& sum, const This_T& x) {}
+  
   static void safeDivide(bool& x, const bool& y) {}
   static void setMax(bool& x, const bool& y) {}
 };
@@ -39,6 +42,7 @@ struct   NumTypeTraits<bool>
 template<>
 struct   NumTypeTraits<int>
 {
+  typedef int This_T;
   typedef int T_Scalar;
   typedef int T_BuiltIn;
 
@@ -55,6 +59,8 @@ struct   NumTypeTraits<int>
   static void accumulateDotProduct(int& sum, const int& v0, const int& v1)
   { sum += v0*v1;}
 
+  static void reduceSum(T_Scalar& sum, const This_T& x) {sum+=x;}
+
   static void safeDivide(int& x, const int& y) {if (y!=0) x/=y;}
   static void setMax(int& x, const int& y) {if (y>x) x=y;}
   
@@ -63,6 +69,7 @@ struct   NumTypeTraits<int>
 template<>
 struct   NumTypeTraits<double>
 {
+  typedef double This_T;
   typedef double T_Scalar;
   typedef double T_BuiltIn;
   static string getTypeName() {return "double";}
@@ -80,6 +87,7 @@ struct   NumTypeTraits<double>
   static void accumulateDotProduct(double& sum, const double& v0, const double& v1)
   { sum += v0*v1;}
 
+  static void reduceSum(T_Scalar& sum, const This_T& x) {sum+=x;}
   static void safeDivide(double& x, const double& y) {if (y!=0) x/=y;}
   static void setMax(double& x, const double& y) {if (y>x) x=y;}
 
@@ -89,6 +97,7 @@ template<>
 struct NumTypeTraits<float>
 { 
   typedef float T_Scalar;
+  typedef float This_T;
   typedef float T_BuiltIn;
 
   static string getTypeName() {return "float";}
@@ -104,6 +113,7 @@ struct NumTypeTraits<float>
   static void accumulateOneNorm(float& sum, const float& v) { sum += fabs(v);}
   static void accumulateDotProduct(float& sum, const float& v0, const float& v1)
   { sum += v0*v1;}
+  static void reduceSum(T_Scalar& sum, const This_T& x) {sum+=x;}
   static void safeDivide(float& x, const float& y) {if (y!=0) x/=y;}
   static void setMax(float& x, const float& y) {if (y>x) x=y;}
 };

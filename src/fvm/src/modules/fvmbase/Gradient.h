@@ -8,6 +8,7 @@ template <class T>
 class Gradient
 {
 public:
+  typedef Gradient<T> This_T;
   typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
   typedef typename NumTypeTraits<T>::T_BuiltIn T_BuiltIn;
   
@@ -30,7 +31,8 @@ public:
   //  T& operator[](int n) {return _data[n];}
   const T& operator[](int n) const {return _data[n];}
 
-  Gradient& operator=(const T& o)
+
+  Gradient& operator=(const T_Scalar& o)
   {
     for(int i=0;i<3;i++)
       _data[i] = o;
@@ -118,6 +120,12 @@ public:
       NumTypeTraits<T>::accumulateDotProduct(sum._data[i],v0._data[i],v1._data[i]);
   }
 
+  static void reduceSum(T_Scalar& sum, const This_T& x)
+  {
+    for(int i=0; i<3; i++)
+      NumTypeTraits<T>::reduceSum(sum,x[i]);
+  }
+  
   static void safeDivide(Gradient& x, const Gradient& y)
   {
     for(int i=0; i<3; i++)

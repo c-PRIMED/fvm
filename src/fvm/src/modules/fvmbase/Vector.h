@@ -77,13 +77,14 @@ public:
     return *this;
   }
 
+#if 0
   Vector& operator=(const int o)
   {
     for(int i=0;i<N;i++)
       _data[i] = o;
     return *this;
   }
-
+#endif
   
   Vector& operator=(const Vector& o)
   {
@@ -179,6 +180,12 @@ public:
   {
     for(int i=0; i<N; i++)
       sum[i]+=v0[i]*v1[i];
+  }
+
+  static void reduceSum(T_Scalar& sum, const This_T& x)
+  {
+    for(int i=0; i<N; i++)
+      NumTypeTraits<T>::reduceSum(sum,x[i]);
   }
 
   static void safeDivide(Vector& x, const Vector& y)

@@ -21,7 +21,7 @@ public:
   shared_ptr<LinearSystem>
   createCoarse(const int groupSize, const double weightRatioThreshold);
 
-  MultiField& getX() {return _x;}
+  MultiField& getX() {return *_x;}
   MultiField& getB() {return *_b;}
   MultiField& getDelta() {return *_delta;}
   MultiField& getResidual() {return *_residual;}
@@ -29,10 +29,18 @@ public:
   MultiFieldMatrix& getMatrix() {return _matrix;}
 
   MultiField& getCoarseIndex() {return _coarseIndex;}
+
+  shared_ptr<MultiField> getDeltaPtr() {return _delta;}
+  shared_ptr<MultiField> getBPtr() {return _b;}
+
+  void replaceDelta(shared_ptr<MultiField> newDelta) {_delta=newDelta;}
+  void replaceB(shared_ptr<MultiField> newB) {_b=newB;}
+  
+  void setCoarseningField(const Field& f) {_coarseningField=&f;}
   
 private:
   MultiFieldMatrix _matrix;
-  MultiField _x;
+  shared_ptr<MultiField> _x;
   shared_ptr<MultiField> _b;
   shared_ptr<MultiField> _delta;
   shared_ptr<MultiField> _residual;

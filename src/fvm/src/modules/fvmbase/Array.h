@@ -277,6 +277,30 @@ public:
     return nPtr;
   }
 
+  virtual shared_ptr<ArrayBase>
+  reduceSum() const
+  {
+    T_Scalar sum(NumTypeTraits<T_Scalar>::getZero());
+    for(int i=0; i<_length; i++)
+      NumTypeTraits<T>::reduceSum(sum,_data[i]);
+    shared_ptr<Array<T_Scalar> > nPtr(new Array<T_Scalar>(1));
+    (*nPtr)[0] = sum;
+    return nPtr;
+  }
+
+  virtual void
+  setSum(const ArrayBase& sumBase)
+  {
+    const Array<T_Scalar>& sum =
+      dynamic_cast<const Array<T_Scalar>& >(sumBase);
+    if (sum.getLength() == 1)
+    {
+        const T_Scalar& s = sum[0];
+        for(int i=0; i<_length; i++)
+          _data[i]=s;
+    }
+  }
+
   virtual shared_ptr<Array>
   getSubset(const Array<int>& indices)
   {

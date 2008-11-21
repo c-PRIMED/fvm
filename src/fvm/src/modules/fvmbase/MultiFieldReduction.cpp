@@ -65,10 +65,24 @@ MultiFieldReduction::operator<(const double tolerance) const
   return true;
 }
 
-MFPtr
+MFRPtr
+MultiFieldReduction::operator*(const MultiFieldReduction& o)
+{
+  MFRPtr r(new MultiFieldReduction());
+  
+  foreach(const ArrayMap::value_type& pos, _arrays)
+  {
+      shared_ptr<ArrayBase> aptr = dynamic_pointer_cast<ArrayBase>(pos.second->newCopy());
+      *aptr *= o[*pos.first];
+      r->addArray(*pos.first,aptr);
+  }
+  return r;
+}
+
+MFRPtr
 MultiFieldReduction::operator/(const MultiFieldReduction& o)
 {
-  MFPtr r(new MultiFieldReduction());
+  MFRPtr r(new MultiFieldReduction());
   
   foreach(const ArrayMap::value_type& pos, _arrays)
   {
@@ -91,25 +105,22 @@ MultiFieldReduction::setMax(const MultiFieldReduction& o)
 void
 MultiFieldReduction::reduceSum()
 {
-  ArrayBase& array0 = *(_arrays.begin()->second);
+  shared_ptr<ArrayBase> sum;
 
-  for(ArrayMap::const_iterator posj=_arrays.begin();
-      posj!=_arrays.end();
-      ++posj)
+  foreach(const ArrayMap::value_type& pos, _arrays)
   {
-      ArrayBase& arrayj = *posj->second;
-      if (&array0 != &arrayj)
-        array0 += arrayj;
+      shared_ptr<ArrayBase> thisSum = pos.second->reduceSum();
+      if (sum)
+        *sum += *thisSum;
+      else
+        sum = thisSum;
   }
-  
-  for(ArrayMap::const_iterator posj=_arrays.begin();
-      posj!=_arrays.end();
-      ++posj)
+
+  foreach(const ArrayMap::value_type& pos, _arrays)
   {
-      ArrayBase& arrayj = *posj->second;
-      if (&array0 != &arrayj)
-        arrayj.copyFrom(array0);
+      pos.second->setSum(*sum);
   }
+
 
 }
 

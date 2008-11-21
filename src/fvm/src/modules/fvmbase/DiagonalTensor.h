@@ -10,6 +10,7 @@ template <class T, int N>
 class DiagonalTensor
 {
 public:
+  typedef DiagonalTensor<T,N> This_T;
   typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
   typedef typename NumTypeTraits<T>::T_BuiltIn T_BuiltIn;
 
@@ -189,6 +190,12 @@ public:
       NumTypeTraits<T>::accumulateDotProduct(sum[i],v0[i],v1[i]);
   }
 
+  static void reduceSum(T_Scalar& sum, const This_T& x)
+  {
+    for(int i=0; i<N; i++)
+      NumTypeTraits<T>::reduceSum(sum,x[i]);
+  }
+  
   static void safeDivide(DiagonalTensor& x, const DiagonalTensor& y)
   {
     for(int i=0; i<N; i++)

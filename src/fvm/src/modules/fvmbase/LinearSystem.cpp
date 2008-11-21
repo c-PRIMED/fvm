@@ -2,6 +2,11 @@
 #include "Array.h"
 
 LinearSystem::LinearSystem() :
+  _x(new MultiField()),
+  _b(),
+  _delta(),
+  _residual(),
+  _coarseIndex(),
   _coarseningField(0)
 {}
 
@@ -14,15 +19,15 @@ void
 LinearSystem::initAssembly()
 {
   _matrix.initAssembly();
-  _b = dynamic_pointer_cast<MultiField>(_x.newClone());
+  _b = dynamic_pointer_cast<MultiField>(_x->newClone());
   _b->zero();
 }
 
 void
 LinearSystem::initSolve()
 {
-  _delta = dynamic_pointer_cast<MultiField>(_x.newClone());
-  _residual = dynamic_pointer_cast<MultiField>(_x.newClone());
+  _delta = dynamic_pointer_cast<MultiField>(_x->newClone());
+  _residual = dynamic_pointer_cast<MultiField>(_x->newClone());
   _delta->zero();
   _residual->zero();
 
@@ -36,7 +41,7 @@ LinearSystem::initSolve()
         indicesToRemove.push_back(i);
   }
 
-  _xAux = _x.extract(indicesToRemove);
+  _xAux = _x->extract(indicesToRemove);
   _bAux = _b->extract(indicesToRemove);
   _deltaAux = _delta->extract(indicesToRemove);
   _residualAux = _residual->extract(indicesToRemove);
@@ -116,10 +121,13 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
           foreach(MultiField::ArrayIndex ko,arrayIndices)
           {
               MultiFieldMatrix::EntryIndex fineEntryIndex(k,ko);
-              const StorageSite& coarseSiteO = *_matrix._coarseSites[ko];
-              if (_matrix._coarseMappers.find(fineEntryIndex)
-                  != _matrix._coarseMappers.end())
-                mappers[&coarseSiteO]=_matrix._coarseMappers[fineEntryIndex];
+              if (_matrix._coarseSites.find(ko) != _matrix._coarseSites.end())
+              {
+                  const StorageSite& coarseSiteO = *_matrix._coarseSites[ko];
+                  if (_matrix._coarseMappers.find(fineEntryIndex)
+                      != _matrix._coarseMappers.end())
+                    mappers[&coarseSiteO]=_matrix._coarseMappers[fineEntryIndex];
+              }
           }
       }
   }
@@ -198,7 +206,7 @@ void LinearSystem::postSolve()
 
   if (_xAux)
   {
-      _x.merge(*_xAux);
+      _x->merge(*_xAux);
       _b->merge(*_bAux);
       _delta->merge(*_deltaAux);
       _residual->merge(*_residualAux);
@@ -209,6 +217,6 @@ void LinearSystem::postSolve()
 
 void LinearSystem::updateSolution()
 {
-  _x += *_delta;
+  *_x += *_delta;
 }
 

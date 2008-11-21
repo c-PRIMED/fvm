@@ -107,6 +107,12 @@ public:
              +NumTypeTraits<B>::getTypeName()
              +">");
 
+  virtual void initAssembly()
+  {
+    _diag.zero();
+    _offDiag.zero();
+  }
+
   /**
    * y = this * x
    * 
@@ -280,7 +286,7 @@ public:
                      const CRConnectivity& coarseConnectivity)
   {
     const Array<int>&  coarseIndex =
-      dynamic_cast<Array<int>& >(gCoarseIndex);
+      dynamic_cast<const Array<int>& >(gCoarseIndex);
     
     const int nCoarseRows = coarseConnectivity.getRowDim();
 
