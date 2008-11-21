@@ -94,7 +94,7 @@ public:
     }
 
     _niters  =0;
-    _initialNorm = MFPtr();
+    _initialNorm = MFRPtr();
   }
   
   ThermalBCMap& getBCMap() {return _bcMap;}
@@ -205,11 +205,11 @@ public:
 
         ls.initSolve();
 
-        MFPtr rNorm(ls.getResidual().getOneNorm());
+        MFRPtr rNorm(ls.getResidual().getOneNorm());
 
         if (!_initialNorm) _initialNorm = rNorm;
         
-        MFPtr normRatio((*rNorm)/(*_initialNorm));
+        MFRPtr normRatio((*rNorm)/(*_initialNorm));
 
         cout << _niters << ": " << *rNorm << endl;
 
@@ -249,7 +249,7 @@ private:
   ThermalModelOptions<T> _options;
   GradientModel<T> _temperatureGradientModel;
   
-  MFPtr _initialNorm;
+  MFRPtr _initialNorm;
   int _niters;
 };
 

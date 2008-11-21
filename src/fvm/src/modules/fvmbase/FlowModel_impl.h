@@ -15,6 +15,8 @@
 #include "VectorTranspose.h"
 #include "DiffusionDiscretization.h"
 #include "ConvectionDiscretization.h"
+#include "TimeDerivativeDiscretization.h"
+
 #include "Underrelaxer.h"
 #include "MomentumPressureGradientDiscretization.h"
 #include "AMG.h"
@@ -126,6 +128,16 @@ public:
 
         _flowFields.velocity.addArray(cells,vCell);
 
+        if (_options.transient)
+        {
+            _flowFields.velocityN1.addArray(cells,
+                                            dynamic_pointer_cast<ArrayBase>(vCell->newCopy()));
+            if (_options.timeDiscretizationOrder > 1)
+              _flowFields.velocityN2.addArray(cells,
+                                              dynamic_pointer_cast<ArrayBase>(vCell->newCopy()));
+
+        }
+        
         shared_ptr<TArray> pCell(new TArray(cells.getCount()));
         shared_ptr<TArray> pFace(new TArray(faces.getCount()));
         *pCell = _options["initialPressure"];
@@ -229,14 +241,37 @@ public:
 
     computeContinuityResidual();
     _niters  =0;
-    _initialMomentumNorm = MFPtr();
-    _initialContinuityNorm = MFPtr();
+    _initialMomentumNorm = MFRPtr();
+    _initialContinuityNorm = MFRPtr();
   }
   
   FlowBCMap& getBCMap() {return _bcMap;}
   FlowVCMap& getVCMap() {return _vcMap;}
   FlowModelOptions<T>& getOptions() {return _options;}
 
+  void updateTime()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+
+        const StorageSite& cells = mesh.getCells();
+        VectorT3Array& v =
+          dynamic_cast<VectorT3Array&>(_flowFields.velocity[cells]);
+        VectorT3Array& vN1 =
+          dynamic_cast<VectorT3Array&>(_flowFields.velocityN1[cells]);
+
+        if (_options.timeDiscretizationOrder > 1)
+        {
+            VectorT3Array& vN2 =
+              dynamic_cast<VectorT3Array&>(_flowFields.velocityN2[cells]);
+            vN2 = vN1;
+        }
+        vN1 = v;
+    }
+  }
+  
   void initMomentumLinearization(LinearSystem& ls)
   {
     const int numMeshes = _meshes.size();
@@ -280,27 +315,49 @@ public:
     
     DiscrList discretizations;
     shared_ptr<Discretization>
-      dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,T>(_meshes,_geomFields,
-                                                              _flowFields.velocity,
-                                                              _flowFields.viscosity,
-                                                              _flowFields.velocityGradient));
+      dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,T>
+         (_meshes,_geomFields,
+          _flowFields.velocity,
+          _flowFields.viscosity,
+          _flowFields.velocityGradient));
+
     shared_ptr<Discretization>
-      cd(new ConvectionDiscretization<VectorT3,DiagTensorT3,T>(_meshes,_geomFields,
-                                                               _flowFields.velocity,
-                                                               _flowFields.massFlux,
-                                                               _flowFields.continuityResidual,
-                                                               _flowFields.velocityGradient));
+      cd(new ConvectionDiscretization<VectorT3,DiagTensorT3,T>
+         (_meshes,_geomFields,
+          _flowFields.velocity,
+          _flowFields.massFlux,
+          _flowFields.continuityResidual,
+          _flowFields.velocityGradient));
+
     shared_ptr<Discretization>
-      pd(new MomentumPressureGradientDiscretization<T>(_meshes,_geomFields,
-                                                       _flowFields,
-                                                       _pressureGradientModel));
+      pd(new MomentumPressureGradientDiscretization<T>
+         (_meshes,_geomFields,
+          _flowFields,
+          _pressureGradientModel));
+
     shared_ptr<Discretization>
-      ud(new Underrelaxer<VectorT3,DiagTensorT3,T>(_meshes,_flowFields.velocity,
-                                                   _options["momentumURF"]));
+      ud(new Underrelaxer<VectorT3,DiagTensorT3,T>
+         (_meshes,_flowFields.velocity,
+          _options["momentumURF"]));
+
     discretizations.push_back(dd);
     discretizations.push_back(cd);
     discretizations.push_back(pd);
     discretizations.push_back(ud);
+
+    if (_options.transient)
+    {
+        shared_ptr<Discretization>
+          td(new TimeDerivativeDiscretization<VectorT3,DiagTensorT3,T>
+             (_meshes,_geomFields,
+              _flowFields.velocity,
+              _flowFields.velocityN1,
+              _flowFields.velocityN2,
+              _flowFields.density,
+              _options["timeStep"]));
+        
+        discretizations.push_back(td);
+    }
     
     Linearizer linearizer;
 
@@ -366,7 +423,7 @@ public:
   }
 
 
-  MFPtr solveMomentum()
+  MFRPtr solveMomentum()
   {
     LinearSystem ls;
 
@@ -383,11 +440,11 @@ public:
     _previousVelocity = dynamic_pointer_cast<Field>(_flowFields.velocity.newCopy());
 
     //AMG solver(ls);
-    MFPtr rNorm = _momSolver.solve(ls);
+    MFRPtr rNorm = _options.momentumLinearSolver->solve(ls);
 
     if (!_initialMomentumNorm) _initialMomentumNorm = rNorm;
         
-    _momSolver.cleanup();
+    _options.momentumLinearSolver->cleanup();
     
     ls.postSolve();
     ls.updateSolution();
@@ -538,10 +595,11 @@ public:
   }
 
   T fixedFluxContinuityBC(const StorageSite& faces,
-                             const Mesh& mesh,
-                             MultiFieldMatrix& matrix,
-                             MultiField& xField,
-                             MultiField& rField)
+                          const Mesh& mesh,
+                          MultiFieldMatrix& matrix,
+                          MultiField& xField,
+                          MultiField& rField,
+                          const FlowBC<T>& bc)
   {
     const StorageSite& cells = mesh.getCells();
 
@@ -559,9 +617,17 @@ public:
     PPAssembler& ppAssembler = ppMatrix.getPairWiseAssembler(faceCells);
     PPDiagArray& ppDiag = ppMatrix.getDiag();
 
-    TArray& rCell = dynamic_cast<TArray&>(rField[pIndex]);
-    const TArray& massFlux = dynamic_cast<const TArray&>(_flowFields.massFlux[faces]);
+    const VectorT3Array& faceArea =
+      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
 
+    TArray& rCell = dynamic_cast<TArray&>(rField[pIndex]);
+    TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
+    const TArray& density = dynamic_cast<const TArray&>(_flowFields.density[cells]);
+
+    VectorT3 bVelocity;
+    bVelocity[0] = bc["specifiedXVelocity"];
+    bVelocity[1] = bc["specifiedYVelocity"];
+    bVelocity[2] = bc["specifiedZVelocity"];
 
     const int nFaces = faces.getCount();
 
@@ -571,6 +637,8 @@ public:
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
+
+        massFlux[f] = density[c0]*dot(bVelocity,faceArea[f]);
 
         rCell[c0] -= massFlux[f];
 
@@ -585,7 +653,7 @@ public:
         dFluxdP.setCoeffR(f,T(0.));
         
     }
-#if 0
+#if 1
     if (matrix.hasMatrix(vIndex,pIndex))
     {
         VPMatrix& vpMatrix =
@@ -868,6 +936,7 @@ public:
     const int nFaces = faces.getCount();
     for(int f=0; f<nFaces; f++)
     {
+        //        const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
         
         pFace[f] = pCell[c1];
@@ -932,15 +1001,15 @@ public:
           ppAssembler.getCoeff10(f)*pp[c0];
     }
 
-#if 0
+#if 1
     MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
     if (mfmatrix.hasMatrix(pIndex,vIndex))
     {
         PVMatrix& pvMatrix =
-          dynamic_cast<PVMatrix>(mfmatrix.getMatrix(pIndex,vIndex));
+          dynamic_cast<PVMatrix&>(mfmatrix.getMatrix(pIndex,vIndex));
         
         PVAssembler& pvAssembler = pvMatrix.getPairWiseAssembler(faceCells);
-        const VectorT3Array& Vp = dynamic_cast<VectorT3Array>(xField[vIndex]);
+        const VectorT3Array& Vp = dynamic_cast<const VectorT3Array&>(xField[vIndex]);
 
         for(int f=0; f<nFaces; f++)
         {
@@ -986,24 +1055,43 @@ public:
     }
   }
 
-#if 0
-  void correctVelocityExplicit(const UMesh& mesh,
+
+  void correctVelocityExplicit(const Mesh& mesh,
                                const MultiField& xField)
   {
     const StorageSite& cells = mesh.getCells();
+    MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
     
-    VectorT3Array& V = dynamic_cast<VectorT3Array>(_flowFields.velocity[cells]);
-    const VectorT3Array& Vp = dynamic_cast<VectorT3Array>(xField[vIndex]);
+    VectorT3Array& V = dynamic_cast<VectorT3Array&>(_flowFields.velocity[cells]);
+    const VectorT3Array& Vp = dynamic_cast<const VectorT3Array&>(xField[vIndex]);
 
-    const T velocityURF(getVar("velocityURF"));
+    const T velocityURF(_options["velocityURF"]);
       
     const int nCells = cells.getCount();
     for(int c=0; c<nCells; c++)
     {
         V[c] += velocityURF*Vp[c];
     }
+
+    // boundary
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        const StorageSite& faces = fg.site;
+        MultiField::ArrayIndex fluxIndex(&_flowFields.momentumFlux,&faces);
+        VectorT3Array& momFlux =
+          dynamic_cast<VectorT3Array&>(_flowFields.momentumFlux[faces]);
+        const VectorT3Array& dmomFlux =
+          dynamic_cast<const VectorT3Array&>(xField[fluxIndex]);
+        
+        const int nFaces = faces.getCount();
+        for(int f=0; f<nFaces; f++)
+        {
+            momFlux[f] += dmomFlux[f];
+        }
+    }
   }
-#endif
+
 
   // set the first cell of the first mesh to be a Dirichlet point
   void setDirichlet(MultiFieldMatrix& mfmatrix,
@@ -1095,7 +1183,7 @@ public:
                 (bc.bcType == "VelocityBoundary"))
             {
                 
-                netFlux += fixedFluxContinuityBC(faces,mesh,matrix,x,b);
+                netFlux += fixedFluxContinuityBC(faces,mesh,matrix,x,b,bc);
             }
             else if (bc.bcType == "PressureBoundary")
             {
@@ -1115,8 +1203,6 @@ public:
 
     if (this->_useReferencePressure)
     {
-        setDirichlet(matrix,b);
-
         T volumeSum(0.);
         
         for (int n=0; n<numMeshes; n++)
@@ -1144,6 +1230,7 @@ public:
             }
         }
     }
+    setDirichlet(matrix,b);
   }
 
   void setReferencePP(const MultiField& ppField)
@@ -1209,7 +1296,7 @@ public:
         MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
         
         MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-        //        const bool coupled =  matrix.hasMatrix(pIndex,vIndex);
+        const bool coupled =  matrix.hasMatrix(pIndex,vIndex);
         
         correctPressure(mesh,ppField);
         
@@ -1217,10 +1304,10 @@ public:
         
         correctMassFluxInterior(mesh,iFaces,matrix,ppField);
         
-        //if (coupled)
-        //  correctVelocityExplicit(vIndex,mesh,xField);
-        //else
-        correctVelocityInterior(mesh,iFaces,ppField);
+        if (coupled)
+          correctVelocityExplicit(mesh,ppField);
+        else
+          correctVelocityInterior(mesh,iFaces,ppField);
         
         updateFacePressureInterior(mesh,iFaces);
         
@@ -1233,8 +1320,8 @@ public:
               
             correctMassFluxBoundary(faces,ppField);
             
-            //if (!coupled)
-            correctVelocityBoundary(mesh,faces,ppField);
+            if (!coupled)
+              correctVelocityBoundary(mesh,faces,ppField);
 
             if (bc.bcType == "PressureBoundary")
             {
@@ -1316,19 +1403,19 @@ public:
   }
 
   
-  MFPtr solveContinuity()
+  MFRPtr solveContinuity()
   {
     shared_ptr<LinearSystem> ls(discretizeContinuity());
 
     // discard previous velocity
     _previousVelocity = shared_ptr<Field>();
 
-    MFPtr rNorm = _continuitySolver.solve(*ls);
+    MFRPtr rNorm = _options.pressureLinearSolver->solve(*ls);
 
     if (!_initialContinuityNorm) _initialContinuityNorm = rNorm;
         
     ls->postSolve();
-    _continuitySolver.cleanup();
+    _options.pressureLinearSolver->cleanup();
     
     postContinuitySolve(*ls);
 
@@ -1343,8 +1430,8 @@ public:
   {
     for(int n=0; n<niter; n++)
     { 
-        MFPtr mNorm = solveMomentum();
-        MFPtr cNorm = solveContinuity();
+        MFRPtr mNorm = solveMomentum();
+        MFRPtr cNorm = solveContinuity();
 
         if (_niters < 5)
         {
@@ -1352,8 +1439,8 @@ public:
             _initialContinuityNorm->setMax(*cNorm);
         }
         
-        MFPtr mNormRatio((*mNorm)/(*_initialMomentumNorm));
-        MFPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
+        MFRPtr mNormRatio((*mNorm)/(*_initialMomentumNorm));
+        MFRPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
         
         if (_options.printNormalizedResiduals)
           cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
@@ -1367,6 +1454,88 @@ public:
     }
   }
 
+  void advanceCoupled(const int niter)
+  {
+    const int numMeshes = _meshes.size();
+    for(int n=0; n<niter; n++)
+    { 
+        LinearSystem ls;
+
+        ls.setCoarseningField(_flowFields.pressure);
+        initMomentumLinearization(ls);
+        initContinuityLinearization(ls);
+        
+        for (int n=0; n<numMeshes; n++)
+        {
+            const Mesh& mesh = *_meshes[n];
+            
+            const StorageSite& cells = mesh.getCells();
+            MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
+            MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
+            
+            const CRConnectivity& cellCells = mesh.getCellCells();
+            
+            shared_ptr<Matrix> mvp(new VPMatrix(cellCells));
+            ls.getMatrix().addMatrix(vIndex,pIndex,mvp);
+
+            shared_ptr<Matrix> mpv(new PVMatrix(cellCells));
+            ls.getMatrix().addMatrix(pIndex,vIndex,mpv);
+        }
+
+        ls.initAssembly();
+
+        linearizeMomentum(ls);
+
+        // save current velocity for use in continuity discretization
+        _previousVelocity = dynamic_pointer_cast<Field>(_flowFields.velocity.newCopy());
+        
+        // save the momentum ap coeffficients for use in continuity discretization
+        _momApField = shared_ptr<Field>(new Field("momAp"));
+        for (int n=0; n<numMeshes; n++)
+        {
+            const Mesh& mesh = *_meshes[n];
+            
+            const StorageSite& cells = mesh.getCells();
+            MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
+            const VVMatrix& vvMatrix =
+              dynamic_cast<const VVMatrix&>(ls.getMatrix().getMatrix(vIndex,vIndex));
+            const VVDiagArray& momAp = vvMatrix.getDiag();
+            _momApField->addArray(cells,dynamic_pointer_cast<ArrayBase>(momAp.newCopy()));
+        }
+        
+        linearizeContinuity(ls);
+        
+        ls.initSolve();
+
+        MFRPtr rNorm = _options.coupledLinearSolver->solve(ls);
+
+        if (!_initialCoupledNorm) _initialCoupledNorm = rNorm;
+        
+        ls.postSolve();
+
+        postContinuitySolve(ls);
+        
+        _options.coupledLinearSolver->cleanup();
+    
+        if (_niters < 5)
+          _initialCoupledNorm->setMax(*rNorm);
+        
+        MFRPtr normRatio((*rNorm)/(*_initialCoupledNorm));
+        
+        if (_options.printNormalizedResiduals)
+          cout << _niters << ": " << *normRatio <<  endl;
+        else
+          cout << _niters << ": " << *rNorm <<  endl;
+
+        _niters++;
+
+        _momApField = shared_ptr<Field>();
+
+        if (*normRatio < _options.momentumTolerance)
+          break;
+    }
+  }
+  
 #ifndef USING_ATYPE_TANGENT
   
   void dumpContinuityMatrix(const string fileBase)
@@ -1447,8 +1616,129 @@ public:
     }
   }
 
-  AMG& getMomentumSolver() {return _momSolver;}
-  AMG& getContinuitySolver() {return _continuitySolver;}
+  VectorT3 getPressureIntegral(const Mesh& mesh, const int faceGroupId)
+  {
+    VectorT3 r(VectorT3::getZero());
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+        {
+            const StorageSite& faces = fg.site;
+            const VectorT3Array& faceArea =
+              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+            const int nFaces = faces.getCount();
+            const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += faceArea[f]*facePressure[f];
+
+            found=true;
+        }
+    }
+  if (!found)
+    throw CException("getPressureIntegral: invalid faceGroupID");
+    return r;
+  }
+  
+  VectorT3 getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupId)
+  {
+    VectorT3 r(VectorT3::getZero());
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+        {
+            const StorageSite& faces = fg.site;
+            const int nFaces = faces.getCount();
+            const VectorT3Array& momFlux =
+              dynamic_cast<const VectorT3Array&>(_flowFields.momentumFlux[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += momFlux[f];
+
+            found=true;
+        }
+    }
+    if (!found)
+      throw CException("getMomentumFluxIntegral: invalid faceGroupID");
+    return r;
+  }
+  
+  void printPressureIntegrals()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            
+            VectorT3 r(VectorT3::getZero());
+            
+            const StorageSite& faces = fg.site;
+            const VectorT3Array& faceArea =
+              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+            const int nFaces = faces.getCount();
+            const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += faceArea[f]*facePressure[f];
+
+            cout << "Mesh " << mesh.getID() << " faceGroup " << fg.id << " : " << r <<  endl;
+        }
+    }
+  }
+  
+  void printMomentumFluxIntegrals()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            
+            VectorT3 r(VectorT3::getZero());
+            
+            const StorageSite& faces = fg.site;
+            const int nFaces = faces.getCount();
+            const VectorT3Array& momFlux =
+              dynamic_cast<const VectorT3Array&>(_flowFields.momentumFlux[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += momFlux[f];
+
+            cout << "Mesh " << mesh.getID() << " faceGroup " << fg.id << " : " << r <<  endl;
+        }
+    }
+  }
+  
+  void printMassFluxIntegrals()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            
+            T r(0.);
+            
+            const StorageSite& faces = fg.site;
+            const int nFaces = faces.getCount();
+            const TArray& massFlux = dynamic_cast<const TArray&>(_flowFields.massFlux[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += massFlux[f];
+
+            cout << "Mesh " << mesh.getID() << " faceGroup " << fg.id << " : " << r <<  endl;
+        }
+    }
+  }
+  
+  //  LinearSolver& getMomentumSolver() {return _momSolver;}
+  // LinearSolver& getContinuitySolver() {return _continuitySolver;}
   
 private:
   const MeshList _meshes;
@@ -1462,8 +1752,9 @@ private:
   GradientModel<VectorT3> _velocityGradientModel;
   GradientModel<T> _pressureGradientModel;
   
-  MFPtr _initialMomentumNorm;
-  MFPtr _initialContinuityNorm;
+  MFRPtr _initialMomentumNorm;
+  MFRPtr _initialContinuityNorm;
+  MFRPtr _initialCoupledNorm;
   int _niters;
 
   shared_ptr<Field> _previousVelocity;
@@ -1471,8 +1762,8 @@ private:
 
   bool _useReferencePressure;
   T _referencePP;
-  AMG _momSolver;
-  AMG _continuitySolver;
+  //AMG _momSolver;
+  //AMG _continuitySolver;
 };
 
 template<class T>
@@ -1526,19 +1817,69 @@ FlowModel<T>::advance(const int niter)
   _impl->advance(niter);
 }
 
-
 template<class T>
-AMG&
+void
+FlowModel<T>::advanceCoupled(const int niter)
+{
+  _impl->advanceCoupled(niter);
+}
+
+#if 0
+template<class T>
+LinearSolver&
 FlowModel<T>::getMomentumSolver()
 {
   return _impl->getMomentumSolver();
 }
 
 template<class T>
-AMG&
+LinearSolver&
 FlowModel<T>::getContinuitySolver()
 {
   return _impl->getContinuitySolver();
+}
+#endif
+
+template<class T>
+void
+FlowModel<T>::updateTime()
+{
+  _impl->updateTime();
+}
+
+template<class T>
+void
+FlowModel<T>::printPressureIntegrals()
+{
+  _impl->printPressureIntegrals();
+}
+
+template<class T>
+void
+FlowModel<T>::printMomentumFluxIntegrals()
+{
+  _impl->printMomentumFluxIntegrals();
+}
+
+template<class T>
+void
+FlowModel<T>::printMassFluxIntegrals()
+{
+  _impl->printMassFluxIntegrals();
+}
+
+template<class T>
+Vector<T,3>
+FlowModel<T>::getPressureIntegral(const Mesh& mesh, const int faceGroupId)
+{
+ return  _impl->getPressureIntegral(mesh,faceGroupId);
+}
+
+template<class T>
+Vector<T,3>
+FlowModel<T>::getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupId)
+{
+ return  _impl->getMomentumFluxIntegral(mesh,faceGroupId);
 }
 
 #ifndef USING_ATYPE_TANGENT

@@ -3,7 +3,8 @@
 #include "CException.h"
 #include <rlog/StdioNode.h>
 #include <rlog/RLogChannel.h>
-
+#include "AMG.h"
+#include "BCGStab.h"
 rlog::StdioNode *stdLog;
 %}
 
@@ -33,6 +34,8 @@ namespace std{
 using namespace std;
 
 %include "Mesh.i"
+%include "AMG.i"
+%include "BCGStab.i"
 
 %inline %{
   

@@ -1,13 +1,17 @@
 %{
 #include "FlowModel.h"
+#include "AMG.h"
 %}
 
 %include "atype.i"
 %include "FloatVarDict.i"
 %include "GeomFields.h"
 %include "FlowFields.h"
+%include "LinearSolver.i"
+%include "Vector.i"
 
 using namespace std;
+using namespace boost;
 
 template <class T>
 struct FlowBC : public FloatVarDict<T>
@@ -24,10 +28,16 @@ template <class T>
 struct FlowModelOptions : public FloatVarDict<T>
 {
   bool printNormalizedResiduals;
+  bool transient;
   double momentumTolerance;
   double continuityTolerance;
+  int timeDiscretizationOrder;
+  LinearSolver *momentumLinearSolver;
+  LinearSolver *pressureLinearSolver;
+  LinearSolver *coupledLinearSolver;
 }; 
 
+%template(Vector3) Vector<ATYPE_STR,3>;
 
 %template(FlowBCA) FlowBC<ATYPE_STR>;
 %template(FlowBCList) std::vector<FlowBC<ATYPE_STR>* >;
@@ -41,7 +51,6 @@ struct FlowModelOptions : public FloatVarDict<T>
 
 
 %include "Model.i"
-%include "AMG.i"
 
 %include "FlowModel.h"
 

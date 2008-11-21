@@ -17,6 +17,8 @@ struct FlowFields
   Field viscosity;
   Field density;
   Field continuityResidual;
+  Field velocityN1;
+  Field velocityN2;
 };
 
 #endif

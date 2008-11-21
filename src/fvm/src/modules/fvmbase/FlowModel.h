@@ -7,7 +7,7 @@
 #include "FlowFields.h"
 
 #include "Mesh.h"
-#include "AMG.h"
+#include "LinearSolver.h"
 
 #include "FlowBC.h"
 
@@ -37,9 +37,19 @@ public:
   void printBCs();
 
   void advance(const int niter);
+  void advanceCoupled(const int niter);
 
-  AMG& getMomentumSolver();
-  AMG& getContinuitySolver();
+  void updateTime();
+
+  Vector<T,3> getPressureIntegral(const Mesh& mesh, const int faceGroupID);
+  Vector<T,3> getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupID);
+  
+  void printPressureIntegrals();
+  void printMomentumFluxIntegrals();
+  void printMassFluxIntegrals();
+  
+  //LinearSolver& getMomentumSolver();
+  //LinearSolver& getContinuitySolver();
 
 #ifndef USING_ATYPE_TANGENT
   

@@ -1,4 +1,6 @@
+#include "misc.h"
 #include "FloatVarDict.h"
+#include "AMG.h"
 
 template<class T>
 struct FlowBC : public FloatVarDict<T>
@@ -35,13 +37,27 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->defineVar("initialZVelocity",T(0.0));
     this->defineVar("initialPressure",T(0.0));
     this->defineVar("momentumURF",T(0.7));
+    this->defineVar("velocityURF",T(1.0));
     this->defineVar("pressureURF",T(0.3));
+    this->defineVar("timeStep",T(0.1));
     this->momentumTolerance=1e-3;
     this->continuityTolerance=1e-3;
     this->printNormalizedResiduals = true;
+    this->transient = false;
+    this->timeDiscretizationOrder=1;
+    this->momentumLinearSolver = 0;
+    this->pressureLinearSolver = 0;
+    this->coupledLinearSolver = 0;
   }
+  
   bool printNormalizedResiduals;
   double momentumTolerance;
   double continuityTolerance;
+  bool transient;
+  int timeDiscretizationOrder;
+  LinearSolver *momentumLinearSolver;
+  LinearSolver *pressureLinearSolver;
+  LinearSolver *coupledLinearSolver;
+  
 };
 
