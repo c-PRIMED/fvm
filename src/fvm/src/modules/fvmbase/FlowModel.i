@@ -37,7 +37,7 @@ struct FlowModelOptions : public FloatVarDict<T>
   LinearSolver *coupledLinearSolver;
 }; 
 
-%template(Vector3) Vector<ATYPE_STR,3>;
+//%template(Vector3) Vector<ATYPE_STR,3>;
 
 %template(FlowBCA) FlowBC<ATYPE_STR>;
 %template(FlowBCList) std::vector<FlowBC<ATYPE_STR>* >;

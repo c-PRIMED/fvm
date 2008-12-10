@@ -14,7 +14,9 @@ Mesh::Mesh(const int dimension, const int id):
   _faceGroups(),
   _boundaryGroups(),
   _interfaceGroups(),
-  _connectivityMap()
+  _connectivityMap(),
+  _coordinates(),
+  _ibType()
 {
   logCtor();
 }
@@ -165,4 +167,41 @@ Mesh::setFaceCells(shared_ptr<CRConnectivity> faceCells)
 {
   SSPair key(&_faces,&_cells);
   _connectivityMap[key] = faceCells;
+}
+
+const Array<int>&
+Mesh::getIBType() const
+{
+  return getOrCreateIBType();
+}
+
+void
+Mesh::setIBTypeForCell(const int c, const int type)
+{
+  Array<int>& ibType = getOrCreateIBType();
+  ibType[c]=type;
+}
+
+int
+Mesh::getIBTypeForCell(const int c) const
+{
+  Array<int>& ibType = getOrCreateIBType();
+  return ibType[c];
+}
+
+Array<int>&
+Mesh::getOrCreateIBType() const
+{
+  if (!_ibType)
+  {
+      _ibType = shared_ptr<Array<int> >(new Array<int>(_cells.getCount()));
+      *_ibType = IBTYPE_FLUID;
+  }
+  return *_ibType;
+}
+  
+Mesh::VecD3
+Mesh::getCellCoordinate(const int c) const
+{
+  return (*_coordinates)[c];
 }

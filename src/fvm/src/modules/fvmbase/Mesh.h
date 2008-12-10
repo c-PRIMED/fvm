@@ -51,6 +51,13 @@ public:
     } CellType;
   
 
+  enum
+    {
+      IBTYPE_FLUID,
+      IBTYPE_SOLID,
+      IBTYPE_BOUNDARY
+    };
+  
   Mesh(const int dimension, const int id);
   
   ~Mesh();
@@ -115,6 +122,15 @@ public:
   
 
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
+
+  const Array<int>& getIBType() const;
+
+  int getIBTypeForCell(const int c) const;
+  
+  void setIBTypeForCell(const int c, const int type);
+
+  VecD3 getCellCoordinate(const int c) const;
+  //Array<int>& getIBType();
   
 protected:
   const int _dimension;
@@ -129,6 +145,10 @@ protected:
   FaceGroupList _interfaceGroups;
   mutable ConnectivityMap _connectivityMap;
   shared_ptr<Array<VecD3> > _coordinates;
+
+  mutable shared_ptr<Array<int> > _ibType;
+
+  Array<int>& getOrCreateIBType() const;
   
   //mutable Array<int> *_cellTypes;
   //mutable Array<int> *_cellTypeCount;
