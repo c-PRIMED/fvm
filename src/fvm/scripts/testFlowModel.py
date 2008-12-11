@@ -22,8 +22,8 @@ from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
 fileBase = None
-numIterations = 10
-#fileBase = "/home/sm/prism-meshes/cav32"
+numIterations = 1
+fileBase = "/home/sm/prism-meshes/case1/case1"
 #fileBase = "/home/sm/a/data/wj"
 
 def usage():
@@ -32,6 +32,14 @@ def usage():
     print "Output will be in filebase-prism.dat if it is not specified."
     sys.exit(1)
 
+def advance(fmodel,niter):
+    for i in range(0,niter):
+        try:
+            fmodel.advance(1)
+        except KeyboardInterrupt:
+            break
+
+# change as needed
 
 outfile = None
 if __name__ == '__main__' and fileBase is None:
@@ -69,23 +77,31 @@ fmodel = models.FlowModelA(geomFields,flowFields,meshes)
 reader.importFlowBCs(fmodel)
 #fmodel.printBCs()
 
-momSolver = fmodel.getMomentumSolver()
+momSolver = fvmbaseExt.AMG()
 momSolver.relativeTolerance = 1e-1
-momSolver.nMaxCycles = 20
-momSolver.maxCoarseLevels=20
+#momSolver.nMaxIterations = 20
+#momSolver.maxCoarseLevels=20
 momSolver.verbosity=0
 
-contSolver = fmodel.getContinuitySolver()
+#contSolver = fvmbaseExt.AMG()
+pc = fvmbaseExt.AMG()
+pc.verbosity=0
+contSolver = fvmbaseExt.BCGStab()
+contSolver.preconditioner = pc
 contSolver.relativeTolerance = 1e-1
-contSolver.nMaxCycles = 20
+contSolver.nMaxIterations = 20
 contSolver.verbosity=0
-contSolver.maxCoarseLevels=20
+#contSolver.maxCoarseLevels=20
 
 foptions = fmodel.getOptions()
+
+foptions.momentumLinearSolver = momSolver
+foptions.pressureLinearSolver = contSolver
+
 foptions.momentumTolerance=1e-3
 foptions.continuityTolerance=1e-3
-foptions.setVar("momentumURF",0.7)
-foptions.setVar("pressureURF",0.3)
+foptions.setVar("momentumURF",0.95)
+foptions.setVar("pressureURF",0.1)
 foptions.printNormalizedResiduals=False
 
 """
@@ -97,13 +113,24 @@ if atype=='tangent':
 """
 
 fmodel.init()
-fmodel.advance(numIterations)
+#fmodel.advance(numIterations)
+advance(fmodel,numIterations)
 
 t1 = time.time()
 if outfile != '/dev/stdout':
     print '\nsolution time = %f' % (t1-t0)
 
-writer = exporters.FluentDataExporterA(reader,outfile,False,0)
+print 'solution time = %f' % (t1-t0)
+
+print '\n\npressure integrals\n'
+fmodel.printPressureIntegrals()
+
+print '\n\nmomentum flux integrals\n'
+fmodel.printMomentumFluxIntegrals()
+
+
+writer = exporters.FluentDataExporterA(reader,fileBase+"-prism.dat",False,0)
+
 writer.init()
 writer.writeScalarField(flowFields.pressure,1)
 writer.writeVectorField(flowFields.velocity,111)
@@ -118,4 +145,4 @@ if (atype=='tangent'):
     writer.writeScalarField(flowFields.massFlux,18)
     writer.finish()
 
-
+    
