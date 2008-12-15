@@ -77,14 +77,23 @@ void BaseMoveableMem :: Alloc (size_t s)
   if (totalsize == 0)
     {
       size = s;
-      ptr = (char*) malloc(s);
+      //ptr = (char*) malloc(s);
+      ptr = new char[s];
+
+      if (!ptr)
+	{
+	  cerr << "BaseynamicMem, cannot allocate " << s << " bytes" << endl;
+	  Print ();
+	  throw ("BaseDynamicMem::Alloc: out of memory");
+	}
+
       return;
     }
 
 
   used += s - size;
 
-  int r = s % 8;
+  size_t r = s % 8;
   if (r) s += 8-r;
   if (prev)
     pos = prev->pos + prev->size;
@@ -115,7 +124,8 @@ void BaseMoveableMem :: Alloc (size_t s)
 	  cout << "moveable memory: allocate large block of "
 	       << totalsize / 1048576  << " MB" << endl; 
 	  // largeblock = new char[totalsize];
-	  largeblock = (char*)malloc (totalsize);
+	  // largeblock = (char*)malloc (totalsize);
+	  largeblock = new char[totalsize];
 	}
       ptr = largeblock+pos;
 
@@ -133,9 +143,20 @@ void BaseMoveableMem :: ReAlloc (size_t s)
       if (size == s) return;
       
       char * old = ptr;
-      ptr = (char*)malloc(s);
+      ptr = new char[s];
+
+      if (!ptr)
+	{
+	  cerr << "BaseynamicMem, cannot Reallocate " << s << " bytes" << endl;
+	  Print ();
+	  throw ("BaseDynamicMem::Alloc: out of memory");
+	}
+      
+
+
       memmove (ptr, old, (s < size) ? s : size);
-      free (old);
+      //free (old);
+      delete [] old;
       size = s;
       return;
     }
@@ -147,7 +168,7 @@ void BaseMoveableMem :: MoveTo (size_t newpos)
 {
   //  cout << "move block, oldpos = " << pos << "; newpos = " << newpos
   // << ", size = " << size << endl;
-  static int move = 0;
+  static size_t move = 0;
 
   if (newpos + size > totalsize)
     throw NgException ("MoveableMem overflow");
@@ -173,7 +194,8 @@ void BaseMoveableMem :: Free () throw()
 {
   if (totalsize == 0)
     {
-      free (ptr);
+      //free (ptr);
+      delete [] ptr;
       ptr = 0;
       return;
     }
@@ -199,7 +221,7 @@ void BaseMoveableMem :: Free () throw()
 
 void BaseMoveableMem :: Swap (BaseMoveableMem & m2) throw()
 {
-  int hi;
+  size_t hi;
   // BaseMoveableMem * hp;
   char * cp;
   hi = size; size  = m2.size; m2.size = hi;
@@ -217,16 +239,16 @@ void BaseMoveableMem :: Print ()
 {
   cout << "****************** Moveable Mem Report ****************" << endl;
   BaseMoveableMem * p = first;
-  int mem = 0;
+  long int mem = 0;
   int cnt = 0;
   while (p)
     {
-      mem += p->size;
+      mem += long(p->size);
       cnt++;
 
       cout << setw(10) << p->size << " Bytes";
       cout << ", pos = " << p->pos;
-      //      cout << ", addr = " << p->ptr;
+      cout << ", addr = " << (void*)p->ptr;
       if (p->name)
 	cout << " in block " << p->name;
       cout << endl;

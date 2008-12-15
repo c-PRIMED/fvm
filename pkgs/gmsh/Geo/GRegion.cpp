@@ -8,12 +8,7 @@
 #include "GRegion.h"
 #include "GFace.h"
 #include "MElement.h"
-
-#if defined(HAVE_GMSH_EMBEDDED)
-#  include "GmshEmbedded.h"
-#else
-#  include "Message.h"
-#endif
+#include "GmshMessage.h"
 
 GRegion::GRegion(GModel *model, int tag) : GEntity (model, tag)
 {
@@ -28,20 +23,22 @@ GRegion::~GRegion()
     ++it;
   }
 
-  for(unsigned int i = 0; i < mesh_vertices.size(); i++)
-    delete mesh_vertices[i];
+  deleteMesh();
+}
 
-  for(unsigned int i = 0; i < tetrahedra.size(); i++)
-    delete tetrahedra[i];
-
-  for(unsigned int i = 0; i < hexahedra.size(); i++)
-    delete hexahedra[i];
-
-  for(unsigned int i = 0; i < prisms.size(); i++)
-    delete prisms[i];
-
-  for(unsigned int i = 0; i < pyramids.size(); i++)
-    delete pyramids[i];
+void GRegion::deleteMesh()
+{
+  for(unsigned int i = 0; i < mesh_vertices.size(); i++) delete mesh_vertices[i];
+  mesh_vertices.clear();
+  transfinite_vertices.clear();
+  for(unsigned int i = 0; i < tetrahedra.size(); i++) delete tetrahedra[i];
+  tetrahedra.clear();
+  for(unsigned int i = 0; i < hexahedra.size(); i++) delete hexahedra[i];
+  hexahedra.clear();
+  for(unsigned int i = 0; i < prisms.size(); i++) delete prisms[i];
+  prisms.clear();
+  for(unsigned int i = 0; i < pyramids.size(); i++) delete pyramids[i];
+  pyramids.clear();
 }
 
 unsigned int GRegion::getNumMeshElements()
@@ -61,12 +58,16 @@ MElement *const *GRegion::getStartElementType(int type) const
 {
   switch(type) {
   case 0:
+    if(tetrahedra.empty()) return 0; // msvc would throw an exception
     return reinterpret_cast<MElement *const *>(&tetrahedra[0]);
   case 1:
+    if(hexahedra.empty()) return 0; // msvc would throw an exception
     return reinterpret_cast<MElement *const *>(&hexahedra[0]);
   case 2:
+    if(prisms.empty()) return 0; // msvc would throw an exception
     return reinterpret_cast<MElement *const *>(&prisms[0]);
   case 3:
+    if(pyramids.empty()) return 0; // msvc would throw an exception
     return reinterpret_cast<MElement *const *>(&pyramids[0]);
   }
   return 0;

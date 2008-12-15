@@ -10,16 +10,14 @@
 #include "GFace.h"
 #include "MElement.h"
 #include "GmshDefines.h"
+#include "GmshMessage.h"
 
-#if defined(HAVE_GMSH_EMBEDDED)
-#  include "GmshEmbedded.h"
-#else
-#  include "Message.h"
-#  include "GaussLegendre1D.h"
+#if !defined(HAVE_GMSH_EMBEDDED)
+#include "GaussLegendre1D.h"
 #endif
 
 GEdge::GEdge(GModel *model, int tag, GVertex *_v0, GVertex *_v1)
-  : GEntity(model, tag), v0(_v0), v1(_v1)
+  : GEntity(model, tag), _tooSmall(false), v0(_v0), v1(_v1)
 {
   if(v0) v0->addEdge(this);
   if(v1 && v1 != v0) v1->addEdge(this);
@@ -31,11 +29,15 @@ GEdge::~GEdge()
   if(v0) v0->delEdge(this);
   if(v1 && v1 != v0) v1->delEdge(this);
 
-  for(unsigned int i = 0; i < mesh_vertices.size(); i++)
-    delete mesh_vertices[i];
+  deleteMesh();
+}
 
-  for(unsigned int i = 0; i < lines.size(); i++)
-    delete lines[i];
+void GEdge::deleteMesh()
+{
+  for(unsigned int i = 0; i < mesh_vertices.size(); i++) delete mesh_vertices[i];
+  mesh_vertices.clear();
+  for(unsigned int i = 0; i < lines.size(); i++) delete lines[i];
+  lines.clear();
 }
 
 unsigned int GEdge::getNumMeshElements()
@@ -50,6 +52,7 @@ void GEdge::getNumMeshElements(unsigned *const c) const
 
 MElement *const *GEdge::getStartElementType(int type) const
 {
+  if(lines.empty()) return 0; // msvc would throw an exception
   return reinterpret_cast<MElement *const *>(&lines[0]);
 }
 
@@ -67,7 +70,7 @@ void GEdge::resetMeshAttributes()
   meshAttributes.nbPointsTransfinite = 0;
   meshAttributes.typeTransfinite = 0;
   meshAttributes.extrude = 0;
-  meshAttributes.meshSize = 1.e22;
+  meshAttributes.meshSize = MAX_LC;
   meshAttributes.minimumMeshSegments = 1;
 }
 

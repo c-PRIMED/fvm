@@ -3,6 +3,7 @@
 
 #include <csg.hpp>
 
+
 namespace netgen
 {
 
@@ -16,6 +17,9 @@ namespace netgen
     // edges selected in csg input file
     for (i = 1; i <= geom.singedges.Size(); i++)
       {
+	//if(geom.singedges.Get(i)->maxhinit > 0)
+	//  continue; //!!!!
+
 	const SingularEdge & se = *geom.singedges.Get(i);
 	for (j = 1; j <= se.segms.Size(); j++)
 	  {
@@ -161,8 +165,8 @@ namespace netgen
 		if (mesh.GetIdentifications().GetSymmetric (pi1, pi4) &&
 		    mesh.GetIdentifications().GetSymmetric (pi2, pi3))
 		  {
-		    int p3 = el.PNum(pi3);
-		    int p4 = el.PNum(pi4);
+		    //int p3 = el.PNum(pi3);
+		    //int p4 = el.PNum(pi4);
 		  
 		    el.SetType(PRISM);
 		    el.PNum(1) = pi1;
@@ -245,7 +249,7 @@ namespace netgen
   void RefinePrisms (Mesh & mesh, const CSGeometry * geom, 
 		     ZRefinementOptions & opt)
   {
-    int i, j, k;
+    int i, j;
     bool found, change;
     int cnt = 0;
 
@@ -287,8 +291,8 @@ namespace netgen
 			}
 		    }
 		  else
-		    {
-		      const ARRAY<double> & slices = csid->GetSlices();
+		    {   
+		      //const ARRAY<double> & slices = csid->GetSlices();
 		      INDEX_4 i4;
 		      i4[0] = pair.I1();
 		      i4[1] = pair.I2();
@@ -324,7 +328,7 @@ namespace netgen
 	      {
 		const Point3d & p1 = mesh.Point(pi1);
 		const Point3d & p2 = mesh.Point(pi2);
-		int npi;
+		int npi(0);
 	      
 		INDEX_2 edge(pi1, pi2);
 		edge.Sort();
@@ -391,11 +395,14 @@ namespace netgen
 		if (!refedges.Used(edge))
 		  {
 		    const ARRAY<double> & slices = csid->GetSlices();
+		    //(*testout) << "idnr " << idnr << " i " << i << endl;
+		    //(*testout) << "slices " << slices << endl;
 		    double slicefac = slices.Get(slicenr);
 		    double slicefaclast = 
 		      (slicenr == slices.Size()) ? 1 : slices.Get(slicenr+1);
 		    
 		    Point3d np = p1 + (slicefac / slicefaclast) * (p2-p1);
+		    //(*testout) << "slicenr " << slicenr << " slicefac " << slicefac << " quot " << (slicefac / slicefaclast) << " np " << np << endl;
 		    npi = mesh.AddPoint (np);
 		    refedges.Set (edge, npi);
 		    found = 1;
@@ -719,7 +726,7 @@ namespace netgen
     INDEX_2_HASHTABLE<int> singedges(mesh.GetNSeg());
 
     SelectSingularEdges (mesh, *geom, singedges, opt);
-    MakePrismsSingEdge (mesh, singedges);
+    //MakePrismsSingEdge (mesh, singedges);
     MakePrismsClosePoints (mesh);
 
     RefinePrisms (mesh, geom, opt);

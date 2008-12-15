@@ -14,7 +14,7 @@
 
 namespace netgen
 {
-  using namespace netgen;
+  //using namespace netgen;
 
   BitArray :: BitArray ()
   {

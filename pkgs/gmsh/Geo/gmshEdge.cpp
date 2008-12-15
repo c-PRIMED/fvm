@@ -5,10 +5,11 @@
 
 #include "GModel.h"
 #include "GFace.h"
+#include "GFaceCompound.h"
 #include "gmshEdge.h"
 #include "Geo.h"
 #include "GeoInterpolation.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Context.h"
 
 extern Context_T CTX;
@@ -201,6 +202,7 @@ SPoint2 gmshEdge::reparamOnFace(GFace *face, double epar,int dir) const
     }
   }
   
+
   if(s->Typ ==  MSH_SURF_REGL){
     Curve *C[4];
     for(int i = 0; i < 4; i++)

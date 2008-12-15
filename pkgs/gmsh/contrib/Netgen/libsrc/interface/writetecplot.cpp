@@ -40,7 +40,7 @@ void WriteTecPlotFormat (const Mesh & mesh,
     {
       const Element & el = mesh.VolumeElement(i);
       INDEX_3 i3;
-      int k, l;
+      int l;
       for (j = 1; j <= 4; j++)   // loop over faces of tet
 	{
 	  l = 0;
@@ -87,9 +87,9 @@ void WriteTecPlotFormat (const Mesh & mesh,
 	  {
 	    n = geom.GetSurface(j) -> GetNormalVector ( mesh.Point(i) );
 		
-	    outfile << mesh.Point(i).X() << " " /* Knoten Koordinaten */
-		    << mesh.Point(i).Y() << " "
-		    << mesh.Point(i).Z() << " "
+	    outfile << mesh.Point(i)(0) << " " /* Knoten Koordinaten */
+		    << mesh.Point(i)(1) << " "
+		    << mesh.Point(i)(2) << " "
 		    << n(0) << " "
 		    << n(1) << " "
 		    << n(2) << " "
@@ -109,15 +109,15 @@ void WriteTecPlotFormat (const Mesh & mesh,
 	  /// Hier soll noch die Ausgabe der Nummer des angrenzenden
 	      /// Vol.elements erfolgen !
 
-	      for (i = 1; i <= nse; i++)
+	      for (k = 1; k <= nse; k++)
 		{
-		  const Element2d & el = mesh.SurfaceElement(i);
+		  const Element2d & sel = mesh.SurfaceElement(k);
 		  INDEX_3 i3;
 		  for (j = 1; j <= 3; j++)
-		    i3.I(j) = el.PNum(j);
+		    i3.I(j) = sel.PNum(j);
 		  i3.Sort();
 		  
-		  int elind = face2volelement.Get(i3);
+		  //int elind = face2volelement.Get(i3);
 		}
 	}
     }

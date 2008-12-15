@@ -19,12 +19,13 @@
 #include "MElement.h"
 #include "Context.h"
 #include "GPoint.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Numeric.h"
 #include "BDS.h"
 #include "qualityMeasures.h"
 #include "Field.h"
 #include "OS.h"
+#include "HighOrder.h"
 
 extern Context_T CTX;
 
@@ -316,6 +317,7 @@ static bool recover_medge(BDS_Mesh *m, GEdge *ge, std::set<EdgeToRecover> *e2r,
   return true;
 }
 
+
 // Builds An initial triangular mesh that respects the boundaries of
 // the domain, including embedded points and surfaces
 
@@ -327,37 +329,55 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
   std::map<int, MVertex*>numbered_vertices;
   std::list<GEdge*> edges = gf->edges();
   std::list<GEdge*> emb_edges = gf->embeddedEdges();
+  std::list<GVertex*> emb_vertx = gf->embeddedVertices();
   std::list<GEdge*>::iterator it = edges.begin();
+  std::list<GVertex*>::iterator itvx = emb_vertx.begin();
 
   // build a set with all points of the boundaries
   it = edges.begin();
   while(it != edges.end()){
     if ((*it)->isSeam(gf)) return false;
     if(!(*it)->isMeshDegenerated()){
-      all_vertices.insert((*it)->mesh_vertices.begin(), 
-                          (*it)->mesh_vertices.end());
-      all_vertices.insert((*it)->getBeginVertex()->mesh_vertices.begin(),
-                          (*it)->getBeginVertex()->mesh_vertices.end());
-      all_vertices.insert((*it)->getEndVertex()->mesh_vertices.begin(),
-                          (*it)->getEndVertex()->mesh_vertices.end());
+      for (unsigned int i = 0; i< (*it)->lines.size(); i++){
+	all_vertices.insert((*it)->lines[i]->getVertex(0));
+	all_vertices.insert((*it)->lines[i]->getVertex(1));
+      }      
+      //      all_vertices.insert((*it)->mesh_vertices.begin(), 
+      //                          (*it)->mesh_vertices.end());
+      //      all_vertices.insert((*it)->getBeginVertex()->mesh_vertices.begin(),
+      //                          (*it)->getBeginVertex()->mesh_vertices.end());
+      //      all_vertices.insert((*it)->getEndVertex()->mesh_vertices.begin(),
+      //                          (*it)->getEndVertex()->mesh_vertices.end());
     }
     ++it;
   }
 
   it = emb_edges.begin();
   while(it != emb_edges.end()){
-    all_vertices.insert((*it)->mesh_vertices.begin(),
-                        (*it)->mesh_vertices.end() );
-    all_vertices.insert((*it)->getBeginVertex()->mesh_vertices.begin(),
-                        (*it)->getBeginVertex()->mesh_vertices.end());
-    all_vertices.insert((*it)->getEndVertex()->mesh_vertices.begin(),
-                        (*it)->getEndVertex()->mesh_vertices.end());
+    if(!(*it)->isMeshDegenerated()){
+      all_vertices.insert((*it)->mesh_vertices.begin(),
+			  (*it)->mesh_vertices.end() );
+      all_vertices.insert((*it)->getBeginVertex()->mesh_vertices.begin(),
+			  (*it)->getBeginVertex()->mesh_vertices.end());
+      all_vertices.insert((*it)->getEndVertex()->mesh_vertices.begin(),
+			  (*it)->getEndVertex()->mesh_vertices.end());
+    }
     ++it;
   }
-  
+ 
+  // add embedded vertices
+  while(itvx != emb_vertx.end()){
+    all_vertices.insert((*itvx)->mesh_vertices.begin(),
+			(*itvx)->mesh_vertices.end() );
+    ++itvx;
+  }
+ 
   if (all_vertices.size() < 3){
-    Msg::Warning("Cannot triangulate less than 3 vertices");
-    return false;
+    Msg::Warning("Mesh Generation of Model Face %d Skipped: "
+		 "Only %d Mesh Vertices on The Contours",
+		 gf->tag(), all_vertices.size());
+    gf->meshStatistics.status = GFace::DONE;
+    return true;
   }
 
   double *U_ = new double[all_vertices.size()];
@@ -370,29 +390,9 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
   while(itv != all_vertices.end()){
     MVertex *here = *itv;
     SPoint2 param;
-    if(here->onWhat()->geomType() == GEntity::DiscreteCurve ||
-       here->onWhat()->geomType() == GEntity::BoundaryLayerCurve){
-      param = gf->parFromPoint(SPoint3(here->x(), here->y(), here->z()));
-    }
-    else if(here->onWhat()->dim() == 0){
-      GVertex *gv = (GVertex*)here->onWhat();
-      param = gv->reparamOnFace(gf,1);
-    }
-    else if(here->onWhat()->dim() == 1){
-      GEdge *ge = (GEdge*)here->onWhat();
-      double UU;
-      here->getParameter(0, UU);
-      param = ge->reparamOnFace(gf, UU, 1);
-    }
-    else{
-      double UU, VV;
-      if(here->onWhat() == gf && here->getParameter(0, UU) && here->getParameter(1, VV))
-        param = SPoint2(UU, VV);
-      else
-        param = gf->parFromPoint(SPoint3(here->x(), here->y(), here->z()));
-    }
-    U_[count] = param.x();
-    V_[count] = param.y();
+    reparamMeshVertexOnFace(here, gf, param);
+    U_[count] = param[0];
+    V_[count] = param[1];
     (*itv)->setIndex(count);
     numbered_vertices[(*itv)->getIndex()] = *itv;
     bbox += SPoint3(param.x(), param.y(), 0);
@@ -411,6 +411,7 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
   BDS_Mesh *m = new BDS_Mesh;
   m->scalingU = 1;
   m->scalingV = 1;
+
 
   // Use a divide & conquer type algorithm to create a triangulation.
   // We add to the triangulation a box with 4 points that encloses the
@@ -506,7 +507,8 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
     }
     it = emb_edges.begin();
     while(it != emb_edges.end()){
-      recover_medge(m, *it, &edgesToRecover, &edgesNotRecovered, 1);
+      if(!(*it)->isMeshDegenerated())
+	recover_medge(m, *it, &edgesToRecover, &edgesNotRecovered, 1);
       ++it;
     }
     
@@ -581,7 +583,8 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
     
     it = emb_edges.begin();
     while(it != emb_edges.end()){
-      recover_medge(m, *it, &edgesToRecover, &edgesNotRecovered, 2);
+      if(!(*it)->isMeshDegenerated())
+	recover_medge(m, *it, &edgesToRecover, &edgesNotRecovered, 2);
       ++it;
     }
     // compute characteristic lengths at vertices    
@@ -600,7 +603,7 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
  	pp->lcBGM() = BGM_MeshSize(ge, u, 0, here->x(), here->y(), here->z());
       }
       else
- 	pp->lcBGM() = 1.e22;      
+ 	pp->lcBGM() = MAX_LC;      
       pp->lc() = pp->lcBGM();
     }
     for(int ip = 0; ip < 4; ip++) delete bb[ip];
@@ -950,7 +953,7 @@ static bool buildConsecutiveListOfVertices(GFace *gf, GEdgeLoop  &gel,
          pp->lcBGM() = BGM_MeshSize(ge, u, 0,here->x(), here->y(), here->z());
        }
        else
-         pp->lcBGM() = 1.e22;
+         pp->lcBGM() = MAX_LC;
        
        pp->lc() = pp->lcBGM();
        m->add_geom (ge->tag(), ge->dim());
@@ -1268,13 +1271,7 @@ void deMeshGFace::operator() (GFace *gf)
 {
   if(gf->geomType() == GEntity::DiscreteSurface) return;
 
-  for (unsigned int i=0;i<gf->mesh_vertices.size();i++) delete gf->mesh_vertices[i];
-  gf->mesh_vertices.clear();
-  gf->transfinite_vertices.clear();
-  for (unsigned int i=0;i<gf->triangles.size();i++) delete gf->triangles[i];
-  gf->triangles.clear();
-  for (unsigned int i=0;i<gf->quadrangles.size();i++) delete gf->quadrangles[i];
-  gf->quadrangles.clear();
+  gf->deleteMesh();
   gf->deleteVertexArrays();
   gf->model()->destroyMeshCaches();
 
@@ -1286,6 +1283,7 @@ const int debugSurface = -1;
 
 void meshGFace::operator() (GFace *gf)
 {
+
   gf->model()->setCurrentMeshEntity(gf);
 
   if (debugSurface >= 0 && gf->tag() != debugSurface){
@@ -1315,14 +1313,14 @@ void meshGFace::operator() (GFace *gf)
     algo = "MeshAdapt+Delaunay";
 
   Msg::StatusBar(2, true, "Meshing surface %d (%s, %s)", 
-      gf->tag(), gf->getTypeString().c_str(), algo);
+		 gf->tag(), gf->getTypeString().c_str(), algo);
 
   // compute loops on the fly (indices indicate start and end points
   // of a loop; loops are not yet oriented)
   Msg::Debug("Computing edge loops");
-  std::vector<MVertex*> points;
-  std::vector<int> indices;
-  computeEdgeLoops(gf, points, indices);
+  //  std::vector<MVertex*> points;
+  //  std::vector<int> indices;
+  //  computeEdgeLoops(gf, points, indices);
 
   Msg::Debug("Generating the mesh");
   if(noseam(gf) || gf->getNativeType() == GEntity::GmshModel || gf->edgeLoops.empty()){
@@ -1336,7 +1334,7 @@ void meshGFace::operator() (GFace *gf)
   //  gmshQMorph(gf);
   
   Msg::Debug("Type %d %d triangles generated, %d internal vertices",
-      gf->geomType(), gf->triangles.size(), gf->mesh_vertices.size());
+	     gf->geomType(), gf->triangles.size(), gf->mesh_vertices.size());
 }
 
 template<class T>

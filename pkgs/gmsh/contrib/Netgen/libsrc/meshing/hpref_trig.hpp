@@ -1,8 +1,5 @@
 
 
-
-
-
 // HP_TRIG
 int reftrig_splitedges[][3] =
 {
@@ -25,9 +22,6 @@ HPRef_Struct reftrig =
   reftrig_newelstypes, 
   reftrig_newels
 };
-
-
-
 
 
 
@@ -233,17 +227,6 @@ HPRef_Struct reftrig_singcorner123 =
   reftrig_singcorner123_newelstypes, 
   reftrig_singcorner123_newels
 };
-
-
-
-
-
-
-
-
-
-
-
 
 // HP_TRIG_SINGEDGE
 int reftrig_singedge_splitedges[][3] =
@@ -531,18 +514,6 @@ HPRef_Struct reftrig_singedgecorner123 =
   reftrig_singedgecorner123_newels
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
 // HP_TRIG_SINGEDGES
 int reftrig_singedges_splitedges[][3] =
 {
@@ -748,3 +719,58 @@ HPRef_Struct reftrig_singedges23 =
 };
 
 
+// HP_TRIG_3SINGEDGES
+int reftrig_3singedges_splitedges[][3] =
+{
+  { 1, 2, 4 },
+  { 2, 1, 5 }, 
+  { 2, 3, 6 }, 
+  { 3, 2, 7 }, 
+  { 3, 1, 8 }, 
+  { 1, 3, 9 }, 
+  { 0, 0, 0 }
+};
+int reftrig_3singedges_splitfaces[][4] =
+{
+  { 1, 2, 3, 10 },
+  { 2, 3, 1, 11 },
+  { 3, 1, 2, 12 }, 
+  { 0, 0, 0, 0 }
+};
+
+HPREF_ELEMENT_TYPE reftrig_3singedges_newelstypes[] =
+{
+  HP_TRIG, 
+  HP_QUAD_SINGEDGE, 
+  HP_QUAD_SINGEDGE, 
+  HP_QUAD_SINGEDGE, 
+  HP_TRIG_SINGEDGECORNER1, 
+  HP_TRIG_SINGEDGECORNER2, 
+  HP_TRIG_SINGEDGECORNER1, 
+  HP_TRIG_SINGEDGECORNER2, 
+  HP_TRIG_SINGEDGECORNER1, 
+  HP_TRIG_SINGEDGECORNER2, 
+  HP_NONE, 
+};
+int reftrig_3singedges_newels[][8] =
+{
+  { 10, 11, 12 }, 
+  { 4, 5, 11, 10 }, 
+  { 6, 7, 12, 11 },
+  { 8, 9, 10, 12 }, 
+  { 1, 4, 10 }, 
+  { 9, 1, 10 }, 
+  { 2, 6, 11 }, 
+  { 5, 2, 11 }, 
+  { 3, 8, 12 }, 
+  { 7, 3, 12 }, 
+};
+HPRef_Struct reftrig_3singedges =
+{
+  HP_TRIG,
+  reftrig_3singedges_splitedges, 
+  reftrig_3singedges_splitfaces, 
+  0,
+  reftrig_3singedges_newelstypes, 
+  reftrig_3singedges_newels
+};

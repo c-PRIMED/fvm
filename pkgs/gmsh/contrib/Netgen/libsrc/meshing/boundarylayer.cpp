@@ -73,7 +73,7 @@ void InsertVirtualBoundaryLayer (Mesh & mesh)
 	  int p4 = mapto.Get (p2);
 	  if (!p4) p4 = p2;
 	  
-	  Element2d el(4);
+	  Element2d el(QUAD);
 	  el.PNum(1) = p1;
 	  el.PNum(2) = p2;
 	  el.PNum(3) = p3;
@@ -89,3 +89,4 @@ void InsertVirtualBoundaryLayer (Mesh & mesh)
 }
 
 }
+

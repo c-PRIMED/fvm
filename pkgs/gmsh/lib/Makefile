@@ -3,7 +3,8 @@
 # See the LICENSE.txt file for license information. Please report all
 # bugs and problems to <gmsh@geuz.org>.
 
-clean:
-	rm -f *.a *.lib
+include ../variables
 
+clean:
+	${RM} *.a *.lib
 

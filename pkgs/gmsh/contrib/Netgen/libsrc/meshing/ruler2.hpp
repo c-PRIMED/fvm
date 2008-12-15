@@ -93,7 +93,8 @@ public:
   const threeint & GetOrientation (int i) const { return orientations.Get(i); }
   ///
   int GetDelLine (int i) const { return dellines.Get(i); }
-
+  ///
+  const ARRAY<int> & GetDelLines() const { return dellines; }
   ///
   void GetFreeZone (ARRAY<Point2d> & afreearea);
   ///
@@ -102,8 +103,8 @@ public:
   {
     double dx = p.X() - points.Get(pi).X();
     double dy = p.Y() - points.Get(pi).Y();
-    const threefloat * tf = &tolerances.Get(pi);
-    return tf->f1 * dx * dx + tf->f2 * dx * dy + tf->f3 * dy * dy;
+    const threefloat * tfp = &tolerances.Get(pi);
+    return tfp->f1 * dx * dx + tfp->f2 * dx * dy + tfp->f3 * dy * dy;
   }
 
   ///

@@ -164,7 +164,7 @@ void CutOffAndCombine (Mesh & mesh, const Mesh & othermesh)
 
 void HelmholtzMesh (Mesh & mesh)
 {
-  int i, j;
+  int i;
   double ri, ra, rinf;
 
   cout << "ri = ";
@@ -179,15 +179,15 @@ void HelmholtzMesh (Mesh & mesh)
   double b = (ri*ri - ra * rinf) / det;
   for (i = 1; i <= mesh.GetNP(); i++)
     {
-      Point3d & p = mesh.Point(i);
-      double rold = sqrt (sqr(p.X()) + sqr(p.Y()) + sqr(p.Z()));
+      Point<3> & p = mesh.Point(i);
+      double rold = sqrt (sqr(p(0)) + sqr(p(1)) + sqr(p(2)));
       if (rold < ri) continue;
 
       double rnew = 1 / (a * rold - b);
       double fac = rnew / rold;
-      p.X() *= fac;
-      p.Y() *= fac;
-      p.Z() *= fac;
+      p(0) *= fac;
+      p(1) *= fac;
+      p(2) *= fac;
     }
 }
 }

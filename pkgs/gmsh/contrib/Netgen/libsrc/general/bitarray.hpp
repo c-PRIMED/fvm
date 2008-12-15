@@ -21,34 +21,45 @@
 */
 class BitArray
 {
-  ///
   INDEX size;
-  ///
   unsigned char * data;
 
 public:
-  ///
   BitArray ();
   ///
   BitArray (INDEX asize);
   ///
   ~BitArray ();
 
-  ///
+  /// 
   void SetSize (INDEX asize);
   ///
-  inline INDEX Size () const;
+  INDEX Size () const
+  {
+    return size;
+  }
 
   ///
   void Set ();
   ///
-  inline void Set (INDEX i);
-  ///
+  void Set (INDEX i)
+  {
+    data[Addr(i)] |= Mask(i);
+  }
+  
   void Clear ();
-  ///
-  inline void Clear (INDEX i);
-  ///
-  inline int Test (INDEX i) const;
+
+
+  void Clear (INDEX i)
+  {
+    data[Addr(i)] &= ~Mask(i);
+  }
+
+  bool Test (INDEX i) const
+  {
+    return (data[i / CHAR_BIT] & (char(1) << (i % CHAR_BIT) ) ) ? true : false;
+  }
+
   ///
   void Invert ();
   ///
@@ -57,9 +68,15 @@ public:
   void Or (const BitArray & ba2);
 private:
   ///
-  inline unsigned char Mask (INDEX i) const;
+  inline unsigned char Mask (INDEX i) const
+  {
+    return char(1) << (i % CHAR_BIT);
+  }
   ///
-  inline INDEX Addr (INDEX i) const;
+  inline INDEX Addr (INDEX i) const
+  {
+  return (i / CHAR_BIT);
+  }
 
   ///
   BitArray & operator= (BitArray &);
@@ -69,14 +86,12 @@ private:
 
 
 
-
-
 // print bitarray
 inline ostream & operator<< (ostream & s, const BitArray & a)
 {
   for (int i = 1; i <= a.Size(); i++)
     {
-      s << a.Test(i);
+      s << int (a.Test(i));
       if (i % 40 == 0) s << "\n";
     }
   if (a.Size() % 40 != 0) s << "\n";
@@ -84,7 +99,7 @@ inline ostream & operator<< (ostream & s, const BitArray & a)
 }
 
 
-
+/*
 inline
 INDEX BitArray :: Size () const
   {
@@ -102,7 +117,6 @@ INDEX BitArray :: Addr (INDEX i) const
   {
   return (i / CHAR_BIT);
   }
-
 inline
 void BitArray :: Set (INDEX i)
   {
@@ -115,13 +129,14 @@ void BitArray :: Clear (INDEX i)
   data[Addr(i)] &= ~Mask(i);
   }
 
+
 inline
 int BitArray :: Test (INDEX i) const
   {
   return (data[i / CHAR_BIT] & (char(1) << (i % CHAR_BIT) ) ) ? 1 : 0;
   }
 
-
+*/
 
 
 

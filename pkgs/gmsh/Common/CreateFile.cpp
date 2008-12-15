@@ -4,7 +4,7 @@
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <string.h>
-#include "Message.h"
+#include "GmshMessage.h"
 #include "GModel.h"
 #include "GmshDefines.h"
 #include "StringUtils.h"
@@ -48,6 +48,7 @@ int GuessFileFormatFromFileName(const char *name)
   else if(!strcmp(ext, ".med"))  return FORMAT_MED;
   else if(!strcmp(ext, ".mesh")) return FORMAT_MESH;
   else if(!strcmp(ext, ".bdf"))  return FORMAT_BDF;
+  else if(!strcmp(ext, ".diff")) return FORMAT_DIFF;
   else if(!strcmp(ext, ".nas"))  return FORMAT_BDF;
   else if(!strcmp(ext, ".p3d"))  return FORMAT_P3D;
   else if(!strcmp(ext, ".wrl"))  return FORMAT_VRML;
@@ -82,6 +83,7 @@ void GetDefaultFileName(int format, char *name)
   case FORMAT_MED:  strcpy(ext, ".med"); break;
   case FORMAT_MESH: strcpy(ext, ".mesh"); break;
   case FORMAT_BDF:  strcpy(ext, ".bdf"); break;
+  case FORMAT_DIFF: strcpy(ext, ".diff"); break;
   case FORMAT_P3D:  strcpy(ext, ".p3d"); break;
   case FORMAT_VRML: strcpy(ext, ".wrl"); break;
   case FORMAT_GIF:  strcpy(ext, ".gif"); break;
@@ -136,12 +138,12 @@ void CreateOutputFile(const char *filename, int format)
     break;
 
   case FORMAT_MSH:
-    GModel::current()->writeMSH(name, CTX.mesh.msh_file_version, CTX.mesh.msh_binary, 
-                                CTX.mesh.save_all, CTX.mesh.scaling_factor);
+    GModel::current()->writeMSH(name, CTX.mesh.msh_file_version, CTX.mesh.binary, 
+                                CTX.mesh.save_all, CTX.mesh.save_parametric,CTX.mesh.scaling_factor);
     break;
 
   case FORMAT_STL:
-    GModel::current()->writeSTL(name, CTX.mesh.stl_binary,
+    GModel::current()->writeSTL(name, CTX.mesh.binary,
                                 CTX.mesh.save_all, CTX.mesh.scaling_factor);
     break;
 
@@ -155,8 +157,8 @@ void CreateOutputFile(const char *filename, int format)
     break;
 
   case FORMAT_VTK:
-    GModel::current()->writeVTK(name, CTX.mesh.msh_binary, CTX.mesh.save_all,
-                                CTX.mesh.scaling_factor);
+    GModel::current()->writeVTK(name, CTX.mesh.binary, CTX.mesh.save_all,
+                                CTX.mesh.scaling_factor, CTX.big_endian);
     break;
 
   case FORMAT_MESH:
@@ -166,6 +168,11 @@ void CreateOutputFile(const char *filename, int format)
   case FORMAT_BDF:
     GModel::current()->writeBDF(name, CTX.mesh.bdf_field_format, 
 				CTX.mesh.save_all, CTX.mesh.scaling_factor);
+    break;
+
+  case FORMAT_DIFF:
+    GModel::current()->writeDIFF(name, CTX.mesh.binary, CTX.mesh.save_all,
+                                 CTX.mesh.scaling_factor);
     break;
 
   case FORMAT_P3D:

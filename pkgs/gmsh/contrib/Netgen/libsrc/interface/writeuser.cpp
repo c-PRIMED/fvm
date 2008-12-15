@@ -17,7 +17,7 @@ namespace netgen
 
 void RegisterUserFormats (ARRAY<const char*> & names)
 {
-  char *types[] =
+  const char *types[] =
     {
       "Neutral Format",
       "Surface Mesh Format" ,
@@ -32,6 +32,8 @@ void RegisterUserFormats (ARRAY<const char*> & names)
       "STL Format",
       "VRML Format",
       "Gmsh Format",
+      "JCMwave Format",
+      "TET Format",
       //      { "Chemnitz Format" },
       0
     };
@@ -42,9 +44,9 @@ void RegisterUserFormats (ARRAY<const char*> & names)
 
 
 
-bool WriteUserFormat (const string & format, 	
+bool WriteUserFormat (const string & format,
 		      const Mesh & mesh,
-		      const CSGeometry & geom,
+		      const CSGeometry & geom, 
 		      const string & filename)
 {
   PrintMessage (1, "Export mesh to file ", filename, 
@@ -99,6 +101,14 @@ bool WriteUserFormat (const string & format,
   else if (format == "Gmsh Format")
     WriteGmshFormat (mesh, geom, filename);
  
+  else if (format == "JCMwave Format")
+    WriteJCMFormat (mesh, geom, filename);
+
+#ifdef OLIVER
+  else if (format == "TET Format")
+    WriteTETFormat( mesh, filename);//, "High Frequency" );
+#endif
+
   else 
     {
       return 1;
@@ -235,10 +245,10 @@ void WriteSurfaceFormat (const Mesh & mesh,
   outfile << mesh.GetNP() << endl;
   for (i = 1; i <= mesh.GetNP(); i++)
     {
-      for (j = 1; j <= 3; j++)
+      for (j = 0; j < 3; j++)
 	{
 	  outfile.width(10);
-	  outfile << mesh.Point(i).X(j) << " ";
+	  outfile << mesh.Point(i)(j) << " ";
 	}
       outfile << endl;
     }
@@ -269,7 +279,7 @@ void WriteSTLFormat (const Mesh & mesh,
   
   ofstream outfile (filename.c_str());
   
-  int i, j, k;
+  int i;
   
   outfile.precision(10);
   
@@ -324,7 +334,7 @@ void WriteVRMLFormat (const Mesh & mesh,
 
       int np = mesh.GetNP();
       int nse = mesh.GetNSE();
-      int i, j, k, l;
+      int i, j;
 
       ofstream outfile (filename.c_str());
 
@@ -400,7 +410,7 @@ void WriteVRMLFormat (const Mesh & mesh,
 
       int np = mesh.GetNP();
       int nse = mesh.GetNSE();
-      int i, j, k, l;
+      int i, j;
 
       ofstream outfile (filename.c_str());
 
@@ -897,3 +907,4 @@ void WriteFile (int typ,
 }
 #endif
 }
+

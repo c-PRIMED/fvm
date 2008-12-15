@@ -59,6 +59,8 @@ class CurvedElements
   void CalcElementTransformation (Point<3> xi, int elnr,
 				  Point<3> * x = NULL, Mat<3,3> * dxdxi = NULL);
 
+
+
 public:
 
   Refinement * refinement;
@@ -87,7 +89,7 @@ public:
   const class Mesh & GetMesh() const
   { return mesh; };
 
-  void BuildCurvedElements(Refinement * ref, int polydeg);
+  void BuildCurvedElements(Refinement * ref, int polydeg, bool rational=false);
 
   int GetEdgeOrder (int edgenr) const
   { return edgeorder[edgenr]; };
@@ -117,30 +119,45 @@ public:
   { CalcSegmentTransformation (xi, segnr, &x, &dxdxi); };
 
 
-  void CalcSurfaceTransformation (Point<2> & xi, int elnr,
+  void CalcSurfaceTransformation (const Point<2> & xi, int elnr,
 				  Point<3> & x)
   { CalcSurfaceTransformation (xi, elnr, &x, NULL); };
 
-  void CalcSurfaceTransformation (Point<2> & xi, int elnr,
+  void CalcSurfaceTransformation (const Point<2> & xi, int elnr,
 				  Mat<3,2> & dxdxi)
   { CalcSurfaceTransformation (xi, elnr, NULL, &dxdxi); };
 
-  void CalcSurfaceTransformation (Point<2> & xi, int elnr,
+  void CalcSurfaceTransformation (const Point<2> & xi, int elnr,
 				  Point<3> & x, Mat<3,2> & dxdxi)
   { CalcSurfaceTransformation (xi, elnr, &x, &dxdxi); };
 
 
-  void CalcElementTransformation (Point<3> xi, int elnr,
+  void CalcElementTransformation (const Point<3> & xi, int elnr,
 				  Point<3> & x)
   { CalcElementTransformation (xi, elnr, &x, NULL); };
 
-  void CalcElementTransformation (Point<3> xi, int elnr,
+  void CalcElementTransformation (const Point<3> & xi, int elnr,
 				  Mat<3,3> & dxdxi)
   { CalcElementTransformation (xi, elnr, NULL, &dxdxi); };
 
-  void CalcElementTransformation (Point<3> xi, int elnr,
+  void CalcElementTransformation (const Point<3> & xi, int elnr,
 				  Point<3> & x, Mat<3,3> & dxdxi)
   { CalcElementTransformation (xi, elnr, &x, &dxdxi); };
+
+
+
+
+  void CalcMultiPointSegmentTransformation (ARRAY<double> * xi, int segnr,
+					    ARRAY<Point<3> > * x,
+					    ARRAY<Vec<3> > * dxdxi);
+
+  void CalcMultiPointSurfaceTransformation (ARRAY< Point<2> > * xi, int elnr,
+					    ARRAY< Point<3> > * x,
+					    ARRAY< Mat<3,2> > * dxdxi);
+
+  void CalcMultiPointElementTransformation (ARRAY< Point<3> > * xi, int elnr,
+					    ARRAY< Point<3> > * x,
+					    ARRAY< Mat<3,3> > * dxdxi);
 
 };
 
@@ -162,6 +179,8 @@ class PolynomialBasis
   ArrayMem<double,20> dlp;
 
   inline void CalcLegendrePolynomials (double x);
+  // P_i(x/t) t^i
+  inline void CalcScaledLegendrePolynomials (double x, double t);
   inline void CalcDLegendrePolynomials (double x);
 
 public:
@@ -191,6 +210,10 @@ public:
   inline void CalcDDf (double x);
 
   inline void CalcFDf (double x);
+
+  // compute F_i(x/t) t^i
+  inline void CalcFScaled (double x, double t);
+  static inline void CalcFScaled (int p, double x, double t, double * values);
 
   double GetF (int p) { return f[p-2]; };
   double GetDf (int p) { return df[p-2]; };
@@ -595,8 +618,8 @@ protected:
   Vec<3> vdshape[8];
   ArrayMem<double,120> eshape;
   ArrayMem<Vec<3>,120> edshape;
-  ArrayMem<double,2000> fshape;
-  ArrayMem<Vec<3>,2000> fdshape;
+  ArrayMem<double,300> fshape;
+  ArrayMem<Vec<3>,300> fdshape;
 
   virtual void CalcNFaceShapes () = 0;
 
@@ -652,7 +675,13 @@ public:
   }
 
   virtual void CalcVertexShapes() = 0;
+  virtual void CalcVertexShapesOnly()
+  { CalcVertexShapes(); }
+
   virtual void CalcEdgeShapes() = 0;
+  virtual void CalcEdgeShapesOnly() 
+    { CalcEdgeShapes(); }
+
   virtual void CalcFaceShapes() = 0;
 
   double GetVertexShape (int v)
@@ -708,7 +737,9 @@ public:
   void SetReferencePoint (Point<3> axi);
 
   virtual void CalcVertexShapes();
+  virtual void CalcVertexShapesOnly();
   virtual void CalcEdgeShapes();
+  virtual void CalcEdgeShapesOnly();
   virtual void CalcFaceShapes();
 };
 

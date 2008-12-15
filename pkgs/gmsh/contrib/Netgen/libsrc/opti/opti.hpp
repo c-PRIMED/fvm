@@ -100,7 +100,7 @@ namespace netgen
 
 
   /**  
-       Solvers linear programming problem.
+       Solver for linear programming problem.
 
        \begin{verbatim}
        min      c^t x

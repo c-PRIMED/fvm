@@ -10,7 +10,7 @@
 
 
 extern int
-IntersectTriangleLine (const Point3d ** tri, const Point3d ** line);
+IntersectTriangleLine (const Point<3> ** tri, const Point<3> ** line);
 
 
 
@@ -20,7 +20,7 @@ IntersectTriangleLine (const Point3d ** tri, const Point3d ** line);
   one edge of tet or one face of tet
  */
 extern int 
-IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
+IntersectTetTriangle (const Point<3> ** tet, const Point<3> ** tri,
 		      const int * tetpi = NULL, const int * tripi = NULL);
 
 /**
@@ -33,7 +33,7 @@ IntersectTetTriangleRef (const Point3d ** tri, const int * tripi = NULL);
 
 // 1, iff not regular triangulation
 extern int 
-IntersectTriangleTriangle (const Point3d ** tri1, const Point3d ** tri2);
+IntersectTriangleTriangle (const Point<3> ** tri1, const Point<3> ** tri2);
 
 
 extern void
@@ -42,7 +42,7 @@ LocalCoordinates (const Vec3d & e1, const Vec3d & e2,
 
 /// return 1 = degenerated sphere
 extern int
-CalcSphereCenter (const Point3d ** pts, Point3d & c);
+CalcSphereCenter (const Point<3> ** pts, Point<3> & c);
 
 /// return 1 = degenerated triangle
 extern int

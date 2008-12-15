@@ -3,7 +3,7 @@
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
-#include "Message.h"
+#include "GmshMessage.h"
 #include "BackgroundMesh.h"
 #include "Numeric.h"
 #include "Context.h"
@@ -14,8 +14,6 @@
 #include "Field.h"
 
 extern Context_T CTX;
-
-#define MAX_LC 1.e22
 
 // computes the characteristic length of the mesh at a vertex in order
 // to have the geometry captured with accuracy. A parameter called
@@ -112,6 +110,7 @@ static double LC_MVertex_PNTS(GEntity *ge, double U, double V)
     {
       GVertex *gv = (GVertex *)ge;
       double lc = gv->prescribedMeshSizeAtVertex();
+      // FIXME we might want to remove this to make all lc treatment consistent
       if(lc >= MAX_LC) return CTX.lc / 10.;
       return lc;
     }
@@ -124,6 +123,7 @@ static double LC_MVertex_PNTS(GEntity *ge, double U, double V)
       double a = (U - range.low()) / (range.high() - range.low()); 
       double lc = (1 - a) * v1->prescribedMeshSizeAtVertex() +
         (a) * v2->prescribedMeshSizeAtVertex() ;
+      // FIXME we might want to remove this to make all lc treatment consistent
       if(lc >= MAX_LC) return CTX.lc / 10.;
       return lc;
     }
@@ -135,7 +135,7 @@ static double LC_MVertex_PNTS(GEntity *ge, double U, double V)
 // This is the only function that is used by the meshers
 double BGM_MeshSize(GEntity *ge, double U, double V, double X, double Y, double Z)
 {
-  // default lc (mesh size == size of the domain)
+  // default lc (mesh size == size of the model)
   double l1 = CTX.lc;
 
   // lc from points
@@ -153,7 +153,7 @@ double BGM_MeshSize(GEntity *ge, double U, double V, double X, double Y, double 
   FieldManager *fields = GModel::current()->getFields();
   if(fields->background_field > 0){
     Field *f = fields->get(fields->background_field);
-    if(f) l4 = (*f)(X, Y, Z);
+    if(f) l4 = (*f)(X, Y, Z, ge);
   }
 
   // take the minimum, then contrain by lc_min and lc_max
@@ -162,7 +162,8 @@ double BGM_MeshSize(GEntity *ge, double U, double V, double X, double Y, double 
   lc = std::min(lc, CTX.mesh.lc_max);
 
   if(lc <= 0.){
-    Msg::Error("Wrong characteristic length lc = %g", lc);
+    Msg::Error("Wrong characteristic length lc = %g (lcmin = %g, lcmax = %g)",
+	       lc, CTX.mesh.lc_min, CTX.mesh.lc_max);
     lc = l1;
   }
 

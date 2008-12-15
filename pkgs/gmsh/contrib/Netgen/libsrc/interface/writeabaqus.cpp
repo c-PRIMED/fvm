@@ -40,9 +40,9 @@ void WriteAbaqusFormat (const Mesh & mesh,
   for (i = 1; i <= np; i++)
     {
       outfile << i << ", ";
-      outfile << mesh.Point(i).X() << ", ";
-      outfile << mesh.Point(i).Y() << ", ";
-      outfile << mesh.Point(i).Z() << "\n";
+      outfile << mesh.Point(i)(0) << ", ";
+      outfile << mesh.Point(i)(1) << ", ";
+      outfile << mesh.Point(i)(2) << "\n";
     }
 
   int elemcnt = 0; //element counter
@@ -129,7 +129,7 @@ void WriteAbaqusFormat (const Mesh & mesh,
 
       char mpcfilename[255];
       strcpy (mpcfilename, cfilename);
-      int len = strlen (cfilename);
+      size_t len = strlen (cfilename);
       if (len >= 4 && (strcmp (mpcfilename+len-4, ".inp") == 0))
 	strcpy (mpcfilename+len-4, ".mpc");
       else
@@ -137,7 +137,7 @@ void WriteAbaqusFormat (const Mesh & mesh,
 	  
       ofstream mpc (mpcfilename);
 
-      int masternode;
+      int masternode(0);
 
       ARRAY<INDEX_2> pairs;
       BitArray master(np), help(np);

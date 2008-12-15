@@ -6,8 +6,11 @@
 #ifndef _PLUGIN_MANAGER_H_
 #define _PLUGIN_MANAGER_H_
 
+#include <cstring>
 #include <map>
-#include "Plugin.h"
+
+class GMSH_Plugin;
+class GMSH_Solve_Plugin;
 
 struct ltstrpg
 {

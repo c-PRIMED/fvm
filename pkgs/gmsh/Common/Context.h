@@ -50,6 +50,7 @@ class Context_T {
   int gl_position[2]; // position of the graphic window on the screen
   int msg_position[2]; // position of the message window on the screen
   int msg_size[2]; // size of the message window on the screen
+  int msg_auto_scroll; // scroll automatically to last message
   int opt_position[2]; // position of the option window on the screen
   int vis_position[2]; // position of the visibility window on the screen
   int clip_position[2]; // position of the clipping planes window on the screen
@@ -63,8 +64,9 @@ class Context_T {
   int field_size[2]; // size of the field window on the screen
   int file_chooser_position[2]; // position of the file chooser window on the screen
   int system_menu_bar; // use the system menu bar on MacOS?
-  int batch; // 0=full gfx; -1=just parse; 1,2,3=batch 1D, 2D, 3D mesh 
-  int batchAfterMesh; // 1=partition
+  int batch; // -3=server daemon; -2=check coherence; -1=write geo; 0=full gfx;
+             // 1=1D mesh; 2=2D mesh; 3=3D mesh; 4=adapt mesh; 5=refine mesh;
+  int batch_after_mesh; // 1=partition mesh
   int initial_context; // 0=automatic; 1=geom; 2=mesh; 3=solver; 4=post 
   int nopopup; // never popup dialogs in scripts (use default values instead)
   int non_modal_windows; // make all windows "non modal"
@@ -127,6 +129,7 @@ class Context_T {
   int expert_mode; // to disable some warnings for beginners
   int printing; // dynamic: equal to 1 while gmsh is printing
   int hide_unselected; // hide all unselected entities
+  int draw_all_models;
 
   // geometry options 
   struct{
@@ -158,7 +161,7 @@ class Context_T {
     int optimize, optimize_netgen, refine_steps;
     int quality_type, label_type;
     double quality_inf, quality_sup, radius_inf, radius_sup;
-    double scaling_factor, lc_factor, rand_factor, lc_integration_precision, lc_min, lc_max;
+    double scaling_factor, lc_factor, rand_factor, lc_integration_precision, lc_min, lc_max, tolerance_edge_length;
     int lc_from_points, lc_from_curvature, lc_extend_from_boundary;
     int dual, voronoi, draw_skin_only;
     int light, light_two_side, light_lines;
@@ -169,7 +172,7 @@ class Context_T {
     int min_circ_points, min_curv_points;
     double normals, tangents, explode;
     int color_carousel;
-    int save_all, save_groups_of_nodes, stl_binary, msh_binary, bdf_field_format;
+    int save_all, save_groups_of_nodes, binary, bdf_field_format, save_parametric;
     int smooth_normals, reverse_all_normals;
     double angle_smooth_normals;
     double allow_swap_edge_angle;

@@ -11,13 +11,15 @@ namespace netgen
 
 vnetrule :: vnetrule ()
 {
-  name = "";
+  name = new char[1];
+  name[0] = char(0);
   quality = 0;
 }
 
 vnetrule :: ~vnetrule ()
 {
-  if (strlen(name)) delete [] name;
+  // if (strlen(name)) 
+  delete [] name;
   for (int i = 1; i <= freefaces.Size(); i++)
     delete freefaces.Elem(i);
   for (int i = 1; i <= freesets.Size(); i++)
@@ -360,27 +362,27 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
 	      double rs1 = an * v1;
 	      double rs2 = an * v2;
 	      
-	      double lam1 = rs1 * vii22 - rs2 * vii12;
-	      double lam2 = rs2 * vii11 - rs1 * vii12;
+	      double lambda1 = rs1 * vii22 - rs2 * vii12;
+	      double lambda2 = rs2 * vii11 - rs1 * vii12;
 
-	      if (fabs (lam1) > fabs (lam2))
+	      if (fabs (lambda1) > fabs (lambda2))
 		{
-		  if (lam1 < 0)
+		  if (lambda1 < 0)
 		    an *= -1;
 		}
 	      else
 		{
-		  if (lam2 < 0)
+		  if (lambda2 < 0)
 		    an *= -1;
 		}
 
 
-	      if (lam1 * lam2 < 0 && 0)
+	      if (lambda1 * lambda2 < 0 && 0)
 		{
-		  if (fabs (lam1) > 1e-14 && fabs (lam2) > 1e-14)
+		  if (fabs (lambda1) > 1e-14 && fabs (lambda2) > 1e-14)
 		    {
-		      //		      (*mycout) << "lam1 lam2 < 0" << endl;
-		      (*testout) << "lami different" << endl;
+		      //		      (*mycout) << "lambda1 lambda2 < 0" << endl;
+		      (*testout) << "lambdai different" << endl;
 		      (*testout) << "v1 = " << v1 << endl;
 		      (*testout) << "v2 = " << v2 << endl;
 		      (*testout) << "n = " << n << endl;
@@ -392,7 +394,7 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
 		      (*testout) << "an * v2 = " << (an * v2) << endl;
 		      
 		      (*testout) << "vii = " << vii11 << ", " << vii12 << ", " << vii22 << endl;
-		      (*testout) << "lami = " << lam1 << ", " << lam2 << endl;
+		      (*testout) << "lambdai = " << lambda1 << ", " << lambda2 << endl;
 		      (*testout) << "rs = " << rs1 << ", " << rs2 << endl;
 		      continue;
 		    }
@@ -494,30 +496,30 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
 	      double rs1 = an * v1;
 	      double rs2 = an * v2;
 	      
-	      double lam1 = rs1 * vii22 - rs2 * vii12;
-	      double lam2 = rs2 * vii11 - rs1 * vii12;
+	      double lambda1 = rs1 * vii22 - rs2 * vii12;
+	      double lambda2 = rs2 * vii11 - rs1 * vii12;
 
-	      //	      (*testout) << "lam1, lam2 = " << lam1 << ", " << lam2 << endl;
+	      //	      (*testout) << "lambda1, lambda2 = " << lambda1 << ", " << lambda2 << endl;
 
 
-	      if (fabs (lam1) > fabs (lam2))
+	      if (fabs (lambda1) > fabs (lambda2))
 		{
-		  if (lam1 < 0)
+		  if (lambda1 < 0)
 		    an *= -1;
 		}
 	      else
 		{
-		  if (lam2 < 0)
+		  if (lambda2 < 0)
 		    an *= -1;
 		}
 
 
-	      if (lam1 * lam2 < 0)
+	      if (lambda1 * lambda2 < 0)
 		{
-		  if (fabs (lam1) > 1e-14 && fabs (lam2) > 1e-14)
+		  if (fabs (lambda1) > 1e-14 && fabs (lambda2) > 1e-14)
 		    {
-		      //		      (*mycout) << "lam1 lam2 < 0" << endl;
-		      (*testout) << "lami different" << endl;
+		      //		      (*mycout) << "lambda1 lambda2 < 0" << endl;
+		      (*testout) << "lambdai different" << endl;
 		      (*testout) << "v1 = " << v1 << endl;
 		      (*testout) << "v2 = " << v2 << endl;
 		      (*testout) << "n = " << n << endl;
@@ -529,7 +531,7 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
 		      (*testout) << "an * v2 = " << (an * v2) << endl;
 		      
 		      (*testout) << "vii = " << vii11 << ", " << vii12 << ", " << vii22 << endl;
-		      (*testout) << "lami = " << lam1 << ", " << lam2 << endl;
+		      (*testout) << "lambdai = " << lambda1 << ", " << lambda2 << endl;
 		      (*testout) << "rs = " << rs1 << ", " << rs2 << endl;
 		      continue;
 		    }

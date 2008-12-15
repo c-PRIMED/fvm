@@ -1,8 +1,8 @@
 #include <mystdlib.h>
 
 #include "meshing.hpp"
-#include <csg.hpp>
-#include <geometry2d.hpp>
+//#include <csg.hpp> // MODIFIED FOR GMSH
+//#include <geometry2d.hpp>// MODIFIED FOR GMSH
 
 namespace netgen
 {
@@ -55,7 +55,7 @@ namespace netgen
   int CheckSurfaceMesh2 (const Mesh & mesh)
   {
     int i, j, k;
-    const Point3d *tri1[3], *tri2[3];
+    const Point<3> *tri1[3], *tri2[3];
 
     for (i = 1; i <= mesh.GetNOpenElements(); i++)
       {
@@ -223,14 +223,16 @@ namespace netgen
       err += ll / (h * h) + 
 	h * h * ( 1 / ll1 + 1 / ll2 + 1 / ll3 + 
 		  1 / ll4 + 1 / ll5 + 1 / ll6 ) - 12;
-
+    
+    if (teterrpow == 2)
+      return err*err;
     return pow (err, teterrpow);
   }
 
 
   double CalcTetBadnessGrad (const Point3d & p1, const Point3d & p2,
 			     const Point3d & p3, const Point3d & p4, double h,
-			     int pi, Vec3d & grad)
+			     int pi, Vec<3> & grad)
   {
     double vol, l, ll, lll;
     double err;
@@ -310,7 +312,11 @@ namespace netgen
     gradll += gradll2;
     gradll += gradll3;
 
-
+    /*
+    Vec3d gradll;
+    gradll = v1+v2+v3;
+    gradll *= -2;
+    */
 
     err = 0.0080187537 * lll / vol; 
 
@@ -322,6 +328,14 @@ namespace netgen
   
     if (h > 0)
       {
+	/*
+	Vec3d gradll1 (*pp2, *pp1);
+	Vec3d gradll2 (*pp3, *pp1);
+	Vec3d gradll3 (*pp4, *pp1);
+	gradll1 *= 2;
+	gradll2 *= 2;
+	gradll3 *= 2;
+	*/
 	err += ll / (h*h) + 
 	  h*h * ( 1 / ll1 + 1 / ll2 + 1 / ll3 + 
 		  1 / ll4 + 1 / ll5 + 1 / ll6 ) - 12;
@@ -332,9 +346,18 @@ namespace netgen
 	cout << "?";
       }
 
-    double errpow = pow (err, teterrpow);
-    grad = (teterrpow * errpow / err) * graderr;
-  
+
+    double errpow;
+    if (teterrpow == 2)
+      {
+        errpow = err*err;   
+        grad = (2 * err) * graderr;
+      }
+    else
+      {
+        errpow = pow (err, teterrpow);
+        grad = (teterrpow * errpow / err) * graderr;
+      }
     return errpow;
   }
   
@@ -607,9 +630,9 @@ namespace netgen
 
     of << mesh.GetNP() << endl;
     for (i = 1; i <= mesh.GetNP(); i++)
-      of << mesh.Point(i).X() << " "
-	 << mesh.Point(i).Y() << " "
-	 << mesh.Point(i).Z() << "\n";
+      of << mesh.Point(i)(0) << " "
+	 << mesh.Point(i)(1) << " "
+	 << mesh.Point(i)(2) << "\n";
     
     of << 2 * mesh.GetNSeg() << endl;
     for (i = 1; i <= mesh.GetNSeg(); i++)
@@ -636,9 +659,9 @@ namespace netgen
 
     outfile << mesh.GetNP() << endl;
     for (i = 1; i <= mesh.GetNP(); i++)
-      outfile << mesh.Point(i).X() << " "
-	      << mesh.Point(i).Y() << " "
-	      << mesh.Point(i).Z() << endl;
+      outfile << mesh.Point(i)(0) << " "
+	      << mesh.Point(i)(1) << " "
+	      << mesh.Point(i)(2) << endl;
 
   
 
@@ -711,8 +734,6 @@ namespace netgen
 
 
 
-
-
   void SaveVolumeMesh (const Mesh & mesh, 
 		       const CSGeometry & geometry,
 		       char * filename)
@@ -742,9 +763,9 @@ namespace netgen
 
     outfile << mesh.GetNP() << endl;
     for (i = 1; i <= mesh.GetNP(); i++)
-      outfile << mesh.Point(i).X() << " "
-	      << mesh.Point(i).Y() << " "
-	      << mesh.Point(i).Z() << endl;
+      outfile << mesh.Point(i)(0) << " "
+	      << mesh.Point(i)(1) << " "
+	      << mesh.Point(i)(2) << endl;
 
 #ifdef SOLIDGEOM
     outfile << geometry.GetNSurf() << endl;
@@ -752,7 +773,6 @@ namespace netgen
       geometry.GetSurface(i) -> Print (outfile);
 #endif
   }
-
 
 
 
@@ -906,7 +926,7 @@ namespace netgen
 		       << setw(4) << el.PNum(3)  << endl;
 	  }
 	(*testout) << "volelements: " << endl;
-	for (ElementIndex ei = 0; ei < mesh.GetNE(); ei++)
+	for (ei = 0; ei < mesh.GetNE(); ei++)
 	  {
 	    const Element & el = mesh[ei];
 	    (*testout) << setw(5) << i << ":" 
@@ -922,19 +942,20 @@ namespace netgen
 
 
 
-  void RemoveProblem (Mesh & mesh)
+  void RemoveProblem (Mesh & mesh, int domainnr)
   {
     int i, j, k;
   
-    mesh.FindOpenElements();
+    mesh.FindOpenElements(domainnr);
     int np = mesh.GetNP();
 
     BitArrayChar<PointIndex::BASE> ppoints(np);
   
-    int ndom = mesh.GetNDomains();
+    // int ndom = mesh.GetNDomains();
 
     PrintMessage (3, "Elements before Remove: ", mesh.GetNE());
-    for (k = 1; k <= ndom; k++)
+    // for (k = 1; k <= ndom; k++)
+    k = domainnr;
       {
 	ppoints.Clear();
       

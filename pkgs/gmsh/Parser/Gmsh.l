@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Geo.h"
 #include "Gmsh.tab.hpp"
 
@@ -91,8 +91,6 @@ Atan2                   return tAtan2;
 ArcTan2                 return tAtan2;
 
 Bezier			return tBezier;
-Boundary		return tBoundary;
-Bump                    return tBump;
 BSpline			return tBSpline;
 BoundingBox             return tBoundingBox;
 
@@ -106,13 +104,13 @@ Characteristic          return tCharacteristic;
 Complex                 return tComplex;
 Color                   return tColor;
 ColorTable              return tColorTable;
+Compound                return tCompound;
 Coordinates             return tCoordinates;
 CatmullRom		return tSpline;
 Call                    return tCall;
 
 Delete                  return tDelete;
 Dilate                  return tDilate;
-Duplicata               return tDuplicata;
 Draw                    return tDraw;
 
 Exp                     return tExp;
@@ -144,6 +142,7 @@ Hypot                   return tHypot;
 In                      return tIn;
 If                      return tIf;
 Intersect               return tIntersect;
+INTERPOLATION_SCHEME    return tInterpolationScheme;
 
 Knots			return tKnots;
 
@@ -166,8 +165,6 @@ Physical                return tPhysical;
 Pi                      return tPi;
 Plane                   return tPlane;
 Point                   return tPoint;
-Power                   return tProgression;
-Progression             return tProgression;
 Parametric		return tParametric;
 PolarSphere             return tPolarSphere;
 Printf                  return tPrintf;
@@ -185,14 +182,18 @@ Sin                     return tSin;
 Sinh                    return tSinh;
 Sphere                  return tSphere;
 Spline                  return tSpline;
+Split                   return tSplit;
 Surface                 return tSurface;
-Symmetry                return tSymmetry;
 Sprintf                 return tSprintf;
 StrCat                  return tStrCat;
 StrPrefix               return tStrPrefix;
 StrRelative             return tStrRelative;
 Show                    return tShow;
+Symmetry                return tSymmetry;
 
+T2                      return tText2D;
+T3                      return tText3D;
+TIME                    return tTime;
 Transfinite             return tTransfinite;
 Translate               return tTranslate;
 Tanh                    return tTanh;
@@ -202,11 +203,6 @@ Today                   return tToday;
 Using                   return tUsing;
 
 Volume                  return tVolume;
-
-T2                      return tText2D;
-T3                      return tText3D;
-INTERPOLATION_SCHEME    return tInterpolationScheme;
-TIME                    return tTime;
 
 {digit}+ |
 {digit}+"."{digit}*({exp})? |

@@ -6,7 +6,7 @@
 #include "PViewDataGModel.h"
 #include "MElement.h"
 #include "Numeric.h"
-#include "Message.h"
+#include "GmshMessage.h"
 
 PViewDataGModel::PViewDataGModel(DataType type) 
   : PViewData(), _min(VAL_INF), _max(-VAL_INF), _type(type)
@@ -259,9 +259,9 @@ int PViewDataGModel::getNode(int step, int ent, int ele, int nod,
 	vy[i] = e->getVertex(i)->y();
 	vz[i] = e->getVertex(i)->z();
       }
-      x = e->interpolate(vx, p[3 * nod], p[3 * nod + 1], p[3 * nod + 2]);
-      y = e->interpolate(vy, p[3 * nod], p[3 * nod + 1], p[3 * nod + 2]);
-      z = e->interpolate(vz, p[3 * nod], p[3 * nod + 1], p[3 * nod + 2]);
+      x = e->interpolate(vx, p[3 * nod], p[3 * nod + 1], p[3 * nod + 2], 1, 1);
+      y = e->interpolate(vy, p[3 * nod], p[3 * nod + 1], p[3 * nod + 2], 1, 1);
+      z = e->interpolate(vz, p[3 * nod], p[3 * nod + 1], p[3 * nod + 2], 1, 1);
     }
     return 0;
   }

@@ -1,17 +1,23 @@
 #include <mystdlib.h>
 
-#include "meshing.hpp"
-
+#include "meshing.hpp"  
 
 namespace netgen
 {
 
 
+  ostream & operator<<(ostream  & s, const MeshPoint & pt)
+  {
+    s << Point<3> (pt);
+    return s;
+  }
 
+  /*
   MultiPointGeomInfo :: MultiPointGeomInfo()
   {
     cnt = 0;
   }
+  */
 
   int MultiPointGeomInfo :: 
   AddPointGeomInfo (const PointGeomInfo & gi)
@@ -31,6 +37,7 @@ namespace netgen
   }
   
 
+  /*
   void MultiPointGeomInfo :: 
   Init ()
   {
@@ -42,7 +49,7 @@ namespace netgen
   {
     cnt = 0;
   }
-
+  */
 
 
 
@@ -52,8 +59,8 @@ namespace netgen
     p2 = -1; 
     edgenr = -1;
 
-    singedge_left = 0;
-    singedge_right = 0;
+    singedge_left = 0.;
+    singedge_right = 0.;
     seginfo = 0;
 
     si = -1;
@@ -75,31 +82,62 @@ namespace netgen
     epgeominfo[1].edgenr = 1;
     epgeominfo[1].dist = 0;
     */
+
+    bcname = 0;
   }    
 
-
+  Segment::Segment (const Segment & other)
+    : p1(other.p1),
+      p2(other.p2),
+      edgenr(other.edgenr),
+      singedge_left(other.singedge_left),
+      singedge_right(other.singedge_right),
+      seginfo(other.seginfo),
+      si(other.si),
+      domin(other.domin),
+      domout(other.domout),
+      tlosurf(other.tlosurf),
+      geominfo(),
+      surfnr1(other.surfnr1),
+      surfnr2(other.surfnr2),
+      epgeominfo(),
+      pmid(other.pmid),
+      meshdocval(other.meshdocval),
+      hp_elnr(other.hp_elnr)
+  {
+    geominfo[0] = other.geominfo[0];
+    geominfo[1] = other.geominfo[1];
+    epgeominfo[0] = other.epgeominfo[0];
+    epgeominfo[1] = other.epgeominfo[1];
+    bcname = other.bcname;
+  }
 
   Segment& Segment::operator=(const Segment & other)
   {
-    p1 = other.p1;
-    p2 = other.p2;
-    edgenr = other.edgenr;
-    singedge_left = other.singedge_left;
-    singedge_right = other.singedge_right;
-    seginfo = other.seginfo;
-    si = other.si;
-    domin = other.domin;
-    domout = other.domout;
-    tlosurf = other.tlosurf;
-    geominfo[0] = other.geominfo[0];
-    geominfo[1] = other.geominfo[1];
-    surfnr1 = other.surfnr1;
-    surfnr2 = other.surfnr2;
-    epgeominfo[0] = other.epgeominfo[0];
-    epgeominfo[1] = other.epgeominfo[1];
-    pmid = other.pmid;
-    meshdocval = other.meshdocval;
-
+    if (&other != this)
+      {
+	p1 = other.p1;
+	p2 = other.p2;
+	edgenr = other.edgenr;
+	singedge_left = other.singedge_left;
+	singedge_right = other.singedge_right;
+	seginfo = other.seginfo;
+	si = other.si;
+	domin = other.domin;
+	domout = other.domout;
+	tlosurf = other.tlosurf;
+	geominfo[0] = other.geominfo[0];
+	geominfo[1] = other.geominfo[1];
+	surfnr1 = other.surfnr1;
+	surfnr2 = other.surfnr2;
+	epgeominfo[0] = other.epgeominfo[0];
+	epgeominfo[1] = other.epgeominfo[1];
+	pmid = other.pmid;
+	meshdocval = other.meshdocval;
+	hp_elnr = other.hp_elnr;
+	bcname = other.bcname;
+      }
+    
     return *this;
   }
 
@@ -108,9 +146,32 @@ namespace netgen
   {
     s << seg.p1 << "(gi=" << seg.geominfo[0].trignum << ") - "
       << seg.p2 << "(gi=" << seg.geominfo[1].trignum << ")"
-      << " si = " << seg.si;
+      << " domin = " << seg.domin << ", domout = " << seg.domout 
+      << " si = " << seg.si << ", edgenr = " << seg.edgenr;
     return s;
   }
+
+
+  Element2d :: Element2d ()
+  { 
+    for (int i = 0; i < ELEMENT2D_MAXPOINTS; i++)
+      {
+	pnum[i] = 0;
+	geominfo[i].trignum = 0;
+      }
+    np = 3;
+    index = 0;
+    badel = 0;
+    deleted = 0;
+    typ = TRIG;
+    orderx = ordery = 1;
+    refflag = 1;
+    strongrefflag = false;
+#ifdef PARALLEL
+    isghost = 0;
+#endif
+  } 
+
 
   Element2d :: Element2d (int anp)
   { 
@@ -130,8 +191,12 @@ namespace netgen
       case 6: typ = TRIG6; break;
       case 8: typ = QUAD8; break;
       }
-    order = 1;
+    orderx = ordery = 1;
     refflag = 1;
+    strongrefflag = false;
+#ifdef PARALLEL
+    isghost = 0;
+#endif
   } 
 
   Element2d :: Element2d (ELEMENT_TYPE atyp)
@@ -147,10 +212,14 @@ namespace netgen
     index = 0;
     badel = 0;
     deleted = 0;
-    order = 1;
+    orderx = ordery = 1;
     refflag = 1;
-  } 
+    strongrefflag = false;
+#ifdef PARALLEL
+  isghost = 0;
+#endif
 
+  } 
 
 
 
@@ -170,8 +239,14 @@ namespace netgen
   index = 0;
   badel = 0;
   refflag = 1;
+  strongrefflag = false;
   deleted = 0;
-  order = 1;
+  orderx = ordery = 1;
+
+#ifdef PARALLEL
+  isghost = 0;
+#endif
+
 }
 
 Element2d :: Element2d (int pi1, int pi2, int pi3, int pi4)
@@ -191,8 +266,13 @@ Element2d :: Element2d (int pi1, int pi2, int pi3, int pi4)
   index = 0;
   badel = 0;
   refflag = 1;
+  strongrefflag = false;
   deleted = 0;
-  order = 1;
+  orderx = ordery = 1;
+
+#ifdef PARALLEL
+  isghost = 0;
+#endif
 }
 
 
@@ -219,6 +299,16 @@ void Element2d :: GetBox (const T_POINTS & points, Box3d & box) const
   for (unsigned i = 1; i < np; i++)
     box.AddPoint (points.Get(pnum[i]));
 }
+
+bool Element2d :: operator==(const Element2d & el2) const
+{
+  bool retval = (el2.GetNP() == np);
+  for(int i= 0; retval && i<np; i++)
+    retval = (el2[i] == (*this)[i]);
+
+  return retval;
+}
+
 
 void Element2d :: Invert2()
 {
@@ -261,21 +351,20 @@ void Element2d :: NormalizeNumbering2 ()
 {
   if (GetNP() == 3)
     {
-      PointIndex pi1;
       if (PNum(1) < PNum(2) && PNum(1) < PNum(3))
 	return;
       else
 	{
 	  if (PNum(2) < PNum(3))
 	    {
-	      pi1 = PNum(2);
+	      PointIndex pi1 = PNum(2);
 	      PNum(2) = PNum(3);
 	      PNum(3) = PNum(1);
 	      PNum(1) = pi1;
 	    }
 	  else
 	    {
-	      pi1 = PNum(3);
+	      PointIndex pi1 = PNum(3);
 	      PNum(3) = PNum(2);
 	      PNum(2) = PNum(1);
 	      PNum(1) = pi1;
@@ -424,6 +513,39 @@ void Element2d :: GetShape (const Point2d & p, Vector & shape) const
     }
 }
 
+
+
+void Element2d :: GetShapeNew (const Point<2> & p, FlatVector & shape) const
+{
+  switch (typ)
+    {
+    case TRIG:
+      {
+	shape(0) = p(0);
+	shape(1) = p(1);
+	shape(2) = 1-p(0)-p(1);
+	break;
+      }
+
+    case QUAD:
+      {
+	shape(0) = (1-p(0))*(1-p(1));
+	shape(1) =    p(0) *(1-p(1));
+	shape(2) =    p(0) *   p(1) ;
+	shape(3) = (1-p(0))*   p(1) ;
+	break;
+      }
+    }
+}
+
+
+
+
+
+
+
+
+
 void Element2d :: 
 GetDShape (const Point2d & p, DenseMatrix & dshape) const
 {
@@ -460,6 +582,44 @@ GetDShape (const Point2d & p, DenseMatrix & dshape) const
       PrintSysError ("Element2d::GetDShape, illegal type ", typ);
     }
 }
+
+
+
+
+void Element2d :: 
+GetDShapeNew (const Point<2> & p, MatrixFixWidth<2> & dshape) const
+{
+  switch (typ)
+    {
+    case TRIG:
+      {
+	dshape = 0;
+	dshape(0,0) = 1;
+	dshape(1,1) = 1;
+	dshape(2,0) = -1;
+	dshape(2,1) = -1;
+	break;
+      }
+    case QUAD:
+      {
+	dshape(0,0) = -(1-p(1));
+	dshape(0,1) = -(1-p(0));
+
+	dshape(1,0) =  (1-p(1));
+	dshape(1,1) =  -p(0);
+
+	dshape(2,0) = p(1);
+	dshape(2,1) = p(0);
+
+	dshape(3,0) = -p(1);
+	dshape(3,1) = (1-p(0));
+	break;
+      }
+    }
+}
+
+
+
 
 
 void Element2d :: 
@@ -669,7 +829,7 @@ CalcJacobianBadnessDirDeriv (const ARRAY<Point2d> & points,
 
 
 double Element2d :: 
-CalcJacobianBadness (const T_POINTS & points, const Vec3d & n) const
+CalcJacobianBadness (const T_POINTS & points, const Vec<3> & n) const
 {
   int i, j;
   int nip = GetNIP();
@@ -678,15 +838,15 @@ CalcJacobianBadness (const T_POINTS & points, const Vec3d & n) const
   
   pmat.SetSize (2, GetNP());
 
-  Vec3d t1, t2;
-  n.GetNormal(t1);
-  Cross (n, t1, t2);
+  Vec<3> t1, t2;
+  t1 = n.GetNormal();
+  t2 = Cross (n, t1);
 
-  for (i = 1; i <= nip; i++)
+  for (i = 1; i <= GetNP(); i++)
     {
-      const Point3d & p = points.Get(PNum(i));
-      pmat.Elem(1, i) = p.X() * t1.X() + p.Y() * t1.Y() + p.Z() * t1.Z();
-      pmat.Elem(2, i) = p.X() * t2.X() + p.Y() * t2.Y() + p.Z() * t2.Z();
+      Point3d p = points.Get(PNum(i));
+      pmat.Elem(1, i) = p.X() * t1(0) + p.Y() * t1(1) + p.Z() * t1(2);
+      pmat.Elem(2, i) = p.X() * t2(0) + p.Y() * t2(1) + p.Z() * t2(2);
     }
 
   double err = 0;
@@ -727,9 +887,9 @@ void Element2d :: ComputeIntegrationPointData () const
       IntegrationPointData * ipd = new IntegrationPointData;
       Point2d hp;
       GetIntegrationPoint (i, hp, ipd->weight);
-      ipd->p.X() = hp.X();
-      ipd->p.Y() = hp.Y();
-      ipd->p.Z() = 0;
+      ipd->p(0) = hp.X();
+      ipd->p(1) = hp.Y();
+      ipd->p(2) = 0;
 
       ipd->shape.SetSize(GetNP());
       ipd->dshape.SetSize(2, GetNP());
@@ -786,9 +946,16 @@ Element :: Element ()
   flags.illegal_valid = 0;
   flags.badness_valid = 0;
   flags.refflag = 1;
+  flags.strongrefflag = false;
   flags.deleted = 0;
-  order = 1;
+  flags.fixed = 0;
+  orderx = ordery = orderz = 1;
+
+#ifdef PARALLEL
   partitionNumber = -1;
+  isghost = 0;
+#endif
+
 }
 
 
@@ -806,7 +973,10 @@ Element :: Element (int anp)
   flags.illegal_valid = 0;
   flags.badness_valid = 0;
   flags.refflag = 1;
+  flags.strongrefflag = false;
   flags.deleted = 0;
+  flags.fixed = 0;
+
   switch (np)
     {
     case 4: typ = TET; break;
@@ -816,7 +986,26 @@ Element :: Element (int anp)
     case 10: typ = TET10; break;
     default: cerr << "Element::Element: unknown element with " << np << " points" << endl;
     }
-  order = 1;
+  orderx = ordery = orderz = 1;
+
+#ifdef PARALLEL
+  isghost = 0;
+#endif
+}
+
+void Element :: SetOrder (const int aorder) 
+  { 
+    orderx = aorder; 
+    ordery = aorder; 
+    orderz = aorder;
+  }
+
+
+void Element :: SetOrder (const int ox, const int oy, const int oz) 
+{ 
+  orderx = ox; 
+  ordery = oy;
+  orderz = oz; 
 }
 
 
@@ -835,8 +1024,14 @@ Element :: Element (ELEMENT_TYPE type)
   flags.illegal_valid = 0;
   flags.badness_valid = 0;
   flags.refflag = 1;
+  flags.strongrefflag = false;
   flags.deleted = 0;
-  order = 1;
+  flags.fixed = 0;
+  orderx = ordery = orderz = 1;
+
+#ifdef PARALLEL
+  isghost = 0;
+#endif
 }
 
 
@@ -851,8 +1046,11 @@ Element & Element :: operator= (const Element & el2)
     pnum[i] = el2.pnum[i];
   index = el2.index;
   flags = el2.flags;
-  order = el2.order;
+  orderx = el2.orderx;
+  ordery = el2.ordery;
+  orderz = el2.orderz;
   hp_elnr = el2.hp_elnr;
+  flags = el2.flags;
   return *this;
 }
 
@@ -935,13 +1133,10 @@ void Element :: GetBox (const T_POINTS & points, Box3d & box) const
 
 double Element :: Volume (const T_POINTS & points) const
 {
-  Vec3d v1 = points.Get(PNum(2)) - 
-    points.Get(PNum(1));
-  Vec3d v2 = points.Get(PNum(3)) - 
-    points.Get(PNum(1));
-  Vec3d v3 = points.Get(PNum(4)) - 
-    points.Get(PNum(1)); 
-         
+  Vec<3> v1 = points.Get(PNum(2)) - points.Get(PNum(1));
+  Vec<3> v2 = points.Get(PNum(3)) - points.Get(PNum(1));
+  Vec<3> v3 = points.Get(PNum(4)) - points.Get(PNum(1)); 
+  
   return -(Cross (v1, v2) * v3) / 6;	 
 }  
 
@@ -1107,6 +1302,17 @@ void Element :: GetTetsLocal (ARRAY<Element> & locels) const
     }
 }
 
+bool Element :: operator==(const Element & el2) const
+{
+  bool retval = (el2.GetNP() == np);
+  for(int i= 0; retval && i<np; i++)
+    retval = (el2[i] == (*this)[i]);
+
+  return retval;
+}
+
+
+#ifdef OLD
 void Element :: GetNodesLocal (ARRAY<Point3d> & points) const
 {
   const static double tetpoints[4][3] =
@@ -1147,11 +1353,11 @@ void Element :: GetNodesLocal (ARRAY<Point3d> & points) const
       { 0, 0, 0 },
       { 1, 0, 0 },
       { 1, 1, 0 },
-      { 1, 0, 0 },
+      { 0, 1, 0 },
       { 0, 0, 1 },
       { 1, 0, 1 },
       { 1, 1, 1 },
-      { 1, 0, 1 }
+      { 0, 1, 1 }
     };
   
   int np, i;
@@ -1200,14 +1406,14 @@ void Element :: GetNodesLocal (ARRAY<Point3d> & points) const
   for (i = 0; i < np; i++)
     points.Append (Point3d (pp[i][0], pp[i][1], pp[i][2]));
 }
+#endif
 
 
 
 
 
 
-
-void Element :: GetNodesLocalNew (ARRAY<Point3d> & points) const
+void Element :: GetNodesLocalNew (ARRAY<Point<3> > & points) const
 {
   const static double tetpoints[4][3] =
     {      
@@ -1304,7 +1510,7 @@ void Element :: GetNodesLocalNew (ARRAY<Point3d> & points) const
   
   points.SetSize(0);
   for (i = 0; i < np; i++)
-    points.Append (Point3d (pp[i][0], pp[i][1], pp[i][2]));
+    points.Append (Point<3> (pp[i][0], pp[i][1], pp[i][2]));
 }
 
 
@@ -1331,15 +1537,12 @@ void Element :: GetSurfaceTriangles (ARRAY<Element2d> & surftrigs) const
     { 1, 2, 4 },
     { 2, 1, 3 } };
 
-  // just a few:
   static int tet10trigs[][3] = 
-  { { 2, 8, 9 },
-    { 3, 10, 8},
-    { 4, 9, 10 },
-    { 9, 8, 10 },
-    { 3, 1, 4 },
-    { 1, 2, 4 },
-    { 2, 1, 3 } };
+  { { 2, 8, 9 }, { 3, 10, 8}, { 4, 9, 10 }, { 9, 8, 10 },
+    { 3, 6, 10 }, { 1, 7, 6 }, { 4, 10, 7 }, { 6, 7, 10 },
+    { 1, 5, 7 }, { 2, 9, 5 }, { 4, 7, 9 }, { 5, 9, 7 },
+    { 1, 6, 5 }, { 2, 5, 8 }, { 3, 8, 6 }, { 5, 6, 8 }
+  };
 
   static int pyramidtrigs[][3] =
   {
@@ -1407,7 +1610,7 @@ void Element :: GetSurfaceTriangles (ARRAY<Element2d> & surftrigs) const
       }
     case TET10:
       {
-	nf = 7;
+	nf = 16;
 	fp = tet10trigs;
 	break;
       }
@@ -1428,7 +1631,7 @@ void Element :: GetSurfaceTriangles (ARRAY<Element2d> & surftrigs) const
   surftrigs.SetSize (nf);
   for (j = 0; j < nf; j++)
     {
-      surftrigs.Elem(j+1) = Element2d(3);
+      surftrigs.Elem(j+1) = Element2d(TRIG);
       surftrigs.Elem(j+1).PNum(1) = fp[j][0];
       surftrigs.Elem(j+1).PNum(2) = fp[j][1];
       surftrigs.Elem(j+1).PNum(3) = fp[j][2];
@@ -1439,8 +1642,9 @@ void Element :: GetSurfaceTriangles (ARRAY<Element2d> & surftrigs) const
 
 
 
-ARRAY<IntegrationPointData*> ipdtet;
-ARRAY<IntegrationPointData*> ipdtet10;
+ARRAY< AutoPtr < IntegrationPointData > > ipdtet;
+ARRAY< AutoPtr < IntegrationPointData > > ipdtet10;
+
 
 
 int Element :: GetNIP () const
@@ -1456,7 +1660,7 @@ int Element :: GetNIP () const
 }
 
 void Element :: 
-GetIntegrationPoint (int ip, Point3d & p, double & weight) const
+GetIntegrationPoint (int ip, Point<3> & p, double & weight) const
 {
   static double eltetqp[1][4] =
   {
@@ -1482,9 +1686,9 @@ GetIntegrationPoint (int ip, Point3d & p, double & weight) const
     case TET10: pp = &eltet10qp[ip-1][0]; break;
     }
 
-  p.X() = pp[0];
-  p.Y() = pp[1];
-  p.Z() = pp[2];
+  p(0) = pp[0];
+  p(1) = pp[1];
+  p(2) = pp[2];
   weight = pp[3];
 }
 
@@ -1497,7 +1701,7 @@ GetTransformation (int ip, const T_POINTS & points,
   pmat.SetSize (3, np);
   dshape.SetSize (3, np);
 
-  Point3d p;
+  Point<3> p;
   double w;
 
   GetPointMatrix (points, pmat);
@@ -1539,8 +1743,10 @@ GetTransformation (int ip, class DenseMatrix & pmat,
 
 
 
-void Element :: GetShape (const Point3d & p, Vector & shape) const
+void Element :: GetShape (const Point<3> & hp, Vector & shape) const
 {
+  Point3d p = hp;
+
   if (shape.Size() != GetNP())
     {
       cerr << "Element::GetShape: Length not fitting" << endl;
@@ -1610,6 +1816,7 @@ void Element :: GetShape (const Point3d & p, Vector & shape) const
 }
 
 
+
 void Element :: GetShapeNew (const Point<3> & p, FlatVector & shape) const
 {
   /*
@@ -1675,8 +1882,10 @@ void Element :: GetShapeNew (const Point<3> & p, FlatVector & shape) const
 
 
 void Element :: 
-GetDShape (const Point3d & p, DenseMatrix & dshape) const
+GetDShape (const Point<3> & hp, DenseMatrix & dshape) const
 {
+  Point3d p = hp;
+
   int np = GetNP();
   if (dshape.Height() != 3 || dshape.Width() != np)
     {
@@ -1823,7 +2032,7 @@ double Element :: CalcJacobianBadness (const T_POINTS & points) const
 
 double Element :: 
 CalcJacobianBadnessDirDeriv (const T_POINTS & points,
-			     int pi, Vec3d & dir, double & dd) const
+			     int pi, Vec<3> & dir, double & dd) const
 {
   int i, j, k, l;
   int nip = GetNIP();
@@ -1839,7 +2048,7 @@ CalcJacobianBadnessDirDeriv (const T_POINTS & points,
     for (j = 1; j <= 3; j++)
       vmat.Elem(j, i) = 0;
   for (j = 1; j <= 3; j++)
-    vmat.Elem(j, pi) = dir.X(j);
+    vmat.Elem(j, pi) = dir(j-1);
 
 
 
@@ -1897,6 +2106,92 @@ CalcJacobianBadnessDirDeriv (const T_POINTS & points,
   return err;
 }
 
+double Element :: 
+CalcJacobianBadnessGradient (const T_POINTS & points,
+			     int pi, Vec<3> & grad) const
+{
+  int i, j, k, l;
+  int nip = GetNIP();
+  static DenseMatrix trans(3,3), dtrans(3,3), hmat(3,3);
+  static DenseMatrix pmat, vmat;
+  
+  pmat.SetSize (3, GetNP());
+  vmat.SetSize (3, GetNP());
+
+  GetPointMatrix (points, pmat);
+  
+  for (i = 1; i <= np; i++)
+    for (j = 1; j <= 3; j++)
+      vmat.Elem(j, i) = 0;
+  for (j = 1; j <= 3; j++)
+    vmat.Elem(j, pi) = 1.;
+
+
+  double err = 0;
+
+  double dfrob[3];
+
+  grad = 0;
+
+  for (i = 1; i <= nip; i++)
+    {
+      GetTransformation (i, pmat, trans);
+      GetTransformation (i, vmat, dtrans);
+ 
+      // Frobenius norm
+      double frob = 0;
+      for (j = 1; j <= 9; j++)
+	frob += sqr (trans.Get(j));
+      frob = sqrt (frob);
+
+      for(k = 0; k<3; k++)
+	{
+	  dfrob[k] = 0;
+	  for (j = 1; j <= 3; j++)
+	    dfrob[k] += trans.Get(k+1,j) * dtrans.Get(k+1,j);
+	  dfrob[k] = dfrob[k] / (3.*frob);
+	}
+
+      frob /= 3;      
+
+      double det = trans.Det();
+      double ddet[3]; // = 0;
+      
+      for(k=1; k<=3; k++)
+	{
+	  int km1 = (k > 1) ? (k-1) : 3;
+	  int kp1 = (k < 3) ? (k+1) : 1;
+	  ddet[k-1] = 0;
+	  for(j=1; j<=3; j++)
+	    {
+	      int jm1 = (j > 1) ? (j-1) : 3;
+	      int jp1 = (j < 3) ? (j+1) : 1;
+	      
+	      ddet[k-1] += (-1.)* dtrans.Get(k,j) * ( trans.Get(km1,jm1)*trans.Get(kp1,jp1) - 
+						     trans.Get(km1,jp1)*trans.Get(kp1,jm1) );
+	    }
+	}
+
+      
+      det *= -1;
+      
+      if (det <= 0)
+	err += 1e12;
+      else
+	{
+	  err += frob * frob * frob / det;
+	  double fac = (frob * frob)/(det * det);
+	  for(j=0; j<3; j++)
+	    grad(j) += fac * (3 * dfrob[j] * det - frob * ddet[j]);
+	}
+    }
+
+  err /= nip;
+  grad *= 1./nip;
+  return err;
+}
+
+
 
 
 
@@ -1911,8 +2206,14 @@ void Element :: ComputeIntegrationPointData () const
       PrintSysError ("Element::ComputeIntegrationPoint, illegal type ", int(typ));
     }
 
-  int i;
-  for (i = 1; i <= GetNIP(); i++)
+  switch (GetType())
+    {
+    case TET: ipdtet.SetSize(GetNIP()); break;
+    case TET10: ipdtet10.SetSize(GetNIP()); break;
+    }
+
+
+  for (int i = 1; i <= GetNIP(); i++)
     {
       IntegrationPointData * ipd = new IntegrationPointData;
       GetIntegrationPoint (i, ipd->p, ipd->weight);
@@ -1924,8 +2225,8 @@ void Element :: ComputeIntegrationPointData () const
 
       switch (GetType())
 	{
-	case TET: ipdtet.Append (ipd); break;
-	case TET10: ipdtet10.Append (ipd); break;
+	case TET: ipdtet.Elem(i).Reset(ipd); break;
+	case TET10: ipdtet10.Elem(i).Reset(ipd); break;
 	default:
 	  PrintSysError ("Element::ComputeIntegrationPoint(2), illegal type ", int(typ));
 	}
@@ -1942,8 +2243,18 @@ void Element :: ComputeIntegrationPointData () const
 FaceDescriptor ::  FaceDescriptor()
 { 
   surfnr = domin = domout  = bcprop = 0; 
-  domin_singular = domout_singular = 0;
-  tlosurf = -1;
+  domin_singular = domout_singular = 0.;
+  tlosurf = -1; 
+  bcname = 0;
+  firstelement = -1;
+}
+
+FaceDescriptor ::  FaceDescriptor(const FaceDescriptor& other)
+  : surfnr(other.surfnr), domin(other.domin), domout(other.domout),
+    tlosurf(other.tlosurf), bcprop(other.bcprop), bcname(other.bcname),
+    domin_singular(other.domin_singular), domout_singular(other.domout_singular)
+{ 
+  firstelement = -1;
 }
 
 FaceDescriptor :: 
@@ -1954,7 +2265,9 @@ FaceDescriptor(int surfnri, int domini, int domouti, int tlosurfi)
   domout = domouti;
   tlosurf = tlosurfi; 
   bcprop = surfnri;
-  domin_singular = domout_singular = 0;
+  domin_singular = domout_singular = 0.;
+  bcname = 0;
+  firstelement = -1;
 }
 
 FaceDescriptor :: FaceDescriptor(const Segment & seg)
@@ -1964,7 +2277,9 @@ FaceDescriptor :: FaceDescriptor(const Segment & seg)
   domout = seg.domout+1;
   tlosurf = seg.tlosurf+1;
   bcprop = 0;
-  domin_singular = domout_singular = 0;
+  domin_singular = domout_singular = 0.;
+  bcname = 0;
+  firstelement = -1;
 }
 
 int FaceDescriptor ::  SegmentFits (const Segment & seg)
@@ -1975,6 +2290,23 @@ int FaceDescriptor ::  SegmentFits (const Segment & seg)
     domout == seg.domout+1  &&
     tlosurf == seg.tlosurf+1;
 }
+
+
+string FaceDescriptor :: GetBCName () const
+{
+  if ( bcname )
+    return *bcname;
+  else 
+    return "default";
+  
+}
+
+/*
+void FaceDescriptor :: SetBCName (string * bcn)
+{
+  bcname = bcn;
+}
+*/
 
 
 ostream & operator<<(ostream  & s, const FaceDescriptor & fd)
@@ -1998,26 +2330,40 @@ Identifications :: Identifications (Mesh & amesh)
   : mesh(amesh)
 {
   identifiedpoints = new INDEX_2_HASHTABLE<int>(100);
+  identifiedpoints_nr = new INDEX_3_HASHTABLE<int>(100);
   maxidentnr = 0;
 }
 
 Identifications :: ~Identifications ()
 {
   delete identifiedpoints;
+  delete identifiedpoints_nr;
 }
 
 void Identifications :: Delete ()
 {
   delete identifiedpoints;
   identifiedpoints = new INDEX_2_HASHTABLE<int>(100);
+  delete identifiedpoints_nr;
+  identifiedpoints_nr = new INDEX_3_HASHTABLE<int>(100);
   maxidentnr = 0;
 }
 
 void Identifications :: Add (PointIndex pi1, PointIndex pi2, int identnr)
 {
+  //  (*testout) << "Identification::Add, pi1 = " << pi1 << ", pi2 = " << pi2 << ", identnr = " << identnr << endl;
   INDEX_2 pair (pi1, pi2);
   identifiedpoints->Set (pair, identnr);
+
+  INDEX_3 tripl (pi1, pi2, identnr);
+  identifiedpoints_nr->Set (tripl, 1);
+
   if (identnr > maxidentnr) maxidentnr = identnr;
+
+  if (identnr+1 > idpoints_table.Size())
+    idpoints_table.ChangeSize (identnr+1);
+  idpoints_table.Add (identnr, pair);
+  
   //  timestamp = NextTimeStamp();
 }
 
@@ -2029,6 +2375,17 @@ int Identifications :: Get (PointIndex pi1, PointIndex pi2) const
   else
     return 0;
 }
+
+bool Identifications :: Get (PointIndex pi1, PointIndex pi2, int nr) const
+{
+  INDEX_3 tripl(pi1, pi2, nr);
+  if (identifiedpoints_nr->Used (tripl))
+    return 1;
+  else
+    return 0;
+}
+
+
 
 int Identifications :: GetSymmetric (PointIndex pi1, PointIndex pi2) const
 {
@@ -2044,41 +2401,68 @@ int Identifications :: GetSymmetric (PointIndex pi1, PointIndex pi2) const
 }
 
 
-void Identifications :: GetMap (int identnr, ARRAY<int,PointIndex::BASE> & identmap) const
+void Identifications :: GetMap (int identnr, ARRAY<int,PointIndex::BASE> & identmap, bool symmetric) const
 {
   identmap.SetSize (mesh.GetNP());
   identmap = 0;
 
-  for (int i = 1; i <= identifiedpoints->GetNBags(); i++)
-    for (int j = 1; j <= identifiedpoints->GetBagSize(i); j++)
+  if (identnr)
+    for (int i = 0; i < idpoints_table[identnr].Size(); i++)
       {
-	INDEX_2 i2;
-	int nr;
-	identifiedpoints->GetData (i, j, i2, nr);
-	
-	if (nr == identnr || !identnr)
-	  identmap.Elem(i2.I1()) = i2.I2();
-      }  
+	INDEX_2 pair = idpoints_table[identnr][i];
+	identmap[pair.I1()] = pair.I2();
+	if(symmetric)
+	  identmap[pair.I2()] = pair.I1();
+      }
+
+  else
+    {
+      cout << "getmap, identnr = " << identnr << endl;
+
+      for (int i = 1; i <= identifiedpoints_nr->GetNBags(); i++)
+	for (int j = 1; j <= identifiedpoints_nr->GetBagSize(i); j++)
+	  {
+	    INDEX_3 i3;
+	    int dummy;
+	    identifiedpoints_nr->GetData (i, j, i3, dummy);
+	    
+	    if (i3.I3() == identnr || !identnr)
+	      {
+		identmap.Elem(i3.I1()) = i3.I2();
+		if(symmetric)
+		  identmap.Elem(i3.I2()) = i3.I1();
+	      }
+	  }  
+    }
+
 }
- 
+
 
 void Identifications :: GetPairs (int identnr, 
 				  ARRAY<INDEX_2> & identpairs) const
 {
-  int i, j;
-  
   identpairs.SetSize(0);
   
-  for (i = 1; i <= identifiedpoints->GetNBags(); i++)
-    for (j = 1; j <= identifiedpoints->GetBagSize(i); j++)
-      {
-	INDEX_2 i2;
-	int nr;
-	identifiedpoints->GetData (i, j, i2, nr);
-	
-	if (identnr == 0 || nr == identnr)
+  if (identnr == 0)
+    for (int i = 1; i <= identifiedpoints->GetNBags(); i++)
+      for (int j = 1; j <= identifiedpoints->GetBagSize(i); j++)
+	{
+	  INDEX_2 i2;
+	  int nr;
+	  identifiedpoints->GetData (i, j, i2, nr);
 	  identpairs.Append (i2);
-      }  
+	}  
+  else
+    for (int i = 1; i <= identifiedpoints_nr->GetNBags(); i++)
+      for (int j = 1; j <= identifiedpoints_nr->GetBagSize(i); j++)
+	{
+	  INDEX_3 i3;
+	  int dummy;
+	  identifiedpoints_nr->GetData (i, j, i3 , dummy);
+	  
+	  if (i3.I3() == identnr)
+	    identpairs.Append (INDEX_2(i3.I1(), i3.I2()));
+	}  
 }
 
 
@@ -2100,12 +2484,19 @@ void Identifications :: SetMaxPointNr (int maxpnum)
 }
 
 
-
+void Identifications :: Print (ostream & ost) const
+{
+  ost << "Identifications:" << endl;
+  ost << "pairs: " << endl << *identifiedpoints << endl;
+  ost << "pairs and nr: " << endl << *identifiedpoints_nr << endl;
+  ost << "table: " << endl << idpoints_table << endl;
+}
 
 
 MeshingParameters :: MeshingParameters ()
 {
-  optimize3d = "cmdmstm";
+  optimize3d = "cmdmustm";
+  //optimize3d = "cmdmstm";
   optsteps3d = 3;
   optimize2d = "smsmsmSmSmSm";
   optsteps2d = 3;
@@ -2118,22 +2509,26 @@ MeshingParameters :: MeshingParameters ()
   grading = 0.3;
   delaunay = 1;
   maxh = 1e10;
+  minh = 0;
   meshsizefilename = NULL;
   startinsurface = 0;
   checkoverlap = 1;
+  checkoverlappingboundary = 1;
   checkchartboundary = 1;
   curvaturesafety = 2;
   segmentsperedge = 1;
   parthread = 0;
 
   elsizeweight = 0.2;
+  giveuptol2d = 200;
   giveuptol = 10;
-  maxoutersteps = 5;
+  maxoutersteps = 10;
   starshapeclass = 5;
   baseelnp = 0;
   sloppy = 1;
 
   badellimit = 175;
+  check_impossible = 0;
   secondorder = 0;
 }
 
@@ -2164,6 +2559,7 @@ void MeshingParameters :: Print (ostream & ost) const
       << " segmentsperedge = " <<  segmentsperedge << endl
       << " parthread = " <<  parthread << endl
       << " elsizeweight = " <<  elsizeweight << endl
+      << " giveuptol2d = " <<  giveuptol2d << endl
       << " giveuptol = " <<  giveuptol << endl
       << " maxoutersteps = " <<  maxoutersteps << endl
       << " starshapeclass = " <<  starshapeclass << endl
@@ -2198,11 +2594,13 @@ void MeshingParameters :: CopyFrom(const MeshingParameters & other)
   //const_cast<char*>(meshsizefilename) = other.meshsizefilename; //???
   startinsurface = other.startinsurface;
   checkoverlap = other.checkoverlap;
+  checkoverlappingboundary = other.checkoverlappingboundary;
   checkchartboundary = other.checkchartboundary;
   curvaturesafety = other.curvaturesafety;
   segmentsperedge = other.segmentsperedge;
   parthread = other.parthread;
   elsizeweight = other.elsizeweight;
+  giveuptol2d = other.giveuptol2d;
   giveuptol = other.giveuptol;
   maxoutersteps = other.maxoutersteps;
   starshapeclass = other.starshapeclass;
@@ -2226,8 +2624,9 @@ DebugParameters :: DebugParameters ()
   haltsegment = 0;
   haltsegmentp1 = 0;
   haltsegmentp2 = 0;
-}
+};
 
 
 
 }
+

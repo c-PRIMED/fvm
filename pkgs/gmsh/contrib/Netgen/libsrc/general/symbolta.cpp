@@ -19,7 +19,7 @@
 
 namespace netgen
 {
-  using namespace netgen;
+  //using namespace netgen;
 
   BASE_SYMBOLTABLE :: BASE_SYMBOLTABLE ()
   {

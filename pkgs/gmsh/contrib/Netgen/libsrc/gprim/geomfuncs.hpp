@@ -60,6 +60,15 @@ inline Point<D> Center (const Point<D> & a, const Point<D> & b, const Point<D> &
   return res;
 }
 
+template <int D>
+inline Point<D> Center (const Point<D> & a, const Point<D> & b, const Point<D> & c, const Point<D> & d)
+{
+  Point<D> res;
+  for (int i = 0; i < D; i++)
+    res(i) = (1.0/4.0) * (a(i) + b(i) + c(i) + d(i));
+  return res;
+}
+
 
 
 inline Vec<3> Cross (const Vec<3> & v1, const Vec<3> & v2)
@@ -69,6 +78,18 @@ inline Vec<3> Cross (const Vec<3> & v1, const Vec<3> & v2)
       v1(2) * v2(0) - v1(0) * v2(2),
       v1(0) * v2(1) - v1(1) * v2(0) );
 }
+
+
+inline double Determinant (const Vec<3> & col1,
+			   const Vec<3> & col2,
+			   const Vec<3> & col3)
+{
+  return
+    col1(0) * ( col2(1) * col3(2) - col2(2) * col3(1)) +
+    col1(1) * ( col2(2) * col3(0) - col2(0) * col3(2)) +
+    col1(2) * ( col2(0) * col3(1) - col2(1) * col3(0));
+}
+
 
 
 template <>

@@ -13,8 +13,8 @@
 
 
 
-#include <mystdlib.h>
-#include <mydefs.hpp>
+#include "../include/mystdlib.h"
+#include "../include/mydefs.hpp"
 
 
 namespace netgen
@@ -38,6 +38,9 @@ namespace netgen
 #include "sort.hpp"
 #include "stack.hpp"
 #include "mystring.hpp"
+#include "profiler.hpp"
+#include "netgenout.hpp"
+
 }
 
 #endif

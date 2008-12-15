@@ -46,6 +46,7 @@ extern void PushStatus(const MyStr& s);
 extern void PushStatusF(const MyStr& s);
 extern void PopStatus();
 extern void SetThreadPercent(double percent);
+extern void GetStatus(MyStr & s, double & percentage);
 
 
 #endif

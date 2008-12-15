@@ -43,7 +43,7 @@ public:
   
   ///
   int ApplyRules (ARRAY<Point3d> & lpoints, ARRAY<int> & allowpoint,
-		  ARRAY<Element2d> & lfaces, INDEX lfacesplit,
+		  ARRAY<MiniElement2d> & lfaces, INDEX lfacesplit,
 		  INDEX_2_HASHTABLE<int> & connectedpairs,
 		  ARRAY<Element> & elements,
 		  ARRAY<INDEX> & delfaces, int tolerance, 
@@ -55,6 +55,8 @@ public:
   ///
   void AddBoundaryElement (const Element2d & elem);
   ///
+  void AddBoundaryElement (const MiniElement2d & elem);
+  ///
   int AddConnectedPair (const INDEX_2 & pair);
   
   ///
@@ -63,7 +65,7 @@ public:
   void BlockFillLocalH (Mesh & mesh, const MeshingParameters & mp);
 
   /// uses points of adfront, and puts new elements into mesh
-  void Delaunay (Mesh & mesh, const MeshingParameters & mp);
+  void Delaunay (Mesh & mesh, int domainnr, const MeshingParameters & mp);
   ///
   friend class PlotVolMesh;
   ///

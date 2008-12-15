@@ -210,11 +210,12 @@ public:
 
   static INDEX_3 Sort (int i1, int i2, int i3)
   {
-    INDEX_3 i(i1, i2, i3);
-    return i.Sort();
+    if (i1 > i2) Swap (i1, i2);
+    if (i2 > i3) Swap (i2, i3);
+    if (i1 > i2) Swap (i1, i2);
+    return INDEX_3 (i1, i2, i3);
   }
 
-  ///
   INDEX_3 Sort ()
   {
     if (i[0] > i[1]) Swap (i[0], i[1]);
@@ -223,7 +224,6 @@ public:
     return *this;
   }
 
-  ///
   int operator== (const INDEX_3 & in2) const
     { return i[0] == in2.i[0] && i[1] == in2.i[1] && i[2] == in2.i[2];}
 

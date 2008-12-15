@@ -10,12 +10,13 @@
 #include <linalg.hpp>
 #include <csg.hpp>
 #include <meshing.hpp>
+#include <sys/stat.h>
+
 
 namespace netgen
 {
 #include "writeuser.hpp"
 
-#include <sys/stat.h>
 
 
 void WriteElmerFormat (const Mesh &mesh,
@@ -25,18 +26,20 @@ void WriteElmerFormat (const Mesh &mesh,
   int np = mesh.GetNP();
   int ne = mesh.GetNE();
   int nse = mesh.GetNSE();
-  int i, j, rc;
+  int i, j;
   char str[200];
   
   int inverttets = mparam.inverttets;
   int invertsurf = mparam.inverttrigs;
 
 #ifdef WIN32
-  cerr << "not yet implemented for Windows platforms." << endl;
-  return;
+  char a[256];
+  sprintf( a, "mkdir %s", filename.c_str() );
+  system( a );
 #else
-  rc = mkdir(filename.c_str(), S_IRWXU|S_IRWXG);
+  int rc = mkdir(filename.c_str(), S_IRWXU|S_IRWXG);
 #endif
+
   sprintf( str, "%s/mesh.header", filename.c_str() );
   ofstream outfile_h(str);
   sprintf( str, "%s/mesh.nodes", filename.c_str() );
@@ -74,8 +77,9 @@ void WriteElmerFormat (const Mesh &mesh,
 //  outfile.setf (ios::showpoint);
   
   outfile_h << np << " " << ne << " " << nse << "\n";
-  outfile_h << "1"     << "\n";
-  outfile_h << "504 1" << "\n";
+  outfile_h << "2"     << "\n";
+  outfile_h << "303 " << nse << "\n";
+  outfile_h << "504 " << ne << "\n";
   
   for (i = 1; i <= np; i++)
     {

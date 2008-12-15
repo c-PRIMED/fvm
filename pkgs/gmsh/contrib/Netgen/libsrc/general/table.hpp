@@ -37,6 +37,8 @@ public:
   ~BASE_TABLE ();
   ///
   void SetSize (int size);
+  ///
+  void ChangeSize (int size);
 
   /// increment size of entry i by one, i is 0-based
   void IncSize (int i, int elsize)
@@ -53,9 +55,11 @@ public:
 
   ///
   void AllocateElementsOneBlock (int elemsize);
-
+  
   int AllocatedElements () const;
   int UsedElements () const;
+
+  void SetElementSizesToMaxSizes ();
 };
 
 
@@ -80,7 +84,7 @@ public:
   /// Creates table of size size
   inline TABLE (int size) : BASE_TABLE (size) { ; }
 
-  /// Creates fixed element size table
+  /// Creates fixed maximal element size table
   inline TABLE (const FlatArray<int,BASE> & entrysizes)
     : BASE_TABLE (FlatArray<int> (entrysizes.Size(), const_cast<int*>(&entrysizes[BASE])), 
 		  sizeof(T))
@@ -90,6 +94,12 @@ public:
   inline void SetSize (int size)
   {
     BASE_TABLE::SetSize (size);
+  }
+
+  /// Changes Size of table to size, keep data
+  inline void ChangeSize (int size)
+  {
+    BASE_TABLE::ChangeSize (size);
   }
 
 
@@ -115,7 +125,7 @@ public:
   }
 
 
-  /// Inserts element acont into row i. BASE-based. Does not test if already used, assumes to have mem
+  /// Inserts element acont into row i. BASE-based. Does not test if already used, assumes to have enough memory
   inline void AddSave (int i, const T & acont)
     {
       ((T*)data[i-BASE].col)[data[i-BASE].size] = acont;
@@ -195,12 +205,13 @@ public:
 
 
 template <class T, int BASE>
-inline ostream & operator<< (ostream & ost, TABLE<T,BASE> & table)
+inline ostream & operator<< (ostream & ost, const TABLE<T,BASE> & table)
 {
   for (int i = BASE; i < table.Size()+BASE; i++)
     {
       ost << i << ": ";
       FlatArray<T> row = table[i];
+      ost << "(" << row.Size() << ") ";
       for (int j = 0; j < row.Size(); j++)
 	ost << row[j] << " ";
       ost << endl;

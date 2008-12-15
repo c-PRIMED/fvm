@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include "PViewOptions.h"
-#include "Message.h"
+#include "GmshMessage.h"
 
 #if defined(HAVE_MATH_EVAL)
 #include "matheval.h"
@@ -66,20 +66,32 @@ int PViewOptions::getScaleIndex(double val, int numIso, double min, double max,
   return 0;
 }
 
-// val in [min, max]
 unsigned int PViewOptions::getColor(double val, double min, double max, 
-                                    bool forceLinear)
+                                    bool forceLinear, int numColors)
 {
   if(CT.size == 1) return CT.table[0];
-  int index = getScaleIndex(val, CT.size, min, max, forceLinear);
-  return CT.table[index];
+
+  if(numColors <= 0){ // use full colormap
+    int index = getScaleIndex(val, CT.size, min, max, forceLinear);
+    if(index < 0) index = 0;
+    else if(index > CT.size - 1) index = CT.size - 1;
+    return CT.table[index];
+  }
+  else{
+    // the maximum should belong to the last interval: so use
+    // numColors + 1 and correct afterwards
+    int index = getScaleIndex(val, numColors + 1, min, max, forceLinear);
+    if(index > numColors - 1) index = numColors - 1;
+    return getColor(index, numColors);
+  }
 }
 
-// i in [0, nb - 1]
 unsigned int PViewOptions::getColor(int i, int nb)
 {
   int index = (nb == 1) ? CT.size / 2 : 
     (int)(i / (double)(nb - 1) * (CT.size - 1) + 0.5);
+  if(index < 0) index = 0;
+  else if(index > CT.size - 1) index = CT.size - 1;
   return CT.table[index];
 }
 

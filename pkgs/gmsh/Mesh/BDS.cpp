@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "Numeric.h"
 #include "BDS.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "GFace.h"
 #include "meshGFaceDelaunayInsertion.h"
 #include "qualityMeasures.h"
@@ -1331,7 +1331,10 @@ bool BDS_Mesh::smooth_point_centroid(BDS_Point *p, GFace *gf, bool test_quality)
 {
   if(!p->config_modified) return false;
   if(p->g && p->g->classif_degree <= 1) return false;
-
+  if(p->g && p->g->classif_tag < 0) {
+    p->config_modified = true;
+    return true;
+  }
   std::list<BDS_Edge*>::iterator eit = p->edges.begin();
   while(eit != p->edges.end()) {
     if((*eit)->numfaces() == 1) return false;

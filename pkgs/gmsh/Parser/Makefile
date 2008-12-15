@@ -42,7 +42,7 @@ parser:
 	flex -P gmsh_yy -oGmsh.yy.cpp Gmsh.l
 
 clean:
-	rm -f *.o *.obj
+	${RM} *.o *.obj
 
 depend:
 	(sed '/^# DO NOT DELETE THIS LINE/q' Makefile && \
@@ -53,7 +53,7 @@ depend:
 	rm -f Makefile.new
 
 # DO NOT DELETE THIS LINE
-Gmsh.tab.o: Gmsh.tab.cpp ../Common/Message.h ../Common/MallocUtils.h \
+Gmsh.tab.o: Gmsh.tab.cpp ../Common/GmshMessage.h ../Common/MallocUtils.h \
   ../Common/ListUtils.h ../Common/TreeUtils.h ../Common/avl.h \
   ../Common/ListUtils.h ../Numeric/Numeric.h ../Numeric/NumericEmbedded.h \
   ../Common/Context.h ../Geo/CGNSOptions.h ../Mesh/PartitionOptions.h \
@@ -74,8 +74,8 @@ Gmsh.tab.o: Gmsh.tab.cpp ../Common/Message.h ../Common/MallocUtils.h \
   ../Common/CommandLine.h FunctionManager.h ../Common/OS.h \
   ../Common/CreateFile.h ../Mesh/Field.h ../Post/PView.h \
   ../Mesh/BackgroundMesh.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Plugin/PluginManager.h ../Plugin/Plugin.h ../Common/GmshMatrix.h
-Gmsh.yy.o: Gmsh.yy.cpp ../Common/Message.h ../Geo/Geo.h \
+  ../Plugin/PluginManager.h
+Gmsh.yy.o: Gmsh.yy.cpp ../Common/GmshMessage.h ../Geo/Geo.h \
   ../Common/GmshDefines.h ../Geo/gmshSurface.h ../Geo/Pair.h \
   ../Geo/Range.h ../Geo/SPoint2.h ../Geo/SPoint3.h ../Geo/SVector3.h \
   ../Geo/SPoint3.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \

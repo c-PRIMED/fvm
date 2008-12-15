@@ -37,6 +37,16 @@ namespace netgen
     int ne = mesh.GetNSE();
     //    SurfaceElementIndex sei;
 
+    
+//     for (SurfaceElementIndex sei = 0; sei < ne; sei++)
+//       {
+// 	const Element2d & el = mesh[sei];
+// 	(*testout) << "element " << sei << ": " <<flush;
+// 	for(int j=0; j<el.GetNP(); j++)
+// 	  (*testout) << el[j] << " " << flush;
+// 	(*testout) << "IsDeleted() " << el.IsDeleted()<< endl;
+//       }
+
     bool ok;
     int olddef, newdef;
 
@@ -234,13 +244,17 @@ namespace netgen
     for (SurfaceElementIndex sei = 0; sei < ne; sei++)
       {
 	const Element2d & el = mesh[sei];
+
 	if (el.GetIndex() == faceindex && !el.IsDeleted())
 	  {
 	    for (int j = 0; j < el.GetNP(); j++)
 	      elonnode.Add (el[j], sei);
 	  }
-	for (int j = 0; j < el.GetNP(); j++)
-	  nelonnode[el[j]]++;
+	if(!el.IsDeleted())
+	  {
+	    for (int j = 0; j < el.GetNP(); j++)
+	      nelonnode[el[j]]++;
+	  }
       }
 
     for (SurfaceElementIndex sei = 0; sei < ne; sei++)
@@ -253,11 +267,11 @@ namespace netgen
 		for (int k = 0; k < elonnode[el[j]].Size(); k++)
 		  {
 		    int nbel = elonnode[el[j]] [k];
-		    int used = 0;
+		    bool inuse = false;
 		    for (int l = 0; l < nbels[sei].Size(); l++)
 		      if (nbels[sei][l] == nbel)
-			used = 1;
-		    if (!used)
+			inuse = true;
+		    if (!inuse)
 		      nbels.Add (sei, nbel);
 		  }
 	      }
@@ -376,7 +390,7 @@ namespace netgen
 
 		// calc metric badness
 		double bad1 = 0, bad2 = 0;
-		Vec3d n;
+		Vec<3> n;
 
 		SelectSurfaceOfPoint (mesh.Point(pmap.Get(1)), pgi.Get(1));
 		GetNormalVector (surfnr, mesh.Point(pmap.Get(1)), pgi.Elem(1), n);

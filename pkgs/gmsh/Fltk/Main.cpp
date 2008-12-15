@@ -8,7 +8,7 @@
 #include "GUI.h"
 #include "Gmsh.h"
 #include "GmshUI.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Draw.h"
 #include "Context.h"
 #include "Options.h"
@@ -44,7 +44,9 @@ int main(int argc, char *argv[])
   if(argc == 2 && std::string(argv[1]) == "-doc"){
     Init_Options(0);
     GMSH_PluginManager::instance()->registerDefaultPlugins();
+    GModel *dummy = new GModel;
     Print_OptionsDoc();
+    delete dummy;
     exit(0);
   }
 
@@ -84,11 +86,11 @@ int main(int argc, char *argv[])
   // Log the following for bug reports
   Msg::Info("-------------------------------------------------------");
   Msg::Info("Gmsh version   : %s", Get_GmshVersion());
-  Msg::Info(gmsh_os);
-  Msg::Info("%s%s", gmsh_options, Get_BuildOptions());
-  Msg::Info(gmsh_date);
-  Msg::Info(gmsh_host);
-  Msg::Info(gmsh_packager);
+  Msg::Info("Build OS       : %s", Get_GmshBuildOS());
+  Msg::Info("Build options  : %s", Get_GmshBuildOptions().c_str());
+  Msg::Info("Build date     : %s", Get_GmshBuildDate());
+  Msg::Info("Build host     : %s", Get_GmshBuildHost());
+  Msg::Info("Packager       : %s", Get_GmshPackager());
   Msg::Info("Home directory : %s", CTX.home_dir);
   Msg::Info("Launch date    : %s", currtime.c_str());
   Msg::Info("Command line   : %s", cmdline.c_str());
@@ -99,8 +101,13 @@ int main(int argc, char *argv[])
 
   // Open project file and merge all other input files
   OpenProject(CTX.filename);
-  for(unsigned int i = 1; i < CTX.files.size(); i++)
-    MergeFile(CTX.files[i].c_str());
+  for(unsigned int i = 1; i < CTX.files.size(); i++){
+    if(CTX.files[i] == "-new")
+      new GModel;
+    else
+      MergeFile(CTX.files[i].c_str());
+  }
+  
   if(CTX.post.combine_time){
     PView::combine(true, 2, CTX.post.combine_remove_orig);
     WID->update_views();

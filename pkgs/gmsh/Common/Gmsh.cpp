@@ -6,7 +6,7 @@
 #include <string>
 #include "GmshDefines.h"
 #include "GModel.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "OpenFile.h"
 #include "CreateFile.h"
 #include "Options.h"
@@ -17,6 +17,7 @@
 #include "Field.h"
 #include "Context.h"
 #include "Partition.h"
+#include "GmshDaemon.h"
 
 #if !defined(HAVE_NO_POST)
 #include "PluginManager.h"
@@ -68,6 +69,11 @@ int GmshSetOption(std::string category, std::string name, double value, int inde
   return 0;
 }
 
+int GmshMergeFile(std::string fileName)
+{
+  return MergeFile(fileName.c_str(), 1);
+}
+
 int GmshFinalize()
 {
   return 1;
@@ -78,8 +84,13 @@ int GmshBatch()
   if(!GModel::current()) return 0;
 
   OpenProject(CTX.filename);
-  for(unsigned int i = 1; i < CTX.files.size(); i++)
-    MergeFile(CTX.files[i].c_str());
+  for(unsigned int i = 1; i < CTX.files.size(); i++){
+    if(CTX.files[i] == "-new")
+      new GModel;
+    else
+      MergeFile(CTX.files[i].c_str());
+  }
+
 #if !defined(HAVE_NO_POST)
   if(CTX.bgm_filename) {
     MergeFile(CTX.bgm_filename);
@@ -89,22 +100,29 @@ int GmshBatch()
       Msg::Error("Invalid background mesh (no view)");
   }
 #endif
-  if(CTX.batch == 4) {
-    AdaptMesh(GModel::current());
-    CreateOutputFile(CTX.output_filename, CTX.mesh.format);
+
+  if(CTX.batch == -3){
+    GmshDaemon(CTX.solver.socket_name);
   }
-  else if(CTX.batch > 0) {
-    GModel::current()->mesh(CTX.batch);
+  else if(CTX.batch == -2){
+    GModel::current()->checkMeshCoherence(CTX.geom.tolerance);
+  }
+  else if(CTX.batch == -1){
+    CreateOutputFile(CTX.output_filename, FORMAT_GEO);
+  }
+  else if(CTX.batch > 0){
+    if(CTX.batch < 4)
+      GModel::current()->mesh(CTX.batch);
+    else if(CTX.batch == 4)
+      AdaptMesh(GModel::current());
+    else if(CTX.batch == 5)
+      RefineMesh(GModel::current());
 #if defined(HAVE_CHACO) || defined(HAVE_METIS)
-    if(CTX.batchAfterMesh == 1)
-       PartitionMesh(GModel::current(), CTX.mesh.partition_options);
+    if(CTX.batch_after_mesh == 1)
+      PartitionMesh(GModel::current(), CTX.mesh.partition_options);
 #endif
     CreateOutputFile(CTX.output_filename, CTX.mesh.format);
   }
-  else if(CTX.batch == -1)
-    CreateOutputFile(CTX.output_filename, FORMAT_GEO);
-  else if(CTX.batch == -2)
-    GModel::current()->checkMeshCoherence();
 
   return 1;
 }

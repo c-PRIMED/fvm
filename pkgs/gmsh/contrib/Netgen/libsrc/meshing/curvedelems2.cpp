@@ -1,6 +1,8 @@
+
 #include <mystdlib.h>
 
 #include "meshing.hpp"
+#ifndef CURVEDELEMS_NEW
 
 namespace netgen
 {
@@ -25,11 +27,11 @@ namespace netgen
     }
 
 
-    void CurvedElements :: BuildCurvedElements(Refinement * ref, int polydeg)
+  void CurvedElements :: BuildCurvedElements(Refinement * ref, int polydeg, bool rational)
     {
       if (mesh.coarsemesh)
 	{
-	  mesh.coarsemesh->GetCurvedElements().BuildCurvedElements (ref, polydeg);
+	  mesh.coarsemesh->GetCurvedElements().BuildCurvedElements (ref, polydeg, rational);
 	  SetHighOrder();
 	  return;
 	}
@@ -65,6 +67,13 @@ namespace netgen
 	edgedone = 0;
 	edgeorder = 1;
 	faceorder = 1;
+
+	if (polydeg == 1)
+	{
+	    isHighOrder = 0;
+	    return;
+	}
+
 	
 	/*
 	for (e = 0; e < top.GetNEdges(); e++)
@@ -99,11 +108,6 @@ namespace netgen
 	      }
 	  }
 
-	if (polydeg == 1)
-	{
-	    isHighOrder = 0;
-	    return;
-	}
 
 	PrintMessage (1, "Building curved elements, order = ", polydeg);
 	PushStatusF ("curving edges");
@@ -741,7 +745,7 @@ namespace netgen
 
 	  if (maxcoeff < 1e-12) faceorder[f] = 1;
 	}
-
+    
     isHighOrder = 1;              // true
 
     PrintMessage(1, "done");
@@ -750,3 +754,5 @@ namespace netgen
     }
 
 } // namespace netgen
+
+#endif

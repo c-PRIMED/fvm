@@ -4,7 +4,9 @@
 #include <opti.hpp>
 
 #ifndef SMALLLIB
+//#ifndef NOTCL
 //#include <visual.hpp>
+//#endif
 #endif
 
 namespace netgen
@@ -67,7 +69,11 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
     }
 
 
-  int i, i2, j, k, j2;
+  static int timer = NgProfiler::CreateTimer ("EdgeSwapping 2D");
+  NgProfiler::RegionTimer reg1 (timer);
+
+
+  int i, i2, j, j2;
   bool should;
   PointIndex pi;
 
@@ -103,7 +109,7 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
   double d;
   Vec3d nv1, nv2;
   double horder;
-  double loch;
+  double loch(-1);
   static const double minangle[] = { 0, 1.481, 2.565, 3.627, 4.683, 5.736, 7, 9 };
 
   pangle = 0;
@@ -113,7 +119,7 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
       const Element2d & sel = mesh[seia[i]];
       for (j = 0; j < 3; j++)
 	{
-	  POINTTYPE typ = mesh.PointType (sel[j]);
+	  POINTTYPE typ = mesh[sel[j]].Type();
 	  if (typ == FIXEDPOINT || typ == EDGEPOINT)
 	    {
 	      pangle[sel[j]] +=
@@ -126,7 +132,7 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
   for (pi = PointIndex::BASE; 
        pi < mesh.GetNP()+PointIndex::BASE; pi++)
     {
-      if (mesh.PointType(pi) == INNERPOINT || mesh.PointType(pi) == SURFACEPOINT)
+      if (mesh[pi].Type() == INNERPOINT || mesh[pi].Type() == SURFACEPOINT)
 	pdef[pi] = -6;
       else
 	for (j = 0; j < 8; j++)
@@ -143,7 +149,7 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
 
   for (i = 0; i < seia.Size(); i++)
     {
-      const Element2d & sel = mesh[seia[i]];
+      //const Element2d & sel = mesh[seia[i]];
       for (j = 0; j < 3; j++)
 	{
 	  neighbors[seia[i]].SetNr (j+1, -1);
@@ -250,15 +256,35 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
 	      gi2 = mesh[t1].GeomInfoPiMod(o1+2);
 	      gi3 = mesh[t1].GeomInfoPiMod(o1);
 	      gi4 = mesh[t2].GeomInfoPiMod(o2);
-	      
-	      // normal of old   (new ?????)
-	      nv1 = Cross (mesh.Point(pi3)-mesh.Point(pi4), 
-			   mesh.Point(pi1)-mesh.Point(pi4));
-	      nv2 = Cross (mesh.Point(pi4)-mesh.Point(pi3), 
-			   mesh.Point(pi2)-mesh.Point(pi3));
+	    
+	      bool allowswap = true;
+
+	      Vec3d auxvec1,auxvec2;
+
+	      auxvec1 = mesh.Point(pi3)-mesh.Point(pi4);
+	      auxvec2 = mesh.Point(pi1)-mesh.Point(pi4);
+	      allowswap = allowswap && fabs(1.-(auxvec1*auxvec2)/(auxvec1.Length()*auxvec2.Length())) > 1e-4;
+
+	      if(!allowswap)
+		continue;
+
+	      // normal of new
+	      nv1 = Cross (auxvec1, 
+			   auxvec2);
+
+	      auxvec1 = mesh.Point(pi4)-mesh.Point(pi3);
+	      auxvec2 = mesh.Point(pi2)-mesh.Point(pi3);
+	      allowswap = allowswap && fabs(1.-(auxvec1*auxvec2)/(auxvec1.Length()*auxvec2.Length())) > 1e-4;
+
+
+	      if(!allowswap)
+		continue;
+
+	      nv2 = Cross (auxvec1, 
+			   auxvec2);
 
 	      
-	      // normals of swapped  original (???JS)
+	      // normals of original
 	      Vec3d nv3, nv4;
 	      nv3 = Cross (mesh.Point(pi1)-mesh.Point(pi4), 
 			   mesh.Point(pi2)-mesh.Point(pi4));
@@ -273,7 +299,7 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
 	      nv1.Normalize();
 	      nv2.Normalize();
 	    
-	      Vec3d nvp3, nvp4;
+	      Vec<3> nvp3, nvp4;
 	      SelectSurfaceOfPoint (mesh.Point(pi3), gi3);
 	      GetNormalVector (surfnr, mesh.Point(pi3), gi3, nvp3);
 
@@ -287,7 +313,7 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
 	      
 	      
 	      double critval = cos (M_PI / 6);  // 30 degree
-	      bool allowswap = 
+	      allowswap = allowswap &&
 		(nv1 * nvp3 > critval) && 
 		(nv1 * nvp4 > critval) && 
 		(nv2 * nvp3 > critval) && 
@@ -325,7 +351,6 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
 					     metricweight, loch);
 
 		    }
-
 		  
 		  if (allowswap)
 		    {
@@ -350,8 +375,9 @@ void MeshOptimize2d :: EdgeSwapping (Mesh & mesh, int usemetric)
 
 		      nswaps ++;
 		      
-		    //            testout << "nv1 = " << nv1 << "   nv2 = " << nv2 << endl;
-		      
+		      // testout << "nv1 = " << nv1 << "   nv2 = " << nv2 << endl;
+		     
+
 		      done = 1;
 		      
 		      mesh[t1].PNum(1) = pi1;
@@ -412,7 +438,12 @@ void MeshOptimize2d :: CombineImprove (Mesh & mesh)
     }
 
 
-  int i, j, k, l, i2, j2;
+  static int timer = NgProfiler::CreateTimer ("Combineimprove 2D");
+  NgProfiler::RegionTimer reg (timer);
+
+
+
+  int i, j, k, l;
   PointIndex pi;
   SurfaceElementIndex sei;
 
@@ -432,14 +463,13 @@ void MeshOptimize2d :: CombineImprove (Mesh & mesh)
     surfnr = mesh.GetFaceDescriptor (faceindex).SurfNr();
 
 
-  int should;
   PointIndex pi1, pi2;
   MeshPoint p1, p2, pnew;
   double bad1, bad2;
-  Vec3d nv;
+  Vec<3> nv;
 
   int np = mesh.GetNP();
-  int nse = mesh.GetNSE();
+  //int nse = mesh.GetNSE();
 
   TABLE<SurfaceElementIndex,PointIndex::BASE> elementsonnode(np); 
   ARRAY<SurfaceElementIndex> hasonepi, hasbothpi;
@@ -454,19 +484,22 @@ void MeshOptimize2d :: CombineImprove (Mesh & mesh)
     }
 
 
-  ARRAY<int,PointIndex::BASE> fixed(np);
-  fixed = 0;
+  ARRAY<bool,PointIndex::BASE> fixed(np);
+  fixed = false;
 
   SegmentIndex si;
   for (si = 0; si < mesh.GetNSeg(); si++)
     {
       INDEX_2 i2(mesh[si].p1, mesh[si].p2);
-      fixed[i2.I1()] = 1;
-      fixed[i2.I2()] = 1;
+      fixed[i2.I1()] = true;
+      fixed[i2.I2()] = true;
     }
 
+  for(i = 0; i<mesh.LockedPoints().Size(); i++)
+    fixed[mesh.LockedPoints()[i]] = true;
 
-  ARRAY<Vec3d,PointIndex::BASE> normals(np);
+
+  ARRAY<Vec<3>,PointIndex::BASE> normals(np);
 
   for (pi = PointIndex::BASE; 
        pi < np + PointIndex::BASE; pi++)
@@ -632,13 +665,13 @@ void MeshOptimize2d :: CombineImprove (Mesh & mesh)
 				     nv, -1, loch);
 	      bad2 += err;
 
-	      Vec3d hnv = Cross (Vec3d (mesh[el[0]],
-					mesh[el[1]]),
-				 Vec3d (mesh[el[0]],
-					mesh[el[2]]));
+	      Vec<3> hnv = Cross (Vec3d (mesh[el[0]],
+                                         mesh[el[1]]),
+                                  Vec3d (mesh[el[0]],
+                                         mesh[el[2]]));
 	      if (hnv * nv < 0)
 		bad2 += 1e10;
-
+              
 	      for (l = 0; l < 3; l++)
 		if ( (normals[el[l]] * nv) < 0.5)
 		  bad2 += 1e10;
@@ -676,7 +709,7 @@ void MeshOptimize2d :: CombineImprove (Mesh & mesh)
 	      bool gi_set(false);
 	      
 	      
-	      Element2d *el1p;
+	      Element2d *el1p(NULL);
 	      l=0;
 	      while(mesh[elementsonnode[pi1][l]].IsDeleted() && l<elementsonnode.EntrySize(pi1)) l++;
 	      if(l<elementsonnode.EntrySize(pi1))
@@ -712,7 +745,7 @@ void MeshOptimize2d :: CombineImprove (Mesh & mesh)
 			  el.GeomInfoPi (l+1) = gi;
 			}
 
-		      fixed[el[l]] = 1;
+		      fixed[el[l]] = true;
 		    }
 		}
 

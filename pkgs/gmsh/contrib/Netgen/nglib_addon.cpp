@@ -10,23 +10,20 @@ namespace nglib {
 using namespace netgen;
 
 #include <iostream>
-#include "Message.h"
+#include "GmshMessage.h"
 
 namespace nglib
 {
 
-class mystreambuf: public streambuf
-{
+class mystreambuf : public streambuf {
   int index;
   char txt[1024];
  public:
-  mystreambuf() { 
-    index = 0; 
-  }
-  int sync(){ 
+  mystreambuf() : index(0) {} 
+  int sync()
+  { 
     txt[index] = '\0';
-    if(!index || 
-       (index == 1 && (txt[0] == '.' || txt[0] == '+' || txt[0] == ' '))){
+    if(!index || (index == 1 && (txt[0] == '.' || txt[0] == '+' || txt[0] == ' '))){
       // ignore these messages
     }
     else{
@@ -38,7 +35,8 @@ class mystreambuf: public streambuf
     index = 0; 
     return 0; 
   }
-  int overflow(int ch){ 
+  int overflow(int ch)
+  {
     if(index < 1023){
       txt[index] = ch;
       if(txt[index] == '\n' || txt[index] == '\r') txt[index] = ' ';

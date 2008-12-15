@@ -14,7 +14,7 @@
 
 namespace netgen
 {
-  using namespace netgen;
+  //using namespace netgen;
 
   BlockAllocator :: BlockAllocator (unsigned asize, unsigned ablocks)
     : bablocks (0)
@@ -28,15 +28,17 @@ namespace netgen
 
   BlockAllocator :: ~BlockAllocator ()
   {
-    for (unsigned i = 0; i < bablocks.Size(); i++)
+    //for (unsigned i = 0; i < bablocks.Size(); i++)
+    for (int i = 0; i < bablocks.Size(); i++)
       delete [] bablocks[i];
   }
 
-  void BlockAllocator :: Alloc2 ()
+  void * BlockAllocator :: Alloc ()
   {
     //  return new char[size];
-    //    if (!freelist)
+    if (!freelist)
       {
+	// cout << "freelist = " << freelist << endl;
 	// cout << "BlockAlloc: " << size*blocks << endl;
 	char * hcp = new char [size * blocks];
 	bablocks.Append (hcp);
@@ -46,11 +48,10 @@ namespace netgen
 	*(void**)&(hcp[(blocks-1)*size]) = NULL;
 	freelist = hcp;
       }
-      /*
+
     void * p = freelist;
     freelist = *(void**)freelist;
     return p;
-      */
   }
 
   /*

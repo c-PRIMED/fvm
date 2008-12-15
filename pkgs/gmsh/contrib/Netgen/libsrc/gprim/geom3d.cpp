@@ -404,6 +404,86 @@ int SolveLinearSystem (const Vec3d & col1, const Vec3d & col2,
 		       const Vec3d & col3, const Vec3d & rhs,
 		       Vec3d & sol)
 {
+  // changed by MW
+  double matrix[3][3];
+  double locrhs[3];
+  int retval = 0;
+
+  for(int i=0; i<3; i++)
+    {
+      matrix[i][0] = col1.X(i+1);
+      matrix[i][1] = col2.X(i+1);
+      matrix[i][2] = col3.X(i+1);
+      locrhs[i] = rhs.X(i+1);
+    }
+
+  for(int i=0; i<2; i++)
+    {
+      int pivot = i;
+      double maxv = fabs(matrix[i][i]);
+      for(int j=i+1; j<3; j++)
+	if(fabs(matrix[j][i]) > maxv)
+	  {
+	    maxv = fabs(matrix[j][i]);
+	    pivot = j;
+	  }
+
+      if(fabs(maxv) > 1e-40)
+	{
+	  if(pivot != i)
+	    {
+	      swap(matrix[i][0],matrix[pivot][0]);
+	      swap(matrix[i][1],matrix[pivot][1]);
+	      swap(matrix[i][2],matrix[pivot][2]);
+	      swap(locrhs[i],locrhs[pivot]);
+	    }
+	  for(int j=i+1; j<3; j++)
+	    {
+	      double fac = matrix[j][i] / matrix[i][i];
+	      
+	      for(int k=i+1; k<3; k++)
+		matrix[j][k] -= fac*matrix[i][k];
+	      locrhs[j] -= fac*locrhs[i];
+	    }
+	}
+      else
+	retval = 1;
+    }
+
+  if(fabs(matrix[2][2]) < 1e-40)
+    retval = 1;
+
+  if(retval != 0)
+    return retval;
+  
+
+  for(int i=2; i>=0; i--)
+    {
+      double sum = locrhs[i];
+      for(int j=2; j>i; j--)
+	sum -= matrix[i][j]*sol.X(j+1);
+
+      sol.X(i+1) = sum/matrix[i][i];
+    }
+
+  return 0;
+  
+  
+  
+
+
+  /*
+  double det = Determinant (col1, col2, col3);
+  if (fabs (det) < 1e-40)
+    return 1;
+  
+  sol.X() = Determinant (rhs, col2, col3) / det;
+  sol.Y() = Determinant (col1, rhs, col3) / det;
+  sol.Z() = Determinant (col1, col2, rhs) / det;
+
+  return 0;
+  */
+  /*
   Vec3d cr;
   Cross (col1, col2, cr);
   double det = cr * col3;
@@ -436,6 +516,7 @@ int SolveLinearSystem (const Vec3d & col1, const Vec3d & col2,
     }
 
   return 0;
+  */
 }
 
 

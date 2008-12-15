@@ -33,11 +33,13 @@ protected:
   void MoveTo (size_t newpos);
   void Free () throw(); 
   char * Ptr() { return ptr; }
-  const char * Ptr() const { return ptr; }
+  char * Ptr() const { return ptr; }
   void Swap (BaseMoveableMem & m2) throw(); 
 public:
   void SetName (const char * aname);
   static void Print ();
+
+  friend class BaseDynamicMem;
 };
 
 
@@ -75,9 +77,9 @@ public:
     return reinterpret_cast<T*> (BaseMoveableMem::Ptr());
   }
 
-  operator const T* () const
+  operator T* () const
   {
-    return reinterpret_cast<const T*> (BaseMoveableMem::Ptr());
+    return reinterpret_cast<T*> (BaseMoveableMem::Ptr());
   }
 
   operator T* () 

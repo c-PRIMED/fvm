@@ -5,7 +5,7 @@
 
 #include "GmshUI.h"
 #include "GmshDefines.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Draw.h"
 #include "Context.h"
 #include "Numeric.h"
@@ -55,6 +55,7 @@ void Draw3d()
   InitProjection();
   InitRenderModel();
   InitPosition();
+  Draw_Axes();
   Draw_Geom();
   Draw_Mesh();
   Draw_Post();

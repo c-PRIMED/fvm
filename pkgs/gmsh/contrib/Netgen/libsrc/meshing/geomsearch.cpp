@@ -7,7 +7,7 @@ namespace netgen
   GeomSearch3d :: GeomSearch3d() 
   {
     size.i1 = 0; size.i2 = 0; size.i3 = 0; 
-  }
+  };
 
   GeomSearch3d :: ~GeomSearch3d()
   {
@@ -28,23 +28,23 @@ namespace netgen
     hashcount = 1;
   }
 
-  void GeomSearch3d :: ElemMaxExt(Point3d& minp, Point3d& maxp, const Element2d& elem)
+  void GeomSearch3d :: ElemMaxExt(Point3d& minp, Point3d& maxp, const MiniElement2d& elem)
   {
-    maxp.X()=(*points)[elem.PNum(1)].P().X();
-    maxp.Y()=(*points)[elem.PNum(1)].P().Y();
-    maxp.Z()=(*points)[elem.PNum(1)].P().Z();
-    minp.X()=(*points)[elem.PNum(1)].P().X();
-    minp.Y()=(*points)[elem.PNum(1)].P().Y();
-    minp.Z()=(*points)[elem.PNum(1)].P().Z();
+    maxp.X()=(*points)[elem.PNum(1)].P()(0);
+    maxp.Y()=(*points)[elem.PNum(1)].P()(1);
+    maxp.Z()=(*points)[elem.PNum(1)].P()(2);
+    minp.X()=(*points)[elem.PNum(1)].P()(0);
+    minp.Y()=(*points)[elem.PNum(1)].P()(1);
+    minp.Z()=(*points)[elem.PNum(1)].P()(2);
   
     for (int i=2; i <= 3; i++)
       {
-	maxp.X()=max2((*points)[elem.PNum(i)].P().X(),maxp.X());
-	maxp.Y()=max2((*points)[elem.PNum(i)].P().Y(),maxp.Y());
-	maxp.Z()=max2((*points)[elem.PNum(i)].P().Z(),maxp.Z());
-	minp.X()=min2((*points)[elem.PNum(i)].P().X(),minp.X());
-	minp.Y()=min2((*points)[elem.PNum(i)].P().Y(),minp.Y());
-	minp.Z()=min2((*points)[elem.PNum(i)].P().Z(),minp.Z());
+	maxp.X()=max2((*points)[elem.PNum(i)].P()(0),maxp.X());
+	maxp.Y()=max2((*points)[elem.PNum(i)].P()(1),maxp.Y());
+	maxp.Z()=max2((*points)[elem.PNum(i)].P()(2),maxp.Z());
+	minp.X()=min2((*points)[elem.PNum(i)].P()(0),minp.X());
+	minp.Y()=min2((*points)[elem.PNum(i)].P()(1),minp.Y());
+	minp.Z()=min2((*points)[elem.PNum(i)].P()(2),minp.Z());
       }
   }
 
@@ -105,7 +105,7 @@ namespace netgen
 	size.i1 = int (boxext.X()/midext.X()/hashelemsizefactor+1);
 	size.i2 = int (boxext.Y()/midext.Y()/hashelemsizefactor+1);
 	size.i3 = int (boxext.Z()/midext.Z()/hashelemsizefactor+1);
-	PrintMessage (5, "hashsizes = ", size.i1, ", ", size.i2, ", ", size.i3);
+	// PrintMessage (5, "hashsizes = ", size.i1, ", ", size.i2, ", ", size.i3);
       
 	elemsize.X()=boxext.X()/size.i1;
 	elemsize.Y()=boxext.Y()/size.i2;
@@ -149,7 +149,7 @@ namespace netgen
   
   }
 
-  void GeomSearch3d :: AddElem(const Element2d& elem, INDEX elemnum)
+  void GeomSearch3d :: AddElem(const MiniElement2d& elem, INDEX elemnum)
   {
     Point3d minp, maxp;
     ElemMaxExt(minp, maxp, elem);
@@ -159,27 +159,23 @@ namespace netgen
     int ey = int ((maxp.Y()-minext.Y())/elemsize.Y()+1.);
     int sz = int ((minp.Z()-minext.Z())/elemsize.Z()+1.);
     int ez = int ((maxp.Z()-minext.Z())/elemsize.Z()+1.);
-    int ix,iy,iz;
   
-    for (ix = sx; ix <= ex; ix++)
-      {
-	for (iy = sy; iy <= ey; iy++)
-	  {
-	    for (iz = sz; iz <= ez; iz++)
-	      {
-		INDEX ind=ix+(iy-1)*size.i1+(iz-1)*size.i2*size.i1;
-		if (ind < 1 || ind > size.i1 * size.i2 * size.i3)
-		  {
-		    cerr << "Illegal hash-position";
-		    cerr << "Position: " << ix << "," << iy << "," << iz << endl;
-		  }
-		hashtable.Elem(ind)->Append(elemnum);		      
-	      }
-	  }
-      }
+    for (int ix = sx; ix <= ex; ix++)
+      for (int iy = sy; iy <= ey; iy++)
+        for (int iz = sz; iz <= ez; iz++)
+          {
+            INDEX ind=ix+(iy-1)*size.i1+(iz-1)*size.i2*size.i1;
+            if (ind < 1 || ind > size.i1 * size.i2 * size.i3)
+              {
+                cerr << "Illegal hash-position";
+                cerr << "Position: " << ix << "," << iy << "," << iz << endl;
+		    throw NgException ("Illegal position in Geomsearch");
+              }
+            hashtable.Elem(ind)->Append(elemnum);		      
+          }
   }
 
-  void GeomSearch3d :: GetLocals(ARRAY<Element2d> & locfaces,  ARRAY<INDEX> & findex,
+  void GeomSearch3d :: GetLocals(ARRAY<MiniElement2d> & locfaces,  ARRAY<INDEX> & findex,
 				 INDEX fstind, const Point3d& p0, double xh)
   {
     hashcount++;
@@ -227,7 +223,7 @@ namespace netgen
 			i != fstind)
 		      {
 			cnt1++;
-			const Element2d & face = faces->Get(i).Face();
+			const MiniElement2d & face = faces->Get(i).Face();
 		      
 			const Point3d & p1 = (*points)[face.PNum(1)].P();
 			const Point3d & p2 = (*points)[face.PNum(2)].P();
@@ -235,7 +231,11 @@ namespace netgen
 		      
 			midp = Center (p1, p2, p3);
 		      
-			if (Dist2 (midp, p0) <= xh*xh)
+			// if (Dist2 (midp, p0) <= xh*xh)  
+                        if((Dist2 (p1, p0) <= xh*xh) ||
+                           (Dist2 (p2, p0) <= xh*xh) ||
+                           (Dist2 (p3, p0) <= xh*xh) ||
+                           (Dist2 (midp, p0) <= xh*xh) )  // by Jochen Wild
 			  {
 			    cnt3++;
 			    locfaces.Append(faces->Get(i).Face());

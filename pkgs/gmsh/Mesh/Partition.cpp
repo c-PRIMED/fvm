@@ -95,7 +95,7 @@ int PartitionMesh(GModel *const model, PartitionOptions &options)
   Msg::StatusBar(1, true, "Partitioning graph...");
   if(!ier) ier = PartitionGraph(graph, options);
   if(ier) {
-    Msg::StatusBar(1, true, "Mesh");
+    Msg::StatusBar(1, false, "Mesh");
     return 1;
   }
 
@@ -123,9 +123,8 @@ int PartitionMesh(GModel *const model, PartitionOptions &options)
 
   model->recomputeMeshPartitions();
   Msg::Info("Partitioning complete");
-  Msg::StatusBar(1, true, "Mesh");
+  Msg::StatusBar(1, false, "Mesh");
   return 0;
-
 }
 
 
@@ -194,8 +193,8 @@ int PartitionGraph(Graph &graph, PartitionOptions &options)
       }
       if(!ier) graph.short2int();
     }
-    break;
 #endif
+    break;
   case 2:  // Metis
 #ifdef HAVE_METIS
     {
@@ -249,11 +248,10 @@ int PartitionGraph(Graph &graph, PartitionOptions &options)
         for(int n = graph.getNumVertex(); n--;) ++(*p++);
       }
     }
-    break;
 #endif
+    break;
   }
   return ier;
-
 }
 
 
@@ -327,7 +325,7 @@ int MakeGraph(GModel *const model, Graph &graph, BoElemGrVec *const boElemGrVec)
                             boElemGrVec);
           }
           catch(...) {
-            Message::Error("Exception thrown during graph generation");
+            Msg::Error("Exception thrown during graph generation");
             ier = 2;
           }
         }
@@ -349,7 +347,7 @@ int MakeGraph(GModel *const model, Graph &graph, BoElemGrVec *const boElemGrVec)
                             boElemGrVec);
           }
           catch(...) {
-            Message::Error("Exception thrown during graph generation");
+            Msg::Error("Exception thrown during graph generation");
             ier = 2;
           }
         }
@@ -386,7 +384,7 @@ int MakeGraph(GModel *const model, Graph &graph, BoElemGrVec *const boElemGrVec)
 //             if((*it)->triangles.size() + (*it)->quadrangles.size() > 0)
 //               groups[face][1].push_back(*it);
 //           if(groups[face].size() == 0) {
-//             Message::Error("No mesh elements were found");
+//             Msg::Error("No mesh elements were found");
 //             return;
 //           }
 //         }
@@ -409,7 +407,7 @@ int MakeGraph(GModel *const model, Graph &graph, BoElemGrVec *const boElemGrVec)
 //           }
 //           const int numGrVert = numElem[ElemTypeTri] + numElem[ElemTypeQuad];
 //           if(numGrVert == 0) {
-//             Message::Error("No mesh elements were found");
+//             Msg::Error("No mesh elements were found");
 //             return;
 //           }
 //           const int maxGrEdge =
@@ -441,7 +439,7 @@ int MakeGraph(GModel *const model, Graph &graph, BoElemGrVec *const boElemGrVec)
 //           const int numGrVert = numElem[ElemTypeTetra] + numElem[ElemTypeHexa] +
 //             numElem[ElemTypePrism] + numElem[ElemTypePyramid];
 //           if(numGrVert == 0) {
-//             Message::Error("No mesh elements were found");
+//             Msg::Error("No mesh elements were found");
 //             return;
 //           }
 //           const int maxGrEdge =
@@ -545,8 +543,9 @@ struct MakeGraphFromEntity
     int nType = entity->getNumElementTypes();
     for(int iType = 0; iType != nType; ++iType) {
       // Loop over all elements in a type
-      MElement *const *element = entity->getStartElementType(iType);
       const int nElem = numElem[iType];
+      if(!nElem) continue;
+      MElement *const *element = entity->getStartElementType(iType);
       for(int iElem = 0; iElem != nElem; ++iElem) {
         const int nFace = DimTr<DIM>::getNumFace(element[iElem]);
         // Insert this element into the map of graph vertices
@@ -619,8 +618,9 @@ struct MatchBoElemToGrVertex
     int nType = entity->getNumElementTypes();
     for(int iType = 0; iType != nType; ++iType) {
       // Loop over all elements in a type
-      MElement *const *element = entity->getStartElementType(iType);
       const int nElem = numElem[iType];
+      if(!nElem) continue;
+      MElement *const *element = entity->getStartElementType(iType);
       for(int iElem = 0; iElem != nElem; ++iElem) {
         FaceT face = DimTr<DIM>::getFace(element[iElem], 0);
         const typename FaceMap::const_iterator faceMapIt = faceMap.find(face);

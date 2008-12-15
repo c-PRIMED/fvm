@@ -164,8 +164,56 @@ enum HPREF_ELEMENT_TYPE {
   HP_PRISM_SINGEDGE_H12,
 
   HP_PRISM_1FA_0E_0V,     // 1 singular trig face
+  HP_PRISM_2FA_0E_0V,     // 2 singular trig faces
   HP_PRISM_1FB_0E_0V,     // 1 singular quad face  1-2-4-5
+
   HP_PRISM_1FB_1EA_0V,     // 1 singular quad face, edge is 1-2
+  HP_PRISM_1FA_1E_0V, 
+  HP_PRISM_2FA_1E_0V, 
+  HP_PRISM_1FA_1FB_0E_0V, 
+  HP_PRISM_2FA_1FB_0E_0V,
+  HP_PRISM_1FA_1FB_1EA_0V, 
+  HP_PRISM_1FA_1FB_1EB_0V, 
+  HP_PRISM_2FA_1FB_1EA_0V,
+  HP_PRISM_1FB_1EC_0V, 
+  HP_PRISM_1FA_1FB_1EC_0V, 
+  HP_PRISM_2FA_1FB_1EC_0V,
+  HP_PRISM_1FB_2EA_0V, 
+  HP_PRISM_1FA_1FB_2EA_0V, 
+  HP_PRISM_2FA_1FB_2EA_0V,
+  HP_PRISM_1FB_2EB_0V,
+  HP_PRISM_1FA_1FB_2EB_0V,  
+  HP_PRISM_1FA_1FB_2EC_0V, 
+  HP_PRISM_2FA_1FB_2EB_0V, 
+  HP_PRISM_1FB_3E_0V, 
+  HP_PRISM_1FA_1FB_3E_0V, 
+  HP_PRISM_2FA_1FB_3E_0V, 
+  HP_PRISM_2FB_0E_0V, 
+  HP_PRISM_1FA_2FB_0E_0V, 
+  HP_PRISM_2FA_2FB_0E_0V,
+  HP_PRISM_2FB_1EC_0V, 
+  HP_PRISM_1FA_2FB_1EC_0V,
+  HP_PRISM_1FA_2FB_1EB_0V,
+  HP_PRISM_2FA_2FB_1EC_0V,
+  HP_PRISM_2FB_3E_0V, 
+  HP_PRISM_1FA_2FB_3E_0V, 
+  HP_PRISM_2FA_2FB_3E_0V, 
+  HP_PRISM_1FA_2E_0V, 
+  HP_PRISM_2FA_2E_0V,
+  HP_PRISM_3E_0V, 
+  HP_PRISM_1FA_3E_0V, 
+  HP_PRISM_2FA_3E_0V,  
+  HP_PRISM_3FB_0V, 
+  HP_PRISM_1FA_3FB_0V, 
+  HP_PRISM_2FA_3FB_0V,  
+  HP_PRISM_3E_4EH,
+  
+ 
+
+  /*  HP_PRISM_1FB_1EA_0V,     // 1 singular quad face, edge is 1-4
+  HP_PRISM_1FB_1EB_0V,     // 1 singular quad face, edge is 2-5
+  HP_PRISM_2F_0E_0V,      // 2 singular quad faces
+  */
 
   HP_PYRAMID = 2000,
   HP_PYRAMID_0E_1V,
@@ -177,8 +225,8 @@ enum HPREF_ELEMENT_TYPE {
   HP_HEX_1E_1V,
   HP_HEX_1E_0V,
   HP_HEX_3E_0V,
-
-  HP_HEX_1F_0E_0V
+  HP_HEX_1F_0E_0V,
+  HP_HEX_1FA_1FB_0E_0V, 
 };
 
 
@@ -197,31 +245,75 @@ struct HPRef_Struct {
 
 class HPRefElement
 {
+private:
+  void Reset(void);
+
 public:
-  HPRefElement () 
-  {
-    for (int i = 0; i < 8; i++)
+  HPRefElement (); 
+  HPRefElement(Element & el);
+  HPRefElement(Element2d & el);
+  HPRefElement(Segment & el);	
+  HPRefElement(HPRefElement & el);
+
+  void SetType( HPREF_ELEMENT_TYPE t);
+  // HPRefElement(HPRefElement & el, HPREF_ELEMENT_TYPE t); 
+	       
+  /* HPRefElement(HPRefElement & el, HPREF_ELEMENT_TYPE t)
+  { 
+    type = t; 
+    HPRef_Struct * hprs = Get_HPRef_Struct(t);
+    for (int i=0; i<np ; i++) 
       {
-	pnums[i] = -1;
-	param[i][0] = param[i][1] = param[i][2] = 0;
+	pnums[i] = el[i];
+	for(int l=0; l<np; l++) param[i][l] = el.param[i][l]; 
       }
-  }
+    switch(hprs->geom)
+      {
+      case HP_SEGM: np=2; sing_edge_left=0; sing_edge_right=0; break; 
+      case HP_QUAD: np=4; break; 
+      case HP_TRIG: np=3; break; 
+      case HP_HEX: np=8; break; 
+      case HP_PRISM: np=6; break;
+      case HP_TET: np=4; break; 
+      case HP_PYRAMID: np=5; break; 
+      }
+    index = el.index; 
+    levelx = el.levelx; 
+    levely = el.levely; 
+    levelz = el.levelz; 
+    type = el.type; 
+    coarse_elnr = el.coarse_elnr;
+    singedge_left = el.singedge_left; 
+    singedge_right = el.singedge_left; 
+    } */ 
+  
   HPREF_ELEMENT_TYPE type;
   PointIndex pnums[8];
   double param[8][3];
   int index;
-  int level;
+  int levelx;
+  int levely;
+  int levelz;
+  int np; 
   int coarse_elnr;
+  int domin, domout; // he: needed for segment!! in 3d there should be surf1, surf2!!
+  // int coarse_hpelnr; 
+  PointIndex & operator[](int i) { return(pnums[i]);}
+  PointIndex & PNumMod(int i) { return pnums[(i-1) % np]; };
+  PointIndex & PNum(int i) {return pnums[(i-1)]; };
+  int GetIndex () const { return index; }; 
+  double singedge_left, singedge_right; 
+  
+
   //  EdgePointGeomInfo epgeominfo[2];
+  
 };
 
 
 
-extern void HPRefinement (Mesh & mesh, Refinement * ref, int levels);
+extern void HPRefinement (Mesh & mesh, Refinement * ref, int levels, 
+			  double fac1=0.125, bool setorders=true, bool ref_level = false);
 
 
 #endif
-
-
-
 

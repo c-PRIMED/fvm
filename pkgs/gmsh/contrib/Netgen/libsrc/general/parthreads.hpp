@@ -8,7 +8,7 @@
 /**************************************************************************/
 
 /*
-  Parallel thread, Mutex, 
+  Parallel thread, Mutex,
 */
 
 #ifdef NO_PARALLEL_THREADS
@@ -17,7 +17,7 @@ class NgMutex { };
 
 class NgLock
 {
-public:	
+public:
   NgLock (NgMutex & mut, bool lock = 0) { ; }
   void Lock () { ; }
   void UnLock () { ; }
@@ -26,14 +26,14 @@ public:
 
 #else
 
-#ifdef WIN32
+#ifdef _MSC_VER
 
 class NgMutex
 {
   CCriticalSection cs;
-  
+
 public:
-  NgMutex () 
+  NgMutex ()
   { ; }
   friend class NgLock;
 };
@@ -42,7 +42,7 @@ class NgLock
 {
   CSingleLock sl;
   bool locked;
-public:	
+public:
   NgLock (NgMutex & mut, bool lock = 0)
     : sl(&mut.cs)
   {
@@ -57,13 +57,13 @@ public:
 
   void Lock ()
   {
-    sl.Lock(); 
+    sl.Lock();
     locked = 1;
   }
 
   void UnLock ()
-  { 
-    sl.Unlock(); 
+  {
+    sl.Unlock();
     locked = 0;
   }
 };
@@ -71,7 +71,7 @@ public:
 #else
 
 
-#include <pthread.h>
+// #include <pthread.h>
 
 class NgMutex
 {
@@ -80,41 +80,44 @@ public:
   NgMutex ()
   {
     pthread_mutex_init (&mut, NULL);
-  }
+   }
   friend class NgLock;
 };
 
-class NgLock 
+class NgLock
 {
   pthread_mutex_t & mut;
   bool locked;
 public:
-  NgLock (NgMutex & ngmut, bool lock = 0)
+  NgLock (NgMutex & ngmut, bool lock = false)
     : mut (ngmut.mut)
-  { 
-    if (lock) pthread_mutex_lock (&mut); 
+  {
+    if (lock)
+      pthread_mutex_lock (&mut);
+
     locked = lock;
   };
 
   ~NgLock()
   {
-    if (locked) pthread_mutex_unlock (&mut); 
+    if (locked)
+      pthread_mutex_unlock (&mut);
   }
-  
+
   void Lock ()
-  { 
-    pthread_mutex_lock (&mut); 
-    locked = 1;
+  {
+    pthread_mutex_lock (&mut);
+    locked = true;
   }
   void UnLock ()
-  { 
-    pthread_mutex_unlock (&mut); 
-    locked = 0;
+  {
+    pthread_mutex_unlock (&mut);
+    locked = false;
   }
   /*
   int TryLock ()
-  { 
-    return pthread_mutex_trylock (&mut); 
+  {
+    return pthread_mutex_trylock (&mut);
   }
   */
 };

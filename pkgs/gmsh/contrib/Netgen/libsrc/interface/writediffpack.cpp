@@ -93,7 +93,7 @@ void WriteDiffPackFormat (const Mesh & mesh,
           outfile.width(9);
           outfile << p.Z()/scale << ") ";
 	 
-	  if(mesh.PointType(i) != INNERPOINT) 
+	  if(mesh[PointIndex(i)].Type() != INNERPOINT) 
 	    {
 	      BCsinpoint.DeleteAll();
 	      for (j = 1; j <= nse; j++) 
@@ -184,7 +184,7 @@ void WriteDiffPackFormat (const Mesh & mesh,
       // Output compatible to Diffpack grid format 2D
 
       int np = mesh.GetNP();
-      int ne = mesh.GetNE();
+      //int ne = mesh.GetNE();
       int nse = mesh.GetNSE();
       ARRAY <int> BIname;
       ARRAY <int> BCsinpoint;
@@ -239,7 +239,7 @@ void WriteDiffPackFormat (const Mesh & mesh,
           outfile.width(9);
           outfile << p.Y()/scale << ", ";
 	 
-	  if(mesh.PointType(i) != INNERPOINT) 
+	  if(mesh[PointIndex(i)].Type() != INNERPOINT) 
 	    {
 	      BCsinpoint.DeleteAll();
 	      for (j = 1; j <= nse; j++) 

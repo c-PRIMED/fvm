@@ -10,6 +10,8 @@
 #include "GPoint.h"
 #include "SPoint2.h"
 
+#define MAX_LC 1.e22
+
 class MElement;
 class MPoint;
 
@@ -20,8 +22,11 @@ class GVertex : public GEntity
   std::list<GEdge*> l_edges;
   double meshSize;
  public:
-  GVertex(GModel *m, int tag, double ms=1.e22);
+  GVertex(GModel *m, int tag, double ms=MAX_LC);
   virtual ~GVertex();
+
+  // delete mesh data
+  virtual void deleteMesh();
 
   // get/set the coordinates of the vertex
   virtual GPoint point() const = 0;

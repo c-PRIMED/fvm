@@ -29,6 +29,11 @@ Field format for Nastran BDF files (0=free, 1=small, 2=large)@*
 Default value: @code{1}@*
 Saved in: @code{General.OptionsFileName}
 
+@item Mesh.Binary
+Write mesh files in binary format (if possible)@*
+Default value: @code{0}@*
+Saved in: @code{General.OptionsFileName}
+
 @item Mesh.C1Continuity
 Impose C1 continuity to high order meshes (only valid in 2D plane and ElemenOrder = 2)@*
 Default value: @code{0}@*
@@ -254,11 +259,6 @@ Minimum number of points used to mesh a (non-straight) curve@*
 Default value: @code{3}@*
 Saved in: @code{General.OptionsFileName}
 
-@item Mesh.MshBinary
-Write MSH files in binary format?@*
-Default value: @code{0}@*
-Saved in: @code{General.OptionsFileName}
-
 @item Mesh.MshFileVersion
 Version of the MSH file format to use@*
 Default value: @code{2}@*
@@ -409,6 +409,11 @@ Ignore Physical definitions and save all elements@*
 Default value: @code{0}@*
 Saved in: @code{-}
 
+@item Mesh.SaveParametric
+Save parametric coordinates of nodes@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
 @item Mesh.SaveGroupsOfNodes
 Save groups of nodes for each physical line and surface (UNV mesh format only)@*
 Default value: @code{0}@*
@@ -454,11 +459,6 @@ Smooth the mesh normals?@*
 Default value: @code{0}@*
 Saved in: @code{General.OptionsFileName}
 
-@item Mesh.StlBinary
-Save STL files in binary format?@*
-Default value: @code{0}@*
-Saved in: @code{General.OptionsFileName}
-
 @item Mesh.SurfaceEdges
 Display edges of surface mesh?@*
 Default value: @code{1}@*
@@ -482,6 +482,11 @@ Saved in: @code{General.OptionsFileName}
 @item Mesh.Tetrahedra
 Display mesh tetrahedra?@*
 Default value: @code{1}@*
+Saved in: @code{General.OptionsFileName}
+
+@item Mesh.ToleranceEdgeLength
+Skip a model edge in mesh generation if its length is less than user's defined tolerance@*
+Default value: @code{0}@*
 Saved in: @code{General.OptionsFileName}
 
 @item Mesh.Triangles
@@ -511,7 +516,7 @@ Saved in: @code{General.OptionsFileName}
 
 @item Mesh.ZoneDefinition
 Method for defining a zone (0=single zone, 1=by partition, 2=by physical)@*
-Default value: @code{2}@*
+Default value: @code{0}@*
 Saved in: @code{General.OptionsFileName}
 
 @item Mesh.Color.Points

@@ -7,10 +7,8 @@ namespace netgen
 
 GradingBox :: GradingBox (const double * ax1, const double * ax2)
 {
-  int i;
-
   h2 = 0.5 * (ax2[0] - ax1[0]);
-  for (i = 0; i <= 2; i++)
+  for (int i = 0; i <= 2; i++)
     {
       /*
       x1[i] = ax1[i];
@@ -24,7 +22,7 @@ GradingBox :: GradingBox (const double * ax1, const double * ax2)
 	     << " h = " << (x2[0] - x1[0]) << endl;
   */
 
-  for (i = 0; i < 8; i++)
+  for (int i = 0; i < 8; i++)
     childs[i] = NULL;
   father = NULL;
 
@@ -339,7 +337,7 @@ void LocalH :: FindInnerBoxes ( // int (*sameside)(const Point3d & p1, const Poi
 			       AdFront3 * adfront,
 			       int (*testinner)(const Point3d & p1))
 {
-  int i, j;
+  int i;
 
   int nf = adfront->GetNF();
 

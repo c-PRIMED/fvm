@@ -21,13 +21,11 @@
 */
 
 
-#include <myadt.hpp>
+#include "../include/myadt.hpp"
 namespace netgen
 {
 #include "vector.hpp"
-  // #include "basemat.hpp"
 #include "densemat.hpp"
-  // #include "sparsmat.hpp"
 #include "polynomial.hpp"
 }
 #endif

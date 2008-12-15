@@ -337,7 +337,6 @@ public:
 
 
 
-
 class QuadraticFunction3d
 {
   double c0, cx, cy, cz;

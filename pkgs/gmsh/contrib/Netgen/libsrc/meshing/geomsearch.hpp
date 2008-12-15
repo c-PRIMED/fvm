@@ -9,6 +9,7 @@
 
 class FrontPoint3;
 class FrontFace;
+class MiniElement2d;
 
   /// class for quick access of 3D-elements; class cannot delete elements, but only append
 class GeomSearch3d
@@ -24,7 +25,7 @@ public:
   void Init (ARRAY <FrontPoint3,PointIndex::BASE> *pointsi, ARRAY <FrontFace> *facesi);
 
   ///get elements max extension
-  void ElemMaxExt(Point3d& minp, Point3d& maxp, const Element2d& elem);
+  void ElemMaxExt(Point3d& minp, Point3d& maxp, const MiniElement2d& elem);
   
   ///get minimum coordinates of two points ->p2
   void MinCoords(const Point3d& p1, Point3d& p2);
@@ -37,10 +38,10 @@ public:
   void Create();
 
   ///add new element to Hashtable
-  void AddElem(const Element2d& elem, INDEX elemnum);
+  void AddElem(const MiniElement2d& elem, INDEX elemnum);
 
   ///GetLocal faces in sphere with radius xh and middlepoint p
-  void GetLocals(ARRAY<Element2d> & locfaces,  ARRAY<INDEX> & findex,
+  void GetLocals(ARRAY<MiniElement2d> & locfaces,  ARRAY<INDEX> & findex,
 		 INDEX fstind, const Point3d& p0, double xh);
 
 private:

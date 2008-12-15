@@ -4,13 +4,14 @@
 // bugs and problems to <gmsh@geuz.org>.
 
 #include "GUI_Classifier.h"
+#include "Numeric.h"
 #include "Draw.h"
 #include "Options.h"
 #include "Context.h"
 #include "SelectBuffer.h"
 #include "GUI_Projection.h"
 #include "GUI_Extras.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "meshGFaceDelaunayInsertion.h"
 #include "meshGFaceOptimize.h"
 #include "discreteEdge.h"
@@ -422,7 +423,7 @@ classificationEditor::classificationEditor()
     o->end();
   }
   {
-    Fl_Group *o = new Fl_Group(WB, WB + BH, width - 2 * WB, height - 2 * WB - BH, "Reverse Engineer Surfaces");
+    Fl_Group *o = new Fl_Group(WB, WB + BH, width - 2 * WB, height - 2 * WB - BH, "Reparametrize Surfaces");
     reverse_eng = o;
     o->hide();
     o->deactivate();

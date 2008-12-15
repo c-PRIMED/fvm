@@ -5,7 +5,7 @@
 
 #include <math.h>
 #include <algorithm>
-#include "Message.h"
+#include "GmshMessage.h"
 #include "GmshUI.h"
 #include "Numeric.h"
 #include "Draw.h"
@@ -323,7 +323,9 @@ static void addScalarPoint(PView *p, double xyz[NMAX][3], double val[NMAX][9],
   if(opt->SaturateValues) saturate(1, val, vmin, vmax, i0);
 
   if(val[i0][0] >= vmin && val[i0][0] <= vmax){
-    unsigned int col = opt->getColor(val[i0][0], vmin, vmax);
+    unsigned int col = opt->getColor(val[i0][0], vmin, vmax, false, 
+                                     (opt->IntervalsType == PViewOptions::Discrete) ? 
+                                     opt->NbIso : -1);
     SVector3 n = getPointNormal(p, val[i0][0]);
     p->va_points->add(&xyz[i0][0], &xyz[i0][1], &xyz[i0][2], &n, &col, 0, unique);
   }
@@ -399,7 +401,7 @@ static void addScalarLine(PView *p, double xyz[NMAX][3], double val[NMAX][9],
       double x2[2], y2[2], z2[2], v2[2];
       int nb = CutLine(x, y, z, v, min, max, x2, y2, z2, v2);
       if(nb == 2){
-        unsigned color = opt->getColor(k, opt->NbIso);
+        unsigned int color = opt->getColor(k, opt->NbIso);
         unsigned int col[2] = {color, color};
         SVector3 n[2];
         getLineNormal(p, x2, y2, z2, v2, n, true);
@@ -524,7 +526,7 @@ static void addScalarTriangle(PView *p, double xyz[NMAX][3], double val[NMAX][9]
       double x2[10], y2[10], z2[10], v2[10];
       int nb = CutTriangle(x, y, z, v, min, max, x2, y2, z2, v2);
       if(nb >= 3){
-        unsigned color = opt->getColor(k, opt->NbIso);
+        unsigned int color = opt->getColor(k, opt->NbIso);
         unsigned int col[3] = {color, color, color};
         for(int j = 2; j < nb; j++){
           double x3[3] = {x2[0], x2[j - 1], x2[j]};
@@ -868,7 +870,9 @@ static void addVectorElement(PView *p, int ient, int iele, int numNodes,
     for(int i = 0; i < numNodes; i++){
       double v2 = ComputeScalarRep(numComp2, val2[i]);
       if(v2 >= opt->ExternalMin && v2 <= opt->ExternalMax){
-        unsigned int color = opt->getColor(v2, opt->ExternalMin, opt->ExternalMax);
+        unsigned int color = opt->getColor(v2, opt->ExternalMin, opt->ExternalMax, false,
+                                           (opt->IntervalsType == PViewOptions::Discrete) ? 
+                                           opt->NbIso : -1);
         unsigned int col[2] = {color, color};
         double dxyz[3][2];
         for(int j = 0; j < 3; j++){
@@ -899,7 +903,9 @@ static void addVectorElement(PView *p, int ient, int iele, int numNodes,
     double v2 = ComputeScalarRep(numComp2, d2);
     if(v2 >= opt->ExternalMin * (1. - 1.e-15) &&
        v2 <= opt->ExternalMax * (1. + 1.e-15)){
-      unsigned int color = opt->getColor(v2, opt->ExternalMin, opt->ExternalMax);
+      unsigned int color = opt->getColor(v2, opt->ExternalMin, opt->ExternalMax, false,
+                                         (opt->IntervalsType == PViewOptions::Discrete) ? 
+                                         opt->NbIso : -1);
       unsigned int col[2] = {color, color};
       double dxyz[3][2];
       for(int i = 0; i < 3; i++){
@@ -985,7 +991,7 @@ static void addElementsInArrays(PView *p, bool preprocessNormalsOnly)
 
 static void drawArrays(PView *p, VertexArray *va, GLint type, bool useNormalArray)
 {
-  if(!va) return;
+  if(!va || !va->getNumVertices()) return;
 
   PViewOptions *opt = p->getOptions();
 
@@ -1033,15 +1039,15 @@ static void drawArrays(PView *p, VertexArray *va, GLint type, bool useNormalArra
   }
   else{
     glVertexPointer(3, GL_FLOAT, 0, va->getVertexArray());
-    glNormalPointer(GL_BYTE, 0, va->getNormalArray());
-    glColorPointer(4, GL_UNSIGNED_BYTE, 0, va->getColorArray());
     glEnableClientState(GL_VERTEX_ARRAY);
     if(useNormalArray){
       glEnable(GL_LIGHTING);
+      glNormalPointer(GL_BYTE, 0, va->getNormalArray());
       glEnableClientState(GL_NORMAL_ARRAY);
     }
     else
       glDisableClientState(GL_NORMAL_ARRAY);
+    glColorPointer(4, GL_UNSIGNED_BYTE, 0, va->getColorArray());
     glEnableClientState(GL_COLOR_ARRAY);
     glDrawArrays(type, 0, va->getNumVertices());
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -1132,11 +1138,10 @@ static void drawNumberGlyphs(PView *p, int numNodes, int numComp,
       unsigned int col = opt->getColor(v, vmin, vmax);
       glColor4ubv((GLubyte *) & col);
       glRasterPos3d(pc.x(), pc.y(), pc.z());
-      const char *txt = stringValue(numComp, d, v, opt->Format).c_str();
       if(opt->CenterGlyphs)
-        Draw_String_Center(txt);
+        Draw_String_Center(stringValue(numComp, d, v, opt->Format));
       else
-        Draw_String(txt);
+        Draw_String(stringValue(numComp, d, v, opt->Format));
     }
   }
   else if(opt->GlyphLocation == PViewOptions::Vertex){
@@ -1146,11 +1151,10 @@ static void drawNumberGlyphs(PView *p, int numNodes, int numComp,
         unsigned int col = opt->getColor(v, vmin, vmax);
         glColor4ubv((GLubyte *) & col);
         glRasterPos3d(xyz[i][0], xyz[i][1], xyz[i][2]);
-        const char *txt = stringValue(numComp, val[i], v, opt->Format).c_str();
         if(opt->CenterGlyphs)
-          Draw_String_Center(txt);
+          Draw_String_Center(stringValue(numComp, val[i], v, opt->Format));
         else
-          Draw_String(txt);
+          Draw_String(stringValue(numComp, val[i], v, opt->Format));
       }
     }
   }
@@ -1335,8 +1339,8 @@ class initPView {
     p->va_vectors->finalize();
 
     Msg::Info("Rendering %d vertices", p->va_points->getNumVertices() + 
-        p->va_lines->getNumVertices() + p->va_triangles->getNumVertices() + 
-        p->va_vectors->getNumVertices());
+	      p->va_lines->getNumVertices() + p->va_triangles->getNumVertices() + 
+	      p->va_vectors->getNumVertices());
 
     p->setChanged(false);
   }
@@ -1405,7 +1409,7 @@ class drawPView {
     }
 
     if(opt->RangeType == PViewOptions::Custom){
-      opt->TmpMin = opt->CustomMin;
+       opt->TmpMin = opt->CustomMin;
       opt->TmpMax = opt->CustomMax;
     }
     else if(opt->RangeType == PViewOptions::PerTimeStep){
@@ -1439,7 +1443,7 @@ class drawPView {
         std::string str;
         data->getString3D(i, opt->TimeStep, str, x, y, z, style);
         glRasterPos3d(x, y, z);
-        Draw_String(str.c_str(), style);
+        Draw_String(str, style);
       }
     }
     

@@ -8,7 +8,8 @@
 #include "MVertex.h"
 #include "MElement.h"
 #include "Numeric.h"
-#include "Message.h"
+#include "FunctionSpace.h"
+#include "GmshMessage.h"
 
 double qmTriangle(const BDS_Point *p1, const BDS_Point *p2, const BDS_Point *p3, 
                   const gmshQualityMeasure4Triangle &cr)
@@ -173,21 +174,25 @@ double qmTet(const double &x1, const double &y1, const double &z1,
 }
 
 
-static double mesh_functional_distorsion(MTriangle *t, double u, double v)
+double mesh_functional_distorsion(MTriangle *t, double u, double v)
 {
   // compute uncurved element jacobian d_u x and d_v x
-  double mat[2][3];  
-  t->jac(1, 0, 0, 0, 0, mat);
+  double mat[3][3];  
+  double d1 = t->getPrimaryJacobian(u,v,0,mat);
+  
+   //double d1 = t->getJacobian(u,v,0,mat);
   double v1[3] = {mat[0][0], mat[0][1], mat[0][2]};
   double v2[3] = {mat[1][0], mat[1][1], mat[1][2]};
   double normal1[3];
   prodve(v1, v2, normal1);
   double nn = sqrt(normal1[0]*normal1[0] + 
-		   normal1[1]*normal1[1] + 
-		   normal1[2]*normal1[2]);
+  		   normal1[1]*normal1[1] + 
+  		   normal1[2]*normal1[2]);
   
   // compute uncurved element jacobian d_u x and d_v x
-  t->jac(u, v, 0, mat);
+  
+  double d2 = t->getJacobian(u, v, 0, mat);
+  
   double v1b[3] = {mat[0][0], mat[0][1], mat[0][2]};
   double v2b[3] = {mat[1][0], mat[1][1], mat[1][2]};
   double normal[3];
@@ -205,6 +210,7 @@ static double mesh_functional_distorsion(MTriangle *t, double u, double v)
 
 double qmDistorsionOfMapping (MTriangle *e)
 {
+  //  return 1.0;
   if (e->getPolynomialOrder() == 1)return 1.0;
   IntPt *pts;
   int npts;
@@ -217,10 +223,64 @@ double qmDistorsionOfMapping (MTriangle *e)
     const double di  = mesh_functional_distorsion (e,u,v);
     dmin = (i==0)? di : std::min(dmin,di);
   }
+  const Double_Matrix& points = e->getFunctionSpace()->points;
+
+  for (int i=0;i<e->getNumPrimaryVertices();i++) {
+    const double u = points(i,0);
+    const double v = points(i,1);
+    const double di  = mesh_functional_distorsion (e,u,v);
+    dmin = std::min(dmin,di);
+  }
   return dmin;
 }
 
+static double mesh_functional_distorsion(MTetrahedron *t, double u, double v, double w)
+{
+  // compute uncurved element jacobian d_u x and d_v x
+  double mat[3][3];  
+  t->getPrimaryJacobian(u,v,w, mat);
+  
+  const double det1 = det3x3(mat);
+
+   //const double det1 = t->getJacobian(u,v,w,mat);
+  // const double det1 = det3x3(mat);
+  t->getJacobian(u,v,w,mat);
+  const double detN = det3x3(mat);
+  // const double detN = det3x3(mat);
+
+  //  printf("%g %g %g = %g %g\n",u,v,w,det1,detN);
+
+  if (det1 == 0 || detN == 0) return 0;
+  double dist = std::min(detN/det1, det1/detN); 
+  return dist;
+}
+
+
 double qmDistorsionOfMapping (MTetrahedron *e)
 {
-  return 1.0;
+  if (e->getPolynomialOrder() == 1)return 1.0;
+  IntPt *pts;
+  int npts;
+  e->getIntegrationPoints(e->getPolynomialOrder(),&npts, &pts);
+  double dmin;
+  for (int i=0;i<npts;i++){
+    const double u = pts[i].pt[0];
+    const double v = pts[i].pt[1];
+    const double w = pts[i].pt[2];
+    const double di  = mesh_functional_distorsion (e,u,v,w);
+    dmin = (i==0)? di : std::min(dmin,di);
+  }
+  
+  const Double_Matrix& points = e->getFunctionSpace()->points;
+
+  for (int i=0;i<e->getNumPrimaryVertices();i++) {
+    const double u = points(i,0);
+    const double v = points(i,1);
+    const double w = points(i,2);
+    const double di  = mesh_functional_distorsion (e,u,v,w);
+    dmin = std::min(dmin,di);
+  }
+  //  printf("DMIN = %g\n\n",dmin);
+
+  return dmin< 0 ? 0 :dmin;
 }

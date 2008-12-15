@@ -14,8 +14,8 @@
   Alternating Digital Tree
  */
 
-#include <mystdlib.h>
-#include <myadt.hpp>
+#include "../include/mystdlib.h"
+#include "../include/myadt.hpp"
 
 class ADTreeNode
 {
@@ -467,6 +467,10 @@ public:
   Box3dTree (const Point3d & apmin, const Point3d & apmax);
   ~Box3dTree ();
   void Insert (const Point3d & bmin, const Point3d & bmax, int pi);
+  void Insert (const Box<3> & box, int pi)
+  {
+    Insert (box.PMin(), box.PMax(), pi);
+  }
   void DeleteElement (int pi) 
     { tree->DeleteElement(pi); }
   void GetIntersecting (const Point3d & pmin, const Point3d & pmax, 

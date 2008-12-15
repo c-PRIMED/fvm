@@ -22,6 +22,11 @@
 class Point3d;
 class Vec3d;
 
+
+// extract string str which is enclosed by the given character encl from a given string in
+void ReadEnclString(istream & in, string & str, const char encl);
+
+
 class MyStr;
 
 MyStr operator + (const MyStr &, const MyStr &);
@@ -42,11 +47,12 @@ public:
   MyStr(char);
   MyStr(const MyStr &);
   MyStr(int);
+  MyStr(void *);
   MyStr(long);
   MyStr(double);
   MyStr(const Point3d& p);
   MyStr(const Vec3d& p);
-  MyStr(const std::string & st);
+  MyStr(const string & st);
 
   ~MyStr();
   MyStr Left(unsigned);
@@ -61,6 +67,7 @@ public:
   friend MyStr operator + (const MyStr &, const MyStr &);
   void operator += (const MyStr &);
   char* c_str();
+  string cpp_string(void) const;
 
   //change every ',' -> ';', '.' -> ','
   void ConvertTextToExcel();
@@ -202,7 +209,7 @@ inline ostream& operator << (ostream& os, const MyStr& s)
 inline void MyStr::SetToErrHandler(void (*Handler)())
 {
   ErrHandler = Handler;
-}
+};
 
 #endif
 

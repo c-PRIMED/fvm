@@ -7,7 +7,6 @@
 /* Author: Joachim Schoeberl                                              */
 /* Date:   01. Jun. 95                                                    */
 /**************************************************************************/
-#include <string.h>
 
 /**
    Base class for the generic SYMBOLTABLE.
@@ -63,7 +62,7 @@ public:
   /// Associates el to the string name, overrides if name is used
   inline void Set (const char * name, const T & el);
   /// Checks whether name is used
-  inline int Used (const char * name) const;
+  inline bool Used (const char * name) const;
   /// Deletes symboltable
   inline void DeleteAll ();
 
@@ -143,9 +142,9 @@ inline void SYMBOLTABLE<T> :: Set (const char * name, const T & el)
 }
 
 template <class T>
-inline int SYMBOLTABLE<T> :: Used (const char * name) const
+inline bool SYMBOLTABLE<T> :: Used (const char * name) const
 {
-  return (Index(name)) ? 1 : 0;
+  return (Index(name)) ? true : false;
 }
 
 template <class T>

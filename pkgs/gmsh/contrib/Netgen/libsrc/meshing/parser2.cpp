@@ -1,6 +1,13 @@
 #include <mystdlib.h>
 #include "meshing.hpp"
 
+#ifdef WIN32
+#define COMMASIGN ':'
+#else
+#define COMMASIGN ','
+#endif
+
+
 namespace netgen
 {
 
@@ -25,7 +32,7 @@ void LoadMatrixLine (istream & ist, DenseMatrix & m, int line)
 	m.Elem(line, 2 * pnum) = f;
 
       ist >> ch;
-      if (ch == ',')
+      if (ch == COMMASIGN)
 	ist >> ch;
     }
 }
@@ -53,14 +60,18 @@ void netrule :: LoadRule (istream & ist)
   ist.get (buf, sizeof(buf), '"');
   ist.get (ch);
 
-  if(name != NULL) delete [] name;
+  // if(name != NULL) 
+  delete [] name;
   name = new char[strlen (buf) + 1];
   strcpy (name, buf);
+  //(*testout) << "name " << name << endl;
   //  (*mycout) << "Rule " << name << " found." << endl;
 
   do
     {
       ist >> buf;
+
+      //(*testout) << "buf " << buf << endl;
 
       if (strcmp (buf, "quality") == 0)
 
@@ -127,6 +138,8 @@ void netrule :: LoadRule (istream & ist)
 	      ist >> lin.I2();
 	      ist >> ch;    // ')'
 
+
+	      //(*testout) << "read line " << lin.I1() << " " << lin.I2() << endl;
 	      lines.Append (lin);
 	      linevecs.Append (points.Get(lin.I2()) - points.Get(lin.I1()));
 	      noldl++;
@@ -135,9 +148,11 @@ void netrule :: LoadRule (istream & ist)
 	      linetolerances.Elem(noldl).f2 = 0;
 	      linetolerances.Elem(noldl).f3 = 0;
 
+	      //(*testout) << "mapl1" << endl; 
 	      ist >> ch;
 	      while (ch != ';')
 		{
+		  //(*testout) << "working on character \""<<ch<<"\""<< endl;
 		  if (ch == '{')
 		    {
 		      ist >> linetolerances.Elem(noldl).f1;
@@ -152,13 +167,17 @@ void netrule :: LoadRule (istream & ist)
 		      dellines.Append (noldl);
 		      ist >> ch; // 'e'
 		      ist >> ch; // 'l'
+		      //(*testout) << "read del" << endl;
 		    }
 
 		  ist >> ch;
+		  //(*testout) << "read character \""<<ch<<"\""<< endl;
 		}
 
 	      ist >> ch;
+	      //(*testout) << "read next character \""<<ch<<"\""<< endl;
 	    }
+	  
 
 	  ist.putback (ch);
 	}
@@ -315,17 +334,17 @@ void netrule :: LoadRule (istream & ist)
 	      ist >> elements.Last().PNum(1);
 	      ist >> ch;    // ','
 	  
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  ist >> elements.Last().PNum(2);
 		  ist >> ch;    // ','
 		}
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  ist >> elements.Last().PNum(3);
 		  ist >> ch;    // ','
 		}
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  elements.Last().SetType (QUAD);
 		  ist >> elements.Last().PNum(4);
@@ -388,6 +407,8 @@ void netrule :: LoadRule (istream & ist)
     }
   while (!ist.eof() && strcmp (buf, "endrule") != 0);
 
+  //(*testout) << "loadr1" << endl;
+
   oldutonewu.SetSize (2 * (points.Size() - noldp), 2 * noldp);
   oldutofreearea.SetSize (2 * freezone.Size(), 2 * noldp);
   oldutofreearealimit.SetSize (2 * freezone.Size(), 2 * noldp);
@@ -407,6 +428,7 @@ void netrule :: LoadRule (istream & ist)
   freesetinequ.SetSize (freezone.Size());
 
 
+  //(*testout) << "loadr2" << endl;
 
   {
     char ok;
@@ -419,6 +441,7 @@ void netrule :: LoadRule (istream & ist)
     for (j = 1; j <= 2; j++)
       pnearness.Elem(GetPointNr (1, j)) = 0;
 
+    //(*testout) << "loadr3" << endl;
     do
       {
 	ok = 1;
@@ -438,6 +461,7 @@ void netrule :: LoadRule (istream & ist)
 	  }
       }
     while (!ok);
+    //(*testout) << "loadr4" << endl;
 
     lnearness.SetSize (noldl);
 
@@ -448,16 +472,19 @@ void netrule :: LoadRule (istream & ist)
 	  lnearness.Elem(i) += pnearness.Get(GetPointNr (i, j));
       }
   }
+  //(*testout) << "loadr5" << endl;
 
   oldutofreearea_i.SetSize (10);
   for (i = 0; i < oldutofreearea_i.Size(); i++)
     {
       oldutofreearea_i[i] = new DenseMatrix (oldutofreearea.Height(), oldutofreearea.Width());
       DenseMatrix & mati = *oldutofreearea_i[i];
-      for (int j = 0; j < oldutofreearea.Height(); j++)
+      for (j = 0; j < oldutofreearea.Height(); j++)
 	for (int k = 0; k < oldutofreearea.Width(); k++)
 	  mati(j,k) = 1.0 / (i+1) * oldutofreearea(j,k) + (1 - 1.0/(i+1)) * oldutofreearealimit(j,k);
     }
+
+  //(*testout) << "loadr6" << endl;
 }
 
 
@@ -470,7 +497,8 @@ void Meshing2 :: LoadRules (const char * filename)
 {
   char buf[256];
   istream * ist;
-  char *tr1 = NULL;
+  //char *tr1 = NULL;
+  string tr1;
 
   /*
   ifstream ist (filename);
@@ -504,14 +532,16 @@ void Meshing2 :: LoadRules (const char * filename)
 	  // LoadRules ("rules/quad.rls");
 	}
 
-      int len = 0;
+      size_t len = 0;
       while (*hcp)
 	{
+	  //	  (*testout) << "POS2 *hcp " << *hcp << endl;
 	  len += strlen (*hcp);
 	  hcp++;
 	}
-      tr1 = new char[len+1];
-      tr1[0] = 0;
+      //tr1 = new char[len+1];
+      //tr1[0] = 0;
+      tr1.reserve(len+1);
 
 
       if (!mparam.quad)
@@ -520,13 +550,21 @@ void Meshing2 :: LoadRules (const char * filename)
 	hcp = quadrules;
 
 
-      char * tt1 = tr1;
+      //char * tt1 = tr1;
       while (*hcp)
 	{
-	  strcat (tt1, *hcp);
-	  tt1 += strlen (*hcp);
+	  //strcat (tt1, *hcp);
+	  //tt1 += strlen (*hcp);
+	  tr1.append(*hcp);
 	  hcp++;
 	}
+      
+#ifdef WIN32
+      // VC++ 2005 workaround
+	  for(string::size_type i=0; i<tr1.size(); i++)
+	if(tr1[i] == ',')
+	  tr1[i] = ':';
+#endif
 
       ist = new istringstream (tr1);
     }
@@ -546,14 +584,20 @@ void Meshing2 :: LoadRules (const char * filename)
 
       if (strcmp (buf, "rule") == 0)
 	{
+	  //(*testout) << "found rule" << endl;
 	  netrule * rule = new netrule;
+	  //(*testout) << "fr1" << endl;
 	  rule -> LoadRule(*ist);
+	  //(*testout) << "fr2" << endl;
+	  
 	  rules.Append (rule);
 	}
+      //(*testout) << "loop" << endl;
     }
+  //(*testout) << "POS3" << endl;
 
   delete ist;
-  delete [] tr1;
+  //delete [] tr1;
 }
 
 }

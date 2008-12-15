@@ -12,7 +12,7 @@
 enum MESHING2_RESULT
 {
   MESHING2_OK = 0,
-  MESHING2_GIVEUP = 1
+  MESHING2_GIVEUP = 1,
 };
 
 
@@ -35,12 +35,15 @@ class Meshing2
   /// statistics
   ARRAY<int> ruleused, canuse, foundmap;
   /// 
-  Box3d boundingbox;
+  Box<3> boundingbox;
   ///
   double starttime;
+  ///
+  double maxarea;
+
 public:
   ///
-  Meshing2 (const Box3d & aboundingbox);
+  Meshing2 (const Box<3> & aboundingbox);
 
   ///
   virtual ~Meshing2 ();
@@ -52,7 +55,8 @@ public:
   MESHING2_RESULT GenerateMesh (Mesh & mesh, double gh, int facenr);
 
   ///
-  void AddPoint (const Point3d & p, PointIndex globind, MultiPointGeomInfo * mgi = NULL);
+  void AddPoint (const Point3d & p, PointIndex globind, MultiPointGeomInfo * mgi = NULL,
+		 bool pointonsurface = true);
 
   ///
   void AddBoundaryElement (INDEX i1, INDEX i2,
@@ -60,6 +64,9 @@ public:
   
   ///
   void SetStartTime (double astarttime);
+
+  ///
+  void SetMaxArea (double amaxarea);
 
 protected:
   ///
@@ -70,7 +77,7 @@ protected:
   virtual double CalcLocalH (const Point3d & p, double gh) const;
 
   ///
-  virtual void DefineTransformation (Point3d & p1, Point3d & p2,
+  virtual void DefineTransformation (const Point3d & p1, const Point3d & p2,
 				     const PointGeomInfo * geominfo1,
 				     const PointGeomInfo * geominfo2);
   ///

@@ -15,7 +15,7 @@
 #include "MallocUtils.h"
 #include "ListUtils.h"
 #include "TreeUtils.h"
-#include "Message.h"
+#include "GmshMessage.h"
 
 List_T *List_Create(int n, int incr, int size)
 {
@@ -267,6 +267,26 @@ void List_Merge(List_T * a, List_T * b)
   for(i = 0; i < List_Nbr(a); i++) {
     List_Add(b, List_Pointer_Fast(a, i));
   }
+}
+
+void List_Remove(List_T *a, int i)
+{
+  memcpy(&a->array[i * a->size], &a->array[(i + 1) * a->size], 
+         a->size * (a->n - i - 1));
+  a->n--;
+}
+
+//insert a in b before i
+void List_Insert_In_List(List_T *a, int i, List_T *b)
+{
+  int oldn = b->n;
+  b->n += a->n;
+  List_Realloc(b, b->n);
+  for(int j = 0; j < oldn - i; j++)
+    memcpy(List_Pointer_Fast(b, b->n - j - 1), List_Pointer_Fast(b, oldn - j - 1),
+           b->size);
+  for(int j = 0;j < a->n; j++)
+    memcpy(List_Pointer_Fast(b, oldn + j), List_Pointer_Fast(a, j), b->size);
 }
 
 void swap_bytes(char *array, int size, int n)

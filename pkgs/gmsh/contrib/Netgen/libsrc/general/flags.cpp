@@ -13,7 +13,7 @@
 
 namespace netgen
 {
-  using namespace netgen;
+  //using namespace netgen;
 
   Flags :: Flags ()
   {
@@ -112,7 +112,7 @@ namespace netgen
       return NULL;
   }
   
-  int Flags :: GetDefineFlag (const char * name) const
+  bool Flags :: GetDefineFlag (const char * name) const
   {
     return defflags.Used (name);
   }
@@ -143,22 +143,22 @@ namespace netgen
   }
 
 
-  int Flags :: StringFlagDefined (const char * name) const
+  bool Flags :: StringFlagDefined (const char * name) const
   {
     return strflags.Used (name);
   }
 
-  int Flags :: NumFlagDefined (const char * name) const
+  bool Flags :: NumFlagDefined (const char * name) const
   {
     return numflags.Used (name);
   }
 
-  int Flags :: StringListFlagDefined (const char * name) const
+  bool Flags :: StringListFlagDefined (const char * name) const
   {
     return strlistflags.Used (name);
   }
 
-  int Flags :: NumListFlagDefined (const char * name) const
+  bool Flags :: NumListFlagDefined (const char * name) const
   {
     return numlistflags.Used (name);
   }

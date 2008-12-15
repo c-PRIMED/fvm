@@ -1,13 +1,23 @@
 #ifndef FILE_MESHING
 #define FILE_MESHING
 
-#include <myadt.hpp>
-#include <gprim.hpp>
-#include <linalg.hpp>
-#include <opti.hpp>
+
+
+#define CURVEDELEMS_NEW
+
+
+#include "../include/myadt.hpp"
+#include "../include/gprim.hpp"
+#include "../include/linalg.hpp"
+#include "../include/opti.hpp"
+
+
+
 
 namespace netgen
 {
+
+  extern int printmessage_importance;
 
   class CSGeometry;
   
@@ -43,9 +53,15 @@ namespace netgen
 #include "improve3.hpp"
 #endif
 #include "findip.hpp"
+#include "findip2.hpp"
 
 #include "topology.hpp"
+
+#ifdef CURVEDELEMS_NEW
+#include "curvedelems_new.hpp"
+#else
 #include "curvedelems.hpp"
+#endif
 #include "clusters.hpp"
 
 #ifdef _INCLUDE_MORE
@@ -55,6 +71,16 @@ namespace netgen
 #include "hprefinement.hpp"
 #include "boundarylayer.hpp"
 #include "specials.hpp"
+
+#include "validate.hpp"
+
+#ifdef PARALLEL
+#include "../parallel/paralleltop.hpp"
+// #include "../parallel/parallelmesh.hpp"
+#endif
+
+
+
 }
 
 #endif

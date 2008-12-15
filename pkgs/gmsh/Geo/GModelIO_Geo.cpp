@@ -9,9 +9,10 @@
 #include "OpenFile.h"
 #include "Numeric.h"
 #include "ListUtils.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "gmshVertex.h"
 #include "gmshFace.h"
+#include "GFaceCompound.h"
 #include "gmshEdge.h"
 #include "gmshRegion.h"
 #include "Field.h"
@@ -111,6 +112,7 @@ int GModel::importGEOInternals()
   for(int i = 0; i < List_Nbr(_geo_internals->PhysicalGroups); i++){
     PhysicalGroup *p;
     List_Read(_geo_internals->PhysicalGroups, i, &p);
+    std::list<GFace*>f_compound;
     for(int j = 0; j < List_Nbr(p->Entities); j++){
       int num;
       List_Read(p->Entities, j, &num);
@@ -118,7 +120,10 @@ int GModel::importGEOInternals()
       switch(p->Typ){
       case MSH_PHYSICAL_POINT:   ge = getVertexByTag(abs(num)); break;
       case MSH_PHYSICAL_LINE:    ge = getEdgeByTag(abs(num)); break;
-      case MSH_PHYSICAL_SURFACE: ge = getFaceByTag(abs(num)); break;
+      case MSH_PHYSICAL_SURFACE: 
+	f_compound.push_back(getFaceByTag(abs(num))); 
+	ge = getFaceByTag(abs(num)); 
+	break;
       case MSH_PHYSICAL_VOLUME:  ge = getRegionByTag(abs(num)); break;
       }
       int pnum = sign(num) * p->Num;
@@ -126,6 +131,30 @@ int GModel::importGEOInternals()
          ge->physicals.end())
         ge->physicals.push_back(pnum);
     }
+    // the physical is a compound i.e. we allow the meshes
+    // not to conform internal MEdges of the compound
+    if (p->Typ == MSH_PHYSICAL_SURFACE && p->Boundaries[0]){
+      int i = 0;
+      List_T *bnd;
+      std::list<GEdge*> b[4];
+      while((bnd = p->Boundaries[i])){
+	if (i > 3)break;
+	for(int j = 0; j < List_Nbr(bnd); j++){
+	  int ie;
+	  List_Read(bnd, j, &ie);
+	  b[i].push_back(getEdgeByTag(abs(ie)));
+	}
+	i++;
+      }
+      GFace *gf = getFaceByTag(abs(p->Num));
+      if (!gf){
+	GFaceCompound *gf = new GFaceCompound(this, p->Num, f_compound, 
+                                              b[0], b[1], b[2], b[3]);
+	add(gf);
+      }
+      else
+        gf->resetMeshAttributes();
+    }      
   }
 
   Msg::Debug("Gmsh model imported:");
@@ -133,16 +162,16 @@ int GModel::importGEOInternals()
   Msg::Debug("%d Edges", edges.size());
   Msg::Debug("%d Faces", faces.size());
   Msg::Debug("%d Regions", regions.size());
-  
+
   return 1;
 }
 
-class writeFieldOptionGEO{
+class writeFieldOptionGEO {
  private :
   FILE *geo;
   Field *field;
  public :
-  writeFieldOptionGEO(FILE *fp,Field *_field) { geo = fp ? fp : stdout; field=_field;}
+  writeFieldOptionGEO(FILE *fp,Field *_field) { geo = fp ? fp : stdout; field=_field; }
   void operator() (std::pair<std::string, FieldOption *> it)
   {
     std::string v;
@@ -151,7 +180,7 @@ class writeFieldOptionGEO{
   }
 };
 
-class writeFieldGEO{
+class writeFieldGEO {
  private :
   FILE *geo;
  public :

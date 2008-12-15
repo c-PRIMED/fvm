@@ -42,8 +42,10 @@ void MinFunction :: Grad (const Vector & /* x */, Vector & /* g */) const
   
 double MinFunction :: FuncGrad (const Vector & x, Vector & g) const
 {
+  cerr << "Grad of MinFunction called" << endl;
+  return 0;
+  /*
   int n = x.Size();
-  int i, j;
 
   static Vector xr;
   static Vector xl;
@@ -53,15 +55,16 @@ double MinFunction :: FuncGrad (const Vector & x, Vector & g) const
   double eps = 1e-6;
   double fl, fr;
   
-  for (i = 1; i <= n; i++)
+  for (int i = 1; i <= n; i++)
     {
       xr.Set (1, x);
       xl.Set (1, x);
-      xr.Elem(i) += eps;
-      xl.Elem(i) -= eps;
 
-      fl = Func (xl);
+      xr.Elem(i) += eps;
       fr = Func (xr);
+
+      xl.Elem(i) -= eps;
+      fl = Func (xl);
 
       g.Elem(i) = (fr - fl) / (2 * eps);
     }
@@ -69,6 +72,7 @@ double MinFunction :: FuncGrad (const Vector & x, Vector & g) const
   double f = Func(x);
   //  (*testout) << "f = " << f << " grad = " << g << endl;
   return f;
+  */
 }
 
 
@@ -144,17 +148,17 @@ void lines (Vector & x,         // i: initial point of line-search
 	    // o: gradient at xneu, iff ifail = 0
 	    const MinFunction & fun,  // function to minimize
 	    const OptiParameters & par,
-	     double & alphahat,  // i: initial value for alpha_hat
+	    double & alphahat,  // i: initial value for alpha_hat
 	    // o: solution alpha iff ifail = 0
-	     double fmin,        // i: lower bound for f
-	     double mu1,         // i: Parameter mu_1 of Alg.2.1
-	     double sigma,       // i: Parameter sigma of Alg.2.1
-	     double xi1,         // i: Parameter xi_1 of Alg.2.1
-	     double xi2,         // i: Parameter xi_1 of Alg.2.1
-	     double tau,         // i: Parameter tau of Alg.2.1
-	     double tau1,        // i: Parameter tau_1 of Alg.2.1
-	     double tau2,        // i: Parameter tau_2 of Alg.2.1
-	     int & ifail)        // o: 0 on success
+	    double fmin,        // i: lower bound for f
+	    double mu1,         // i: Parameter mu_1 of Alg.2.1
+	    double sigma,       // i: Parameter sigma of Alg.2.1
+	    double xi1,         // i: Parameter xi_1 of Alg.2.1
+	    double xi2,         // i: Parameter xi_1 of Alg.2.1
+	    double tau,         // i: Parameter tau of Alg.2.1
+	    double tau1,        // i: Parameter tau_1 of Alg.2.1
+	    double tau2,        // i: Parameter tau_2 of Alg.2.1
+	    int & ifail)        // o: 0 on success
   //    -1 bei termination because lower limit fmin
   //     1 bei illegal termination due to different reasons
 
@@ -170,12 +174,13 @@ void lines (Vector & x,         // i: initial point of line-search
 
   phi0prime = g * p;
 
-
   if (phi0prime > 0)
     {
       ifail = 1;
       return;
     }
+
+  ifail = 1;  // Markus
 
   phi1prime = phi0prime;
 
@@ -186,15 +191,15 @@ void lines (Vector & x,         // i: initial point of line-search
 
   while (it++ <= par.maxit_linsearch)
     {
-      //      (*testout) << "alphahat = " << alphahat << endl;
 
       xneu.Set2 (1, x, alphahat, p);
 
-      // f = fun.FuncGrad (xneu, g);
+
+      //    f = fun.FuncGrad (xneu, g);
       //      f = fun.Func (xneu);
       f = fun.FuncDeriv (xneu, p, phihatprime);
 
-      //      (*testout) << "f = " << f << " phip = " << phihatprime << endl;
+      // (*testout) << "lines, f = " << f << " phip = " << phihatprime << endl;
 
       if (f < fmin)
 	{
@@ -209,7 +214,7 @@ void lines (Vector & x,         // i: initial point of line-search
 	  break;
 	}
 
-      //      (*testout) << "i = " << it << " al = " << alphahat << " f = " << f << " fprime " << phihatprime << endl;;
+      // (*testout) << "i = " << it << " al = " << alphahat << " f = " << f << " fprime " << phihatprime << endl;;
 
       if (f - phi0 > mu1 * alphahat * phi1prime + eps0 * fabs (phi0))
 

@@ -6,9 +6,9 @@ namespace netgen
 
   void Optimize2d (Mesh & mesh, MeshingParameters & mp)
   {
-    int i, j;
+    int i;
 
-    double h = mp.maxh;
+    //double h = mp.maxh;
   
     mesh.CalcSurfacesOfNode();
 
@@ -18,7 +18,7 @@ namespace netgen
     //  cout << "optstr = " << optstr << endl;
 
     for (i = 1; i <= optsteps; i++)
-      for (j = 1; j <= strlen(optstr); j++)
+      for (size_t j = 1; j <= strlen(optstr); j++)
 	{
 	  if (multithread.terminate) break;
 	  switch (optstr[j-1])

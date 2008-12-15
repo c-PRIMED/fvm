@@ -8,23 +8,23 @@
 #include "GFace.h"
 #include "GEdge.h"
 #include "MElement.h"
+#include "GmshMessage.h"
+#include "VertexArray.h"
 
 #if defined(HAVE_GMSH_EMBEDDED)
-#  include "GmshEmbedded.h"
+#include "GmshEmbedded.h"
 #else
-#  include "Message.h"
-#  include "Numeric.h"
-#  include "GaussLegendre1D.h"
-#  include "VertexArray.h"
-#  include "Context.h"
-#  if defined(HAVE_GSL)
-#    include <gsl/gsl_vector.h>
-#    include <gsl/gsl_linalg.h>
-#  else
-#    define NRANSI
-#    include "nrutil.h"
+#include "Numeric.h"
+#include "GaussLegendre1D.h"
+#include "Context.h"
+#if defined(HAVE_GSL)
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_linalg.h>
+#else
+#define NRANSI
+#include "nrutil.h"
 void dsvdcmp(double **a, int m, int n, double w[], double **v);
-#  endif
+#endif
 #endif
 
 extern Context_T CTX;
@@ -47,17 +47,50 @@ GFace::~GFace()
     ++it;
   }
 
-  for(unsigned int i = 0; i < mesh_vertices.size(); i++)
-    delete mesh_vertices[i];
-
-  for(unsigned int i = 0; i < triangles.size(); i++)
-    delete triangles[i];
-
-  for(unsigned int i = 0; i < quadrangles.size(); i++)
-    delete quadrangles[i];
+  deleteMesh();
 
   if(va_geom_triangles)
     delete va_geom_triangles;
+}
+
+void GFace::delFreeEdge(GEdge *e)
+{ 
+  // delete the edge from the edge list and the orientation list
+  std::list<GEdge*>::iterator ite = l_edges.begin();
+  std::list<int>::iterator itd = l_dirs.begin();
+  while(ite != l_edges.end()){
+    if(e == *ite){
+      Msg::Debug("Erasing edge %d from edge list in face %d", e->tag(), tag());
+      l_edges.erase(ite);
+      if(itd != l_dirs.end()) l_dirs.erase(itd);
+      break;
+    }
+    ite++; 
+    if(itd != l_dirs.end()) itd++;
+  }
+
+  // delete the edge from the edge loops
+  for(std::list<GEdgeLoop>::iterator it = edgeLoops.begin(); 
+      it != edgeLoops.end(); it++){
+    for(GEdgeLoop::iter it2 = it->begin(); it2 != it->end(); it2++){
+      if(e == it2->ge){
+        Msg::Debug("Erasing edge %d from edge loop in face %d", e->tag(), tag());
+        it->erase(it2);
+        break;
+      }
+    }
+  }
+}
+
+void GFace::deleteMesh()
+{
+  for(unsigned int i = 0; i < mesh_vertices.size(); i++) delete mesh_vertices[i];
+  mesh_vertices.clear();
+  transfinite_vertices.clear();
+  for(unsigned int i = 0; i < triangles.size(); i++) delete triangles[i];
+  triangles.clear();
+  for(unsigned int i = 0; i < quadrangles.size(); i++) delete quadrangles[i];
+  quadrangles.clear();
 }
 
 unsigned int GFace::getNumMeshElements()
@@ -75,8 +108,10 @@ MElement *const *GFace::getStartElementType(int type) const
 {
   switch(type) {
   case 0:
+    if(triangles.empty()) return 0; // msvc would throw an exception
     return reinterpret_cast<MElement *const *>(&triangles[0]);
   case 1:
+    if(quadrangles.empty()) return 0; // msvc would throw an exception
     return reinterpret_cast<MElement *const *>(&quadrangles[0]);
   }
   return 0;
@@ -94,7 +129,7 @@ MElement *GFace::getMeshElement(unsigned int index)
 void GFace::resetMeshAttributes()
 {
   meshAttributes.recombine = 0;
-  meshAttributes.recombineAngle = 0.;
+  meshAttributes.recombineAngle = 45.;
   meshAttributes.Method = MESH_UNSTRUCTURED;
   meshAttributes.transfiniteArrangement = 0;
   meshAttributes.transfiniteSmoothing = -1;
@@ -446,8 +481,15 @@ double GFace::curvature(const SPoint2 &param) const
   SVector3 dndu = 500 * (n2 - n1);
   SVector3 dndv = 500 * (n4 - n3);
 
-  double c = fabs(dot(dndu, du) +  dot(dndv, dv)) / detJ;
+  // double c = fabs(dot(dndu, du) +  dot(dndv, dv)) / detJ;
 
+
+  double ddu = dot(dndu,du);
+  double ddv = dot(dndv,dv);
+  
+  double c = std::max(fabs(ddu),fabs(ddv))/detJ;
+  
+  
   // Msg::Info("c = %g detJ %g", c, detJ);
 
   return c;
@@ -524,15 +566,13 @@ void GFace::XYZtoUV(const double X, const double Y, const double Z,
         V = Vnew;
       }
 
-      //printf("i=%d j=%d err=%g iter=%d err2=%g u=%.16g v=%.16g x=%g y=%g z=%g\n", 
-      //     i, j, err, iter, err2, U, V, X, Y, Z);
-
       if(iter < MaxIter && err <= Precision &&
          Unew <= umax && Vnew <= vmax &&
          Unew >= umin && Vnew >= vmin){
         if (onSurface && err2 > 1.e-4 * CTX.lc)
-          Msg::Warning("Converged for i=%d j=%d (err=%g iter=%d) BUT xyz error = %g",
-              i, j, err, iter, err2);
+          Msg::Warning("Converged for i=%d j=%d (err=%g iter=%d) BUT "
+                       "xyz error = %g in point (%e,%e,%e) on surface %d",
+                       i, j, err, iter, err2, X, Y, Z, tag());
         return;
       }
     }
@@ -556,7 +596,7 @@ SPoint2 GFace::parFromPoint(const SPoint3 &p) const
 
 GPoint GFace::closestPoint(const SPoint3 & queryPoint, const double initialGuess[2]) const
 {
-  Msg::Error("Closet point not implemented for this type of surface");
+  Msg::Error("Closest point not implemented for this type of surface");
   return GPoint(0, 0, 0);
 }
 
@@ -569,6 +609,14 @@ bool GFace::containsParam(const SPoint2 &pt) const
     return true;
   else
     return false;
+}
+
+SVector3 GFace::normal(const SPoint2 &param) const
+{
+  Pair<SVector3,SVector3> der = firstDer(param);
+  SVector3 n = crossprod(der.first(), der.second());
+  n.normalize();
+  return n;
 }
 
 bool GFace::buildRepresentationCross()
@@ -709,7 +757,7 @@ bool GFace::buildSTLTriangulation()
 // by default we assume that straight lines are geodesics
 SPoint2 GFace::geodesic(const SPoint2 &pt1 , const SPoint2 &pt2 , double t)
 {
-  if(CTX.mesh.second_order_experimental && geomType() != GEntity::Plane){
+  if(CTX.mesh.second_order_experimental && geomType() != GEntity::Plane ){
     // FIXME: this is buggy -- remove the CTX option once we do it in
     // a robust manner
     GPoint gp1 = point(pt1.x(), pt1.y());
@@ -719,12 +767,16 @@ SPoint2 GFace::geodesic(const SPoint2 &pt1 , const SPoint2 &pt2 , double t)
 				     gp1.y() + t * (gp2.y() - gp1.y()),
 				     gp1.z() + t * (gp2.z() - gp1.z())),
 			     (double*)guess);
-    return SPoint2(gp.u(), gp.v());
+    if (gp.g())
+      return SPoint2(gp.u(), gp.v());
+    else
+      return pt1 + (pt2 - pt1) * t;
   }
   else{
     return pt1 + (pt2 - pt1) * t;
   }
 }
+
 
 // length of a curve drawn on a surface
 // S = (X(u,v), Y(u,v), Z(u,v) );

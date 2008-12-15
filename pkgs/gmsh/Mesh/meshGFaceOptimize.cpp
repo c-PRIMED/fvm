@@ -11,7 +11,7 @@
 #include "MVertex.h"
 #include "MElement.h"
 #include "BackgroundMesh.h"
-#include "Message.h"
+#include "GmshMessage.h"
 
 static void setLcsInit(MTriangle *t, std::map<MVertex*, double> &vSizes)
 {
@@ -81,16 +81,27 @@ void buidMeshGenerationDataStructures(GFace *gf, std::set<MTri3*, compareTri3Ptr
   for (unsigned int i = 0;i < gf->triangles.size(); i++)
     setLcs(gf->triangles[i], vSizesMap);
 
+  // take care of embedded vertices
+  {
+    std::list<GVertex*> emb_vertx = gf->embeddedVertices();
+    std::list<GVertex*>::iterator itvx = emb_vertx.begin();
+    while(itvx != emb_vertx.end()){
+      MVertex *v = *((*itvx)->mesh_vertices.begin());
+      vSizesMap[v] = std::min(vSizesMap[v],(*itvx)->prescribedMeshSizeAtVertex());      
+      ++itvx;
+    }
+  }
+
   int NUM = 0;
   for (std::map<MVertex*, double>::iterator it = vSizesMap.begin();
        it != vSizesMap.end(); ++it){
     it->first->setNum(NUM++);
     vSizes.push_back(it->second);
     vSizesBGM.push_back(it->second);
-    double u0, v0;
-    parametricCoordinates(it->first, gf, u0, v0);
-    Us.push_back(u0);
-    Vs.push_back(v0);
+    SPoint2 param;
+    reparamMeshVertexOnFace(it->first, gf, param);
+    Us.push_back(param[0]);
+    Vs.push_back(param[1]);
   }
   for(unsigned int i = 0; i < gf->triangles.size(); i++){
     double lc = 0.3333333333 * (vSizes [gf->triangles[i]->getVertex(0)->getNum()] +
@@ -167,7 +178,10 @@ void parametricCoordinates(MTriangle *t, GFace *gf, double u[3], double v[3])
 {
   for (unsigned int j = 0; j < 3; j++){
     MVertex *ver = t->getVertex(j);
-    parametricCoordinates(ver, gf, u[j], v[j]);
+    SPoint2 param;
+    reparamMeshVertexOnFace(ver, gf, param);
+    u[j] = param[0];
+    v[j] = param[1];
   }
 }
 
@@ -757,3 +771,5 @@ int edgeCollapsePass(double minLC, GFace *gf, std::set<MTri3*,compareTri3Ptr> &a
   printf("A %d %d tris\n", (int)allTris.size(), (int)newTris.size());
   return nbCollapse;
 }
+
+

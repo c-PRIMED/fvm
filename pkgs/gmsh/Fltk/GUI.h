@@ -35,7 +35,7 @@
 #include <FL/Fl_Tooltip.H>
 #include <FL/Fl_Shared_Image.H>
 #include <FL/Fl_File_Icon.H>
-#if defined(__APPLE__) && defined(HAVE_FLTK_1_1_5_OR_ABOVE)
+#if defined(__APPLE__)
 #include <FL/Fl_Sys_Menu_Bar.H>
 #endif
 
@@ -74,6 +74,7 @@ extern        Context_Item menu_geometry_elementary_extrude[];
 extern            Context_Item menu_geometry_elementary_extrude_translate[]; 
 extern            Context_Item menu_geometry_elementary_extrude_rotate[]; 
 extern        Context_Item menu_geometry_elementary_delete[]; 
+extern        Context_Item menu_geometry_elementary_split[]; 
 extern    Context_Item menu_geometry_physical[]; 
 extern        Context_Item menu_geometry_physical_add[]; 
 extern Context_Item menu_mesh[]; 
@@ -97,21 +98,6 @@ struct PluginDialogBox
   Fl_Input *input[MAX_PLUGIN_OPTIONS];
 };
 
-class FieldDialogBox
-{
-  std::list<Fl_Widget*> inputs;
-  std::list<std::string> inputs_values;
- public:
-  Field *current_field;
-  Fl_Group *group;
-  Fl_Menu_Button *put_on_view_btn;
-  Fl_Check_Button *set_size_btn;
-  Fl_Button *apply_btn,*revert_btn;
-  FieldDialogBox(Field *field, int x, int y, int width, int height, int fontsize);
-  void load_field(Field *field);
-  void save_values();
-};
-
 // The dialog for solvers
 
 struct SolverDialogBox
@@ -130,7 +116,7 @@ class GUI{
   int MH, fontsize;
   Fl_Scroll *m_scroll;
 
-  void add_multiline_in_browser(Fl_Browser *o, const char *prefix, const char *str);
+  void add_multiline_in_browser(Fl_Browser *o, const char *prefix, const char *str, int wrap=0);
 
 public:
 
@@ -142,7 +128,7 @@ public:
 
   // menu window
   Fl_Window        *m_window;
-#if defined(__APPLE__) && defined(HAVE_FLTK_1_1_5_OR_ABOVE)
+#if defined(__APPLE__)
   Fl_Sys_Menu_Bar  *m_sys_menu_bar;
 #endif
   Fl_Menu_Bar      *m_menu_bar;
@@ -218,7 +204,15 @@ public:
   // Field window
   Fl_Window        *field_window;
   Fl_Hold_Browser  *field_browser;
-  FieldDialogBox   *selected_field_dialog_box;
+  std::list<Fl_Widget*> field_options_widget;
+  Fl_Scroll        *field_options_scroll;
+  Fl_Group         *field_editor_group;
+  Fl_Box           *field_title;
+  Fl_Check_Button  *field_background_btn;
+  Fl_Menu_Button   *field_put_on_view_btn;
+  Fl_Browser       *field_help_display;
+  Fl_Button        *field_delete_btn;
+  int              field_selected_id;
 
   // Plugin window
   Fl_Window        *plugin_window;
@@ -229,12 +223,13 @@ public:
   // statistics window
   Fl_Window        *stat_window;
   Fl_Output        *stat_value[50];
-  Fl_Button        *stat_butt[4];
+  Fl_Button        *stat_butt[8];
   double            quality[4][100];
 
   // message window
   Fl_Window        *msg_window;
   Fl_Browser       *msg_browser;
+  Fl_Check_Button  *msg_butt;
 
   // visibility window
   Fl_Window        *vis_window;
@@ -292,8 +287,7 @@ public:
   void create_view_options_window(int numview);
   void create_plugin_dialog_box(GMSH_Plugin *p, int x, int y, int width, int height);
   void create_plugin_window(int numview);
-  void create_field_dialog_box(Field *f, int x, int y, int width, int height);
-  void create_field_window(int numview);
+  void create_field_window();
   void create_visibility_window(bool redraw_only=false);
   void create_clip_window();
   void create_manip_window();
@@ -316,6 +310,12 @@ public:
   void set_context(Context_Item menu[], int flag);
   int  get_context();
   void update_views();
+  void update_fields();
+  void edit_field(Field *f);
+  void save_field_options();
+  void load_field_options();
+  void load_field_list();
+  void load_field_view_list();
   void set_anim_buttons(int mode);
   void check_anim_buttons();
   void set_status(const char *msg, int num);

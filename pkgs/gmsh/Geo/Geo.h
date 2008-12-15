@@ -146,7 +146,7 @@ typedef struct{
   List_T *EmbeddedCurves;
   List_T *EmbeddedPoints;
   List_T *TrsfPoints;
-  List_T *RuledSurfaceOptions;
+  List_T *InSphereCenter;
   double plan[3][3];
   double a, b, c, d;
   ExtrudeParams *Extrude;
@@ -182,6 +182,7 @@ typedef struct{
   int Typ;
   char Visible;
   List_T *Entities;
+  List_T *Boundaries[4];
 }PhysicalGroup;
 
 class GEO_Internals{
@@ -222,7 +223,8 @@ Surface *Create_Surface(int Num, int Typ);
 Volume *Create_Volume(int Num, int Typ);
 EdgeLoop *Create_EdgeLoop(int Num, List_T * intlist);
 SurfaceLoop *Create_SurfaceLoop(int Num, List_T * intlist);
-PhysicalGroup *Create_PhysicalGroup(int Num, int typ, List_T * intlist);
+PhysicalGroup *Create_PhysicalGroup(int Num, int typ, List_T * intlist,
+                                    List_T *bndlist[4] = 0);
 
 void End_Curve(Curve * c);
 void End_Surface(Surface * s);
@@ -277,6 +279,7 @@ bool ProjectPointOnCurve(Curve *c, Vertex *v, Vertex *RES, Vertex *DER);
 bool ProjectPointOnSurface(Surface *s, Vertex &p, double u[2]);
 
 bool IntersectCurvesWithSurface(List_T *curve_ids, int surface_id, List_T *shapes);
+bool SplitCurve(int line_id, List_T *vertices_id, List_T *shapes);
 
 int recognize_seg(int typ, List_T *liste, int *seg);
 int recognize_loop(List_T *liste, int *loop);

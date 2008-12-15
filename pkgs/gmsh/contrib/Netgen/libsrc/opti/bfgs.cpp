@@ -77,6 +77,7 @@ void Cholesky (const DenseMatrix & a,
 
 void MultLDLt (const DenseMatrix & l, const Vector & d, const Vector & g, Vector & p)
 {
+  /*
   int i, j, n;
   double val;
 
@@ -99,32 +100,59 @@ void MultLDLt (const DenseMatrix & l, const Vector & d, const Vector & g, Vector
 	val += p.Get(j) * l.Get(i, j);
       p.Set(i, val);
     }
+  */
+
+
+
+  double val;
+
+  int n = l.Height();
+  p = g;
+  
+  for (int i = 0; i < n; i++)
+    {
+      val = 0;
+      for (int j = i; j < n; j++)
+	val += p(j) * l(j, i);
+      p(i) = val;
+    }
+
+  for (int i = 0; i < n; i++)
+    p(i) *= d(i);
+
+  for (int i = n-1; i >= 0; i--)
+    {
+      val = 0;
+      for (int j = 0; j <= i; j++)
+	val += p(j) * l(i, j);
+      p(i) = val;
+    }
 }
 
 void SolveLDLt (const DenseMatrix & l, const Vector & d, const Vector & g, Vector & p)
 {
-  int i, j, n;
   double val;
 
-  n = l.Height();
+  int n = l.Height();
   p = g;
 
-  for (i = 1; i <= n; i++)
+  for (int i = 0; i < n; i++)
     {
       val = 0;
-      for (j = 1; j < i; j++)
-	val += p.Get(j) * l.Get(i, j);
-      p.Elem(i) -= val;
+      for (int j = 0; j < i; j++)
+	val += p(j) * l(i,j);
+      p(i) -= val;
     }
-  for (i = 1; i <= n; i++)
-    p.Elem(i) /= d.Get(i);
 
-  for (i = n; i >= 1; i--)
+  for (int i = 0; i < n; i++)
+    p(i) /= d(i);
+  
+  for (int i = n-1; i >= 0; i--)
     {
       val = 0;
-      for (j = i+1; j <= n; j++)
-	val += p.Get(j) * l.Get(j, i);
-      p.Elem(i) -= val;
+      for (int j = i+1; j < n; j++)
+	val += p(j) * l(j, i);
+      p(i) -= val;
     }
 }
 
@@ -148,7 +176,11 @@ int LDLtUpdate (DenseMatrix & l, Vector & d, double a, const Vector & u)
     {
       t = told + a * sqr (v.Elem(j)) / d.Get(j);
 
-      if (t <= 0) return 1;
+      if (t <= 0) 
+	{
+	  (*testout) << "update err, t = " << t << endl;
+	  return 1;
+	}
 
       xi = a * v.Elem(j) / (d.Get(j) * t);
 
@@ -177,7 +209,6 @@ double BFGS (
 
 
 {
-
   int i, j, n = x.Size();
   long it;
   char a1crit, a3acrit;
@@ -216,7 +247,6 @@ double BFGS (
   f0 = f;
   x0 = x;
 
-
   it = 0;
   do
     {
@@ -254,6 +284,11 @@ double BFGS (
 
       SolveLDLt (l, d, g, p);
 
+ //      (*testout) << "l " << l << endl
+// 		 << "d " << d << endl
+// 		 << "g " << g << endl
+// 		 << "p " << p << endl;
+
 
       p *= -1;
       y = g;
@@ -266,8 +301,11 @@ double BFGS (
       lines (x, xneu, p, f, g, fun, par, alphahat, fmin,
 	     mu1, sigma, xi1, xi2, tau, tau1, tau2, ifail);
 
-      /*
-      if (it > par.maxit_bfgs/2)
+      if(ifail == 1)
+	(*testout) << "no success with linesearch" << endl;
+
+       /*
+      // if (it > par.maxit_bfgs/2)
 	{
 	  (*testout) << "x = " << x << endl;
 	  (*testout) << "xneu = " << xneu << endl;
@@ -275,7 +313,6 @@ double BFGS (
 	  (*testout) << "g = " << g << endl;
 	}
       */
-
 
       //      (*testout) << "it = " << it << " f = " << f << endl;
       //      if (ifail != 0) break;
@@ -297,14 +334,20 @@ double BFGS (
 	{
 	  if (LDLtUpdate (l, d, 1 / a1, y) != 0)
 	    {
-	      cerr << "update error1" << endl;
+              cerr << "BFGS update error1" << endl;
+	      (*testout) << "BFGS update error1" << endl;
+	      (*testout) << "l " << endl << l << endl
+			 << "d " << d << endl;
 	      ifail = 1;
 	      break;
 	    }
 
 	  if (LDLtUpdate (l, d, -1 / a2, bs) != 0)
 	    {
-	      cerr << "update error2" << endl;
+              cerr << "BFGS update error2" << endl;
+	      (*testout) << "BFGS update error2" << endl;
+	      (*testout) << "l " << endl << l << endl
+			 << "d " << d << endl;
 	      ifail = 1;
 	      break;
 	    }
@@ -339,8 +382,8 @@ double BFGS (
 	testout << ")" << endl;
 	*/
 
-      //      (*testout) << "it = " << it << " f = " << f << " x = " << x << endl
-      //		 << " g = " << g << " p = " << p << endl << endl;
+      //(*testout) << "it = " << it << " f = " << f << " x = " << x << endl
+      //	 << " g = " << g << " p = " << p << endl << endl;
 
       //      (*testout) << "|g| = " << g.L2Norm() << endl;
 

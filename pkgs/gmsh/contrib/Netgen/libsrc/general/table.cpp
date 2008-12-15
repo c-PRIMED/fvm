@@ -13,7 +13,7 @@
 
 namespace netgen
 {
-  using namespace netgen;
+  //using namespace netgen;
 
   BASE_TABLE :: BASE_TABLE (int size)
     : data(size)
@@ -67,6 +67,26 @@ namespace netgen
     
     data.SetSize(size);
     for (int i = 0; i < size; i++)
+      {
+	data[i].maxsize = 0;
+	data[i].size = 0;
+	data[i].col = NULL;
+      }    
+  }
+  
+  void BASE_TABLE :: ChangeSize (int size)
+  {
+    int oldsize = data.Size();
+    if (size == oldsize) 
+      return;
+
+    if (size < oldsize)
+      for (int i = size; i < oldsize; i++)
+	delete [] (char*)data[i].col;
+    
+    data.SetSize(size);
+
+    for (int i = oldsize; i < size; i++)
       {
 	data[i].maxsize = 0;
 	data[i].size = 0;
@@ -162,6 +182,12 @@ namespace netgen
     for (int i = 0; i < data.Size(); i++)
       els += data[i].size;
     return els;
+  }
+
+  void BASE_TABLE :: SetElementSizesToMaxSizes ()
+  {
+    for (int i = 0; i < data.Size(); i++)
+      data[i].size = data[i].maxsize;
   }
 
 }

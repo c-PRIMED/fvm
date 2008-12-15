@@ -8,6 +8,12 @@
 /**************************************************************************/
 
 
+
+
+// template <class T, int B1, int B2> class IndirectArray;
+
+
+
 /**
    A simple array container.
    Array represented by size and data-pointer.
@@ -27,15 +33,18 @@ protected:
 public:
 
   /// provide size and memory
-  inline FlatArray (int asize, T * adata) 
+  FlatArray (int asize, T * adata) 
     : size(asize), data(adata) { ; }
 
   /// the size
-  inline int Size() const { return size; }
+  int Size() const { return size; }
 
+  int Begin() const { return BASE; }
+  int End() const { return size+BASE; }
 
+  /*
   /// access array. 
-  inline T & operator[] (int i) 
+  T & operator[] (int i) 
   { 
 #ifdef DEBUG
     if (i-BASE < 0 || i-BASE >= size)
@@ -44,10 +53,10 @@ public:
 
     return data[i-BASE]; 
   }
+  */
 
-
-  /// Access array. 
-  inline const T & operator[] (int i) const
+  /// Access array. BASE-based
+  T & operator[] (int i) const
   {
 #ifdef DEBUG
     if (i-BASE < 0 || i-BASE >= size)
@@ -57,7 +66,13 @@ public:
     return data[i-BASE]; 
   }
 
-  ///
+  /*
+  template <int B2>
+  IndirectArray<T, BASE, B2> operator[] (const FlatArray<int, B2> & ind) 
+  { return IndirectArray<T, BASE, B2>  (*this, ind); }
+  */
+
+  /// Access array, one-based  (old fashioned)
   T & Elem (int i)
   {
 #ifdef DEBUG
@@ -70,7 +85,7 @@ public:
     return ((T*)data)[i-1]; 
   }
   
-  ///
+  /// Access array, one-based  (old fashioned)
   const T & Get (int i) const 
   {
 #ifdef DEBUG
@@ -82,7 +97,7 @@ public:
     return ((const T*)data)[i-1]; 
   }
 
-  ///
+  /// Access array, one-based  (old fashioned)
   void Set (int i, const T & el)
   { 
 #ifdef DEBUG
@@ -95,14 +110,16 @@ public:
   }
 
 
-  /// access last element. check by macro CHECK_RANGE
-  T & Last ()
+
+  /// access first element
+  T & First () const
   {
-    return data[size-1];
+    return data[0];
   }
 
+
   /// access last element. check by macro CHECK_RANGE
-  const T & Last () const
+  T & Last () const
   {
     return data[size-1];
   }
@@ -114,8 +131,28 @@ public:
       data[i] = val;
     return *this;
   }
-};
 
+  /// takes range starting from position start of end-start elements
+  const FlatArray<T> Range (int start, int end)
+  {
+    return FlatArray<T> (end-start, data+start);
+  }
+
+  /// first position of element elem, returns -1 if element not contained in array 
+  int Pos(const T & elem) const
+  {
+    int pos = -1;
+    for(int i=0; pos==-1 && i < this->size; i++)
+      if(elem == data[i]) pos = i;
+    return pos;
+  }
+
+  /// does the array contain element elem ?
+  bool Contains(const T & elem) const
+  {
+    return ( Pos(elem) >= 0 );
+  }
+};
 
 
 
@@ -123,11 +160,10 @@ public:
 template <class T, int BASE>
 inline ostream & operator<< (ostream & s, const FlatArray<T,BASE> & a)
 {
-  for (int i = BASE; i < a.Size()+BASE; i++)
+  for (int i = a.Begin(); i < a.End(); i++)
     s << i << ": " << a[i] << endl;
   return s;
 }
-
 
 
 
@@ -211,6 +247,28 @@ public:
     return this->size;
   }
 
+  template <typename T2, int B2>
+  void Append (FlatArray<T2, B2> a2)
+  {
+    if (this->size+a2.Size() > allocsize)
+      ReSize (this->size+a2.Size());
+    for (int i = 0; i < a2.Size(); i++)
+      this->data[this->size+i] = a2[i+B2];
+    this->size += a2.Size();
+  }
+
+
+  /*
+  template <int B1, int B2>
+  void Append (const IndirectArray<T,B1,B2> & a2)
+  {
+    if (this->size+a2.Size() > allocsize)
+      ReSize (this->size+a2.Size());
+    for (int i = 0; i < a2.Size(); i++)
+      this->data[this->size+i] = a2[i+B2];
+    this->size += a2.Size();
+  }
+  */
 
   /// Delete element i (0-based). Move last element to position i.
   void Delete (int i)
@@ -267,6 +325,16 @@ public:
     return *this;
   }
 
+  /// array copy
+  ARRAY & operator= (const FlatArray<T> & a2)
+  {
+    SetSize (a2.Size());
+    for (int i = BASE; i < this->size+BASE; i++)
+      (*this)[i] = a2[i];
+    return *this;
+  }
+
+
 private:
 
   /// resize array, at least to size minsize. copy contents
@@ -302,7 +370,7 @@ private:
 template <class T, int S> 
 class ArrayMem : public ARRAY<T>
 {
-  // T mem[S];
+  // T mem[S];     // Intel C++ calls dummy constructor
   // char mem[S*sizeof(T)];
   double mem[(S*sizeof(T)+7) / 8];
 public:
@@ -324,6 +392,24 @@ public:
 
 
 
+/*
+template <class T, int B1, int B2>
+class IndirectArray
+{
+  const FlatArray<T, B1> & array;
+  const FlatArray<int, B2> & ia; 
+
+public:
+  IndirectArray (const FlatArray<T,B1> & aa, const FlatArray<int, B2> & aia)
+    : array(aa), ia(aia) { ; }
+  int Size() const { return ia.Size(); }
+  const T & operator[] (int i) const { return array[ia[i]]; }
+};
+*/
+
+
+
+
 
 
 
@@ -331,7 +417,8 @@ public:
 
 
 ///
-template <class T> class MoveableArray 
+template <class T, int BASE = 0> 
+class MoveableArray 
 {
   int size;
   int allocsize;
@@ -371,11 +458,11 @@ public:
 
   ///
   T & operator[] (int i)
-  { return ((T*)data)[i]; }
+  { return ((T*)data)[i-BASE]; }
 
   ///
   const T & operator[] (int i) const
-  { return ((const T*)data)[i]; }
+  { return ((const T*)data)[i-BASE]; }
 
   ///
   T & Elem (int i)
@@ -447,15 +534,31 @@ public:
     return *this;
   }
 
-  void SetName (char * aname)
+
+  MoveableArray & Copy (const MoveableArray & a2)
+  {
+    SetSize (a2.Size());
+    for (int i = 0; i < this->size; i++)
+      data[i] = a2.data[i];
+    return *this;
+  }
+
+  /// array copy
+  MoveableArray & operator= (const MoveableArray & a2)
+  {
+    return Copy(a2);
+  }
+
+
+  void SetName (const char * aname)
   {
     data.SetName(aname);
   }
 private:
   ///
-  MoveableArray & operator= (MoveableArray &);
+  //MoveableArray & operator= (MoveableArray &); //???
   ///
-  MoveableArray (const MoveableArray &);
+  //MoveableArray (const MoveableArray &); //???
 };
 
 
@@ -468,8 +571,59 @@ inline ostream & operator<< (ostream & ost, MoveableArray<T> & a)
 }
 
 
+/// bubble sort array
+template <class T>
+inline void BubbleSort (const FlatArray<T> & data)
+{
+  T hv;
+  for (int i = 0; i < data.Size(); i++)
+    for (int j = i+1; j < data.Size(); j++)
+      if (data[i] > data[j])
+	{
+	  hv = data[i];
+	  data[i] = data[j];
+	  data[j] = hv;
+	}
+}
+/// bubble sort array
+template <class T, class S>
+inline void BubbleSort (FlatArray<T> & data, FlatArray<S> & slave)
+{
+  T hv;
+  S hvs;
+  for (int i = 0; i < data.Size(); i++)
+    for (int j = i+1; j < data.Size(); j++)
+      if (data[i] > data[j])
+	{
+	  hv = data[i];
+	  data[i] = data[j];
+	  data[j] = hv;
+
+	  hvs = slave[i];
+	  slave[i] = slave[j];
+	  slave[j] = hvs;
+	}
+}
 
 
+template <class T> 
+void Intersection (const FlatArray<T> & in1, const FlatArray<T> & in2, 
+		   ARRAY<T> & out)
+{
+  out.SetSize(0);
+  for(int i=0; i<in1.Size(); i++)
+    if(in2.Contains(in1[i]))
+      out.Append(in1[i]);
+}
+template <class T> 
+void Intersection (const FlatArray<T> & in1, const FlatArray<T> & in2, const FlatArray<T> & in3,
+		   ARRAY<T> & out)
+{
+  out.SetSize(0);
+  for(int i=0; i<in1.Size(); i++)
+    if(in2.Contains(in1[i]) && in3.Contains(in1[i]))
+      out.Append(in1[i]);
+}
 
 
 

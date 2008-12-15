@@ -56,7 +56,7 @@ namespace netgen
             int elnr = 0;
             for (j = 1; j <= 2; j++)
             {
-                int nelp;
+                int nelp(0);
                 switch (j)
                 {
                 case 1:
@@ -174,9 +174,9 @@ namespace netgen
         for (i = 1; i <= np; i++)
         {
             outfile << i << " ";
-            outfile << mesh.Point(i).X() << " ";
-            outfile << mesh.Point(i).Y() << " ";
-            outfile << mesh.Point(i).Z() << "\n";
+            outfile << mesh.Point(i)(0) << " ";
+            outfile << mesh.Point(i)(1) << " ";
+            outfile << mesh.Point(i)(2) << "\n";
         }
     }
     ////////////////////////////////////////////////////////////////////////////////// 

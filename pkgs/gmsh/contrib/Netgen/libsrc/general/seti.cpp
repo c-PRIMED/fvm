@@ -4,7 +4,7 @@
 
 namespace netgen
 {
-  using namespace netgen;
+  //using namespace netgen;
 
   IndexSet :: IndexSet (int maxind)
   {

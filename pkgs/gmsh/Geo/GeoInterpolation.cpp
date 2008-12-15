@@ -3,7 +3,7 @@
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Geo.h"
 #include "GeoInterpolation.h"
 #include "GeoStringInterface.h"
@@ -218,7 +218,6 @@ Vertex InterpolateCurve(Curve *c, double u, int derivee)
   }
   
   Vertex V;
-  V.u = u;
 
   if(derivee) {
     double eps1 = (u == 0) ? 0 : 1.e-5;
@@ -229,6 +228,7 @@ Vertex InterpolateCurve(Curve *c, double u, int derivee)
     V.Pos.X = (D[1].Pos.X - D[0].Pos.X) / (eps1 + eps2);
     V.Pos.Y = (D[1].Pos.Y - D[0].Pos.Y) / (eps1 + eps2);
     V.Pos.Z = (D[1].Pos.Z - D[0].Pos.Z) / (eps1 + eps2);
+    V.u = u;
     return V;
   }
 
@@ -265,7 +265,7 @@ Vertex InterpolateCurve(Curve *c, double u, int derivee)
       V.Pos.Y = pp.y();
       V.Pos.Z = pp.z();
     }
-    return V;
+    break;
 
   case MSH_SEGM_PARAMETRIC:
     V.Pos.X = evaluate_scalarfunction("t", u, c->functu);
@@ -273,7 +273,7 @@ Vertex InterpolateCurve(Curve *c, double u, int derivee)
     V.Pos.Z = evaluate_scalarfunction("t", u, c->functw);
     V.w = (1. - u) * c->beg->w + u * c->end->w;
     V.lc = (1. - u) * c->beg->lc + u * c->end->lc;
-    return V;
+    break;
 
   case MSH_SEGM_CIRC:
   case MSH_SEGM_CIRC_INV:
@@ -298,14 +298,16 @@ Vertex InterpolateCurve(Curve *c, double u, int derivee)
     V.Pos.Z += c->Circle.v[1]->Pos.Z;
     V.w = (1. - u) * c->beg->w + u * c->end->w;
     V.lc = (1. - u) * c->beg->lc + u * c->end->lc;
-    return V;
+    break;
 
   case MSH_SEGM_BSPLN:
   case MSH_SEGM_BEZIER:
-    return InterpolateUBS(c, u, 0);
+    V = InterpolateUBS(c, u, 0);
+    break;
 
   case MSH_SEGM_NURBS:
-    return InterpolateNurbs(c, u, 0);
+    V = InterpolateNurbs(c, u, 0);
+    break;
 
   case MSH_SEGM_SPLN:
     N = List_Nbr(c->Control_Points);
@@ -355,23 +357,25 @@ Vertex InterpolateCurve(Curve *c, double u, int derivee)
       V.Pos.X = pt.x();
       V.Pos.Y = pt.y();
       V.Pos.Z = pt.z();
-      return V;
     }
     else
-      return InterpolateCubicSpline(v, t, c->mat, 0, t1, t2);
+      V = InterpolateCubicSpline(v, t, c->mat, 0, t1, t2);
+    break;
 
   case MSH_SEGM_BND_LAYER:
     Msg::Error("Cannot interpolate boundary layer curve");
-    return V;
+    break;
 
   case MSH_SEGM_DISCRETE:
     Msg::Error("Cannot interpolate discrete curve");
-    return V;
+    break;
 
   default:
     Msg::Error("Unknown curve type in interpolation");
-    return V;
+    break;
   }
+  V.u = u;
+  return V;
 
 }
 
@@ -444,17 +448,14 @@ bool iSRuledSurfaceASphere(Surface *s, SPoint3 &center, double &radius)
   if(s->Typ != MSH_SURF_REGL && s->Typ != MSH_SURF_TRIC)return false;
 
   bool isSphere = true;
-  Vertex *O = 0, OO;
+  Vertex *O = 0;
   Curve *C[4] = {0, 0, 0, 0};
   for(int i = 0; i < std::min(List_Nbr(s->Generatrices), 4); i++)
     List_Read(s->Generatrices, i, &C[i]);
 
-  if(List_Nbr(s->RuledSurfaceOptions) == 3) {
+  if(List_Nbr(s->InSphereCenter)) {
     // it's on a sphere: get the center
-    List_Read(s->RuledSurfaceOptions, 0, & ((double *)center)[0]);
-    List_Read(s->RuledSurfaceOptions, 1, & ((double *)center)[1]);
-    List_Read(s->RuledSurfaceOptions, 2, & ((double *)center)[2]);
-    O = &OO;
+    List_Read(s->InSphereCenter, 0, &O);
   }
   else{
     // try to be intelligent (hum)
@@ -495,17 +496,14 @@ static Vertex InterpolateRuledSurface(Surface *s, double u, double v)
   for(int i = 0; i < std::min(List_Nbr(s->Generatrices), 4); i++)
     List_Read(s->Generatrices, i, &C[i]);
   
-  Vertex *O = 0, OO;
+  Vertex *O = 0;
   bool isSphere = true;
 
   // Ugly hack: "fix" transfinite interpolation if we have a sphere
   // patch
-  if(List_Nbr(s->RuledSurfaceOptions) == 3) {
+  if(List_Nbr(s->InSphereCenter)) {
     // it's on a sphere: get the center
-    List_Read(s->RuledSurfaceOptions, 0, &OO.Pos.X);
-    List_Read(s->RuledSurfaceOptions, 1, &OO.Pos.Y);
-    List_Read(s->RuledSurfaceOptions, 2, &OO.Pos.Z);
-    O = &OO;
+    List_Read(s->InSphereCenter, 0, &O);
   }
   else{
     // try to be intelligent (hum)

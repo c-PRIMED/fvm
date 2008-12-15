@@ -17,7 +17,10 @@ public:
   ///
   void ImproveMesh (Mesh & mesh2d);
   void ImproveMeshJacobian (Mesh & mesh2d);
-    
+  void ImproveVolumeMesh (Mesh & mesh);
+  void ProjectBoundaryPoints(ARRAY<int> & surfaceindex, 
+			     const ARRAY<Point<3>* > & from, ARRAY<Point<3>* > & dest);
+
   void EdgeSwapping (Mesh & mesh, int usemetric);
   void CombineImprove (Mesh & mesh);
 
@@ -29,24 +32,32 @@ public:
   void SetMetricWeight (double mw) { metricweight = mw; }
   void SetWriteStatus (int ws) { writestatus = ws; }
 
+
+
   ///
-  virtual void SelectSurfaceOfPoint (const Point3d & p,
+  virtual void SelectSurfaceOfPoint (const Point<3> & p,
 				     const PointGeomInfo & gi);
   ///
-  virtual void ProjectPoint (INDEX /* surfind */, Point3d & /* p */) const { };
+  virtual void ProjectPoint (INDEX /* surfind */, Point<3> & /* p */) const { };
+
+  /// project point, use gi as initial value, and compute new gi
+  virtual int ProjectPointGI (INDEX surfind, Point<3> & p, PointGeomInfo & gi) const 
+  { ProjectPoint (surfind, p); return CalcPointGeomInfo (surfind, gi, p); }
+
   ///
-  virtual void ProjectPoint2 (INDEX /* surfind */, INDEX /* surfind2 */, Point3d & /* p */) const { };
+  virtual void ProjectPoint2 (INDEX /* surfind */, INDEX /* surfind2 */, Point<3> & /* p */) const { };
+
   /// liefert zu einem 3d-Punkt die geominfo (Dreieck) und liefert 1, wenn erfolgreich, 
   /// 0, wenn nicht (Punkt ausserhalb von chart)
-  virtual int CalcPointGeomInfo(PointGeomInfo& gi, const Point3d& /*p3*/) const
+  virtual int CalcPointGeomInfo(PointGeomInfo& gi, const Point<3> & /*p3*/) const
     { gi.trignum = 1; return 1;};
 
-  virtual int CalcPointGeomInfo(int /* surfind */, PointGeomInfo& gi, const Point3d& p3) const
+  virtual int CalcPointGeomInfo(int /* surfind */, PointGeomInfo& gi, const Point<3> & p3) const
     { return CalcPointGeomInfo (gi, p3); }
 
   ///
-  virtual void GetNormalVector(INDEX surfind, const Point3d & p, PointGeomInfo & gi, Vec3d & n) const;
-  virtual void GetNormalVector(INDEX surfind, const Point3d & p, Vec3d & n) const;
+  virtual void GetNormalVector(INDEX surfind, const Point<3>  & p, PointGeomInfo & gi, Vec<3> & n) const;
+  virtual void GetNormalVector(INDEX surfind, const Point<3> & p, Vec<3> & n) const;
 
   void CheckMeshApproximation (Mesh & mesh);
 

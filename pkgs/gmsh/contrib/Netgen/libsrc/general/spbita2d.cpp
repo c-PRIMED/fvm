@@ -14,7 +14,7 @@
 
 namespace netgen
 {
-  using namespace netgen;
+  //using namespace netgen;
 
   SPARSE_BIT_ARRAY_2D :: SPARSE_BIT_ARRAY_2D (int ah, int aw)
   {

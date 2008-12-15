@@ -3,6 +3,8 @@
 
 namespace netgen
 {
+
+
 static double CalcElementBadness (const ARRAY<Point2d> & points,
 				  const Element2d & elem)
 {
@@ -68,8 +70,8 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
   int noldlp, noldll;
   int loctestmode;
 
-  static ARRAY<int> pused, lused;
-  static ARRAY<int> pmap, lmap, pfixed;
+  static ARRAY<int> pused, pmap, pfixed;
+  static ARRAY<int, 1> lmap, lused;
   static ARRAY<int> pnearness, lnearness;
   
   static ARRAY<Point2d> tempnewpoints;
@@ -188,24 +190,14 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
       pused = 0;
       pmap = 0;
       lmap = 0;
-      /*
-      for (i = 1; i <= lused.Size(); i++)
-	lused.Set (i, 0);
-      for (i = 1; i <= pused.Size(); i++)
-	pused.Set (i, 0);
-      for (i = 1; i <= pmap.Size(); i++)
-	pmap.Set(i, 0);
-      for (i = 1; i <= lmap.Size(); i++)
-	lmap.Set(i, 0);
-      */
 
-      lused[0] = 1;   // .Set (1, 1);
-      lmap[0] = 1;    // .Set (1, 1);
+      lused[1] = 1;   // .Set (1, 1);
+      lmap[1] = 1;    // .Set (1, 1);
 
-      for (j = 1; j <= 2; j++)
+      for (j = 0; j < 2; j++)
 	{
-	  pmap.Elem(rule->GetPointNr (1, j)) = llines.Get(1).I(j);
-	  pused.Elem(llines.Get(1).I(j))++;
+          pmap.Elem(rule->GetLine(1)[j]) = llines[0][j];
+          pused.Elem(llines[0][j])++;
 	}
 
 
@@ -229,29 +221,47 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 		      ok = 1;
 
 		      loclin = llines.Get(locli);
-
-		      linevec.X() = lpoints.Get (loclin.I2()).X() -
-			lpoints.Get (loclin.I1()).X();
-		      linevec.Y() = lpoints.Get (loclin.I2()).Y() -
-			lpoints.Get (loclin.I1()).Y();
+                      linevec = lpoints.Get(loclin.I2()) - lpoints.Get(loclin.I1());
 
 		      if (rule->CalcLineError (nlok, linevec) > maxerr)
-			  ok = 0;
-
-		      for (j = 1; j <= 2 && ok; j++)
 			{
-			  refpi = rule->GetPointNr (nlok, j);
+			  ok = 0;
+			  if(loctestmode)
+			    (*testout) << "not ok pos1" << endl;
+			}
+
+		      for (j = 0; j < 2 && ok; j++)
+			{
+			  // refpi = rule->GetPointNr (nlok, j);
+                          refpi = rule->GetLine(nlok)[j];
 
 			  if (pmap.Get(refpi) != 0)
 			    {
-			      if (pmap.Get(refpi) != loclin.I(j))
-				ok = 0;
+			      if (pmap.Get(refpi) != loclin[j])
+				{
+				  ok = 0;
+				  if(loctestmode)
+				    (*testout) << "not ok pos2" << endl;
+				}
 			    }
 			  else
 			    {
-			      if (rule->CalcPointDist (refpi, lpoints.Get(loclin.I(j))) > maxerr
-				  || !legalpoints.Get(loclin.I(j))
-				  || pused.Get(loclin.I(j))) ok = 0;
+			      if (rule->CalcPointDist (refpi, lpoints.Get(loclin[j])) > maxerr
+				  || !legalpoints.Get(loclin[j])
+				  || pused.Get(loclin[j]))
+				{
+				  ok = 0;
+				  if(loctestmode)
+				    {
+				      (*testout) << "nok pos3" << endl;
+				      //if(rule->CalcPointDist (refpi, lpoints.Get(loclin[j])) > maxerr)
+				      //(*testout) << "r1" << endl;
+				      //if(!legalpoints.Get(loclin[j]))
+				      //(*testout) << "r2 legalpoints " << legalpoints << " loclin " << loclin << " j " << j << endl;
+				      //if(pused.Get(loclin[j]))
+				      //(*testout) << "r3" << endl;
+				    }
+				}
 			    }
 			}
 		    }
@@ -259,11 +269,11 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 
 	      if (ok)
 		{
-		  lused.Set (locli, 1);
-		  for (j = 1; j <= 2; j++)
+		  lused.Elem (locli) = 1;
+		  for (j = 0; j < 2; j++)
 		    {
-		      pmap.Set(rule->GetPointNr (nlok, j), loclin.I(j));
-		      pused.Elem(loclin.I(j))++;
+		      pmap.Set(rule->GetLine (nlok)[j], loclin[j]);
+		      pused.Elem(loclin[j])++;
 		    }
 
 		  nlok++;
@@ -273,12 +283,12 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 		  lmap.Elem(nlok) = 0;
 		  nlok--;
 
-		  lused.Set (lmap.Get(nlok), 0);
-		  for (j = 1; j <= 2; j++)
+		  lused.Elem (lmap.Get(nlok)) = 0;
+		  for (j = 0; j < 2; j++)
 		    {
-		      pused.Elem(llines.Get(lmap.Get(nlok)).I(j)) --;
-		      if (! pused.Get (llines.Get (lmap.Get (nlok)).I(j)))
-			pmap.Set (rule->GetPointNr (nlok, j), 0);
+		      pused.Elem(llines.Get(lmap.Get(nlok))[j]) --;
+		      if (! pused.Get (llines.Get (lmap.Get (nlok))[j]))
+			pmap.Set (rule->GetLine (nlok)[j], 0);
 		    }
 		}
 	    }
@@ -295,8 +305,8 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 	      incnpok = 1;
 
 	      pfixed.SetSize (pmap.Size());
-	      for (i = 1; i <= pmap.Size(); i++)
-		pfixed.Elem(i) = (pmap.Get(i) >= 1);
+	      for (i = 0; i < pmap.Size(); i++)
+		pfixed[i] = (pmap[i] >= 1);
 
 	      while (npok >= 1)
 		{
@@ -334,8 +344,9 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 			      else
 				{
 				  if (rule->CalcPointDist (npok, lpoints.Get(pmap.Get(npok))) > maxerr 
-				      || !legalpoints.Get(pmap.Get(npok)) 
-				      ) ok = 0;
+				      || !legalpoints.Get(pmap.Get(npok))) 
+                                    
+                                    ok = 0;
 				}
 			    }
 
@@ -400,7 +411,8 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 		      if (ok && !rule->ConvexFreeZone())
 			{
 			  ok = 0;
-			  if (loctestmode) (*testout) << "freezone not convex" << endl;
+			  if (loctestmode) 
+			    (*testout) << "freezone not convex" << endl;
 
 			  /*
 			  static int cnt = 0;
@@ -511,15 +523,18 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 
 			  for (i = rule->GetNOldL() + 1; i <= rule->GetNL(); i++)
 			    {
-			      llines.Append (INDEX_2 (pmap.Get(rule->GetPointNr (i, 1)),
-						      pmap.Get(rule->GetPointNr (i, 2))));
+			      llines.Append (INDEX_2 (pmap.Get(rule->GetLine (i)[0]),
+						      pmap.Get(rule->GetLine (i)[1])));
 			    }
 
 
 			  // delete old lines:
+                          for (i = 1; i <= rule->GetNDelL(); i++)
+                            dellines.Append (lmap.Get(rule->GetDelLine(i)));
 
-			  for (i = 1; i <= rule->GetNDelL(); i++)
-			    dellines.Append (lmap.Get(rule->GetDelLine(i)));
+                          // dellines.Append (lmap[rule->GetDelLines()]);
+                          // lmap[rule->GetDelLines()];
+
 
 			  // insert new elements:
 
@@ -549,7 +564,7 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 
 			  canuse.Elem(ri) ++;
 
-			  if (elerr < minelerr)
+			  if (elerr < 0.99*minelerr)
 			    {
 
 			      if (loctestmode)
@@ -569,25 +584,13 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 				}
 
 
-
 			      minelerr = elerr;
 			      found = ri;
 
-			      tempnewpoints.SetSize (0);
-			      for (i = noldlp+1; i <= lpoints.Size(); i++)
-				tempnewpoints.Append (lpoints.Get(i));
-
-			      tempnewlines.SetSize (0);
-			      for (i = noldll+1; i <= llines.Size(); i++)
-				tempnewlines.Append (llines.Get(i));
-
-			      tempdellines.SetSize (0);
-			      for (i = 1; i <= dellines.Size(); i++)
-				tempdellines.Append (dellines.Get(i));
-
-			      tempelements.SetSize (0);
-			      for (i = 1; i <= elements.Size(); i++)
-				tempelements.Append (elements.Get(i));
+                              tempnewpoints = lpoints.Range (noldlp, lpoints.Size());
+                              tempnewlines = llines.Range (noldll, llines.Size());
+                              tempdellines = dellines;
+                              tempelements = elements;
 			    }
 
 			  lpoints.SetSize (noldlp);
@@ -595,9 +598,7 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 			  dellines.SetSize (0);
 			  elements.SetSize (0);
 			  ok = 0;
-
 			}
-
 
 		      npok = rule->GetNOldP();
 		      incnpok = 0;
@@ -614,9 +615,7 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 		  pused.Elem(pmap.Get(refpi))--;
 
 		  if (pused.Get(pmap.Get(refpi)) == 0)
-		    {
-		      pmap.Set(refpi, 0);
-		    }
+                    pmap.Set(refpi, 0);
 		}
 	    }
 	}
@@ -625,14 +624,10 @@ int Meshing2 ::ApplyRules (ARRAY<Point2d> & lpoints,
 
   if (found)
     {
-      for (i = 0; i < tempnewpoints.Size(); i++)
-	lpoints.Append (tempnewpoints[i]);
-      for (i = 0; i < tempnewlines.Size(); i++)
-	llines.Append (tempnewlines[i]);
-      for (i = 0; i < tempdellines.Size(); i++)
-	dellines.Append (tempdellines[i]);
-      for (i = 0; i < tempelements.Size(); i++)
-	elements.Append (tempelements[i]);
+      lpoints.Append (tempnewpoints);
+      llines.Append (tempnewlines);
+      dellines.Append (tempdellines);
+      elements.Append (tempelements);
     }
 
 

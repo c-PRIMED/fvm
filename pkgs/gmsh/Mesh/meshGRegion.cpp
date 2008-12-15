@@ -13,7 +13,7 @@
 #include "GEdge.h"
 #include "gmshRegion.h"
 #include "BDS.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Context.h"
 
 extern Context_T CTX;
@@ -153,13 +153,37 @@ void TransferTetgenMesh(GRegion *gr, tetgenio &in, tetgenio &out,
     int Count = 0;
     for(int j = 0; j < 3; j++){   
       if(v[j]->onWhat()->dim() == 2){
-	v[j]->getParameter(0,guess[0]);
-	v[j]->getParameter(1,guess[1]);
+	double uu,vv;
+	v[j]->getParameter(0,uu);
+	v[j]->getParameter(1,vv);
+	guess[0] += uu;
+	guess[1] += vv;
+	Count++;
+      }
+      else if (v[j]->onWhat()->dim() == 1){
+	GEdge *ge = (GEdge*)v[j]->onWhat();
+	double UU;
+	v[j]->getParameter(0, UU);
+	SPoint2 param;
+	param = ge->reparamOnFace(gf, UU, 1);
+	guess[0]+=param.x();
+	guess[1]+=param.y();
+	Count++;
+      }
+      else if (v[j]->onWhat()->dim() == 0){
+	SPoint2 param;
+	GVertex *gv = (GVertex*)v[j]->onWhat();
+	param = gv->reparamOnFace(gf,1);
+	guess[0]+=param.x();
+	guess[1]+=param.y();
 	Count++;
       }
     }
-    guess[0]/=Count;
-    guess[1]/=Count;
+    if (Count != 0){
+      guess[0]/=Count;
+      guess[1]/=Count;
+    }
+
     for(int j = 0; j < 3; j++){   
       if(v[j]->onWhat()->dim() == 3){
         v[j]->onWhat()->mesh_vertices.erase
@@ -171,14 +195,20 @@ void TransferTetgenMesh(GRegion *gr, tetgenio &in, tetgenio &out,
 	  // PARAMETRIC COORDINATES SHOULD BE SET for the vertex !!!!!!!!!!!!!
 	  // This is not 100 % safe yet, so we reserve that operation for high order
 	  // meshes.
+	  //	  Msg::Debug("A new point has been inserted in mesh face %d by the 3D mesher, guess %g %g",gf->tag(),guess[0],guess[1]);
 	  GPoint gp = gf->closestPoint (SPoint3(v[j]->x(), v[j]->y(), v[j]->z()),guess);
 
-	  Msg::Debug("A new point has been inserted in mesh face %d by the 3D mesher",gf->tag());
-	  Msg::Debug("The point has been projected back to the surface (%g %g %g) -> (%g %g %g)",
-		     v[j]->x(), v[j]->y(), v[j]->z(),gp.x(),gp.y(),gp.z());
-
 	  // To be safe, we should ensure that this mesh motion does not lead to an invalid mesh !!!!
-	  v1b = new MFaceVertex(gp.x(),gp.y(),gp.z(),gf,gp.u(),gp.v());
+	  //v1b = new MVertex(gp.x(),gp.y(),gp.z(),gf);
+	  if (gp.g()){
+	    v1b = new MFaceVertex(gp.x(),gp.y(),gp.z(),gf,gp.u(),gp.v());
+	    Msg::Info("The point has been projected back to the surface (%g %g %g) -> (%g %g %g)",
+		       v[j]->x(), v[j]->y(), v[j]->z(),gp.x(),gp.y(),gp.z());
+	  }
+	  else{
+	    v1b = new MVertex(v[j]->x(), v[j]->y(), v[j]->z(),gf);	  
+	    Msg::Warning("The point was not projected back to the surface (%g %g %g)", v[j]->x(), v[j]->y(), v[j]->z());
+	  }
 	}
 	else{
 	  v1b = new MVertex(v[j]->x(), v[j]->y(), v[j]->z(),gf);
@@ -395,22 +425,7 @@ void deMeshGRegion::operator() (GRegion *gr)
 {
   if(gr->geomType() == GEntity::DiscreteVolume) return;
 
-  for(unsigned int i = 0; i < gr->mesh_vertices.size(); i++)
-    delete gr->mesh_vertices[i];
-  gr->mesh_vertices.clear();
-  gr->transfinite_vertices.clear();
-  for(unsigned int i = 0; i < gr->tetrahedra.size(); i++)
-    delete gr->tetrahedra[i];
-  gr->tetrahedra.clear();
-  for(unsigned int i = 0; i < gr->hexahedra.size(); i++) 
-    delete gr->hexahedra[i];
-  gr->hexahedra.clear();
-  for(unsigned int i = 0; i < gr->prisms.size(); i++) 
-    delete gr->prisms[i];
-  gr->prisms.clear();
-  for(unsigned int i = 0; i < gr->pyramids.size(); i++)
-    delete gr->pyramids[i];
-  gr->pyramids.clear();
+  gr->deleteMesh();
   gr->deleteVertexArrays();
   gr->model()->destroyMeshCaches();
 }

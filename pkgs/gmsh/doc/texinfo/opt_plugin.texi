@@ -414,7 +414,7 @@ Default value: @code{-1}
 @end table
 
 @item Plugin(FieldView)
-Plugin(FieldView) evaluate a field on the choosen view.
+Plugin(FieldView) evaluates a field on the choosen view.
 
 Numeric options:
 @table @code
@@ -427,7 +427,16 @@ Default value: @code{-1}
 @end table
 
 @item Plugin(GSHHS)
-Plugin(GSHHS) import GSHHS data.
+Plugin(GSHHS) read differenct kind of contour lines data and write a .geo file.
+Valid values for "Format" are :
+ -"gshhs" : open GSHHS file
+ -"loops2" : import 2D contour lines in simple text format :
+   NB_POINTS_IN_FIRST_LOOP
+   COORD1 COORD2
+   COORD1 COORD2
+   ...    ...
+   NB_POINTS_IN_SECOND_LOOP
+   ...
 
 String options:
 @table @code
@@ -534,6 +543,19 @@ Numeric options:
 @table @code
 @item Eigenvalue
 Default value: @code{2}
+@item iView
+Default value: @code{-1}
+@end table
+
+@item Plugin(LongitudeLatitude)
+Plugin(LongituteLatitude) Project the view `iView'
+in Longitude-Latitude. If `iView' < 0, the plugin
+is run on the current view.
+
+Plugin(LongituteLatitude) is executed in place.
+
+Numeric options:
+@table @code
 @item iView
 Default value: @code{-1}
 @end table
@@ -796,27 +818,6 @@ Default value: @code{0}
 Default value: @code{0}
 @item iView
 Default value: @code{-1}
-@end table
-
-@item Plugin(TransformLatLon)
-Plugin(TransformLatLon) transforms the homogeneous
-node coordinates (x,y,z,1) of the elements in
-the view `iView' by the matrix
-[`A11' `A12' `A13' `Tx']
-[`A21' `A22' `A23' `Ty']
-[`A31' `A32' `A33' `Tz'].
-If `SwapOrientation' is set, the orientation of the
-elements is reversed. If `iView' < 0, the plugin
-is run on the current view.
-
-Plugin(TransformLatLon) is executed in-place.
-
-Numeric options:
-@table @code
-@item iView
-Default value: @code{-1}
-@item Longitude0
-Default value: @code{0}
 @end table
 
 @item Plugin(Triangulate)

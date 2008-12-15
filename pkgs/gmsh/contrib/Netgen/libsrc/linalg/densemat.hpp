@@ -14,6 +14,7 @@
 
 #include <assert.h>
 
+
 class DenseMatrix
 {
 protected:
@@ -35,7 +36,7 @@ public:
   void SetSize (int h, int w = 0);
 
   int Height() const { return height; }
-  int Width() const { return width; }
+  int Width() const {return width; }
 
   double & operator() (int i, int j) { return data[i*width+j]; }
   double operator() (int i, int j) const { return data[i*width+j]; }
@@ -97,7 +98,7 @@ public:
 	    sum = 0;
 	    sp = &v.Get(1);
 	    
-	    for (INDEX j = 1; j <= width; j++)
+	    for (int j = 1; j <= width; j++)
 	      {
 		//        sum += Get(i,j) * v.Get(j);
 		sum += *mp * *sp;
@@ -142,15 +143,15 @@ public:
   ///
   void SolveDestroy (const Vector & b, Vector & x);
   ///
-  const double & Get(INDEX i, INDEX j) const { return data[(i-1)*width+j-1]; }
+  const double & Get(int i, int j) const { return data[(i-1)*width+j-1]; }
   ///
-  const double & Get(INDEX i) const { return data[i-1]; }
+  const double & Get(int i) const { return data[i-1]; }
   ///
-  void Set(INDEX i, INDEX j, double v) { data[(i-1)*width+j-1] = v; }
+  void Set(int i, int j, double v) { data[(i-1)*width+j-1] = v; }
   ///
-  double & Elem(INDEX i, INDEX j) { return data[(i-1)*width+j-1]; }
+  double & Elem(int i, int j) { return data[(i-1)*width+j-1]; }
   ///
-  const double & ConstElem(INDEX i, INDEX j) const { return data[(i-1)*width+j-1]; }
+  const double & ConstElem(int i, int j) const { return data[(i-1)*width+j-1]; }
 };
 
 
@@ -241,6 +242,15 @@ public:
   { return data[i*WIDTH+j]; }
 
 
+  MatrixFixWidth & operator*= (double v)
+  {
+    if (data)
+      for (int i = 0; i < height*WIDTH; i++)
+        data[i] *= v;
+    return *this;
+  }
+
+
 
   const double & Get(int i, int j) const { return data[(i-1)*WIDTH+j-1]; }
   ///
@@ -254,7 +264,21 @@ public:
 };
 
 
+template <int WIDTH>
+extern ostream & operator<< (ostream & ost, const MatrixFixWidth<WIDTH> & m)
+{
+  for (int i = 0; i < m.Height(); i++)
+    {
+      for (int j = 0; j < m.Width(); j++)
+	ost << m.Get(i+1,j+1) << " ";
+      ost << endl;
+    }
+  return ost;
+};
 
+
+
+extern void CalcInverse (const DenseMatrix & m1, DenseMatrix & m2);
 
 
 #endif

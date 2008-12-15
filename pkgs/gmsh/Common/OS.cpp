@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <time.h>
+#include <math.h>
 
 #if !defined(WIN32) || defined(__CYGWIN__)
 #include <unistd.h>
@@ -31,7 +32,7 @@
 #define RUSAGE_CHILDREN -1
 #endif
 
-#include "Message.h"
+#include "GmshMessage.h"
 
 double GetTimeInSeconds()
 {
@@ -109,6 +110,13 @@ int GetProcessId()
 #endif
 }
 
+std::string GetHostName()
+{
+  char host[256];
+  gethostname(host, sizeof(host));
+  return std::string(host);
+}
+
 int UnlinkFile(const char *filename)
 {
 #if !defined(WIN32) || defined(__CYGWIN__)
@@ -164,3 +172,17 @@ int SystemCall(const char *command)
   return system(command);
 #endif
 }
+
+//HACK: allow the use of mixed debug/non-debug code with MSVC
+#if (defined (_MSC_VER) && defined (_DEBUG))
+extern "C" {
+   _CRTIMP void __cdecl _invalid_parameter_noinfo(void) {  }
+}
+#endif
+
+//HACK: fix undefined hypot with MSVC
+#if defined (_MSC_VER)
+extern "C" {
+  double hypot(double x, double y){ return _hypot(x, y); }
+}
+#endif

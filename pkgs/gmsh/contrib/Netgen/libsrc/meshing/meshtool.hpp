@@ -57,7 +57,7 @@ extern double CalcTetBadnessGrad (const Point3d & p1,
 				const Point3d & p3, 
 				const Point3d & p4, 
 				double h, int pi,
-				Vec3d & grad);
+				Vec<3> & grad);
 
 
 /** Calculates volume of an element.
@@ -79,5 +79,5 @@ extern int CheckSurfaceMesh2 (const Mesh & mesh);
 ///
 extern int CheckMesh3D (const Mesh & mesh);
 ///
-extern void RemoveProblem (Mesh & mesh);
+extern void RemoveProblem (Mesh & mesh, int domainnr);
 #endif

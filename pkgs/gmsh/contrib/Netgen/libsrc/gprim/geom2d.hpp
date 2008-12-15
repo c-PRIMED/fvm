@@ -162,12 +162,25 @@ public:
     Points counter-clock-wise ?
     Are the points (p1, p2, p3) counter-clock-wise ?
     */
-  friend inline int CCW (const Point2d & p1, const Point2d & p2, const Point2d & p3)
+  friend inline bool CCW (const Point2d & p1, const Point2d & p2, const Point2d & p3)
     {
       //      return Cross (p2 - p1, p3 - p2) > 0;
       return
 	(p2.px - p1.px) * (p3.py - p2.py) - 
 	(p2.py - p1.py) * (p3.px - p2.px) > 0;
+    }  /**
+    Points counter-clock-wise ?
+    Are the points (p1, p2, p3) counter-clock-wise ?
+    */
+  friend inline bool CCW (const Point2d & p1, const Point2d & p2, const Point2d & p3, double eps)
+    {
+      //      return Cross (p2 - p1, p3 - p2) > 0;
+      double ax = p2.px - p1.px;
+      double ay = p2.py - p1.py;
+      double bx = p3.px - p2.px;
+      double by = p3.py - p2.py;
+
+      return ax*by - ay*bx > eps*eps*max2(ax*ax+ay*ay,bx*bx+by*by);
     }
 
   ///

@@ -2,10 +2,31 @@
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
+//
+// Contributor(s):
+//   Koen Hillewaert
+//
 
 #include "FunctionSpace.h"
 #include "GmshDefines.h"
-#include "Message.h"
+#include "GmshMessage.h"
+
+Double_Matrix generate1DMonomials(int order)
+{
+  Double_Matrix monomials(order + 1, 1);
+  for (int i = 0; i < order + 1; i++) monomials(i, 0) = i;
+  return monomials;
+}
+
+Double_Matrix generate1DPoints(int order)
+{
+  Double_Matrix line(order + 1, 1);
+  line(0, 0) = -1.;
+  line(1, 0) =  1.;
+  double dd = 2. / order;
+  for (int i = 2; i < order+1; i++) line(i, 0) = -1. + dd * (i - 1);
+  return line;
+}
 
 Double_Matrix generatePascalTriangle(int order)
 {
@@ -93,14 +114,7 @@ Double_Matrix generatePascalSerendipityTetrahedron(int order)
     4 * std::max(0, (order - 2) * (order - 1) / 2);
   Double_Matrix monomials(nbMonomials, 3);
 
-  // order 0
-  
   monomials.set_all(0);
- 
-  monomials(0, 0) = 0;
-  monomials(0, 1) = 0;
-  monomials(0, 2) = 0;
-
   int index = 1;
   for (int p = 1; p < order; p++) {
     for (int i = 0; i < 3; i++) {
@@ -143,29 +157,34 @@ Double_Matrix generatePascalTetrahedron(int order)
 int nbdoftriangle(int order) { return (order + 1) * (order + 2) / 2; }
 int nbdoftriangleserendip(int order) { return 3 * order; }
 
-void nodepositionface0(int order, double *u,  double *v,  double *w)
+//KH : caveat : node coordinates are not yet coherent with node numbering associated
+//              to numbering of principal vertices of face !!!!
+
+// uv surface - orientation v0-v2-v1
+void nodepositionface0(int order, double *u, double *v, double *w)
 {
   int ndofT = nbdoftriangle(order);
-  if (order == 0) { u[0] = 0.; v[0] = 0.; return; }
+  if (order == 0) { u[0] = 0.; v[0] = 0.; w[0] = 0.; return; }
   
   u[0]= 0.;    v[0]= 0.;    w[0] = 0.;
-  u[1]= order; v[1]= 0;     w[1] = 0.;
-  u[2]= 0.;    v[2]= order; w[2] = 0.;
+  u[1]= 0.;    v[1]= order; w[1] = 0.;
+  u[2]= order; v[2]= 0.;    w[2] = 0.;
 
   // edges
   for (int k = 0; k < (order - 1); k++){
-    u[3 + k] = k + 1; 
-    v[3 + k] =0.; 
+    u[3 + k] = 0.; 
+    v[3 + k] = k + 1; 
     w[3 + k] = 0.;
 
-    u[3 + order - 1 + k] = order - 1 - k ; 
-    v[3 + order - 1 + k] = k + 1;
+    u[3 + order - 1 + k] = k + 1;
+    v[3 + order - 1 + k] = order - 1 - k ; 
     w[3 + order - 1 + k] = 0.;
 
-    u[3 + 2 * (order - 1) + k] = 0.;
-    v[3 + 2 * (order - 1) + k] = order - 1 - k;
+    u[3 + 2 * (order - 1) + k] = order - 1 - k;
+    v[3 + 2 * (order - 1) + k] = 0.;
     w[3 + 2 * (order - 1) + k] = 0.;
   }
+  
   if (order > 2){
     int nbdoftemp = nbdoftriangle(order - 3);
     nodepositionface0(order - 3, &u[3 + 3 * (order - 1)], &v[3 + 3 * (order - 1)], 
@@ -183,10 +202,11 @@ void nodepositionface0(int order, double *u,  double *v,  double *w)
   }
 }
 
-void nodepositionface1(int order,  double *u,  double *v,  double *w)
+// uw surface - orientation v0-v1-v3
+void nodepositionface1(int order, double *u, double *v, double *w)
 {
    int ndofT = nbdoftriangle(order);
-   if (order == 0) { u[0] = 0.; v[0] = 0.; return; }
+   if (order == 0) { u[0] = 0.; v[0] = 0.; w[0] = 0.; return; }
    
    u[0]= 0.;    v[0]= 0.;  w[0] = 0.;
    u[1]= order; v[1]= 0;   w[1] = 0.;
@@ -222,34 +242,36 @@ void nodepositionface1(int order,  double *u,  double *v,  double *w)
    }
 }
 
-void nodepositionface2(int order,  double *u,  double *v,  double *w)
+// vw surface - orientation v0-v3-v2
+void nodepositionface2(int order, double *u, double *v, double *w)
 {
    int ndofT = nbdoftriangle(order);
    if (order == 0) { u[0] = 0.; v[0] = 0.; return; }
    
-   u[0]= order; v[0]= 0.;    w[0] = 0.;
-   u[1]= 0.;    v[1]= order; w[1] = 0.;
-   u[2]= 0.;    v[2]= 0.;    w[2] = order;
+   u[0]= 0.; v[0]= 0.;    w[0] = 0.;
+   u[1]= 0.; v[1]= 0.;    w[1] = order;
+   u[2]= 0.; v[2]= order; w[2] = 0.;
    // edges
    for (int k = 0; k < (order - 1); k++){
-     u[3 + k] = order - 1 - k;
-     v[3 + k] = k + 1;
-     w[3 + k] = 0.;
+     
+     u[3 + k] = 0.;
+     v[3 + k] = 0.;
+     w[3 + k] = k + 1;
 
      u[3 + order - 1 + k] = 0.;
-     v[3 + order - 1 + k] = order - 1 - k;
-     w[3 + order - 1 + k] = k + 1; 
+     v[3 + order - 1 + k] = k + 1;
+     w[3 + order - 1 + k] = order - 1 - k;
      
-     u[3 + 2 * (order - 1) + k] = k + 1;
-     v[3 + 2 * (order - 1) + k] = 0.;
-     w[3 + 2 * (order - 1) + k] = order - 1 - k; 
+     u[3 + 2 * (order - 1) + k] = 0.;
+     v[3 + 2 * (order - 1) + k] = order - 1 - k;
+     w[3 + 2 * (order - 1) + k] = 0.;
    }
    if (order > 2){
      int nbdoftemp = nbdoftriangle(order - 3);
      nodepositionface2(order - 3, &u[3 + 3 * (order - 1)], &v[3 + 3 * (order - 1)],
                        &w[3 + 3 * (order - 1)]);
      for (int k = 0; k < nbdoftemp; k++){
-       u[3 + k + 3 * (order - 1)] = u[3 + k + 3 * (order - 1)] * (order - 3) + 1.;
+       u[3 + k + 3 * (order - 1)] = u[3 + k + 3 * (order - 1)] * (order - 3);
        v[3 + k + 3 * (order - 1)] = v[3 + k + 3 * (order - 1)] * (order - 3) + 1.;
        w[3 + k + 3 * (order - 1)] = w[3 + k + 3 * (order - 1)] * (order - 3) + 1.;
      }
@@ -261,34 +283,36 @@ void nodepositionface2(int order,  double *u,  double *v,  double *w)
    }
 }
 
-void nodepositionface3(int order, double *u, double *v,  double *w)
+// uvw surface  - orientation v3-v1-v2
+void nodepositionface3(int order,  double *u,  double *v,  double *w)
 {
    int ndofT = nbdoftriangle(order);
-   if (order == 0) { u[0] = 0.; v[0] = 0.; return; }
+   if (order == 0) { u[0] = 0.; v[0] = 0.; w[0] = 0.; return; }
    
-   u[0]= 0.; v[0]= 0.;    w[0] = 0.;
-   u[1]= 0.; v[1]= order; w[1] = 0.;
-   u[2]= 0.; v[2]= 0.;    w[2] = order;
+   u[0]= 0.;    v[0]= 0.;    w[0] = order;
+   u[1]= order; v[1]= 0.;    w[1] = 0.;
+   u[2]= 0.;    v[2]= order; w[2] = 0.;
    // edges
    for (int k = 0; k < (order - 1); k++){
-     u[3 + k] = 0.;
-     v[3 + k]= k + 1;
-     w[3 + k] = 0.;
 
-     u[3 + order - 1 + k] = 0.;
-     v[3 + order - 1 + k] = order - 1 - k;
-     w[3 + order - 1 + k] = k + 1; 
+     u[3 + k] = k + 1;
+     v[3 + k] = 0.;
+     w[3 + k] = order - 1 - k;
+
+     u[3 + order - 1 + k] = order - 1 - k;
+     v[3 + order - 1 + k] = k + 1;
+     w[3 + order - 1 + k] = 0.;
      
      u[3 + 2 * (order - 1) + k] = 0.;
-     v[3 + 2 * (order - 1) + k] = 0.;
-     w[3 + 2 * (order - 1) + k] = order - 1 - k;
+     v[3 + 2 * (order - 1) + k] = order - 1 - k; 
+     w[3 + 2 * (order - 1) + k] = k + 1;
    }
    if (order > 2){
      int nbdoftemp = nbdoftriangle(order - 3);
      nodepositionface3(order - 3, &u[3 + 3 * (order - 1)], &v[3 + 3 * (order - 1)],
                        &w[3 + 3 * (order - 1)]);
      for (int k = 0; k < nbdoftemp; k++){
-       u[3 + k + 3 * (order - 1)] = u[3 + k + 3 * (order - 1)] * (order - 3);
+       u[3 + k + 3 * (order - 1)] = u[3 + k + 3 * (order - 1)] * (order - 3) + 1.;
        v[3 + k + 3 * (order - 1)] = v[3 + k + 3 * (order - 1)] * (order - 3) + 1.;
        w[3 + k + 3 * (order - 1)] = w[3 + k + 3 * (order - 1)] * (order - 3) + 1.;
      }
@@ -328,7 +352,8 @@ Double_Matrix gmshGeneratePointsTetrahedron(int order, bool serendip)
     point(3, 1) = 0.;
     point(3, 2) = order;
 
-    // edges e5 and e6 switched in original version
+    // edges e5 and e6 switched in original version, opposite direction
+    // the template has been defined in table edges_tetra and faces_tetra (MElement.h)
     
     if (order > 1) {
       for (int k = 0; k < (order - 1); k++) {
@@ -339,7 +364,7 @@ Double_Matrix gmshGeneratePointsTetrahedron(int order, bool serendip)
         // point(4 + 4 * (order - 1) + k, 0) = order - 1 - k;
         // point(4 + 5 * (order - 1) + k, 0) = 0.;
         point(4 + 4 * (order - 1) + k, 0) = 0.;
-        point(4 + 5 * (order - 1) + k, 0) = order - 1 - k;
+        point(4 + 5 * (order - 1) + k, 0) = k+1;
         
         point(4 + k, 1) = 0.;
         point(4 +      order - 1  + k, 1) = k + 1;
@@ -347,15 +372,15 @@ Double_Matrix gmshGeneratePointsTetrahedron(int order, bool serendip)
         point(4 + 3 * (order - 1) + k, 1) = 0.;
         //         point(4 + 4 * (order - 1) + k, 1) = 0.;
         //         point(4 + 5 * (order - 1) + k, 1) = order - 1 - k;
-        point(4 + 4 * (order - 1) + k, 1) = order - 1 - k;
+        point(4 + 4 * (order - 1) + k, 1) = k+1;
         point(4 + 5 * (order - 1) + k, 1) = 0.;
         
         point(4 + k, 2) = 0.;
         point(4 +      order - 1  + k, 2) = 0.;
         point(4 + 2 * (order - 1) + k, 2) = 0.; 
-        point(4 + 3 * (order - 1) + k, 2) = k + 1;
-        point(4 + 4 * (order - 1) + k, 2) = k + 1;
-        point(4 + 5 * (order - 1) + k, 2) = k + 1; 
+        point(4 + 3 * (order - 1) + k, 2) = order - 1 - k;
+        point(4 + 4 * (order - 1) + k, 2) = order - 1 - k;
+        point(4 + 5 * (order - 1) + k, 2) = order - 1 - k;
       }
       
       if (order > 2) {
@@ -368,6 +393,8 @@ Double_Matrix gmshGeneratePointsTetrahedron(int order, bool serendip)
         
         nodepositionface0(order - 3, u, v, w);
 
+        // u-v plane
+        
         for (int i = 0; i < nbdofface; i++){
           point(ns + i, 0) = u[i] * (order - 3) + 1.;
           point(ns + i, 1) = v[i] * (order - 3) + 1.;
@@ -376,6 +403,8 @@ Double_Matrix gmshGeneratePointsTetrahedron(int order, bool serendip)
         
         ns = ns + nbdofface;
 
+        // u-w plane
+        
         nodepositionface1(order - 3, u, v, w);
         
         for (int i=0; i < nbdofface; i++){
@@ -383,23 +412,27 @@ Double_Matrix gmshGeneratePointsTetrahedron(int order, bool serendip)
           point(ns + i, 1) = v[i] * (order - 3) ;
           point(ns + i, 2) = w[i] * (order - 3) + 1.;
         }
+
+        // v-w plane 
         
         ns = ns + nbdofface;
 
         nodepositionface2(order - 3, u, v, w);
         
         for (int i = 0; i < nbdofface; i++){
-          point(ns + i, 0) = u[i] * (order - 3) + 1.;
+          point(ns + i, 0) = u[i] * (order - 3);
           point(ns + i, 1) = v[i] * (order - 3) + 1.;
           point(ns + i, 2) = w[i] * (order - 3) + 1.;
         }
 
+        // u-v-w plane 
+        
         ns = ns + nbdofface;
 
         nodepositionface3(order - 3, u, v, w);
 
         for (int i = 0; i < nbdofface; i++){
-          point(ns + i, 0) = u[i] * (order - 3);
+          point(ns + i, 0) = u[i] * (order - 3) + 1.;
           point(ns + i, 1) = v[i] * (order - 3) + 1.;
           point(ns + i, 2) = w[i] * (order - 3) + 1.;
         }
@@ -543,12 +576,36 @@ std::map<int, gmshFunctionSpace> gmshFunctionSpaces::fs;
 
 const gmshFunctionSpace &gmshFunctionSpaces::find(int tag) 
 {
-  std::map<int,gmshFunctionSpace>::const_iterator it = fs.find(tag);
+  std::map<int, gmshFunctionSpace>::const_iterator it = fs.find(tag);
   if (it != fs.end()) return it->second;
   
   gmshFunctionSpace F;
   
   switch (tag){
+  case MSH_PNT:
+    F.monomials = generate1DMonomials(0);
+    F.points    = generate1DPoints(0);
+    break;
+  case MSH_LIN_2 :
+    F.monomials = generate1DMonomials(1);
+    F.points    = generate1DPoints(1);
+    break;
+  case MSH_LIN_3 :
+    F.monomials = generate1DMonomials(2);
+    F.points    = generate1DPoints(2);
+    break;
+  case MSH_LIN_4:
+    F.monomials = generate1DMonomials(3);
+    F.points    = generate1DPoints(3);
+    break;
+  case MSH_LIN_5:
+    F.monomials = generate1DMonomials(4);
+    F.points    = generate1DPoints(4);
+    break;
+  case MSH_LIN_6:
+    F.monomials = generate1DMonomials(5);
+    F.points    = generate1DPoints(5);
+    break;  
   case MSH_TRI_3 :
     F.monomials = generatePascalTriangle(1);
     F.points =    gmshGeneratePointsTriangle(1, false);
@@ -618,4 +675,28 @@ const gmshFunctionSpace &gmshFunctionSpaces::find(int tag)
   F.coefficients = generateLagrangeMonomialCoefficients(F.monomials, F.points);
   fs.insert(std::make_pair(tag, F));
   return fs[tag];
+}
+
+std::map<std::pair<int,int>, Double_Matrix> gmshFunctionSpaces::injector;
+
+const Double_Matrix &gmshFunctionSpaces::findInjector(int tag1,int tag2)
+{
+  std::pair<int,int> key(tag1,tag2);
+  std::map<std::pair<int,int>,Double_Matrix>::const_iterator it = injector.find(key);
+  if (it != injector.end()) return it->second;
+
+  const gmshFunctionSpace& fs1 = find(tag1);
+  const gmshFunctionSpace& fs2 = find(tag2);
+
+  Double_Matrix inj(fs1.points.size1(),fs2.points.size1());
+  
+  double sf[256];
+  
+  for (int i=0;i<fs1.points.size1();i++) {
+    fs2.f(fs1.points(i,0),fs1.points(i,1),fs1.points(i,2),sf);
+    for (int j=0;j<fs2.points.size1();j++) inj(i,j) = sf[j];
+  }
+
+  injector.insert(std::make_pair(key,inj));
+  return injector[key];
 }

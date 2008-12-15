@@ -4,7 +4,7 @@
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <stdlib.h>
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Numeric.h"
 #include "Context.h"
 #include "OS.h"
@@ -24,6 +24,108 @@
 #endif
 
 extern Context_T CTX;
+
+static MVertex* isEquivalentTo(std::multimap<MVertex*, MVertex*> &m, MVertex *v)
+{
+  std::multimap<MVertex*, MVertex*>::iterator it = m.lower_bound(v);
+  std::multimap<MVertex*, MVertex*>::iterator ite = m.upper_bound(v);
+  if (it == ite) return v;
+  MVertex *res = it->second; ++it;
+  while (it !=ite){
+    res = std::min(res,it->second); ++it;
+  }
+  if (res < v) return isEquivalentTo(m, res);
+  return res;
+}
+
+static void buildASetOfEquivalentMeshVertices(GFace *gf, 
+					      std::multimap<MVertex*, MVertex *> &equivalent,
+					      std::map<GVertex*, MVertex*> &bm)
+{
+  // an edge is degenerated when is length is considered to be
+  // zero. In some cases, a model edge can be considered as too
+  // small an is ignored.
+
+  // for taking that into account, we loop over the edges
+  // and create pairs of MVertices that are considered as
+  // equal.
+
+  std::list<GEdge*> edges = gf->edges();
+  std::list<GEdge*> emb_edges = gf->embeddedEdges();
+  std::list<GEdge*>::iterator it = edges.begin();
+
+  while(it != edges.end()){
+    if((*it)->isMeshDegenerated()){
+      MVertex *va = *((*it)->getBeginVertex()->mesh_vertices.begin());
+      MVertex *vb = *((*it)->getEndVertex()->mesh_vertices.begin());
+      if (va != vb){
+	equivalent.insert(std::make_pair(va, vb));
+	equivalent.insert(std::make_pair(vb, va));
+	bm[(*it)->getBeginVertex()] = va;
+	bm[(*it)->getEndVertex()] = vb;
+	printf("%d equivalent to %d\n", va->getNum(), vb->getNum());
+      }
+    }
+    ++it;
+  }
+
+  it = emb_edges.begin();
+  while(it != emb_edges.end()){
+    if((*it)->isMeshDegenerated()){
+      MVertex *va = *((*it)->getBeginVertex()->mesh_vertices.begin());
+      MVertex *vb = *((*it)->getEndVertex()->mesh_vertices.begin());
+      if (va != vb){
+	equivalent.insert(std::make_pair(va, vb));
+	equivalent.insert(std::make_pair(vb, va));
+	bm[(*it)->getBeginVertex()] = va;
+	bm[(*it)->getEndVertex()] = vb;
+      }
+    }
+    ++it;
+  }
+}
+
+struct geomTresholdVertexEquivalence 
+{
+  // Initial MVertex associated to one given MVertex
+  std::map<GVertex*, MVertex*> backward_map;
+  // initiate the forward and backward maps
+  geomTresholdVertexEquivalence(GModel *g);  
+  // restores the initial state
+  ~geomTresholdVertexEquivalence ();
+};
+
+geomTresholdVertexEquivalence::geomTresholdVertexEquivalence(GModel *g)
+{
+  std::multimap<MVertex*, MVertex*> equivalenceMap;
+  for (GModel::fiter it = g->firstFace(); it != g->lastFace(); ++it)
+    buildASetOfEquivalentMeshVertices(*it, equivalenceMap, backward_map);
+  // build the structure that identifiate geometrically equivalent 
+  // mesh vertices.
+  for (std::map<GVertex*, MVertex*>::iterator it = backward_map.begin(); 
+       it != backward_map.end(); ++it){
+    GVertex *g = it->first;
+    MVertex *v = it->second;
+    MVertex *other = isEquivalentTo(equivalenceMap, v);
+    if (v != other){
+      printf("Finally : %d equivalent to %d\n", v->getNum(), other->getNum());
+      g->mesh_vertices.clear();
+      g->mesh_vertices.push_back(other);
+    }
+  }
+}
+
+geomTresholdVertexEquivalence::~geomTresholdVertexEquivalence()
+{
+  // restore the initial data
+  for (std::map<GVertex*, MVertex*>::iterator it = backward_map.begin();
+       it != backward_map.end() ; ++it){
+    GVertex *g = it->first;
+    MVertex *v = it->second;
+    g->mesh_vertices.clear();
+    g->mesh_vertices.push_back(v);
+  }
+}
 
 template<class T>
 static void GetQualityMeasure(std::vector<T*> &ele, 
@@ -173,14 +275,32 @@ static bool TooManyElements(GModel *m, int dim)
   // list)
   double sumAllLc = 0.;
   for(GModel::viter it = m->firstVertex(); it != m->lastVertex(); ++it)
-    sumAllLc += (*it)->prescribedMeshSizeAtVertex();
+    sumAllLc += (*it)->prescribedMeshSizeAtVertex() * CTX.mesh.lc_factor;
   sumAllLc /= (double)m->getNumVertices();
   if(!sumAllLc || pow(CTX.lc / sumAllLc, dim) > 1.e10) 
     return !Msg::GetBinaryAnswer
-      ("Your choice of characteristic lengths will likely produce\n"
-       "a very large mesh. Do you really want to continue?\n\n"
-       "(To disable this warning in the future, select `Enable\n"
-       "expert mode' in the option dialog.)",
+      ("Your choice of characteristic lengths will likely produce a very\n"
+       "large mesh. Do you really want to continue?\n\n"
+       "(To disable this warning in the future, select `Enable expert mode'\n"
+       "in the option dialog.)",
+       "Continue", "Cancel");
+  return false;
+}
+
+static bool CancelDelaunayHybrid(GModel *m)
+{
+  if(CTX.expert_mode) return false;
+  int n = 0;
+  for(GModel::riter it = m->firstRegion(); it != m->lastRegion(); ++it)
+    n += (*it)->getNumMeshElements();
+  if(n)
+    return !Msg::GetBinaryAnswer
+      ("You are trying to generate a mixed structured/unstructured grid using\n"
+       "the 3D Delaunay algorithm. This algorithm cannot garantee that the\n"
+       "final mesh will be conforming. You should probably use the Frontal\n"
+       "Netgen algorithm instead. Do you really want to continue?\n\n"
+       "(To disable this warning in the future, select `Enable expert mode'\n"
+       "in the option dialog.)",
        "Continue", "Cancel");
   return false;
 }
@@ -196,7 +316,7 @@ static void Mesh1D(GModel *m)
   double t2 = Cpu();
   CTX.mesh_timer[0] = t2 - t1;
   Msg::Info("Mesh 1D complete (%g s)", CTX.mesh_timer[0]);
-  Msg::StatusBar(1, true, "Mesh");
+  Msg::StatusBar(1, false, "Mesh");
 }
 
 static void PrintMesh2dStatistics(GModel *m)
@@ -264,6 +384,9 @@ static void Mesh2D(GModel *m)
   Msg::StatusBar(1, true, "Meshing 2D...");
   double t1 = Cpu();
 
+  // skip short mesh edges
+  geomTresholdVertexEquivalence inst (m);
+
   // boundary layers are special: their generation (including vertices
   // and curve meshes) is global as it depends on a smooth normal
   // field generated from the surface mesh of the source surfaces
@@ -289,13 +412,13 @@ static void Mesh2D(GModel *m)
   double t2 = Cpu();
   CTX.mesh_timer[1] = t2 - t1;
   Msg::Info("Mesh 2D complete (%g s)", CTX.mesh_timer[1]);
-  Msg::StatusBar(1, true, "Mesh");
+  Msg::StatusBar(1, false, "Mesh");
 
   PrintMesh2dStatistics(m);
 }
 
 static void FindConnectedRegions(std::vector<GRegion*> &delaunay, 
-                          std::vector<std::vector<GRegion*> > &connected)
+				 std::vector<std::vector<GRegion*> > &connected)
 {
   // FIXME: need to split region vector into connected components here!
   connected.push_back(delaunay);
@@ -318,6 +441,9 @@ static void Mesh3D(GModel *m)
   std::vector<GRegion*> delaunay;
   std::for_each(m->firstRegion(), m->lastRegion(), meshGRegion(delaunay));
 
+  // warn if attempting to use Delaunay for mixed meshes
+  if(delaunay.size() && CancelDelaunayHybrid(m)) return;
+
   // and finally mesh the delaunay regions (again, this is global; but
   // we mesh each connected part separately for performance and mesh
   // quality reasons)
@@ -329,7 +455,7 @@ static void Mesh3D(GModel *m)
   double t2 = Cpu();
   CTX.mesh_timer[2] = t2 - t1;
   Msg::Info("Mesh 3D complete (%g s)", CTX.mesh_timer[2]);
-  Msg::StatusBar(1, true, "Mesh");
+  Msg::StatusBar(1, false, "Mesh");
 }
 
 void OptimizeMeshNetgen(GModel *m)
@@ -341,7 +467,7 @@ void OptimizeMeshNetgen(GModel *m)
 
   double t2 = Cpu();
   Msg::Info("Mesh 3D optimization with Netgen complete (%g s)", t2 - t1);
-  Msg::StatusBar(1, true, "Mesh");
+  Msg::StatusBar(1, false, "Mesh");
 }
 
 void OptimizeMesh(GModel *m)
@@ -353,12 +479,12 @@ void OptimizeMesh(GModel *m)
 
   double t2 = Cpu();
   Msg::Info("Mesh 3D optimization complete (%g s)", t2 - t1);
-  Msg::StatusBar(1, true, "Mesh");
+  Msg::StatusBar(1, false, "Mesh");
 }
 
 void AdaptMesh(GModel *m)
 {
-  Msg::StatusBar(1, true, "Adapting the 3D Mesh...");
+  Msg::StatusBar(1, true, "Adapting 3D Mesh...");
   double t1 = Cpu();
 
   if(CTX.threads_lock) {
@@ -381,7 +507,7 @@ void AdaptMesh(GModel *m)
 
   double t2 = Cpu();
   Msg::Info("Mesh Adaptation complete (%g s)", t2 - t1);
-  Msg::StatusBar(1, true, "Mesh");
+  Msg::StatusBar(1, false, "Mesh");
 }
 
 void GenerateMesh(GModel *m, int ask)

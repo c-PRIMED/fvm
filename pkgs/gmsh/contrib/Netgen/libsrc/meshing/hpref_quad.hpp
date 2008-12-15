@@ -1,7 +1,3 @@
-
-
-
-
 // HP_QUAD
 int refquad_splitedges[][3] =
 {
@@ -907,12 +903,7 @@ HPRef_Struct refquad_1e_4v =
   refquad_1e_4v_newels
 };
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
-
-
 
 // HP_QUAD_2E
 int refquad_2e_splitedges[][3] =
@@ -928,7 +919,10 @@ int refquad_2e_splitfaces[][4] =
   { 1, 2, 4, 9 },
   { 0, 0, 0, 0 },
 };
-HPREF_ELEMENT_TYPE refquad_2e_newelstypes[] =
+
+
+/* 
+   HPREF_ELEMENT_TYPE refquad_2e_newelstypes[] =
 {
   HP_TRIG_SINGEDGECORNER1,
   HP_TRIG_SINGEDGECORNER2,
@@ -945,6 +939,25 @@ int refquad_2e_newels[][8] =
   { 4, 6, 9, 8 },
   { 9, 7, 3, 8 },
 };
+*/ 
+
+// SZ refine to 4 quads 
+HPREF_ELEMENT_TYPE refquad_2e_newelstypes[] =
+{
+  HP_QUAD_2E,
+  HP_QUAD_SINGEDGE,
+  HP_QUAD_SINGEDGE,
+  HP_QUAD,
+  HP_NONE,
+};
+int refquad_2e_newels[][8] =
+{
+  { 1, 5, 9, 6 },
+  { 5, 2, 7, 9 },
+  { 4, 6, 9, 8 },
+  { 9, 7, 3, 8 },
+};
+
 HPRef_Struct refquad_2e =
 {
   HP_QUAD,
@@ -954,11 +967,6 @@ HPRef_Struct refquad_2e =
   refquad_2e_newelstypes, 
   refquad_2e_newels
 };
-
-
-
-
-
 
 
 // HP_QUAD_2E_1VA
@@ -976,6 +984,8 @@ int refquad_2e_1va_splitfaces[][4] =
   { 1, 2, 4, 9 },
   { 0, 0, 0, 0 },
 };
+
+/* 
 HPREF_ELEMENT_TYPE refquad_2e_1va_newelstypes[] =
 {
   HP_TRIG_SINGEDGECORNER1,
@@ -995,6 +1005,26 @@ int refquad_2e_1va_newels[][8] =
   { 9, 7, 3, 8 },
   { 10, 2, 7 },
 };
+*/ 
+// SZ Quad_2e refinement 
+HPREF_ELEMENT_TYPE refquad_2e_1va_newelstypes[] =
+{
+  HP_QUAD_2E,
+  HP_QUAD_SINGEDGE,
+  HP_QUAD_SINGEDGE,
+  HP_QUAD,
+  HP_TRIG_SINGEDGECORNER2,
+  HP_NONE,
+};
+int refquad_2e_1va_newels[][8] =
+{
+  { 1, 5, 9, 6 },
+  { 5, 10, 7, 9 },
+  { 4, 6, 9, 8 },
+  { 9, 7, 3, 8 },
+  { 10, 2, 7 },
+};
+
 HPRef_Struct refquad_2e_1va =
 {
   HP_QUAD,
@@ -1004,9 +1034,6 @@ HPRef_Struct refquad_2e_1va =
   refquad_2e_1va_newelstypes, 
   refquad_2e_1va_newels
 };
-
-
-
 
 
 
@@ -1028,8 +1055,10 @@ int refquad_2e_1vb_splitfaces[][4] =
 };
 HPREF_ELEMENT_TYPE refquad_2e_1vb_newelstypes[] =
 {
-  HP_TRIG_SINGEDGECORNER1,
-  HP_TRIG_SINGEDGECORNER2,
+  // HP_TRIG_SINGEDGECORNER1,
+  // HP_TRIG_SINGEDGECORNER2,
+  // SZ QUAD_2E 
+  HP_QUAD_2E,
   HP_QUAD_SINGEDGE,
   HP_QUAD_SINGEDGE,
   HP_TRIG,
@@ -1039,8 +1068,9 @@ HPREF_ELEMENT_TYPE refquad_2e_1vb_newelstypes[] =
 };
 int refquad_2e_1vb_newels[][8] =
 {
-  { 1, 5, 9 },
-  { 6, 1, 9 },
+  //{ 1, 5, 9 },
+  //{ 6, 1, 9 },
+  { 1, 5, 9, 6 },
   { 5, 2, 7, 9 },
   { 4, 6, 9, 8 },
   { 7, 8, 9 },
@@ -1055,11 +1085,8 @@ HPRef_Struct refquad_2e_1vb =
   0,
   refquad_2e_1vb_newelstypes, 
   refquad_2e_1vb_newels
-};
-
-
-
-
+}
+;
 
 // HP_QUAD_2E_1VC
 int refquad_2e_1vc_splitedges[][3] =
@@ -1078,8 +1105,9 @@ int refquad_2e_1vc_splitfaces[][4] =
 };
 HPREF_ELEMENT_TYPE refquad_2e_1vc_newelstypes[] =
 {
-  HP_TRIG_SINGEDGECORNER1,
-  HP_TRIG_SINGEDGECORNER2,
+  //  HP_TRIG_SINGEDGECORNER1,
+  // HP_TRIG_SINGEDGECORNER2,
+  HP_QUAD_2E, 
   HP_TRIG_SINGEDGECORNER1,
   HP_QUAD_SINGEDGE,
   HP_QUAD_SINGEDGE,
@@ -1088,8 +1116,9 @@ HPREF_ELEMENT_TYPE refquad_2e_1vc_newelstypes[] =
 };
 int refquad_2e_1vc_newels[][8] =
 {
-  { 1, 5, 10 },
-  { 6, 1, 10 },
+  //{ 1, 5, 10 },
+  //{ 6, 1, 10 },
+  { 1, 5, 10, 6}, 
   { 4, 8, 9 },
   { 5, 2, 7, 10 },
   { 8, 6, 10, 9 },
@@ -1105,16 +1134,7 @@ HPRef_Struct refquad_2e_1vc =
   refquad_2e_1vc_newels
 };
 
-
-
-
-
-
-
-
-
-
-// HP_QUAD_2E
+// HP_QUAD_2E_2VA
 int refquad_2e_2va_splitedges[][3] =
 {
   { 1, 2, 5 },
@@ -1133,8 +1153,9 @@ int refquad_2e_2va_splitfaces[][4] =
 };
 HPREF_ELEMENT_TYPE refquad_2e_2va_newelstypes[] =
 {
-  HP_TRIG_SINGEDGECORNER1,
-  HP_TRIG_SINGEDGECORNER2,
+  //HP_TRIG_SINGEDGECORNER1,
+  //HP_TRIG_SINGEDGECORNER2,
+  HP_QUAD_2E,
   HP_QUAD_SINGEDGE,
   HP_QUAD_SINGEDGE,
   HP_TRIG,
@@ -1145,8 +1166,9 @@ HPREF_ELEMENT_TYPE refquad_2e_2va_newelstypes[] =
 };
 int refquad_2e_2va_newels[][8] =
 {
-  { 1, 5, 9 },
-  { 6, 1, 9 },
+  // { 1, 5, 9 },
+  // { 6, 1, 9 },
+  { 1, 5, 9, 6 }, 
   { 5, 12, 7, 9 },
   { 4, 6, 9, 8 },
   { 7, 8, 9 },
@@ -1187,8 +1209,9 @@ int refquad_2e_2vb_splitfaces[][4] =
 };
 HPREF_ELEMENT_TYPE refquad_2e_2vb_newelstypes[] =
 {
-  HP_TRIG_SINGEDGECORNER1,
-  HP_TRIG_SINGEDGECORNER2,
+  // HP_TRIG_SINGEDGECORNER1,
+  // HP_TRIG_SINGEDGECORNER2,
+  HP_QUAD_2E, 
   HP_TRIG_SINGEDGECORNER1,
   HP_TRIG_SINGEDGECORNER2,
   HP_QUAD_SINGEDGE,
@@ -1198,8 +1221,9 @@ HPREF_ELEMENT_TYPE refquad_2e_2vb_newelstypes[] =
 };
 int refquad_2e_2vb_newels[][8] =
 {
-  { 1, 5, 11 },
-  { 6, 1, 11 },
+  //{ 1, 5, 11 },
+  //{ 6, 1, 11 },
+  { 1, 5, 11, 6 }, 
   { 4, 9, 10 },
   { 7, 2, 8 },
   { 5, 7, 8, 11 },
@@ -1216,16 +1240,7 @@ HPRef_Struct refquad_2e_2vb =
   refquad_2e_2vb_newels
 };
 
-
-
-
-
-
-
-
-
-
-// HP_QUAD_2E
+// HP_QUAD_2E_2VC
 int refquad_2e_2vc_splitedges[][3] =
 {
   { 1, 2, 5 },
@@ -1244,14 +1259,15 @@ int refquad_2e_2vc_splitfaces[][4] =
 };
 HPREF_ELEMENT_TYPE refquad_2e_2vc_newelstypes[] =
 {
-  HP_TRIG_SINGEDGECORNER1,
-  HP_TRIG_SINGEDGECORNER2,
+  // HP_TRIG_SINGEDGECORNER1,
+  // HP_TRIG_SINGEDGECORNER2,
+  HP_QUAD_2E, 
   HP_QUAD_SINGEDGE,
   HP_QUAD_SINGEDGE,
   HP_TRIG,
   HP_QUAD,
   HP_TRIG_SINGCORNER,
-  HP_TRIG_SINGEDGECORNER2,
+  HP_TRIG_SINGEDGECORNER1, //SZ (vorher: SINGEDGECORNER2) 
   HP_NONE,
 };
 int refquad_2e_2vc_newels[][8] =
@@ -1275,20 +1291,7 @@ HPRef_Struct refquad_2e_2vc =
   refquad_2e_2vc_newels
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-// HP_QUAD_2E
+// HP_QUAD_2E_3V  
 int refquad_2e_3v_splitedges[][3] =
 {
   { 1, 2, 5 },
@@ -1308,8 +1311,9 @@ int refquad_2e_3v_splitfaces[][4] =
 };
 HPREF_ELEMENT_TYPE refquad_2e_3v_newelstypes[] =
 {
-  HP_TRIG_SINGEDGECORNER1,
-  HP_TRIG_SINGEDGECORNER2,
+  // HP_TRIG_SINGEDGECORNER1,
+  // HP_TRIG_SINGEDGECORNER2,
+  HP_QUAD_2E, 
   HP_QUAD_SINGEDGE,
   HP_QUAD_SINGEDGE,
   HP_TRIG,
@@ -1321,8 +1325,9 @@ HPREF_ELEMENT_TYPE refquad_2e_3v_newelstypes[] =
 };
 int refquad_2e_3v_newels[][8] =
 {
-  { 1, 5, 9 },
-  { 6, 1, 9 },
+  //{ 1, 5, 9 },
+  //{ 6, 1, 9 },
+  { 1, 5, 9, 6 }, 
   { 5, 12, 7, 9 },
   { 13, 6, 9, 8 },
   { 7, 8, 9 },
@@ -1340,15 +1345,6 @@ HPRef_Struct refquad_2e_3v =
   refquad_2e_3v_newelstypes, 
   refquad_2e_3v_newels
 };
-
-
-
-
-
-
-
-
-
 
 // HP_QUAD_2EB_0V
 int refquad_2eb_0v_splitedges[][3] =
@@ -1385,12 +1381,6 @@ HPRef_Struct refquad_2eb_0v =
   refquad_2eb_0v_newelstypes, 
   refquad_2eb_0v_newels
 };
-
-
-
-
-
-
 
 
 // HP_QUAD_2EB_1VA
@@ -1432,9 +1422,6 @@ HPRef_Struct refquad_2eb_1va =
   refquad_2eb_1va_newels
 };
 
-
-
-
 // HP_QUAD_2EB_1VB
 int refquad_2eb_1vb_splitedges[][3] =
 {
@@ -1473,11 +1460,6 @@ HPRef_Struct refquad_2eb_1vb =
   refquad_2eb_1vb_newelstypes, 
   refquad_2eb_1vb_newels
 };
-
-
-
-
-
 
 // HP_QUAD_2EB_2VA
 int refquad_2eb_2va_splitedges[][3] =
@@ -1600,8 +1582,6 @@ HPRef_Struct refquad_2eb_2vc =
 };
 
 
-
-
 // HP_QUAD_2EB_2VD
 int refquad_2eb_2vd_splitedges[][3] =
 {
@@ -1638,11 +1618,6 @@ HPRef_Struct refquad_2eb_2vd =
   refquad_2eb_2vd_newelstypes, 
   refquad_2eb_2vd_newels
 };
-
-
-
-
-
 
 
 // HP_QUAD_2EB_3VA
@@ -1686,9 +1661,6 @@ HPRef_Struct refquad_2eb_3va =
 };
 
 
-
-
-
 // HP_QUAD_2EB_3VB
 int refquad_2eb_3vb_splitedges[][3] =
 {
@@ -1728,10 +1700,6 @@ HPRef_Struct refquad_2eb_3vb =
   refquad_2eb_3vb_newelstypes, 
   refquad_2eb_3vb_newels
 };
-
-
-
-
 
 
 // HP_QUAD_2EB_4V
@@ -1781,10 +1749,6 @@ HPRef_Struct refquad_2eb_4v =
   refquad_2eb_4v_newelstypes, 
   refquad_2eb_4v_newels
 };
-
-
-
-
 
 
 
@@ -1913,15 +1877,6 @@ HPRef_Struct refquad_3e_3va =
   refquad_3e_3va_newelstypes, 
   refquad_3e_3va_newels
 };
-
-
-
-
-
-
-
-
-
 
 // HP_QUAD_3E_3VB
 int refquad_3e_3vb_splitedges[][3] =
@@ -2125,5 +2080,3 @@ HPRef_Struct refquad_4e =
   refquad_4e_newelstypes, 
   refquad_4e_newels
 };
-
-

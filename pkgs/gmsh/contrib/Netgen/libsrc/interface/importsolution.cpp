@@ -22,7 +22,7 @@ void ImportSolution (const char * filename)
 {
   ifstream inf (filename);
   char buf[100], name[1000];
-  int i, j, size, comps, order;
+  int i, size, comps, order;
   bool iscomplex;
   const char * type;
   Flags flags;
@@ -81,10 +81,18 @@ void ImportSolution (const char * filename)
 	  soldata.order = order;
 	  soldata.iscomplex = iscomplex;
 	  soldata.soltype = NG_SOLUTION_NODAL;
+          soldata.draw_surface = 1;
+          soldata.draw_volume = 1;
 	  if (strcmp (type, "element") == 0)
-	    soldata.soltype = NG_SOLUTION_ELEMENT;
+            {
+              soldata.soltype = NG_SOLUTION_ELEMENT;
+              soldata.draw_surface = 0;
+            }
 	  if (strcmp (type, "surfaceelement") == 0)
-	    soldata.soltype = NG_SOLUTION_SURFACE_ELEMENT;
+            {
+              soldata.soltype = NG_SOLUTION_SURFACE_ELEMENT;
+              soldata.draw_volume = 0;
+            }
 	  if (strcmp (type, "noncontinuous") == 0)
 	    soldata.soltype = NG_SOLUTION_NONCONTINUOUS;
 	  if (strcmp (type, "surfacenoncontinuous") == 0)

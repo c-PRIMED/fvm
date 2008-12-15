@@ -3,12 +3,13 @@
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
+#include <string>
 #include <string.h>
 #include <stdlib.h>
 #include "GmshUI.h"
 #include "GmshDefines.h"
 #include "GmshVersion.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "OpenFile.h"
 #include "CommandLine.h"
 #include "Context.h"
@@ -30,47 +31,25 @@
 
 extern Context_T CTX;
 
-char gmsh_progname[]  = "Gmsh, a 3D mesh generator with pre- and post-processing facilities" ;
-char gmsh_copyright[] = "Copyright (C) 1997-2008 Christophe Geuzaine and Jean-Francois Remacle";
-char gmsh_version[]   = "Version        : " ;
-char gmsh_license[]   = "License        : " GMSH_SHORT_LICENSE;
-char gmsh_gui[]       = "GUI toolkit    : " ;
-char gmsh_os[]        = "Build OS       : " GMSH_OS ;
-char gmsh_options[]   = "Build options  : " ;
-char gmsh_date[]      = "Build date     : " GMSH_DATE ;
-char gmsh_host[]      = "Build host     : " GMSH_HOST ;
-char gmsh_packager[]  = "Packager       : " GMSH_PACKAGER ;
-char gmsh_url[]       = "Web site       : http://www.geuz.org/gmsh/" ;
-char gmsh_email[]     = "Mailing list   : gmsh@geuz.org" ;
-
-int Get_GmshMajorVersion(){ return GMSH_MAJOR_VERSION; }
-int Get_GmshMinorVersion(){ return GMSH_MINOR_VERSION; }
-int Get_GmshPatchVersion(){ return GMSH_PATCH_VERSION; }
-const char *Get_GmshExtraVersion(){ return GMSH_EXTRA_VERSION; }
-const char *Get_GmshVersion(){ return GMSH_VERSION; }
-const char *Get_GmshBuildDate(){ return GMSH_DATE; }
-const char *Get_GmshBuildHost(){ return GMSH_HOST; }
-const char *Get_GmshPackager(){ return GMSH_PACKAGER; }
-const char *Get_GmshBuildOS(){ return GMSH_OS; }
-const char *Get_GmshShortLicense(){ return GMSH_SHORT_LICENSE; }
-
 void Print_Usage(const char *name)
 {
   // If you make changes in this routine, please also change the
-  // texinfo documentation (doc/texinfo/command_line.texi) as well as
-  // the man page (doc/gmsh.1)
+  // texinfo documentation (doc/texinfo/command_line.texi) and the man
+  // page (doc/gmsh.1)
   Msg::Direct("Usage: %s [options] [files]", name);
   Msg::Direct("Geometry options:");
   Msg::Direct("  -0                    Output unrolled geometry, then exit");
   Msg::Direct("  -tol float            Set geometrical tolerance");
   Msg::Direct("Mesh options:");
   Msg::Direct("  -1, -2, -3            Perform 1D, 2D or 3D mesh generation, then exit");
+  Msg::Direct("  -refine               Perform uniform mesh refinement, then exit");
   Msg::Direct("  -part                 Partition after batch mesh generation");
   Msg::Direct("  -saveall              Save all elements (discard physical group definitions)");
   Msg::Direct("  -o file               Specify mesh output file name");
   Msg::Direct("  -format string        Set output mesh format (msh, msh1, msh2, unv, vrml, stl, mesh,");
   Msg::Direct("                          bdf, p3d, cgns, med)");
   Msg::Direct("  -bin                  Use binary format when available");  
+  Msg::Direct("  -parametric           Save vertices with their parametric coordinates");  
   Msg::Direct("  -algo string          Select mesh algorithm (de, del2d, frontal, iso, netgen, tetgen)");
   Msg::Direct("  -smooth int           Set number of mesh smoothing steps");
   Msg::Direct("  -optimize[_netgen]    Optimize quality of tetrahedral elements");
@@ -113,53 +92,61 @@ void Print_Usage(const char *name)
   Msg::Direct("  -help                 Show this message");
 }
 
-char *Get_BuildOptions(void)
+int Get_GmshMajorVersion(){ return GMSH_MAJOR_VERSION; }
+int Get_GmshMinorVersion(){ return GMSH_MINOR_VERSION; }
+int Get_GmshPatchVersion(){ return GMSH_PATCH_VERSION; }
+const char *Get_GmshExtraVersion(){ return GMSH_EXTRA_VERSION; }
+const char *Get_GmshVersion(){ return GMSH_VERSION; }
+const char *Get_GmshBuildDate(){ return GMSH_DATE; }
+const char *Get_GmshBuildHost(){ return GMSH_HOST; }
+const char *Get_GmshPackager(){ return GMSH_PACKAGER; }
+const char *Get_GmshBuildOS(){ return GMSH_OS; }
+const char *Get_GmshShortLicense(){ return GMSH_SHORT_LICENSE; }
+std::string Get_GmshBuildOptions()
 {
-  static int first = 1;
-  static char opt[256] = "";
-  
-  if(first){
+  std::string opt;
 #if defined(HAVE_GSL)
-    strcat(opt, "GSL ");
+  opt += "GSL ";
 #endif
 #if defined(HAVE_NETGEN)
-    strcat(opt, "NETGEN ");
+  opt += "NETGEN ";
 #endif
 #if defined(HAVE_TETGEN)
-    strcat(opt, "TETGEN ");
+  opt += "TETGEN ";
 #endif
 #if defined(HAVE_LIBJPEG)
-    strcat(opt, "JPEG ");
+  opt += "JPEG ";
 #endif
 #if defined(HAVE_LIBPNG)
-    strcat(opt, "PNG ");
+  opt += "PNG ";
 #endif
 #if defined(HAVE_LIBZ)
-    strcat(opt, "ZLIB ");
+  opt += "ZLIB ";
 #endif
 #if defined(HAVE_MATH_EVAL)
-    strcat(opt, "MATHEVAL ");
+  opt += "MATHEVAL ";
 #endif
 #if defined(HAVE_METIS)
-    strcat(opt, "METIS ");
+  opt += "METIS ";
 #endif
 #if defined(HAVE_CHACO)
-    strcat(opt, "CHACO ");
+  opt += "CHACO ";
 #endif
 #if defined(HAVE_ANN)
-    strcat(opt, "ANN ");
+  opt += "ANN ";
 #endif
 #if defined(HAVE_CGNS)
-    strcat(opt, "CGNS ");
+  opt += "CGNS ";
 #endif
 #if defined(HAVE_OCC)
-    strcat(opt, "OCC ");
+  opt += "OCC ";
 #endif
 #if defined(HAVE_MED)
-    strcat(opt, "MED ");
+  opt += "MED ";
 #endif
-    first = 0;
-  }
+#if defined(HAVE_GMM)
+  opt += "GMM++ ";
+#endif
   return opt;
 }
 
@@ -185,7 +172,15 @@ void Get_Options(int argc, char *argv[])
 
     if(argv[i][0] == '-') {
 
-      if(!strcmp(argv[i] + 1, "")) {
+      if(!strcmp(argv[i] + 1, "socket")) {
+        i++;        
+        if(argv[i] != NULL)
+          CTX.solver.socket_name = argv[i++];
+        else
+	  Msg::Fatal("Missing string");
+        CTX.batch = -3;
+      }
+      else if(!strcmp(argv[i] + 1, "")) {
         CTX.batch = -2;
         i++;
       }
@@ -209,8 +204,16 @@ void Get_Options(int argc, char *argv[])
         CTX.batch = 4;
         i++;
       }
+      else if(!strcmp(argv[i] + 1, "refine")) {
+        CTX.batch = 5;
+        i++;
+      }
       else if(!strcmp(argv[i] + 1, "part")) {
-        CTX.batchAfterMesh = 1;
+        CTX.batch_after_mesh = 1;
+        i++;
+      }
+      else if(!strcmp(argv[i] + 1, "new")) {
+        CTX.files.push_back("-new");
         i++;
       }
       else if(!strcmp(argv[i] + 1, "pid")) {
@@ -300,7 +303,7 @@ void Get_Options(int argc, char *argv[])
           // convert mesh to latest binary format
           if(GModel::current()->getMeshStatus() > 0){
             CTX.mesh.msh_file_version = 2.0;
-            CTX.mesh.msh_binary = 1;
+            CTX.mesh.binary = 1;
             CreateOutputFile(filename, FORMAT_MSH);
           }
           i++;
@@ -361,6 +364,17 @@ void Get_Options(int argc, char *argv[])
           CTX.mesh.lc_max = atof(argv[i++]);
           if(CTX.mesh.lc_max <= 0.0)
 	    Msg::Fatal("Maximum length size must be > 0");
+        }
+        else
+          Msg::Fatal("Missing number");
+      }
+      else if(!strcmp(argv[i] + 1, "edgelmin")) {
+        i++;
+        if(argv[i] != NULL) {
+          CTX.mesh.tolerance_edge_length = atof(argv[i++]);
+          if( CTX.mesh.tolerance_edge_length <= 0.0)
+	    Msg::Fatal("Tolerance for model edge length must be > 0 (here %g)",
+                       CTX.mesh.tolerance_edge_length);
         }
         else
           Msg::Fatal("Missing number");
@@ -454,6 +468,8 @@ void Get_Options(int argc, char *argv[])
             CTX.mesh.format = FORMAT_P3D;
           else if(!strcmp(argv[i], "cgns"))
             CTX.mesh.format = FORMAT_CGNS;
+          else if(!strcmp(argv[i], "diff"))
+            CTX.mesh.format = FORMAT_DIFF;
           else if(!strcmp(argv[i], "med"))
             CTX.mesh.format = FORMAT_MED;
           else
@@ -465,7 +481,11 @@ void Get_Options(int argc, char *argv[])
       }
       else if(!strcmp(argv[i] + 1, "bin")) {
         i++;
-        CTX.mesh.stl_binary = CTX.mesh.msh_binary = 1;
+        CTX.mesh.binary = 1;
+      }
+      else if(!strcmp(argv[i] + 1, "parametric")) {
+        i++;
+        CTX.mesh.save_parametric = 1;
       }
       else if(!strcmp(argv[i] + 1, "algo")) {
         i++;
@@ -498,26 +518,26 @@ void Get_Options(int argc, char *argv[])
 	Msg::Exit(0);
       }
       else if(!strcmp(argv[i] + 1, "info") || !strcmp(argv[i] + 1, "-info")) {
-        fprintf(stderr, "%s%s\n", gmsh_version, GMSH_VERSION);
+        fprintf(stderr, "Version        : %s\n", GMSH_VERSION);
 #if defined(HAVE_FLTK)
-        fprintf(stderr, "%sFLTK %d.%d.%d\n", gmsh_gui, FL_MAJOR_VERSION,
+        fprintf(stderr, "GUI toolkit    : FLTK %d.%d.%d\n", FL_MAJOR_VERSION,
                 FL_MINOR_VERSION, FL_PATCH_VERSION);
 #else
-        fprintf(stderr, "%snone\n", gmsh_gui);
+        fprintf(stderr, "GUI toolkit    : none\n");
 #endif
-        fprintf(stderr, "%s\n", gmsh_license);
-        fprintf(stderr, "%s\n", gmsh_os);
-        fprintf(stderr, "%s%s\n", gmsh_options, Get_BuildOptions());
-        fprintf(stderr, "%s\n", gmsh_date);
-        fprintf(stderr, "%s\n", gmsh_host);
-        fprintf(stderr, "%s\n", gmsh_packager);
-        fprintf(stderr, "%s\n", gmsh_url);
-        fprintf(stderr, "%s\n", gmsh_email);
+        fprintf(stderr, "License        : %s\n", GMSH_SHORT_LICENSE);
+        fprintf(stderr, "Build OS       : %s\n", GMSH_OS);
+        fprintf(stderr, "Build options  : %s\n", Get_GmshBuildOptions().c_str());
+        fprintf(stderr, "Build date     : %s\n", GMSH_DATE);
+        fprintf(stderr, "Build host     : %s\n", GMSH_HOST);
+        fprintf(stderr, "Packager       : %s\n", GMSH_PACKAGER);
+        fprintf(stderr, "Web site       : http://www.geuz.org/gmsh/\n");
+        fprintf(stderr, "Mailing list   : gmsh@geuz.org\n");
 	Msg::Exit(0);
       }
       else if(!strcmp(argv[i] + 1, "help") || !strcmp(argv[i] + 1, "-help")) {
-        fprintf(stderr, "%s\n", gmsh_progname);
-        fprintf(stderr, "%s\n", gmsh_copyright);
+        fprintf(stderr, "Gmsh, a 3D mesh generator with pre- and post-processing facilities\n");
+        fprintf(stderr, "Copyright (C) 1997-2008 Christophe Geuzaine and Jean-Francois Remacle\n");
         Print_Usage(argv[0]);
 	Msg::Exit(0);
       }

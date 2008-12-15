@@ -559,27 +559,26 @@ BaseVector & Vector :: Set (double scal, const BaseVector & v2)
 
 BaseVector & Vector :: Set2 (double scal , const BaseVector & v2,
       double scal3, const BaseVector & v3)
-  {
+{
   const Vector & hv2 = v2.CastToVector();
   const Vector & hv3 = v3.CastToVector();
 
-
-  if (Length() == hv2.Length())
+  if (Length() == hv2.Length() && Length() == hv3.Length())
     {
-    double * p1 = data;
-    double * p2 = hv2.data;
-    double * p3 = hv3.data;
-
-    for (INDEX i = Length(); i > 0; i--)
-      {
-      (*p1) = scal * (*p2) + scal3 * (*p3);
-      p1++; p2++; p3++;
-      }
+      double * p1 = data;
+      double * p2 = hv2.data;
+      double * p3 = hv3.data;
+      
+      for (INDEX i = Length(); i > 0; i--)
+	{
+	  (*p1) = scal * (*p2) + scal3 * (*p3);
+	  p1++; p2++; p3++;
+	}
     }
   else
     (*myerr) << "Vector::Set: illegal dimension" << endl;
   return *this;
-  }
+}
 
 
 void Vector :: GetPart (int startpos, BaseVector & v2) const

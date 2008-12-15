@@ -8,519 +8,459 @@
 
 namespace netgen
 {
-
-  /*
-AdFront2::FrontPoint2 :: FrontPoint2 ()
-{
-  globalindex = 0;
-  nlinetopoint = 0;
-  frontnr = INT_MAX-10;    // attention: overflow on calculating  INT_MAX + 1
-  mgi = NULL;
-}
-  */
-
-AdFront2::FrontPoint2 :: FrontPoint2 (const Point3d & ap, PointIndex agi,
-				      MultiPointGeomInfo * amgi)
-{
-  p = ap;
-  globalindex = agi;
-  nlinetopoint = 0;
-  frontnr = INT_MAX-10;
-
-  if (amgi)
-    {
-      mgi = new MultiPointGeomInfo (*amgi);
-      for (int i = 1; i <= mgi->GetNPGI(); i++)
-	if (mgi->GetPGI(i).trignum <= 0)
-	  cout << "Add FrontPoint2, illegal geominfo = " << mgi->GetPGI(i).trignum << endl;
-    }
-  else
-    mgi = NULL;
-}
-
-/*
-AdFront2::FrontPoint2 :: ~FrontPoint2 ()
-{
-//  if (mgi) delete mgi;
-}
-*/
-
-
-AdFront2::FrontLine :: FrontLine ()
-{
-  lineclass = 1;
-}
-
-AdFront2::FrontLine :: FrontLine (const INDEX_2 & al)
-{
-  l = al;
-  lineclass = 1;
-}
-
-
-
-
-
-
-AdFront2 :: AdFront2 (const Box3d & aboundingbox)
-  : boundingbox(aboundingbox), 
-    linesearchtree(boundingbox.PMin(), boundingbox.PMax()),
-    cpointsearchtree(boundingbox.PMin(), boundingbox.PMax())
-{
-  nfl = 0;
-  //  allflines = new INDEX_2_HASHTABLE<int> (100000);
-  allflines = 0;
-
-  minval = 0;
-  starti = 1;
-}
-
-AdFront2 :: ~AdFront2 ()
-{
-  delete allflines;
-}
-
-
-void AdFront2 :: PrintOpenSegments (ostream & ost) const
-{
- if (nfl > 0)
-    {
-      int i;
-      ost << nfl << " open front segments left:" << endl;
-      for (i = 1; i <= lines.Size(); i++)
-	if (lines.Get(i).Valid())
-	  ost << GetGlobalIndex (lines.Get(i).L().I1()) << "-"
-	      << GetGlobalIndex (lines.Get(i).L().I2()) << endl;
-	    
-    }
-}
-
-
-void AdFront2 :: GetPoints (ARRAY<Point3d> & apoints) const
-{
-  for (int i = 0; i < points.Size(); i++)
-    apoints.Append (points[i].P());
-}
-
-
-
-
-
-INDEX AdFront2 :: AddPoint (const Point3d & p, PointIndex globind, 
-			    MultiPointGeomInfo * mgi)
-{
-  // inserts at empty position or resizes array
-  int pi;
-
-  if (delpointl.Size() != 0)
-    {
-      pi = delpointl.Last();
-      delpointl.DeleteLast ();
-
-      points.Elem(pi) = FrontPoint2 (p, globind, mgi);
-    }
-  else
-    {
-      pi = points.Append (FrontPoint2 (p, globind, mgi));
-    }
-
-  if (mgi)
-    {
-      cpointsearchtree.Insert (p, pi);
-    }
-
-  return pi;
-}
-
-
-INDEX AdFront2 :: AddLine (INDEX pi1, INDEX pi2,
-			   const PointGeomInfo & gi1, const PointGeomInfo & gi2)
-{
-  int minfn;
-  INDEX li;
-
-  FrontPoint2 & p1 = points.Elem(pi1);
-  FrontPoint2 & p2 = points.Elem(pi2);
-
-
-
-  nfl++;
-
-  p1.AddLine();
-  p2.AddLine();
-
-  minfn = min2 (p1.FrontNr(), p2.FrontNr());
-  p1.DecFrontNr (minfn+1);
-  p2.DecFrontNr (minfn+1);
-
-  if (dellinel.Size() != 0)
-    {
-      li = dellinel.Last();
-      dellinel.DeleteLast ();
-
-      lines.Elem(li) = FrontLine (INDEX_2(pi1, pi2));
-    }
-  else
-    {
-      li = lines.Append(FrontLine (INDEX_2(pi1, pi2)));
-    }
-
-  
-  if (!gi1.trignum || !gi2.trignum)
-    {
-      cout << "ERROR: in AdFront::AddLine, illegal geominfo" << endl;
-    }
-  
-  lines.Elem(li).SetGeomInfo (gi1, gi2);
-
-  Box3d lbox;
-  lbox.SetPoint(p1.P());
-  lbox.AddPoint(p2.P());
-
-  linesearchtree.Insert (lbox.PMin(), lbox.PMax(), li);
-
-  /*
-  (*testout) << "add front line: " << p1.P() << " - " << p2.P()
-  	     << " Dist = " << Dist (p1.P(), p2.P()) << endl;
-  */
-
-  if (allflines)
-    {
-      if (allflines->Used (INDEX_2 (GetGlobalIndex (pi1), 
-				    GetGlobalIndex (pi2))))
-	{
-	  cerr << "ERROR Adfront2::AddLine: line exists" << endl;
-	  (*testout) << "ERROR Adfront2::AddLine: line exists" << endl;
-	}
-
-      allflines->Set (INDEX_2 (GetGlobalIndex (pi1), 
-			       GetGlobalIndex (pi2)), 1);
-    }
-
-  return li;
-}
-
-
-void AdFront2 :: DeleteLine (INDEX li)
-{
-  int i;
-  INDEX pi;
-
-  nfl--;
-
-  for (i = 1; i <= 2; i++)
-    {
-      pi = lines.Get(li).L().I(i);
-      points.Elem(pi).RemoveLine();
-
-      if (!points.Get(pi).Valid())
-	{
-	  delpointl.Append (pi);
-	  if (points.Elem(pi).mgi)
-	    {
-	      cpointsearchtree.DeleteElement (pi);
-	      delete points.Elem(pi).mgi;
-	      points.Elem(pi).mgi = NULL;
-	    }
-	}
-    }
-
-  if (allflines)
-    {
-      allflines->Set (INDEX_2 (GetGlobalIndex (lines.Get(li).L().I1()),
-			       GetGlobalIndex (lines.Get(li).L().I2())), 2);
-    }
-
-  lines.Elem(li).Invalidate();
-  linesearchtree.DeleteElement (li);
-
-
-
-  dellinel.Append (li);
-}
-
-
-int AdFront2 :: ExistsLine (int pi1, int pi2)
-{
-  if (!allflines)
-    return 0;
-  if (allflines->Used (INDEX_2(pi1, pi2)))
-    return allflines->Get (INDEX_2 (pi1, pi2));
-  else
-    return 0;
-}
-
-
-
-void AdFront2 :: IncrementClass (INDEX li)
-{
-  lines.Elem(li).IncrementClass();
-}
-
-
-void AdFront2 :: ResetClass (INDEX li)
-{
-  lines.Elem(li).ResetClass();
-}
-
-
-
-int AdFront2 :: SelectBaseLine (Point3d & p1, Point3d & p2, 
-				const PointGeomInfo *& geominfo1,
-				const PointGeomInfo *& geominfo2,
-				int & qualclass)
-{
-  int i, hi;
-
-  /*  
-      int minval;
-      int baselineindex;
-      minval = INT_MAX;
-  for (i = 1; i <= lines.Size(); i++)
-    if (lines.Get(i).Valid())
+  AdFront2::FrontPoint2 :: FrontPoint2 (const Point<3> & ap, PointIndex agi,
+					MultiPointGeomInfo * amgi, bool aonsurface)
+  {
+    p = ap;
+    globalindex = agi;
+    nlinetopoint = 0;
+    frontnr = INT_MAX-10;
+    onsurface = aonsurface;
+
+    if (amgi)
       {
-	hi = lines.Get(i).LineClass() +
-	  points.Get(lines.Get(i).L().I1()).FrontNr() +
-	  points.Get(lines.Get(i).L().I2()).FrontNr();
-	
-	if (hi < minval)
+	mgi = new MultiPointGeomInfo (*amgi);
+	for (int i = 1; i <= mgi->GetNPGI(); i++)
+	  if (mgi->GetPGI(i).trignum <= 0)
+	    cout << "Add FrontPoint2, illegal geominfo = " << mgi->GetPGI(i).trignum << endl;
+      }
+    else
+      mgi = NULL;
+  }
+
+
+  AdFront2 :: AdFront2 (const Box3d & aboundingbox)
+    : boundingbox(aboundingbox), 
+      linesearchtree(boundingbox.PMin(), boundingbox.PMax()),
+      pointsearchtree(boundingbox.PMin(), boundingbox.PMax()),
+      cpointsearchtree(boundingbox.PMin(), boundingbox.PMax())
+  {
+    nfl = 0;
+    allflines = 0;
+
+    minval = 0;
+    starti = lines.Begin();
+  }
+
+  AdFront2 :: ~AdFront2 ()
+  {
+    delete allflines;
+  }
+
+
+  void AdFront2 :: PrintOpenSegments (ostream & ost) const
+  {
+    if (nfl > 0)
+      {
+	ost << nfl << " open front segments left:" << endl;
+	for (int i = lines.Begin(); i < lines.End(); i++)
+	  if (lines[i].Valid())
+	    ost << i << ": " 
+                << GetGlobalIndex (lines[i].L().I1()) << "-"
+		<< GetGlobalIndex (lines[i].L().I2()) << endl;
+      }
+  }
+
+  /*
+  void AdFront2 :: GetPoints (ARRAY<Point<3> > & apoints) const
+  {
+    apoints.Append (points);
+    // for (int i = 0; i < points.Size(); i++)
+    // apoints.Append (points[i].P());
+  }
+  */
+
+
+
+  int AdFront2 :: AddPoint (const Point<3> & p, PointIndex globind, 
+                            MultiPointGeomInfo * mgi,
+                            bool pointonsurface)
+  {
+    // inserts at empty position or resizes array
+    int pi;
+
+    if (delpointl.Size() != 0)
+      {
+	pi = delpointl.Last();
+	delpointl.DeleteLast ();
+
+	points[pi] = FrontPoint2 (p, globind, mgi, pointonsurface);
+      }
+    else
+      {
+	pi = points.Append (FrontPoint2 (p, globind, mgi, pointonsurface)) - 1;
+      }
+
+    if (mgi)
+      cpointsearchtree.Insert (p, pi);
+
+    pointsearchtree.Insert (p, pi);
+
+    return pi;
+  }
+
+
+  int AdFront2 :: AddLine (int pi1, int pi2,
+                           const PointGeomInfo & gi1, const PointGeomInfo & gi2)
+  {
+    int minfn;
+    int li;
+
+    FrontPoint2 & p1 = points[pi1];
+    FrontPoint2 & p2 = points[pi2];
+
+
+    nfl++;
+
+    p1.AddLine();
+    p2.AddLine();
+
+    minfn = min2 (p1.FrontNr(), p2.FrontNr());
+    p1.DecFrontNr (minfn+1);
+    p2.DecFrontNr (minfn+1);
+
+    if (dellinel.Size() != 0)
+      {
+	li = dellinel.Last();
+	dellinel.DeleteLast ();
+	lines[li] = FrontLine (INDEX_2(pi1, pi2));
+      }
+    else
+      {
+	li = lines.Append(FrontLine (INDEX_2(pi1, pi2))) - 1;
+      }
+
+  
+    if (!gi1.trignum || !gi2.trignum)
+      {
+	cout << "ERROR: in AdFront::AddLine, illegal geominfo" << endl;
+      }
+  
+    lines[li].SetGeomInfo (gi1, gi2);
+
+    Box3d lbox;
+    lbox.SetPoint(p1.P());
+    lbox.AddPoint(p2.P());
+
+    linesearchtree.Insert (lbox.PMin(), lbox.PMax(), li);
+
+    if (allflines)
+      {
+	if (allflines->Used (INDEX_2 (GetGlobalIndex (pi1), 
+				      GetGlobalIndex (pi2))))
 	  {
-	    minval = hi;
-	    baselineindex = i;
+	    cerr << "ERROR Adfront2::AddLine: line exists" << endl;
+	    (*testout) << "ERROR Adfront2::AddLine: line exists" << endl;
+	  }
+
+	allflines->Set (INDEX_2 (GetGlobalIndex (pi1), 
+				 GetGlobalIndex (pi2)), 1);
+      }
+
+    return li;
+  }
+
+
+  void AdFront2 :: DeleteLine (int li)
+  {
+    int pi;
+
+    nfl--;
+
+    for (int i = 1; i <= 2; i++)
+      {
+	pi = lines[li].L().I(i);
+	points[pi].RemoveLine();
+
+	if (!points[pi].Valid())
+	  {
+	    delpointl.Append (pi);
+	    if (points[pi].mgi)
+	      {
+		cpointsearchtree.DeleteElement (pi);
+		delete points[pi].mgi;
+		points[pi].mgi = NULL;
+	      }
+
+            pointsearchtree.DeleteElement (pi);
 	  }
       }
-  */
+
+    if (allflines)
+      {
+	allflines->Set (INDEX_2 (GetGlobalIndex (lines[li].L().I1()),
+				 GetGlobalIndex (lines[li].L().I2())), 2);
+      }
+
+    lines[li].Invalidate();
+    linesearchtree.DeleteElement (li);
+
+    dellinel.Append (li);
+  }
+
+
+  int AdFront2 :: ExistsLine (int pi1, int pi2)
+  {
+    if (!allflines)
+      return 0;
+    if (allflines->Used (INDEX_2(pi1, pi2)))
+      return allflines->Get (INDEX_2 (pi1, pi2));
+    else
+      return 0;
+  }
+
 
   /*
-  static int minval = 0;
-  static int starti = 1;
-  */
-  int baselineindex = 0; 
+  void AdFront2 :: IncrementClass (int li)
+  {
+    lines[li].IncrementClass();
+  }
 
-  for (i = starti; i <= lines.Size(); i++)
-    {
-      if (lines.Get(i).Valid())
-	//      const ILINE * lp = &lines.Get(i).l;
-	//      if (lp->I1() >= 0)
-	{
-	  hi = lines.Get(i).LineClass() +
-	    points.Get(lines.Get(i).L().I1()).FrontNr() +
-	    points.Get(lines.Get(i).L().I2()).FrontNr();
-	  
-	  if (hi <= minval)
-	    {
-	      minval = hi;
-	      baselineindex = i;
-	      break;
-	    }
-	}
-    }
-  
-  if (!baselineindex)
-    {
-      // (*testotu) << "nfl = " << nfl << " tot l = " << lines.Size() << endl;
-      minval = INT_MAX;
-      for (i = 1; i <= lines.Size(); i++)
-	if (lines.Get(i).Valid())
+
+  void AdFront2 :: ResetClass (int li)
+  {
+    lines[li].ResetClass();
+  }
+  */
+
+  int AdFront2 :: SelectBaseLine (Point<3>  & p1, Point<3>  & p2, 
+				  const PointGeomInfo *& geominfo1,
+				  const PointGeomInfo *& geominfo2,
+				  int & qualclass)
+  {
+    int baselineindex = -1; 
+
+    for (int i = starti; i < lines.End(); i++)
+      {
+	if (lines[i].Valid())
 	  {
-	    hi = lines.Get(i).LineClass() +
-	      points.Get(lines.Get(i).L().I1()).FrontNr() +
-	      points.Get(lines.Get(i).L().I2()).FrontNr();
-	    
-	    if (hi < minval)
+	    int hi = lines[i].LineClass() +
+	      points[lines[i].L().I1()].FrontNr() +
+	      points[lines[i].L().I2()].FrontNr();
+	  
+	    if (hi <= minval)
 	      {
 		minval = hi;
 		baselineindex = i;
+		break;
 	      }
 	  }
-    }
-  starti = baselineindex+1;
-
-
-
-  p1 = points.Get(lines.Get(baselineindex).L().I1()).P();
-  p2 = points.Get(lines.Get(baselineindex).L().I2()).P();
-  geominfo1 = &lines.Get(baselineindex).GetGeomInfo(1);
-  geominfo2 = &lines.Get(baselineindex).GetGeomInfo(2);
-
-  qualclass = lines.Get(baselineindex).LineClass();
-
-  return baselineindex;
-}
-
-
-
-
-int AdFront2 :: GetLocals (int baselineindex,
-			   ARRAY<Point3d> & locpoints,
-			   ARRAY<MultiPointGeomInfo> & pgeominfo,
-			   ARRAY<INDEX_2> & loclines,   // local index
-			   ARRAY<INDEX> & pindex,
-			   ARRAY<INDEX> & lindex,
-			   double xh)
-{
-  int i, j, ii;
-  int pstind;
-  int pi;
-  Point3d midp, p0;
-
-  pstind = lines.Get(baselineindex).L().I1();
-  p0 = points.Get(pstind).P();
-
-  loclines.Append(lines.Get(baselineindex).L());
-  lindex.Append(baselineindex);
-
-  static ARRAY<int> nearlines;
-
-  nearlines.SetSize(0);
-
-  linesearchtree.GetIntersecting (p0 - Vec3d(xh, xh, xh),
-				  p0 + Vec3d(xh, xh, xh),
-				  nearlines);
-
-  for (ii = 1; ii <= nearlines.Size(); ii++)
-    {
-      i = nearlines.Get(ii);
-
-      if (lines.Get(i).Valid() && i != baselineindex)
-	{
-	  // const Point3d & p1 = points.Get(lines.Get(i).L().I1()).P();
-	  // const Point3d & p2 = points.Get(lines.Get(i).L().I2()).P();
-
-	  //	  midp = Center (p1, p2);
-	  //	  if (Dist (midp, p0) <= xh + 0.5 * Dist (p1, p2))
-	    {
-	      loclines.Append(lines.Get(i).L());
-	      lindex.Append(i);
-	    }
-	}
-    }
-
-  static ARRAY<int> invpindex;
-
-  invpindex.SetSize (points.Size());
-  for (i = 1; i <= loclines.Size(); i++)
-    {
-      invpindex.Elem(loclines.Get(i).I1()) = 0;
-      invpindex.Elem(loclines.Get(i).I2()) = 0;
-    }
-
-  for (i = 1; i <= loclines.Size(); i++)
-    {
-      for (j = 1; j <= 2; j++)
-	{
-	  pi = loclines.Get(i).I(j);
-	  if (invpindex.Get(pi) == 0)
-	    {
-	      pindex.Append (pi);
-	      invpindex.Elem(pi) = pindex.Size();
-	      loclines.Elem(i).I(j) = locpoints.Append (points.Get(pi).P());
-	    }
-	  else
-	    loclines.Elem(i).I(j) = invpindex.Get(pi);
-	}
-    }
-
-  pgeominfo.SetSize (locpoints.Size());
-  for (i = 1; i <= pgeominfo.Size(); i++)
-    pgeominfo.Elem(i).Init();
-
-
-  for (i = 1; i <= loclines.Size(); i++)
-    for (j = 1; j <= 2; j++)
+      }
+  
+    if (baselineindex == -1)
       {
-	int lpi = loclines.Get(i).I(j);
-	
-	const PointGeomInfo & gi = 
-	  lines.Get(lindex.Get(i)).GetGeomInfo (j);
-	pgeominfo.Elem(lpi).AddPointGeomInfo (gi);
-	
-	/*
-	if (pgeominfo.Elem(lpi).cnt == MULTIPOINTGEOMINFO_MAX)
-	  break;
+	minval = INT_MAX;
+	for (int i = lines.Begin(); i < lines.End(); i++)
+	  if (lines[i].Valid())
+	    {
+	      int hi = lines[i].LineClass() +
+		points[lines[i].L().I1()].FrontNr() +
+		points[lines[i].L().I2()].FrontNr();
+	    
+	      if (hi < minval)
+		{
+		  minval = hi;
+		  baselineindex = i;
+		}
+	    }
+      }
+    starti = baselineindex+1;
 
-	const PointGeomInfo & gi = 
-	  lines.Get(lindex.Get(i)).GetGeomInfo (j);
-	
-	PointGeomInfo * pgi = pgeominfo.Elem(lpi).mgi;
+    p1 = points[lines[baselineindex].L().I1()].P();
+    p2 = points[lines[baselineindex].L().I2()].P();
+    geominfo1 = &lines[baselineindex].GetGeomInfo(1);
+    geominfo2 = &lines[baselineindex].GetGeomInfo(2);
 
-	int found = 0;
-	for (k = 0; k < pgeominfo.Elem(lpi).cnt; k++)
-	  if (pgi[k].trignum == gi.trignum)
+    qualclass = lines[baselineindex].LineClass();
+
+    return baselineindex;
+  }
+
+
+
+
+  int AdFront2 :: GetLocals (int baselineindex,
+			     ARRAY<Point3d> & locpoints,
+			     ARRAY<MultiPointGeomInfo> & pgeominfo,
+			     ARRAY<INDEX_2> & loclines,   // local index
+			     ARRAY<INDEX> & pindex,
+			     ARRAY<INDEX> & lindex,
+			     double xh)
+  {
+    // baselineindex += 1-lines.Begin();
+
+    int pstind;
+    Point<3>  midp, p0;
+
+    pstind = lines[baselineindex].L().I1();
+    p0 = points[pstind].P();
+
+    loclines.Append(lines[baselineindex].L());
+    lindex.Append(baselineindex);  //  +1-lines.Begin());
+
+    static ARRAY<int> nearlines;
+    nearlines.SetSize(0);
+    static ARRAY<int> nearpoints;
+    nearpoints.SetSize(0);
+
+    linesearchtree.GetIntersecting (p0 - Vec3d(xh, xh, xh),
+				    p0 + Vec3d(xh, xh, xh),
+				    nearlines);
+
+    pointsearchtree.GetIntersecting (p0 - Vec3d(xh, xh, xh),
+                                     p0 + Vec3d(xh, xh, xh),
+                                     nearpoints);
+
+
+    for (int ii = 1; ii <= nearlines.Size(); ii++)
+      {
+	int i = nearlines.Get(ii);
+	if (lines[i].Valid() && i != baselineindex) //  + 1-lines.Begin())
+	  {
+            loclines.Append(lines[i].L());
+            lindex.Append(i);
+	  }
+      }
+
+    static ARRAY<int> invpindex;
+    invpindex.SetSize (points.Size()); 
+    // invpindex = -1;
+    for (int i = 0; i < nearpoints.Size(); i++)
+      invpindex[nearpoints[i]] = -1;
+
+    for (int i = 0; i < loclines.Size(); i++)
+      {
+	invpindex[loclines[i].I1()] = 0;
+	invpindex[loclines[i].I2()] = 0;
+      }
+
+
+    for (int i = 0; i < loclines.Size(); i++)
+      {
+	for (int j = 0; j < 2; j++)
+	  {
+	    int pi = loclines[i][j];
+	    if (invpindex[pi] == 0)
+	      {
+		pindex.Append (pi);
+		invpindex[pi] = pindex.Size();
+		loclines[i][j] = locpoints.Append (points[pi].P());
+	      }
+	    else
+	      loclines[i][j] = invpindex[pi];
+	  }
+      }
+
+
+    // double xh2 = xh*xh;
+    for (int ii = 0; ii < nearpoints.Size(); ii++)
+      {
+        int i = nearpoints[ii];
+	if (points[i].Valid() && 
+	    points[i].OnSurface() &&
+	    // Dist2 (points.Get(i).P(), p0) <= xh2 &&
+	    invpindex[i] <= 0)
+	  {
+	    invpindex[i] = locpoints.Append (points[i].P());
+	    pindex.Append(i);
+	  }
+      }
+    /*
+    double xh2 = xh*xh;
+    for (i = 1; i <= points.Size(); i++)
+      {
+	if (points.Get(i).Valid() && 
+	    points.Get(i).OnSurface() &&
+	    Dist2 (points.Get(i).P(), p0) <= xh2 &&
+	    invpindex.Get(i) <= 0)
+	  {
+	    invpindex.Elem(i) =
+	      locpoints.Append (points.Get(i).P());
+	    pindex.Append(i);
+	  }
+      }
+    */
+
+    pgeominfo.SetSize (locpoints.Size());
+    for (int i = 0; i < pgeominfo.Size(); i++)
+      pgeominfo[i].Init();
+
+
+    for (int i = 0; i < loclines.Size(); i++)
+      for (int j = 0; j < 2; j++)
+	{
+	  int lpi = loclines[i][j];
+	
+	  const PointGeomInfo & gi = 
+	    lines[lindex[i]].GetGeomInfo (j+1);
+	  pgeominfo.Elem(lpi).AddPointGeomInfo (gi);
+	
+	  /*
+	    if (pgeominfo.Elem(lpi).cnt == MULTIPOINTGEOMINFO_MAX)
+	    break;
+
+	    const PointGeomInfo & gi = 
+	    lines.Get(lindex.Get(i)).GetGeomInfo (j);
+	
+	    PointGeomInfo * pgi = pgeominfo.Elem(lpi).mgi;
+
+	    int found = 0;
+	    for (k = 0; k < pgeominfo.Elem(lpi).cnt; k++)
+	    if (pgi[k].trignum == gi.trignum)
 	    found = 1;
 
-	if (!found)
-	  {
+	    if (!found)
+	    {
 	    pgi[pgeominfo.Elem(lpi).cnt] = gi;
 	    pgeominfo.Elem(lpi).cnt++;
-	  }
-	*/
-      }
+	    }
+	  */
+	}
 
-  for (i = 1; i <= locpoints.Size(); i++)
-    {
-      int pi = pindex.Get(i);
-      
-      if (points.Get(pi).mgi)
-	for (j = 1; j <= points.Get(pi).mgi->GetNPGI(); j++)
-	  pgeominfo.Elem(i).AddPointGeomInfo (points.Get(pi).mgi->GetPGI(j));
-    }
-	
-  
-
-  /*
-  for (i = 1; i <= points.Size(); i++)
-    if (points.Get(i).Valid() && 
-	Dist (points.Get(i).P(), p0) <= xh &&
-	invpindex.Get(i) == 0)
+    for (int i = 0; i < locpoints.Size(); i++)
       {
-	invpindex.Elem(i) =
-	  locpoints.Append (points.Get(pi).P());
+	int pi = pindex[i];
+      
+	if (points[pi].mgi)
+	  for (int j = 1; j <= points[pi].mgi->GetNPGI(); j++)
+	    pgeominfo[i].AddPointGeomInfo (points[pi].mgi->GetPGI(j));
       }
-  */
+   
+    if (loclines.Size() == 1)
+      {
+	cout << "loclines.Size = 1" << endl;
+	(*testout) << "loclines.size = 1" << endl
+		   << " h = " << xh << endl
+		   << " nearline.size = " << nearlines.Size() << endl
+		   << " p0 = " << p0 << endl;
+      }
 
-  if (loclines.Size() == 1)
-    {
-      cout << "loclines.Size = 1" << endl;
-      (*testout) << "loclines.size = 1" << endl
-		 << " h = " << xh << endl
-		 << " nearline.size = " << nearlines.Size() << endl
-		 << " p0 = " << p0 << endl;
-    }
-
-  return lines.Get(baselineindex).LineClass();
-}
-
-
-
-void AdFront2 :: SetStartFront ()
-{
-  INDEX i;
-  int j;
-
-  for (i = 1; i <= lines.Size(); i++)
-    if (lines.Get(i).Valid())
-      for (j = 1; j <= 2; j++)
-        points.Elem(lines.Get(i).L().I(j)).DecFrontNr(0);
-}
+    return lines[baselineindex].LineClass();
+  }
 
 
 
+  void AdFront2 :: SetStartFront ()
+  {
+    for (int i = lines.Begin(); i < lines.End(); i++)
+      if (lines[i].Valid())
+	for (int j = 1; j <= 2; j++)
+	  points[lines[i].L().I(j)].DecFrontNr(0);
+  }
 
-void AdFront2 :: Print (ostream & ost) const
-{
-  INDEX i;
 
-  ost << points.Size() << " Points: " << endl;
-  for (i = 1; i <= points.Size(); i++)
-    if (points.Get(i).Valid())
-      ost << i << "  " << points.Get(i).P() << endl;
+  void AdFront2 :: Print (ostream & ost) const
+  {
+    ost << points.Size() << " Points: " << endl;
+    for (int i = points.Begin(); i < points.End(); i++)
+      if (points[i].Valid())
+	ost << i << "  " << points[i].P() << endl;
 
-  ost << nfl << " Lines: " << endl;
-  for (i = 1; i <= lines.Size(); i++)
-    if (lines.Get(i).Valid())
-      ost << lines.Get(i).L().I1() << " - " << lines.Get(i).L().I2() << endl;
+    ost << nfl << " Lines: " << endl;
+    for (int i = lines.Begin(); i < lines.End(); i++)
+      if (lines[i].Valid())
+	ost << lines[i].L().I1() << " - " << lines[i].L().I2() << endl;
 
-  ost << flush;
-}
+    ost << flush;
+  }
 }

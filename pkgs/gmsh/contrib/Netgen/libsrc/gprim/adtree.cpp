@@ -60,10 +60,10 @@ namespace netgen
 
   void ADTree :: Insert (const float * p, int pi)
   {
-    ADTreeNode *node;
+    ADTreeNode *node(NULL);
     ADTreeNode *next;
     int dir;
-    int lr;
+    int lr(1);
 
     float * bmin = new float [dim];
     float * bmax = new float [dim];
@@ -310,10 +310,10 @@ namespace netgen
 
   void ADTree3 :: Insert (const float * p, int pi)
   {
-    ADTreeNode3 *node;
+    ADTreeNode3 *node(NULL);
     ADTreeNode3 *next;
     int dir;
-    int lr;
+    int lr(0);
 
     float bmin[3];
     float bmax[3];
@@ -1595,10 +1595,10 @@ namespace netgen
 
   void ADTree6 :: Insert (const float * p, int pi)
   {
-    ADTreeNode6 *node;
+    ADTreeNode6 *node(NULL);
     ADTreeNode6 *next;
     int dir;
-    int lr;
+    int lr(0);
 
     float bmin[6];
     float bmax[6];
@@ -1639,8 +1639,7 @@ namespace netgen
 	  }
 
 	dir++;
-	if (dir == 6)
-	  dir = 0;
+	if (dir == 6) dir = 0;
       }
 
 
@@ -1649,11 +1648,9 @@ namespace netgen
     next->pi = pi;
     next->sep = (bmin[dir] + bmax[dir]) / 2;
 
-
     if (ela.Size() < pi+1)
       ela.SetSize (pi+1);
     ela[pi] = next;
-
 
     if (lr)
       node->right = next;
@@ -1706,37 +1703,23 @@ namespace netgen
 				   ARRAY<int> & pis) const
   {
     static ARRAY<inttn6> stack(10000);
-    ADTreeNode6 * node;
-    int dir, stacks;
 
     stack.SetSize (10000);
     pis.SetSize(0);
 
-    stack.Elem(1).node = root;
-    stack.Elem(1).dir = 0;
-    stacks = 1;
+    stack[0].node = root;
+    stack[0].dir = 0;
+    int stacks = 0;
 
-    while (stacks)
+    while (stacks >= 0)
       {
-	node = stack.Get(stacks).node;
-	dir = stack.Get(stacks).dir; 
+	ADTreeNode6 * node = stack[stacks].node;
+	int dir = stack[stacks].dir; 
+
 	stacks--;
 
 	if (node->pi != -1)
 	  {
-	  
-	    // 	  int in = 1;
-	    // 	  for (i = 0; i < 3; i++)
-	    // 	    if (/* node->data[i] < bmin[i]  || */ node->data[i] > bmax[i] || 
-	    // 		node->data[i+3] < bmin[i+3] /* || node->data[i+3] > bmax[i+3] */ )
-	    // 	      {
-	    // 		in = 0;
-	    // 		break;
-	    // 	      }
-
-	    // 	  if (in)
-	    // 	    pis.Append (node->pi);
-
 	    if (node->data[0] > bmax[0] || 
 		node->data[1] > bmax[1] || 
 		node->data[2] > bmax[2] || 
@@ -1748,85 +1731,22 @@ namespace netgen
 	      pis.Append (node->pi);
 	  }
 
-
-	int ndir = dir+1;
-	if (ndir == 6)
-	  ndir = 0;
+	int ndir = (dir+1) % 6;
 
 	if (node->left && bmin[dir] <= node->sep)
 	  {
 	    stacks++;
-	    stack.Elem(stacks).node = node->left;
-	    stack.Elem(stacks).dir = ndir;
+	    stack[stacks].node = node->left;
+	    stack[stacks].dir = ndir;
 	  }
 	if (node->right && bmax[dir] >= node->sep)
 	  {
 	    stacks++;
-	    stack.Elem(stacks).node = node->right;
-	    stack.Elem(stacks).dir = ndir;
+	    stack[stacks].node = node->right;
+	    stack[stacks].dir = ndir;
 	  }
       }
   }
-
-  /*
-    void ADTree6 :: GetIntersecting (const float * bmin, 
-    const float * bmax,
-    ARRAY<int> & pis) const
-    {
-    static ARRAY<ADTreeNode6*> stack(10000);
-    static ARRAY<int> stackdir(10000);
-    ADTreeNode6 * node;
-    int dir, stacks;
-
-    stack.SetSize (10000);
-    stackdir.SetSize(10000);
-    pis.SetSize(0);
-
-    stack.Elem(1) = root;
-    stackdir.Elem(1) = 0;
-    stacks = 1;
-
-    while (stacks)
-    {
-    node = stack.Get(stacks);
-    dir = stackdir.Get(stacks); 
-    stacks--;
-
-    if (node->pi)
-    {
-	  
-    if (node->data[0] > bmax[0] || 
-    node->data[1] > bmax[1] || 
-    node->data[2] > bmax[2] || 
-    node->data[3] < bmin[3] || 
-    node->data[4] < bmin[4] || 
-    node->data[5] < bmin[5])
-    ;
-    else
-    pis.Append (node->pi);
-    }
-
-
-    int ndir = dir+1;
-    if (ndir == 6)
-    ndir = 0;
-
-    if (node->left && bmin[dir] <= node->sep)
-    {
-    stacks++;
-    stack.Elem(stacks) = node->left;
-    stackdir.Elem(stacks) = ndir;
-    }
-    if (node->right && bmax[dir] >= node->sep)
-    {
-    stacks++;
-    stack.Elem(stacks) = node->right;
-    stackdir.Elem(stacks) = ndir;
-    }
-    }
-    }
-  */
-
 
   void ADTree6 :: PrintRec (ostream & ost, const ADTreeNode6 * node) const
   {

@@ -35,9 +35,40 @@
 namespace netgen
 {
 
+
+  void ReadEnclString(istream & in, string & str, const char encl)
+  {
+    char currchar;
+    str = "";
+
+    in.get(currchar);
+    while(in && currchar == ' ' || currchar == '\t' || currchar == '\n')
+      in.get(currchar);
+	
+    if(currchar == encl)
+      {
+	in.get(currchar);
+	while(in && currchar != encl)
+	  {
+	    str += currchar;
+	    in.get(currchar);
+	  }
+      }
+    else
+      {
+	in.putback(currchar);
+	in >> str;
+      }
+  }
+	    
+	
+    
+  
+
+
 void DefaultStringErrHandler()
 {
-  cerr << "Fehler : Bereichsüberschreitung bei Stringoperation\n" << flush;
+  cerr << "Error : string operation out of range\n" << flush;
 }
 
 void (*MyStr::ErrHandler)() = DefaultStringErrHandler;
@@ -53,7 +84,7 @@ MyStr::MyStr()
 
 MyStr::MyStr(const char *s)
 {
-  length = strlen(s);
+  length = unsigned(strlen(s));
 
   if (length > SHORTLEN)
     str = new char[length + 1];
@@ -86,7 +117,7 @@ MyStr::MyStr(int i)
 {
   char buffer[32];
   sprintf(buffer, "%d", i);
-  length = strlen(buffer);
+  length = unsigned(strlen(buffer));
   if (length > SHORTLEN)
     str = new char[length + 1];
   else
@@ -94,11 +125,24 @@ MyStr::MyStr(int i)
   strcpy(str, buffer);
 }
 
+MyStr::MyStr(void * p)
+{
+  char buffer[32];
+  sprintf(buffer, "%p", p);
+  length = unsigned(strlen(buffer));
+  if (length > SHORTLEN)
+    str = new char[length + 1];
+  else
+    str = shortstr;
+  strcpy(str, buffer);
+}
+
+
 MyStr::MyStr(long l)
 {
   char buffer[32];
   sprintf(buffer, "%ld", l);
-  length = strlen(buffer);
+  length = unsigned(strlen(buffer));
   if (length > SHORTLEN)
     str = new char[length + 1];
   else
@@ -111,7 +155,7 @@ MyStr::MyStr(double d)
   char buffer[32];
   //if (fabs(d) < 1E-100) {d = 0;}
   sprintf(buffer, "%g", d);
-  length = strlen(buffer);
+  length = unsigned(strlen(buffer));
   if (length > SHORTLEN)
     str = new char[length + 1];
   else
@@ -124,7 +168,7 @@ MyStr::MyStr(const Point3d& p)
   char buffer[80];
   //if (fabs(d) < 1E-100) {d = 0;}
   sprintf(buffer, "[%g, %g, %g]", p.X(), p.Y(), p.Z());
-  length = strlen(buffer);
+  length = unsigned(strlen(buffer));
   if (length > SHORTLEN)
     str = new char[length + 1];
   else
@@ -137,7 +181,7 @@ MyStr::MyStr(const Vec3d& p)
   char buffer[80];
   //if (fabs(d) < 1E-100) {d = 0;}
   sprintf(buffer, "[%g, %g, %g]", p.X(), p.Y(), p.Z());
-  length = strlen(buffer);
+  length = unsigned(strlen(buffer));
   if (length > SHORTLEN)
     str = new char[length + 1];
   else
@@ -155,9 +199,9 @@ MyStr::MyStr(unsigned n, int)
   str[n] = 0;
 }
 
-MyStr::MyStr(const std::string & st)
+MyStr::MyStr(const string & st)
 {
-  length = st.length();
+  length = unsigned(st.length());
   if (length > SHORTLEN)
     str = new char[length + 1];
   else
@@ -212,14 +256,14 @@ MyStr& MyStr::InsertAt(unsigned pos, const MyStr& s)
   strcpy(tmp + pos, s.str);
   strcpy(tmp + pos + s.length, str + pos);
 
-  if (length > SHORTLEN) delete str;
+  if (length > SHORTLEN) delete [] str;
   length = newLength;
   if (length > SHORTLEN)
     str = tmp;
   else
     {
       strcpy (shortstr, tmp);
-      delete tmp;
+      delete [] tmp;
       str = shortstr;
     }
   return *this;
@@ -232,7 +276,7 @@ MyStr &MyStr::WriteAt(unsigned pos, const MyStr& s)
     MyStr::ErrHandler();
     return *this;
   }
-  int n = length - pos;
+  unsigned n = length - pos;
   if(s.length < n)
     n = s.length;
   strncpy(str + pos, s.str, n);
@@ -263,7 +307,7 @@ void MyStr::ConvertExcelToText()
 
 MyStr& MyStr::operator = (const MyStr& s)
 {
-  if (length > SHORTLEN) delete str;
+  if (length > SHORTLEN) delete [] str;
   length = s.length;
   if (length > SHORTLEN)
     str = new char[length + 1];
@@ -292,7 +336,7 @@ void MyStr::operator += (const MyStr& s)
       char *tmp = new char[length + s.length + 1];
       if (length != 0) strcpy(tmp, str);
       if (s.length != 0) strcpy(tmp + length, s.str);
-      if (length > SHORTLEN) delete str;
+      if (length > SHORTLEN) delete [] str;
       length += s.length;
       str = tmp;
     }
@@ -339,6 +383,13 @@ MyStr MyStr::operator () (unsigned l, unsigned r)
   }
 }
 
+string MyStr::cpp_string(void) const
+{
+  string aux(str,length);
+  return aux;
+}
+
+/*
 istream& operator >> (istream& is, MyStr& s)
 {
   const int buflen = 1000;
@@ -358,7 +409,7 @@ istream& operator >> (istream& is, MyStr& s)
 
   return is;
 }
-
+*/
 /*
 #ifdef __borland
 ::ifstream& operator >> (::ifstream& is, MyStr& s)       // wb

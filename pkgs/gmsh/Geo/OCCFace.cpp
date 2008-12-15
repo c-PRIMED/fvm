@@ -8,7 +8,7 @@
 #include "OCCVertex.h"
 #include "OCCEdge.h"
 #include "OCCFace.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Numeric.h"
 #include "VertexArray.h"
 #include "Context.h"
@@ -30,31 +30,30 @@ extern Context_T CTX;
 OCCFace::OCCFace(GModel *m, TopoDS_Face _s, int num, TopTools_IndexedMapOfShape &emap)
   : GFace(m, num), s(_s)
 {
-  TopExp_Explorer exp0, exp01, exp1, exp2, exp3;
+  TopExp_Explorer exp2, exp3;
   for(exp2.Init(s, TopAbs_WIRE); exp2.More(); exp2.Next()){
-    TopoDS_Shape wire = exp2.Current();
+    TopoDS_Wire wire = TopoDS::Wire(exp2.Current());
     Msg::Debug("OCC Face %d - New Wire", num);
     std::list<GEdge*> l_wire;
     for(exp3.Init(wire, TopAbs_EDGE); exp3.More(); exp3.Next()){          
       TopoDS_Edge edge = TopoDS::Edge(exp3.Current());
       int index = emap.FindIndex(edge);
       GEdge *e = m->getEdgeByTag(index);
-      if(e){
-	l_wire.push_back(e);
-	Msg::Debug("Edge %d ori %d", e->tag(), edge.Orientation());
-	e->addFace(this);
-	if(!e->is3D()){
-	  OCCEdge *occe = (OCCEdge*)e;
-	  occe->setTrimmed(this);
-	}
+      if(!e){
+        Msg::Error("Unknown edge %d in face %d", index, num);
       }
       else{
-	Msg::Error("Unknown edge %d in face %d", index, num);
+        l_wire.push_back(e);
+        Msg::Debug("Edge %d ori %d", e->tag(), edge.Orientation());
+        e->addFace(this);
+        if(!e->is3D()){
+          OCCEdge *occe = (OCCEdge*)e;
+          occe->setTrimmed(this);
+        }
       }
     }      
     
     GEdgeLoop el(l_wire);
-
     for(GEdgeLoop::citer it = el.begin(); it != el.end(); ++it){
       l_edges.push_back(it->ge);
       l_dirs.push_back(it->_sign);
@@ -67,16 +66,16 @@ OCCFace::OCCFace(GModel *m, TopoDS_Face _s, int num, TopTools_IndexedMapOfShape 
           std::max(it->ge->meshAttributes.minimumMeshSegments,3);
       }
     }
-    
     edgeLoops.push_back(el);
   }
-  BRepAdaptor_Surface surface( s );
+
+  BRepAdaptor_Surface surface(s);
   _periodic[0] = surface.IsUPeriodic();
   _periodic[1] = surface.IsVPeriodic();
 
   ShapeAnalysis::GetFaceUVBounds(_s, umin, umax, vmin, vmax);
   Msg::Debug("OCC Face %d with %d edges bounds (%g,%g)(%g,%g)", 
-      num, l_edges.size(), umin, umax, vmin, vmax);
+             num, l_edges.size(), umin, umax, vmin, vmax);
   // we do that for the projections to converge on the borders of the
   // surface
   const double du = umax - umin;

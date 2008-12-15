@@ -92,6 +92,7 @@ class GEntity {
     SurfaceOfRevolution,
     BoundaryLayerSurface,
     DiscreteSurface,
+    CompoundSurface,
     Volume,
     DiscreteVolume
   };
@@ -130,6 +131,7 @@ class GEntity {
       "Surface of Revolution",
       "Boundary layer surface",
       "Discrete surface",
+      "Compound surface",
       "Volume",
       "Discrete volume"
     };
@@ -143,6 +145,9 @@ class GEntity {
   GEntity(GModel *m, int t);
 
   virtual ~GEntity();
+
+  // delete the mesh data
+  virtual void deleteMesh(){}
 
   // delete the vertex arrays, used to to draw the mesh efficiently
   void deleteVertexArrays();

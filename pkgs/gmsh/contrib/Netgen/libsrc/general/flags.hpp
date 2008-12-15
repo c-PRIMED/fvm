@@ -62,7 +62,7 @@ public:
   /// Returns address of numerical flag, null if not exists
   double * GetNumFlagPtr (const char * name);
   /// Returns boolean flag
-  int GetDefineFlag (const char * name) const;
+  bool GetDefineFlag (const char * name) const;
   /// Returns string list flag, empty array if not exist
   const ARRAY<char*> & GetStringListFlag (const char * name) const;
   /// Returns num list flag, empty array if not exist
@@ -70,13 +70,13 @@ public:
 
 
   /// Test, if string flag is defined
-  int StringFlagDefined (const char * name) const;
+  bool StringFlagDefined (const char * name) const;
   /// Test, if num flag is defined
-  int NumFlagDefined (const char * name) const;
+  bool NumFlagDefined (const char * name) const;
   /// Test, if string list flag is defined
-  int StringListFlagDefined (const char * name) const;
+  bool StringListFlagDefined (const char * name) const;
   /// Test, if num list flag is defined
-  int NumListFlagDefined (const char * name) const;
+  bool NumListFlagDefined (const char * name) const;
 };
   
 #endif

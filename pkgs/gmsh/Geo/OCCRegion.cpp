@@ -8,7 +8,7 @@
 #include "OCCEdge.h"
 #include "OCCFace.h"
 #include "OCCRegion.h"
-#include "Message.h"
+#include "GmshMessage.h"
 
 #if defined(HAVE_OCC)
 
@@ -31,7 +31,7 @@ OCCRegion::OCCRegion(GModel *m, TopoDS_Solid _s, int num, TopTools_IndexedMapOfS
 	Msg::Error("Unknown face %d in region %d", index, num);
     }      
   }
-  Msg::Info("OCC Region %d with %d edges", num, l_faces.size());
+  Msg::Info("OCC Region %d with %d faces", num, l_faces.size());
 }
 
 GEntity::GeomType OCCRegion::geomType() const

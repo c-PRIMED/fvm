@@ -15,7 +15,7 @@
 #include "Context.h"
 #include "GPoint.h"
 #include "GModel.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Numeric.h"
 #include "BDS.h"
 #include "qualityMeasures.h"
@@ -259,6 +259,17 @@ bool edgeSwapTestDelaunay(BDS_Edge *e,GFace *gf)
     gmsh::orient3d(p1x, p2x, op1x, fourth);  
   return result > 0.;
 }
+
+
+bool edgeSwapTestHighOrder(BDS_Edge *e,GFace *gf)
+{
+  // must evaluate the swap with the perspectve of 
+  // the generation of 2 high order elements 
+  // The rationale is to consider the edges as
+  // exactly matching curves and surfaces 
+  return false;
+}
+
 
 bool edgeSwapTestDelaunayAniso(BDS_Edge *e, GFace *gf, std::set<swapquad> &configs)
 {
@@ -519,8 +530,25 @@ void gmshRefineMeshBDS(GFace *gf, BDS_Mesh &m, const int NIT,
   
   int MAXNP = m.MAXPOINTNUMBER;
 
+
+  // classify correctly the embedded vertices
+  // use a negative model face number to avoid
+  // mesh motion
+  std::list<GVertex*> emb_vertx = gf->embeddedVertices();
+  std::list<GVertex*>::iterator itvx = emb_vertx.begin();
+  while(itvx != emb_vertx.end()){
+    MVertex *v = *((*itvx)->mesh_vertices.begin());
+    BDS_Point *p = m.find_point(v->getIndex());
+    m.add_geom (-1, 2);
+    p->g = m.get_geom(-1,2);
+    p->lc() = (*itvx)->prescribedMeshSizeAtVertex();
+    p->lcBGM() = (*itvx)->prescribedMeshSizeAtVertex();
+    ++itvx;
+  }
+
   // IF ASKED , compute nodal size field using 1D Mesh
   if (computeNodalSizeField){
+
     std::set<BDS_Point*,PointLessThan>::iterator itp = m.points.begin();
     while (itp != m.points.end()){
       std::list<BDS_Edge*>::iterator it  = (*itp)->edges.begin();
@@ -535,10 +563,12 @@ void gmshRefineMeshBDS(GFace *gf, BDS_Mesh &m, const int NIT,
         }
         ++it;
       }
-      if (!ne) L = 1.e22;
-      if(CTX.mesh.lc_from_points)
-        (*itp)->lc() = L;
-      (*itp)->lcBGM() = L;
+      if ((*itp)->g && (*itp)->g->classif_tag > 0){
+	if (!ne) L = MAX_LC;
+	if(CTX.mesh.lc_from_points)
+	  (*itp)->lc() = L;
+	(*itp)->lcBGM() = L;
+      }
       ++itp;
     }
   }
@@ -555,7 +585,7 @@ void gmshRefineMeshBDS(GFace *gf, BDS_Mesh &m, const int NIT,
     int nb_swap = 0;
 
     // split long edges
-    double minL = 1.E22, maxL = 0;
+    double minL = 1.e22, maxL = 0;
     int NN1 = m.edges.size();
     int NN2 = 0;
     std::list<BDS_Edge*>::iterator it = m.edges.begin();
@@ -766,10 +796,10 @@ BDS_Mesh *gmsh2BDS(std::list<GFace*> &l)
         if (!p[j]) {
           p[j] = m->add_point(e->getVertex(j)->getNum(), e->getVertex(j)->x(),
                               e->getVertex(j)->y(), e->getVertex(j)->z());
-          double u0, v0;
-          parametricCoordinates(e->getVertex(j), gf, u0, v0);
-          p[j]->u = u0;
-          p[j]->v = v0;
+          SPoint2 param;
+          reparamMeshVertexOnFace(e->getVertex(j), gf, param);
+          p[j]->u = param[0];
+          p[j]->v = param[1];
           m->add_geom(e->getVertex(j)->onWhat()->tag(), 
                       e->getVertex(j)->onWhat()->dim());
           BDS_GeomEntity *g = m->get_geom(e->getVertex(j)->onWhat()->tag(), 

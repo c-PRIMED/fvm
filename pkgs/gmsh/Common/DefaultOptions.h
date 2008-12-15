@@ -95,7 +95,7 @@ StringXString MeshOptions_String[] = {
 StringXString SolverOptions_String[] = {
   { F|O, "SocketName" , opt_solver_socket_name , 
 #if defined(WIN32) && !defined(__CYGWIN__)
-    "127.0.0.1:44122" , // use TCP/IP sockets by default on "pure" Windows
+    "127.0.0.1:44122" , // use TCP/IP sockets by default on Windows
 #else
     ".gmshsock" , // otherwise use Unix sockets by default
 #endif
@@ -543,6 +543,8 @@ StringXNumber GeneralOptions_Number[] = {
 
   { F|O, "DoubleBuffer" , opt_general_double_buffer , 1. ,
     "Use a double buffered graphic window (on Unix, should be set to 0 when working on a remote host without GLX)" },
+  { F|O, "DrawAllModels" , opt_general_draw_all_models, 0. , 
+    "Draw all loaded models (instead of drawing only the current one)" },
   { F|O, "DrawBoundingBoxes" , opt_general_draw_bounding_box, 0. ,
     "Draw bounding boxes" },
 
@@ -657,6 +659,8 @@ StringXNumber GeneralOptions_Number[] = {
     "Horizontal position (in pixels) of the upper left corner of the menu window" }, 
   { F|S, "MenuPositionY" , opt_general_menu_position1 , 50. ,
     "Vertical position (in pixels) of the upper left corner of the menu window" }, 
+  { F|S, "MessageAutoScroll" , opt_general_message_auto_scroll , 1. , 
+    "Automatically scroll message window" }, 
   { F|S, "MessagePositionX" , opt_general_message_position0 , 650. , 
     "Horizontal position (in pixels) of the upper left corner of the message window" }, 
   { F|S, "MessagePositionY" , opt_general_message_position1 , 490. , 
@@ -865,7 +869,7 @@ StringXNumber GeometryOptions_Number[] = {
   { F|O, "SurfaceNumbers" , opt_geometry_surfaces_num , 0. , 
     "Display surface numbers?" },
   { F|O, "SurfaceType" , opt_geometry_surface_type , 2. , 
-    "Surface display type (0=cross, 1=wireframe, 2=solid" },
+    "Surface display type (0=cross, 1=wireframe, 2=solid)" },
 
   { F|O, "Tangents" , opt_geometry_tangents , 0. ,
     "Display size of tangent vectors (in pixels)" },
@@ -897,6 +901,8 @@ StringXNumber MeshOptions_Number[] = {
 
   { F|O, "BdfFieldFormat" , opt_mesh_bdf_field_format , 1. , 
     "Field format for Nastran BDF files (0=free, 1=small, 2=large)" },
+  { F|O, "Binary" , opt_mesh_binary , 0. , 
+    "Write mesh files in binary format (if possible)" },
 
   { F|O, "C1Continuity" , opt_mesh_c1 , 0. ,
     "Impose C1 continuity to high order meshes (only valid in 2D plane and ElemenOrder = 2)" },
@@ -938,7 +944,7 @@ StringXNumber MeshOptions_Number[] = {
     "Factor applied to all characteristic lengths" },
   { F|O, "CharacteristicLengthMin" , opt_mesh_lc_min, 0.0 ,
     "Minimum characteristic length" },
-  { F|O, "CharacteristicLengthMax" , opt_mesh_lc_max, 1.e22 ,
+  { F|O, "CharacteristicLengthMax" , opt_mesh_lc_max, 1.e22,
     "Maximum characteristic length" },
   { F|O, "CharacteristicLengthFromCurvature" , opt_mesh_lc_from_curvature , 0. ,
     "Compute characteristic lengths from curvature" },
@@ -994,8 +1000,6 @@ StringXNumber MeshOptions_Number[] = {
     "Minimum number of points used to mesh a circle" },
   { F|O, "MinimumCurvePoints" , opt_mesh_min_curv_points, 3. ,
     "Minimum number of points used to mesh a (non-straight) curve" },
-  { F|O, "MshBinary" , opt_mesh_msh_binary , 0. , 
-    "Write MSH files in binary format?" },
   { F|O, "MshFileVersion" , opt_mesh_msh_file_version , 2.0 , 
     "Version of the MSH file format to use" },
 
@@ -1062,6 +1066,8 @@ StringXNumber MeshOptions_Number[] = {
 
   { F,   "SaveAll" , opt_mesh_save_all , 0. , 
     "Ignore Physical definitions and save all elements" },
+  { F,   "SaveParametric" , opt_mesh_save_parametric , 0. , 
+    "Save parametric coordinates of nodes" },
   { F,   "SaveGroupsOfNodes" , opt_mesh_save_groups_of_nodes , 0. , 
     "Save groups of nodes for each physical line and surface (UNV mesh format only)" },
   { F|O, "ScalingFactor" , opt_mesh_scaling_factor , 1.0 ,
@@ -1080,8 +1086,6 @@ StringXNumber MeshOptions_Number[] = {
     "Number of smoothing steps of internal edges for high order meshes" },
   { F|O, "SmoothNormals" , opt_mesh_smooth_normals , 0. , 
     "Smooth the mesh normals?" },
-  { F|O, "StlBinary" , opt_mesh_stl_binary , 0. , 
-    "Save STL files in binary format?" },
   { F|O, "SurfaceEdges" , opt_mesh_surfaces_edges , 1. , 
     "Display edges of surface mesh?" },
   { F|O, "SurfaceFaces" , opt_mesh_surfaces_faces , 0. , 
@@ -1093,6 +1097,8 @@ StringXNumber MeshOptions_Number[] = {
     "Display size of tangent vectors (in pixels)" }, 
   { F|O, "Tetrahedra" , opt_mesh_tetrahedra , 1. , 
     "Display mesh tetrahedra?" },
+  { F|O, "ToleranceEdgeLength" , opt_mesh_tolerance_edge_length, 0.0,
+    "Skip a model edge in mesh generation if its length is less than user's defined tolerance" },
   { F|O, "Triangles" , opt_mesh_triangles , 1. , 
     "Display mesh triangles?" },
 
@@ -1105,7 +1111,7 @@ StringXNumber MeshOptions_Number[] = {
   { F|O, "Voronoi" , opt_mesh_voronoi , 0. ,
     "Display the voronoi diagram" },
 
-  { F|O, "ZoneDefinition" , opt_mesh_zone_definition , 2. , 
+  { F|O, "ZoneDefinition" , opt_mesh_zone_definition , 0. , 
     "Method for defining a zone (0=single zone, 1=by partition, 2=by physical)" },
 
   { 0, NULL , NULL , 0. , NULL }

@@ -11,7 +11,7 @@
 #include <sstream>
 
 #include "GmshUI.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "MallocUtils.h"
 #include "ListUtils.h"
 #include "StringUtils.h"
@@ -595,6 +595,7 @@ static const char *input_formats =
   "BRep model" TT "*.brep" NN
 #endif
   "I-deas universal mesh" TT "*.unv" NN
+  "Diffpack 3D mesh" TT "*.diff" NN
   "VTK mesh" TT "*.vtk" NN
 #if defined(HAVE_MED)
   "MED file" TT "*.{med,mmed,rmed}" NN
@@ -650,13 +651,14 @@ int _save_options(const char *name){ return options_dialog(name); }
 int _save_geo(const char *name){ return geo_dialog(name); }
 int _save_cgns(const char *name){ return cgns_write_dialog(name); }
 int _save_unv(const char *name){ return unv_dialog(name); }
-int _save_vtk(const char *name){ return generic_mesh_dialog(name, "VTK Options", FORMAT_VTK); }
-int _save_med(const char *name){ return generic_mesh_dialog(name, "MED Options", FORMAT_MED); }
-int _save_mesh(const char *name){ return generic_mesh_dialog(name, "MESH Options", FORMAT_MESH); }
+int _save_vtk(const char *name){ return generic_mesh_dialog(name, "VTK Options", FORMAT_VTK, true); }
+int _save_diff(const char *name){ return generic_mesh_dialog(name, "Diffpack Options", FORMAT_DIFF, true); }
+int _save_med(const char *name){ return generic_mesh_dialog(name, "MED Options", FORMAT_MED, false); }
+int _save_mesh(const char *name){ return generic_mesh_dialog(name, "MESH Options", FORMAT_MESH, false); }
 int _save_bdf(const char *name){ return bdf_dialog(name); }
-int _save_p3d(const char *name){ return generic_mesh_dialog(name, "P3D Options", FORMAT_P3D); }
-int _save_stl(const char *name){ return stl_dialog(name); }
-int _save_vrml(const char *name){ return generic_mesh_dialog(name, "VRML Options", FORMAT_VRML); }
+int _save_p3d(const char *name){ return generic_mesh_dialog(name, "P3D Options", FORMAT_P3D, false); }
+int _save_stl(const char *name){ return generic_mesh_dialog(name, "STL Options", FORMAT_STL, true); }
+int _save_vrml(const char *name){ return generic_mesh_dialog(name, "VRML Options", FORMAT_VRML, false); }
 int _save_eps(const char *name){ return gl2ps_dialog(name, "EPS Options", FORMAT_EPS); }
 int _save_gif(const char *name){ return gif_dialog(name); }
 int _save_jpeg(const char *name){ return jpeg_dialog(name); }
@@ -681,6 +683,7 @@ int _save_auto(const char *name)
   case FORMAT_MED  : return _save_med(name);
   case FORMAT_MESH : return _save_mesh(name);
   case FORMAT_BDF  : return _save_bdf(name);
+  case FORMAT_DIFF : return _save_diff(name);
   case FORMAT_P3D  : return _save_p3d(name);
   case FORMAT_STL  : return _save_stl(name);
   case FORMAT_VRML : return _save_vrml(name);
@@ -725,6 +728,7 @@ void file_save_as_cb(CALLBACK_ARGS)
     {"CGNS" TT "*.cgns", _save_cgns},
 #endif
     {"I-deas universal mesh" TT "*.unv", _save_unv},
+    {"Diffpack 3D mesh" TT "*.diff", _save_diff},
     {"VTK mesh" TT "*.vtk", _save_vtk},
 #if defined(HAVE_MED)
     {"MED file" TT "*.med", _save_med},
@@ -1082,6 +1086,7 @@ void mesh_options_ok_cb(CALLBACK_ARGS)
   opt_mesh_reverse_all_normals(0, GMSH_SET, WID->mesh_butt[0]->value());
   opt_mesh_lc_from_curvature(0, GMSH_SET, WID->mesh_butt[1]->value());
   opt_mesh_lc_from_points(0, GMSH_SET, WID->mesh_butt[5]->value());
+  opt_mesh_lc_extend_from_boundary(0, GMSH_SET, WID->mesh_butt[16]->value());
   opt_mesh_optimize(0, GMSH_SET, WID->mesh_butt[2]->value());
   opt_mesh_optimize_netgen(0, GMSH_SET, WID->mesh_butt[24]->value());
   opt_mesh_order(0, GMSH_SET, WID->mesh_value[3]->value());
@@ -1108,7 +1113,6 @@ void mesh_options_ok_cb(CALLBACK_ARGS)
   opt_mesh_light_two_side(0, GMSH_SET, WID->mesh_butt[18]->value());
   opt_mesh_smooth_normals(0, GMSH_SET, WID->mesh_butt[19]->value());
   opt_mesh_light_lines(0, GMSH_SET, WID->mesh_butt[20]->value());
-
   opt_mesh_nb_smoothing(0, GMSH_SET, WID->mesh_value[0]->value());
   opt_mesh_lc_factor(0, GMSH_SET, WID->mesh_value[2]->value());
   opt_mesh_lc_min(0, GMSH_SET, WID->mesh_value[25]->value());
@@ -1838,19 +1842,48 @@ void statistics_update_cb(CALLBACK_ARGS)
 
 void statistics_histogram_cb(CALLBACK_ARGS)
 {
-  const char *name = (const char*)data;
-  int type;
-  if(!strcmp(name, "Gamma"))
-    type = 0;
-  else if(!strcmp(name, "Eta"))
-    type = 1;
-  else if(!strcmp(name, "Rho"))
-    type = 2;
-  else
-    type = 3;
+  std::string name((const char*)data);
+
   std::vector<double> x, y;
-  for(int i = 0; i < 100; i++) y.push_back(WID->quality[type][i]);
-  new PView(name, "# Elements", x, y);
+
+  if(name == "Gamma2D"){
+    for(int i = 0; i < 100; i++) y.push_back(WID->quality[0][i]);
+    new PView("Gamma", "# Elements", x, y);
+  }
+  else if(name == "Eta2D"){
+    for(int i = 0; i < 100; i++) y.push_back(WID->quality[1][i]);
+    new PView("Eta", "# Elements", x, y);
+  }
+  else if(name == "Rho2D"){
+    for(int i = 0; i < 100; i++) y.push_back(WID->quality[2][i]);
+    new PView("Rho", "# Elements", x, y);
+  }
+  else if(name == "Disto2D"){
+    for(int i = 0; i < 100; i++) y.push_back(WID->quality[3][i]);
+    new PView("Disto", "# Elements", x, y);
+  }
+  else{
+    std::vector<GEntity*> entities;
+    GModel::current()->getEntities(entities);
+    std::map<int, std::vector<double> > d;
+    for(unsigned int i = 0; i < entities.size(); i++){
+      if(entities[i]->dim() < 2) continue;
+      for(unsigned int j = 0; j < entities[i]->getNumMeshElements(); j++){
+        MElement *e = entities[i]->getMeshElement(j);
+        if(name == "Gamma3D")
+          d[e->getNum()].push_back(e->gammaShapeMeasure());
+        else if(name == "Eta3D")
+          d[e->getNum()].push_back(e->etaShapeMeasure());
+        else if(name == "Rho3D")
+          d[e->getNum()].push_back(e->rhoShapeMeasure());
+        else
+          d[e->getNum()].push_back(e->distoShapeMeasure());
+      }
+    }
+    name.resize(name.size() - 2);
+    new PView(name, "ElementData", GModel::current(), d);
+  }
+
   WID->update_views();
   Draw();
 }
@@ -1860,6 +1893,11 @@ void statistics_histogram_cb(CALLBACK_ARGS)
 void message_cb(CALLBACK_ARGS)
 {
   WID->create_message_window();
+}
+
+void message_auto_scroll_cb(CALLBACK_ARGS)
+{
+  CTX.msg_auto_scroll = WID->msg_butt->value();
 }
 
 void message_copy_cb(CALLBACK_ARGS)
@@ -3096,6 +3134,59 @@ void geometry_elementary_add_new_cb(CALLBACK_ARGS)
     Msg::Error("Unknown entity to create: %s", str.c_str());
 }
 
+static void _split_selection()
+{
+  opt_geometry_lines(0, GMSH_SET | GMSH_GUI, 1);
+  Draw();
+  Msg::StatusBar(3, false, "Select a line to split\n"
+          "[Press 'q' to abort]");
+  std::vector<GVertex*> vertices;
+  std::vector<GEdge*> edges;
+  std::vector<GFace*> faces;
+  std::vector<GRegion*> regions;
+  std::vector<MElement*> elements;
+  GEdge* edge_to_split = NULL;
+  while(1){
+    char ib = SelectEntity(2, vertices, edges, faces, regions, elements);
+    if(ib == 'q')
+      break;
+    if(!edges.empty()){
+      edge_to_split = edges[0];
+      HighlightEntity(edges[0]);
+      break;
+    }
+  }
+  Msg::StatusBar(3, false, "");
+  if(edges.empty())
+    return;
+  List_T *List1 = List_Create(5, 5, sizeof(int));
+  Msg::StatusBar(3, false, "Select break points\n"
+                 "[Press 'e' to end selection or 'q' to abort]");
+  opt_geometry_points(0, GMSH_SET | GMSH_GUI, 1);
+  Draw();
+  while(1){
+    char ib = SelectEntity(1, vertices, edges, faces, regions, elements);
+    if(ib == 'q')
+      break;
+    if(ib == 'e'){
+      split_edge(edge_to_split->tag(), List1, CTX.filename);
+      break;
+    }
+    if(!vertices.empty()){
+      for(unsigned int i = 0; i < vertices.size(); i++){
+        int tag = vertices[i]->tag();
+        int index = List_ISearchSeq(List1, &tag, fcmp_int); 
+        if(index < 0) List_Add(List1, &tag);
+        HighlightEntity(vertices[i]);
+      }
+    }
+  }
+  Msg::StatusBar(3, false, "");
+  WID->reset_visibility();
+  ZeroHighlight();
+  Draw();
+}
+
 static void _action_point_line_surface_volume(int action, int mode, const char *what)
 {
   std::vector<GVertex*> vertices;
@@ -3305,6 +3396,7 @@ static void _action_point_line_surface_volume(int action, int mode, const char *
         case 9:
           add_recosurf(List1, CTX.filename);
           break;
+
         default:
           Msg::Error("Unknown action on selected entities");
           break;
@@ -3439,6 +3531,15 @@ void geometry_elementary_delete_cb(CALLBACK_ARGS)
     return;
   }
   _action_point_line_surface_volume(6, 0, (const char*)data);
+}
+
+void geometry_elementary_split_cb(CALLBACK_ARGS)
+{
+  if(!data){
+    WID->set_context(menu_geometry_elementary_split, 0);
+    return;
+  }
+  _split_selection();
 }
 
 void geometry_elementary_coherence_cb(CALLBACK_ARGS)
@@ -3727,6 +3828,14 @@ void mesh_optimize_cb(CALLBACK_ARGS)
   Msg::StatusBar(2, false, " ");
 }
 
+void mesh_refine_cb(CALLBACK_ARGS)
+{
+  RefineMesh(GModel::current(), CTX.mesh.second_order_linear);
+  CTX.mesh.changed |= (ENT_LINE | ENT_SURFACE | ENT_VOLUME);
+  Draw();
+  Msg::StatusBar(2, false, " ");
+}
+
 void mesh_optimize_netgen_cb(CALLBACK_ARGS)
 {
   if(CTX.threads_lock) {
@@ -3881,7 +3990,7 @@ static void _add_transfinite(int dim)
           if(ib == 'e') {
             switch (dim) {
             case 2:
-              if(p.size() == 3 + 1 || p.size() == 4 + 1)
+              if(p.size() == 0 + 1 || p.size() == 3 + 1 || p.size() == 4 + 1)
                 add_trsfsurf(p, CTX.filename,
                              WID->context_mesh_choice[1]->text());
               else
@@ -4334,80 +4443,70 @@ void view_plugin_cb(CALLBACK_ARGS)
 
 void view_field_cb(CALLBACK_ARGS)
 {
-  WID->create_field_window((int)(long)data);
-}
-
-void view_field_cancel_cb(CALLBACK_ARGS)
-{
-  WID->field_window->hide();
+  WID->field_window->show();
+  WID->edit_field(NULL);
 }
 
 void view_field_delete_cb(CALLBACK_ARGS)
 {
-  FieldDialogBox *fdb = (FieldDialogBox*)data;
-  fdb->group->hide();
-  delete_field(fdb->current_field->id, CTX.filename);
-  WID->create_field_window(0);
-}
-
-void view_field_set_size_btn_cb(CALLBACK_ARGS)
-{
-  FieldDialogBox *fdb = (FieldDialogBox*)data;
-  fdb->group->hide();
-  int v = ((Fl_Check_Button*)w)->value();
-  if(v)
-    set_background_field(fdb->current_field->id, CTX.filename);
-  else
-    set_background_field(-1, CTX.filename);
-  WID->create_field_window(fdb->current_field->id);
+  Field *f=(Field*)WID->field_editor_group->user_data();
+  delete_field(f->id, CTX.filename);
+  WID->edit_field(NULL);
 }
 
 void view_field_new_cb(CALLBACK_ARGS)
 {
   Fl_Menu_Button* mb = ((Fl_Menu_Button*)w);
-  int id = GModel::current()->getFields()->new_id();
+  FieldManager *fields=GModel::current()->getFields();
+  int id = fields->new_id();
   add_field(id, mb->text(), CTX.filename);
-  WID->create_field_window(id);
+  WID->edit_field((*fields)[id]);
 }
 
 void view_field_apply_cb(CALLBACK_ARGS)
 {
-  FieldDialogBox *fdb = (FieldDialogBox*)data;
-  fdb->save_values();
-  int selected = WID->field_browser->value();
-  std::ostringstream sstream("");
-  sstream << fdb->current_field->id;
-  sstream << " " << fdb->current_field->get_name();
-  WID->field_browser->text(selected, sstream.str().c_str());
+  WID->save_field_options();
 }
 
 void view_field_revert_cb(CALLBACK_ARGS)
 {
-  FieldDialogBox *fdb = (FieldDialogBox*)data;
-  fdb->load_field(fdb->current_field);
+  WID->load_field_options();
 }
 
 void view_field_browser_cb(CALLBACK_ARGS)
 {
   int selected = WID->field_browser->value();
-  if(WID->selected_field_dialog_box){
-    WID->selected_field_dialog_box->group->hide();
+  if(!selected){
+    WID->edit_field(NULL);
   }
-  if(!selected) return;
   Field *f = (Field*)WID->field_browser->data(selected);
-  f->dialog_box()->load_field(f);
-  WID->selected_field_dialog_box = f->dialog_box();
-  f->dialog_box()->group->show();
+  WID->edit_field(f);
 }
 
 void view_field_put_on_view_cb(CALLBACK_ARGS)
 {
   Fl_Menu_Button* mb = ((Fl_Menu_Button*)w);
-  Field *field = ((FieldDialogBox*)data)->current_field;
+  Field *field = (Field*)WID->field_editor_group->user_data();
   int iView;
-  sscanf(mb->text(), "View [%i]", &iView);
-  field->put_on_view(PView::list[iView]);
+  if(sscanf(mb->text(), "View [%i]", &iView)){
+    if(iView < (int)PView::list.size()){
+      field->put_on_view(PView::list[iView]);
+    }
+  }
+  else{
+    field->put_on_new_view();
+    WID->update_views();
+  }
   Draw();
+}
+
+void view_field_select_file_cb(CALLBACK_ARGS){
+  Fl_Input *input=(Fl_Input*)data;
+  int ret=file_chooser(0,0,"File selection","",input->value());
+  if(ret){
+    input->value(file_chooser_get_name(0).c_str());
+    input->set_changed();
+  }
 }
 
 void view_field_select_node_cb(CALLBACK_ARGS)
@@ -4507,11 +4606,6 @@ void view_plugin_browser_cb(CALLBACK_ARGS)
   for(int i = 1; i <= WID->plugin_browser->size(); i++)
     ((GMSH_Plugin*)WID->plugin_browser->data(i))->dialogBox->group->hide();
   p->dialogBox->group->show();
-
-  if(iView >= 0)
-    WID->plugin_run->activate();
-  else
-    WID->plugin_run->deactivate();
 }
 
 void view_plugin_run_cb(CALLBACK_ARGS)
@@ -4542,8 +4636,10 @@ void view_plugin_run_cb(CALLBACK_ARGS)
   }
 
   // run on all selected views
+  bool no_view_selected = true;
   for(int i = 1; i <= WID->plugin_view_browser->size(); i++) {
     if(WID->plugin_view_browser->selected(i)) {
+      no_view_selected = false;
       try{
         if(i - 1 >= 0 && i - 1 < (int)PView::list.size())
           p->execute(PView::list[i - 1]);
@@ -4556,6 +4652,9 @@ void view_plugin_run_cb(CALLBACK_ARGS)
         Msg::Warning("%s", tmp);
       }
     }
+  }
+  if(no_view_selected){
+    p->execute(0);
   }
 
   WID->update_views();

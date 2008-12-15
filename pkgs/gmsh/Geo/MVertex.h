@@ -8,9 +8,11 @@
 
 #include <stdio.h>
 #include <set>
+#include "SPoint2.h"
 #include "SPoint3.h"
 
 class GEntity;
+class GEdge;
 class GFace;
 class MVertex;
 
@@ -22,7 +24,7 @@ class MVertexLessThanLexicographic{
 
 // A mesh vertex.
 class MVertex{
- private:
+ protected:
   // the maximum vertex id number in the mesh
   static int _globalNum;
   // the id number of the vertex (this number is unique and is
@@ -42,7 +44,7 @@ class MVertex{
 
  public :
   MVertex(double x, double y, double z, GEntity *ge=0, int num=0) 
-    : _visible(true), _order(1), _x(x), _y(y), _z(z), _ge(ge)
+    : _visible(1), _order(1), _x(x), _y(y), _z(z), _ge(ge)
   {
     if(num){
       _num = num;
@@ -106,20 +108,23 @@ class MVertex{
   linearSearch(std::set<MVertex*, MVertexLessThanLexicographic> &pos);
 
   // IO routines
-  void writeMSH(FILE *fp, bool binary=false, double scalingFactor=1.0);
+  void writeMSH(FILE *fp, bool binary=false, bool saveParametric=false,
+                double scalingFactor=1.0);
   void writeVRML(FILE *fp, double scalingFactor=1.0);
   void writeUNV(FILE *fp, double scalingFactor=1.0);
-  void writeVTK(FILE *fp, bool binary=false, double scalingFactor=1.0);
+  void writeVTK(FILE *fp, bool binary=false, double scalingFactor=1.0,
+		bool bigEndian=false);
   void writeMESH(FILE *fp, double scalingFactor=1.0);
   void writeBDF(FILE *fp, int format=0, double scalingFactor=1.0);
+  void writeDIFF(FILE *fp, bool binary, double scalingFactor=1.0);
 };
 
 class MEdgeVertex : public MVertex{
  protected:
   double _u, _lc;
  public :
-  MEdgeVertex(double x, double y, double z, GEntity *ge, double u, double lc = -1.0) 
-    : MVertex(x, y, z, ge), _u(u), _lc(lc)
+  MEdgeVertex(double x, double y, double z, GEntity *ge, double u, double lc = -1.0, int num = 0) 
+    : MVertex(x, y, z, ge,num), _u(u), _lc(lc)
   {
   }
   virtual ~MEdgeVertex(){}
@@ -140,8 +145,8 @@ class MFaceVertex : public MVertex{
  protected:
   double _u, _v;
  public :
-  MFaceVertex(double x, double y, double z, GEntity *ge, double u, double v) 
-    : MVertex(x, y, z, ge), _u(u), _v(v)
+  MFaceVertex(double x, double y, double z, GEntity *ge, double u, double v, int num =0) 
+    : MVertex(x, y, z, ge, num), _u(u), _v(v)
   {
   }
   virtual ~MFaceVertex(){}
@@ -160,6 +165,9 @@ class MFaceVertex : public MVertex{
   }
 };
 
-void parametricCoordinates(const MVertex *ver, const GFace *gf, double &u, double &v);
+bool reparamMeshEdgeOnFace(MVertex *v1, MVertex *v2, GFace *gf, 
+                           SPoint2 &param1, SPoint2 &param2);
+bool reparamMeshVertexOnFace(MVertex *v, GFace *gf, SPoint2 &param);
+bool reparamMeshVertexOnEdge(MVertex *v, GEdge *ge, double &param);
 
 #endif

@@ -1,8 +1,6 @@
 #include <mystdlib.h>
 #include "meshing.hpp"
 
-// #define MARK
-// #include <prof.h>
 
 namespace netgen
 {
@@ -52,8 +50,8 @@ static double CalcElementBadness (const ARRAY<Point3d> & points,
 int Meshing3 :: ApplyRules 
 (
  ARRAY<Point3d> & lpoints,     // in: local points, out: old+new local points
- ARRAY<int> & allowpoint,      // in: 1 .. it is allowed to use pointi
- ARRAY<Element2d> & lfaces,    // in: local faces, out: old+new local faces
+ ARRAY<int> & allowpoint,      // in: 2 .. it is allowed to use pointi, 1..will be allowed later, 0..no means
+ ARRAY<MiniElement2d> & lfaces,    // in: local faces, out: old+new local faces
  INDEX lfacesplit,	       // for local faces in outer radius
  INDEX_2_HASHTABLE<int> & connectedpairs,  // connected pairs for prism-meshing
  ARRAY<Element> & elements,    // out: new elements
@@ -65,8 +63,9 @@ int Meshing3 :: ApplyRules
  )
 
 {
+  NgProfiler::RegionTimer regtot(97);
+
   int i, j, k, ri, nfok, npok, incnpok, refpi, locpi, locfi, locfr;
-  int hi, minn, hpi;
   float hf, err, minerr, teterr, minteterr;
   char ok, found, hc;
   vnetrule * rule;
@@ -74,74 +73,66 @@ int Meshing3 :: ApplyRules
   Vec3d ui;
   Point3d np;
   int oldnp, noldlp, noldlf;
-  const Element2d * locface = NULL;
+  const MiniElement2d * locface = NULL;
   int loktestmode;
-  
-  static ARRAY<int> pused;       // point is already mapped
-  static ARRAY<int> fused;       // face is already mapped
-  static ARRAY<int> pmap;        // map of reference point to local point
-  static ARRAY<int> pfixed;      // ???
-  static ARRAY<int> fmapi;       // face in reference is mapped to face nr ...
-  static ARRAY<int> fmapr;       // face in reference is rotated to map 
+
+
+  static ARRAY<int> pused;        // point is already mapped
+  static ARRAY<char> fused;       // face is already mapped
+  static ARRAY<int> pmap;         // map of reference point to local point
+  static ARRAY<char> pfixed;      // point mapped by face-map
+  static ARRAY<int> fmapi;        // face in reference is mapped to face nr ...
+  static ARRAY<int> fmapr;        // face in reference is rotated to map 
   static ARRAY<Point3d> transfreezone;  // transformed free-zone
-  static INDEX cnt = 0;
-  INDEX_2_HASHTABLE<int> ledges(lfaces.Size());  // edges in local environment
+  static int cnt = 0;
+  static INDEX_2_CLOSED_HASHTABLE<int> ledges(100); // edges in local environment
   
   static ARRAY<Point3d> tempnewpoints;
-  static ARRAY<Element2d> tempnewfaces;
+  static ARRAY<MiniElement2d> tempnewfaces;
   static ARRAY<int> tempdelfaces;
   static ARRAY<Element> tempelements;
   static ARRAY<Box3d> triboxes;         // bounding boxes of local faces
 
 
-  static ARRAY<int> pnearness;
+  static ARRAY<int, PointIndex::BASE> pnearness;
   static ARRAY<int> fnearness;
-  
+
   cnt++;
   
   delfaces.SetSize (0);
   elements.SetSize (0);
 
-
   // determine topological distance of faces and points to
   // base element
-
 
   pnearness.SetSize (lpoints.Size());
   fnearness.SetSize (lfacesplit);
 
-  for (i = 1; i <= pnearness.Size(); i++)
-    pnearness.Set(i, INT_MAX/10);
+  pnearness = INT_MAX/10;
+  for (j = 0; j < lfaces[0].GetNP(); j++)
+    pnearness[lfaces[0][j]] = 0;
 
-  for (j = 1; j <= lfaces.Get(1).GetNP(); j++)
-    pnearness.Set(lfaces.Get(1).PNum(j), 0);
+  NgProfiler::RegionTimer reg2(98);
+  
+  NgProfiler::StartTimer (90);
 
-
-  // MARK(appl1);
-  do
+  for (int loop = 0; loop < 2; loop++)
     {
-      ok = 1;
-      
-      for (i = 1; i <= lfacesplit; i++)
-	{
-	  const Element2d & hface = lfaces.Get(i);
 
-	  minn = INT_MAX-1;
-	  for (j = 1; j <= hface.GetNP(); j++)
+      for (i = 0; i < lfacesplit; i++)
+	{
+	  const MiniElement2d & hface = lfaces[i];
+
+	  int minn = INT_MAX-1;
+	  for (j = 0; j < hface.GetNP(); j++)
 	    {
-	      hi = pnearness.Get(hface.PNum(j));
+	      int hi = pnearness[hface[j]];
 	      if (hi < minn) minn = hi;
 	    }
-	  
-	  for (j = 1; j <= hface.GetNP(); j++)
-	    {
-	      hpi = hface.PNum(j);
-	      if (pnearness.Get(hpi) > minn+1)
-		{
-		  ok = 0;
-		  pnearness.Set(hpi, minn+1);
-		}
-	    }
+	  if (minn < INT_MAX/10)
+	    for (j = 0; j < hface.GetNP(); j++)
+	      if (pnearness[hface[j]] > minn+1)
+		pnearness[hface[j]] = minn+1;
 	}
 
       for (i = 1; i <= connectedpairs.GetNBags(); i++)
@@ -151,94 +142,72 @@ int Meshing3 :: ApplyRules
 	    int val;
 	    connectedpairs.GetData (i, j, edge, val);
 
-	    
-	    if (edge.I1() > pnearness.Size() ||
-		edge.I2() > pnearness.Size() ||
-		edge.I1() < 1 ||
-		edge.I2() < 1)
-	      {
-		cerr << "pair out of range" << endl;
-		exit (1);
-	      }
-		
-	    if (pnearness.Get(edge.I1()) >
-		pnearness.Get(edge.I2()) + 1)
-	      {
-		;
-		ok = 0;
-		pnearness.Elem(edge.I1()) = 
-		  pnearness.Get(edge.I2()) + 1;
-	      }
-	    if (pnearness.Get(edge.I2()) >
-		pnearness.Get(edge.I1()) + 1)
-	      {
-		;
-		ok = 0;
-		pnearness.Elem(edge.I2()) = 
-		  pnearness.Get(edge.I1()) + 1;
-	      }
+	    if (pnearness[edge.I1()] > pnearness[edge.I2()] + 1)
+	      pnearness[edge.I1()] = pnearness[edge.I2()] + 1;
+
+	    if (pnearness[edge.I2()] > pnearness[edge.I1()] + 1)
+	      pnearness[edge.I2()] = pnearness[edge.I1()] + 1;
 	  }
+
     }
-  while (!ok);
+
+  for (i = 0; i < fnearness.Size(); i++)
+    {
+      int sum = 0;
+      for (j = 0; j < lfaces[i].GetNP(); j++)
+	sum += pnearness[lfaces[i][j]];
+      fnearness[i] = sum;
+    }
 
   
-  for (i = 1; i <= fnearness.Size(); i++)
-    {
-      fnearness.Set(i, 0);
-      for (j = 1; j <= lfaces.Get(i).GetNP(); j++)
-	fnearness.Elem(i) += pnearness.Get(lfaces.Get(i).PNum(j));
-    }
-
-
-  // MARK(appl2);
+  NgProfiler::StopTimer (90);
+  NgProfiler::StartTimer (91);
 
   // find bounding boxes of faces
 
   triboxes.SetSize (lfaces.Size());
-  for (i = 1; i <= lfaces.Size(); i++)
+  for (i = 0; i < lfaces.Size(); i++)
     {
-      const Element2d & face = lfaces.Get(i);
-      triboxes.Elem(i).SetPoint (lpoints.Get(face.PNum(1)));
-      for (j = 2; j <= face.GetNP(); j++)
-	triboxes.Elem(i).AddPoint (lpoints.Get(face.PNum(j)));
+      const MiniElement2d & face = lfaces[i];
+      triboxes[i].SetPoint (lpoints.Get(face[0]));
+      for (j = 1; j < face.GetNP(); j++)
+	triboxes[i].AddPoint (lpoints.Get(face[j]));
     }
 
-  // MARK(appl3);  
+  NgProfiler::StopTimer (91);
+  NgProfiler::StartTimer (92);
 
-  /*
-  for (j = 1; j <= lfacesplit; j++)
-    for (k = 1; k <= lfaces.Get(j).GetNP(); k++)
-      {
-	INDEX_2 i2;
-	i2.I1() = lfaces.Get(j).PNumMod(k);
-	i2.I2() = lfaces.Get(j).PNumMod(k+1);
-	i2.Sort();
-	ledges.Set (i2, 1);
-      }
-  */  
   
-  for (j = 1; j <= lfacesplit; j++)
-    {
-      const Element2d & face = lfaces.Get(j);
-      int newp, oldp;
+  bool useedges = 0;
+  for (ri = 0; ri < rules.Size(); ri++)
+    if (rules[ri]->GetNEd()) useedges = 1;
 
-      newp = face.PNum(face.GetNP());
-      for (k = 1; k <= face.GetNP(); k++)
-	{
-	  oldp = newp;
-	  newp = face.PNum(k);
-	  
-	  INDEX_2 i2(oldp, newp);
-	  i2.Sort();
-	  ledges.Set (i2, 1);
-	}
+  if (useedges)
+    {
+      ledges.SetSize (5 * lfacesplit);
+      
+      for (j = 0; j < lfacesplit; j++)
+	// if (fnearness[j] <= 5) 
+	  {
+	    const MiniElement2d & face = lfaces[j];
+	    int newp, oldp;
+	    
+	    newp = face[face.GetNP()-1];
+	    for (k = 0; k < face.GetNP(); k++)
+	      {
+		oldp = newp;
+		newp = face[k];
+		ledges.Set (INDEX_2::Sort(oldp, newp), 1);
+	      }
+	  }
     }
 
+  NgProfiler::StopTimer (92);
+
+  NgProfiler::RegionTimer reg3(99);
 
   pused.SetSize (lpoints.Size());
   fused.SetSize (lfaces.Size());
-  
-
 
   found = 0;
   minerr = tolfak * tolerance * tolerance;
@@ -248,21 +217,30 @@ int Meshing3 :: ApplyRules
     (*testout) << "cnt = " << cnt << " class = " << tolerance << endl;
 
 
-  // check each rule:
 
-  // MARK(applyml);
+  // impossible, if no rule can be applied at any tolerance class
+  bool impossible = 1;
+
+
+  // check each rule:
 
   for (ri = 1; ri <= rules.Size(); ri++)
     { 
+      int base = (lfaces[0].GetNP() == 3) ? 100 : 200;
+      NgProfiler::RegionTimer regx1(base);
+      NgProfiler::RegionTimer regx(base+ri);
+
       sprintf (problems.Elem(ri), "");
 
       rule = rules.Get(ri);
       
-      if (rule->GetNP(1) != lfaces.Get(1).GetNP())
+      if (rule->GetNP(1) != lfaces[0].GetNP())
 	continue;
 
       if (rule->GetQuality() > tolerance)
 	{
+	  if (rule->GetQuality() < 100) impossible = 0;
+
 	  if (testmode)
 	    sprintf (problems.Elem(ri), "Quality not ok");
 	  continue;
@@ -271,11 +249,7 @@ int Meshing3 :: ApplyRules
       if (testmode)
 	sprintf (problems.Elem(ri), "no mapping found");
       
-      loktestmode = testmode || rule->TestFlag ('t');
-      /*
-      if (tolerance > 8)
-	loktestmode = 1;
-      */
+      loktestmode = testmode || rule->TestFlag ('t') || tolerance > 5;
 
       if (loktestmode)
 	(*testout) << "Rule " << ri << " = " << rule->Name() << endl;
@@ -284,31 +258,24 @@ int Meshing3 :: ApplyRules
       fmapi.SetSize (rule->GetNF());
       fmapr.SetSize (rule->GetNF());
       
-      for (i = 1; i <= lfaces.Size(); i++)
-	fused.Set (i, 0);
-      for (i = 1; i <= lpoints.Size(); i++)
-	pused.Set (i, 0);
-      for (i = 1; i <= pmap.Size(); i++)
-	pmap.Set(i, 0);
-      for (i = 1; i <= fmapi.Size(); i++)
-	fmapi.Set(i, 0);
+      fused = 0;
+      pused = 0;
+      pmap = 0;
+      fmapi = 0;
       for (i = 1; i <= fmapr.Size(); i++)
 	fmapr.Set(i, rule->GetNP(i));
       
-      fused.Set (1, 1);
-      
-      fmapi.Set (1, 1);
-      fmapr.Set (1, rotind1);
+      fused[0] = 1;
+      fmapi[0] = 1;
+      fmapr[0] = rotind1;
 
       
       for (j = 1; j <= lfaces.Get(1).GetNP(); j++)
 	{
-	  locpi = lfaces.Get(1).PNumMod (j+rotind1);
+	  locpi = lfaces[0].PNumMod (j+rotind1);
 	  pmap.Set (rule->GetPointNr (1, j), locpi);
 	  pused.Elem(locpi)++;
 	}
-
-
 
       /*
 	map all faces
@@ -316,6 +283,8 @@ int Meshing3 :: ApplyRules
 	*/
 
       nfok = 2;
+      NgProfiler::RegionTimer regfa(300);
+      NgProfiler::RegionTimer regx2(base+50+ri);
       while (nfok >= 2)
 	{
 	  
@@ -382,7 +351,10 @@ int Meshing3 :: ApplyRules
 				  const Point3d & rp = rule->GetPoint(refpi);
 
 				  if ( Dist2 (lp, rp) * rule->PointDistFactor(refpi) > minerr)
-				    ok = 0;
+				    {
+				      impossible = 0;
+				      ok = 0;
+				    }
 				}
 			    }
 			}
@@ -436,6 +408,7 @@ int Meshing3 :: ApplyRules
 	  else
 	    
 	    { 
+	      NgProfiler::RegionTimer regfb(301);
 
 	      // all faces are mapped
 	      // now map all isolated points:
@@ -482,10 +455,16 @@ int Meshing3 :: ApplyRules
 			      ok = 1;
 			      locpi++;
 			      
-			      if (pused.Get(locpi) || !allowpoint.Get(locpi) ||
+			      if (pused.Get(locpi) || 
 				  pnearness.Get(locpi) > rule->GetPNearness(npok))
 				{
 				  ok = 0;
+				}
+			      else if (allowpoint.Get(locpi) != 2)
+				{
+				  ok = 0;
+				  if (allowpoint.Get(locpi) == 1)
+				    impossible = 0;
 				}
 			      else
 				{
@@ -493,7 +472,10 @@ int Meshing3 :: ApplyRules
 				  const Point3d & rp = rule->GetPoint(npok);
 
 				  if ( Dist2 (lp, rp) * rule->PointDistFactor(npok) > minerr)
-				    ok = 0;
+				    {
+				      ok = 0;
+				      impossible = 0;
+				    }
 				}
 			    }
 			  
@@ -527,7 +509,8 @@ int Meshing3 :: ApplyRules
 		  else
 		    
 		    {
-		      
+		      NgProfiler::RegionTimer regfa2(302);		      
+
 		      // all points are mapped
 		      
 		      if (loktestmode)
@@ -544,14 +527,10 @@ int Meshing3 :: ApplyRules
 		      
 		      
 		      // check mapedges:
-		      
 		      for (i = 1; i <= rule->GetNEd(); i++)
 			{
-			  int i1, i2;
-			  i1 = pmap.Get(rule->GetEdge(i).i1);
-			  i2 = pmap.Get(rule->GetEdge(i).i2);
-
-			  INDEX_2 in2(i1, i2);
+			  INDEX_2 in2(pmap.Get(rule->GetEdge(i).i1),
+				      pmap.Get(rule->GetEdge(i).i2));
 			  in2.Sort();
 			  if (!ledges.Used (in2)) ok = 0;
 			}
@@ -565,11 +544,8 @@ int Meshing3 :: ApplyRules
 			    { 
 			      for (j = 1; j <= 3; j++)
 				{
-				  int i1, i2;
-				  i1 = pmap.Get(el.PNum(j));
-				  i2 = pmap.Get(el.PNum(j+3));
-				  
-				  INDEX_2 in2(i1, i2);
+				  INDEX_2 in2(pmap.Get(el.PNum(j)),
+					      pmap.Get(el.PNum(j+3)));      
 				  in2.Sort();
 				  if (!connectedpairs.Used (in2)) ok = 0;
 				}
@@ -706,7 +682,7 @@ int Meshing3 :: ApplyRules
 			  if (!fused.Get(i))
 			    { 
 			      int triin;
-			      const Element2d & lfacei = lfaces.Get(i);
+			      const MiniElement2d & lfacei = lfaces.Get(i);
 
 			      if (!triboxes.Elem(i).Intersect (rule->fzbox))
 				triin = 0;
@@ -877,7 +853,6 @@ int Meshing3 :: ApplyRules
 			    }
 
 
-			  // MARK(m2);			  
 			  //			  newu = rule->GetOldUToNewU() * oldu;
 
 			  // set new points:
@@ -902,7 +877,7 @@ int Meshing3 :: ApplyRules
 			  for (i = rule->GetNOldF() + 1; i <= rule->GetNF(); i++)
 			    if (!fmapi.Get(i))
 			      {
-				Element2d nface(rule->GetNP(i));
+				MiniElement2d nface(rule->GetNP(i));
 				for (j = 1; j <= nface.GetNP(); j++)
 				  nface.PNum(j) = pmap.Get(rule->GetPointNr (i, j));
 				
@@ -937,12 +912,13 @@ int Meshing3 :: ApplyRules
 
 			      Vec3d n;
 			      Cross (v1, v2, n);
-			      if (n * v3 > -1e-7)
+			      //if (n * v3 >= -1e-7*n.Length()*v3.Length()) // OR -1e-7???
+			      if (n * v3 >= -1e-9)
 				{
 				  if (loktestmode)
 				    {
 				      sprintf (problems.Elem(ri), "Orientation wrong");
-				      (*testout) << "Orientation wrong" << endl;
+				      (*testout) << "Orientation wrong ("<< n*v3 << ")" << endl;
 				    }
 				  ok = 0;
 				}
@@ -1067,6 +1043,9 @@ int Meshing3 :: ApplyRules
 				}
 			    }
 
+
+			  if (teterr > minteterr) impossible = 0;
+
 			  if (ok && teterr < minteterr)
 			    {
 
@@ -1103,6 +1082,7 @@ int Meshing3 :: ApplyRules
 				tempelements.Append (elements.Get(i));
 			    }
 			  
+
 			  lpoints.SetSize (noldlp);
 			  lfaces.SetSize (noldlf);
 			  delfaces.SetSize (0);
@@ -1133,32 +1113,8 @@ int Meshing3 :: ApplyRules
 	(*testout) << "end rule" << endl;
     }
 
-  //  (*testout) << "end" << endl;
-
-  // if successfull, reload best choice
-  
   if (found)
     {
-
-#ifdef debug
-      // if face in advancing front ???
-      for (i = 1; i <= tempnewfaces.Size(); i++)
-	{
-	  hc = 1;
-	  for (k = 1; k <= lfaces.Size() && hc; k++)
-	    for (j = 1; j <= 3 && hc; j++)
-	      if (tempnewfaces.Elem(i).PNumMod(j  ) == lfaces.Get(k).PNum(1) &&
-		  tempnewfaces.Elem(i).PNumMod(j+1) == lfaces.Get(k).PNum(3) &&
-		  tempnewfaces.Elem(i).PNumMod(j+2) == lfaces.Get(k).PNum(2))
-		{
-		  tempdelfaces.Append(k);
-		  tempnewfaces.Elem(i).PNum(1) = 0;
-		  hc = 0;
-		  cerr << "Ruler-reload necessary" << endl;
-		}
-	}
-#endif
-      
       for (i = 1; i <= tempnewpoints.Size(); i++)
 	lpoints.Append (tempnewpoints.Get(i));
       for (i = 1; i <= tempnewfaces.Size(); i++)
@@ -1171,6 +1127,11 @@ int Meshing3 :: ApplyRules
     }
   
   retminerr = minerr;
+
+
+  if (impossible && found == 0)
+    return -1;
+
   return found;
 }
 }

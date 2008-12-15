@@ -7,7 +7,7 @@
 #include <sstream>
 #include "GmshUI.h"
 #include "GmshDefines.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Numeric.h"
 #include "Context.h"
 #include "Options.h"
@@ -20,6 +20,7 @@
 #include "Generator.h"
 #include "Solvers.h"
 #include "PluginManager.h"
+#include "Plugin.h"
 #include "Shortcut_Window.h"
 #include "PView.h"
 #include "PViewOptions.h"
@@ -27,6 +28,7 @@
 #include "Field.h"
 #include "GModel.h"
 #include "GeoStringInterface.h"
+#include "StringUtils.h"
 
 #define NB_BUTT_SCROLL 25
 #define NB_HISTORY_MAX 1000
@@ -83,7 +85,7 @@ Fl_Menu_Item m_menubar_table[] = {
 // shortcuts: they would cause spurious menu items to appear on the
 // menu window; removed File->Quit)
 
-#if defined(__APPLE__) && defined(HAVE_FLTK_1_1_5_OR_ABOVE)
+#if defined(__APPLE__)
 
 // random changes in fltk are driving me nuts sometimes
 #if (FL_MAJOR_VERSION == 1) && (FL_MINOR_VERSION == 1) && (FL_PATCH_VERSION <= 6)
@@ -151,6 +153,7 @@ Context_Item menu_geometry[] = {
       {"Delete",    (Fl_Callback *)geometry_elementary_delete_cb, (void*)0} ,
       {"Translate", (Fl_Callback *)geometry_elementary_translate_cb, (void*)0} ,
       {"Rotate",    (Fl_Callback *)geometry_elementary_rotate_cb, (void*)0} ,
+      {"Split",     (Fl_Callback *)geometry_elementary_split_cb, (void*)0} ,
       {"Scale",     (Fl_Callback *)geometry_elementary_scale_cb, (void*)0} ,
       {"Symmetry",  (Fl_Callback *)geometry_elementary_symmetry_cb, (void*)0} ,
       {"Extrude",   (Fl_Callback *)geometry_elementary_extrude_cb, (void*)0} ,
@@ -220,6 +223,11 @@ Context_Item menu_geometry[] = {
           {"Volume",  (Fl_Callback *)geometry_elementary_delete_cb, (void*)"Volume"} ,
           {0} 
         };  
+        Context_Item menu_geometry_elementary_split[] = {
+          {"0Geometry>Elementary>Split",NULL},
+            {"Line",(Fl_Callback *)geometry_elementary_split_cb,(void*)"Line"},
+            {0}
+        };
         Context_Item menu_geometry_elementary_translate[] = {
           {"0Geometry>Elementary>Translate", NULL} ,
           {"Point",   (Fl_Callback *)geometry_elementary_translate_cb, (void*)"Point"} ,  
@@ -296,6 +304,7 @@ Context_Item menu_mesh[] = {
   {"3D",           (Fl_Callback *)mesh_3d_cb} , 
   {"First order",  (Fl_Callback *)mesh_degree_cb, (void*)1 } , 
   {"Second order", (Fl_Callback *)mesh_degree_cb, (void*)2 } , 
+  {"Refine",       (Fl_Callback *)mesh_refine_cb} ,
   {"Optimize",     (Fl_Callback *)mesh_optimize_cb} , 
 #if defined(HAVE_NETGEN)
   {"Optimize (Netgen)", (Fl_Callback *)mesh_optimize_netgen_cb} , 
@@ -306,13 +315,13 @@ Context_Item menu_mesh[] = {
 #if defined(HAVE_FOURIER_MODEL)
   {"Reparameterize",   (Fl_Callback *)mesh_parameterize_cb} , 
 #endif
-  //{"Reclassify",   (Fl_Callback *)mesh_classify_cb} , 
+  //  {"Reclassify",   (Fl_Callback *)mesh_classify_cb} , 
   {"Save",         (Fl_Callback *)mesh_save_cb} ,
   {0} 
 };  
     Context_Item menu_mesh_define[] = {
       {"1Mesh>Define", NULL} ,
-      {"Fields",      (Fl_Callback *)view_field_cb, (void*)(-1) },
+      {"Fields",      (Fl_Callback *)view_field_cb},
       {"Characteristic length", (Fl_Callback *)mesh_define_length_cb  } ,
       {"Recombine",   (Fl_Callback *)mesh_define_recombine_cb  } ,
       {"Transfinite", (Fl_Callback *)mesh_define_transfinite_cb  } , 
@@ -501,6 +510,8 @@ int GetFontSize()
 
 // Definition of global shortcuts
 
+#include "GmshSocket.h"
+
 int GUI::global_shortcuts(int event)
 {
   // we only handle shortcuts here
@@ -510,6 +521,15 @@ int GUI::global_shortcuts(int event)
   if(Fl::test_shortcut('0')) {
     geometry_reload_cb(0, 0);
     mod_geometry_cb(0, 0);
+    return 1;
+  }
+  // FIXME TESTING ONLY -- TO REMOVE LATER
+  else if(Fl::test_shortcut(FL_CTRL + 'p')) {
+    Msg::Info("TEST DAEMON!");
+    if(SINFO[2].server){
+      Msg::Info("SENDING COMMAND!");
+      SINFO[2].server->SendString(GmshSocket::CLIENT_INFO, "HEY YOU!");
+    }
     return 1;
   }
   else if(Fl::test_shortcut('1') || Fl::test_shortcut(FL_F + 1)) {
@@ -922,7 +942,7 @@ GUI::GUI(int argc, char **argv)
   
   // add callback to respond to the Mac Finder (when you click on a
   // document)
-#if defined(__APPLE__) && defined(HAVE_FLTK_1_1_5_OR_ABOVE)
+#if defined(__APPLE__)
   fl_open_callback(OpenProjectMacFinder);
 #endif
 
@@ -968,7 +988,7 @@ GUI::GUI(int argc, char **argv)
   
   create_option_window();
   create_plugin_window(0);
-  create_field_window(0);
+  create_field_window();
   create_message_window();
   create_statistics_window();
   create_visibility_window();
@@ -1027,14 +1047,14 @@ void GUI::create_menu_window()
   int width = 14 * fontsize;
 
   // this is the initial height: no dynamic button is shown!
-#if defined(__APPLE__) && defined(HAVE_FLTK_1_1_5_OR_ABOVE)
+#if defined(__APPLE__)
   if(CTX.system_menu_bar){
     MH = BH + 6;  // the menu bar is not in the application!
   }
   else{
 #endif
     MH = BH + BH + 6;
-#if defined(__APPLE__) && defined(HAVE_FLTK_1_1_5_OR_ABOVE)
+#if defined(__APPLE__)
   }
 #endif
 
@@ -1042,7 +1062,7 @@ void GUI::create_menu_window()
   m_window->box(GMSH_WINDOW_BOX);
   m_window->callback(file_quit_cb);
 
-#if defined(__APPLE__) && defined(HAVE_FLTK_1_1_5_OR_ABOVE)
+#if defined(__APPLE__)
   if(CTX.system_menu_bar){
     // the system menubar is kind of a hack in fltk < 1.1.7: it still
     // creates a real (invisible) menubar. To avoid spurious mouse
@@ -1064,7 +1084,7 @@ void GUI::create_menu_window()
     Fl_Box *o = new Fl_Box(0, BH, width, BH + 6);
     o->box(FL_UP_BOX);
     y = BH + 3;
-#if defined(__APPLE__) && defined(HAVE_FLTK_1_1_5_OR_ABOVE)
+#if defined(__APPLE__)
   }
 #endif
 
@@ -1175,52 +1195,26 @@ void GUI::set_context(Context_Item * menu_asked, int flag)
 
   Msg::StatusBar(1, false, menu[0].label + 1);
 
-  // Remove all the children (m_push*, m_toggle*, m_pop*). FLTK <=
-  // 1.1.4 should be OK with this. FLTK 1.1.5 may crash as it may
-  // access a widget's data after its callback is executed (we call
-  // set_context in the button callbacks!). FLTK 1.1.6 introduced a
-  // fix (Fl::delete_widget) to delay the deletion until the next
-  // Fl::wait call. In any case, we cannot use m_scroll->clear()
-  // (broken in < 1.1.5, potential crasher in >= 1.1.5).
+  // cannot use m_scroll->clear() in fltk 1.1 (should be fixed in 1.3)
   for(unsigned int i = 0; i < m_push_butt.size(); i++){
     m_scroll->remove(m_push_butt[i]);
-#if defined(HAVE_FLTK_1_1_6_OR_ABOVE)
     Fl::delete_widget(m_push_butt[i]);
-#else
-    delete m_push_butt[i];
-#endif
   }
   for(unsigned int i = 0; i < m_toggle_butt.size(); i++){
     m_scroll->remove(m_toggle_butt[i]);
-#if defined(HAVE_FLTK_1_1_6_OR_ABOVE)
     Fl::delete_widget(m_toggle_butt[i]);
-#else
-    delete m_toggle_butt[i];
-#endif
   }
   for(unsigned int i = 0; i < m_toggle2_butt.size(); i++){
     m_scroll->remove(m_toggle2_butt[i]);
-#if defined(HAVE_FLTK_1_1_6_OR_ABOVE)
     Fl::delete_widget(m_toggle2_butt[i]);
-#else
-    delete m_toggle2_butt[i];
-#endif
   }
   for(unsigned int i = 0; i < m_popup_butt.size(); i++){
     m_scroll->remove(m_popup_butt[i]);
-#if defined(HAVE_FLTK_1_1_6_OR_ABOVE)
     Fl::delete_widget(m_popup_butt[i]);
-#else
-    delete m_popup_butt[i];
-#endif
   }
   for(unsigned int i = 0; i < m_popup2_butt.size(); i++){
     m_scroll->remove(m_popup2_butt[i]);
-#if defined(HAVE_FLTK_1_1_6_OR_ABOVE)
     Fl::delete_widget(m_popup2_butt[i]);
-#else
-    delete m_popup2_butt[i];
-#endif
   }
 
   // reset the vectors
@@ -1247,7 +1241,7 @@ void GUI::set_context(Context_Item * menu_asked, int flag)
       b1->callback(view_toggle_cb, (void *)nb);
       b1->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
       b1->value(opt->Visible);
-      b1->label(data->getName().c_str());
+      b1->copy_label(data->getName().c_str());
       b1->tooltip(data->getFileName().c_str());
       
       char *tmp = new char[32];
@@ -1341,7 +1335,7 @@ void GUI::set_context(Context_Item * menu_asked, int flag)
   else{ // geometry, mesh and solver contexts
     while(menu[nb + 1].label) {
       Fl_Button *b = new Fl_Button(0, MH + nb * BH, width, BH);
-      b->label(menu[nb + 1].label);
+      b->copy_label(menu[nb + 1].label);
       b->callback(menu[nb + 1].callback, menu[nb + 1].arg);
       m_push_butt.push_back(b);
       m_scroll->add(b);
@@ -1470,7 +1464,7 @@ void GUI::create_graphic_window()
   g_status_butt[5] = new Fl_Button(x, glheight + 2, sw, sht, "@-1gmsh_models");
   x += sw;
   g_status_butt[5]->callback(status_xyz1p_cb, (void *)"model");
-  g_status_butt[5]->tooltip("Switch current model");
+  g_status_butt[5]->tooltip("Change current model");
 
   g_status_butt[0] = new Fl_Button(x, glheight + 2, sw, sht, "X");
   x += sw;
@@ -1574,6 +1568,7 @@ void GUI::set_size(int new_w, int new_h)
 
 void GUI::set_title(const char *str)
 {
+  // FIXME shoud use copy_label, but broken for Fl_Windows in fltk 1.1.7
   g_window->label(str);
 }
 
@@ -1588,6 +1583,7 @@ void GUI::update_views()
   reset_plugin_view_browser();
   reset_clip_browser();
   reset_external_view_list();
+  load_field_view_list();
 }
 
 // Set animation button
@@ -1657,15 +1653,21 @@ void GUI::set_status(const char *msg, int num)
   }
 }
 
-void GUI::add_multiline_in_browser(Fl_Browser * o, const char *prefix, const char *str)
+void GUI::add_multiline_in_browser(Fl_Browser * o, const char *prefix, const char *str, int wrap)
 {
   int start = 0, len;
   if(!str || !strlen(str) || !strcmp(str, "\n")) {
     o->add(" ");
     return;
   }
-  for(unsigned int i = 0; i < strlen(str); i++) {
-    if(i == strlen(str) - 1 || str[i] == '\n') {
+  for(int i = 0; i < (int)strlen(str); i++) {
+    if(i == (int)strlen(str) - 1 || str[i] == '\n' || (wrap > 0 && i-start==wrap)) {
+      if(wrap>0 && i-start == wrap){ //line is longer than wrap
+        while(str[i]!=' ' &&i>start) //go back to the previous space
+          i--;
+        if(i==start) //no space in this line, cut the word
+          i+=wrap;
+      }
       len = i - start + (str[i] == '\n' ? 0 : 1);
       char *buff = new char[len + strlen(prefix) + 2];
       strcpy(buff, prefix);
@@ -1673,6 +1675,7 @@ void GUI::add_multiline_in_browser(Fl_Browser * o, const char *prefix, const cha
       buff[len + strlen(prefix)] = '\0';
       o->add(buff);
       start = i + 1;
+      delete []buff;
     }
   }
 }
@@ -2472,7 +2475,7 @@ void GUI::create_option_window()
       mesh_value[3]->align(FL_ALIGN_RIGHT);
       mesh_value[3]->callback(mesh_options_ok_cb);
 
-      mesh_butt[4] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 9 * BH, BW, BH, "Use incomplete second order elements");
+      mesh_butt[4] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 9 * BH, BW, BH, "Use incomplete high order elements");
       mesh_butt[4]->type(FL_TOGGLE_BUTTON);
       mesh_butt[4]->callback(mesh_options_ok_cb);
 
@@ -2483,30 +2486,34 @@ void GUI::create_option_window()
       Fl_Group *o = new Fl_Group(L + WB, WB + BH, width - 2 * WB, height - 2 * WB - BH, "Advanced");
       o->hide();
 
-      mesh_butt[1] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 1 * BH, BW, BH, "Compute element sizes from curvature" );
-      mesh_butt[1]->type(FL_TOGGLE_BUTTON);
-      mesh_butt[1]->callback(mesh_options_ok_cb);
-
-      mesh_butt[5] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 2 * BH, BW, BH, "Compute element sizes using point values");
+      mesh_butt[5] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 1 * BH, BW, BH, "Compute element sizes using point values");
       mesh_butt[5]->type(FL_TOGGLE_BUTTON);
       mesh_butt[5]->callback(mesh_options_ok_cb);
 
-      mesh_butt[2] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 3 * BH, BW, BH, "Optimize quality of tetrahedra");
+      mesh_butt[1] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 2 * BH, BW, BH, "Compute element sizes from curvature" );
+      mesh_butt[1]->type(FL_TOGGLE_BUTTON);
+      mesh_butt[1]->callback(mesh_options_ok_cb);
+
+      mesh_butt[16] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 3 * BH, BW, BH, "Extend element sizes from boundary");
+      mesh_butt[16]->type(FL_TOGGLE_BUTTON);
+      mesh_butt[16]->callback(mesh_options_ok_cb);
+
+      mesh_butt[2] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 4 * BH, BW, BH, "Optimize quality of tetrahedra");
       mesh_butt[2]->type(FL_TOGGLE_BUTTON);
       mesh_butt[2]->callback(mesh_options_ok_cb);
 
-      mesh_butt[24] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 4 * BH, BW, BH, "Optimize quality of tetrahedra with Netgen");
+      mesh_butt[24] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 5 * BH, BW, BH, "Optimize quality of tetrahedra with Netgen");
       mesh_butt[24]->type(FL_TOGGLE_BUTTON);
 #if !defined(HAVE_NETGEN)
       mesh_butt[24]->deactivate();
 #endif
       mesh_butt[24]->callback(mesh_options_ok_cb);
 
-      mesh_butt[3] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 5 * BH, BW, BH, "Optimize high order mesh (2D-plane only)");
+      mesh_butt[3] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 6 * BH, BW, BH, "Optimize high order mesh (2D-plane only)");
       mesh_butt[3]->type(FL_TOGGLE_BUTTON);
       mesh_butt[3]->callback(mesh_options_ok_cb);
 
-      mesh_butt[21] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 6 * BH, BW, BH, "Impose C1 continuity (2D-plane only)");
+      mesh_butt[21] = new Fl_Check_Button(L + 2 * WB, 2 * WB + 7 * BH, BW, BH, "Impose C1 continuity (2D-plane only)");
       mesh_butt[21]->type(FL_TOGGLE_BUTTON);
       mesh_butt[21]->callback(mesh_options_ok_cb);
 
@@ -3725,7 +3732,6 @@ void GUI::create_plugin_window(int numview)
   {
     plugin_run = new Fl_Return_Button(width - 2 * BB - 2 * WB, height - BH - WB, BB, BH, "Run");
     plugin_run->callback(view_plugin_run_cb);
-    plugin_run->deactivate();
   }
 
   int L1 = (int)(0.3 * width), L2 = (int)(0.6 * L1);
@@ -3760,62 +3766,102 @@ void GUI::create_plugin_window(int numview)
   plugin_window->end();
 }
 
-void FieldDialogBox::save_values()
+// field window
+
+void GUI::update_fields()
 {
-  std::list<Fl_Widget*>::iterator input=inputs.begin();
-  Field *f=current_field;
+  edit_field(GModel::current()->getFields()->get(field_selected_id));
+}
+
+void GUI::load_field_list()
+{
+  FieldManager &fields = *GModel::current()->getFields();
+  Field *selected_field = (Field*)field_editor_group->user_data();
+  field_browser->clear();
+  int i_entry = 0;
+  for(FieldManager::iterator it = fields.begin(); it != fields.end(); it++){
+    i_entry++;
+    Field *field = it->second;
+    std::ostringstream sstream;
+    if(it->first == fields.background_field)
+      sstream << "@b";
+    sstream << it->first << " " << field->get_name();
+    field_browser->add(sstream.str().c_str(), field);
+    if(it->second == selected_field)
+      field_browser->select(i_entry);
+  }
+}
+
+void GUI::save_field_options()
+{
+  std::list<Fl_Widget*>::iterator input = field_options_widget.begin();
+  Field *f = (Field*)field_editor_group->user_data();
   std::ostringstream sstream;
-  std::istringstream istream;
   int i;
   char a;
   sstream.precision(16);
-  for(std::map<std::string,FieldOption*>::iterator it=f->options.begin();it!=f->options.end();it++){
-    FieldOption *option=it->second;
+  for(std::map<std::string, FieldOption*>::iterator it = f->options.begin();
+      it != f->options.end(); it++){
+    FieldOption *option = it->second;
     sstream.str("");
     switch(option->get_type()){
     case FIELD_OPTION_STRING:
     case FIELD_OPTION_PATH:
-      sstream<<"\""<<((Fl_Input*)*input)->value()<<"\"";
+      sstream << "\"" << ((Fl_Input*)*input)->value() << "\"";
       break;
     case FIELD_OPTION_INT:
-      sstream<<(int)((Fl_Value_Input*)*input)->value();
+      sstream << (int)((Fl_Value_Input*)*input)->value();
       break;
     case FIELD_OPTION_DOUBLE:
-      sstream<<((Fl_Value_Input*)*input)->value();
+      sstream << ((Fl_Value_Input*)*input)->value();
       break;
     case FIELD_OPTION_BOOL:
-      sstream<<(bool)((Fl_Check_Button*)*input)->value();
+      sstream << (bool)((Fl_Check_Button*)*input)->value();
       break;
     case FIELD_OPTION_LIST:
-      sstream<<"{";
-      istream.str(((Fl_Input*)*input)->value());
-      while(istream>>i){
-	sstream<<i;
-	if(istream>>a){
-	  if(a!=',')
-	    Msg::Error("Unexpected character \'%c\' while parsing option '%s' of field \'%s\'",a,it->first.c_str(),f->id);
-	  sstream<<", ";
-	}
+      {
+        sstream << "{";
+        std::istringstream istream(((Fl_Input*)*input)->value());
+        while(istream >> i){
+          sstream << i;
+          if(istream >> a){
+            if(a != ',')
+              Msg::Error("Unexpected character \'%c\' while parsing option '%s' of field \'%s\'",
+                         a, it->first.c_str(), f->id);
+            sstream<<", ";
+          }
+        }
+        sstream<<"}";
       }
-      sstream<<"}";
       break;
     }
     if((*input)->changed()){
-      add_field_option(f->id,it->first.c_str(),sstream.str().c_str(),CTX.filename);
+      add_field_option(f->id, it->first.c_str(), sstream.str().c_str(), CTX.filename);
       (*input)->clear_changed();
     }
     input++;
   }
+  int is_bg_field = field_background_btn->value();
+  FieldManager &fields = *GModel::current()->getFields();
+  if(is_bg_field && fields.background_field != f->id){
+    set_background_field(f->id, CTX.filename);
+    load_field_list();
+  }
+  if(!is_bg_field && fields.background_field == f->id){
+    set_background_field(-1, CTX.filename);
+    load_field_list();
+  }
 }
 
-void FieldDialogBox::load_field(Field *f)
+void GUI::load_field_options()
 {
-  current_field=f;
-  std::list<Fl_Widget*>::iterator input=inputs.begin();
-  for(std::map<std::string,FieldOption*>::iterator it=f->options.begin();it!=f->options.end();it++){
-    FieldOption *option=it->second;
+  Field *f = (Field*)field_editor_group->user_data();
+  std::list<Fl_Widget*>::iterator input = field_options_widget.begin();
+  for(std::map<std::string,FieldOption*>::iterator it = f->options.begin();
+      it != f->options.end(); it++){
+    FieldOption *option = it->second;
     std::ostringstream vstr;
-    std::list<int>::iterator list_it;;
+    std::list<int>::iterator list_it;
     switch(option->get_type()){
     case FIELD_OPTION_STRING:
     case FIELD_OPTION_PATH:
@@ -3830,160 +3876,167 @@ void FieldDialogBox::load_field(Field *f)
       break;
     case FIELD_OPTION_LIST:
       vstr.str("");
-      for(list_it=option->list().begin();list_it!=option->list().end();list_it++){
+      for(list_it = option->list().begin(); list_it != option->list().end(); list_it++){
 	if(list_it!=option->list().begin())
-	  vstr<<", ";
-	vstr<<*list_it;
+	  vstr << ", ";
+	vstr << *list_it;
       }
       ((Fl_Input*)(*input))->value(vstr.str().c_str());
       break;
     }
+    (*input)->clear_changed();
     input++;
   }
-  if(PView::list.size()){
-    put_on_view_btn->activate();
-    for(unsigned int i = 0; i < PView::list.size(); i++) {
-      std::ostringstream s;
-      s<<"View ["<<i<<"]";
-      put_on_view_btn->add(s.str().c_str());
-    }
-  }
-  else{
-    put_on_view_btn->deactivate();
-  }
-  set_size_btn->value(GModel::current()->getFields()->background_field==f->id);
+  field_background_btn->value(GModel::current()->getFields()->background_field == f->id);
 }
 
-FieldDialogBox::FieldDialogBox(Field *f, int x, int y, int width, int height,int fontsize)
+void GUI::load_field_view_list()
 {
-  current_field=NULL;
-  group=new Fl_Group(x, y, width, height);
-  {
-    Fl_Box *b = new Fl_Box(x, y, width, BH,f->get_name());
-    b->labelfont(FL_BOLD);
-    Fl_Tabs *o = new Fl_Tabs(x, y + BH + WB, width, height-2*BH-2*WB);
-    group->resizable(o);
-    {
-      Fl_Group *g = new Fl_Group(x, y + 2*BH + WB, width, height - 2*BH-3*WB, "Options");
-      apply_btn = new Fl_Return_Button(x+width - BB-WB ,y+ height - 2*BH -2*WB, BB, BH, "Apply");
-      apply_btn->callback(view_field_apply_cb,this);
-      revert_btn = new Fl_Button(x+width - 2*BB-2*WB ,y+ height - 2*BH -2*WB, BB, BH, "Revert");
-      revert_btn->callback(view_field_revert_cb,this);
-      Fl_Scroll *s = new Fl_Scroll(x + WB, y + 2*WB + 2*BH, width - 2 * WB, height - 4*BH - 5 * WB);
-      int yy=y+3*WB+2*BH;
-      for(std::map<std::string,FieldOption*>::iterator it=f->options.begin();it!=f->options.end();it++){
-	Fl_Widget *input;
-	switch(it->second->get_type()){
-	case FIELD_OPTION_INT:
-	case FIELD_OPTION_DOUBLE:
-	  input=new Fl_Value_Input(x+WB,yy,IW,BH,it->first.c_str());
-	  break;
-	case FIELD_OPTION_BOOL:
-	  input=new Fl_Check_Button(x+WB,yy,BH,BH,it->first.c_str());
-	  break;
-	case FIELD_OPTION_PATH:
-	case FIELD_OPTION_STRING:
-	  input=new Fl_Input(x+WB,yy,IW,BH,it->first.c_str());
-	  break;
-	case FIELD_OPTION_LIST:
-	default:
-	  /*{
-	    Fl_Button *b=new Fl_Button(x+WB,yy,BH,BH);
-	    b->label("@+");
-	    b->callback(view_field_select_node_cb);
-	    }
-	    input=new Fl_Input(x+WB+2*BH,yy,IW-2*BH,BH,it->first.c_str());*/
-	  input=new Fl_Input(x+WB,yy,IW,BH,it->first.c_str());
-	  break;
-	}
-	input->align(FL_ALIGN_RIGHT);
-	inputs.push_back(input);
-	yy+=WB+BH;
-      }
-      o->resizable(g); // to avoid ugly resizing of tab labels
-      g->resizable(s);
-      s->end();
-      g->end();
-    }
-    {
-      Fl_Group *g = new Fl_Group(x, y + 2*BH + WB, width, height - 2*BH-3*WB, "Help");
-      Fl_Browser *o = new Fl_Browser(x + WB, y + 2*WB + 2*BH, width - 2 * WB, height - 4 * WB - 3 * BH);
-      o->add(" ");
-      g->end();
-    }
-    o->end();
+  field_put_on_view_btn->clear();
+  field_put_on_view_btn->add("New view");
+  field_put_on_view_btn->activate();
+  for(unsigned int i = 0; i < PView::list.size(); i++) {
+    std::ostringstream s;
+    s << "View [" << i << "]";
+    field_put_on_view_btn->add(s.str().c_str());
   }
-  {
-    Fl_Button *b = new Fl_Button(x+width - BB,y+ height - BH , BB, BH, "Delete");
-    b->callback(view_field_delete_cb,this);
-  }
-  put_on_view_btn = new Fl_Menu_Button(x+width - BB-(int)(1.25*BB)-WB,y+ height - BH ,(int)(1.25*BB),BH,"Put on view");
-  put_on_view_btn->callback(view_field_put_on_view_cb,this);
-  
-  set_size_btn = new Fl_Check_Button(x,y+ height - BH, (int)(1.3*BB),BH,"Background size");
-  set_size_btn->callback(view_field_set_size_btn_cb,this);
-  
-  group->end();
-  group->hide();
 }
 
-void GUI::create_field_window(int numfield)
+void GUI::edit_field(Field *f)
+{
+  field_editor_group->user_data(f);
+  field_put_on_view_btn->deactivate();
+  field_delete_btn->deactivate();
+  if(f == NULL){
+    field_selected_id = -1;
+    field_editor_group->hide();
+    load_field_list();
+    return;
+  }
+  field_selected_id = f->id;
+  field_editor_group->show();
+  field_editor_group->user_data(f);
+  field_title->label(f->get_name());
+  field_options_scroll->clear();
+  field_options_widget.clear();
+  field_options_scroll->begin();
+  int x = field_options_scroll->x();
+  int yy = field_options_scroll->y() + WB;
+  field_help_display->clear();
+  add_multiline_in_browser(field_help_display, "", f->get_description().c_str(), 100);
+  field_help_display->add("\n");
+  field_help_display->add("@b@cOptions");
+  for(std::map<std::string, FieldOption*>::iterator it = f->options.begin(); 
+      it != f->options.end(); it++){
+    Fl_Widget *input;
+    field_help_display->add(("@b" + it->first).c_str());
+    field_help_display->add(("@i" + it->second->get_type_name()).c_str());
+    add_multiline_in_browser(field_help_display, "", it->second->get_description().c_str(), 100);
+    switch(it->second->get_type()){
+    case FIELD_OPTION_INT:
+    case FIELD_OPTION_DOUBLE:
+      input = new Fl_Value_Input(x, yy, IW, BH, it->first.c_str());
+      break;
+    case FIELD_OPTION_BOOL:
+      input = new Fl_Check_Button(x, yy, BH, BH, it->first.c_str());
+      break;
+    case FIELD_OPTION_PATH:
+      {
+        Fl_Button *b = new Fl_Button(x, yy, BH, BH, "S");
+        input = new Fl_Input(x + WB + BH, yy, IW - WB - BH, BH, it->first.c_str());
+        b->callback(view_field_select_file_cb, input);
+      }
+      break;
+    case FIELD_OPTION_STRING:
+      input = new Fl_Input(x, yy, IW, BH, it->first.c_str());
+      break;
+    case FIELD_OPTION_LIST:
+    default:
+      input = new Fl_Input(x, yy, IW, BH, it->first.c_str());
+      break;
+    }
+    input->align(FL_ALIGN_RIGHT);
+    field_options_widget.push_back(input);
+    yy += WB + BH;
+  }
+  field_options_scroll->end();
+  load_field_options();
+  field_options_scroll->damage(1);
+  field_put_on_view_btn->activate();
+  field_delete_btn->activate();
+  load_field_list();
+}
+
+void GUI::create_field_window()
 {
   int width0 = 34 * fontsize + WB;
   int height0 = 13 * BH + 5 * WB;
-  
   int width = (CTX.field_size[0] < width0) ? width0 : CTX.field_size[0];
   int height = (CTX.field_size[1] < height0) ? height0 : CTX.field_size[1];
-  
-  int L1 = BB;
-  int i_entry=1;
-  if(field_window) {
-    width=field_window->w();
-    height=field_window->h();
-    FieldManager &fields=*GModel::current()->getFields();
-    field_browser->clear();
-    for(FieldManager::iterator it=fields.begin();it!=fields.end();it++){
-      Field *field=it->second;
-      std::ostringstream sstream;
-      if(it->first==fields.background_field)
-	sstream<<"*";
-      sstream<<it->first;
-      sstream<<" "<<field->get_name();
-      field_browser->add(sstream.str().c_str(),field);
-      if(!field->dialog_box()){
-	field_window->begin();
-	field->dialog_box()=new FieldDialogBox(field, 2 * WB + L1 , WB, width - L1 - 3 * WB, height - 2*WB  ,fontsize);
-	field_window->end();
-      }
-      if(it->second->id==numfield){
-	field_browser->select(i_entry);
-	field_browser->do_callback();
-      }
-      i_entry++;
-    }
-    field_window->show();
-    return;
-  }
-  
-  selected_field_dialog_box=NULL;
   field_window = new Dialog_Window(width, height, CTX.non_modal_windows, "Fields");
   field_window->box(GMSH_WINDOW_BOX);
-  Fl_Group *resize_box = new Fl_Group(2*WB+L1, 2*WB+BB,width-3*WB-L1, height - 3 * WB-BB);
-  resize_box->end();
-  {
-    Fl_Menu_Button *b= new Fl_Menu_Button(WB,WB,L1,BH,"New");
-    FieldManager &fields=*GModel::current()->getFields();
-    std::map<std::string, FieldFactory*>::iterator it;
-    for(it=fields.map_type_name.begin();it!=fields.map_type_name.end();it++)
-      b->add(it->first.c_str());
-    b->callback(view_field_new_cb);
-  }
-  field_browser = new Fl_Hold_Browser(WB, 2*WB+BH, L1, height - 3 * WB - BH);
+  int x = WB;
+  int y = WB;
+  int w = (int)(1.5 * BB);
+  Fl_Menu_Button *new_field_btn = new Fl_Menu_Button(x, y, w, BH, "New");
+  FieldManager &fields = *GModel::current()->getFields();
+  std::map<std::string, FieldFactory*>::iterator it;
+  for(it = fields.map_type_name.begin(); it != fields.map_type_name.end(); it++)
+    new_field_btn->add(it->first.c_str());
+  new_field_btn->callback(view_field_new_cb);
+  y += BH;
+  int h = height - 2 * WB - 3 * BH;
+  field_browser = new Fl_Hold_Browser(x, y + WB, w, h - 2 * WB);
+  y += h; 
+  field_delete_btn = new Fl_Button(x, y, w, BH, "Delete");
+  field_delete_btn->callback(view_field_delete_cb, this);
+  y += BH;
   field_browser->callback(view_field_browser_cb);
-  field_window->resizable(resize_box);
+  field_put_on_view_btn = new Fl_Menu_Button(x, y, w, BH, "Put on view");
+  field_put_on_view_btn->callback(view_field_put_on_view_cb, this);
+  x += w + WB;
+  y = WB;
+  w = width - x - WB;
+  h = height - y - WB;
+  field_editor_group = new Fl_Group(x, y, w, h);
+  field_title = new Fl_Box(x, y, w, BH, "field_name");
+  y += BH + WB;
+  h -= BH + WB;
+  field_title->labelfont(FL_BOLD);
+  field_title->labelsize(18);
+  Fl_Tabs *tabs = new Fl_Tabs(x, y , w, h);
+  y += BH;
+  h -= BH;
+  x += WB;
+  w -= 2 * WB;
+  Fl_Group *options_tab = new Fl_Group(x, y, w, h, "Options");
+  Fl_Scroll *options_scroll = new Fl_Scroll(x, y, w, h - BH - 2 * WB);
+  field_options_scroll = options_scroll;
+  options_scroll->end();
+  Fl_Button *apply_btn = new Fl_Return_Button(x + w - BB, y + h - BH - WB, BB, BH, "Apply");
+  Fl_Button *revert_btn = new Fl_Button(x + w - 2 * BB - WB, y + h - BH - WB, BB, BH, "Revert");
+  field_background_btn = new Fl_Check_Button(x, y + h - BH - WB, (int)(1.5 * BB), BH, "Background mesh size");
+  apply_btn->callback(view_field_apply_cb, this);
+  revert_btn->callback(view_field_revert_cb, this);
+  options_tab->end();
+  Fl_Group *help_tab= new Fl_Group(x, y, w, h, "Help");
+  field_help_display = new Fl_Browser(x, y + WB, w, h - 2 * WB);
+  help_tab->end();
+  tabs->end();
+  field_editor_group->end();
+  field_window->resizable(new Dummy_Box((int)(1.5 * BB) + 2 * WB, BH + 2 * WB, 
+                                        width - 3 * WB - (int)(1.5 * BB), height - 3 * BH - 5 * WB));
+  field_editor_group->resizable(tabs);
+  tabs->resizable(options_tab);
+  options_tab->resizable(new Dummy_Box(3 * BB + 4 * WB, BH + 2 * WB,
+                                       width - 9 * WB - 5 * BB, height - 3 * BH - 5 * WB));
+  //options_tab->resizable(options_scroll);
+  //field_window->resizable(field_editor_group);
   field_window->size_range(width0, height0);
   field_window->position(CTX.field_position[0], CTX.field_position[1]);
   field_window->end();
+  load_field_view_list();
+  edit_field(NULL);
 }
 
 // Create the window for the statistics
@@ -4049,14 +4102,20 @@ void GUI::create_statistics_window()
       stat_value[num] = new Fl_Output(2 * WB, 2 * WB + 16 * BH, IW, BH, "Disto");
       stat_value[num]->tooltip("~ min (J0/J, J/J0)"); num++;
 
-      stat_butt[0] = new Fl_Button(width - BB - 5 * WB, 2 * WB + 13 * BH, BB, BH, "Graph");
-      stat_butt[0]->callback(statistics_histogram_cb, (void *)"Gamma");
-      stat_butt[1] = new Fl_Button(width - BB - 5 * WB, 2 * WB + 14 * BH, BB, BH, "Graph");
-      stat_butt[1]->callback(statistics_histogram_cb, (void *)"Eta");
-      stat_butt[2] = new Fl_Button(width - BB - 5 * WB, 2 * WB + 15 * BH, BB, BH, "Graph");
-      stat_butt[2]->callback(statistics_histogram_cb, (void *)"Rho");
-      stat_butt[3] = new Fl_Button(width - BB - 5 * WB, 2 * WB + 16 * BH, BB, BH, "Graph");
-      stat_butt[3]->callback(statistics_histogram_cb, (void *)"Disto");
+      for(int i = 0; i < 4; i++){
+        int ww = 3 * fontsize;
+        new Fl_Box(FL_NO_BOX, width - 3 * ww - 2 * WB, 2 * WB + (13 + i) * BH, ww, BH, "Plot:");
+        stat_butt[2 * i] = new Fl_Button(width - 2 * ww - 2 * WB, 2 * WB + (13 + i) * BH, ww, BH, "2D");
+        stat_butt[2 * i + 1] = new Fl_Button(width - ww - 2 * WB, 2 * WB + (13 + i) * BH, ww, BH, "3D");
+      }
+      stat_butt[0]->callback(statistics_histogram_cb, (void *)"Gamma2D");
+      stat_butt[1]->callback(statistics_histogram_cb, (void *)"Gamma3D");
+      stat_butt[2]->callback(statistics_histogram_cb, (void *)"Eta2D");
+      stat_butt[3]->callback(statistics_histogram_cb, (void *)"Eta3D");
+      stat_butt[4]->callback(statistics_histogram_cb, (void *)"Rho2D");
+      stat_butt[5]->callback(statistics_histogram_cb, (void *)"Rho3D");
+      stat_butt[6]->callback(statistics_histogram_cb, (void *)"Disto2D");
+      stat_butt[7]->callback(statistics_histogram_cb, (void *)"Disto3D");
 
       g[1]->end();
     }
@@ -4129,7 +4188,7 @@ void GUI::set_statistics(bool compute_quality)
   sprintf(label[num], "%g", s[15]); stat_value[num]->value(label[num]); num++;
 
   if(!compute_quality){
-    for(int i = 0; i < 4; i++) stat_butt[i]->deactivate();
+    for(int i = 0; i < 8; i += 2) stat_butt[i]->deactivate();
     sprintf(label[num], "Press Update");
     stat_value[num]->deactivate();
     stat_value[num]->value(label[num]); num++;
@@ -4144,7 +4203,7 @@ void GUI::set_statistics(bool compute_quality)
     stat_value[num]->value(label[num]); num++;
   }
   else{
-    for(int i = 0; i < 4; i++) stat_butt[i]->activate();
+    for(int i = 0; i < 8; i += 2) stat_butt[i]->activate();
     sprintf(label[num], "%.4g (%.4g->%.4g)", s[17], s[18], s[19]);
     stat_value[num]->activate();
     stat_value[num]->value(label[num]); num++;
@@ -4200,6 +4259,11 @@ void GUI::create_message_window(bool redraw_only)
   msg_browser->callback(message_copy_cb);
 
   {
+    msg_butt = new Fl_Check_Button(width - 4 * BB - 4 * WB, height - BH - WB, BB, BH, "Auto scroll");
+    msg_butt->type(FL_TOGGLE_BUTTON);
+    msg_butt->callback(message_auto_scroll_cb);
+  }
+  {
     Fl_Return_Button *o = new Fl_Return_Button(width - 3 * BB - 3 * WB, height - BH - WB, BB, BH, "Clear");
     o->callback(message_clear_cb);
   }
@@ -4212,7 +4276,7 @@ void GUI::create_message_window(bool redraw_only)
     o->callback(cancel_cb, (void *)msg_window);
   }
 
-  msg_window->resizable(new Fl_Box(WB, WB, 100, 10));
+  msg_window->resizable(new Fl_Box(1, 1, 4, 4));
   msg_window->size_range(WB + 100 + 3 * BB + 4 * WB, 100);
 
   msg_window->position(CTX.msg_position[0], CTX.msg_position[1]);
@@ -4221,8 +4285,13 @@ void GUI::create_message_window(bool redraw_only)
 
 void GUI::add_message(const char *msg)
 {
-  msg_browser->add(msg, 0);
-  msg_browser->bottomline(msg_browser->size());
+  // remove \n, \t, \r
+  std::string str(msg);
+  for(unsigned int i = 0; i < str.size(); i++)
+    if(str[i] == '\n' || str[i] == '\t' || str[i] == '\r') str[i] = ' ';
+  msg_browser->add(str.c_str(), 0);
+  if(CTX.msg_auto_scroll)
+    msg_browser->bottomline(msg_browser->size());
 }
 
 void GUI::save_message(const char *filename)
@@ -4744,28 +4813,14 @@ void GUI::create_about_window()
     o->add(buffer);
     sprintf(buffer, "@c@.Build host: %s", Get_GmshBuildHost());
     o->add(buffer);
-    {
-      char str1[1024];
-      strcpy(str1, Get_BuildOptions());
-      unsigned int len = 30;
-      if(strlen(str1) > len){
-        int split;
-        for(split = len - 1; split >= 0; split--){
-          if(str1[split] == ' '){
-            str1[split] = '\0';
-            break;
-          }
-        }
-        sprintf(buffer, "@c@.Build options: %s", str1);
-        o->add(buffer);
-        sprintf(buffer, "@c@.%s", &str1[split+1]);
+    std::vector<std::string> lines = SplitWhiteSpace(Get_GmshBuildOptions(), 30);
+    for(unsigned int i = 0; i < lines.size(); i++){
+      if(!i)
+        sprintf(buffer, "@c@.Build options: %s", lines[i].c_str());
+      else
+        sprintf(buffer, "@c@.%s", lines[i].c_str());
         o->add(buffer);
       }
-      else{
-        sprintf(buffer, "@c@.Options: %s", str1);
-        o->add(buffer);
-      }
-    }
     sprintf(buffer, "@c@.Packaged by: %s", Get_GmshPackager());
     o->add(buffer);
     o->add(" ");
@@ -4838,7 +4893,7 @@ void GUI::create_geometry_context_window(int num)
       context_geometry_input[4] = new Fl_Input(2 * WB, 2 * WB + 3 * BH, IW, BH, "Z coordinate");
       context_geometry_input[4]->value("0");
       context_geometry_input[5] = new Fl_Input(2 * WB, 2 * WB + 4 * BH, IW, BH, "Characteristic length");
-      context_geometry_input[5]->value("0.1");
+      context_geometry_input[5]->value("");
       for(i = 2; i < 6; i++) {
         context_geometry_input[i]->align(FL_ALIGN_RIGHT);
       }

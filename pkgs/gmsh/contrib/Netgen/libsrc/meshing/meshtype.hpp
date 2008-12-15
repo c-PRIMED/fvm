@@ -1,7 +1,6 @@
 #ifndef MESHTYPE
 #define MESHTYPE
 
-//#include <algorithm>
 
 /**************************************************************************/
 /* File:   meshtype.hpp                                                   */
@@ -35,9 +34,6 @@ enum ELEMENTTYPE { FREEELEMENT, FIXEDELEMENT };
 enum OPTIMIZEGOAL { OPT_QUALITY, OPT_CONFORM, OPT_REST, OPT_WORSTCASE, OPT_LEGAL };
 
 
-class Mesh; // Added by Christophe for Gmsh (ISO C++ forbids declaration of 'Mesh' with no type)
-
-// class CSGeometry;
 
 extern int GetTimeStamp();
 extern int NextTimeStamp();
@@ -54,7 +50,12 @@ public:
 
 inline ostream & operator<< (ostream & ost, const PointGeomInfo & gi)
 {
-  return (ost << gi.trignum);
+  return (ost << gi.trignum << " " << gi.u << " " << gi.v);
+}
+
+inline istream & operator>> (istream & ist, PointGeomInfo & gi)
+{
+  return (ist >> gi.trignum >> gi.u >> gi.v);
 }
 
 
@@ -65,10 +66,10 @@ class MultiPointGeomInfo
   int cnt;
   PointGeomInfo mgi[MULTIPOINTGEOMINFO_MAX];
 public:
-  MultiPointGeomInfo ();
+  MultiPointGeomInfo () { cnt = 0; }
   int AddPointGeomInfo (const PointGeomInfo & gi);
-  void Init ();
-  void DeleteAll ();
+  void Init () { cnt = 0; }
+  void DeleteAll () { cnt = 0; }
 
   int GetNPGI () const { return cnt; }
   const PointGeomInfo & GetPGI (int i) const { return mgi[i-1]; }
@@ -79,15 +80,20 @@ class EdgePointGeomInfo
 {
 public:
   int edgenr;
-  double dist; 
+  int body;    // for ACIS
   double u, v; // for OCC Meshing
+  double dist; // for 2d meshing
 
+public:
   EdgePointGeomInfo ()
-    : edgenr(0), dist(0.0), u(0.0), v(0.0) { ; }
+    : edgenr(0), body(0), dist(0.0), u(0.0), v(0.0) { ; }
+
 
   EdgePointGeomInfo & operator= (const EdgePointGeomInfo & gi2)
   {
-    edgenr = gi2.edgenr;  dist = gi2.dist;
+    edgenr = gi2.edgenr;  
+    body = gi2.body;
+    dist = gi2.dist;
     u = gi2.u; v = gi2.v;
     return *this;
   }
@@ -95,7 +101,8 @@ public:
 
 inline ostream & operator<< (ostream & ost, const EdgePointGeomInfo & gi)
 {
-  return (ost << gi.edgenr);
+  ost << "epgi: edgnr=" << gi.edgenr << ", dist=" << gi.dist;
+  return ost;
 }
 
 
@@ -112,8 +119,8 @@ public:
   PointIndex & operator= (int ai) { i = ai; return *this; }
   operator int () const { return i; }
   int GetInt () const { return i; }
-  PointIndex operator++ (int) { int hi = i; i++; return hi; }
-  PointIndex operator-- (int) { int hi = i; i--; return hi; }
+  PointIndex operator++ (int) { int hi = i; i++; return PointIndex(hi); }
+  PointIndex operator-- (int) { int hi = i; i--; return PointIndex(hi); }
 
 #ifdef BASE0
   enum { BASE = 0 };
@@ -213,33 +220,68 @@ inline ostream & operator<< (ostream & ost, const SegmentIndex & pi)
 /**
    Point in the mesh.
    Contains layer (a new feature in 4.3 for overlapping meshes.
-   will contain pointtype
  */
-class MeshPoint : public Point3d
+class MeshPoint : public Point<3>
 {
   int layer;
-  bool singular;
+  double singular; // singular factor for hp-refinement
   POINTTYPE type;
-public:
-  MeshPoint () : layer(1), singular(0), type(INNERPOINT) { ; }
-  MeshPoint (const Point3d & ap, int alayer = 1, POINTTYPE apt = INNERPOINT)
-    : Point3d (ap), layer(alayer), singular(0), type(apt) { ; }
-  
-  void SetPoint (const Point3d & ap)
-  { Point3d::operator= (ap); }
-  int GetLayer() const { return layer; }
 
-  bool IsSingular() const { return singular; }
-  void SetSingular(bool s = 1) { singular = s; }
+#ifdef PARALLEL
+  bool isghost;
+#endif
+
+public:
+  MeshPoint () : layer(1), singular(0.), type(INNERPOINT) 
+{ 
+#ifdef PARALLEL
+  isghost = 0;
+#endif
+  ;
+}
+
+  MeshPoint (const Point<3> & ap, int alayer = 1, POINTTYPE apt = INNERPOINT)
+    : Point<3> (ap), layer(alayer), singular(0.),type(apt) 
+  { 
+#ifdef PARALLEL
+    isghost = 0;
+#endif  
+    ;
+  }
+  
+  void SetPoint (const Point<3> & ap)
+  { 
+    Point<3>::operator= (ap); 
+    layer = 0; 
+    singular = 0; 
+#ifdef PARALLEL
+    isghost = 0;
+#endif
+  }
+
+  int GetLayer() const { return layer; }
 
   POINTTYPE Type() const { return type; }
   void SetType(POINTTYPE at) { type = at; }
+ 
+  double Singularity() const { return singular; }
+  void Singularity(double s) { singular = s; }
+  bool IsSingular() const { return (singular != 0.0); }
+
+#ifdef PARALLEL
+  bool IsGhost () const { return isghost; }
+  void SetGhost ( bool aisghost ) { isghost = aisghost; }
+#endif
+
 };
 
+ostream & operator<<(ostream  & s, const MeshPoint & pt);
 
 
-// typedef MoveableArray<MeshPoint> T_POINTS;
-typedef ARRAY<MeshPoint,PointIndex::BASE> T_POINTS;
+
+
+typedef MoveableArray<MeshPoint,PointIndex::BASE> T_POINTS;
+// typedef ARRAY<MeshPoint,PointIndex::BASE> T_POINTS;
 
 
 class Element2d;
@@ -252,7 +294,7 @@ class Element2d
 { 
   /// point numbers
   PointIndex pnum[ELEMENT2D_MAXPOINTS];
-  /// geom info of corner points
+  /// geom info of points
   PointGeomInfo geominfo[ELEMENT2D_MAXPOINTS];
 
   /// surface nr
@@ -263,15 +305,26 @@ class Element2d
   unsigned int np:4;
   bool badel:1;
   bool refflag:1;  // marked for refinement
+  bool strongrefflag:1;
   bool deleted:1;  // element is deleted
 
   /// order for hp-FEM
-  unsigned int order:6;
+  unsigned int orderx:6;
+  unsigned int ordery:6;
 
+#ifdef PARALLEL
+  bool isghost;
+  int partitionNumber; 
+#endif
+
+  /// a linked list for all segments in the same face
+  SurfaceElementIndex next;
 
 public:
   ///
-  Element2d (int anp = 3);
+  Element2d ();
+  ///
+  Element2d (int anp);
   ///
   Element2d (ELEMENT_TYPE type);
   ///
@@ -346,8 +399,15 @@ public:
   ///
   int GetIndex () const { return index; }
 
-  int GetOrder () const { return order; }
-  void SetOrder (int aorder) { order = aorder; }
+  int GetOrder () const { return orderx; }
+  void SetOrder (int aorder) { orderx = ordery = aorder; }
+
+
+  void GetOrder (int & ox, int & oy) const { ox = orderx, oy =ordery;};
+  void GetOrder (int & ox, int & oy, int & oz) const { ox = orderx; oy = ordery; oz=0; }
+  void SetOrder (int ox, int oy, int  oz) { orderx = ox; ordery = oy;}
+  void SetOrder (int ox, int oy) { orderx = ox; ordery = oy;}
+
 
   ///
   void GetBox (const T_POINTS & points, Box3d & box) const;
@@ -375,8 +435,10 @@ public:
 			  class DenseMatrix & trans) const;
 
   void GetShape (const Point2d & p, class Vector & shape) const;
+  void GetShapeNew (const Point<2> & p, class FlatVector & shape) const;
   /// matrix 2 * np
   void GetDShape (const Point2d & p, class DenseMatrix & dshape) const;
+  void GetDShapeNew (const Point<2> & p, class MatrixFixWidth<2> & dshape) const;
   /// matrix 2 * np
   void GetPointMatrix (const ARRAY<Point2d> & points,
 		       class DenseMatrix & pmat) const; 
@@ -386,7 +448,7 @@ public:
 
   double CalcJacobianBadness (const ARRAY<Point2d> & points) const;
   double CalcJacobianBadness (const T_POINTS & points, 
-			      const Vec3d & n) const;
+			      const Vec<3> & n) const;
   double CalcJacobianBadnessDirDeriv (const ARRAY<Point2d> & points,
 				      int pi, Vec2d & dir, double & dd) const;
 
@@ -407,11 +469,29 @@ public:
   bool TestRefinementFlag () const
   { return refflag; }
 
+  void SetStrongRefinementFlag (bool rflag = 1) 
+  { strongrefflag = rflag; }
+  bool TestStrongRefinementFlag () const
+  { return strongrefflag; }
+
+  
+  bool operator==(const Element2d & el2) const;
+
   int HasFace(const Element2d& el) const;
   ///
   int meshdocval;
   ///
   int hp_elnr;
+
+#ifdef PARALLEL
+  bool IsGhost () const { return isghost; }
+  void SetGhost ( bool aisghost ) { isghost = aisghost; }
+
+  // by JS, only for 2D meshes ????
+  int GetPartition () const { return partitionNumber; }
+  void SetPartition (int nr) { partitionNumber = nr; }; 
+#endif
+
 };
 
 
@@ -420,7 +500,7 @@ public:
 class IntegrationPointData
 {
 public:
-  Point3d p;
+  Point<3> p;
   double weight;
   Vector shape;
   DenseMatrix dshape;
@@ -456,18 +536,29 @@ private:
     bool illegal_valid:1; // is illegal-flag valid ?
     bool badness_valid:1; // is badness valid ?
     bool refflag:1;     // mark element for refinement
+    bool strongrefflag:1;
     bool deleted:1;   // element is deleted, will be removed from array
+    bool fixed:1;     // don't change element in optimization
   };
-  /// surface or sub-domain index
+
+  /// sub-domain index
   short int index;
   /// order for hp-FEM
-  unsigned int order:6;
+  unsigned int orderx:6;
+  unsigned int ordery:6;
+  unsigned int orderz:6;
+  /* unsigned int levelx:6;
+  unsigned int levely:6;
+  unsigned int levelz:6; */ 
   /// stored shape-badness of element
   float badness;
-  /// number of partition for parallel compution 
-  short int partitionNumber;
-  ///
   
+#ifdef PARALLEL
+  /// number of partition for parallel computation 
+  int partitionNumber;
+  bool isghost;
+#endif
+
 public:
   flagstruct flags;
 
@@ -491,10 +582,16 @@ public:
   {
     switch (typ)
       {
-      case TET: return 4;
-      case TET10: return 4;
-      case PRISM12: return 6;
-      case PRISM: return 6; //SZ 
+      case TET: 
+      case TET10: 
+        return 4;
+      case PRISM12: 
+      case PRISM: 
+        return 6; 
+      case PYRAMID:
+        return 5;
+      case HEX:
+        return 8;
       default:
 #ifdef DEBUG
 	PrintSysError ("Element3d::GetNV not implemented for typ ", typ)
@@ -503,6 +600,9 @@ public:
       }
     return np;
   }
+
+  bool operator==(const Element & el2) const;
+
   // old style:
   int NP () const { return np; }
 
@@ -528,8 +628,14 @@ public:
   ///
   int GetIndex () const { return index; }
 
-  int GetOrder () const { return order; }
-  void SetOrder (int aorder) { order = aorder; }
+  int GetOrder () const { return orderx; }
+  void SetOrder (const int aorder) ; 
+
+  void GetOrder (int & ox, int & oy, int & oz) const { ox = orderx; oy = ordery; oz = orderz; }
+  void SetOrder (const int ox, const int oy, const int oz);
+  // void GetLevel (int & ox, int & oy, int & oz) const { ox = levelx; oy = levely; oz = levelz; }
+  // void SetLevel (int ox, int oy, int oz) { levelx = ox; levely = oy; levelz = oz; }
+
 
   ///
   void GetBox (const T_POINTS & points, Box3d & box) const;
@@ -567,8 +673,8 @@ public:
   /// split into 4 node tets, local point nrs
   void GetTetsLocal (ARRAY<Element> & locels) const;
   /// returns coordinates of nodes
-  void GetNodesLocal (ARRAY<Point3d> & points) const;
-  void GetNodesLocalNew (ARRAY<Point3d> & points) const;
+  // void GetNodesLocal (ARRAY<Point<3> > & points) const;
+  void GetNodesLocalNew (ARRAY<Point<3> > & points) const;
 
   /// split surface into 3 node trigs
   void GetSurfaceTriangles (ARRAY<Element2d> & surftrigs) const;
@@ -576,16 +682,16 @@ public:
 
   /// get number of 'integration points'
   int GetNIP () const;
-  void GetIntegrationPoint (int ip, Point3d & p, double & weight) const;
+  void GetIntegrationPoint (int ip, Point<3> & p, double & weight) const;
   void GetTransformation (int ip, const T_POINTS & points,
 			  class DenseMatrix & trans) const;
   void GetTransformation (int ip, class DenseMatrix & pmat,
 			  class DenseMatrix & trans) const;
 
-  void GetShape (const Point3d & p, class Vector & shape) const;
+  void GetShape (const Point<3> & p, class Vector & shape) const;
   void GetShapeNew (const Point<3> & p, class FlatVector & shape) const;
   /// matrix 2 * np
-  void GetDShape (const Point3d & p, class DenseMatrix & dshape) const;
+  void GetDShape (const Point<3> & p, class DenseMatrix & dshape) const;
   void GetDShapeNew (const Point<3> & p, class MatrixFixWidth<3> & dshape) const;
   /// matrix 3 * np
   void GetPointMatrix (const T_POINTS & points,
@@ -596,7 +702,9 @@ public:
 
   double CalcJacobianBadness (const T_POINTS & points) const;
   double CalcJacobianBadnessDirDeriv (const T_POINTS & points,
-				      int pi, Vec3d & dir, double & dd) const;
+				      int pi, Vec<3> & dir, double & dd) const;
+  double CalcJacobianBadnessGradient (const T_POINTS & points,
+				      int pi, Vec<3> & grad) const;
 
   ///
   friend ostream & operator<<(ostream  & s, const Element & el);
@@ -605,6 +713,11 @@ public:
   { flags.refflag = rflag; }
   int TestRefinementFlag () const
   { return flags.refflag; }
+
+  void SetStrongRefinementFlag (bool rflag = 1) 
+  { flags.strongrefflag = rflag; }
+  int TestStrongRefinementFlag () const
+  { return flags.strongrefflag; }
 
   int Illegal () const
     { return flags.illegal; }
@@ -632,10 +745,20 @@ public:
     return flags.deleted; 
   }
 
+#ifdef PARALLEL
   int GetPartition () const { return partitionNumber; }
   void SetPartition (int nr) { partitionNumber = nr; }; 
+#endif
 
   int hp_elnr;
+
+#ifdef PARALLEL
+  bool IsGhost () const { return isghost; }
+
+  void SetGhost ( const bool aisghost ) { isghost = aisghost; }
+#endif
+
+  friend class Mesh;
 };
 
 
@@ -651,6 +774,10 @@ class Segment
 public:
   ///
   Segment();
+  Segment (const Segment& other);
+
+   ~Segment()
+  { ; }
 
   friend ostream & operator<<(ostream  & s, const Segment & seg);
 
@@ -661,8 +788,8 @@ public:
   /// edge nr
   int edgenr;
   ///
-  unsigned int singedge_left:1;
-  unsigned int singedge_right:1;
+  double singedge_left;
+  double singedge_right;
 
   /// 0.. not first segment of segs, 1..first of class, 2..first of class, inverse
   unsigned int seginfo:2;
@@ -687,7 +814,10 @@ public:
   ///
   int meshdocval;
 
+private:
+  string* bcname;
 
+public:
   PointIndex operator[] (int i) const
   { return (i == 0) ? p1 : p2; }
 
@@ -698,6 +828,28 @@ public:
 
   
   int hp_elnr;
+
+  void SetBCName ( string * abcname )
+  {
+    bcname = abcname;
+  }
+
+  string * BCNamePtr () 
+  { return bcname; }
+
+  const string * BCNamePtr () const 
+  { return bcname; }
+
+  string GetBCName () const
+  {
+    if (! bcname )
+      {
+	return "default";
+      }
+    return *bcname;
+  }
+
+
 };
 
 
@@ -719,10 +871,21 @@ class FaceDescriptor
   /// boundary condition property
   int bcprop;
 
+  ///
+  string * bcname;
+  /// root of linked list 
+  SurfaceElementIndex firstelement;
+  
+public:
+  ///
+  double domin_singular;
+  double domout_singular;
 public:
   FaceDescriptor();
   FaceDescriptor(int surfnri, int domini, int domouti, int tlosurfi);
   FaceDescriptor(const Segment & seg);
+  FaceDescriptor(const FaceDescriptor& other);
+  ~FaceDescriptor()  { ; }
 
   int SegmentFits (const Segment & seg);
 
@@ -731,19 +894,17 @@ public:
   int DomainOut () const { return domout; }
   int TLOSurface () const { return tlosurf; }
   int BCProperty () const { return bcprop; }
+  string GetBCName () const; 
+  // string * BCNamePtr () { return bcname; }
+  // const string * BCNamePtr () const  { return bcname; }
   void SetSurfNr (int sn) { surfnr = sn; }
   void SetDomainIn (int di) { domin = di; }
   void SetDomainOut (int dom) { domout = dom; }
   void SetBCProperty (int bc) { bcprop = bc; }
+  void SetBCName (string * bcn) { bcname = bcn; }
 
   friend ostream & operator<<(ostream  & s, const FaceDescriptor & fd);
-
-
-  ///
-  bool domin_singular;
-  bool domout_singular;
-
-
+  friend class Mesh;
 };
 
  
@@ -766,7 +927,7 @@ public:
      // h .. Histogramm, no pause
      // H .. Histogramm, pause
   */
-  char * optimize3d;
+  const char * optimize3d;
   /// number of 3d optimization steps
   int optsteps3d;
   /**
@@ -778,7 +939,7 @@ public:
      // P .. plot, pause
      // c .. combine
   **/
-  char * optimize2d;
+  const char * optimize2d;
   /// number of 2d optimization steps
   int optsteps2d;
   /// power of error (to approximate max err optimization)
@@ -799,12 +960,16 @@ public:
   int delaunay;
   /// maximal mesh size
   double maxh;
+  /// minimal mesh size
+  double minh;
   /// file for meshsize
   const char * meshsizefilename;
   /// start surfacemeshing from everywhere in surface
   int startinsurface;
   /// check overlapping surfaces (debug)
   int checkoverlap;
+  /// check overlapping surface mesh before volume meshing
+  int checkoverlappingboundary;
   /// check chart boundary (sometimes too restrictive)
   int checkchartboundary;
   /// safty factor for curvatures (elemetns per radius)
@@ -819,7 +984,9 @@ public:
 
 
   /// from mp3:
-  /// give up quality class
+  /// give up quality class, 2d meshing
+  int giveuptol2d;
+  /// give up quality class, 3d meshing
   int giveuptol;
   /// maximal outer steps
   int maxoutersteps;
@@ -833,6 +1000,8 @@ public:
   /// limit for max element angle (150-180)
   double badellimit;
 
+  bool check_impossible;
+  
   ///
   int secondorder;
   /// high order element curvature
@@ -844,12 +1013,16 @@ public:
   ///
   int inverttrigs;
   ///
+  int autozrefine;
+  ///
   MeshingParameters ();
   ///
   void Print (ostream & ost) const;
 
   void CopyFrom(const MeshingParameters & other);
 };
+
+
 
 class DebugParameters 
 {
@@ -883,9 +1056,6 @@ public:
   ///
   DebugParameters ();
 };
-
-
-
 
 
 
@@ -961,18 +1131,30 @@ inline void Element :: GetFace (int i, Element2d & face) const
  */
 class Identifications
 {
+public:
+  enum ID_TYPE { UNDEFINED = 1, PERIODIC = 2, CLOSESURFACES = 3, CLOSEEDGES = 4};
+  
+
 private:
-  Mesh & mesh;
+  class Mesh & mesh;
 
   /// identify points (thin layers, periodic b.c.)  
   INDEX_2_HASHTABLE<int> * identifiedpoints;
+  
+  /// the same, with info about the id-nr
+  INDEX_3_HASHTABLE<int> * identifiedpoints_nr;
+
+  /// sorted by identification nr
+  TABLE<INDEX_2> idpoints_table;
+
+  ARRAY<ID_TYPE> type;
 
   /// number of identifications (or, actually used identifications ?)
   int maxidentnr;
 
 public:
   ///
-  Identifications (Mesh & amesh);
+  Identifications (class Mesh & amesh);
   ///
   ~Identifications ();
 
@@ -987,6 +1169,10 @@ public:
 
   int Get (PointIndex pi1, PointIndex pi2) const;
   int GetSymmetric (PointIndex pi1, PointIndex pi2) const;
+
+  bool Get (PointIndex pi1, PointIndex pi2, int identnr) const;
+  bool GetSymmetric (PointIndex pi1, PointIndex pi2, int identnr) const;
+
   ///
   INDEX_2_HASHTABLE<int> & GetIdentifiedPoints () 
   { 
@@ -1006,7 +1192,22 @@ public:
   }
 
   ///
-  void GetMap (int identnr, ARRAY<int,PointIndex::BASE> & identmap) const;
+  void GetMap (int identnr, ARRAY<int,PointIndex::BASE> & identmap, bool symmetric = false) const;
+  ///
+  ID_TYPE GetType(int identnr) const
+  {
+    if(identnr <= type.Size())
+      return type[identnr-1];
+    else
+      return UNDEFINED;
+  }
+  void SetType(int identnr, ID_TYPE t)
+  {
+    while(type.Size() < identnr)
+      type.Append(UNDEFINED);
+    type[identnr-1] = t;
+  }
+    
   ///
   void GetPairs (int identnr, ARRAY<INDEX_2> & identpairs) const;
   ///
@@ -1014,6 +1215,8 @@ public:
 
   /// remove secondorder
   void SetMaxPointNr (int maxpnum);
+
+  void Print (ostream & ost) const;
 };
 
 
@@ -1023,3 +1226,4 @@ public:
 
 
 #endif
+

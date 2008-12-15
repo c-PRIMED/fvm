@@ -49,15 +49,27 @@ class GFace : public GEntity
   // outer contour of the face.
   void resolveWires();
 
+ public: // this will become protected or private
+  std::list<GEdgeLoop> edgeLoops;
+
  public:
   GFace(GModel *model, int tag);
   virtual ~GFace();
 
-  std::list<GEdgeLoop> edgeLoops;
+  // delete mesh data
+  virtual void deleteMesh();
 
   // add/delete regions that are bounded by the face
   void addRegion(GRegion *r){ r1 ? r2 = r : r1 = r; }
   void delRegion(GRegion *r){ if(r1 == r) r1 = r2; r2 = 0; }
+
+  // add embedded vertices/edges
+  void addEmbeddedVertex(GVertex *v){ embedded_vertices.push_back(v); }
+  void addEmbeddedEdge(GEdge *e){ embedded_edges.push_back(e); }
+  
+  // delete the edge from the face (the edge is supposed to be a free
+  // edge in the face, not part of any edge loops--use with caution!)
+  void delFreeEdge(GEdge *e);
 
   // edge orientations
   virtual std::list<int> orientations() const { return l_dirs; }
@@ -67,6 +79,9 @@ class GFace : public GEntity
 
   // edges that are embedded in the face
   virtual std::list<GEdge*> embeddedEdges() const { return embedded_edges; }
+
+  // edges that are embedded in the face
+  virtual std::list<GVertex*> embeddedVertices() const { return embedded_vertices; }
 
   // vertices that bound the face
   virtual std::list<GVertex*> vertices() const;
@@ -118,7 +133,7 @@ class GFace : public GEntity
   virtual GPoint closestPoint(const SPoint3 & queryPoint, const double initialGuess[2]) const;
 
   // return the normal to the face at the given parameter location
-  virtual SVector3 normal(const SPoint2 &param) const = 0;
+  virtual SVector3 normal(const SPoint2 &param) const;
 
   // return the first derivate of the face at the parameter location
   virtual Pair<SVector3,SVector3> firstDer(const SPoint2 &param) const = 0;
@@ -130,7 +145,7 @@ class GFace : public GEntity
   virtual std::string getAdditionalInfoString();
 
   // fill the crude representation cross
-  bool buildRepresentationCross();
+  virtual bool buildRepresentationCross();
 
   // build a STL triangulation and fills the vertex array
   // va_geom_triangles

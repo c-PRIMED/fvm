@@ -113,6 +113,7 @@ void PrintTime(const MyStr& s1, const MyStr& s2, const MyStr& s3, const MyStr& s
 
 
 static ARRAY<MyStr*> msgstatus_stack(0);
+static ARRAY<double> threadpercent_stack(0);
 static MyStr msgstatus = "";
 
 
@@ -125,6 +126,7 @@ void ResetStatus()
   for (int i = 0; i < msgstatus_stack.Size(); i++)
     delete msgstatus_stack[i];
   msgstatus_stack.SetSize(0);
+  threadpercent_stack.SetSize(0);
 
   // multithread.task = "";
   multithread.percent = 100.;
@@ -132,20 +134,21 @@ void ResetStatus()
 
 void PushStatus(const MyStr& s)
 {
-  msgstatus_stack.Append(new MyStr (s));
+  msgstatus_stack.Append(new MyStr (s));  
   SetStatMsg(s);
+  threadpercent_stack.Append(0);
 }
 
 void PushStatusF(const MyStr& s)
 {
   msgstatus_stack.Append(new MyStr (s));
   SetStatMsg(s);
+  threadpercent_stack.Append(0);
   PrintFnStart(s);
 }
 
 void PopStatus()
 {
-  SetThreadPercent(100.);
   if (msgstatus_stack.Size())
     {
       if (msgstatus_stack.Size() > 1)
@@ -153,13 +156,21 @@ void PopStatus()
       else
 	SetStatMsg ("");
       delete msgstatus_stack.Last();
-      msgstatus_stack.SetSize(msgstatus_stack.Size()-1);
+      msgstatus_stack.DeleteLast();
+      threadpercent_stack.DeleteLast();
+      if(threadpercent_stack.Size() > 0)
+	multithread.percent = threadpercent_stack.Last();
+      else
+	multithread.percent = 100.;
     }
   else
     {
       PrintSysError("PopStatus failed");
     }
 }
+
+
+
 /*
 void SetStatMsgF(const MyStr& s)
 {
@@ -177,11 +188,33 @@ void SetStatMsg(const MyStr& s)
 void SetThreadPercent(double percent)
 {
   multithread.percent = percent;
+  if(threadpercent_stack.Size() > 0)
+    threadpercent_stack.Last() = percent;
 }
 
 
+void GetStatus(MyStr & s, double & percentage)
+{
+  if(threadpercent_stack.Size() > 0)
+    percentage = threadpercent_stack.Last();
+  else
+    percentage = multithread.percent;
+  
+  if ( msgstatus_stack.Size() )
+    s = *msgstatus_stack.Last();
+  else
+    s = "idle";     
+}
+
 
 #ifdef SMALLLIB
+#define SMALLLIBORNOTCL
+#endif
+#ifdef NOTCL
+#define SMALLLIBORNOTCL
+#endif
+
+#ifdef SMALLLIBORNOTCL
 void Ng_PrintDest(const char * s){cout << s <<flush;}
 double GetTime(){return 0;}
 void MyError(const char * ch)

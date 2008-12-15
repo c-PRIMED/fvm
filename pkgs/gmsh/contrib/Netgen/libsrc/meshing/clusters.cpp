@@ -21,8 +21,12 @@ void AnisotropicClusters ::  Update()
   int i, j, k;
 
   const MeshTopology & top = mesh.GetTopology();
-  if (!top.HasEdges())
-    return;
+
+  bool hasedges = top.HasEdges();
+  bool hasfaces = top.HasFaces();
+
+  if (!hasedges || !hasfaces) return;
+
 
   PrintMessage (3, "Update Clusters");
 
@@ -38,11 +42,9 @@ void AnisotropicClusters ::  Update()
   int changed;
 
   for (i = 1; i <= cluster_reps.Size(); i++)
-    cluster_reps.Elem(i) = i;
-
-  for (i = 1; i <= cluster_reps.Size(); i++)
     cluster_reps.Elem(i) = -1;
 
+  
   for (i = 1; i <= ne; i++)
     {
       const Element & el = mesh.VolumeElement(i);
@@ -68,6 +70,7 @@ void AnisotropicClusters ::  Update()
 	cluster_reps.Elem(nnums[j]) = nnums[j];
     }
 
+  
 
   for (i = 1; i <= nse; i++)
     {
@@ -106,6 +109,7 @@ void AnisotropicClusters ::  Update()
       7, 7, 4, 5, 6, 
       7
     };
+
   static const int pyramid_cluster[] =
     { 
       1, 2, 2, 1, 3,
@@ -132,8 +136,10 @@ void AnisotropicClusters ::  Update()
     { 2, 3, 1, 1, 4, 5, 1, 6, 4, 5, 5, 4, 7, 7, 7 };
 
   int cnt = 0;
+
   do
     {
+
       cnt++;
       changed = 0;
       
@@ -192,6 +198,7 @@ void AnisotropicClusters ::  Update()
 	      else if (cluster_reps.Get(el.PNum(3)) == 
 		       cluster_reps.Get(el.PNum(4)))
 		clustertab = tet_cluster34;
+
 	      else
 		clustertab = NULL;
 	      break;

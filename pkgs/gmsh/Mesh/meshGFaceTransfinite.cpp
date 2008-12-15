@@ -11,7 +11,7 @@
 #include "MVertex.h"
 #include "MElement.h"
 #include "Context.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Numeric.h"
 
 #define SQU(a)      ((a)*(a))
@@ -43,19 +43,30 @@ int MeshTransfiniteSurface(GFace *gf)
 
   Msg::StatusBar(2, true, "Meshing surface %d (transfinite)", gf->tag());
 
-  std::vector<MVertex*> corners, d_vertices;
-  std::vector<int> indices;
+  std::vector<MVertex*> corners;
 
-  for(unsigned int i = 0; i < gf->meshAttributes.corners.size(); i++)
-    corners.push_back(gf->meshAttributes.corners[i]->mesh_vertices[0]);
-
-  computeEdgeLoops(gf, d_vertices, indices);
+  if(gf->meshAttributes.corners.size()){
+    // corners have been specified explicitly
+    for(unsigned int i = 0; i < gf->meshAttributes.corners.size(); i++)
+      corners.push_back(gf->meshAttributes.corners[i]->mesh_vertices[0]);
+  }
+  else{
+    // try to find the corners automatically
+    GEdgeLoop el(gf->edges());
+    for(GEdgeLoop::iter it = el.begin(); it != el.end(); it++)
+      corners.push_back(it->getBeginVertex()->mesh_vertices[0]);
+  }
 
   if(corners.size () != 3 && corners.size () != 4){
     Msg::Error("Surface %d is transfinite but has %d corners",
 	       gf->tag(), corners.size());
     return 0;
   }
+
+  std::vector<MVertex*> d_vertices;
+  std::vector<int> indices;
+  computeEdgeLoops(gf, d_vertices, indices);
+
   if(indices.size () != 2){
     Msg::Error("Surface %d is transfinite but has %d holes",
 	       gf->tag(), indices.size() - 2);
@@ -285,68 +296,78 @@ int MeshTransfiniteSurface(GFace *gf)
     }
   }  
 
-  // elliptic smoother (don't apply this by default)
-  if(corners.size() == 4 && gf->geomType() == GEntity::Plane){
-    int numSmooth = 0;
-    if(gf->meshAttributes.transfiniteSmoothing < 0 && CTX.mesh.nb_smoothing > 1)
-      numSmooth = CTX.mesh.nb_smoothing;
-    else if(gf->meshAttributes.transfiniteSmoothing > 0)
-      numSmooth = gf->meshAttributes.transfiniteSmoothing;
-    for (int IT = 0; IT < numSmooth; IT++){
-      for(int i = 1; i < L; i++){
-        for(int j = 1; j < H; j++){
-          MVertex *v11 = tab[i - 1][j - 1];
-          MVertex *v12 = tab[i - 1][j    ];
-          MVertex *v13 = tab[i - 1][j + 1];           
-          MVertex *v21 = tab[i    ][j - 1];
-          MVertex *v22 = tab[i    ][j    ];
-          MVertex *v23 = tab[i    ][j + 1];
-          MVertex *v31 = tab[i + 1][j - 1];
-          MVertex *v32 = tab[i + 1][j    ];
-          MVertex *v33 = tab[i + 1][j + 1];
-          double alpha = 0.25 * (SQU(v23->x() - v21->x()) +
-                                 SQU(v23->y() - v21->y()) +
-                                 SQU(v23->z() - v21->z()));
-          double gamma = 0.25 * (SQU(v32->x() - v12->x()) +
-                                 SQU(v32->y() - v12->y()) +
-                                 SQU(v32->z() - v12->z()));
-          double beta = 0.0625 * ((v32->x() - v12->x()) * (v23->x() - v21->x()) +
-                                  (v32->y() - v12->y()) * (v23->y() - v21->y()) +
-                                  (v32->z() - v12->z()) * (v23->z() - v21->z()));
-          v22->x() = 0.5 * (alpha * (v32->x() + v12->x()) + 
-                            gamma * (v23->x() + v21->x()) -
-                            2. * beta * (v33->x() - v13->x() - 
-                                         v31->x() + v11->x())) / (alpha + gamma);
-          v22->y() = 0.5 * (alpha * (v32->y() + v12->y()) +
-                            gamma * (v23->y() + v21->y()) -
-                            2. * beta * (v33->y() - v13->y() -
-                                         v31->y() + v11->y())) / (alpha + gamma);
-          v22->z() = 0.5 * (alpha * (v32->z() + v12->z()) +
-                            gamma * (v23->z() + v21->z()) -
-                            2. * beta * (v33->z() - v13->z() -
-                                         v31->z() + v11->z())) / (alpha + gamma);
+  // should we apply the elliptic smoother?
+  int numSmooth = 0;
+  if(gf->meshAttributes.transfiniteSmoothing < 0 && CTX.mesh.nb_smoothing > 1)
+    numSmooth = CTX.mesh.nb_smoothing;
+  else if(gf->meshAttributes.transfiniteSmoothing > 0)
+    numSmooth = gf->meshAttributes.transfiniteSmoothing;
+
+  if(corners.size() == 4 && numSmooth){
+    std::vector<std::vector<double> > u(L + 1), v(L + 1);
+    for(int i = 0; i <= L; i++){
+      u[i].resize(H + 1);
+      v[i].resize(H + 1);
+    }
+    for(int i = 0; i <= L; i++){
+      for(int j = 0; j <= H; j++){ 
+        int iP1 = N1 + i;
+        int iP2 = N2 + j;
+        int iP3 = N4 - i;
+        int iP4 = (N4 + (N3 - N2) - j) % m_vertices.size();
+        if(j == 0)     { u[i][j] = U[iP1]; v[i][j] = V[iP1]; }
+        else if(i == L){ u[i][j] = U[iP2]; v[i][j] = V[iP2]; }
+        else if(j == H){ u[i][j] = U[iP3]; v[i][j] = V[iP3]; }
+        else if(i == 0){ u[i][j] = U[iP4]; v[i][j] = V[iP4]; }
+        else{
+          tab[i][j]->getParameter(0, u[i][j]);
+          tab[i][j]->getParameter(1, v[i][j]);
         }
       }
     }
-    // recompute corresponding u,v coordinates (necessary e.g. for 2nd order algo)
+    for(int IT = 0; IT < numSmooth; IT++){
+      for(int i = 1; i < L; i++){
+        for(int j = 1; j < H; j++){
+          double alpha = 0.25 * (SQU(u[i][j + 1] - u[i][j - 1]) +
+                                 SQU(v[i][j + 1] - v[i][j - 1])) ;
+          double gamma = 0.25 * (SQU(u[i + 1][j] - u[i - 1][j]) +
+                                 SQU(v[i + 1][j] - v[i - 1][j]));
+          double beta = 0.0625 * 
+            ((u[i + 1][j] - u[i - 1][j]) * (u[i][j + 1] - u[i][j - 1]) +
+             (v[i + 1][j] - v[i - 1][j]) * (v[i][j + 1] - v[i][j - 1]));
+          u[i][j] = 0.5 * 
+            (alpha * (u[i + 1][j] + u[i - 1][j]) + 
+             gamma * (u[i][j + 1] + u[i][j - 1]) -
+             2. * beta * (u[i + 1][j + 1] - u[i - 1][j + 1] - 
+                          u[i + 1][j - 1] + u[i - 1][j - 1])) / (alpha + gamma);
+          v[i][j] = 0.5 * 
+            (alpha * (v[i + 1][j] + v[i - 1][j]) + 
+             gamma * (v[i][j + 1] + v[i][j - 1]) -
+             2. * beta * (v[i + 1][j + 1] - v[i - 1][j + 1] - 
+                          v[i + 1][j - 1] + v[i - 1][j - 1])) / (alpha + gamma);
+        }
+      }
+    }
     for(int i = 1; i < L; i++){
       for(int j = 1; j < H; j++){
-        MVertex *v = tab[i][j];
-        SPoint2 param = gf->parFromPoint(SPoint3(v->x(), v->y(), v->z()));
-        v->setParameter(0, param[0]);
-        v->setParameter(1, param[1]);
+        GPoint p = gf->point(SPoint2(u[i][j], v[i][j]));
+        tab[i][j]->x() = p.x();
+        tab[i][j]->y() = p.y();
+        tab[i][j]->z() = p.z();
+        tab[i][j]->setParameter(0, u[i][j]);
+        tab[i][j]->setParameter(1, v[i][j]);
       }
     }
   }
 
+  // create elements
   if(corners.size() == 4){ 
-    // create elements
     for(int i = 0; i < L ; i++){
       for(int j = 0; j < H; j++){
-        MVertex *v1 = tab[i    ][j    ];
-        MVertex *v2 = tab[i + 1][j    ];
+        MVertex *v1 = tab[i][j];
+        MVertex *v2 = tab[i + 1][j];
         MVertex *v3 = tab[i + 1][j + 1];
-        MVertex *v4 = tab[i    ][j + 1];
+        MVertex *v4 = tab[i][j + 1];
         if(gf->meshAttributes.recombine)
           gf->quadrangles.push_back(new MQuadrangle(v1, v2, v3, v4));
         else if(gf->meshAttributes.transfiniteArrangement == 1 ||
@@ -365,17 +386,17 @@ int MeshTransfiniteSurface(GFace *gf)
   }
   else{      
     for(int j = 0; j < H; j++){
-      MVertex *v1 = tab[0    ][0    ];
-      MVertex *v2 = tab[1    ][j    ];
-      MVertex *v3 = tab[1    ][j + 1];
+      MVertex *v1 = tab[0][0];
+      MVertex *v2 = tab[1][j];
+      MVertex *v3 = tab[1][j + 1];
       gf->triangles.push_back(new MTriangle(v1, v2, v3));
     }
     for(int i = 1; i < L ; i++){
       for(int j = 0; j < H; j++){
-        MVertex *v1 = tab[i    ][j    ];
-        MVertex *v2 = tab[i + 1][j    ];
+        MVertex *v1 = tab[i][j];
+        MVertex *v2 = tab[i + 1][j];
         MVertex *v3 = tab[i + 1][j + 1];
-        MVertex *v4 = tab[i    ][j + 1];
+        MVertex *v4 = tab[i][j + 1];
         if(gf->meshAttributes.recombine)
           gf->quadrangles.push_back(new MQuadrangle(v1, v2, v3, v4));
         else if(gf->meshAttributes.transfiniteArrangement == 1 ||

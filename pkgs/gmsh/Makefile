@@ -7,7 +7,7 @@ include variables
 
 GMSH_MAJOR_VERSION = 2
 GMSH_MINOR_VERSION = 2
-GMSH_PATCH_VERSION = 4
+GMSH_PATCH_VERSION = 6
 GMSH_EXTRA_VERSION =
 
 GMSH_VERSION = ${GMSH_MAJOR_VERSION}.${GMSH_MINOR_VERSION}.${GMSH_PATCH_VERSION}${GMSH_EXTRA_VERSION}
@@ -22,9 +22,9 @@ GMSH_API = Geo/GModel.h Geo/GEntity.h Geo/GPoint.h\
            Geo/MVertex.h Geo/MEdge.h Geo/MFace.h Geo/MElement.h\
            Geo/discreteVertex.h Geo/discreteEdge.h Geo/discreteFace.h Geo/discreteRegion.h\
            Geo/SPoint2.h Geo/SPoint3.h Geo/SVector3.h Geo/SBoundingBox3d.h\
-           Geo/Pair.h Geo/Range.h\
-           Post/PView.h Post/PViewData.h Post/PViewDataGModel.h\
-           Common/VertexArray.h\
+           Geo/Pair.h Geo/Range.h Numeric/FunctionSpace.h\
+           Post/PView.h Post/PViewData.h Plugin/PluginManager.h\
+           Common/VertexArray.h Common/GmshMessage.h\
            Common/Gmsh.h Common/GmshDefines.h Common/GmshVersion.h Common/GmshMatrix.h
 
 GMSH_EMBEDDED = ${GMSH_API} Geo/discrete*.cpp\
@@ -32,22 +32,23 @@ GMSH_EMBEDDED = ${GMSH_API} Geo/discrete*.cpp\
                 Geo/GEntity.cpp Geo/GVertex.cpp Geo/GEdge.cpp\
                 Geo/GEdgeLoop.cpp Geo/GFace.cpp Geo/GRegion.cpp\
                 Geo/MElement.cpp Geo/MFace.cpp Geo/MVertex.cpp\
-                Common/StringUtils.{cpp,h} Numeric/NumericEmbedded.{cpp,h}\
+                Common/StringUtils.{cpp,h}\
+                Numeric/NumericEmbedded.{cpp,h} Numeric/FunctionSpace.cpp\
                 utils/embed/GmshEmbedded.{cpp,h} utils/embed/Makefile
+
+# Main building rules
 
 all: link
 
 link: compile
 	${LINKER} ${OPTIM} ${DASH}o bin/gmsh${EXEEXT} ${GMSH_LIBS}
 
-link-mac-universal: compile
-	${LINKER} -arch i386 ${OPTIM} -o bin/gmsh_i386 ${GMSH_LIBS}
-	${LINKER} -arch ppc ${OPTIM} -o bin/gmsh_ppc ${GMSH_LIBS}
-	lipo -create bin/gmsh_i386 bin/gmsh_ppc -output bin/gmsh
-	rm -f bin/gmsh_i386 bin/gmsh_ppc
-
 compile: variables initialtag
+ifneq (${UNAME},WIN32MSVC)
 	@for i in ${GMSH_DIRS}; do (cd $$i && ${MAKE}); done
+else
+	for %%i in (${GMSH_DIRS}) do ${MAKE} -C %%i
+endif
 
 install: variables
 	mkdir -p ${bindir}
@@ -60,30 +61,85 @@ uninstall:
 	rm -f ${bindir}/gmsh${EXEEXT}
 	rm -f ${mandir}/man1/gmsh.1
 
+tag:
+ifneq (${UNAME},WIN32MSVC)
+	echo "#define GMSH_MAJOR_VERSION ${GMSH_MAJOR_VERSION}" > ${GMSH_VERSION_FILE}
+	echo "#define GMSH_MINOR_VERSION ${GMSH_MINOR_VERSION}" >> ${GMSH_VERSION_FILE}
+	echo "#define GMSH_PATCH_VERSION ${GMSH_PATCH_VERSION}" >> ${GMSH_VERSION_FILE}
+	echo "#define GMSH_EXTRA_VERSION \"${GMSH_EXTRA_VERSION}\"" >> ${GMSH_VERSION_FILE}
+	echo "#define GMSH_VERSION       \"${GMSH_VERSION}\"" >> ${GMSH_VERSION_FILE}
+	echo "#define GMSH_DATE          \"`date`\"" >> ${GMSH_VERSION_FILE}
+	echo "#define GMSH_HOST          \"${HOSTNAME}\"" >> ${GMSH_VERSION_FILE}
+	echo "#define GMSH_PACKAGER      \"`whoami`\"" >> ${GMSH_VERSION_FILE}
+	echo "#define GMSH_OS            \"${UNAME}\"" >> ${GMSH_VERSION_FILE}
+	echo "#define GMSH_SHORT_LICENSE \"${GMSH_SHORT_LICENSE}\"" >> ${GMSH_VERSION_FILE}
+else
+	echo #define GMSH_MAJOR_VERSION ${GMSH_MAJOR_VERSION} > ${GMSH_VERSION_FILE}
+	echo #define GMSH_MINOR_VERSION ${GMSH_MINOR_VERSION} >> ${GMSH_VERSION_FILE}
+	echo #define GMSH_PATCH_VERSION ${GMSH_PATCH_VERSION} >> ${GMSH_VERSION_FILE}
+	echo #define GMSH_EXTRA_VERSION "${GMSH_EXTRA_VERSION}" >> ${GMSH_VERSION_FILE}
+	echo #define GMSH_VERSION       "${GMSH_VERSION}" >> ${GMSH_VERSION_FILE}
+	echo #define GMSH_DATE          "" >> ${GMSH_VERSION_FILE}
+	echo #define GMSH_HOST          "${HOSTNAME}" >> ${GMSH_VERSION_FILE}
+	echo #define GMSH_PACKAGER      "" >> ${GMSH_VERSION_FILE}
+	echo #define GMSH_OS            "${UNAME}" >> ${GMSH_VERSION_FILE}
+	echo #define GMSH_SHORT_LICENSE ${GMSH_SHORT_LICENSE} >> ${GMSH_VERSION_FILE}
+endif
+
+# Rules to build the Gmsh library
+
+.PHONY: lib
+lib: variables initialtag
+ifneq (${UNAME},WIN32MSVC)
+	@for i in ${GMSH_DIRS}; do (cd $$i && ${MAKE} cpobj); done
+	${AR} ${ARFLAGS}lib/libGmsh${LIBEXT} lib/*${OBJEXT}
+	${RANLIB} lib/libGmsh${LIBEXT}
+	rm -f lib/*${OBJEXT}
+else
+	for %%i in (${GMSH_DIRS}); do ${MAKE} -C %%i
+	${AR} ${ARFLAGS}bin\libGmsh${LIBEXT} lib\*${LIBEXT}
+	erase lib\*${LIBEXT}
+	move bin\libGmsh${LIBEXT} "lib"
+endif
+
+install-lib: lib
+ifneq (${UNAME},WIN32MSVC)
+	mkdir -p ${includedir}/gmsh
+	rm -f ${includedir}/gmsh/*
+	cp -f ${GMSH_API} ${includedir}/gmsh
+	mkdir -p ${libdir}
+	cp -f lib/libGmsh${LIBEXT} ${libdir}/libGmsh${LIBSUFFIX}${LIBEXT}
+else
+	if not exist ${includedir}\gmsh mkdir ${includedir}\gmsh
+	if not exist ${libdir} mkdir ${libdir}
+	erase /q ${includedir}\gmsh\*.h
+	for %%i in (${subst /,\,${GMSH_API}}) do copy %%i ${includedir}\gmsh
+	copy /y lib\libGmsh${LIBEXT} ${libdir}\libGmsh${LIBSUFFIX}${LIBEXT}
+endif
+
+uninstall-lib:
+	rm -rf ${includedir}/gmsh
+	rm -rf ${libdir}/libGmsh${LIBSUFFIX}${LIBEXT}
+
+embed:
+	@if [ -r ../getdp/contrib/gmsh/Makefile ]; then \
+          rsync -av ${GMSH_EMBEDDED} ../getdp/contrib/gmsh;\
+        fi
+
+# Macintosh-specific rules
+
+link-mac-universal: compile
+	${LINKER} -arch i386 ${OPTIM} -o bin/gmsh_i386 ${GMSH_LIBS}
+	${LINKER} -arch ppc ${OPTIM} -o bin/gmsh_ppc ${GMSH_LIBS}
+	lipo -create bin/gmsh_i386 bin/gmsh_ppc -output bin/gmsh
+	rm -f bin/gmsh_i386 bin/gmsh_ppc
+
 install-mac: variables package-mac
 	cp -rf gmsh-${GMSH_VERSION}/Gmsh.app /Applications
 	rm -rf gmsh-${GMSH_VERSION} gmsh-${GMSH_VERSION}-MacOSX.tgz
 
 uninstall-mac:
 	rm -rf /Applications/Gmsh.app
-
-.PHONY: lib
-lib: variables initialtag
-	@for i in ${GMSH_DIRS}; do (cd $$i && ${MAKE} cpobj); done
-	${AR} ${ARFLAGS}lib/libGmsh${LIBEXT} lib/*${OBJEXT}
-	${RANLIB} lib/libGmsh${LIBEXT}
-	rm -f lib/*${OBJEXT}
-
-install-lib: lib
-	mkdir -p ${includedir}/gmsh
-	rm -f ${includedir}/gmsh/*
-	cp -f ${GMSH_API} ${includedir}/gmsh
-	mkdir -p ${libdir}
-	cp -f lib/libGmsh${LIBEXT} ${libdir}/libGmsh${LIBSUFFIX}${LIBEXT}
-
-uninstall-lib:
-	rm -rf ${includedir}/gmsh
-	rm -rf ${libdir}/libGmsh${LIBSUFFIX}${LIBEXT}
 
 framework: lib
 	rm -rf Gmsh.framework
@@ -101,10 +157,7 @@ framework: lib
 	cd Gmsh.framework && ln -s Versions/Current/Headers
 	cd Gmsh.framework && ln -s Versions/Current/Resources
 
-embed:
-	@if [ -r ../getdp/contrib/gmsh/Makefile ]; then \
-          rsync -av ${GMSH_EMBEDDED} ../getdp/contrib/gmsh;\
-        fi
+# Utilities
 
 variables: configure
 	@echo "********************************************************************"
@@ -140,8 +193,13 @@ purge:
                -o -name "*.bak"`
 
 clean:
+ifneq (${UNAME},WIN32MSVC)
 	for i in doc lib ${GMSH_DIRS}; do (cd $$i && ${MAKE} clean); done
 	rm -f ${GMSH_VERSION_FILE}
+else
+	for %%i in (doc lib ${GMSH_DIRS}) do ${MAKE} -C %%i clean
+	erase Common\GmshVersion.h
+endif
 
 clean-most:
 	for i in doc lib ${GMSH_DIRS:contrib/Netgen=}; do (cd $$i && ${MAKE} clean); done
@@ -162,21 +220,12 @@ nodepend:
           && rm -f Makefile.new); \
         done 
 
-tag:
-	rm -f ${GMSH_VERSION_FILE}
-	echo "#define GMSH_MAJOR_VERSION ${GMSH_MAJOR_VERSION}" > ${GMSH_VERSION_FILE}
-	echo "#define GMSH_MINOR_VERSION ${GMSH_MINOR_VERSION}" >> ${GMSH_VERSION_FILE}
-	echo "#define GMSH_PATCH_VERSION ${GMSH_PATCH_VERSION}" >> ${GMSH_VERSION_FILE}
-	echo "#define GMSH_EXTRA_VERSION \"${GMSH_EXTRA_VERSION}\"" >> ${GMSH_VERSION_FILE}
-	echo "#define GMSH_VERSION       \"${GMSH_VERSION}\"" >> ${GMSH_VERSION_FILE}
-	echo "#define GMSH_DATE          \"`date`\"" >> ${GMSH_VERSION_FILE}
-	echo "#define GMSH_HOST          \"${HOSTNAME}\"" >> ${GMSH_VERSION_FILE}
-	echo "#define GMSH_PACKAGER      \"`whoami`\"" >> ${GMSH_VERSION_FILE}
-	echo "#define GMSH_OS            \"${UNAME}\"" >> ${GMSH_VERSION_FILE}
-	echo "#define GMSH_SHORT_LICENSE \"${GMSH_SHORT_LICENSE}\"" >> ${GMSH_VERSION_FILE}
-
 initialtag:
+ifneq (${UNAME},WIN32MSVC)
 	@if [ ! -r ${GMSH_VERSION_FILE} ]; then ${MAKE} tag ; fi
+else
+	${MAKE} tag
+endif
 
 tags:
 	gtags
@@ -202,8 +251,7 @@ source-tree: purge
 
 source: source-tree
 	cd gmsh-${GMSH_VERSION} && rm -rf ${GMSH_VERSION_FILE}\
-          contrib/NR contrib/Triangle/triangle.* contrib/Tetgen/tetgen.*\
-          contrib/Tetgen/predicates.* utils/nightly
+          contrib/NR contrib/Tetgen/*.{cxx,h} contrib/misc/variables.i*
 	tar zcf gmsh-${GMSH_VERSION}-source.tgz gmsh-${GMSH_VERSION}
 
 # Rules to package the binaries
@@ -218,7 +266,7 @@ package-unix:
 	cp -R tutorial gmsh-${GMSH_VERSION}
 	cp -R demos gmsh-${GMSH_VERSION}
 	rm -rf gmsh-${GMSH_VERSION}/*/CVS
-	rm -f gmsh-${GMSH_VERSION}/tutorial/*.msh
+	rm -f gmsh-${GMSH_VERSION}/tutorial/t*.msh
 	rm -f gmsh-${GMSH_VERSION}/*/*~
 	tar cf gmsh-${GMSH_VERSION}-${UNAME}.tar gmsh-${GMSH_VERSION}
 	gzip gmsh-${GMSH_VERSION}-${UNAME}.tar
@@ -232,14 +280,14 @@ package-win:
 	cp doc/README.win32 gmsh-${GMSH_VERSION}/README.txt
 	cp doc/LICENSE.txt doc/VERSIONS.txt doc/FAQ.txt doc/CREDITS.txt\
           gmsh-${GMSH_VERSION}
-	cd utils/misc && ./unix2dos.bash ../../gmsh-${GMSH_VERSION}/*.txt
 	cp -R tutorial gmsh-${GMSH_VERSION}
 	cp -R demos gmsh-${GMSH_VERSION}
 	rm -rf gmsh-${GMSH_VERSION}/*/CVS
-	rm -f gmsh-${GMSH_VERSION}/tutorial/*.msh
+	rm -f gmsh-${GMSH_VERSION}/tutorial/t*.msh
 	rm -f gmsh-${GMSH_VERSION}/*/*~
-	cd utils/misc && ./unix2dos.bash ../../gmsh-${GMSH_VERSION}/tutorial/*\
-                                         ../../gmsh-${GMSH_VERSION}/demos/*
+	unix2dos gmsh-${GMSH_VERSION}/*.txt
+	unix2dos gmsh-${GMSH_VERSION}/tutorial/*
+	unix2dos gmsh-${GMSH_VERSION}/demos/*
 	cd gmsh-${GMSH_VERSION} && zip -r gmsh-${GMSH_VERSION}-Windows.zip *
 	mv gmsh-${GMSH_VERSION}/gmsh-${GMSH_VERSION}-Windows.zip .
 
@@ -263,7 +311,7 @@ package-mac:
 	cp doc/LICENSE.txt doc/VERSIONS.txt doc/FAQ.txt doc/CREDITS.txt\
           gmsh-${GMSH_VERSION}
 	rm -rf gmsh-${GMSH_VERSION}/*/CVS\
-               gmsh-${GMSH_VERSION}/tutorial/*.msh\
+               gmsh-${GMSH_VERSION}/tutorial/t*.msh\
                gmsh-${GMSH_VERSION}/*/*~
 	tar zcf gmsh-${GMSH_VERSION}-MacOSX.tgz gmsh-${GMSH_VERSION}
 

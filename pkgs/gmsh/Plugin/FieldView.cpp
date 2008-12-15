@@ -29,10 +29,10 @@ void GMSH_FieldViewPlugin::getName(char *name) const
 void GMSH_FieldViewPlugin::getInfos(char *author, char *copyright,
                                     char *help_text) const
 {
-  strcpy(author, "J. Lambrechts (jonathanlambrechts@gmail.org)");
-  strcpy(copyright, "GPL");
+  strcpy(author, "J. Lambrechts");
+  strcpy(copyright, "C. Geuzaine, J.-F. Remacle");
   strcpy(help_text,
-         "Plugin(FieldView) evaluate a field on the choosen view.\n");
+         "Plugin(FieldView) evaluates a field on the choosen view.\n");
 }
 
 int GMSH_FieldViewPlugin::getNbOptions() const
@@ -52,7 +52,7 @@ void GMSH_FieldViewPlugin::catchErrorMessage(char *errorMessage) const
 
 PView *GMSH_FieldViewPlugin::execute(PView *v)
 {
-  int comp = (int)FieldViewOptions_Number[0].def;
+  //int comp = (int)FieldViewOptions_Number[0].def;
   int iView = (int)FieldViewOptions_Number[1].def;
   int iField = (int)FieldViewOptions_Number[2].def;
   Field *field = GModel::current()->getFields()->get(iField);

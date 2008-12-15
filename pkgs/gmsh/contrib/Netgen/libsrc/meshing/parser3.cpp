@@ -1,6 +1,13 @@
 #include <mystdlib.h>
 #include "meshing.hpp"
 
+#ifdef WIN32
+#define COMMASIGN ':'
+#else
+#define COMMASIGN ','
+#endif
+
+
 namespace netgen
 {
 
@@ -35,7 +42,7 @@ void LoadVMatrixLine (istream & ist, DenseMatrix & m, int line)
 	}
 
       ist >> ch;
-      if (ch == ',')
+      if (ch == COMMASIGN)
 	ist >> ch;
     }
 }
@@ -100,6 +107,7 @@ void vnetrule :: LoadRule (istream & ist)
   ist.get (buf, sizeof(buf), '"');
   ist.get (ch);
 
+  delete [] name;
   name = new char[strlen (buf) + 1];
   strcpy (name, buf);
   //  (*mycout) << "Rule " << name << " found." << endl;
@@ -175,7 +183,7 @@ void vnetrule :: LoadRule (istream & ist)
 	      ist >> ch;    // ','
 	      ist >> face.PNum(3);
 	      ist >> ch;    // ')' or ','
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  face.SetType(QUAD);
 		  ist >> face.PNum(4);
@@ -283,7 +291,7 @@ void vnetrule :: LoadRule (istream & ist)
 	      ist >> ch;    // ','
 	      ist >> face.PNum(3);
 	      ist >> ch;    // ')' or ','
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  face.SetType(QUAD);
 		  ist >> face.PNum(4);
@@ -345,8 +353,7 @@ void vnetrule :: LoadRule (istream & ist)
 	}
       else if (strcmp (buf, "freezone2") == 0)
 	{
-	  int i, j, k, nfp;
-	  Point3d p;
+	  int k, nfp;
 
 	  nfp = 0;
 	  ist >> ch;
@@ -408,9 +415,7 @@ void vnetrule :: LoadRule (istream & ist)
 
       else if (strcmp (buf, "freezonelimit") == 0)
 	{
-	  int i, j, k, nfp;
-	  Point3d p;
-
+	  int k, nfp;
 	  nfp = 0;
 	  ist >> ch;
 
@@ -492,33 +497,33 @@ void vnetrule :: LoadRule (istream & ist)
 	      ist >> elements.Last().PNum(1);
 	      ist >> ch;    // ','
 
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  //		  elements.Last().SetNP(2);
 		  ist >> elements.Last().PNum(2);
 		  ist >> ch;    // ','
 		}
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  //		  elements.Last().SetNP(3);
 		  ist >> elements.Last().PNum(3);
 		  ist >> ch;    // ','
 		}
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  //		  elements.Last().SetNP(4);
 		  elements.Last().SetType(TET);
 		  ist >> elements.Last().PNum(4);
 		  ist >> ch;    // ','
 		}
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  //		  elements.Last().SetNP(5);
 		  elements.Last().SetType(PYRAMID);
 		  ist >> elements.Last().PNum(5);
 		  ist >> ch;    // ','
 		}
-	      if (ch == ',')
+	      if (ch == COMMASIGN)
 		{
 		  //		  elements.Last().SetNP(6);
 		  elements.Last().SetType(PRISM);
@@ -764,7 +769,6 @@ void vnetrule :: LoadRule (istream & ist)
 
 
   {
-    char ok;
     int minn;
     //    ARRAY<int> pnearness (noldp);
     pnearness.SetSize (noldp);
@@ -793,8 +797,26 @@ void vnetrule :: LoadRule (istream & ist)
 		}
 	  }
 
+	for (i = 1; i <= edges.Size(); i++)
+	  {
+	    int pi1 = edges.Get(i).i1;
+	    int pi2 = edges.Get(i).i2;
+
+	    if (pnearness.Get(pi1) > pnearness.Get(pi2)+1)
+	      {
+		ok = 0;
+		pnearness.Elem(pi1) = pnearness.Get(pi2)+1;
+	      }
+	    if (pnearness.Get(pi2) > pnearness.Get(pi1)+1)
+	      {
+		ok = 0;
+		pnearness.Elem(pi2) = pnearness.Get(pi1)+1;
+	      }
+	  }
+	
+
 	for (i = 1; i <= elements.Size(); i++)
-	  if (elements.Get(i).GetNP() == 6)
+	  if (elements.Get(i).GetNP() == 6)  // prism rule
 	    {
 	      for (j = 1; j <= 3; j++)
 		{
@@ -816,7 +838,7 @@ void vnetrule :: LoadRule (istream & ist)
       }
     while (!ok);
 
-    int maxpnearness = 0;
+    maxpnearness = 0;
     for (i = 1; i <= pnearness.Size(); i++)
       maxpnearness = max2 (maxpnearness, pnearness.Get(i));
 
@@ -829,6 +851,8 @@ void vnetrule :: LoadRule (istream & ist)
 	for (j = 1; j <= GetNP(i); j++)
 	  fnearness.Elem(i) += pnearness.Get(GetPointNr (i, j));
       }
+
+    // (*testout) << "rule " << name << ", pnear = " << pnearness << endl;
   }
 
   
@@ -858,7 +882,7 @@ void vnetrule :: LoadRule (istream & ist)
 	      INDEX_3 f2(freesetfaces.Get(l).i1, 
 			 freesetfaces.Get(l).i2, 
 			 freesetfaces.Get(l).i3);
-	      INDEX_2 edge(0, 0);
+	      INDEX_2 ed(0, 0);
 	      for (int f11 = 1; f11 <= 3; f11++)
 		for (int f12 = 1; f12 <= 3; f12++)
 		  if (f11 != f12)
@@ -866,23 +890,23 @@ void vnetrule :: LoadRule (istream & ist)
 		      for (int f22 = 1; f22 <= 3; f22++)		    
 			if (f1.I(f11) == f2.I(f21) && f1.I(f12) == f2.I(f22))
 			{
-			  edge.I(1) = f1.I(f11);
-			  edge.I(2) = f1.I(f12);
+			  ed.I(1) = f1.I(f11);
+			  ed.I(2) = f1.I(f12);
 			}
-	      //	      (*testout) << "edge = " << edge.I(1) << "-" << edge.I(2) << endl;
-	      //	      (*testout) << "ind = " << ind << " edge = " << edge << endl;
+	      //	      (*testout) << "ed = " << ed.I(1) << "-" << ed.I(2) << endl;
+	      //	      (*testout) << "ind = " << ind << " ed = " << ed << endl;
 	      for (int eli = 1; eli <= GetNOldF(); eli++)
 		{
 		  if (GetNP(eli) == 4)
 		    {
 		      for (int elr = 1; elr <= 4; elr++)
 			{
-			  if (GetPointNrMod (eli, elr) == edge.I(1) &&
-			      GetPointNrMod (eli, elr+2) == edge.I(2))
+			  if (GetPointNrMod (eli, elr) == ed.I(1) &&
+			      GetPointNrMod (eli, elr+2) == ed.I(2))
 			    {
 			      /*
-			      (*testout) << "edge is diagonal of rectangle" << endl;
-			      (*testout) << "edge = " << edge.I(1) << "-" << edge.I(2) << endl;
+			      (*testout) << "ed is diagonal of rectangle" << endl;
+			      (*testout) << "ed = " << ed.I(1) << "-" << ed.I(2) << endl;
 			      (*testout) << "ind = " << ind << endl;
 			      */
 			      ind = 0;
@@ -931,7 +955,7 @@ void Meshing3 :: LoadRules (const char * filename, const char ** prules)
       if (!prules) prules = tetrules;
 
       const char ** hcp = prules; 
-      int len = 0;
+      size_t len = 0;
       while (*hcp)
 	{
 	  len += strlen (*hcp);
@@ -949,6 +973,14 @@ void Meshing3 :: LoadRules (const char * filename, const char ** prules)
 	  tt1 += strlen (*hcp);	  
 	  hcp++;
 	}
+
+
+#ifdef WIN32
+      // VC++ 2005 workaround
+      for(size_t i=0; i<len; i++)
+	if(tr1[i] == ',')
+	  tr1[i] = ':';
+#endif
 
       ist = new istringstream (tr1);
     }

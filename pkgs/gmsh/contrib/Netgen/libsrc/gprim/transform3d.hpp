@@ -44,6 +44,15 @@ public:
 	    lin[i-1][1] * from.X(2) + lin[i-1][2] * from.X(3);
 	}
     }
+
+  ///
+  void Transform (Point3d & p) const
+  {
+    Point3d hp;
+    Transform (p, hp);
+    p = hp;
+  }
+
   /// transform vector, apply only linear part, not offset
   void Transform (const Vec3d & from, Vec3d & to) const
     {
@@ -157,6 +166,13 @@ public:
   {
     to = Point<D> (v + m * Vec<D>(from));
   }
+
+  void Transform (Point<D> & p) const
+  {
+    p = Point<D> (v + m * Vec<D>(p));
+  }
+
+
 
   /// transform vector, apply only linear part, not offset
   void Transform (const Vec<D> & from, Vec<D> & to) const

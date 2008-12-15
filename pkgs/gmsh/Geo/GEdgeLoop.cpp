@@ -6,12 +6,7 @@
 #include <algorithm>
 #include <functional>
 #include "GEdgeLoop.h"
-
-#if defined(HAVE_GMSH_EMBEDDED)
-#  include "GmshEmbedded.h"
-#else
-#  include "Message.h"
-#endif
+#include "GmshMessage.h"
 
 void GEdgeSigned::print() const
 {
@@ -118,16 +113,6 @@ GEdgeLoop::GEdgeLoop(const std::list<GEdge*> &cwire)
     prevOne = &ges;
     // ges.print();
     loop.push_back(ges);
-  }
-}
-
-
-GEdgeLoop::GEdgeLoop(const std::list<GEdge*> &cwire, const std::list<int> &dir)
-{
-  std::list<GEdge*>::const_iterator it = cwire.begin();
-  std::list<int>::const_iterator itdir = dir.begin();
-  for ( ; it != cwire.end() ; ++it,++itdir){
-    loop.push_back(GEdgeSigned(*itdir,*it));
   }
 }
 

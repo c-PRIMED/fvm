@@ -35,14 +35,14 @@ void WriteTochnogFormat (const Mesh & mesh,
 
   int np = mesh.GetNP();
   int ne = mesh.GetNE();
-  int i, j, k;
+  int i, j;
 
   for (i = 1; i <= np; i++)
     {
       outfile << "node " << " " << i << " ";
-      outfile << mesh.Point(i).X() << " ";
-      outfile << mesh.Point(i).Y() << " ";
-      outfile << mesh.Point(i).Z() << "\n";
+      outfile << mesh.Point(i)(0) << " ";
+      outfile << mesh.Point(i)(1) << " ";
+      outfile << mesh.Point(i)(2) << "\n";
     }
 
   int elemcnt = 0; //element counter

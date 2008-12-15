@@ -8,12 +8,7 @@
 #include "GVertex.h"
 #include "GFace.h"
 #include "MElement.h"
-
-#if defined(HAVE_GMSH_EMBEDDED)
-#  include "GmshEmbedded.h"
-#else
-#  include "Message.h"
-#endif
+#include "GmshMessage.h"
 
 GVertex::GVertex(GModel *m, int tag, double ms) : GEntity(m, tag), meshSize(ms) 
 {
@@ -21,11 +16,15 @@ GVertex::GVertex(GModel *m, int tag, double ms) : GEntity(m, tag), meshSize(ms)
 
 GVertex::~GVertex()
 {
-  for(unsigned int i = 0; i < mesh_vertices.size(); i++)
-    delete mesh_vertices[i];
+  deleteMesh();
+}
 
-  for(unsigned int i = 0; i < points.size(); i++)
-    delete points[i];
+void GVertex::deleteMesh()
+{
+  for(unsigned int i = 0; i < mesh_vertices.size(); i++) delete mesh_vertices[i];
+  mesh_vertices.clear();
+  for(unsigned int i = 0; i < points.size(); i++) delete points[i];
+  points.clear();
 }
 
 void GVertex::setPosition(GPoint &p)
@@ -53,7 +52,7 @@ std::string GVertex::getAdditionalInfoString()
   std::ostringstream sstream;
   sstream << "{" << x() << "," << y() << "," << z() << "}";
   double lc = prescribedMeshSizeAtVertex();
-  if(lc < 1.e22) sstream << " (cl: " << lc << ")";
+  if(lc < MAX_LC) sstream << " (cl: " << lc << ")";
   return sstream.str();
 }
 

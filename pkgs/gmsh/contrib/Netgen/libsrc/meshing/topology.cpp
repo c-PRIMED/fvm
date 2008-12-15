@@ -2,6 +2,10 @@
 
 #include "meshing.hpp"
 
+#ifdef PARALLEL
+#include <parallel.hpp>
+#endif
+
 namespace netgen
 {
 
@@ -35,33 +39,41 @@ MeshTopology :: ~MeshTopology ()
 
 void MeshTopology :: Update()
 {
-  int i, j, k;
+  static int timer = NgProfiler::CreateTimer ("topology");
+  NgProfiler::RegionTimer reg (timer);
 
+#ifdef PARALLEL
+  ParallelMeshTopology & paralleltop = mesh.GetParallelTopology();
+
+  bool isparallel = 0;
+#endif
+
+  
   if (timestamp > mesh.GetTimeStamp()) return;
-
+  
   int ne = mesh.GetNE();
   int nse = mesh.GetNSE();
   int nseg = mesh.GetNSeg();
   int np = mesh.GetNP();
-  int nv = mesh.GetNV();
+  int nv = mesh.GetNV(); 
   int nfa = 0;
   int ned = edge2vert.Size();
 
   PrintMessage (3, "Update mesh topology");
 
-  (*testout) << "ne   = " << ne << endl;
-  (*testout) << "nse  = " << nse << endl;
-  (*testout) << "nseg = " << nseg << endl;
-  (*testout) << "np   = " << np << endl;
-  (*testout) << "nv   = " << nv << endl;
- 
+   (*testout) << " UPDATE MESH TOPOLOGY " << endl; 
+   (*testout) << "ne   = " << ne << endl;
+   (*testout) << "nse  = " << nse << endl;
+   (*testout) << "nseg = " << nseg << endl;
+   (*testout) << "np   = " << np << endl;
+   (*testout) << "nv   = " << nv << endl;
+  
   delete vert2element;
   delete vert2surfelement;
   delete vert2segment;
+  
   ARRAY<int,PointIndex::BASE> cnt(nv);
   ARRAY<int> vnums;
-
-  (*testout) << "tables deleted" << endl;
 
   /*
     generate:
@@ -70,22 +82,23 @@ void MeshTopology :: Update()
     vertex to segment 
    */
 
+
   cnt = 0;
-  for (i = 1; i <= ne; i++)
+  for (ElementIndex ei = 0; ei < ne; ei++)
     {
-      const Element & el = mesh.VolumeElement(i);
+      const Element & el = mesh[ei];
       int nelv = el.GetNV();
-      for (j = 1; j <= nelv; j++)
-	cnt[el.PNum(j)]++;
+      for (int j = 0; j < nelv; j++)
+	cnt[el[j]]++;
     }
 
   vert2element = new TABLE<int,PointIndex::BASE> (cnt);
-  for (i = 1; i <= ne; i++)
+  for (ElementIndex ei = 0; ei < ne; ei++)
     {
-      const Element & el = mesh.VolumeElement(i);
+      const Element & el = mesh[ei];
       int nelv = el.GetNV();
-      for (j = 1; j <= nelv; j++)
-	vert2element->AddSave (el.PNum(j), i);
+      for (int j = 0; j < nelv; j++)
+	vert2element->AddSave (el[j], ei+1);
     }
 
   cnt = 0;
@@ -93,7 +106,7 @@ void MeshTopology :: Update()
     {
       const Element2d & el = mesh[sei];
       int nelv = el.GetNV();
-      for (j = 0; j < nelv; j++)
+      for (int j = 0; j < nelv; j++)
 	cnt[el[j]]++;
     }
 
@@ -102,104 +115,104 @@ void MeshTopology :: Update()
     {
       const Element2d & el = mesh[sei];
       int nelv = el.GetNV();
-      for (j = 0; j < nelv; j++)
+      for (int j = 0; j < nelv; j++)
 	vert2surfelement->AddSave (el[j], sei+1);
     }
 
-
   cnt = 0;
-  for (i = 1; i <= nseg; i++)
+  for (int i = 1; i <= nseg; i++)
     {
       const Segment & seg = mesh.LineSegment(i);
       cnt[seg.p1]++;
       cnt[seg.p2]++;
     }
-
+ 
   vert2segment = new TABLE<int,PointIndex::BASE> (cnt);
-  for (i = 1; i <= nseg; i++)
+  for (int i = 1; i <= nseg; i++)
     {
       const Segment & seg = mesh.LineSegment(i);
       vert2segment->AddSave (seg.p1, i);
       vert2segment->AddSave (seg.p2, i);
     }
 
-
-
-
   if (buildedges)
     {
+      static int timer1 = NgProfiler::CreateTimer ("topology::buildedges");
+      NgProfiler::RegionTimer reg1 (timer1);
+
       PrintMessage (5, "Update edges ");
       
       edges.SetSize(ne);
       surfedges.SetSize(nse); 
       segedges.SetSize(nseg);
 
-      for (i = 1; i <= ne; i++)
-	for (j = 0; j < 12; j++)
-	  edges.Elem(i)[j] = 0;
-      for (i = 1; i <= nse; i++)
-	for (j = 0; j < 4; j++)
-	  surfedges.Elem(i)[j] = 0;
+      for (int i = 0; i < ne; i++)
+	for (int j = 0; j < 12; j++)
+	  edges[i][j] = 0;
+      for (int i = 0; i < nse; i++)
+	for (int j = 0; j < 4; j++)
+	  surfedges[i][j] = 0;
 
       // keep existing edges
       cnt = 0;
-      for (i = 0; i < edge2vert.Size(); i++)
+      for (int i = 0; i < edge2vert.Size(); i++)
 	cnt[edge2vert[i][0]]++;
       TABLE<int,PointIndex::BASE> vert2edge (cnt);
-      for (i = 0; i < edge2vert.Size(); i++)
+      for (int i = 0; i < edge2vert.Size(); i++)
 	vert2edge.AddSave (edge2vert[i][0], i+1);
 
       // ensure all coarse grid and intermediate level edges
       cnt = 0;
-      for (i = 1; i <= mesh.mlbetweennodes.Size(); i++)
+      for (int i = mesh.mlbetweennodes.Begin(); i < mesh.mlbetweennodes.End(); i++)
 	{
 	  int pa[2];
-	  pa[0] = mesh.mlbetweennodes.Get(i).I1();
-	  pa[1] = mesh.mlbetweennodes.Get(i).I2();
+	  pa[0] = mesh.mlbetweennodes[i].I1();
+	  pa[1] = mesh.mlbetweennodes[i].I2();
 	  if (pa[0] > pa[1]) Swap (pa[0], pa[1]);
 	  if (pa[0] > 0)
 	    cnt.Elem(pa[0])++;
 	}
       TABLE<int,PointIndex::BASE> vert2vertcoarse (cnt);
-      for (i = 1; i <= mesh.mlbetweennodes.Size(); i++)
+      for (int i = mesh.mlbetweennodes.Begin(); i < mesh.mlbetweennodes.End(); i++)
 	{
 	  int pa[2];
-	  pa[0] = mesh.mlbetweennodes.Get(i).I1();
-	  pa[1] = mesh.mlbetweennodes.Get(i).I2();
+	  pa[0] = mesh.mlbetweennodes[i].I1();
+	  pa[1] = mesh.mlbetweennodes[i].I2();
 	  if (pa[0] > pa[1]) swap (pa[0], pa[1]);
 	  if (pa[0] > 0)
 	    vert2vertcoarse.AddSave1 (pa[0], pa[1]);
 	}
 
 
-      ARRAY<int,PointIndex::BASE> edgenr(nv), edgeflag(nv);
-      for (i = PointIndex::BASE; i < nv+PointIndex::BASE; i++)
-	edgeflag[i] = 0;
+      ARRAY<int,PointIndex::BASE> edgenr(nv);
+      ARRAY<int,PointIndex::BASE> edgeflag(nv);
+      edgeflag = 0;
+
       ned = edge2vert.Size();
       ARRAY<INDEX_3> missing;
 
-      for (i = 1; i <= nv; i++)
+      for (int i = 1; i <= nv; i++)
 	{
-	  for (j = 1; j <= vert2edge.EntrySize(i); j++)
+	  for (int j = 1; j <= vert2edge.EntrySize(i); j++)
 	    {
 	      int ednr = vert2edge.Get(i,j);
 	      int i2 = edge2vert.Get(ednr)[1];
-	      edgeflag.Elem(i2) = i;
-	      edgenr.Elem(i2) = ednr;
+	      edgeflag[i2] = i;
+	      edgenr[i2] = ednr;
 	    }
-	  for (j = 1; j <= vert2vertcoarse.EntrySize(i); j++)
+	  for (int j = 1; j <= vert2vertcoarse.EntrySize(i); j++)
 	    {
 	      int v2 = vert2vertcoarse.Get(i,j);
-	      if (edgeflag.Get(v2) < i)
+	      if (edgeflag[v2] < i)
 		{
 		  ned++;
-		  edgenr.Elem(v2) = ned;
-		  edgeflag.Elem(v2) = i;
+		  edgenr[v2] = ned;
+		  edgeflag[v2] = i;
 		  missing.Append (INDEX_3(i,v2,ned));
 		}
 	    }
 
-	  for (j = 1; j <= vert2element->EntrySize(i); j++)
+	  for (int j = 1; j <= vert2element->EntrySize(i); j++)
 	    {
 	      int elnr = vert2element->Get(i,j);
 	      const Element & el = mesh.VolumeElement (elnr);
@@ -207,7 +220,7 @@ void MeshTopology :: Update()
 	      int neledges = GetNEdges (el.GetType());
 	      const ELEMENT_EDGE * eledges = GetEdges (el.GetType());
 	  
-	      for (k = 0; k < neledges; k++)
+	      for (int k = 0; k < neledges; k++)
 		{
 		  INDEX_2 edge(el.PNum(eledges[k][0]),
 			       el.PNum(eledges[k][1]));
@@ -218,20 +231,20 @@ void MeshTopology :: Update()
 		  if (edge.I1() != i)
 		    continue;
 	     
-		  if (edgeflag.Get (edge.I2()) < i)
+		  if (edgeflag[edge.I2()] < i)
 		    {
 		      ned++;
-		      edgenr.Elem(edge.I2()) = ned;
-		      edgeflag.Elem(edge.I2()) = i;
+		      edgenr[edge.I2()] = ned;
+		      edgeflag[edge.I2()] = i;
 		    }
 
-		  int edgenum = edgenr.Elem(edge.I2());
+		  int edgenum = edgenr[edge.I2()];
 		  if (edgedir) edgenum *= -1;
 		  edges.Elem(elnr)[k] = edgenum;
 		}
 	    }
 
-	  for (j = 1; j <= vert2surfelement->EntrySize(i); j++)
+	  for (int j = 1; j <= vert2surfelement->EntrySize(i); j++)
 	    {
 	      int elnr = vert2surfelement->Get(i,j);
 	      const Element2d & el = mesh.SurfaceElement (elnr);
@@ -239,7 +252,7 @@ void MeshTopology :: Update()
 	      int neledges = GetNEdges (el.GetType());
 	      const ELEMENT_EDGE * eledges = GetEdges (el.GetType());
 	  
-	      for (k = 0; k < neledges; k++)
+	      for (int k = 0; k < neledges; k++)
 		{
 		  INDEX_2 edge(el.PNum(eledges[k][0]),
 			       el.PNum(eledges[k][1]));
@@ -250,20 +263,20 @@ void MeshTopology :: Update()
 		  if (edge.I1() != i)
 		    continue;
 	     
-		  if (edgeflag.Get (edge.I2()) < i)
+		  if (edgeflag[edge.I2()] < i)
 		    {
 		      ned++;
-		      edgenr.Elem(edge.I2()) = ned;
-		      edgeflag.Elem(edge.I2()) = i;
+		      edgenr[edge.I2()] = ned;
+		      edgeflag[edge.I2()] = i;
 		    }
 	      
-		  int edgenum = edgenr.Elem(edge.I2());
+		  int edgenum = edgenr[edge.I2()];
 		  if (edgedir) edgenum *= -1;
 		  surfedges.Elem(elnr)[k] = edgenum;
 		}
 	    }
 
-	  for (j = 1; j <= vert2segment->EntrySize(i); j++)
+	  for (int j = 1; j <= vert2segment->EntrySize(i); j++)
 	    {
 	      int elnr = vert2segment->Get(i,j);
 	      const Segment & el = mesh.LineSegment (elnr);
@@ -276,13 +289,13 @@ void MeshTopology :: Update()
 	      if (edge.I1() != i)
 		continue;
 	     
-	      if (edgeflag.Get (edge.I2()) < i)
+	      if (edgeflag[edge.I2()] < i)
 		{
 		  ned++;
-		  edgenr.Elem(edge.I2()) = ned;
-		  edgeflag.Elem(edge.I2()) = i;
+		  edgenr[edge.I2()] = ned;
+		  edgeflag[edge.I2()] = i;
 		}   
- 	      int edgenum = edgenr.Elem(edge.I2());
+ 	      int edgenum = edgenr[edge.I2()];
 
 	      if (edgedir) edgenum *= -1;
 	      segedges.Elem(elnr) = edgenum;
@@ -291,14 +304,14 @@ void MeshTopology :: Update()
 
 
       edge2vert.SetSize (ned);
-      for (i = 1; i <= ne; i++)
+      for (int i = 1; i <= ne; i++)
 	{
 	  const Element & el = mesh.VolumeElement (i);
       
 	  int neledges = GetNEdges (el.GetType());
 	  const ELEMENT_EDGE * eledges = GetEdges (el.GetType());
 	  
-	  for (k = 0; k < neledges; k++)
+	  for (int k = 0; k < neledges; k++)
 	    {
 	      INDEX_2 edge(el.PNum(eledges[k][0]),
 			   el.PNum(eledges[k][1]));
@@ -312,14 +325,14 @@ void MeshTopology :: Update()
 	      edge2vert.Elem(edgenum)[1] = edge.I2();
 	    }
 	}
-      for (i = 1; i <= nse; i++)
+      for (int i = 1; i <= nse; i++)
 	{
 	  const Element2d & el = mesh.SurfaceElement (i);
       
 	  int neledges = GetNEdges (el.GetType());
 	  const ELEMENT_EDGE * eledges = GetEdges (el.GetType());
 	  
-	  for (k = 0; k < neledges; k++)
+	  for (int k = 0; k < neledges; k++)
 	    {
 	      INDEX_2 edge(el.PNum(eledges[k][0]),
 			   el.PNum(eledges[k][1]));
@@ -334,7 +347,7 @@ void MeshTopology :: Update()
 	    }
 	}
 
-      for (i = 1; i <= nseg; i++)
+      for (int i = 1; i <= nseg; i++)
 	{
 	  const Segment & el = mesh.LineSegment (i);
       
@@ -348,217 +361,41 @@ void MeshTopology :: Update()
 	  edge2vert.Elem(edgenum)[1] = edge.I2();
 	}
 
-      for (i = 1; i <= missing.Size(); i++)
+      for (int i = 1; i <= missing.Size(); i++)
 	{
 	  INDEX_3 i3 = missing.Get(i);
 	  edge2vert.Elem(i3.I3())[0] = i3.I1();
 	  edge2vert.Elem(i3.I3())[1] = i3.I2();
 	}
 	
+      
       /*
-      (*testout) << "edge table:" << endl;
-      (*testout) << "edge2vert:" << endl;
-      for (i = 1; i <= edge2vert.Size(); i++)
-	  (*testout) << "edge " << i << ", v1,2 = " << edge2vert.Elem(i)[0] << ", " << edge2vert.Elem(i)[1] << endl;
-      (*testout) << "surfedges:" << endl;
-      for (i = 1; i <= surfedges.Size(); i++)
-	  (*testout) << "el " << i << ", edges = " 
-		     << surfedges.Elem(i)[0] << ", "
-		     << surfedges.Elem(i)[1] << ", "
-		     << surfedges.Elem(i)[2] << endl;
-      */
+	(*testout) << "edge table:" << endl;
+	(*testout) << "edge2vert:" << endl;
+	for (int i = 1; i <= edge2vert.Size(); i++)
+	(*testout) << "edge " << i << ", v1,2 = " << edge2vert.Elem(i)[0] << ", " << edge2vert.Elem(i)[1] << endl;
+	(*testout) << "surfedges:" << endl;
+	for (int i = 1; i <= surfedges.Size(); i++)
+	(*testout) << "el " << i << ", edges = " 
+	<< surfedges.Elem(i)[0] << ", "
+	<< surfedges.Elem(i)[1] << ", "
+	<< surfedges.Elem(i)[2] << endl;
+      */ 
+     
+    
     }
 
 
   //  cout << "build edges done" << endl;
 
-#ifdef OLD
-  if (buildedges == 2)
-    { // old style with hash-table
-      edges.SetSize(ne);
-      surfedges.SetSize(nse); 
-      INDEX_2_HASHTABLE<int> vert2edge(ne+nse+1);
-      
-      // keep coarse grid edges
-      for (i = 1; i <= ned; i++)
-	{
-	  INDEX_2 edge (edge2vert.Get(i)[0],
-			edge2vert.Get(i)[1]);
-	  edge.Sort ();
-	  vert2edge.Set (edge, i);
-	}
-      
-      
-      
-      for (i = 1; i <= ne; i++)
-	{
-	  const Element & el = mesh.VolumeElement(i);
-	  
-	  int neledges = GetNEdges (el.GetType());
-	  const ELEMENT_EDGE * eledges = GetEdges (el.GetType());
-	  
-	  for (j = 0; j < 12; j++)
-	    edges.Elem(i)[j] = 0;
-	  for (j = 0; j < neledges; j++)
-	    {
-	      int edgenum;
-	      int edgedir;
-	      
-	      INDEX_2 edge(el.PNum(eledges[j][0]),
-			   el.PNum(eledges[j][1]));
-	      
-	      edgedir = (edge.I1() > edge.I2());
-	      if (edgedir) swap (edge.I1(), edge.I2());
-	      
-	      if (vert2edge.Used (edge))
-		edgenum = vert2edge.Get(edge);
-	      else
-		{
-		  ned++;
-		  vert2edge.Set (edge, ned);
-		  edgenum = ned;
-		  /*
-		  edge2vert.SetSize(edge2vert.Size()+1);
-		  edge2vert.Last()[0] = edge.I1();
-		  edge2vert.Last()[1] = edge.I2();
-		  */
-		  edge2vert.Append (edge);
-		}
-	      
-	      if (edgedir) edgenum *= -1;
-	      edges.Elem(i)[j] = edgenum;
-	    }
-	}
-      
-      for (i = 1; i <= nse; i++)
-	{
-	  const Element2d & el = mesh.SurfaceElement(i);
-	  
-	  int neledges = GetNEdges (el.GetType());
-	  const ELEMENT_EDGE * eledges = GetEdges (el.GetType());
-	  
-	  for (j = 0; j < 4; j++)
-	    surfedges.Elem(i)[j] = 0;
-	  for (j = 0; j < neledges; j++)
-	    {
-	      int edgenum;
-	      int edgedir;
-	      
-	      INDEX_2 edge(el.PNum(eledges[j][0]),
-			   el.PNum(eledges[j][1]));
-	      
-	      edgedir = (edge.I1() > edge.I2());
-	      if (edgedir) swap (edge.I1(), edge.I2());
-	      
-	      if (vert2edge.Used (edge))
-		edgenum = vert2edge.Get(edge);
-	      else
-		{
-		  ned++;
-		  vert2edge.Set (edge, ned);
-		  edgenum = ned;
-		  
-		  /*
-		  edge2vert.SetSize(edge2vert.Size()+1);
-		  edge2vert.Last()[0] = edge.I1();
-		  edge2vert.Last()[1] = edge.I2();
-		  */
-		  edge2vert.Append (edge);
-		  if (mesh.GetDimension() == 3 && mesh.GetNE())
-		    cerr << "surface edge: should be in use: "
-			 << edge.I1() << "-" << edge.I2() << endl;
-		}
-	      
-	      if (edgedir) edgenum *= -1;
-	      surfedges.Elem(i)[j] = edgenum;
-	    }
-	}
-      
-      
-      // find edges only in intermediate level
-      
-      for (i = 1; i <= np; i++)
-	{
-	  int parents[2];
-	  
-	  if (i <= mesh.mlbetweennodes.Size())
-	    {
-	      parents[0] = mesh.mlbetweennodes.Get(i).I1();
-	      parents[1] = mesh.mlbetweennodes.Get(i).I2();
-	    }
-	  else
-	    parents[0] = parents[1] = 0;
-	  
-	  if (parents[0] && parents[1])
-	    {
-	      INDEX_2 edge(parents[0], parents[1]);
-	      int edgedir = (edge.I1() > edge.I2());
-	      if (edgedir) swap (edge.I1(), edge.I2());
-	      
-	      if (!vert2edge.Used (edge))
-		{
-		  ned++;
-		  vert2edge.Set (edge, ned);
-		  /*
-		  edge2vert.SetSize(edge2vert.Size()+1);
-		  edge2vert.Last()[0] = edge.I1();
-		  edge2vert.Last()[1] = edge.I2();
-		  */
-		  edge2vert.Append (edge);
-		}
-	    }
-	}
-      
-      /*
-	cout << "edge2vert: ";
-	edge2vert.PrintMemInfo(cout);
-	cout << "edges: ";
-	edges.PrintMemInfo(cout);
-	cout << "hashtable: ";
-	vert2edge.PrintMemInfo(cout);
-      */
-
-      if (mesh.GetDimension() == 2)
-	{
-	  surffaces.SetSize(mesh.GetNSeg());
-	  for (i = 1; i <= mesh.GetNSeg(); i++)
-	    {
-	      const Segment & seg = mesh.LineSegment (i);
-
-	      INDEX_2 edge(seg.p1, seg.p2);
-	      int edgenum;
-	      int edgedir = (edge.I1() > edge.I2());
-	      if (edgedir) swap (edge.I1(), edge.I2());
-	      
-	      if (vert2edge.Used (edge))
-		edgenum = vert2edge.Get(edge);
-	      else
-		{
-		  ned++;
-		  vert2edge.Set (edge, ned);
-		  edgenum = ned;
-		  
-		  /*
-		  edge2vert.SetSize(edge2vert.Size()+1);
-		  edge2vert.Last()[0] = edge.I1();
-		  edge2vert.Last()[1] = edge.I2();
-		  */
-		  edge2vert.Append (edge);
-		}
-	      
-
-	      if (edgedir) edgenum *= -1;
-	      surffaces.Elem(i) = edgenum;
-	    }
-	}
-    }
-
-#endif  
-  
-
   // generate faces
   if (buildfaces) //  && mesh.GetDimension() == 3)
     {
+      int i, j;
+
+      static int timer2 = NgProfiler::CreateTimer ("topology::buildfaces");
+      NgProfiler::RegionTimer reg2 (timer2);
+
       PrintMessage (5, "Update faces ");
 
       faces.SetSize(ne);
@@ -577,7 +414,7 @@ void MeshTopology :: Update()
 	  f.I3() = face2vert.Get(i)[2];
 	  vert2face.Set (f, i);
 	}
-      
+     
       for (i = 1; i <= ne; i++)
 	{
 	  const Element & el = mesh.VolumeElement (i);
@@ -624,14 +461,9 @@ void MeshTopology :: Update()
 		    vert2face.Set (face, nfa);
 		    facenum = nfa;
 		    
-		    INDEX_4 hface;
+		    INDEX_4 hface(face.I1(),face.I2(),face.I3(),0);
 		    face2vert.Append (hface);
 		    // face2vert.SetSize(face2vert.Size()+1);
-		    face2vert.Last()[0] = face.I1();
-		    face2vert.Last()[1] = face.I2();
-		    face2vert.Last()[2] = face.I3();
-		    face2vert.Last()[3] = 0;
-
 		  }
 		
 		faces.Elem(i)[j] = 8*(facenum-1)+facedir+1;
@@ -684,13 +516,8 @@ void MeshTopology :: Update()
 
 		    // face2vert.SetSize(face2vert.Size()+1);
 
-		    INDEX_4 hface;
+		    INDEX_4 hface(face4.I1(),face4.I2(),face4.I3(),face4.I4());
 		    face2vert.Append (hface);
-		    face2vert.Last()[0] = face4.I1();
-		    face2vert.Last()[1] = face4.I2();
-		    face2vert.Last()[2] = face4.I3();
-		    face2vert.Last()[3] = face4.I4();
-
 		  }
 		
 		faces.Elem(i)[j] = 8*(facenum-1)+facedir+1;
@@ -744,12 +571,8 @@ void MeshTopology :: Update()
 		  facenum = nfa;
 		  
 		  // face2vert.SetSize(face2vert.Size()+1);
-		  INDEX_4 hface;
+		  INDEX_4 hface(face.I1(),face.I2(),face.I3(),0);
 		  face2vert.Append (hface);
-		  face2vert.Last()[0] = face.I1();
-		  face2vert.Last()[1] = face.I2();
-		  face2vert.Last()[2] = face.I3();
-		  face2vert.Last()[3] = 0;
 		}
 	      
 	      surffaces.Elem(i) = 8*(facenum-1)+facedir+1;
@@ -800,18 +623,21 @@ void MeshTopology :: Update()
 		  facenum = nfa;
 		  
 		  // face2vert.SetSize(face2vert.Size()+1);
-		  INDEX_4 hface;
+		  INDEX_4 hface(face4.I1(),face4.I2(),face4.I3(),face4.I3());
 		  face2vert.Append (hface);
+		  /*
 		  face2vert.Last()[0] = face4.I1();
 		  face2vert.Last()[1] = face4.I2();
 		  face2vert.Last()[2] = face4.I3();
 		  face2vert.Last()[3] = face4.I3();
+		  */
 		}
 	      
 	      surffaces.Elem(i) = 8*(facenum-1)+facedir+1;
 	      face2surfel.Elem(facenum) = i;
 	    }
 	}
+
 
       surf2volelement.SetSize (nse);
       for (i = 1; i <= nse; i++)
@@ -822,7 +648,7 @@ void MeshTopology :: Update()
       for (i = 1; i <= ne; i++)
 	for (j = 0; j < 6; j++)
 	  {
-	    int fnum = (faces.Get(i)[j]-1) / 8 + 1;
+            int fnum = (faces.Get(i)[j]+7) / 8;
 	    if (fnum > 0 && face2surfel.Elem(fnum))
 	      {
 		int sel = face2surfel.Elem(fnum);
@@ -832,18 +658,22 @@ void MeshTopology :: Update()
 	      }
 	  }
 
-
       face2vert.SetAllocSize (face2vert.Size());
 
       /*
-	cout << "face2vert: ";
+	*testout << "face2vert: ";
 	face2vert.PrintMemInfo(cout);
-	cout << "faces: ";
+	*testout  << "faces: ";
 	faces.PrintMemInfo(cout);
-	cout << "hashtable: ";
+	*testout << "hashtable: ";
 	vert2face.PrintMemInfo(cout);
       */
 
+#ifdef PARALLEL
+  (*testout) << " RESET Paralleltop" << endl;
+
+      paralleltop.Reset ();
+#endif
 
       ARRAY<char> face_els(nfa), face_surfels(nfa);
       face_els = 0;
@@ -863,43 +693,162 @@ void MeshTopology :: Update()
 	  int cnt_err = 0;
 	  for (i = 0; i < nfa; i++)
 	    {
+	      /*
 	      (*testout) << "face " << i << " has " << int(face_els[i]) << " els, " 
-			 << int(face_surfels[i]) << " surfels, tot = "
-			 << face_els[i] + face_surfels[i] << endl; 
-	      
+ 			 << int(face_surfels[i]) << " surfels, tot = "
+ 			 << face_els[i] + face_surfels[i] << endl; 
+	      */
 	      if (face_els[i] + face_surfels[i] == 1)
 		{
 		  cnt_err++;
-		  (*testout) << "illegal face : " << i << endl;
+#ifdef PARALLEL
+		  if ( ntasks > 1 )
+		    {
+		  if ( !paralleltop.DoCoarseUpdate() ) continue;
+		  // "illegal" faces are exchange faces
+		  /*
+		  (*testout) << "exchange face : " << i << endl;
 		  (*testout) << "points = " << face2vert[i] << endl;
+		  */
+// 		  (*testout) << "global points = ";
+// 		  for ( int j = 0; j < 3; j++ )
+// // 		    (*testout) << face2vert[i].I(j+1) << " -> " 
+// // 			       << paralleltop.GetLoc2Glob_Vert( face2vert[i].I(j+1) ) << ",  ";
+// 		  (*testout) << endl;
+// 		  if ( !paralleltop.IsExchangeFace (i+1) )
+// 		    paralleltop.SetRefinementFace (i+1);
+
+		  paralleltop.SetExchangeFace (i+1);
+		  
+		  for (int j = 0; j < 4; j++)		    
+		    {
+		      if ( face2vert[i].I(j+1) > 0 )
+			paralleltop.SetExchangeVert(face2vert[i].I(j+1));
+		    }
+		  
+		  ARRAY<int> faceedges;
+		  GetFaceEdges (i+1, faceedges);
+		  for ( int j = 0; j < faceedges.Size(); j++)
+		    {
+		      paralleltop.SetExchangeEdge ( faceedges[j] );
+		      int v1, v2;
+		      GetEdgeVertices(faceedges[j], v1, v2 );
+		    }
+		  
+		  /*
 		  (*testout) << "pos = ";
 		  for (int j = 0; j < 4; j++)
 		    if (face2vert[i].I(j+1) >= 1)
 		      (*testout) << mesh[(PointIndex)face2vert[i].I(j+1)] << " ";
 		  (*testout) << endl;
+		  */
+		    }
+		  else
+		    {
+#endif
+		  (*testout) << "illegal face : " << i << endl;
+		  (*testout) << "points = " << face2vert[i] << endl;
+		  (*testout) << "pos = ";
+		  for (j = 0; j < 4; j++)
+		    if (face2vert[i].I(j+1) >= 1)
+		      (*testout) << mesh[(PointIndex)face2vert[i].I(j+1)] << " ";
+		  (*testout) << endl;
+
+		  FlatArray<int> vertels = GetVertexElements (face2vert[i].I(1));
+		  for (int k = 0; k < vertels.Size(); k++)
+		    {
+		      int elfaces[10], orient[10];
+		      int nf = GetElementFaces (vertels[k], elfaces, orient);
+		      for (int l = 0; l < nf; l++)
+			if (elfaces[l] == i)
+			  {
+			    (*testout) << "is face of element " << vertels[k] << endl;
+			    
+			    if (mesh.coarsemesh && mesh.hpelements->Size() == mesh.GetNE() )
+			      {
+				const HPRefElement & hpref_el =
+				  (*mesh.hpelements) [ mesh.VolumeElement (vertels[k]).hp_elnr];
+				(*testout) << "coarse eleme = " << hpref_el.coarse_elnr << endl;
+			      }
+
+			  }
+		    }
+#ifdef PARALLEL
+		    }
+#endif
 		}
 	    }
+
+#ifndef PARALLEL
 	  if (cnt_err)
 	    cout << cnt_err << " elements are not matching !!!" << endl;
+#else
+	  if (cnt_err && ntasks == 1)
+	    cout << cnt_err << " elements are not matching !!!" << endl;
+	  else if (cnt_err && ntasks > 1)
+	    {
+	      cout << "p" << id << ":  " << cnt_err << " elements are not local" << endl;
+	      isparallel = 1;
+	    }
+	  else if ( ntasks > 1 )
+	    cout << "p" << id << ":  " << "Partition " << id << " is totally local" << endl;
+#endif
+
 	}
+
+#ifdef PARALLEL
+     
+      if ( isparallel )
+	{
+ 	  paralleltop.Update();
+	  if ( paralleltop.DoCoarseUpdate() )
+	    {
+	      paralleltop.UpdateCoarseGrid();
+	    }
+	  else
+	    {
+	      //  paralleltop.UpdateRefinement();
+	    }
+	  // paralleltop.Print();
+	}
+
+ 
+#endif
+
+
+
+
     }
+ 
+ 
   
-  /*
-    for (i = 1; i <= ne; i++)
+  /* 
+for (i = 1; i <= ne; i++)
     {
     (*testout) << "Element " << i << endl;
+    (*testout) << "PNums " << endl; 
+    for( int l=1;l<=8;l++) *testout << mesh.VolumeElement(i).PNum(l) << "\t"; 
+    *testout << endl; 
     (*testout) << "edges: " << endl;
     for (j = 0; j < 9; j++)
     (*testout) << edges.Elem(i)[j] << " ";
     (*testout) << "faces: " << endl;
-    for (j = 0; j < 6; j++)
+    for (j = 0; j < 6; j++)m
     (*testout) << faces.Elem(i)[j] << " ";
+    }
+
+    for (i = 1; i <= nse; i++)
+    {
+    (*testout) << "SElement " << i << endl;
+    (*testout) << "PNums " << endl; 
+    for( int l=1;l<=4;l++) *testout << mesh.SurfaceElement(i).PNum(l) << "\t"; 
+    *testout << endl; 
     }
   */
   timestamp = NextTimeStamp();
 }
 
- 
+  
 
 
 int MeshTopology :: GetNVertices (ELEMENT_TYPE et)
@@ -1108,188 +1057,6 @@ const Point3d * MeshTopology :: GetVertices (ELEMENT_TYPE et)
 
 
 
-const ELEMENT_EDGE * MeshTopology :: GetEdges (ELEMENT_TYPE et)
-{
-  static int segm_edges[1][2] =
-    { { 1, 2 }};
-
-  static int trig_edges[3][2] =
-    { { 3, 1 },
-      { 2, 3 },        
-      { 1, 2 }};
-
-  static int quad_edges[4][2] =
-    { { 1, 2 },
-      { 3, 4 },
-      { 4, 1 },
-      { 2, 3 }};
-
-
-  static int tet_edges[6][2] =
-    { { 4, 1 },
-      { 4, 2 },
-      { 4, 3 }, 
-      { 1, 2 },
-      { 1, 3 },
-      { 2, 3 }};
-
-  static int prism_edges[9][2] =
-    { { 3, 1 },
-      { 1, 2 },
-      { 3, 2 },
-      { 6, 4 },
-      { 4, 5 },
-      { 6, 5 },
-      { 3, 6 },
-      { 1, 4 },
-      { 2, 5 }};
-
-  static int pyramid_edges[8][2] =
-    { { 1, 2 },
-      { 2, 3 },
-      { 1, 4 },
-      { 4, 3 },
-      { 1, 5 },
-      { 2, 5 },
-      { 3, 5 },
-      { 4, 5 }};
-
-  static int hex_edges[12][2] =
-    {
-      { 1, 2 },
-      { 3, 4 },
-      { 4, 1 },
-      { 2, 3 },
-      { 5, 6 },
-      { 7, 8 },
-      { 8, 5 },
-      { 6, 7 },
-      { 1, 5 },
-      { 2, 6 },
-      { 3, 7 },
-      { 4, 8 },
-    };
-
-  switch (et)
-    {
-    case SEGMENT:
-    case SEGMENT3:
-      return segm_edges;
-
-    case TRIG:
-    case TRIG6:
-      return trig_edges;
-
-    case QUAD:
-    case QUAD6:
-    case QUAD8:
-      return quad_edges;
-
-    case TET:
-    case TET10:
-      return tet_edges;
-
-    case PYRAMID:
-      return pyramid_edges;
-
-    case PRISM:
-    case PRISM12:
-      return prism_edges;
-
-    case HEX:
-      return hex_edges;
-    default:
-      cerr << "Ng_ME_GetEdges, illegal element type " << et << endl;
-    }
-   return 0;  
-}
-
-
-const ELEMENT_FACE * MeshTopology :: GetFaces (ELEMENT_TYPE et)
-{
-  static int trig_faces[1][4] = 
-    { { 1, 2, 3, 0 } };
-  static int quad_faces[1][4] = 
-    { { 1, 2, 3, 4 } };
-
-  static int tet_faces[4][4] =
-    { { 4, 2, 3, 0 },
-      { 4, 3, 1, 0 },
-      { 4, 1, 2, 0 },
-      { 1, 3, 2, 0 } };
-  
-  static int prism_faces[5][4] =
-    {
-      { 1, 3, 2, 0 },
-      { 4, 5, 6, 0 },
-      { 3, 1, 4, 6 },
-      { 1, 2, 5, 4 },
-      { 2, 3, 6, 5 } 
-    };
-
-  static int pyramid_faces[5][4] =
-    {
-      { 1, 2, 5, 0 },
-      { 2, 3, 5, 0 },
-      { 3, 4, 5, 0 },
-      { 4, 1, 5, 0 },
-      { 1, 4, 3, 2 } 
-    };
-
-  static int hex_faces[6][4] =
-    {
-      { 1, 4, 3, 2 },
-      { 5, 6, 7, 8 },
-      { 1, 2, 6, 5 },
-      { 2, 3, 7, 6 },
-      { 3, 4, 8, 7 },
-      { 4, 1, 5, 8 }
-    };
-
-
-  
-  switch (et)
-    {
-    case TRIG:
-    case TRIG6:
-      return trig_faces;
-
-    case QUAD:
-    case QUAD6:
-    case QUAD8:
-      return quad_faces;
-
-
-    case TET:
-    case TET10:
-      return tet_faces;
-
-    case PRISM:
-    case PRISM12:
-      return prism_faces;
-
-    case PYRAMID:
-      return pyramid_faces;
-
-    case SEGMENT:
-    case SEGMENT3:
-
-    case HEX:
-      return hex_faces;
-
-    default:
-      cerr << "Ng_ME_GetVertices, illegal element type " << et << endl;
-    }
-  return 0;
-}
-
-
-
-
-
-
-
-
 
 
 
@@ -1301,13 +1068,21 @@ void MeshTopology :: GetElementEdges (int elnr, ARRAY<int> & eledges) const
   for (int i = 0; i < ned; i++)
     eledges[i] = abs (edges.Get(elnr)[i]);
 }
-void MeshTopology :: GetElementFaces (int elnr, ARRAY<int> & elfaces) const
+void MeshTopology :: GetElementFaces (int elnr, ARRAY<int> & elfaces, bool withorientation) const
 {
   int i;
   int nfa = GetNFaces (mesh.VolumeElement(elnr).GetType());
   elfaces.SetSize (nfa);
   for (i = 1; i <= nfa; i++)
-    elfaces.Elem(i) = (faces.Get(elnr)[i-1]-1) / 8 + 1;
+    {
+      elfaces.Elem(i) = (faces.Get(elnr)[i-1]-1) / 8 + 1;
+      if(withorientation)
+	{
+	  int orient = (faces.Get(elnr)[i-1]-1) % 8;
+	  if(orient == 1 || orient == 2 || orient == 4 || orient == 7)
+	    elfaces.Elem(i) *= -1;
+	}
+    }
 }
 
 void MeshTopology :: GetElementEdgeOrientations (int elnr, ARRAY<int> & eorient) const
@@ -1358,6 +1133,8 @@ int MeshTopology :: GetElementEdges (int elnr, int * eledges, int * orient) cons
     }
   else
     {
+		throw NgException("rethink implementation");
+		/*
       if (orient)
 	{
 	  for (i = 0; i < 4; i++)
@@ -1373,6 +1150,7 @@ int MeshTopology :: GetElementEdges (int elnr, int * eledges, int * orient) cons
 	  for (i = 0; i < 4; i++)
 	    eledges[i] = abs (surfedges.Get(elnr)[i]);
 	}
+	*/
       return 4;
       //      return GetSurfaceElementEdges (elnr, eledges, orient);
     }
@@ -1498,50 +1276,104 @@ void MeshTopology :: GetEdgeVertices (int ednr, int & v1, int & v2) const
 }
 
 
-void MeshTopology :: GetFaceEdges (int fnr, ARRAY<int> & edges) const
+void MeshTopology :: GetFaceEdges (int fnr, ARRAY<int> & fedges, bool withorientation) const
 {
   ArrayMem<int,4> pi(4);
   ArrayMem<int,12> eledges;
+  
+  fedges.SetSize (0);
+  GetFaceVertices(fnr, pi);
 
-  edges.SetSize (0);
-  GetFaceVertices (fnr, pi);
+  // Sort Edges according to global vertex numbers 
+  // e1 = fmax, f2 
+  // e2 = fmax, f1 
+  // e3 = op e1(f2,f3) 
+  // e4 = op e2(f1,f3) 
+
+  /*  ArrayMem<int,4> fp; 
+  fp[0] = pi[0]; 
+  for(int k=1;k<pi.Size();k++) 
+    if(fp[k]>fp[0]) swap(fp[k],fp[0]); 
+  
+    fp[1] = fp[0]+ */ 
+  
 
   //  GetVertexElements (pi[0], els);
-  FlatArray<int> els = GetVertexElements (pi[0]);
+  FlatArray<int> els= GetVertexElements (pi[0]);
 
   // find one element having all vertices of the face
   for (int i = 0; i < els.Size(); i++)
     {
       const Element & el = mesh.VolumeElement(els[i]);
-
-      int cntv = 0;
-      for (int j = 0; j < el.GetNV(); j++)
-	for (int k = 0; k < pi.Size(); k++)
-	  if (el[j] == pi[k])
-	    cntv++;
-
-      if (cntv == pi.Size())
+      int nref_faces = GetNFaces (el.GetType());
+      const ELEMENT_FACE * ref_faces = GetFaces (el.GetType());
+      int nfa_ref_edges = GetNEdges (GetFaceType(fnr));
+      
+      int cntv = 0,fa=-1; 
+      for(int m=0;m<nref_faces;m++)
+	{ 
+	  cntv=0;
+	  for(int j=0;j<nfa_ref_edges && ref_faces[m][j]>0;j++)
+	    for(int k=0;k<pi.Size();k++)
+	      {
+		if(el[ref_faces[m][j]-1] == pi[k])
+		  cntv++;
+	      }
+	  if (cntv == pi.Size())
+	    {
+	      fa=m;
+	      break;
+	    }
+	}
+     
+      if(fa>=0)
 	{
+	  const ELEMENT_EDGE * fa_ref_edges = GetEdges(GetFaceType(fnr)); 
+	  fedges.SetSize(nfa_ref_edges);
 	  GetElementEdges (els[i], eledges);
 	  
 	  for (int j = 0; j < eledges.Size(); j++)
 	    {
 	      int vi1, vi2;
 	      GetEdgeVertices (eledges[j], vi1, vi2);
+	    
 	      bool has1 = 0;
 	      bool has2 = 0;
 	      for (int k = 0; k < pi.Size(); k++)
 		{
 		  if (vi1 == pi[k]) has1 = 1;
 		  if (vi2 == pi[k]) has2 = 1;
+		  
 		}
-	      if (has1 && has2)
-		edges.Append (eledges[j]);
-	    }
+	      
+	      if (has1 && has2) // eledges[j] is on face 
+		{
+		  // fedges.Append (eledges[j]);
+		  for(int k=0;k<nfa_ref_edges;k++)
+		    {
+		      int w1 = el[ref_faces[fa][fa_ref_edges[k][0]-1]-1]; 
+		      int w2 = el[ref_faces[fa][fa_ref_edges[k][1]-1]-1]; 
 
-          return;
+		      if(withorientation)
+			{
+			  if(w1==vi1 && w2==vi2)
+			    fedges[k] = eledges[j];
+			  if(w1==vi2 && w2==vi1)
+			    fedges[k] = -eledges[j];
+			}
+		      else
+			if((w1==vi1 && w2==vi2) || (w1==vi2 && w2==vi1))
+			  fedges[k] = eledges[j];
+		    }
+		}
+	    }
+	  
+	  // *testout << " Face " << fnr << endl; 
+	  // *testout << " GetFaceEdges " << fedges << endl;
+	  
+	  return;
 	}
-    }
+    }   
 }
 
 
@@ -1555,7 +1387,7 @@ void MeshTopology :: GetVertexElements (int vnr, ARRAY<int> & elements) const
 {
   if (vert2element)
     {
-      int i;
+      int i; 
       int ne = vert2element->EntrySize(vnr);
       elements.SetSize(ne);
       for (i = 1; i <= ne; i++)
@@ -1592,4 +1424,41 @@ void MeshTopology :: GetVertexSurfaceElements( int vnr,
     }
 }
 
+
+int MeshTopology :: GetVerticesEdge ( int v1, int v2 ) const
+{
+  ARRAY<int> elements_v1, elementedges;
+  GetVertexElements ( v1, elements_v1);
+  int edv1, edv2;
+
+  for ( int i = 0; i < elements_v1.Size(); i++ )
+    {
+      GetElementEdges( elements_v1[i], elementedges );
+      for ( int ed = 0; ed < elementedges.Size(); ed ++)
+	{
+	  GetEdgeVertices( elementedges[ed], edv1, edv2 );
+	  if ( ( edv1 == v1 && edv2 == v2 ) || ( edv1 == v2 && edv2 == v1 ) )
+	    return elementedges[ed];
+	}
+    }
+
+  return -1;
+}
+
+
+
+void MeshTopology :: GetSegmentVolumeElements ( int segnr, ARRAY<int> & volels ) const
+{
+  int v1, v2;
+  GetEdgeVertices ( GetSegmentEdge (segnr), v1, v2 );
+  ARRAY<int> volels1, volels2;
+  GetVertexElements ( v1, volels1 );
+  GetVertexElements ( v2, volels2 );
+  volels.SetSize(0);
+
+  for ( int eli1=1; eli1 <= volels1.Size(); eli1++)
+    if ( volels2.Contains( volels1.Elem(eli1) ) )
+      volels.Append ( volels1.Elem(eli1) );
+
+}
 }

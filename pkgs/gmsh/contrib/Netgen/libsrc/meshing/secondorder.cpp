@@ -7,15 +7,6 @@ namespace netgen
 
 
 
-  Refinement :: Refinement ()
-  {
-    ;
-  }
-
-  Refinement :: ~Refinement ()
-  {
-    ;
-  }
   
   void Refinement :: MakeSecondOrder (Mesh & mesh)
   {
@@ -45,10 +36,10 @@ namespace netgen
 	  el.pmid = between.Get(i2);
 	else
 	  {
-	    Point3d pb;
+	    Point<3> pb;
 	    EdgePointGeomInfo ngi;
-	    PointBetween (mesh.Point (el.p1),
-			  mesh.Point (el.p2), 0.5,
+            PointBetween (mesh.Point (el.p1),
+                          mesh.Point (el.p2), 0.5,
 			  el.surfnr1, el.surfnr2,
 			  el.epgeominfo[0], el.epgeominfo[1],
 			  pb, ngi);
@@ -65,7 +56,7 @@ namespace netgen
 	int j;
 	const Element2d & el = mesh.SurfaceElement(sei);
 
-	int onp;
+	int onp(0);
       
 	Element2d newel;
 	newel.SetIndex (el.GetIndex());
@@ -82,7 +73,7 @@ namespace netgen
 	    { 3, 2, 5 },
 	    { 0, 3, 6 },
 	    { 1, 2, 7 } };
-	int (*betw)[3];
+	int (*betw)[3](NULL);
       
 	switch (el.GetType())
 	  {
@@ -130,7 +121,7 @@ namespace netgen
 	      newel[onp+j] = between.Get(i2);
 	    else
 	      {
-		Point3d pb;
+		Point<3> pb;
 		PointGeomInfo newgi;
 		PointBetween (mesh.Point (pi1),
 			      mesh.Point (pi2), 0.5, 
@@ -156,30 +147,29 @@ namespace netgen
     ne = mesh.GetNE();
     for (int i = 1; i <= ne; i++)
       {
-	int j;
 	const Element & el = mesh.VolumeElement(i);
-	int onp;
+	int onp(0);
 
 	Element newel;
 	newel.SetIndex (el.GetIndex());
 
 	static int betw_tet[6][3] =
-	  { { 1, 2, 5 },
-	    { 1, 3, 6 },
-	    { 1, 4, 7 },
-	    { 2, 3, 8 },
-	    { 2, 4, 9 },
-	    { 3, 4, 10 } };
+	  { { 0, 1, 4 },
+	    { 0, 2, 5 },
+	    { 0, 3, 6 },
+	    { 1, 2, 7 },
+	    { 1, 3, 8 },
+	    { 2, 3, 9 } };
 	static int betw_prism[6][3] =
 	  {
-	    { 1, 3, 7 },
+	    { 0, 2, 6 },
+	    { 0, 1, 7 },
 	    { 1, 2, 8 },
-	    { 2, 3, 9 },
-	    { 4, 6, 10 },
+	    { 3, 5, 9 },
+	    { 3, 4, 10 },
 	    { 4, 5, 11 },
-	    { 5, 6, 12 },
 	  };
-	int (*betw)[3];
+	int (*betw)[3](NULL);
 
 	switch (el.GetType())
 	  {
@@ -210,8 +200,8 @@ namespace netgen
 
 	for (int j = 0; j < nnp-onp; j++)
 	  {
-	    INDEX_2 i2(newel.PNum(betw[j][0]),
-		       newel.PNum(betw[j][1]));
+	    INDEX_2 i2(newel[betw[j][0]],
+		       newel[betw[j][1]]);
 	    i2.Sort();
 	  
 	    if (between.Used(i2))
@@ -373,8 +363,8 @@ namespace netgen
 	cout << "WARNING: " << wrongels << " illegal element(s) found" << endl;
 
 	int np = mesh.GetNP();
-	ARRAY<Point3d> should(np);
-	ARRAY<Point3d> can(np);
+	ARRAY<Point<3> > should(np);
+	ARRAY<Point<3> > can(np);
 
 	for (int i = 1; i <= np; i++)
 	  {
@@ -424,13 +414,13 @@ namespace netgen
 		for (int i = 1; i <= np; i++)
 		  if (boundp.Test(i))
 		    {
-		      for (int j = 1; j <= 3; j++)
-			mesh.Point(i).X(j) = 
-			  lam * should.Get(i).X(j) +
-			  (1-lam) * can.Get(i).X(j);
+		      for (int j = 0; j < 3; j++)
+			mesh.Point(i)(j) = 
+			  lam * should.Get(i)(j) +
+			  (1-lam) * can.Get(i)(j);
 		    }
 		  else
-		    mesh.Point(i) = can.Get(i);
+		    mesh.Point(i) = Point<3> (can.Get(i));
 	      
 		//	      (*testout) << "bad els: " << endl;
 		wrongels = 0;

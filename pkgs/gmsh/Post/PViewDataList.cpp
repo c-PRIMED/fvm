@@ -6,7 +6,7 @@
 #include "PViewDataList.h"
 #include "Numeric.h"
 #include "SmoothData.h"
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Context.h"
 
 extern Context_T CTX;
@@ -309,9 +309,9 @@ void PViewDataList::_setLast(int ele)
     else _setLast(ele - _index[19], 3, 6, 9, 9, TI, NbTI);
   }
   else{ // pyramids
-    if(ele < _index[21]) _setLast(ele - _index[20], 3, 5, 1, 15, SY, NbSY);
-    else if(ele < _index[22]) _setLast(ele - _index[21], 3, 5, 3, 15, VY, NbVY);
-    else _setLast(ele - _index[22], 3, 5, 9, 15, TY, NbTY);
+    if(ele < _index[21]) _setLast(ele - _index[20], 3, 5, 1, 8, SY, NbSY);
+    else if(ele < _index[22]) _setLast(ele - _index[21], 3, 5, 3, 8, VY, NbVY);
+    else _setLast(ele - _index[22], 3, 5, 9, 8, TY, NbTY);
   }
 }
 
@@ -668,6 +668,10 @@ bool PViewDataList::combineSpace(nameData &nd)
       Msg::Error("Cannot combine hybrid data");
       return false;
     }
+
+    // copy interpolation from first merged dataset, if any
+    if(!i) _interpolation = l->_interpolation;
+
     // merge elememts
     List_Merge(l->SP, SP); NbSP += l->NbSP; List_Merge(l->VP, VP); NbVP += l->NbVP;
     List_Merge(l->TP, TP); NbTP += l->NbTP; List_Merge(l->SL, SL); NbSL += l->NbSL;
@@ -790,6 +794,7 @@ bool PViewDataList::combineTime(nameData &nd)
   }
   NbT2 = data[0]->NbT2;
   NbT3 = data[0]->NbT3;
+  _interpolation = data[0]->_interpolation;
 
   // merge values for all element types
   for(int i = 0; i < 24; i++){

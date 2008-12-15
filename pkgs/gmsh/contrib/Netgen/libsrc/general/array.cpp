@@ -19,7 +19,7 @@
 
 namespace netgen
 {
-  using namespace netgen;
+  //using namespace netgen;
 
 #ifdef NONE  
   void BASE_ARRAY :: ReSize (int minsize, int elementsize)

@@ -35,7 +35,7 @@ namespace netgen
 	  }
 	else
 	  {
-	    Point3d pnew;
+	    Point<3> pnew;
 
 	    PointBetween (mesh.Point (el.p1),
 			  mesh.Point (el.p2), 0.5,
@@ -103,7 +103,7 @@ namespace netgen
 		  INDEX_2 i2 (pi1, pi2);
 		  i2.Sort();
 
-		  Point3d pb;
+		  Point<3> pb;
 		  PointGeomInfo pgi;
 		  PointBetween (mesh.Point (pi1),
 				mesh.Point (pi2), 0.5,
@@ -164,7 +164,7 @@ namespace netgen
 		  { 2, 3, 6 },
 		  { 3, 4, 7 },
 		  { 1, 4, 8 },
-		  { 1, 3, 9 } };
+		  { 5, 7, 9 } };
 
 	      for (j = 1; j <= 4; j++)
 		{
@@ -187,7 +187,7 @@ namespace netgen
 		    }
 		  else
 		    {
-		      Point3d pb;
+		      Point<3> pb;
 		      PointBetween (mesh.Point (pi1),
 				    mesh.Point (pi2), 0.5,
 				    mesh.GetFaceDescriptor(el.GetIndex ()).SurfNr(),
@@ -300,9 +300,9 @@ namespace netgen
 	  { 6, 7, 9, 10 },
 	  { 6, 8, 9, 10 } };
 	*/
-	   static int reverse[8] =
+	   static bool reverse[8] =
 	   {
-	      0, 0, 0, 0, 0, 1, 0, 1
+	      false, false, false, false, false, true, false, true
 	   };
 
 	   int ind = el.GetIndex();
@@ -315,7 +315,7 @@ namespace netgen
 	      nel.flags.reverse = reverse[j];
 	      if (elrev)
 	      {
-		nel.flags.reverse = 1 - nel.flags.reverse;
+		nel.flags.reverse = !nel.flags.reverse;
 		swap (nel.PNum(3), nel.PNum(4));
 	      }
 
@@ -450,14 +450,25 @@ namespace netgen
 	       { 2, 5, 15 },
 	       };
 
-	     static int fbetw[6][3] =
-	     { { 1, 6, 16 },
-	       { 3, 4, 16 },
-	       { 1, 5, 17 },
-               { 2, 4, 17 },
-	       { 2, 6, 18 },
-	       { 3, 5, 18 },
-	       };
+// he: 15.jul 08, old version is wrong
+//                produces double points ad quad faces and inconsistent mesh
+// 	     static int fbetw[6][3] =
+// 	     { { 1, 6, 16 },
+// 	       { 3, 4, 16 },
+// 	       { 1, 5, 17 },
+//                { 2, 4, 17 },
+// 	       { 2, 6, 18 },
+// 	       { 3, 5, 18 },
+// 	       };
+           
+           static int fbetw[6][3] =
+           { { 7, 10, 16 },
+           { 14, 13, 16 },
+           { 11, 8, 17 },
+           { 13, 15, 17 },
+           { 12, 9, 18 },
+           { 14, 15, 18 },
+           };
 
 	     //int elrev = el.flags.reverse;
 	     pnums = -1;
@@ -593,8 +604,8 @@ namespace netgen
 	cout << "WARNING: " << wrongels << " with wrong orientation found" << endl;
 
 	int np = mesh.GetNP();
-	ARRAY<Point3d> should(np);
-	ARRAY<Point3d> can(np);
+	ARRAY<Point<3> > should(np);
+	ARRAY<Point<3> > can(np);
 	for (int i = 1; i <= np; i++)
 	  {
 	    should.Elem(i) = can.Elem(i) = mesh.Point(i);
@@ -634,10 +645,10 @@ namespace netgen
 		for (int i = 1; i <= np; i++)
 		  if (boundp.Test(i))
 		    {
-		      for (int j = 1; j <= 3; j++)
-			mesh.Point(i).X(j) = 
-			  lam * should.Get(i).X(j) +
-			  (1-lam) * can.Get(i).X(j);
+		      for (int j = 0; j < 3; j++)
+			mesh.Point(i)(j) = 
+			  lam * should.Get(i)(j) +
+			  (1-lam) * can.Get(i)(j);
 		    }
 		  else
 		    mesh.Point(i) = can.Get(i);

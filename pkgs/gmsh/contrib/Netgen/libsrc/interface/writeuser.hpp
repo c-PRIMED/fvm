@@ -63,6 +63,11 @@ extern
 void WriteUserChemnitz (const Mesh & mesh,
 			const string & filename);
 
+extern
+void WriteJCMFormat (const Mesh & mesh,
+                     const CSGeometry & geom,
+                     const string & filename);
+
 
 extern 
 void WriteDiffPackFormat (const Mesh & mesh,
@@ -106,9 +111,30 @@ void WriteEdgeElementFormat (const Mesh & mesh,
 
 
 
-extern void RegisterUserFormats (ARRAY<const char*> & names);
-extern bool WriteUserFormat (const string & format, 	
-			     const Mesh & mesh,
-			     const CSGeometry & geom,
-			     const string & filename);
+#ifdef OLIVER
+extern
+void WriteTETFormat (const Mesh & mesh,
+		     const string & filename);
+
 #endif
+
+extern void ReadTETFormat (Mesh & mesh,
+                      const string & filename);
+
+
+void WriteDolfinFormat (const Mesh & mesh,
+			const string & filename);
+
+
+extern void RegisterUserFormats (ARRAY<const char*> & names);
+
+extern bool WriteUserFormat (const string & format,
+			     const Mesh & mesh,
+			     const CSGeometry & geom, 
+			     const string & filename);
+
+
+
+
+#endif
+

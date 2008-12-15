@@ -33,11 +33,11 @@ class GEdgeLoop
   typedef std::list<GEdgeSigned>::iterator iter;
   typedef std::list<GEdgeSigned>::const_iterator citer;
   GEdgeLoop(const std::list<GEdge*> &);
-  GEdgeLoop(const std::list<GEdge*> &, const std::list<int> &dir);
   inline iter begin() { return loop.begin(); }
   inline iter end() { return loop.end(); }
   inline citer begin() const { return loop.begin(); }
   inline citer end() const { return loop.end(); }
+  inline void erase(iter it){ loop.erase(it); }
   int count(GEdge*) const;
   int count() const { return loop.size(); }
 };

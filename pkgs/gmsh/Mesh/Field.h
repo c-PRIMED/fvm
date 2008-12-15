@@ -6,16 +6,16 @@
 #ifndef _FIELD_H_
 #define _FIELD_H_
 
+#include <string>
 #include <map>
 #include <list>
-#include <string.h>
-#include "Geo.h"
 
 #if !defined(HAVE_NO_POST)
 #include "PView.h"
 #endif
 
 class Field;
+class GEntity;
 
 typedef enum { 
   FIELD_OPTION_DOUBLE = 0,
@@ -27,14 +27,28 @@ typedef enum {
 } FieldOptionType;
 
 class FieldOption {
+ private:
+  std::string _help;
  protected:
   bool *status;
   inline void modified(){ if(status) *status = true; }
  public:
-  FieldOption(bool *_status) : status(_status) {}
+  FieldOption(std::string help, bool *_status) : _help(help), status(_status) {}
   virtual ~FieldOption() {}
   virtual FieldOptionType get_type() = 0;
   virtual void get_text_representation(std::string & v_str) = 0;
+  virtual std::string get_description(){ return _help; }
+  std::string get_type_name(){
+    switch(get_type()){
+    case FIELD_OPTION_INT: return "integer"; break;
+    case FIELD_OPTION_DOUBLE: return "float"; break;
+    case FIELD_OPTION_BOOL: return "boolean"; break;
+    case FIELD_OPTION_PATH: return "path"; break;
+    case FIELD_OPTION_STRING: return "string"; break;
+    case FIELD_OPTION_LIST: return "list"; break;
+    default: return "unknown";
+    }
+  }
   virtual void numerical_value(double val) { throw(1); }
   virtual double numerical_value() const { throw(1); }
   virtual const std::list<int> &list() const { throw(1); }
@@ -43,21 +57,20 @@ class FieldOption {
   virtual std::string &string() { throw(1); }
 };
 
-class FieldDialogBox;
-
 class Field {
  public:
   int id;
   std::map<std::string, FieldOption *> options;
-  virtual double operator() (double x, double y, double z) = 0;
+  virtual double operator() (double x, double y, double z, GEntity *ge=0) = 0;
   virtual ~Field() {}
   bool update_needed;
   Field();
   virtual const char *get_name() = 0;
-  virtual FieldDialogBox *&dialog_box() = 0;
 #if !defined(HAVE_NO_POST)
   void put_on_view(PView * view, int comp = -1);
+  void put_on_new_view();
 #endif
+  virtual std::string get_description(){ return ""; }
 };
 
 class FieldFactory {

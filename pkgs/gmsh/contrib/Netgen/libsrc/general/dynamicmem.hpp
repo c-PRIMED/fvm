@@ -32,6 +32,7 @@ protected:
 public:
   void SetName (const char * aname);
   static void Print ();
+  static void GetUsed (int nr, char * ch);
 };
 
 

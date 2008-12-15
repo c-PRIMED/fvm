@@ -7,12 +7,14 @@
 #include <stdlib.h>
 #include "GmshUI.h"
 #include "GmshDefines.h"
-#include "Message.h"
+#include "GModel.h"
+#include "GmshMessage.h"
 #include "Draw.h"
 #include "Generator.h"
 #include "Context.h"
 #include "Options.h"
 #include "DefaultOptions.h"
+#include "Field.h"
 #include "BackgroundMesh.h"
 
 #if !defined(HAVE_NO_POST)
@@ -21,6 +23,7 @@
 #include "PViewData.h"
 #include "adaptiveData.h"
 #include "PluginManager.h"
+#include "Plugin.h"
 #endif
 
 #if defined(HAVE_FLTK)
@@ -90,17 +93,20 @@ static void Print_StringOptions(int num, int level, int diff, int help,
 				StringXString s[], const char *prefix, FILE *file)
 {
   int i = 0;
-  char tmp[1024];
   while(s[i].str) {
     if(s[i].level & level) {
       if(!diff || strcmp(s[i].function(num, GMSH_GET, NULL), s[i].def)){
+        char tmp[1024];
         sprintf(tmp, "%s%s = \"%s\";%s%s", prefix,
                 s[i].str, s[i].function(num, GMSH_GET, NULL), 
                 help ? " // " : "", help ? s[i].help : "");
         if(file)
           fprintf(file, "%s\n", tmp);
-        else
-          Msg::Direct("%s", tmp);
+        else{
+          // Warning: must call Msg::Direct(level, ...) here, because
+          // we cannot use tmp as a format string (it can contain %s!)
+          Msg::Direct(3, "%s", tmp);
+        }
       }
     }
     i++;
@@ -450,8 +456,7 @@ void Init_Options(int num)
   Init_Options_Safe(num);
 
   // The following defaults cannot be set by the user 
-  CTX.batch = 0;
-  CTX.batchAfterMesh = 0;
+  CTX.batch = CTX.batch_after_mesh = 0;
   CTX.output_filename = NULL;
   CTX.bgm_filename = NULL;
   CTX.lc = 1.0;
@@ -589,6 +594,18 @@ static void Print_ColorTable(int num, int diff, const char *prefix, FILE *file)
   else
     Msg::Direct(tmp);
 #endif
+}
+
+//used in field options, sorry if it's already implemented somewhere else...
+static void Sanitize_String_Texi(std::string &s){
+  int i=-1;
+  while ((i=s.find('\n',i+1))>=0){
+    s.insert(i,"@*");
+    i+=2;
+  }
+  i=-1;
+  while ((i=s.find_first_of("{}",i+1))>=0)
+    s.insert(i++,"@");
 }
 
 void Print_Options(int num, int level, int diff, int help, const char *filename)
@@ -844,6 +861,38 @@ void Print_OptionsDoc()
   }
   fprintf(file, "@end ftable\n");
   fclose(file);
+
+  file = fopen("opt_fields.texi", "w");
+  if(!file) {
+    Msg::Error("Unable to open file 'opt_fields.texi'");
+    return;
+  }
+  fprintf(file, "%s@ftable @code\n", warn);
+  FieldManager &fields = *GModel::current()->getFields();
+  for(std::map<std::string, FieldFactory*>::iterator it = fields.map_type_name.begin();
+      it != fields.map_type_name.end(); it++){
+    fprintf(file, "@item %s\n", it->first.c_str());
+    Field *f = (*it->second)();
+    std::string field_description=f->get_description();
+    Sanitize_String_Texi(field_description);
+    fprintf(file,"%s@*\n",field_description.c_str());
+    fprintf(file, "Options:@*\n");
+    fprintf(file, "@table @code\n");
+    for(std::map<std::string, FieldOption*>::iterator it2 = f->options.begin();
+	it2 != f->options.end(); it2++){
+      fprintf(file, "@item %s\n", it2->first.c_str());
+      std::string val;
+      it2->second->get_text_representation(val);
+      Sanitize_String_Texi(val);
+      fprintf(file, "%s@*\ntype: %s@*\ndefault value: @code{%s}\n",
+          it2->second->get_description().c_str(),
+          it2->second->get_type_name().c_str(),val.c_str());
+    }
+    fprintf(file, "@end table\n\n");
+  }
+  fprintf(file, "@end ftable\n");
+  fclose(file);
+  
 #endif
 }
 
@@ -1942,7 +1991,7 @@ const char *opt_view_name(OPT_ARGS_STR)
     data->setName(val);
 #if defined(HAVE_FLTK)
     if(WID && num >= 0 && num < (int)WID->m_toggle_butt.size()) {
-      WID->m_toggle_butt[num]->label(data->getName().c_str());
+      WID->m_toggle_butt[num]->copy_label(data->getName().c_str());
       WID->m_toggle_butt[num]->redraw();
     }
 #endif
@@ -2502,6 +2551,17 @@ double opt_general_message_size1(OPT_ARGS_NUM)
   return CTX.msg_size[1];
 }
 
+double opt_general_message_auto_scroll(OPT_ARGS_NUM)
+{
+  if(action & GMSH_SET)
+    CTX.msg_auto_scroll = (int)val;
+#if defined(HAVE_FLTK)
+  if(WID && (action & GMSH_GUI))
+    WID->msg_butt->value(CTX.msg_auto_scroll);
+#endif
+  return CTX.msg_auto_scroll;
+}
+
 double opt_general_option_position0(OPT_ARGS_NUM)
 {
   if(action & GMSH_SET)
@@ -3012,6 +3072,13 @@ double opt_general_draw_bounding_box(OPT_ARGS_NUM)
     WID->gen_butt[6]->value(CTX.draw_bbox);
 #endif
   return CTX.draw_bbox;
+}
+
+double opt_general_draw_all_models(OPT_ARGS_NUM)
+{
+  if(action & GMSH_SET)
+    CTX.draw_all_models = (int)val;
+  return CTX.draw_all_models;
 }
 
 double opt_general_xmin(OPT_ARGS_NUM)
@@ -4466,8 +4533,10 @@ double opt_mesh_scaling_factor(OPT_ARGS_NUM)
 
 double opt_mesh_lc_factor(OPT_ARGS_NUM)
 {
-  if(action & GMSH_SET)
-    CTX.mesh.lc_factor = val;
+  if(action & GMSH_SET){
+    if(val > 0)
+      CTX.mesh.lc_factor = val;
+  }
 #if defined(HAVE_FLTK)
   if(WID && (action & GMSH_GUI))
     WID->mesh_value[2]->value(CTX.mesh.lc_factor);
@@ -4497,6 +4566,14 @@ double opt_mesh_lc_max(OPT_ARGS_NUM)
   return CTX.mesh.lc_max;
 }
 
+double opt_mesh_tolerance_edge_length(OPT_ARGS_NUM)
+{
+  if(action & GMSH_SET)
+    CTX.mesh.tolerance_edge_length = val;
+  return CTX.mesh.tolerance_edge_length;
+}
+
+
 double opt_mesh_lc_from_curvature(OPT_ARGS_NUM)
 {
   if(action & GMSH_SET)
@@ -4514,7 +4591,7 @@ double opt_mesh_lc_from_points(OPT_ARGS_NUM)
     CTX.mesh.lc_from_points = (int)val;
 #if defined(HAVE_FLTK)
   if(WID && (action & GMSH_GUI))
-    WID->mesh_butt[5]->value(CTX.mesh.lc_from_points);
+    WID->mesh_butt[5]->value(CTX.mesh.lc_from_points ? 1 : 0);
 #endif
   return CTX.mesh.lc_from_points;
 }
@@ -4523,6 +4600,10 @@ double opt_mesh_lc_extend_from_boundary(OPT_ARGS_NUM)
 {
   if(action & GMSH_SET)
     CTX.mesh.lc_extend_from_boundary = (int)val;
+#if defined(HAVE_FLTK)
+  if(WID && (action & GMSH_GUI))
+    WID->mesh_butt[16]->value(CTX.mesh.lc_extend_from_boundary ? 1 : 0);
+#endif
   return CTX.mesh.lc_extend_from_boundary;
 }
 
@@ -5006,18 +5087,11 @@ double opt_mesh_msh_file_version(OPT_ARGS_NUM)
   return CTX.mesh.msh_file_version;
 }
 
-double opt_mesh_msh_binary(OPT_ARGS_NUM)
+double opt_mesh_binary(OPT_ARGS_NUM)
 {
   if(action & GMSH_SET)
-    CTX.mesh.msh_binary = (int)val;
-  return CTX.mesh.msh_binary;
-}
-
-double opt_mesh_stl_binary(OPT_ARGS_NUM)
-{
-  if(action & GMSH_SET)
-    CTX.mesh.stl_binary = (int)val;
-  return CTX.mesh.stl_binary;
+    CTX.mesh.binary = (int)val;
+  return CTX.mesh.binary;
 }
 
 double opt_mesh_bdf_field_format(OPT_ARGS_NUM)
@@ -5051,7 +5125,7 @@ double opt_mesh_algo2d(OPT_ARGS_NUM)
 #if defined(HAVE_FLTK)
   if(WID && (action & GMSH_GUI)) {
     switch (CTX.mesh.algo2d) {
-    case ALGO_2D_MESHADAPT:
+    case ALGO_2D_FRONTAL:
       WID->mesh_choice[2]->value(0);
       break;
     case ALGO_2D_DELAUNAY:
@@ -5221,6 +5295,14 @@ double opt_mesh_save_all(OPT_ARGS_NUM)
   return CTX.mesh.save_all;
 }
 
+double opt_mesh_save_parametric(OPT_ARGS_NUM)
+{
+  if(action & GMSH_SET)
+    CTX.mesh.save_parametric = val ? 1 : 0;
+  return CTX.mesh.save_parametric;
+}
+
+
 double opt_mesh_save_groups_of_nodes(OPT_ARGS_NUM)
 {
   if(action & GMSH_SET)
@@ -5252,7 +5334,10 @@ double opt_mesh_zone_definition(OPT_ARGS_NUM)
 {
   if(action & GMSH_SET){
     CTX.mesh.zone_definition = (int)val;
-    if(CTX.mesh.zone_definition < 0 || CTX.mesh.zone_definition > 2)
+    if( (CTX.mesh.zone_definition < 0 || CTX.mesh.zone_definition > 2) ||
+        (CTX.mesh.zone_definition == 1 &&
+         GModel::current()->getMinPartitionSize() +
+         GModel::current()->getMaxPartitionSize() == 0) )
       CTX.mesh.zone_definition = 0;
   }
   return CTX.mesh.zone_definition;

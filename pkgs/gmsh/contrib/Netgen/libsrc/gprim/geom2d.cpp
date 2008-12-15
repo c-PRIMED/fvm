@@ -61,7 +61,9 @@ double Fastatan2 (double x, double y)
 
 double Angle (const Vec2d & v)
 {
-  if (v.X() == 0 && v.Y() == 0) return 0;
+  if (v.X() == 0 && v.Y() == 0)
+    return 0;
+    
   double ang = atan2 (v.Y(), v.X());
   if (ang < 0) ang+= 2 * M_PI;
   return ang;
@@ -122,7 +124,8 @@ Point2d CrossPoint (const Line2d & l1, const Line2d & l2)
   double den = Cross (l1.Delta(), l2.Delta());
   double num = Cross ( (l2.P1() - l1.P1()), l2.Delta());
 
-  if (den == 0) return l1.P1();
+  if (den == 0)
+    return l1.P1();
   else
     return l1.P1() + (num/den) * l1.Delta();
 }
@@ -141,8 +144,9 @@ int CrossPointBarycentric (const Line2d & l1, const Line2d & l2,
   double b2 = l2.p1.Y() - l1.p1.Y();
   
   double det = a11*a22 - a12 * a21;
-  if (det == 0) return 1;
-
+  if (det == 0)
+    return 1;
+    
   lam1 = (a22 * b1 - a12 * b2) / det;
   lam2 = (a11 * b2 - a21 * b1) / det;
   return 0;

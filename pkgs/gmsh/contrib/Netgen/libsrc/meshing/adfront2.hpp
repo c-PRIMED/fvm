@@ -2,22 +2,17 @@
 #define FILE_ADFRONT2
 
 /**************************************************************************/
-/* File:   adfront2.hh                                                    */
+/* File:   adfront2.hpp                                                   */
 /* Author: Joachim Schoeberl                                              */
 /* Date:   01. Okt. 95                                                    */
 /**************************************************************************/
 
-/*
+
+/**
+
     Advancing front class for surfaces
+
 */
-
-
-/*
-#define FRONTLINE_GEOMINFO_SIZE 8
-#define FRONTPOINT_GEOMINFO_SIZE 4
-*/
-
-///
 class AdFront2
 {
 
@@ -25,14 +20,16 @@ class AdFront2
   class FrontPoint2
   {
     /// coordinates
-    Point3d p;            
+    Point<3> p;            
     /// global node index
     PointIndex globalindex;   
     /// number of front lines connected to point 
     int nlinetopoint;    
     /// distance to original boundary
     int frontnr;          
-    //   char geominfo[FRONTLINE_GEOMINFO_SIZE];    
+
+    bool onsurface;
+
   public:
     ///
     MultiPointGeomInfo * mgi;
@@ -44,16 +41,19 @@ class AdFront2
       nlinetopoint = 0;
       frontnr = INT_MAX-10;    // attention: overflow on calculating  INT_MAX + 1
       mgi = NULL;
+      onsurface = true;
     }
 
     ///
-    FrontPoint2 (const Point3d & ap, PointIndex agi,
-		 MultiPointGeomInfo * amgi);
+    FrontPoint2 (const Point<3> & ap, PointIndex agi,
+		 MultiPointGeomInfo * amgi, bool aonsurface = true);
     ///
     ~FrontPoint2 () { ; }
 
     ///
-    const Point3d & P () const { return p; }
+    const Point<3> & P () const { return p; }
+    ///
+    operator const Point<3> & () const { return p; }
     ///
     PointIndex GlobalIndex () const { return globalindex; }
 
@@ -70,6 +70,10 @@ class AdFront2
     ///
     bool Valid () const
     { return nlinetopoint >= 0; }
+
+    ///
+    bool OnSurface() const
+    { return onsurface; }
 
     ///
     void DecFrontNr (int afrontnr)
@@ -91,13 +95,21 @@ class AdFront2
     /// quality class 
     int lineclass;      
     /// geometry specific data
-    //    char geominfo[FRONTLINE_GEOMINFO_SIZE];
     PointGeomInfo geominfo[2];
   public:
 
-    FrontLine ();
+    FrontLine ()
+    {
+      lineclass = 1;
+    }
+
     ///
-    FrontLine (const INDEX_2 & al);
+    FrontLine (const INDEX_2 & al)
+    {
+      l = al;
+      lineclass = 1;
+    }
+
 
     ///
     const INDEX_2 & L () const
@@ -158,12 +170,13 @@ class AdFront2
 
   Box3d boundingbox;
   Box3dTree linesearchtree;       /// search tree for lines
-  Point3dTree cpointsearchtree;   /// search tree for cone points
+  Point3dTree pointsearchtree;    /// search tree for points
+  Point3dTree cpointsearchtree;   /// search tree for cone points (not used ???)
 
-  ARRAY<INDEX> delpointl;     /// list of deleted front points
-  ARRAY<INDEX> dellinel;      /// list of deleted front lines
+  ARRAY<int> delpointl;     /// list of deleted front points
+  ARRAY<int> dellinel;      /// list of deleted front lines
 
-  INDEX nfl;                  /// number of front lines;
+  int nfl;                  /// number of front lines;
   INDEX_2_HASHTABLE<int> * allflines; /// all front lines ever have been
 
 
@@ -178,7 +191,7 @@ public:
   ~AdFront2 ();
 
   ///
-  void GetPoints (ARRAY<Point3d> & apoints) const;
+  // void GetPoints (ARRAY<Point<3> > & apoints) const;
   ///
   void Print (ostream & ost) const;
 
@@ -190,7 +203,7 @@ public:
   ///
   int GetNFL () const { return nfl; }
   ///
-  int SelectBaseLine (Point3d & p1, Point3d & p2, 
+  int SelectBaseLine (Point<3> & p1, Point<3> & p2, 
 		      const PointGeomInfo *& geominfo1,
 		      const PointGeomInfo *& geominfo2,
 		      int & qualclass);
@@ -200,33 +213,42 @@ public:
 		 ARRAY<Point3d> & locpoints,
 		 ARRAY<MultiPointGeomInfo> & pgeominfo,
                  ARRAY<INDEX_2> & loclines,   // local index
-                 ARRAY<INDEX> & pindex,
-                 ARRAY<INDEX> & lindex,
+                 ARRAY<int> & pindex,
+                 ARRAY<int> & lindex,
                  double xh);
 
   ///
-  void DeleteLine (INDEX li);
+  void DeleteLine (int li);
   ///
-  INDEX AddPoint (const Point3d & p, PointIndex globind, 
-		  MultiPointGeomInfo * mgi = NULL);
+  int AddPoint (const Point<3> & p, PointIndex globind, 
+                MultiPointGeomInfo * mgi = NULL,
+                bool pointonsurface = true);
   ///
-  INDEX AddLine (INDEX pi1, INDEX pi2, 
-		 const PointGeomInfo & gi1, const PointGeomInfo & gi2);
+  int AddLine (int pi1, int pi2, 
+               const PointGeomInfo & gi1, const PointGeomInfo & gi2);
   ///
   int ExistsLine (int gpi1, int gpi2);
+
   ///
-  void IncrementClass (INDEX li);
+  void IncrementClass (int li)
+  {
+    lines[li].IncrementClass();
+  }
+
   ///
-  void ResetClass (INDEX li);
+  void ResetClass (int li)
+  {
+    lines[li].ResetClass();
+  }
 
   ///
   const PointGeomInfo & GetLineGeomInfo (int li, int lend) const
-    { return lines.Get(li).GetGeomInfo (lend); }
+    { return lines[li].GetGeomInfo (lend); }
   ///
 
   PointIndex GetGlobalIndex (int pi) const
   {
-    return points.Get(pi).GlobalIndex();
+    return points[pi].GlobalIndex();
   }
   ///
   void SetStartFront ();
@@ -236,101 +258,6 @@ public:
 
 
 
-
-
-
-/*
-inline int AdFront2::FrontPoint2 :: Valid () const
-{
-  return nlinetopoint >= 0;
-}
-*/
-/*
-inline const Point3d & AdFront2::FrontPoint2 :: P () const
-{
-  return p;
-}
-
-inline PointIndex AdFront2::FrontPoint2 :: GlobalIndex () const
-{
-  return globalindex;
-}
-
-inline void AdFront2::FrontPoint2 :: AddLine ()
-{
-  nlinetopoint++;
-}
-
-inline void AdFront2::FrontPoint2 :: RemoveLine ()
-{
-  nlinetopoint--;
-  if (nlinetopoint == 0)
-    nlinetopoint = -1;
-}
-
-inline int AdFront2::FrontPoint2 :: FrontNr () const
-{
-  return frontnr;
-}
-
-inline void AdFront2::FrontPoint2 :: DecFrontNr (int afrontnr)
-{
-  if (frontnr > afrontnr) frontnr = afrontnr;
-}
-*/
-
-
-
-
-
-
-
-
-/*
-inline int AdFront2::FrontLine :: Valid () const
-{
-  return l.I1() != 0;
-}
-
-inline void AdFront2::FrontLine :: Invalidate ()
-{
-  l.I1() = 0;
-  l.I2() = 0;
-  lineclass = 1000;
-}
-
-inline const INDEX_2 & AdFront2::FrontLine :: L () const
-{
-  return l;
-}
-
-inline int AdFront2::FrontLine :: LineClass () const
-{
-  return lineclass;
-}
-
-
-inline void AdFront2::FrontLine :: IncrementClass ()
-{
-  lineclass++;
-}
-
-inline void AdFront2::FrontLine :: ResetClass ()
-{
-  lineclass = 1;
-}
-
-
-inline int AdFront2 :: Empty () const
-{
-  return nfl == 0;
-}
-
-inline INDEX AdFront2 :: GetGlobalIndex (INDEX pi) const
-{
-  return points.Get(pi).GlobalIndex();
-}
-*/
 #endif
 
 

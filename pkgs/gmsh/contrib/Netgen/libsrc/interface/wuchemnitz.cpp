@@ -186,6 +186,8 @@ void Convert ()
           i3.I2() = volelements.Get(i).p2;
           i3.I3() = volelements.Get(i).p3;
           break;
+		 default:
+			 i3.I1()=i3.I2()=i3.I3()=0;
         }
       i3.Sort();
       if (faceindex.Used (i3)) 
@@ -224,6 +226,8 @@ void Convert ()
           i2.I1() = faces.Get(i).p1;
           i2.I2() = faces.Get(i).p2;
           break;
+		 default:
+			 i2.I1()=i2.I2()=0;
         }
       if (i2.I1() > i2.I2()) swap (i2.I1(), i2.I2());
       if (edgeindex.Used (i2)) 

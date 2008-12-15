@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include <sstream>
-#include "Message.h"
+#include "GmshMessage.h"
 #include "Numeric.h"
 #include "StringUtils.h"
 #include "Geo.h"
@@ -161,15 +161,18 @@ void add_trsfline(std::vector<int> &l, std::string filename, std::string type,
 void add_trsfsurf(std::vector<int> &l, std::string filename, std::string dir)
 {
   std::ostringstream sstream;
-  sstream << "Transfinite Surface {" << l[0] << "} = {";
-  for(unsigned int i = 1; i < l.size(); i++) {
-    if(i > 1) sstream << ", ";
-    sstream << l[i];
+  sstream << "Transfinite Surface {" << l[0] << "}";
+  if(l.size() > 1){
+    sstream << " = {";
+    for(unsigned int i = 1; i < l.size(); i++) {
+      if(i > 1) sstream << ", ";
+      sstream << l[i];
+    }
+    sstream << "}";
   }
-  if(dir == "Left")
-    sstream << "};";
-  else
-    sstream << "} " << dir << ";";
+  if(dir != "Left")
+    sstream << " " << dir;
+  sstream << ";";
   add_infile(sstream.str(), filename);
 }
 
@@ -197,7 +200,9 @@ void add_point(std::string filename, std::string x, std::string y,
 {
   std::ostringstream sstream;
   sstream << "Point(" << NEWPOINT() << ") = {" << x << ", " << y << ", " 
-	  << z << ", " << lc << "};";
+	  << z ;
+  if(lc.size()) sstream << ", " << lc;
+  sstream << "};";
   add_infile(sstream.str(), filename);
 }
 
@@ -367,4 +372,11 @@ void protude(List_T *list, std::string filename, std::string what,
 	  << px << ", " << py << ", " << pz << "}, " << angle << "} {\n  "
 	  << what << "{" << list2string(list) << "};\n}";
   add_infile(sstream.str(), filename);
+}
+
+void split_edge(int edge_id, List_T *vertices,std::string filename)
+{
+  std::ostringstream sstream;
+  sstream << "Split Line(" << edge_id << ") {" << list2string(vertices) << "};";
+  add_infile(sstream.str(), filename, true);
 }

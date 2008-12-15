@@ -15,20 +15,24 @@
 #include <myadt.hpp>
 
 #include <linalg.hpp>
-#include <csg.hpp>
-#include <stlgeom.hpp>
-#include <geometry2d.hpp>
+
+// MODIFIED FOR GMSH
+//#include <csg.hpp>
+//#include <stlgeom.hpp>
+//#include <geometry2d.hpp>
+
 #include <meshing.hpp>
 
 
 
 // #include <FlexLexer.h>
 
-namespace netgen {
-  extern void MeshFromSpline2D (SplineGeometry2d & geometry,
-				Mesh *& mesh, 
-				MeshingParameters & mp);
-}
+// MODIFIED FOR GMSH
+//namespace netgen {
+//  extern void MeshFromSpline2D (SplineGeometry2d & geometry,
+//				Mesh *& mesh, 
+//				MeshingParameters & mp);
+//}
 
 
 
@@ -166,6 +170,23 @@ Ng_GetVolumeElement (Ng_Mesh * mesh, int num, int * pi)
   return et;
 }
 
+void Ng_RestrictMeshSizeGlobal (Ng_Mesh * mesh, double h)
+{
+  ((Mesh*)mesh) -> SetGlobalH (h);
+}
+
+void Ng_RestrictMeshSizePoint (Ng_Mesh * mesh, double * p, double h)
+{
+  ((Mesh*)mesh) -> RestrictLocalH (Point3d (p[0], p[1], p[2]), h);
+}
+
+void Ng_RestrictMeshSizeBox (Ng_Mesh * mesh, double * pmin, double * pmax, double h)
+{
+  for (double x = pmin[0]; x < pmax[0]; x += h)
+    for (double y = pmin[1]; y < pmax[1]; y += h)
+      for (double z = pmin[2]; z < pmax[2]; z += h)
+        ((Mesh*)mesh) -> RestrictLocalH (Point3d (x, y, z), h);
+}
 
 
 // generates volume mesh from surface mesh
@@ -191,7 +212,7 @@ Ng_Result Ng_GenerateVolumeMesh (Ng_Mesh * mesh, Ng_Meshing_Parameters * mp)
 
 // 2D Meshing Functions:
 
-
+#if 0 // MODIFIED FOR GMSH
 
 void Ng_AddPoint_2D (Ng_Mesh * mesh, double * x)
 {
@@ -233,9 +254,9 @@ void Ng_GetPoint_2D (Ng_Mesh * mesh, int num, double * x)
 {
   Mesh * m = (Mesh*)mesh;
 
-  Point3d & p = m->Point(num);
-  x[0] = p.X();
-  x[1] = p.Y();
+  Point<3> & p = m->Point(num);
+  x[0] = p(0);
+  x[1] = p(1);
 }
 
 void Ng_GetElement_2D (Ng_Mesh * mesh, int num, int * pi, int * matnum)
@@ -287,8 +308,6 @@ Ng_Result Ng_GenerateMesh_2D (Ng_Geometry_2D * geom,
   return NG_OK;
 }
 
-
-
 void Ng_HP_Refinement (Ng_Geometry_2D * geom,
 		       Ng_Mesh * mesh,
 		       int levels)
@@ -296,6 +315,16 @@ void Ng_HP_Refinement (Ng_Geometry_2D * geom,
   Refinement2d ref(*(SplineGeometry2d*)geom);
   HPRefinement (*(Mesh*)mesh, &ref, levels);
 }
+
+void Ng_HP_Refinement (Ng_Geometry_2D * geom,
+		       Ng_Mesh * mesh,
+		       int levels, double parameter)
+{
+  Refinement2d ref(*(SplineGeometry2d*)geom);
+  HPRefinement (*(Mesh*)mesh, &ref, levels, parameter);
+}
+
+
 
 
 
@@ -522,7 +551,7 @@ void Ng_STL_AddEdge (Ng_STL_Geometry * geom,
   readedges.Append(Point3d(p2[0],p2[1],p2[2]));
 }
 
-
+#endif // MODIFIED FOR GMSH
 
 Ng_Meshing_Parameters :: Ng_Meshing_Parameters()
 {

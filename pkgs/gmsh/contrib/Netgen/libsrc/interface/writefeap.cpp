@@ -27,9 +27,9 @@ void WriteFEAPFormat (const Mesh & mesh,
   // rieger@ibnm.uni-hannover.de
 
   int inverttets = mparam.inverttets;
-  int invertsurf = mparam.inverttrigs;
+  //int invertsurf = mparam.inverttrigs;
 
-  int i, j, zz, n;
+  int i, j;
 
   double scale = 1;   // globflags.GetNumFlag ("scale", 1);
   
@@ -57,11 +57,11 @@ void WriteFEAPFormat (const Mesh & mesh,
       outfile << i;
       outfile << ",,";
       outfile.width(10);
-      outfile << mesh.Point(i).X()/scale << "  ";
+      outfile << mesh.Point(i)(0)/scale << "  ";
       outfile.width(10);
-      outfile << mesh.Point(i).Y()/scale << "  ";
+      outfile << mesh.Point(i)(1)/scale << "  ";
       outfile.width(10);
-      outfile << mesh.Point(i).Z()/scale << "\n";
+      outfile << mesh.Point(i)(2)/scale << "\n";
     }   
       
   outfile << "\n" << "\n";

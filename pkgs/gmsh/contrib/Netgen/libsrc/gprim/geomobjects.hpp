@@ -42,6 +42,12 @@ public:
     return *this;
   }
 
+  Point & operator= (double val)
+  {
+    for (int i = 0; i < D; i++) x[i] = val;
+    return *this;
+  }
+
   double & operator() (int i) { return x[i]; }
   const double & operator() (int i) const { return x[i]; }
 
@@ -60,7 +66,7 @@ protected:
   double x[D];
 
 public:
-  Vec () { ; }
+  Vec () { ; } // for (int i = 0; i < D; i++) x[i] = 0; }
   Vec (double ax) { for (int i = 0; i < D; i++) x[i] = ax; }
   Vec (double ax, double ay) { x[0] = ax; x[1] = ay; }
   Vec (double ax, double ay, double az)
@@ -200,6 +206,13 @@ public:
       }
   }
 
+  enum EB_TYPE { EMPTY_BOX = 1 };
+  Box ( EB_TYPE et ) 
+  {
+    pmin = Point<3> (1e99, 1e99, 1e99);
+    pmax = Point<3> (-1e99, -1e99, -1e99);
+  }
+
   const Point<D> & PMin () const { return pmin; }
   const Point<D> & PMax () const { return pmax; }
   
@@ -287,8 +300,8 @@ public:
   };
 
   ///
-  BoxSphere ( Point<D> pmin, Point<D> pmax )
-    : Box<D> (pmin, pmax)
+  BoxSphere ( Point<D> apmin, Point<D> apmax )
+    : Box<D> (apmin, apmax)
   {
     CalcDiamCenter();
   }

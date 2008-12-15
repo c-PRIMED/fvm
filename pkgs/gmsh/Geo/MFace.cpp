@@ -6,10 +6,10 @@
 #include "MFace.h"
 
 #if defined(HAVE_GMSH_EMBEDDED)
-#  include "GmshEmbedded.h"
+#include "GmshEmbedded.h"
 #else
-#  include "Numeric.h"
-#  include "Context.h"
+#include "Numeric.h"
+#include "Context.h"
 #endif
 
 extern Context_T CTX;
@@ -86,3 +86,23 @@ SVector3 MFace::normal() const
   return SVector3(n[0], n[1], n[2]);
 }
 
+bool MFace::computeCorrespondence(const MFace& other,int& rotation,bool& swap) const {
+  
+  rotation = 0;
+  swap = false;
+  
+  if (*this == other) {
+    for (int i=0;i<getNumVertices();i++) {
+      if (_v[0] == other.getVertex(i)) {
+        rotation = i;
+        break;
+      }
+    }
+    if (_v[1] == other.getVertex((rotation+1)%getNumVertices())) swap = false;
+    else                                                         swap = true;
+    return true;
+  }
+  return false;
+}
+
+  

@@ -8,12 +8,7 @@
 // Msg)
 
 #include "NumericEmbedded.h"
-
-#if defined(HAVE_GMSH_EMBEDDED)
-#include "GmshEmbedded.h"
-#else
-#include "Message.h"
-#endif
+#include "GmshMessage.h"
 
 #define SQU(a)      ((a)*(a))
 

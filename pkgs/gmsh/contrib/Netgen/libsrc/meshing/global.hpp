@@ -40,7 +40,7 @@ public:
   int terminate;
   int running;
   double percent;
-  char * task;
+  const char * task;
   bool demorunning;
   multithreadt();
 };

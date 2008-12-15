@@ -46,7 +46,7 @@ namespace netgen
 
   DenseMatrix :: DenseMatrix (const DenseMatrix & m2)
   {
-    data = NULL;
+    data = NULL; height = width = 0;
     SetSize (m2.Height(), m2.Width());
     memcpy (data, m2.data, sizeof(double) * Height() * Width());
   }
@@ -60,8 +60,9 @@ namespace netgen
   void DenseMatrix :: SetSize (int h, int w)
   {
     if (!w) w = h;
-    if (height == h && width == w) return;
-    
+    if (height == h && width == w)
+      return;
+          
     height = h;
     width = w;
     

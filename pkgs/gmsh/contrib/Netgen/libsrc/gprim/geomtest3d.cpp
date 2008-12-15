@@ -7,7 +7,7 @@
 namespace netgen
 {
 int
-IntersectTriangleLine (const Point3d ** tri, const Point3d ** line)
+IntersectTriangleLine (const Point<3> ** tri, const Point<3> ** line)
 {
   Vec3d vl(*line[0], *line[1]);
   Vec3d vt1(*tri[0], *tri[1]);
@@ -111,7 +111,7 @@ IntersectTriangleLine (const Point3d ** tri, const Point3d ** line)
 
 
 
-int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
+int IntersectTetTriangle (const Point<3> ** tet, const Point<3> ** tri,
 			  const int * tetpi, const int * tripi)
 {
   int i, j;
@@ -119,13 +119,8 @@ int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
   double epsrel = 1e-8;
   double eps = diam * epsrel;
 
-#ifdef MARK
-  MARK (inttettri1);
-#endif
-
   double eps2 = eps * eps;
-  int loctripi[3], cnt = 0;
-  int loctetpi[4];
+  int cnt = 0;
 
   int tetp1 = -1, tetp2 = -1;
   int trip1 = -1, trip2 = -1;
@@ -182,10 +177,6 @@ int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
   
   //  (*testout) << "cnt = " << cnt << endl;
 
-#ifdef MARK
-  MARK (inttettri2);
-#endif
-
 
   //  (*testout) << "tet-trig inters, cnt = " << cnt << endl;
   
@@ -194,10 +185,6 @@ int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
     {
     case 0:
       {
-#ifdef MARK
-  MARK (inttettric0);
-#endif
-
 	Vec3d no, n;
 	int inpi[3];
 
@@ -245,7 +232,7 @@ int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
 
 
 	// check, if some tet edge intersects triangle:
-	const Point3d * line[2], *tetf[3];
+	const Point<3> * line[2], *tetf[3];
 	for (i = 0; i <= 2; i++)
 	  for (j = i+1; j <= 3; j++)
 	    {
@@ -278,10 +265,6 @@ int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
       }
     case 1:
       {
-#ifdef MARK
-  MARK (inttettric1);
-#endif
-
 	trip2 = 0;
 	while (trip2 == trip1)
 	  trip2++;
@@ -370,10 +353,6 @@ int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
       }
     case 2:
       {
-#ifdef MARK
-  MARK (inttettric2);
-#endif
-
 	// common edge
 	tetp3 = 0;
 	while (tetp3 == tetp1 || tetp3 == tetp2)
@@ -433,10 +412,6 @@ int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
       }
     case 3:
       {
-#ifdef MARK
-  MARK (inttettric3);
-#endif
-
 	// common face
 	return 0;
       }
@@ -450,18 +425,18 @@ int IntersectTetTriangle (const Point3d ** tet, const Point3d ** tri,
 
 
 
-int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
+int IntersectTetTriangleRef (const Point<3> ** tri, const int * tripi)
 {
   int i, j;
   double eps = 1e-8;
   double eps2 = eps * eps;
 
-  static Point3d rtetp1(0, 0, 0);
-  static Point3d rtetp2(1, 0, 0);  
-  static Point3d rtetp3(0, 1, 0); 
-  static Point3d rtetp4(0, 0, 1);
+  static Point<3> rtetp1(0, 0, 0);
+  static Point<3> rtetp2(1, 0, 0);  
+  static Point<3> rtetp3(0, 1, 0); 
+  static Point<3> rtetp4(0, 0, 1);
 
-  static const Point3d * tet[] = { &rtetp1, &rtetp2, &rtetp3, &rtetp4 };
+  static const Point<3> * tet[] = { &rtetp1, &rtetp2, &rtetp3, &rtetp4 };
   static int tetpi[] = { 1, 2, 3, 4 };
 
 
@@ -474,7 +449,7 @@ int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
   int trip1 = -1, trip2 = -1;
   int tetp3, tetp4, trip3;
 
-
+  /*
   if (!tetpi)
     {
       for (i = 0; i <= 2; i++)
@@ -494,6 +469,7 @@ int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
 	}
     }
   else
+  */
     {
       for (i = 0; i <= 2; i++)
 	{
@@ -514,29 +490,21 @@ int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
   
   //  (*testout) << "cnt = " << cnt << endl;
 
-#ifdef MARK
-  MARK (inttettriref2);
-#endif
-  
 
   switch (cnt)
     {
     case 0:
       {
-#ifdef MARK
-  MARK (inttettric0ref);
-#endif
-
 	Vec3d no, n;
 	//	int inpi[3];
 	int pside[3][4];
 
 	for (j = 0; j < 3; j++)
 	  {
-	    pside[j][0] = (*tri[j]).X() > -eps;
-	    pside[j][1] = (*tri[j]).Y() > -eps;
-	    pside[j][2] = (*tri[j]).Z() > -eps;
-	    pside[j][3] = (*tri[j]).X() + (*tri[j]).Y() + (*tri[j]).Z() < 1+eps;
+	    pside[j][0] = (*tri[j])(0) > -eps;
+	    pside[j][1] = (*tri[j])(1) > -eps;
+	    pside[j][2] = (*tri[j])(2) > -eps;
+	    pside[j][3] = (*tri[j])(0) + (*tri[j])(1) + (*tri[j])(2) < 1+eps;
 	  }
 
 	
@@ -553,7 +521,7 @@ int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
 	  }
 
 
-	const Point3d * line[2], *tetf[3];
+	const Point<3> * line[2], *tetf[3];
 	for (i = 0; i <= 2; i++)
 	  for (j = i+1; j <= 3; j++)
 	    {
@@ -585,10 +553,6 @@ int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
       }
     case 1:
       {
-#ifdef MARK
-  MARK (inttettric1ref);
-#endif
-
 	trip2 = 0;
 	if (trip2 == trip1)
 	  trip2++;
@@ -680,10 +644,6 @@ int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
       }
     case 2:
       {
-#ifdef MARK
-  MARK (inttettric2ref);
-#endif
-
 	// common edge
 	tetp3 = 0;
 	while (tetp3 == tetp1 || tetp3 == tetp2)
@@ -742,10 +702,6 @@ int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
       }
     case 3:
       {
-#ifdef MARK
-  MARK (inttettric3ref);
-#endif
-
 	// common face
 	return 0;
       }
@@ -765,7 +721,7 @@ int IntersectTetTriangleRef (const Point3d ** tri, const int * tripi)
 
 
 
-int IntersectTriangleTriangle (const Point3d ** tri1, const Point3d ** tri2)
+int IntersectTriangleTriangle (const Point<3> ** tri1, const Point<3> ** tri2)
 {
   int i, j;
   double diam = Dist (*tri1[0], *tri1[1]);
@@ -814,7 +770,7 @@ int IntersectTriangleTriangle (const Point3d ** tri1, const Point3d ** tri2)
     {
     case 0:
       {
-	const Point3d * line[2];
+	const Point<3> * line[2];
 	
 	for (i = 0; i <= 2; i++)
 	  {
@@ -869,39 +825,8 @@ LocalCoordinates (const Vec3d & e1, const Vec3d & e2,
 
 
 
-int CalcSphereCenter (const Point3d ** pts, Point3d & c)
+int CalcSphereCenter (const Point<3> ** pts, Point<3> & c)
 {
-  /*
-  static DenseMatrix a(3), inva(3);
-  static Vector rs(3), sol(3);
-  int i;
-  double h = Dist(*pts[0], *pts[1]);
-
-  for (i = 1; i <= 3; i++)
-    {
-      const Point3d & p1 = *pts[0];
-      const Point3d & p2 = *pts[i];
-      Vec3d v(p1, p2);
-      a.Elem(i,1) = v.X();
-      a.Elem(i,2) = v.Y();
-      a.Elem(i,3) = v.Z();
-
-      rs.Elem(i) = 0.5 * (v * v);
-    }
-
-  if (fabs (a.Det()) <= 1e-12 * h * h * h)
-    {
-      (*testout) << "CalcSphereCenter: degenerated" << endl;
-      return 1;
-    }
-
-  CalcInverse (a, inva);
-  inva.Mult (rs, sol);
-
-  for (i = 1; i <= 3; i++)
-    c.X(i) = pts[0]->X(i) + sol.Elem(i);
-  */
-
   Vec3d row1 (*pts[0], *pts[1]);
   Vec3d row2 (*pts[0], *pts[2]);
   Vec3d row3 (*pts[0], *pts[3]);
@@ -1221,3 +1146,5 @@ double MinDistLL2 (const Point3d & l1p1, const Point3d & l1p2,
 }
 			 
 }
+
+
