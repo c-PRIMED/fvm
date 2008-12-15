@@ -1,8 +1,8 @@
-This is netcdf-cxx.info, produced by makeinfo version 4.7 from
-netcdf-cxx.texi.
+This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-cxx.info,
+produced by makeinfo version 4.11 from
+/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
 
-   Copyright (C) 2005-2006 University Corporation for Atmospheric
-Research
+Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
 
 
@@ -37,7 +37,7 @@ The NetCDF C++ Interface Guide
 ******************************
 
 This document describes the netCDF C++ API. It applies to netCDF
-version 4.0. This document was last updated on 17 August 2006.
+version 4.0. This document was last updated on 28 August 2008.
 
    The netCDF library provides an application- and machine-independent
 interface to self-describing, array-oriented data.  It supports an
@@ -51,7 +51,7 @@ document.  The rest of the menu lists all the lower level nodes in the
 document.
 
    For a complete description of the netCDF format and utilities see
-*Note The NetCDF Users Guide: (netcdf)Top.
+*note The NetCDF Users Guide: (netcdf)Top.
 
 * Menu:
 
@@ -430,9 +430,9 @@ Class NcTypedComponent
 
 `NcTypedComponent' is an abstract base class for `NcVar' and `NcAtt'
 that captures the similarities between netCDF variables and attributes.
-We list here the member functions that variables and attributes
-inherit from `NcTypedComponent', but these member functions are also
-documented under the `NcVar' and `NcAtt' classes for convenience.
+We list here the member functions that variables and attributes inherit
+from `NcTypedComponent', but these member functions are also documented
+under the `NcVar' and `NcAtt' classes for convenience.
 
 Public Member Functions
 -----------------------
@@ -1236,19 +1236,19 @@ Index
 
 
 Tag Table:
-Node: Top1357
-Node: Introduction2772
-Node: Class Hierarchy4409
-Node: Auxiliary Types and Constants5842
-Node: NetCDF Classes7003
-Node: Class NcFile7393
-Node: Class NcDim14411
-Node: Class NcTypedComponent15497
-Node: Class NcVar17996
-Node: Class NcAtt29980
-Node: Auxiliary Classes32534
-Node: Class NcValues32866
-Node: Class NcError34639
-Node: Combined Index37392
+Node: Top1433
+Node: Introduction2848
+Node: Class Hierarchy4485
+Node: Auxiliary Types and Constants5918
+Node: NetCDF Classes7079
+Node: Class NcFile7469
+Node: Class NcDim14487
+Node: Class NcTypedComponent15573
+Node: Class NcVar18072
+Node: Class NcAtt30056
+Node: Auxiliary Classes32610
+Node: Class NcValues32942
+Node: Class NcError34715
+Node: Combined Index37468
 
 End Tag Table

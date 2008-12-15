@@ -1,8 +1,8 @@
-This is netcdf-f90.info, produced by makeinfo version 4.7 from
-netcdf-f90.texi.
+This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-f90.info,
+produced by makeinfo version 4.11 from
+/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
 
-   Copyright (C) 2005-2006 University Corporation for Atmospheric
-Research
+Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
 
 
@@ -38,10 +38,10 @@ The NetCDF Fortran 90 Interface Guide
 
 This document describes the Fortran 90 interface to the netCDF library.
 It applies to netCDF version 4.0. This document was last updated on
-29 January 2008.
+28 August 2008.
 
    For a complete description of the netCDF format and utilities see
-*Note The NetCDF Users Guide: (netcdf)Top.
+*note The NetCDF Users Guide: (netcdf)Top.
 
 * Menu:
 
@@ -1828,7 +1828,7 @@ a netCDF dataset. Variable IDs are 1, 2, 3,..., in the order in which
 the variables were defined. A function is available for getting the
 variable ID from the variable name and vice-versa.
 
-   Attributes (see *Note Attributes::) may be associated with a
+   Attributes (see *note Attributes::) may be associated with a
 variable to specify such properties as units.
 
    Operations supported on variables are:
@@ -3157,7 +3157,7 @@ double attributes are adequate for most purposes.
      with underscore are reserved for system use.  Attribute name
      conventions are assumed by some netCDF generic applications, e.g.,
      units as the name for a string attribute that gives the units for
-     a netCDF variable. For examples of attribute conventions see *Note
+     a netCDF variable. For examples of attribute conventions see *note
      Attribute Conventions::.
 
 `values'
@@ -3904,7 +3904,7 @@ supplied to override the default behavior.
 
    Note also that Fortran 90 allows arbitrary array sections to be
 passed to any procedure, which may greatly simplify programming. For
-examples see *Note NF90_PUT_VAR:: and *Note NF90_GET_VAR::.
+examples see *note NF90_PUT_VAR:: and *note NF90_GET_VAR::.
 
 
 File: netcdf-f90.info,  Node: Combined Index,  Prev: FORTRAN 77 to Fortran 90 Transition Guide,  Up: Top
@@ -4019,57 +4019,57 @@ Index
 
 
 Tag Table:
-Node: Top1364
-Node: Use of the NetCDF Library3391
-Node: Creating5185
-Node: Reading Known7904
-Node: Reading Unknown9638
-Node: Writing Data12770
-Node: Adding15675
-Node: Errors18769
-Node: Compiling19858
-Node: Datasets22197
-Node: Datasets Introduction22589
-Node: NetCDF Library Interface Descriptions24592
-Node: NF90_STRERROR25632
-Node: NF90_INQ_LIBVERS27117
-Node: NF90_CREATE27792
-Node: NF90_OPEN32121
-Node: NF90_REDEF35158
-Node: NF90_ENDDEF36495
-Node: NF90_CLOSE40422
-Node: NF90_INQUIRE Family41994
-Node: NF90_SYNC44939
-Node: NF90_ABORT49189
-Node: NF90_SET_FILL51071
-Node: Dimensions55521
-Node: Dimensions Introduction55758
-Node: NF90_DEF_DIM57612
-Node: NF90_INQ_DIMID60317
-Node: NF90_INQUIRE_DIMENSION62138
-Node: NF90_RENAME_DIM64979
-Node: Variables67231
-Node: Variables Introduction67670
-Node: Language-Types69944
-Node: NF90_DEF_VAR71322
-Node: NF90_INQ_VARID75252
-Node: NF90_INQUIRE_VARIABLE76794
-Node: NF90_PUT_VAR80324
-Node: NF90_GET_VAR93024
-Node: Reading and Writing Character String Values105728
-Node: Fill Values108504
-Node: NF90_RENAME_VAR110904
-Node: Attributes112850
-Node: Attributes Introduction113169
-Node: Attribute Conventions115162
-Node: NF90_PUT_ATT124495
-Node: NF90_INQUIRE_ATTRIBUTE128574
-Node: NF90_GET_ATT133038
-Node: NF90_COPY_ATT137068
-Node: NF90_RENAME_ATT140678
-Node: NF90_DEL_ATT142984
-Node: Summary of Fortran 90 Interface144922
-Node: FORTRAN 77 to Fortran 90 Transition Guide152754
-Node: Combined Index156729
+Node: Top1440
+Node: Use of the NetCDF Library3466
+Node: Creating5260
+Node: Reading Known7979
+Node: Reading Unknown9713
+Node: Writing Data12845
+Node: Adding15750
+Node: Errors18844
+Node: Compiling19933
+Node: Datasets22272
+Node: Datasets Introduction22664
+Node: NetCDF Library Interface Descriptions24667
+Node: NF90_STRERROR25707
+Node: NF90_INQ_LIBVERS27192
+Node: NF90_CREATE27867
+Node: NF90_OPEN32196
+Node: NF90_REDEF35233
+Node: NF90_ENDDEF36570
+Node: NF90_CLOSE40497
+Node: NF90_INQUIRE Family42069
+Node: NF90_SYNC45014
+Node: NF90_ABORT49264
+Node: NF90_SET_FILL51146
+Node: Dimensions55596
+Node: Dimensions Introduction55833
+Node: NF90_DEF_DIM57687
+Node: NF90_INQ_DIMID60392
+Node: NF90_INQUIRE_DIMENSION62213
+Node: NF90_RENAME_DIM65054
+Node: Variables67306
+Node: Variables Introduction67745
+Node: Language-Types70019
+Node: NF90_DEF_VAR71397
+Node: NF90_INQ_VARID75327
+Node: NF90_INQUIRE_VARIABLE76869
+Node: NF90_PUT_VAR80399
+Node: NF90_GET_VAR93099
+Node: Reading and Writing Character String Values105803
+Node: Fill Values108579
+Node: NF90_RENAME_VAR110979
+Node: Attributes112925
+Node: Attributes Introduction113244
+Node: Attribute Conventions115237
+Node: NF90_PUT_ATT124570
+Node: NF90_INQUIRE_ATTRIBUTE128649
+Node: NF90_GET_ATT133113
+Node: NF90_COPY_ATT137143
+Node: NF90_RENAME_ATT140753
+Node: NF90_DEL_ATT143059
+Node: Summary of Fortran 90 Interface144997
+Node: FORTRAN 77 to Fortran 90 Transition Guide152829
+Node: Combined Index156804
 
 End Tag Table

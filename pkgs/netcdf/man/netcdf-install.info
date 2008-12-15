@@ -1,8 +1,8 @@
-This is netcdf-install.info, produced by makeinfo version 4.7 from
-netcdf-install.texi.
+This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-install.info,
+produced by makeinfo version 4.11 from
+/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
 
-   Copyright (C) 2005-2006 University Corporation for Atmospheric
-Research
+Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
 
 
@@ -38,16 +38,16 @@ NetCDF Installation and Porting Guide
 
 This document describes how to build and install the netCDF library,
 version 4.0 on Unix and Windows systems. This document was last updated
-on 18 May 2008.
+on 28 August 2008.
 
    Instructions for installing earlier versions of netCDF can be found
 at `http://www.unidata.ucar.edu/software/netcdf/old_docs'.
 
    For a brief introduction to the netCDF format and utilities see
-*Note The NetCDF Tutorial: (netcdf-tutorial)Top.
+*note The NetCDF Tutorial: (netcdf-tutorial)Top.
 
    For a complete description of the netCDF format and utilities see
-*Note The NetCDF Users Guide: (netcdf)Top.
+*note The NetCDF Users Guide: (netcdf)Top.
 
    Programming guides are available for C (*note The NetCDF C Interface
 Guide: (netcdf-c)Top.), C++ (*note The NetCDF C++ Interface Guide:
@@ -1256,19 +1256,22 @@ studio.
 
    To use the netcdf.dll:
 
-   1. Place these in your include directory: 	netcdf.h		C
-include file 	netcdf.inc		Fortran include file
+   1. Place these in your include directory:
+netcdf.h		C include file 	netcdf.inc		Fortran
+include file
 
    2a. To use the Dynamic Library (shared) version of the netcdf
 library:   Place these in a directory that's in your PATH:
-netcdf.dll		library dll 	ncgen.exe		uses the dll
-ncdump.exe		uses the dll
+netcdf.dll		library dll 	ncgen.exe		uses
+the dll 	ncdump.exe		uses the dll
 
-   Place this in a library directory to link against: 	netcdf.lib		library
+   Place this in a library directory to link against:
+netcdf.lib		library
 
    2b. Alternatively, to use a static version of the library
 
-   Place this in a library directory to link against: 	netcdfs.lib		library
+   Place this in a library directory to link against:
+netcdfs.lib		library
 
    Place these in a directory that's in your PATH:
 ncgens.exe		statically linked (no DLL needed)
@@ -1809,31 +1812,31 @@ Index
 
 
 Tag Table:
-Node: Top1378
-Node: installing-binaries3627
-Node: Quick Instructions for Installing NetCDF on Unix5098
-Node: Building and Installing NetCDF on Unix Systems6493
-Node: Requirements7418
-Node: Specifying the Environment for Building8643
-Node: Building on 64 Bit Platforms15424
-Node: Running the configure Script16262
-Node: Running make25316
-Node: Testing the Build25928
-Node: Installing NetCDF28070
-Node: Platform Specific Notes30217
-Node: Additional Porting Notes41621
-Node: NetCDF Source44126
-Node: Windows46976
-Node: Getting Prebuilt DLL48521
-Node: Installing the DLL48996
-Node: Using the DLL with Visual Cplusplus 652343
-Node: Building the DLL with Visual Cplusplus NET53418
-Node: Using the DLL with Visual Cplusplus NET54674
-Node: If Something Goes Wrong56014
-Node: The Usual Build Problems56426
-Node: Troubleshooting61013
-Node: Finding Help63918
-Node: Reporting Problems65589
-Node: Combined Index66501
+Node: Top1450
+Node: installing-binaries3702
+Node: Quick Instructions for Installing NetCDF on Unix5173
+Node: Building and Installing NetCDF on Unix Systems6568
+Node: Requirements7493
+Node: Specifying the Environment for Building8718
+Node: Building on 64 Bit Platforms15499
+Node: Running the configure Script16337
+Node: Running make25391
+Node: Testing the Build26003
+Node: Installing NetCDF28145
+Node: Platform Specific Notes30292
+Node: Additional Porting Notes41696
+Node: NetCDF Source44201
+Node: Windows47051
+Node: Getting Prebuilt DLL48596
+Node: Installing the DLL49071
+Node: Using the DLL with Visual Cplusplus 652418
+Node: Building the DLL with Visual Cplusplus NET53491
+Node: Using the DLL with Visual Cplusplus NET54747
+Node: If Something Goes Wrong56087
+Node: The Usual Build Problems56499
+Node: Troubleshooting61086
+Node: Finding Help63991
+Node: Reporting Problems65662
+Node: Combined Index66574
 
 End Tag Table

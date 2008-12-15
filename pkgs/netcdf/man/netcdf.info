@@ -1,7 +1,8 @@
-This is netcdf.info, produced by makeinfo version 4.7 from netcdf.texi.
+This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf.info, produced
+by makeinfo version 4.11 from
+/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
 
-   Copyright (C) 2005-2006 University Corporation for Atmospheric
-Research
+Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
 
 
@@ -36,7 +37,7 @@ NetCDF Users Guide
 ******************
 
 This guide describes the netCDF object model. This document applies to
-netCDF version 4.0, and was last updated on 7 June 2008.
+netCDF version 4.0, and was last updated on 28 August 2008.
 
    Interface guides are available for C (*note The NetCDF C Interface
 Guide: (netcdf-c)Top.), C++ (*note The NetCDF C++ Interface Guide:
@@ -48,7 +49,7 @@ Interface Guide: (netcdf-f90)Top.).
 the netCDF-Java website,
 `http://www.unidata.ucar.edu/software/netcdf-java'.
 
-   For installation and porting information, see *Note The NetCDF
+   For installation and porting information, see *note The NetCDF
 Installation and Porting Guide: (netcdf-install)Top.
 
 * Menu:
@@ -446,8 +447,8 @@ NF_CREATE: (netcdf-f77)NF_CREATE.
 
    It is also possible to change the default creation format, to convert
 a large body of code without changing every create call. C programmers
-see *Note nc_set_default_format: (netcdf-c)nc_set_default_format.
-Fortran programs see *Note NF_SET_DEFAULT_FORMAT:
+see *note nc_set_default_format: (netcdf-c)nc_set_default_format.
+Fortran programs see *note NF_SET_DEFAULT_FORMAT:
 (netcdf-f77)NF_SET_DEFAULT_FORMAT.
 
 1.4.1 NetCDF Classic Format
@@ -506,7 +507,7 @@ designing and implementing netCDF, it is still possible to use the
 netCDF interface to access data in inefficient ways: for example, by
 requesting a slice of data that requires a single value from each
 record. Advice on how to use the interface efficiently is provided in
-*Note File Structure and Performance::.
+*note File Structure and Performance::.
 
 
 File: netcdf.info,  Node: Archival,  Next: Conventions,  Prev: Performance,  Up: Introduction
@@ -539,7 +540,7 @@ where sensible.
 is important to use all the relevant standard attributes using the
 relevant conventions. For a description of reserved attributes (used by
 the netCDF library) and attribute conventions for generic application
-software, see *Note Attribute Conventions::.
+software, see *note Attribute Conventions::.
 
    A number of groups have defined their own additional conventions and
 styles for netCDF data. Descriptions of these conventions, as well as
@@ -1133,7 +1134,7 @@ Variable Types: (netcdf-f77)Variable Types.
 used. They are given the simpler names byte, char, short, int, float,
 and double. real may be used as a synonym for float in the CDL
 notation. long is a deprecated synonym for int. For the exact meaning
-of each of the types see *Note netCDF external data types::.
+of each of the types see *note netCDF external data types::.
 
    CDL variable declarations appear after the variable keyword in a CDL
 unit. They have the form
@@ -1271,13 +1272,13 @@ standard attribute conventions and it is strongly recommended that
 these be followed unless there are good reasons for not doing so. For
 information about units, long_name, valid_min, valid_max, valid_range,
 scale_factor, add_offset, _FillValue, and other conventional
-attributes, see *Note Attribute Conventions::.
+attributes, see *note Attribute Conventions::.
 
    Attributes may be added to a netCDF dataset long after it is first
 defined, so you don't have to anticipate all potentially useful
 attributes. However adding new attributes to an existing classic or
 64-bit offset format dataset can incur the same expense as copying the
-dataset. For a more extensive discussion see *Note File Structure and
+dataset. For a more extensive discussion see *note File Structure and
 Performance::.
 
 
@@ -1402,7 +1403,7 @@ or unsigned (0 to 255). However, when reading byte data to be converted
 into other numeric types, it is interpreted as signed.
 
    For the correspondence between netCDF external data types and the
-data types of a language see *Note Variables::.
+data types of a language see *note Variables::.
 
 
 File: netcdf.info,  Node: Data Access,  Next: Type Conversion,  Prev: netCDF external data types,  Up: Data
@@ -1854,7 +1855,7 @@ file format is hidden below the interfaces, some understanding of the
 current implementation and associated file structure may help to make
 clear why some netCDF operations are more expensive than others.
 
-   For a detailed description of the netCDF format, see *Note File
+   For a detailed description of the netCDF format, see *note File
 Structure and Performance::. Knowledge of the format is not needed for
 reading and writing netCDF data or understanding most efficiency
 issues. Programs that use only the documented interfaces and that make
@@ -1960,7 +1961,7 @@ sometimes be used to enhance data access performance, since the best
 data access is currently achieved by reading or writing the data in
 sequential order.
 
-   For more detail see *Note File Format::.
+   For more detail see *note File Format::.
 
 
 File: netcdf.info,  Node: The Extended XDR Layer,  Next: Large File Support,  Prev: Parts of a NetCDF Classic File,  Up: File Structure and Performance
@@ -2946,7 +2947,7 @@ with character data.
      binary forms. This library is used in some netCDF applications.
      Using the recommended units syntax permits data represented in
      conformable units to be automatically converted to common units
-     for arithmetic operations. For more information see *Note Units::.
+     for arithmetic operations. For more information see *note Units::.
 
 `long_name'
      A long descriptive name. This could be used for labeling plots, for
@@ -3031,9 +3032,9 @@ with character data.
      applications. It is legal (but not recommended) for the fill value
      to be within the valid range.
 
-     For more information for C programmers see *Note Fill Values:
+     For more information for C programmers see *note Fill Values:
      (netcdf-c)Fill Values. For more information for Fortran
-     programmers see *Note Fill Values: (netcdf-f77)Fill Values.
+     programmers see *note Fill Values: (netcdf-f77)Fill Values.
 
 `missing_value'
      This attribute is not treated in any special way by the library or
@@ -4004,59 +4005,59 @@ Index
 
 
 Tag Table:
-Node: Top1333
-Node: Foreword4381
-Node: Summary9462
-Node: Introduction11948
-Node: Interface12662
-Node: Not DBMS15219
-Node: Format16801
-Node: Which Format18581
-Node: Performance21257
-Node: Archival22639
-Node: Conventions23315
-Node: Background24658
-Node: Whats New34674
-Node: Limitations34973
-Node: Future39320
-Node: References40365
-Node: Components of a NetCDF Dataset43085
-Node: The NetCDF Data Model43569
-Node: Dimensions48933
-Node: Variables51630
-Node: Attributes55803
-Node: Differences between Attributes and Variables59535
-Node: Data61218
-Node: netCDF external data types61824
-Node: Data Access65474
-Node: A C Example of Array Section Access69459
-Node: A Fortran Example of Array Section Access74800
-Node: Type Conversion79695
-Node: Data Structures83168
-Node: File Structure and Performance85345
-Node: Parts of a NetCDF Classic File87022
-Node: The Extended XDR Layer91774
-Node: Large File Support92903
-Node: NetCDF 64 bit Offset Format Limitations95526
-Node: NetCDF Classic Format Limitations97200
-Node: The NetCDF-3 IO Layer99789
-Node: UNICOS Optimization102077
-Node: NetCDF Utilities104571
-Node: CDL Syntax106260
-Node: CDL Data Types111195
-Node: CDL Notation for Data Constants113941
-Node: ncgen117450
-Node: ncdump121186
-Node: Units129362
-Node: Attribute Conventions133699
-Node: File Format143406
-Node: NetCDF-4 Format148103
-Node: NetCDF-4 Classic Model Format149805
-Node: NetCDF Classic Format151232
-Node: Classic Format Spec152855
-Node: Computing Offsets165582
-Node: Examples168259
-Node: 64-bit Offset Format171826
-Node: Combined Index172592
+Node: Top1413
+Node: Foreword4464
+Node: Summary9545
+Node: Introduction12031
+Node: Interface12745
+Node: Not DBMS15302
+Node: Format16884
+Node: Which Format18664
+Node: Performance21340
+Node: Archival22722
+Node: Conventions23398
+Node: Background24741
+Node: Whats New34757
+Node: Limitations35056
+Node: Future39403
+Node: References40448
+Node: Components of a NetCDF Dataset43168
+Node: The NetCDF Data Model43652
+Node: Dimensions49016
+Node: Variables51713
+Node: Attributes55886
+Node: Differences between Attributes and Variables59618
+Node: Data61301
+Node: netCDF external data types61907
+Node: Data Access65557
+Node: A C Example of Array Section Access69542
+Node: A Fortran Example of Array Section Access74883
+Node: Type Conversion79778
+Node: Data Structures83251
+Node: File Structure and Performance85428
+Node: Parts of a NetCDF Classic File87105
+Node: The Extended XDR Layer91857
+Node: Large File Support92986
+Node: NetCDF 64 bit Offset Format Limitations95609
+Node: NetCDF Classic Format Limitations97283
+Node: The NetCDF-3 IO Layer99872
+Node: UNICOS Optimization102160
+Node: NetCDF Utilities104654
+Node: CDL Syntax106343
+Node: CDL Data Types111278
+Node: CDL Notation for Data Constants114024
+Node: ncgen117533
+Node: ncdump121269
+Node: Units129445
+Node: Attribute Conventions133782
+Node: File Format143489
+Node: NetCDF-4 Format148186
+Node: NetCDF-4 Classic Model Format149888
+Node: NetCDF Classic Format151315
+Node: Classic Format Spec152938
+Node: Computing Offsets165665
+Node: Examples168342
+Node: 64-bit Offset Format171909
+Node: Combined Index172675
 
 End Tag Table

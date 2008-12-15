@@ -1,8 +1,8 @@
-This is netcdf-c.info, produced by makeinfo version 4.7 from
-netcdf-c.texi.
+This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-c.info, produced
+by makeinfo version 4.11 from
+/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
 
-   Copyright (C) 2005-2006 University Corporation for Atmospheric
-Research
+Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
 
 
@@ -37,10 +37,10 @@ The NetCDF C Interface Guide
 ****************************
 
    This document describes the C interface to the netCDF library; it
-applies to netCDF version 4.0 and was last updated on 29 January 2008.
+applies to netCDF version 4.0 and was last updated on 28 August 2008.
 
    For a complete description of the netCDF format and utilities see
-*Note The NetCDF Users Guide: (netcdf)Top.
+*note The NetCDF Users Guide: (netcdf)Top.
 
 * Menu:
 
@@ -549,7 +549,7 @@ later chapters contains:
    The examples follow a simple convention for error handling, always
 checking the error status returned from each netCDF function call and
 calling a handle_error function in case an error was detected. For an
-example of such a function, see *Note nc_strerror::.
+example of such a function, see *note nc_strerror::.
 
 
 File: netcdf-c.info,  Node: nc_strerror,  Next: nc_inq_libvers,  Prev: Interface Descriptions,  Up: Datasets
@@ -1174,7 +1174,7 @@ nc_set_fill::. The netCDF dataset is then placed in data mode, so
 variable data can be read or written.
 
    This call may involve copying data under some circumstances. For a
-more extensive discussion see *Note File Structure and Performance:
+more extensive discussion see *note File Structure and Performance:
 (netcdf)File Structure and Performance.
 
 Usage
@@ -1232,7 +1232,7 @@ Non-record variables may be initialized to a "fill value" as well.
 variable data can be read or written.
 
    This call may involve copying data under some circumstances. For a
-more extensive discussion see *Note File Structure and Performance:
+more extensive discussion see *note File Structure and Performance:
 (netcdf)File Structure and Performance.
 
    Caution: this function exposes internals of the netcdf version 1 file
@@ -1642,8 +1642,8 @@ NC_FILL is that data is pre-filled with fill values, that is fill
 values are written when you create non-record variables or when you
 write a value beyond data that has not yet been written. This makes it
 possible to detect attempts to read data before it was written. For
-more information on the use of fill values see *Note Fill Values::. For
-information about how to define your own fill values see *Note
+more information on the use of fill values see *note Fill Values::. For
+information about how to define your own fill values see *note
 Attribute Conventions: (netcdf)Attribute Conventions.
 
    The behavior corresponding to NC_NOFILL overrides the default
@@ -4233,7 +4233,7 @@ double attributes are adequate for most purposes.
      with underscore are reserved for system use.  Attribute name
      conventions are assumed by some netCDF generic applications, e.g.,
      units as the name for a string attribute that gives the units for
-     a netCDF variable. For examples of attribute conventions see *Note
+     a netCDF variable. For examples of attribute conventions see *note
      Attribute Conventions: (netcdf)Attribute Conventions.
 
 `xtype'
@@ -5790,67 +5790,67 @@ Index
 
 
 Tag Table:
-Node: Top1347
-Node: Use of the NetCDF Library5201
-Node: Creating6951
-Node: Reading Known9936
-Node: Reading Unknown11943
-Node: Adding15207
-Node: Errors18299
-Node: Compiling19515
-Node: Datasets21165
-Node: Interface Descriptions24089
-Node: nc_strerror25027
-Node: nc_inq_libvers26461
-Node: nc_create27141
-Node: nc__create35032
-Node: nc_open39744
-Node: nc__open41692
-Node: nc_redef44738
-Node: nc_enddef46043
-Node: nc__enddef47852
-Node: nc_close52143
-Node: nc_inq Family53693
-Node: nc_sync56566
-Node: nc_abort60812
-Node: nc_set_fill62653
-Node: nc_set_default_format67109
-Node: Dimensions70271
-Node: Dimensions Introduction70673
-Node: nc_def_dim72902
-Node: nc_inq_dimid75395
-Node: nc_inq_dim Family77081
-Node: nc_rename_dim79993
-Node: Variables81925
-Node: Variable Introduction83157
-Node: Variable Types85404
-Node: nc_def_var86774
-Node: nc_inq_varid90771
-Node: nc_inq_var92094
-Node: nc_put_var1_ type96183
-Node: nc_put_var_ type100226
-Node: nc_put_vara_ type104360
-Node: nc_put_vars_ type110234
-Node: nc_put_varm_ type116377
-Node: nc_get_var1_ type126435
-Node: nc_get_var_ type130438
-Node: nc_get_vara_ type133811
-Node: nc_get_vars_ type139091
-Node: nc_get_varm_ type144901
-Node: Strings154726
-Node: Fill Values159464
-Node: nc_rename_var161771
-Node: Attributes163631
-Node: Attributes Introduction164144
-Node: nc_put_att_ type166103
-Node: nc_inq_att Family171479
-Node: nc_get_att_ type176562
-Node: nc_copy_att181033
-Node: nc_rename_att184406
-Node: nc_del_att186563
-Node: Summary of C Interface188405
-Node: NetCDF 2 C Transition Guide204952
-Node: Error Codes221537
-Node: Combined Index224202
+Node: Top1425
+Node: Use of the NetCDF Library5278
+Node: Creating7028
+Node: Reading Known10013
+Node: Reading Unknown12020
+Node: Adding15284
+Node: Errors18376
+Node: Compiling19592
+Node: Datasets21242
+Node: Interface Descriptions24166
+Node: nc_strerror25104
+Node: nc_inq_libvers26538
+Node: nc_create27218
+Node: nc__create35109
+Node: nc_open39821
+Node: nc__open41769
+Node: nc_redef44815
+Node: nc_enddef46120
+Node: nc__enddef47929
+Node: nc_close52220
+Node: nc_inq Family53770
+Node: nc_sync56643
+Node: nc_abort60889
+Node: nc_set_fill62730
+Node: nc_set_default_format67186
+Node: Dimensions70348
+Node: Dimensions Introduction70750
+Node: nc_def_dim72979
+Node: nc_inq_dimid75472
+Node: nc_inq_dim Family77158
+Node: nc_rename_dim80070
+Node: Variables82002
+Node: Variable Introduction83234
+Node: Variable Types85481
+Node: nc_def_var86851
+Node: nc_inq_varid90848
+Node: nc_inq_var92171
+Node: nc_put_var1_ type96260
+Node: nc_put_var_ type100303
+Node: nc_put_vara_ type104437
+Node: nc_put_vars_ type110311
+Node: nc_put_varm_ type116454
+Node: nc_get_var1_ type126512
+Node: nc_get_var_ type130515
+Node: nc_get_vara_ type133888
+Node: nc_get_vars_ type139168
+Node: nc_get_varm_ type144978
+Node: Strings154803
+Node: Fill Values159541
+Node: nc_rename_var161848
+Node: Attributes163708
+Node: Attributes Introduction164221
+Node: nc_put_att_ type166180
+Node: nc_inq_att Family171556
+Node: nc_get_att_ type176639
+Node: nc_copy_att181110
+Node: nc_rename_att184483
+Node: nc_del_att186640
+Node: Summary of C Interface188482
+Node: NetCDF 2 C Transition Guide205029
+Node: Error Codes221614
+Node: Combined Index224279
 
 End Tag Table

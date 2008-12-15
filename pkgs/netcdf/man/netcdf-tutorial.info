@@ -1,8 +1,8 @@
-This is netcdf-tutorial.info, produced by makeinfo version 4.7 from
-netcdf-tutorial.texi.
+This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-tutorial.info,
+produced by makeinfo version 4.11 from
+/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
 
-   Copyright (C) 2005-2006 University Corporation for Atmospheric
-Research
+Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
 
 
@@ -51,7 +51,7 @@ quick reference to the important functions in each API, with
 hyper-links to the full documentation of each function.
 
    This document applies to netCDF version 4.0; it was last updated on
-8 April 2008.
+28 August 2008.
 
 * Menu:
 
@@ -243,25 +243,25 @@ The netCDF data model consists of "variables", "dimensions", and
 `Variables'
      N-dimensional arrays of data. Variables in netCDF files can be one
      of six types (char, byte, short, int, float, double). For more
-     information see *Note Variables: (netcdf)Variables.
+     information see *note Variables: (netcdf)Variables.
 
 `Dimensions'
      describe the axes of the data arrays. A dimension has a name and a
      length. An unlimited dimension has a length that can be expanded
      at any time, as more data are written to it. NetCDF files can
      contain at most one unlimited dimension. For more information see
-     *Note Dimensions: (netcdf)Dimensions.
+     *note Dimensions: (netcdf)Dimensions.
 
 `Attributes'
      annotate variables or files with small notes or supplementary
      metadata. Attributes are always scalar values or 1D arrays, which
      can be associated with either a variable or the file as a whole.
      Although there is no enforced limit, the user is expected to keep
-     attributes small. For more information see *Note Attributes:
+     attributes small. For more information see *note Attributes:
      (netcdf)Attributes.
 
 
-   For more information on the netCDF data model see *Note The NetCDF
+   For more information on the netCDF data model see *note The NetCDF
 Data Model: (netcdf)The NetCDF Data Model.
 
 1.1.1 Meteorological Example
@@ -314,8 +314,8 @@ Each netCDF function in the C, Fortran 77, and Fortran 90 APIs returns
 values of every netCDF API call. The return code can be looked up in
 netcdf.h (for C programmers) or netcdf.inc (for Fortran programmers),
 or you can use the strerror function to print out an error message.
-(See *Note nc_strerror: (netcdf-c)nc_strerror./*Note NF_STRERROR:
-(netcdf-f77)NF_STRERROR./*Note NF90_STRERROR:
+(See *note nc_strerror: (netcdf-c)nc_strerror./*note NF_STRERROR:
+(netcdf-f77)NF_STRERROR./*note NF90_STRERROR:
 (netcdf-f90)NF90_STRERROR.).
 
    In general, if a function returns an error code, you can assume it
@@ -334,10 +334,10 @@ type conversion *note Type Conversion: (netcdf-c)Type Conversion.).
 
    Error handling in C++ is different. For some objects, the is_valid()
 method should be called. Other error handling is controlled by the
-NcError class. For more information see *Note Class NcError:
+NcError class. For more information see *note Class NcError:
 (netcdf-cxx)Class NcError.
 
-   For a complete list of netCDF error codes see *Note Error Codes:
+   For a complete list of netCDF error codes see *note Error Codes:
 (netcdf-c)Error Codes.
 
 
@@ -371,7 +371,7 @@ array, in Fortran, the last.
 write and read data one time step at a time along an unlimited
 dimension. *Note pres_temp_4D::.
 
-   For more detailed information about dimensions see *Note Dimensions:
+   For more detailed information about dimensions see *note Dimensions:
 (netcdf)Dimensions.
 
 
@@ -399,13 +399,13 @@ community, and that contain enough details to be useful as a long-term
 archive.
 
    For more information on _FillValue and other attribute conventions,
-see *Note Attribute Conventions: (netcdf)Attribute Conventions.
+see *note Attribute Conventions: (netcdf)Attribute Conventions.
 
    Climate and meteorological users are urged to follow the Climate and
 Forecast (CF) metadata conventions when producing data files. For more
 information about the CF conventions, see `http://cf-pcmdi.llnl.gov'.
 
-   For information about creating attributes, see *Note Creation::.
+   For information about creating attributes, see *note Creation::.
 
 
 File: netcdf-tutorial.info,  Node: Tools,  Next: APIs,  Prev: Fill Values,  Up: Intro
@@ -427,7 +427,7 @@ file, to see what it contains. At the beginning of each example in this
 tutorial, an ncdump of the resulting data file is shown. *Note
 simple_xy::.
 
-   For more information about ncdump and ncgen see *Note NetCDF
+   For more information about ncdump and ncgen see *note NetCDF
 Utilities: (netcdf)NetCDF Utilities.
 
    The following general-purpose tools have been found to be useful in
@@ -513,7 +513,7 @@ File: netcdf-tutorial.info,  Node: Documentation,  Next: Versions,  Prev: APIs, 
 
 This tutorial is brief. A much more complete description of netCDF can
 be found in The NetCDF Users Guide. It fully describes the netCDF model
-and format. For more information see *Note The NetCDF Users Guide:
+and format. For more information see *note The NetCDF Users Guide:
 (netcdf)Top.
 
    The netCDF distribution, in various forms, can be obtained from the
@@ -528,16 +528,16 @@ platforms. *Note The NetCDF Installation and Porting Guide:
 C, C++, Fortran 77, Fortran 90, and Java APIs:
 
 `C'
-     *Note The NetCDF C Interface Guide: (netcdf-c)Top.
+     *note The NetCDF C Interface Guide: (netcdf-c)Top.
 
 `C++'
-     *Note The NetCDF C++ Interface Guide: (netcdf-cxx)Top.
+     *note The NetCDF C++ Interface Guide: (netcdf-cxx)Top.
 
 `Fortran 77'
-     *Note The NetCDF Fortran 77 Interface Guide: (netcdf-f77)Top.
+     *note The NetCDF Fortran 77 Interface Guide: (netcdf-f77)Top.
 
 `Fortran 90'
-     *Note The NetCDF Fortran 90 Interface Guide: (netcdf-f90)Top.
+     *note The NetCDF Fortran 90 Interface Guide: (netcdf-f90)Top.
 
 `Java'
      `http://www.unidata.ucar.edu/software/netcdf-java/v2.1/NetcdfJavaUserManual.htm'.
@@ -581,7 +581,7 @@ wants to read the data must use at least version 3.6.0.
 
    The default format is classic format. To get 64-bit offset format,
 set a flag when creating the file. For more information about the
-format, see *Note Format: (netcdf)Format.
+format, see *note Format: (netcdf)Format.
 
    Classic format has some strict limitations for files larger than two
 gigabytes. (*note NetCDF Classic Format Limitations: (netcdf)NetCDF
@@ -686,7 +686,7 @@ By default, ncdump shows the CDL description of the file. This CDL
 description can be fed into ncgen to create the data file.
 
    The CDL for this example is shown below. For more information on
-ncdump and ncgen see *Note NetCDF Utilities: (netcdf)NetCDF Utilities.
+ncdump and ncgen see *note NetCDF Utilities: (netcdf)NetCDF Utilities.
 
      netcdf simple_xy {
      dimensions:
@@ -1521,7 +1521,7 @@ the latitudes and longitudes that describe the data grid.
    The CDL version of the data file, generated by ncdump, is shown
 below.
 
-   For more information on ncdump and ncgen see *Note NetCDF Utilities:
+   For more information on ncdump and ncgen see *note NetCDF Utilities:
 (netcdf)NetCDF Utilities.
 
      netcdf sfc_pres_temp {
@@ -3015,7 +3015,7 @@ unlimited dimension.
 
    The sample data file created by pres_temp_4D_wr can be examined with
 the utility ncdump. The output is shown below. For more information on
-ncdump see *Note NetCDF Utilities: (netcdf)NetCDF Utilities.
+ncdump see *note NetCDF Utilities: (netcdf)NetCDF Utilities.
 
      netcdf pres_temp_4D {
      dimensions:
@@ -4693,19 +4693,19 @@ file are returned to the operating system.
    For a typical sequence of calls to the C versions of these functions,
 see *Note Creating a NetCDF Dataset: (netcdf-c)Creating.
 
-*Note nc_create:                     create a new netCDF file
+*note nc_create:                     create a new netCDF file
 (netcdf-c)nc_create.                 
-*Note nc_def_dim:                    define a dimension
+*note nc_def_dim:                    define a dimension
 (netcdf-c)nc_def_dim.                
-*Note nc_def_var:                    define a variable
+*note nc_def_var:                    define a variable
 (netcdf-c)nc_def_var.                
-*Note nc_put_att_ type:              write attributes
+*note nc_put_att_ type:              write attributes
 (netcdf-c)nc_put_att_ type.          
-*Note nc_enddef:                     leave define mode
+*note nc_enddef:                     leave define mode
 (netcdf-c)nc_enddef.                 
-*Note nc_put_vara_ type:             write arrays of data
+*note nc_put_vara_ type:             write arrays of data
 (netcdf-c)nc_put_vara_ type.         
-*Note nc_close: (netcdf-c)nc_close.  close a file
+*note nc_close: (netcdf-c)nc_close.  close a file
 
 
 File: netcdf-tutorial.info,  Node: Creation in F77,  Next: Creation in F90,  Prev: Creation in C,  Up: Creation
@@ -4723,7 +4723,7 @@ and ready to start writing the data.
 all buffers are flushed, and any resources associated with the open
 file are returned to the operating system.
 
-   For a typical sequence of calls see *Note Creating a NetCDF Dataset:
+   For a typical sequence of calls see *note Creating a NetCDF Dataset:
 (netcdf-f77)Creating.
 
    Fortran users take note: the netCDF Fortran 77 API consists of
@@ -4734,19 +4734,19 @@ ensure that the wrappers work.
    The name of each Fortran function shows the outline of the C function
 it wraps (for example, NF_CREATE is a wrapper around nc_create).
 
-*Note NF_CREATE:                     create a new netCDF file
+*note NF_CREATE:                     create a new netCDF file
 (netcdf-f77)NF_CREATE.               
-*Note NF_DEF_DIM:                    define a dimension
+*note NF_DEF_DIM:                    define a dimension
 (netcdf-f77)NF_DEF_DIM.              
-*Note NF_DEF_VAR:                    define a variable
+*note NF_DEF_VAR:                    define a variable
 (netcdf-f77)NF_DEF_VAR.              
-*Note NF_PUT_ATT_ type:              write an attribute
+*note NF_PUT_ATT_ type:              write an attribute
 (netcdf-f77)NF_PUT_ATT_ type.        
-*Note NF_ENDDEF:                     end define mode
+*note NF_ENDDEF:                     end define mode
 (netcdf-f77)NF_ENDDEF.               
-*Note NF_PUT_VARA_ type:             write arrays of data
+*note NF_PUT_VARA_ type:             write arrays of data
 (netcdf-f77)NF_PUT_VARA_ type.       
-*Note NF_CLOSE:                      close the netCDF file
+*note NF_CLOSE:                      close the netCDF file
 (netcdf-f77)NF_CLOSE.                
 
 
@@ -4765,7 +4765,7 @@ and ready to start writing the data.
 that all buffers are flushed, and any resources associated with the
 open file are returned to the operating system.
 
-   For a typical sequence of calls see *Note Creating a NetCDF Dataset:
+   For a typical sequence of calls see *note Creating a NetCDF Dataset:
 (netcdf-f90)Creating.
 
    The netCDF Fortran 90 API calls the Fortran 77 API, which in turn
@@ -4776,19 +4776,19 @@ function it wraps (for example, NF90_CREATE is a wrapper around
 NF_CREATE). The F77 functions are, in turn, wrappers around the C
 functions.
 
-*Note NF90_CREATE:                   create a netCDF file
+*note NF90_CREATE:                   create a netCDF file
 (netcdf-f90)NF90_CREATE.             
-*Note NF90_DEF_DIM:                  define a dimension
+*note NF90_DEF_DIM:                  define a dimension
 (netcdf-f90)NF90_DEF_DIM.            
-*Note NF90_DEF_VAR:                  define a variable
+*note NF90_DEF_VAR:                  define a variable
 (netcdf-f90)NF90_DEF_VAR.            
-*Note NF90_PUT_ATT_ type:            write an attribute
+*note NF90_PUT_ATT_ type:            write an attribute
 (netcdf-f90)NF90_PUT_ATT_ type.      
-*Note NF90_ENDDEF:                   end define mode
+*note NF90_ENDDEF:                   end define mode
 (netcdf-f90)NF90_ENDDEF.             
-*Note NF90_PUT_VARA_ type:           write arrays of data
+*note NF90_PUT_VARA_ type:           write arrays of data
 (netcdf-f90)NF90_PUT_VARA_ type.     
-*Note NF90_CLOSE:                    close the netCDF file
+*note NF90_CLOSE:                    close the netCDF file
 (netcdf-f90)NF90_CLOSE.              
 
 
@@ -4803,18 +4803,18 @@ add_att method is available for both NcFile and NcVar.
 
    Use the NcError class to specify error handling behavior.
 
-   For an example creating a simple file see *Note simple_xy_wr.cpp::.
-For a more complex example see *Note pres_temp_4D_wr.cpp::.
+   For an example creating a simple file see *note simple_xy_wr.cpp::.
+For a more complex example see *note pres_temp_4D_wr.cpp::.
 
-*Note Class NcFile:                  a C++ class to manipulate netCDF
+*note Class NcFile:                  a C++ class to manipulate netCDF
 (netcdf-cxx)Class NcFile.            files
-*Note Class NcDim:                   a C++ class to manipulate netCDF
+*note Class NcDim:                   a C++ class to manipulate netCDF
 (netcdf-cxx)Class NcDim.             dimensions
-*Note Class NcVar:                   a C++ class to manipulate netCDF
+*note Class NcVar:                   a C++ class to manipulate netCDF
 (netcdf-cxx)Class NcVar.             variables
-*Note Class NcAtt:                   a C++ class to manipulate netCDF
+*note Class NcAtt:                   a C++ class to manipulate netCDF
 (netcdf-cxx)Class NcAtt.             attributes
-*Note Class NcError:                 a C++ class to control netCDF error
+*note Class NcError:                 a C++ class to control netCDF error
 (netcdf-cxx)Class NcError.           handling
 
 
@@ -4837,7 +4837,7 @@ To read a netCDF file of known structure, you need to:
 
 
    Use ncdump to learn the structure of a file (use the -h option). For
-more information about ncdump see *Note NetCDF Utilities:
+more information about ncdump see *note NetCDF Utilities:
 (netcdf)NetCDF Utilities.
 
 3.2.1 Numbering of NetCDF IDs
@@ -4885,21 +4885,21 @@ File: netcdf-tutorial.info,  Node: Reading in C,  Next: Reading in F77,  Prev: R
 3.2.2 Reading a Known NetCDF File in C
 --------------------------------------
 
-For a typical sequence of calls to these C functions see *Note Reading
+For a typical sequence of calls to these C functions see *note Reading
 a NetCDF Dataset with Known Names: (netcdf-c)Reading Known.
 
-*Note        open a netCDF file      
+*note        open a netCDF file      
 nc_open:                             
 (netcdf-c)nc_open.                        
-*Note        read an attribute       
+*note        read an attribute       
 nc_get_att:                          
 (netcdf-c)nc_get_att.                        
-*Note        read arrays of data     
+*note        read arrays of data     
 nc_get_vara_                         
 type:                                
 (netcdf-c)nc_get_vara_                        
 type.                                
-*Note        close the file          
+*note        close the file          
 nc_close:                            
 (netcdf-c)nc_close.                        
 
@@ -4909,15 +4909,15 @@ File: netcdf-tutorial.info,  Node: Reading in F77,  Next: Reading in F90,  Prev:
 3.2.3 Reading a Known NetCDF File in Fortran 77
 -----------------------------------------------
 
-For a typical sequence of calls to these functions see *Note Reading a
+For a typical sequence of calls to these functions see *note Reading a
 NetCDF Dataset with Known Names: (netcdf-f77)Reading Known.
 
-*Note NF_OPEN: (netcdf-f77)NF_OPEN.  open a netCDF file
-*Note NF_GET_ATT:                    read an attribute
+*note NF_OPEN: (netcdf-f77)NF_OPEN.  open a netCDF file
+*note NF_GET_ATT:                    read an attribute
 (netcdf-f77)NF_GET_ATT.              
-*Note NF_GET_VARA_ type:             read arrays of data
+*note NF_GET_VARA_ type:             read arrays of data
 (netcdf-f77)NF_GET_VARA_ type.       
-*Note NF_CLOSE:                      close the file
+*note NF_CLOSE:                      close the file
 (netcdf-f77)NF_CLOSE.                
 
 
@@ -4926,16 +4926,16 @@ File: netcdf-tutorial.info,  Node: Reading in F90,  Next: Reading in C++,  Prev:
 3.2.4 Reading a Known NetCDF File in Fortran 90
 -----------------------------------------------
 
-For a typical sequence of calls to these functions see *Note Reading a
+For a typical sequence of calls to these functions see *note Reading a
 NetCDF Dataset with Known Names: (netcdf-f90)Reading Known.
 
-*Note NF90_OPEN:                     open a netCDF file
+*note NF90_OPEN:                     open a netCDF file
 (netcdf-f90)NF90_OPEN.               
-*Note NF90_GET_ATT:                  read an attribute
+*note NF90_GET_ATT:                  read an attribute
 (netcdf-f90)NF90_GET_ATT.            
-*Note NF90_GET_VARA:                 read arrays of data
+*note NF90_GET_VARA:                 read arrays of data
 (netcdf-f90)NF90_GET_VARA.           
-*Note NF90_CLOSE:                    close the file
+*note NF90_CLOSE:                    close the file
 (netcdf-f90)NF90_CLOSE.              
 
 
@@ -4944,19 +4944,19 @@ File: netcdf-tutorial.info,  Node: Reading in C++,  Prev: Reading in F90,  Up: R
 3.2.5 Reading a Known NetCDF File in C++
 ----------------------------------------
 
-*Note Class  a C++ class to          
+*note Class  a C++ class to          
 NcFile:      manipulate netCDF files 
 (netcdf-cxx)Class                        
 NcFile.                              
-*Note Class  a C++ class to          
+*note Class  a C++ class to          
 NcDim:       manipulate netCDF       
 (netcdf-cxx)Classdimensions              
 NcDim.                               
-*Note Class  a C++ class to          
+*note Class  a C++ class to          
 NcVar:       manipulate netCDF       
 (netcdf-cxx)Classvariables               
 NcVar.                               
-*Note Class  a C++ class to          
+*note Class  a C++ class to          
 NcAtt:       manipulate netCDF       
 (netcdf-cxx)Classattributes              
 NcAtt.                               
@@ -5018,7 +5018,7 @@ is an array of integers.)
 To find IDs from the names, use functions nc_inq_dimid, nc_inq_attnum,
 and nc_inq_varid.
 
-   For a typical sequence of calls to these functions see *Note Reading
+   For a typical sequence of calls to these functions see *note Reading
 a netCDF Dataset with Unknown Names: (netcdf-c)Reading Unknown.
 
 3.3.1.1 NULL Parameters in Inquiry Functions
@@ -5040,7 +5040,7 @@ which only finds the number of dimensions, exactly as if you had called
 nc_inq, with NULLs in all parameters except ndimsp. (In fact, this is
 just what the nc_inq_ndims functions does).
 
-*Note        Find number                     
+*note        Find number                     
 nc_inq:      of                              
 (netcdf-c)nc_inq.dimensions,                     
              variables,                      
@@ -5049,16 +5049,16 @@ nc_inq:      of
              and the                         
              unlimited                       
              dimid.                          
-*Note        Find                            
+*note        Find                            
 nc_inq_att:  attribute                       
 (netcdf-c)nc_inq_att.name, type,                     
              and length.                     
-*Note        Find                            
+*note        Find                            
 nc_inq_dim   dimension                       
 Family:      name and                        
 (netcdf-c)nc_inq_dimlength.                         
 Family.                                      
-*Note        Find                            
+*note        Find                            
 nc_inq_var:  variable                        
 (netcdf-c)nc_inq_var.name, type,                     
              num                             
@@ -5066,20 +5066,20 @@ nc_inq_var:  variable
              dim IDs,                        
              and num                         
              attributes.                     
-*Note        Find                            
+*note        Find                            
 nc_inq_dimid:dimension                       
 (netcdf-c)nc_inq_dimid.ID from its                     
              name.                           
-*Note        Find                            
+*note        Find                            
 nc_inq_varid:variable ID                     
 (netcdf-c)nc_inq_varid.from its                        
              name.                           
-*Note        Find file                       
+*note        Find file                       
 nc_inq_format:format:                         
 (netcdf-c)nc_inq_format.classic or                      
              64-bit                          
              offset                          
-*Note        Find the                        
+*note        Find the                        
 nc_inq_libvers:netCDF                          
 (netcdf-c)nc_inq_libvers.version.                        
              (Currently                      
@@ -5095,37 +5095,37 @@ First use NF_INQ, which will tell you how many variables and global
 attributes there are in the file. Then start with varid 1, and proceed
 to varid nvars, calling NF_INQ_VAR.
 
-   For a typical sequence of calls to these functions see *Note Reading
+   For a typical sequence of calls to these functions see *note Reading
 a netCDF Dataset with Unknown Names: (netcdf-f77)Reading Unknown.
 
-*Note NF_INQ:       Find number of      
+*note NF_INQ:       Find number of      
 (netcdf-f77)NF_INQ. dimensions,         
                     variables, and      
                     global attributes,  
                     and the unlimited   
                     dimid.              
-*Note NF_INQ_DIM:   Find dimension      
+*note NF_INQ_DIM:   Find dimension      
 (netcdf-f77)NF_INQ_DIM.name and length.    
-*Note               Find variable ID    
+*note               Find variable ID    
 NF_INQ_VARID:       from its name.      
 (netcdf-f77)NF_INQ_VARID.                    
-*Note NF_INQ_VAR:   Find variable       
+*note NF_INQ_VAR:   Find variable       
 (netcdf-f77)NF_INQ_VAR.name, type, num     
                     dimensions, dim     
                     IDs, and num        
                     attributes.         
-*Note               Find dimension ID   
+*note               Find dimension ID   
 NF_INQ_DIMID:       from its name.      
 (netcdf-f77)NF_INQ_DIMID.                    
-*Note NF_INQ_DIM:   Find dimension      
+*note NF_INQ_DIM:   Find dimension      
 (netcdf-f77)NF_INQ_DIM.name and length.    
-*Note NF_INQ_ATT:   Find attribute      
+*note NF_INQ_ATT:   Find attribute      
 (netcdf-f77)NF_INQ_ATT.name, type, and     
                     length.             
-*Note               Find file format:   
+*note               Find file format:   
 NF_INQ_FORMAT:      classic or 64-bit   
 (netcdf-f77)NF_INQ_FORMAT.offset              
-*Note               Find the netCDF     
+*note               Find the netCDF     
 NF_INQ_LIBVERS:     version.            
 (netcdf-f77)NF_INQ_LIBVERS.(Currently 4.0).    
 
@@ -5143,36 +5143,36 @@ to varid nvars, calling NF90_INQ_VAR.
 Reading a netCDF Dataset with Unknown Names: (netcdf-f90)Reading
 Unknown.
 
-*Note NF90_INQ:     Find number of      
+*note NF90_INQ:     Find number of      
 (netcdf-f90)NF90_INQ.dimensions,         
                     variables, and      
                     global attributes,  
                     and the unlimited   
                     dimid.              
-*Note               Find dimension      
+*note               Find dimension      
 NF90_INQ_DIM:       name and length.    
 (netcdf-f90)NF90_INQ_DIM.                    
-*Note               Find variable ID    
+*note               Find variable ID    
 NF90_INQ_VARID:     from its name.      
 (netcdf-f90)NF90_INQ_VARID.                    
-*Note               Find variable       
+*note               Find variable       
 NF90_INQ_VAR:       name, type, num     
 (netcdf-f90)NF90_INQ_VAR.dimensions, dim     
                     IDs, and num        
                     attributes.         
-*Note               Find dimension ID   
+*note               Find dimension ID   
 NF90_INQ_DIMID:     from its name.      
 (netcdf-f90)NF90_INQ_DIMID.                    
-*Note               Find dimension      
+*note               Find dimension      
 NF90_INQ_DIM:       name and length.    
 (netcdf-f90)NF90_INQ_DIM.                    
-*Note               Find attribute      
+*note               Find attribute      
 NF90_INQ_ATT:       name, type, and     
 (netcdf-f90)NF90_INQ_ATT.length.             
-*Note               Find file format:   
+*note               Find file format:   
 NF90_INQ_FORMAT:    classic or 64-bit   
 (netcdf-f90)NF90_INQ_FORMAT.offset              
-*Note               Find the netCDF     
+*note               Find the netCDF     
 NF90_INQ_LIBVERS:   version.            
 (netcdf-f90)NF90_INQ_LIBVERS.(Currently 4.0).    
 
@@ -5182,21 +5182,21 @@ File: netcdf-tutorial.info,  Node: Inquiry in C++,  Prev: Inquiry in F90,  Up: I
 3.3.4 Inquiry Functions in the C++ API
 --------------------------------------
 
-*Note Class  a C++ class                     
+*note Class  a C++ class                     
 NcFile:      to                              
 (netcdf-cxx)Classmanipulate                      
 NcFile.      netCDF files                    
-*Note Class  a C++ class                     
+*note Class  a C++ class                     
 NcDim:       to                              
 (netcdf-cxx)Classmanipulate                      
 NcDim.       netCDF                          
              dimensions                      
-*Note Class  a C++ class                     
+*note Class  a C++ class                     
 NcVar:       to                              
 (netcdf-cxx)Classmanipulate                      
 NcVar.       netCDF                          
              variables                       
-*Note Class  a C++ class                     
+*note Class  a C++ class                     
 NcAtt:       to                              
 (netcdf-cxx)Classmanipulate                      
 NcAtt.       netCDF                          
@@ -5249,43 +5249,43 @@ File: netcdf-tutorial.info,  Node: Subsetting in C,  Next: Subsetting in F77,  P
 ----------------------------------------------
 
 The type of the data may be automatically converted on read or write.
-For more information about type conversion see *Note Type Conversion:
+For more information about type conversion see *note Type Conversion:
 (netcdf-c)Type Conversion.
 
-Read the entire variable at once     *Note nc_get_var_  
+Read the entire variable at once     *note nc_get_var_  
                                      type:              
                                      (netcdf-c)nc_get_var_
                                      type.              
-Write the entire variable at once    *Note nc_put_var_  
+Write the entire variable at once    *note nc_put_var_  
                                      type:              
                                      (netcdf-c)nc_put_var_
                                      type.              
-Read just one value                  *Note              
+Read just one value                  *note              
                                      nc_get_var1_       
                                      type:              
                                      (netcdf-c)nc_get_var1_
                                      type.              
-Write just one value                 *Note              
+Write just one value                 *note              
                                      nc_put_var1_       
                                      type:              
                                      (netcdf-c)nc_put_var1_
                                      type.              
-Read an array subset                 *Note              
+Read an array subset                 *note              
                                      nc_get_vara_       
                                      type:              
                                      (netcdf-c)nc_get_vara_
                                      type.              
-Write an array subset                *Note              
+Write an array subset                *note              
                                      nc_put_vara_       
                                      type:              
                                      (netcdf-c)nc_put_vara_
                                      type.              
-Read an array with strides           *Note              
+Read an array with strides           *note              
                                      nc_get_vars_       
                                      type:              
                                      (netcdf-c)nc_get_vars_
                                      type.              
-Write an array with strides          *Note              
+Write an array with strides          *note              
                                      nc_put_vars_       
                                      type:              
                                      (netcdf-c)nc_put_vars_
@@ -5298,43 +5298,43 @@ File: netcdf-tutorial.info,  Node: Subsetting in F77,  Next: Subsetting in F90, 
 -------------------------------------------------------
 
 The type of the data may be automatically converted on read or write.
-For more information about type conversion see *Note Type Conversion:
+For more information about type conversion see *note Type Conversion:
 (netcdf-f77)Type Conversion.
 
-Read the entire variable at once     *Note NF_GET_VAR_  
+Read the entire variable at once     *note NF_GET_VAR_  
                                      type:              
                                      (netcdf-f77)NF_GET_VAR_
                                      type.              
-Write the entire variable at once    *Note NF_PUT_VAR_  
+Write the entire variable at once    *note NF_PUT_VAR_  
                                      type:              
                                      (netcdf-f77)NF_PUT_VAR_
                                      type.              
-Read just one value                  *Note              
+Read just one value                  *note              
                                      NF_GET_VAR1_       
                                      type:              
                                      (netcdf-f77)NF_GET_VAR1_
                                      type.              
-Write just one value                 *Note              
+Write just one value                 *note              
                                      NF_PUT_VAR1_       
                                      type:              
                                      (netcdf-f77)NF_PUT_VAR1_
                                      type.              
-Read an array subset                 *Note              
+Read an array subset                 *note              
                                      NF_GET_VARA_       
                                      type:              
                                      (netcdf-f77)NF_GET_VARA_
                                      type.              
-Write an array subset                *Note              
+Write an array subset                *note              
                                      NF_PUT_VARA_       
                                      type:              
                                      (netcdf-f77)NF_PUT_VARA_
                                      type.              
-Read an array with strides           *Note              
+Read an array with strides           *note              
                                      NF_GET_VARS_       
                                      type:              
                                      (netcdf-f77)NF_GET_VARS_
                                      type.              
-Write an array with strides          *Note              
+Write an array with strides          *note              
                                      NF_PUT_VARS_       
                                      type:              
                                      (netcdf-f77)NF_PUT_VARS_
@@ -5347,45 +5347,45 @@ File: netcdf-tutorial.info,  Node: Subsetting in F90,  Next: Subsetting in C++, 
 -------------------------------------------------------
 
 The type of the data may be automatically converted on read or write.
-For more information about type conversion see *Note Type Conversion:
+For more information about type conversion see *note Type Conversion:
 (netcdf-f90)Type Conversion.
 
-Read the entire variable at once     *Note              
+Read the entire variable at once     *note              
                                      NF90_GET_VAR_      
                                      type:              
                                      (netcdf-f90)NF90_GET_VAR_
                                      type.              
-Write the entire variable at once    *Note              
+Write the entire variable at once    *note              
                                      NF90_PUT_VAR_      
                                      type:              
                                      (netcdf-f90)NF90_PUT_VAR_
                                      type.              
-Read just one value                  *Note              
+Read just one value                  *note              
                                      NF90_GET_VAR1_     
                                      type:              
                                      (netcdf-f90)NF90_GET_VAR1_
                                      type.              
-Write just one value                 *Note              
+Write just one value                 *note              
                                      NF90_PUT_VAR1_     
                                      type:              
                                      (netcdf-f90)NF90_PUT_VAR1_
                                      type.              
-Read an array subset                 *Note              
+Read an array subset                 *note              
                                      NF90_GET_VARA_     
                                      type:              
                                      (netcdf-f90)NF90_GET_VARA_
                                      type.              
-Write an array subset                *Note              
+Write an array subset                *note              
                                      NF90_PUT_VARA_     
                                      type:              
                                      (netcdf-f90)NF90_PUT_VARA_
                                      type.              
-Read an array with strides           *Note              
+Read an array with strides           *note              
                                      NF90_GET_VARS_     
                                      type:              
                                      (netcdf-f90)NF90_GET_VARS_
                                      type.              
-Write an array with strides          *Note              
+Write an array with strides          *note              
                                      NF90_PUT_VARS_     
                                      type:              
                                      (netcdf-f90)NF90_PUT_VARS_
@@ -5401,7 +5401,7 @@ To read a record of data at a time, use the set_cur method of the NcVar
 class to set the number of the record of interest, and then use the get
 method to read the record.
 
-*Note Class NcVar:                   a C++ class to     
+*note Class NcVar:                   a C++ class to     
 (netcdf-cxx)Class NcVar.             manipulate netCDF  
                                      variables, use     
                                      the set_cur and    
@@ -5511,78 +5511,78 @@ Index
 
 
 Tag Table:
-Node: Top1359
-Node: Intro5410
-Node: Data Model6786
-Node: Errors9729
-Node: Unlimited Dimensions11532
-Node: Fill Values12881
-Node: Tools14250
-Node: APIs16471
-Node: Documentation18513
-Node: Versions20150
-Node: Future21917
-Node: Examples23110
-Node: simple_xy24434
-Node: simple_xy in C26475
-Node: simple_xy_wr.c26938
-Node: simple_xy_rd.c30915
-Node: simple_xy in F7733277
-Node: simple_xy_wr.f33749
-Node: simple_xy_rd.f38225
-Node: simple_xy in F9041048
-Node: simple_xy_wr.f9041538
-Node: simple_xy_rd.f9045469
-Node: simple_xy in C++47945
-Node: simple_xy_wr.cpp48410
-Node: simple_xy_rd.cpp51612
-Node: sfc_pres_temp53973
-Node: sfc_pres_temp in C56701
-Node: sfc_pres_temp_wr.c57216
-Node: sfc_pres_temp_rd.c63949
-Node: sfc_pres_temp in F7770294
-Node: sfc_pres_temp_wr.f70818
-Node: sfc_pres_temp_rd.f78559
-Node: sfc_pres_temp in F9086829
-Node: sfc_pres_temp_wr.f9087371
-Node: sfc_pres_temp_rd.f9093489
-Node: sfc_pres_temp in C++100265
-Node: sfc_pres_temp_wr.cpp100778
-Node: sfc_pres_temp_rd.cpp106571
-Node: pres_temp_4D112700
-Node: pres_temp_4D in C117304
-Node: pres_temp_4D_wr.c117806
-Node: pres_temp_4D_rd.c125886
-Node: pres_temp_4D in F77131322
-Node: pres_temp_4D_wr.f131833
-Node: pres_temp_4D_rd.f141320
-Node: pres_temp_4D in F90150779
-Node: pres_temp_4D_wr.f90151308
-Node: pres_temp_4D_rd.f90158955
-Node: pres_temp_4D in C++164921
-Node: pres_temp_4D_wr.cpp165422
-Node: pres_temp_4D_rd.cpp171275
-Node: Useful Functions176183
-Node: Creation177159
-Node: Creation in C177982
-Node: Creation in F77179453
-Node: Creation in F90181275
-Node: Creation in C++183043
-Node: Reading184182
-Node: Reading in C186406
-Node: Reading in F77187282
-Node: Reading in F90187957
-Node: Reading in C++188672
-Node: Inquiry Functions189470
-Node: Inquiry in C190271
-Node: Inquiry in F77194615
-Node: Inquiry in F90196374
-Node: Inquiry in C++198239
-Node: Subsets199309
-Node: Subsetting in C200968
-Node: Subsetting in F77203530
-Node: Subsetting in F90206138
-Node: Subsetting in C++208878
-Node: Combined Index209645
+Node: Top1430
+Node: Intro5483
+Node: Data Model6859
+Node: Errors9802
+Node: Unlimited Dimensions11605
+Node: Fill Values12954
+Node: Tools14323
+Node: APIs16544
+Node: Documentation18586
+Node: Versions20223
+Node: Future21990
+Node: Examples23183
+Node: simple_xy24507
+Node: simple_xy in C26548
+Node: simple_xy_wr.c27011
+Node: simple_xy_rd.c30988
+Node: simple_xy in F7733350
+Node: simple_xy_wr.f33822
+Node: simple_xy_rd.f38298
+Node: simple_xy in F9041121
+Node: simple_xy_wr.f9041611
+Node: simple_xy_rd.f9045542
+Node: simple_xy in C++48018
+Node: simple_xy_wr.cpp48483
+Node: simple_xy_rd.cpp51685
+Node: sfc_pres_temp54046
+Node: sfc_pres_temp in C56774
+Node: sfc_pres_temp_wr.c57289
+Node: sfc_pres_temp_rd.c64022
+Node: sfc_pres_temp in F7770367
+Node: sfc_pres_temp_wr.f70891
+Node: sfc_pres_temp_rd.f78632
+Node: sfc_pres_temp in F9086902
+Node: sfc_pres_temp_wr.f9087444
+Node: sfc_pres_temp_rd.f9093562
+Node: sfc_pres_temp in C++100338
+Node: sfc_pres_temp_wr.cpp100851
+Node: sfc_pres_temp_rd.cpp106644
+Node: pres_temp_4D112773
+Node: pres_temp_4D in C117377
+Node: pres_temp_4D_wr.c117879
+Node: pres_temp_4D_rd.c125959
+Node: pres_temp_4D in F77131395
+Node: pres_temp_4D_wr.f131906
+Node: pres_temp_4D_rd.f141393
+Node: pres_temp_4D in F90150852
+Node: pres_temp_4D_wr.f90151381
+Node: pres_temp_4D_rd.f90159028
+Node: pres_temp_4D in C++164994
+Node: pres_temp_4D_wr.cpp165495
+Node: pres_temp_4D_rd.cpp171348
+Node: Useful Functions176256
+Node: Creation177232
+Node: Creation in C178055
+Node: Creation in F77179526
+Node: Creation in F90181348
+Node: Creation in C++183116
+Node: Reading184255
+Node: Reading in C186479
+Node: Reading in F77187355
+Node: Reading in F90188030
+Node: Reading in C++188745
+Node: Inquiry Functions189543
+Node: Inquiry in C190344
+Node: Inquiry in F77194688
+Node: Inquiry in F90196447
+Node: Inquiry in C++198312
+Node: Subsets199382
+Node: Subsetting in C201041
+Node: Subsetting in F77203603
+Node: Subsetting in F90206211
+Node: Subsetting in C++208951
+Node: Combined Index209718
 
 End Tag Table
