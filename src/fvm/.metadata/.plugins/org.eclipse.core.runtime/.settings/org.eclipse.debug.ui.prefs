@@ -1,6 +1,0 @@
-#Thu Dec 18 15:52:29 GMT-05:00 2008
-eclipse.preferences.version=1
-DEBUG.consoleOpenOnOut=false
-DEBUG.consoleOpenOnErr=false
-org.eclipse.debug.ui.PREF_LAUNCH_PERSPECTIVES=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\n<launchPerspectives/>\n
-org.eclipse.debug.ui.user_view_bindings=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\n<viewBindings>\n<view id\="org.eclipse.ui.console.ConsoleView">\n<perspective id\="org.eclipse.cdt.ui.CPerspective" userAction\="closed"/>\n</view>\n</viewBindings>\n
