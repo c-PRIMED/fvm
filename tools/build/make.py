@@ -151,13 +151,13 @@ def main():
 
     if options.build and not build_failed:
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
-        print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir
-        print >>f, "export PYTHONPATH="+BuildPkg.libdir
+        print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
+        print >>f, "export PYTHONPATH="+BuildPkg.libdir+":$PYTHONPATH"
         print >>f, "export PATH=%s:$PATH" % BuildPkg.bindir
         f.close
         print "\nDONE\nYou need to do the following to use the build."
-        print "export LD_LIBRARY_PATH="+BuildPkg.libdir
-        print "export PYTHONPATH="+BuildPkg.libdir
+        print "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
+        print "export PYTHONPATH="+BuildPkg.libdir+":$PYTHONPATH"
         print "export PATH=%s:$PATH" % BuildPkg.bindir
         print "OR source env.sh"
 
