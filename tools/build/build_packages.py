@@ -42,6 +42,7 @@ class BuildPkg:
             Boost("pkgs/boost", 0),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
+            Netcdf("pkgs/netcdf", 0),
             Lammps("src/lammps", 1),
             Fvm("src/fvm", 0),
             ]
@@ -206,6 +207,17 @@ class Fltk(BuildPkg):
     
 class Python(BuildPkg):
     name = "python"
+    def _configure(self):
+        return self.sys_log("%s/configure --prefix=%s --enable-shared" % (self.sdir, self.blddir))
+    def _build(self):
+        return self.sys_log("make -j4")
+    def _install(self):
+        return self.sys_log("make install")
+    def _clean(self):
+        return self.sys_log("make clean")
+
+class Netcdf(BuildPkg):
+    name = "netcdf"
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s --enable-shared" % (self.sdir, self.blddir))
     def _build(self):
