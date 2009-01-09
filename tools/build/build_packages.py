@@ -315,7 +315,7 @@ class MPM(BuildPkg):
         if os.path.isfile(bfile):
             os.chdir(os.path.join(self.sdir, "config"))
             self.sys_log("/bin/ln -fs %s CURRENT" % bfile)
-            os.chdir(self.bdir)
+            os.chdir(os.path.join(self.bdir, "config"))
             bfile = os.path.join(self.bdir, "config", e)            
             return self.sys_log("/bin/ln -fs %s CURRENT" % bfile)
         else:
