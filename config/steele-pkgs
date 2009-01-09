@@ -1,7 +1,7 @@
 # config file for steele builds
 
 python:
-	Build=True
+	Build=False
 rlog:
 	Build=True
 boost:
@@ -10,6 +10,11 @@ swig:
 	Build=True
 
 fftw:
+	before=module load intel
+	after=module unload intel
+	Build=True
+
+netcdf:
 	before=module load intel
 	after=module unload intel
 	Build=True
