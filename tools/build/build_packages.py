@@ -42,9 +42,10 @@ class BuildPkg:
             Boost("pkgs/boost", 0),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
-            Netcdf("pkgs/netcdf", 0),
+            Netcdf("pkgs/netcdf", 1),
             Lammps("src/lammps", 1),
             Fvm("src/fvm", 0),
+            MPM("src/MPM", 1),
             ]
         
     setup = staticmethod(setup)
@@ -219,7 +220,7 @@ class Python(BuildPkg):
 class Netcdf(BuildPkg):
     name = "netcdf"
     def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s --enable-shared" % (self.sdir, self.blddir))
+        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -291,7 +292,7 @@ class Swig(BuildPkg):
 class Fftw(BuildPkg):
     name = "fftw"
     def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
+        return self.sys_log("%s/configure --enable-float --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
@@ -305,6 +306,26 @@ class Boost(BuildPkg):
     def _install(self):
         idir = os.path.join(self.blddir, "include")
         return self.sys_log("/bin/ln -fs %s %s" % (self.sdir, idir))
+
+class MPM(BuildPkg):
+    name = "MPM"
+    def _configure(self):
+        e = config(self.name,'configname')
+        bfile = os.path.join(self.sdir, "config", e)
+        if os.path.isfile(bfile):
+            cfile = os.path.join(self.sdir, "config", "CURRENT")
+            return self.sys_log("/bin/ln -fs %s %s" % (bfile, cfile))
+        else:
+            f = open(self.logfile, 'a')
+            print >> f, "Cannot open config file %s." % bfile
+            f.close()        
+        return False
+    def _build(self):
+        return self.sys_log("make -j4")
+    def _install(self):
+        return self.sys_log("make install")
+    def _clean(self):
+        return self.sys_log("make clean")
 
 class Fvm(BuildPkg):
     name = "fvm"

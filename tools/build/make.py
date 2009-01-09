@@ -94,6 +94,7 @@ def main():
     fix_path('PYTHONPATH', BuildPkg.libdir, 1, 0)
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
     os.environ['MEMOSA_HOME'] = BuildPkg.blddir
+    os.environ['MEMOSA_CONFNAME'] = cname
     bs = be = ts = te = 0
 
     # if no options, default to build
@@ -154,6 +155,8 @@ def main():
         print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
         print >>f, "export PYTHONPATH="+BuildPkg.libdir+":$PYTHONPATH"
         print >>f, "export PATH=%s:$PATH" % BuildPkg.bindir
+        print >>f, "\n# Need this to recompile MPM in its directory."
+        print >>f, "export MEMOSA_CONFNAME=%s" % cname
         f.close
         print "\nDONE\nYou need to do the following to use the build."
         print "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
