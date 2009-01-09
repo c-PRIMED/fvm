@@ -313,8 +313,11 @@ class MPM(BuildPkg):
         e = config(self.name,'configname')
         bfile = os.path.join(self.sdir, "config", e)
         if os.path.isfile(bfile):
-            cfile = os.path.join(self.sdir, "config", "CURRENT")
-            return self.sys_log("/bin/ln -fs %s %s" % (bfile, cfile))
+            os.chdir(os.path.join(self.sdir, "config"))
+            self.sys_log("/bin/ln -fs %s CURRENT" % bfile)
+            os.chdir(self.bdir)
+            bfile = os.path.join(self.bdir, "config", e)            
+            return self.sys_log("/bin/ln -fs %s CURRENT" % bfile)
         else:
             f = open(self.logfile, 'a')
             print >> f, "Cannot open config file %s." % bfile

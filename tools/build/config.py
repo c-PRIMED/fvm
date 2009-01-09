@@ -14,11 +14,7 @@ _config_srcs = {
         'nodes': '1',
         'walltime': '1:00:00',
         },
-    'fvm': {
-        'Build': '1',
-        },
     'lammps': {
-        'Build': '1',
         'build': 'openmpi',
         },
 }
