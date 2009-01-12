@@ -222,7 +222,8 @@ class Netcdf(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j4")
+        # Don't use parallel make here. Breaks on some systems.
+        return self.sys_log("make")
     def _install(self):
         return self.sys_log("make install")
     def _clean(self):
@@ -324,7 +325,8 @@ class MPM(BuildPkg):
             f.close()        
         return False
     def _build(self):
-        return self.sys_log("make -j4")
+        # Don't use parallel make here. Breaks on some systems.
+        return self.sys_log("make")
     def _install(self):
         return self.sys_log("make install")
     def _clean(self):
