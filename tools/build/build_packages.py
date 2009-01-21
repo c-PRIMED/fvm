@@ -35,6 +35,8 @@ class BuildPkg:
         
         BuildPkg.packages = [
             Python("pkgs/python", 0),
+            Numpy("pkgs/numpy", 1),
+            Numeric("pkgs/numeric", 1),
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
@@ -43,6 +45,7 @@ class BuildPkg:
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
             Netcdf("pkgs/netcdf", 1),
+            NetCDF4("pkgs/netCDF4", 1),
             Lammps("src/lammps", 1),
             Fvm("src/fvm", 0),
             MPM("src/MPM", 1),
@@ -192,6 +195,23 @@ class Gmsh(BuildPkg):
     def _clean(self):
         return self.sys_log("make clean")
 
+class Numpy(BuildPkg):
+    name = "numpy"
+    def _install(self):
+        return self.sys_log("python setup.py install")
+
+class Numeric(BuildPkg):
+    name = "numeric"
+    def _build(self):
+        return self.sys_log("python setup.py build")
+    def _install(self):
+        return self.sys_log("python setup.py install")
+
+class NetCDF4(BuildPkg):
+    name = "netCDF4"
+    def _install(self):
+        return self.sys_log("NETCDF3_DIR=%s python setup-nc3.py install" % self.blddir)
+
 # FLTK (pronounced "fulltick") is a cross-platform C++ GUI toolkit.
 # http://www.fltk.org/
 # Version 1.1.9 required by gmsh
@@ -220,7 +240,7 @@ class Python(BuildPkg):
 class Netcdf(BuildPkg):
     name = "netcdf"
     def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
+        return self.sys_log("%s/configure --with-pic -prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
         # Don't use parallel make here. Breaks on some systems.
         return self.sys_log("make")
