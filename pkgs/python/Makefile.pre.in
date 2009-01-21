@@ -177,8 +177,8 @@ PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
 # The task to run while instrument when building the profile-opt target
-PROFILE_TASK=	Tools/pybench/pybench.py -n 2 --with-gc --with-syscheck
-#PROFILE_TASK=	Lib/test/regrtest.py
+PROFILE_TASK=	$(srcdir)/Tools/pybench/pybench.py -n 2 --with-gc --with-syscheck
+#PROFILE_TASK=	$(srcdir)/Lib/test/regrtest.py
 
 # === Definitions added by makesetup ===
 
@@ -1204,6 +1204,6 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean 
-.PHONY: smelly funny
+.PHONY: smelly funny patchcheck
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY

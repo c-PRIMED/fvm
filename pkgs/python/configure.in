@@ -6,7 +6,7 @@ dnl NOTE: autoconf 2.64 doesn't seem to work (use 2.63).
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 2.6)
 
-AC_REVISION($Revision: 66295 $)
+AC_REVISION($Revision: 67229 $)
 AC_PREREQ(2.61)
 AC_INIT(python, PYTHON_VERSION, http://www.python.org/python-bugs)
 AC_CONFIG_SRCDIR([Include/object.h])
@@ -261,7 +261,7 @@ case $ac_sys_system/$ac_sys_release in
   # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
   # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
   # Marc Recht
-  NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6[A-S])
+  NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
     define_xopen_source=no;;
   # On Solaris 2.6, sys/wait.h is inconsistent in the usage
   # of union __?sigval. Reported by Stuart Bishop.
@@ -276,11 +276,18 @@ case $ac_sys_system/$ac_sys_release in
   # but used in struct sockaddr.sa_family. Reported by Tim Rice.
   SCO_SV/3.2)
     define_xopen_source=no;;
-  # On FreeBSD 4.8 and MacOS X 10.2, a bug in ncurses.h means that
-  # it craps out if _XOPEN_EXTENDED_SOURCE is defined. Apparently,
-  # this is fixed in 10.3, which identifies itself as Darwin/7.*
-  # This should hopefully be fixed in FreeBSD 4.9
-  FreeBSD/4.8* | Darwin/6* )
+  # On FreeBSD 4, the math functions C89 does not cover are never defined
+  # with _XOPEN_SOURCE and __BSD_VISIBLE does not re-enable them.
+  FreeBSD/4.*)
+    define_xopen_source=no;;
+  # On MacOS X 10.2, a bug in ncurses.h means that it craps out if 
+  # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
+  # identifies itself as Darwin/7.*
+  # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
+  # disables platform specific features beyond repair.
+  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
+  # has no effect, don't bother defining them
+  Darwin/@<:@6789@:>@.*)
     define_xopen_source=no;;
   # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
   # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
@@ -291,13 +298,6 @@ case $ac_sys_system/$ac_sys_release in
     if test `uname -r` -eq 1; then
       define_xopen_source=no
     fi
-    ;;
-  # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
-  # disables platform specific features beyond repair.
-  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
-  # has no effect, don't bother defining them
-  Darwin/@<:@789@:>@.*)
-    define_xopen_source=no
     ;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.

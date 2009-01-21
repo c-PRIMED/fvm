@@ -4,6 +4,111 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.6.1
+==========================
+
+*Release date: 04-Dec-2008*
+
+Core and Builtins
+-----------------
+
+- Issue #3996: On Windows, the PyOS_CheckStack function would cause the
+  interpreter to abort ("Fatal Python error: Could not reset the stack!")
+  instead of throwing a MemoryError.
+
+- Issue #4367: Python would segfault during compiling when the unicodedata
+  module couldn't be imported and \N escapes were present.
+
+- Issue #4348: Some bytearray methods returned that didn't cause any change to
+  the bytearray, returned the same bytearray instead of a copy.
+
+- Issue #4317: Fixed a crash in the imageop.rgb2rgb8() function.
+
+- Issue #4230: If ``__getattr__`` is a descriptor, it now functions correctly.
+
+- Issue #4048: The parser module now correctly validates relative imports.
+
+- Issue #4225: ``from __future__ import unicode_literals`` didn't work in an
+  exec statement.
+
+- Issue #4176: Fixed a crash when pickling an object which ``__reduce__``
+  method does not return iterators for the 4th and 5th items.
+
+- Issue #4209: Enabling unicode_literals and the print_function in the same
+  __future__ import didn't work.
+
+- On windows, os.chdir given unicode was not working if GetCurrentDirectoryW
+  returned a path longer than MAX_PATH. (But It's doubtful this code path is
+  really executed because I cannot move to such directory on win2k)
+
+- Issue #4069: When set.remove(element) is used with a set element, the element
+  is temporarily replaced with an equivalent frozenset.  But the eventual
+  KeyError would always report the empty frozenset([]) as the missing key. Now
+  it correctly refers to the initial element.
+
+- Fixed C99 style comments in several files. Python is now C89 compatible
+  again.
+
+Library
+-------
+
+- Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
+  exception.
+
+- Issue #4363: The uuid.uuid1() and uuid.uuid4() functions now work even if
+  the ctypes module is not present.
+
+- Issue #4116: Resolve member name conflict in ScrolledCanvas.__init__.
+
+- Issue #3774: Fixed an error when create a Tkinter menu item without command
+  and then remove it.
+
+- Fixed a modulefinder crash on certain relative imports.
+
+- Issue #4150: Pdb's "up" command now works for generator frames in post-mortem
+  debugging.
+
+- Issue #4092: Return ArgInfo as promised in the documentation from
+  inspect.getargvalues.
+
+- Issue #3935: Properly support list subclasses in bisect's C implementation.
+
+- Issue #4014: Don't claim that Python has an Alpha release status, in addition
+  to claiming it is Mature.
+
+Build
+-----
+
+- Issue #4389: Add icon to the uninstall entry in "add-and-remove-programs".
+
+- Issue #4289: Remove Cancel button from AdvancedDlg.
+
+- Issue #1656675: Register a drop handler for .py* files on Windows.
+
+- Issue #4120: Exclude manifest from extension modules in VS2008.
+
+- Issue #4091: Install pythonxy.dll in system32 again.
+
+- Issue #4018: Disable "for me" installations on Vista.
+
+- Issue #3758: Add ``patchcheck`` build target to .PHONY.
+
+- Issue #4204: Fixed module build errors on FreeBSD 4.
+
+C-API
+-----
+
+- Issue #4122: On Windows, fix a compilation error when using the
+  Py_UNICODE_ISSPACE macro in an extension module.
+
+Extension Modules
+-----------------
+
+- Issue #4365: Add crtassem.h constants to the msvcrt module.
+
+- Issue #4396: The parser module now correctly validates the with statement.
+
+
 What's New in Python 2.6 final
 ==============================
 

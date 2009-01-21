@@ -9,16 +9,13 @@ except ImportError:
     import support
 
 # Python imports
+import os
 import unittest
 from itertools import chain
 from operator import itemgetter
-from os.path import dirname, pathsep
 
 # Local imports
-from .. import pygram
-from .. import pytree
-from .. import refactor
-from .. import fixer_util
+from lib2to3 import pygram, pytree, refactor, fixer_util
 
 
 class FixerTestCase(support.TestCase):
@@ -30,10 +27,9 @@ class FixerTestCase(support.TestCase):
         self.fixer_log = []
         self.filename = "<string>"
 
-        for order in (self.refactor.pre_order.values(),\
-                      self.refactor.post_order.values()):
-            for fixer in chain(*order):
-                fixer.log = self.fixer_log
+        for fixer in chain(self.refactor.pre_order,
+                           self.refactor.post_order):
+            fixer.log = self.fixer_log
 
     def _check(self, before, after):
         before = support.reformat(before)
@@ -1450,6 +1446,10 @@ class Test_imports(FixerTestCase):
             a = "from %s import foo, bar" % new
             self.check(b, a)
 
+            b = "from %s import (yes, no)" % old
+            a = "from %s import (yes, no)" % new
+            self.check(b, a)
+
     def test_import_module_as(self):
         for old, new in self.modules.items():
             b = "import %s as foo_bar" % old
@@ -1483,6 +1483,44 @@ class Test_imports(FixerTestCase):
                 foo(%s.bar)
                 """ % (new, new)
             self.check(b, a)
+
+            b = """
+                from %s import x
+                %s = 23
+                """ % (old, old)
+            a = """
+                from %s import x
+                %s = 23
+                """ % (new, old)
+            self.check(b, a)
+
+            s = """
+                def f():
+                    %s.method()
+                """ % (old,)
+            self.unchanged(s)
+
+            # test nested usage
+            b = """
+                import %s
+                %s.bar(%s.foo)
+                """ % (old, old, old)
+            a = """
+                import %s
+                %s.bar(%s.foo)
+                """ % (new, new, new)
+            self.check(b, a)
+
+            b = """
+                import %s
+                x.%s
+                """ % (old, old)
+            a = """
+                import %s
+                x.%s
+                """ % (new, old)
+            self.check(b, a)
+
 
 
 class Test_imports2(Test_imports):
@@ -3274,13 +3312,18 @@ class Test_import(FixerTestCase):
         # Need to replace fix_import's exists method
         # so we can check that it's doing the right thing
         self.files_checked = []
+        self.present_files = set()
         self.always_exists = True
         def fake_exists(name):
             self.files_checked.append(name)
-            return self.always_exists
+            return self.always_exists or (name in self.present_files)
 
         from ..fixes import fix_import
         fix_import.exists = fake_exists
+
+    def tearDown(self):
+        from lib2to3.fixes import fix_import
+        fix_import.exists = os.path.exists
 
     def check_both(self, b, a):
         self.always_exists = True
@@ -3291,10 +3334,12 @@ class Test_import(FixerTestCase):
     def test_files_checked(self):
         def p(path):
             # Takes a unix path and returns a path with correct separators
-            return pathsep.join(path.split("/"))
+            return os.path.pathsep.join(path.split("/"))
 
         self.always_exists = False
-        expected_extensions = ('.py', pathsep, '.pyc', '.so', '.sl', '.pyd')
+        self.present_files = set(['__init__.py'])
+        expected_extensions = ('.py', os.path.pathsep, '.pyc', '.so',
+                               '.sl', '.pyd')
         names_to_test = (p("/spam/eggs.py"), "ni.py", p("../../shrubbery.py"))
 
         for name in names_to_test:
@@ -3302,11 +3347,32 @@ class Test_import(FixerTestCase):
             self.filename = name
             self.unchanged("import jam")
 
-            if dirname(name): name = dirname(name) + '/jam'
-            else:             name = 'jam'
+            if os.path.dirname(name):
+                name = os.path.dirname(name) + '/jam'
+            else:
+                name = 'jam'
             expected_checks = set(name + ext for ext in expected_extensions)
+            expected_checks.add("__init__.py")
 
-            self.failUnlessEqual(set(self.files_checked), expected_checks)
+            self.assertEqual(set(self.files_checked), expected_checks)
+
+    def test_not_in_package(self):
+        s = "import bar"
+        self.always_exists = False
+        self.present_files = set(["bar.py"])
+        self.unchanged(s)
+
+    def test_in_package(self):
+        b = "import bar"
+        a = "from . import bar"
+        self.always_exists = False
+        self.present_files = set(["__init__.py", "bar.py"])
+        self.check(b, a)
+
+    def test_comments_and_indent(self):
+        b = "import bar # Foo"
+        a = "from . import bar # Foo"
+        self.check(b, a)
 
     def test_from(self):
         b = "from foo import bar, baz"
@@ -3315,6 +3381,10 @@ class Test_import(FixerTestCase):
 
         b = "from foo import bar"
         a = "from .foo import bar"
+        self.check_both(b, a)
+
+        b = "from foo import (bar, baz)"
+        a = "from .foo import (bar, baz)"
         self.check_both(b, a)
 
     def test_dotted_from(self):
@@ -3356,6 +3426,134 @@ class Test_import(FixerTestCase):
         from . import foo.bar
         """
         self.check_both(b, a)
+
+
+class Test_set_literal(FixerTestCase):
+
+    fixer = "set_literal"
+
+    def test_basic(self):
+        b = """set([1, 2, 3])"""
+        a = """{1, 2, 3}"""
+        self.check(b, a)
+
+        b = """set((1, 2, 3))"""
+        a = """{1, 2, 3}"""
+        self.check(b, a)
+
+        b = """set((1,))"""
+        a = """{1}"""
+        self.check(b, a)
+
+        b = """set([1])"""
+        self.check(b, a)
+
+        b = """set((a, b))"""
+        a = """{a, b}"""
+        self.check(b, a)
+
+        b = """set([a, b])"""
+        self.check(b, a)
+
+        b = """set((a*234, f(args=23)))"""
+        a = """{a*234, f(args=23)}"""
+        self.check(b, a)
+
+        b = """set([a*23, f(23)])"""
+        a = """{a*23, f(23)}"""
+        self.check(b, a)
+
+        b = """set([a-234**23])"""
+        a = """{a-234**23}"""
+        self.check(b, a)
+
+    def test_listcomps(self):
+        b = """set([x for x in y])"""
+        a = """{x for x in y}"""
+        self.check(b, a)
+
+        b = """set([x for x in y if x == m])"""
+        a = """{x for x in y if x == m}"""
+        self.check(b, a)
+
+        b = """set([x for x in y for a in b])"""
+        a = """{x for x in y for a in b}"""
+        self.check(b, a)
+
+        b = """set([f(x) - 23 for x in y])"""
+        a = """{f(x) - 23 for x in y}"""
+        self.check(b, a)
+
+    def test_whitespace(self):
+        b = """set( [1, 2])"""
+        a = """{1, 2}"""
+        self.check(b, a)
+
+        b = """set([1 ,  2])"""
+        a = """{1 ,  2}"""
+        self.check(b, a)
+
+        b = """set([ 1 ])"""
+        a = """{ 1 }"""
+        self.check(b, a)
+
+        b = """set( [1] )"""
+        a = """{1}"""
+        self.check(b, a)
+
+        b = """set([  1,  2  ])"""
+        a = """{  1,  2  }"""
+        self.check(b, a)
+
+        b = """set([x  for x in y ])"""
+        a = """{x  for x in y }"""
+        self.check(b, a)
+
+        b = """set(
+                   [1, 2]
+               )
+            """
+        a = """{1, 2}\n"""
+        self.check(b, a)
+
+    def test_comments(self):
+        b = """set((1, 2)) # Hi"""
+        a = """{1, 2} # Hi"""
+        self.check(b, a)
+
+        # This isn't optimal behavior, but the fixer is optional.
+        b = """
+            # Foo
+            set( # Bar
+               (1, 2)
+            )
+            """
+        a = """
+            # Foo
+            {1, 2}
+            """
+        self.check(b, a)
+
+    def test_unchanged(self):
+        s = """set()"""
+        self.unchanged(s)
+
+        s = """set(a)"""
+        self.unchanged(s)
+
+        s = """set(a, b, c)"""
+        self.unchanged(s)
+
+        # Don't transform generators because they might have to be lazy.
+        s = """set(x for x in y)"""
+        self.unchanged(s)
+
+        s = """set(x for x in y if z)"""
+        self.unchanged(s)
+
+        s = """set(a*823-23**2 + f(23))"""
+        self.unchanged(s)
+
 
 class Test_sys_exc(FixerTestCase):
     fixer = "sys_exc"
@@ -3468,6 +3666,12 @@ class Test_metaclass(FixerTestCase):
         """
         self.unchanged(s)
 
+        s = """
+        class X:
+            a[23] = 74
+        """
+        self.unchanged(s)
+
     def test_comments(self):
         b = """
         class X:
@@ -3574,6 +3778,87 @@ class Test_metaclass(FixerTestCase):
         # keywords in the class statement
         b = """class m(a, arg=23): __metaclass__ = Meta"""
         a = """class m(a, arg=23, metaclass=Meta): pass"""
+        self.check(b, a)
+
+        b = """
+        class X(expression(2 + 4)):
+            __metaclass__ = Meta
+        """
+        a = """
+        class X(expression(2 + 4), metaclass=Meta):
+            pass
+        """
+        self.check(b, a)
+
+        b = """
+        class X(expression(2 + 4), x**4):
+            __metaclass__ = Meta
+        """
+        a = """
+        class X(expression(2 + 4), x**4, metaclass=Meta):
+            pass
+        """
+        self.check(b, a)
+
+
+class Test_getcwdu(FixerTestCase):
+
+    fixer = 'getcwdu'
+
+    def test_basic(self):
+        b = """os.getcwdu"""
+        a = """os.getcwd"""
+        self.check(b, a)
+
+        b = """os.getcwdu()"""
+        a = """os.getcwd()"""
+        self.check(b, a)
+
+        b = """meth = os.getcwdu"""
+        a = """meth = os.getcwd"""
+        self.check(b, a)
+
+        b = """os.getcwdu(args)"""
+        a = """os.getcwd(args)"""
+        self.check(b, a)
+
+    def test_comment(self):
+        b = """os.getcwdu() # Foo"""
+        a = """os.getcwd() # Foo"""
+        self.check(b, a)
+
+    def test_unchanged(self):
+        s = """os.getcwd()"""
+        self.unchanged(s)
+
+        s = """getcwdu()"""
+        self.unchanged(s)
+
+        s = """os.getcwdb()"""
+        self.unchanged(s)
+
+    def test_indentation(self):
+        b = """
+            if 1:
+                os.getcwdu()
+            """
+        a = """
+            if 1:
+                os.getcwd()
+            """
+        self.check(b, a)
+
+    def test_multilation(self):
+        b = """os .getcwdu()"""
+        a = """os .getcwd()"""
+        self.check(b, a)
+
+        b = """os.  getcwdu"""
+        a = """os.  getcwd"""
+        self.check(b, a)
+
+        b = """os.getcwdu (  )"""
+        a = """os.getcwd (  )"""
         self.check(b, a)
 
 

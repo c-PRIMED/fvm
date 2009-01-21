@@ -397,7 +397,7 @@ class BaseBytesTest(unittest.TestCase):
         self.assertEqual(b.rpartition(b'i'), (b'mississipp', b'i', b''))
 
     def test_pickling(self):
-        for proto in range(pickle.HIGHEST_PROTOCOL):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for b in b"", b"a", b"abc", b"\xffab\x80", b"\0\0\377\0\0":
                 b = self.type2test(b)
                 ps = pickle.dumps(b, proto)
@@ -721,6 +721,16 @@ class ByteArrayTest(BaseBytesTest):
         b.insert(0, Indexable(ord('A')))
         self.assertEqual(b, b'A')
 
+    def test_copied(self):
+        # Issue 4348.  Make sure that operations that don't mutate the array
+        # copy the bytes.
+        b = bytearray(b'abc')
+        #self.assertFalse(b is b.replace(b'abc', b'cde', 0))
+
+        t = bytearray([i for i in range(256)])
+        x = bytearray(b'')
+        self.assertFalse(x is x.translate(t))
+
     def test_partition_bytearray_doesnt_share_nullstring(self):
         a, b, c = bytearray(b"x").partition(b"y")
         self.assertEqual(b, b"")
@@ -947,7 +957,7 @@ class ByteArraySubclassTest(unittest.TestCase):
         a = ByteArraySubclass(b"abcd")
         a.x = 10
         a.y = ByteArraySubclass(b"efgh")
-        for proto in range(pickle.HIGHEST_PROTOCOL):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             b = pickle.loads(pickle.dumps(a, proto))
             self.assertNotEqual(id(a), id(b))
             self.assertEqual(a, b)

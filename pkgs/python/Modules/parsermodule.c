@@ -26,12 +26,20 @@
  */
 
 #include "Python.h"                     /* general Python API             */
+#include "Python-ast.h"                 /* mod_ty */
 #include "graminit.h"                   /* symbols defined in the grammar */
 #include "node.h"                       /* internal parser structure      */
 #include "errcode.h"                    /* error codes for PyNode_*()     */
 #include "token.h"                      /* token definitions              */
+#include "grammar.h"
+#include "parsetok.h"
                                         /* ISTERMINAL() / ISNONTERMINAL() */
-#include "compile.h"                    /* PyNode_Compile()               */
+#include "compile.h"
+#undef Yield
+#include "ast.h"
+#include "pyarena.h"
+
+extern grammar _PyParser_Grammar; /* From graminit.c */
 
 #ifdef lint
 #include <note.h>
@@ -156,6 +164,7 @@ typedef struct {
     PyObject_HEAD                       /* standard object header           */
     node* st_node;                      /* the node* returned by the parser */
     int   st_type;                      /* EXPR or SUITE ?                  */
+    PyCompilerFlags st_flags;           /* Parser and compiler flags        */
 } PyST_Object;
 
 
@@ -260,6 +269,7 @@ parser_newstobject(node *st, int type)
     if (o != 0) {
         o->st_node = st;
         o->st_type = type;
+        o->st_flags.cf_flags = 0;
     }
     else {
         PyNode_Free(st);
@@ -394,6 +404,8 @@ static PyObject*
 parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
 {
     PyObject*     res = 0;
+    PyArena*      arena;
+    mod_ty        mod;
     char*         str = "<syntax-tree>";
     int ok;
 
@@ -406,8 +418,16 @@ parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
         ok = PyArg_ParseTupleAndKeywords(args, kw, "|s:compile", &keywords[1],
                                          &str);
 
-    if (ok)
-        res = (PyObject *)PyNode_Compile(self->st_node, str);
+    if (ok) {
+        arena = PyArena_New();
+        if (arena) {
+           mod = PyAST_FromNode(self->st_node, &(self->st_flags), str, arena);
+           if (mod) {
+               res = (PyObject *)PyAST_Compile(mod, str, &(self->st_flags), arena);
+           }
+           PyArena_Free(arena);
+        }
+    }
 
     return (res);
 }
@@ -523,16 +543,25 @@ parser_do_parse(PyObject *args, PyObject *kw, char *argspec, int type)
 {
     char*     string = 0;
     PyObject* res    = 0;
+    int flags        = 0;
+    perrdetail err;
 
     static char *keywords[] = {"source", NULL};
 
     if (PyArg_ParseTupleAndKeywords(args, kw, argspec, keywords, &string)) {
-        node* n = PyParser_SimpleParseString(string,
-                                             (type == PyST_EXPR)
-                                             ? eval_input : file_input);
+        node* n = PyParser_ParseStringFlagsFilenameEx(string, NULL,
+                                                       &_PyParser_Grammar,
+                                                      (type == PyST_EXPR)
+                                                      ? eval_input : file_input,
+                                                      &err, &flags);
 
-	if (n)
+	if (n) {
 	    res = parser_newstobject(n, type);
+            if (res)
+                ((PyST_Object *)res)->st_flags.cf_flags = flags & PyCF_MASK;
+        }
+        else
+            PyParser_SetError(&err);
     }
     return (res);
 }
@@ -1530,7 +1559,7 @@ validate_small_stmt(node *tree)
 
 
 /*  compound_stmt:
- *      if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef | decorated
+ *      if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
  */
 static int
 validate_compound_stmt(node *tree)
@@ -1548,6 +1577,7 @@ validate_compound_stmt(node *tree)
           || (ntype == while_stmt)
           || (ntype == for_stmt)
           || (ntype == try_stmt)
+          || (ntype == with_stmt)
           || (ntype == funcdef)
           || (ntype == classdef)
           || (ntype == decorated))
@@ -1850,10 +1880,10 @@ static int
 count_from_dots(node *tree)
 {
         int i;
-        for (i = 0; i < NCH(tree); i++)
+        for (i = 1; i < NCH(tree); i++)
 		if (TYPE(CHILD(tree, i)) != DOT)
 			break;
-        return i;
+        return i-1;
 }
 
 /* 'from' ('.'* dotted_name | '.') 'import' ('*' | '(' import_as_names ')' |
@@ -2588,6 +2618,38 @@ validate_decorators(node *tree)
     return ok;
 }
 
+/*  with_var
+with_var: 'as' expr
+ */
+static int
+validate_with_var(node *tree)
+{
+    int nch = NCH(tree);
+    int ok = (validate_ntype(tree, with_var)
+        && (nch == 2)
+        && validate_name(CHILD(tree, 0), "as")
+        && validate_expr(CHILD(tree, 1)));
+   return ok;
+}
+
+/*  with_stmt
+ *           0      1       2       -2   -1
+with_stmt: 'with' test [ with_var ] ':' suite
+ */
+static int
+validate_with_stmt(node *tree)
+{
+    int nch = NCH(tree);
+    int ok = (validate_ntype(tree, with_stmt)
+        && ((nch == 4) || (nch == 5))
+        && validate_name(CHILD(tree, 0), "with")
+        && validate_test(CHILD(tree, 1))
+        && (nch == 4 || validate_with_var(CHILD(tree, 2))) 
+        && validate_colon(RCHILD(tree, -2))
+        && validate_suite(RCHILD(tree, -1)));
+   return ok;
+}
+
 /*  funcdef:
  *      
  *     -5   -4         -3  -2    -1
@@ -2963,6 +3025,9 @@ validate_node(node *tree)
              */
           case funcdef:
             res = validate_funcdef(tree);
+            break;
+          case with_stmt:
+            res = validate_with_stmt(tree);
             break;
           case classdef:
             res = validate_class(tree);

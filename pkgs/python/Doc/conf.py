@@ -41,12 +41,6 @@ today_fmt = '%B %d, %Y'
 
 # List of files that shouldn't be included in the build.
 unused_docs = [
-    'whatsnew/2.0',
-    'whatsnew/2.1',
-    'whatsnew/2.2',
-    'whatsnew/2.3',
-    'whatsnew/2.4',
-    'whatsnew/2.5',
     'maclib/scrap',
     'library/xmllib',
     'library/xml.etree',
@@ -144,10 +138,14 @@ latex_preamble = r'''
   \strong{Python Software Foundation}\\
   Email: \email{docs@python.org}
 }
+\let\Verbatim=\OriginalVerbatim
+\let\endVerbatim=\endOriginalVerbatim
 '''
 
 # Documents to append as an appendix to all manuals.
 latex_appendices = ['glossary', 'about', 'license', 'copyright']
+
+latex_elements = {'inputenc': '\\usepackage[utf8x]{inputenc}'}
 
 # Options for the coverage checker
 # --------------------------------

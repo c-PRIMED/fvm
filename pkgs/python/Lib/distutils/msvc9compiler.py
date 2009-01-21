@@ -12,7 +12,7 @@ for older versions of VS in distutils.msvccompiler.
 #   finding DevStudio (through the registry)
 # ported to VS2005 and VS 2008 by Christian Heimes
 
-__revision__ = "$Id: msvc9compiler.py 66502 2008-09-18 03:51:46Z mark.hammond $"
+__revision__ = "$Id: msvc9compiler.py 67415 2008-11-28 11:03:48Z christian.heimes $"
 
 import os
 import subprocess
@@ -316,7 +316,7 @@ class MSVCCompiler(CCompiler) :
         self.__version = VERSION
         self.__root = r"Software\Microsoft\VisualStudio"
         # self.__macros = MACROS
-        self.__path = []
+        self.__paths = []
         # target platform (.plat_name is consistent with 'bdist')
         self.plat_name = None
         self.__arch = None # deprecated name

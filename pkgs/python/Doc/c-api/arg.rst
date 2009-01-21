@@ -32,13 +32,18 @@ variable(s) whose address should be passed.
    converted to C strings using the default encoding.  If this conversion fails, a
    :exc:`UnicodeError` is raised.
 
-``s#`` (string, Unicode or any read buffer compatible object) [const char \*, int]
+``s#`` (string, Unicode or any read buffer compatible object) [const char \*, int (or :ctype:`Py_ssize_t`, see below)]
    This variant on ``s`` stores into two C variables, the first one a pointer to a
    character string, the second one its length.  In this case the Python string may
    contain embedded null bytes.  Unicode objects pass back a pointer to the default
    encoded string version of the object if such a conversion is possible.  All
    other read-buffer compatible objects pass back a reference to the raw internal
    data representation.
+
+   Starting with Python 2.5 the type of the length argument can be
+   controlled by defining the macro :cmacro:`PY_SSIZE_T_CLEAN` before
+   including :file:`Python.h`.  If the macro is defined, length is a
+   :ctype:`Py_ssize_t` rather than an int.
 
 ``s*`` (string, Unicode, or any buffer compatible object) [Py_buffer \*]
   Similar to ``s#``, this code fills a Py_buffer structure provided by the caller.
@@ -246,7 +251,7 @@ variable(s) whose address should be passed.
    or use ``w#`` instead.  Only single-segment buffer objects are accepted;
    :exc:`TypeError` is raised for all others.
 
-``w#`` (read-write character buffer) [char \*, int]
+``w#`` (read-write character buffer) [char \*, Py_ssize_t]
    Like ``s#``, but accepts any object which implements the read-write buffer
    interface.  The :ctype:`char \*` variable is set to point to the first byte of
    the buffer, and the :ctype:`int` is set to the length of the buffer.  Only

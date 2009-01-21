@@ -50,9 +50,10 @@ FAILURE_MAILTO="python-checkins@python.org"
 #FAILURE_CC="optional--uncomment and set to desired address"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"
-REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/"
+REMOTE_DIR="/data/ftp.python.org/pub/www.python.org/doc/current"
+REMOTE_DIR_DIST="/data/ftp.python.org/pub/python/doc/current"
 RESULT_FILE="$DIR/build/index.html"
-INSTALL_DIR="/tmp/python-test/local"
+INSTALL_DIR="/tmp/python-test-2.6/local"
 RSYNC_OPTS="-aC -e ssh"
 
 # Always run the installed version of Python.
@@ -77,7 +78,7 @@ LEAKY_TESTS="test_(asynchat|cmd_line|docxmlrpc|dumbdbm|file|ftplib|httpservers|i
 LEAKY_SKIPS="-x test_compiler test_logging"
 
 # Change this flag to "yes" for old releases to only update/build the docs.
-BUILD_DISABLED="no"
+BUILD_DISABLED="yes"
 
 ## utility functions
 current_time() {
@@ -271,11 +272,24 @@ if [ $err != 0 ]; then
     mail_on_failure "doc" ../build/$F
 fi
 
+F="make-doc-dist.out"
+start=`current_time`
+if [ $conflict_count == 0 ]; then
+    make dist >& ../build/$F
+    err=$?
+fi
+update_status "Making downloadable doc" "$F" $start
+if [ $err != 0 ]; then
+    NUM_FAILURES=1
+    mail_on_failure "doc dist" ../build/$F
+fi
+
 echo "</ul>" >> $RESULT_FILE
 echo "</body>" >> $RESULT_FILE
 echo "</html>" >> $RESULT_FILE
 
 ## copy results
 rsync $RSYNC_OPTS build/html/* $REMOTE_SYSTEM:$REMOTE_DIR
+rsync $RSYNC_OPTS dist/* $REMOTE_SYSTEM:$REMOTE_DIR_DIST
 cd ../build
 rsync $RSYNC_OPTS index.html *.out $REMOTE_SYSTEM:$REMOTE_DIR/results/

@@ -10,7 +10,7 @@ used from a setup script as
 
 # This module should be kept compatible with Python 2.1.
 
-__revision__ = "$Id: __init__.py 66714 2008-10-01 21:46:40Z barry.warsaw $"
+__revision__ = "$Id: __init__.py 67515 2008-12-04 02:59:51Z barry.warsaw $"
 
 # Distutils version
 #
@@ -22,5 +22,5 @@ __revision__ = "$Id: __init__.py 66714 2008-10-01 21:46:40Z barry.warsaw $"
 #
 
 #--start constants--
-__version__ = "2.6"
+__version__ = "2.6.1"
 #--end constants--

@@ -754,7 +754,8 @@ set_pop(PySetObject *so)
 	return key;
 }
 
-PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.");
+PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.\n\
+Raises KeyError if the set is empty.");
 
 static int
 set_traverse(PySetObject *so, visitproc visit, void *arg)
@@ -1873,7 +1874,7 @@ PyDoc_STRVAR(contains_doc, "x.__contains__(y) <==> y in x.");
 static PyObject *
 set_remove(PySetObject *so, PyObject *key)
 {
-	PyObject *tmpkey, *result;
+	PyObject *tmpkey;
 	int rv;
 
 	rv = set_discard_key(so, key);
@@ -1885,11 +1886,14 @@ set_remove(PySetObject *so, PyObject *key)
 		if (tmpkey == NULL)
 			return NULL;
 		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
-		result = set_remove(so, tmpkey);
+		rv = set_discard_key(so, tmpkey);
 		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
 		Py_DECREF(tmpkey);
-		return result;
-	} else if (rv == DISCARD_NOTFOUND) {
+		if (rv == -1)
+			return NULL;
+	} 
+
+	if (rv == DISCARD_NOTFOUND) {
 		set_key_error(key);
 		return NULL;
 	}

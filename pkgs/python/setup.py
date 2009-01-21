@@ -1,7 +1,7 @@
 # Autodetecting setup.py script for building the Python extensions
 #
 
-__version__ = "$Revision: 66688 $"
+__version__ = "$Revision: 67099 $"
 
 import sys, os, imp, re, optparse
 from glob import glob
@@ -320,12 +320,13 @@ class PyBuildExt(build_ext):
         # the environment variable is not set even though the value were passed
         # into configure and stored in the Makefile (issue found on OS X 10.3).
         for env_var, arg_name, dir_list in (
+                ('LDFLAGS', '-R', self.compiler.runtime_library_dirs),
                 ('LDFLAGS', '-L', self.compiler.library_dirs),
                 ('CPPFLAGS', '-I', self.compiler.include_dirs)):
             env_val = sysconfig.get_config_var(env_var)
             if env_val:
                 # To prevent optparse from raising an exception about any
-                # options in env_val that is doesn't know about we strip out
+                # options in env_val that it doesn't know about we strip out
                 # all double dashes and any dashes followed by a character
                 # that is not for the option we are dealing with.
                 #
@@ -934,7 +935,8 @@ class PyBuildExt(build_ext):
             ]
             sqlite_libfile = self.compiler.find_library_file(
                                 sqlite_dirs_to_check + lib_dirs, 'sqlite3')
-            sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
+            if sqlite_libfile:
+                sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
 
         if sqlite_incdir and sqlite_libdir:
             sqlite_srcs = ['_sqlite/cache.c',
@@ -1259,7 +1261,7 @@ class PyBuildExt(build_ext):
                 )
             libraries = []
 
-        elif platform in ('freebsd5', 'freebsd6', 'freebsd7', 'freebsd8'):
+        elif platform in ('freebsd4', 'freebsd5', 'freebsd6', 'freebsd7', 'freebsd8'):
             # FreeBSD's P1003.1b semaphore support is very experimental
             # and has many known problems. (as of June 2008)
             macros = dict(                  # FreeBSD
@@ -1836,7 +1838,6 @@ yourself.
 """
 
 CLASSIFIERS = """
-Development Status :: 3 - Alpha
 Development Status :: 6 - Mature
 License :: OSI Approved :: Python Software Foundation License
 Natural Language :: English

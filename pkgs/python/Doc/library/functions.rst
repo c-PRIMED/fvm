@@ -24,10 +24,8 @@ available.  They are listed here in alphabetical order.
    The function is invoked by the :keyword:`import` statement.  It mainly exists
    so that you can replace it with another function that has a compatible
    interface, in order to change the semantics of the :keyword:`import` statement.
-   For examples of why and how you would do this, see the standard library modules
-   :mod:`ihooks` and :mod:`rexec`.  See also the built-in module :mod:`imp`, which
-   defines some useful operations out of which you can build your own
-   :func:`__import__` function.
+   See the built-in module :mod:`imp`, which defines some useful operations out
+   of which you can build your own :func:`__import__` function.
 
    For example, the statement ``import spam`` results in the following call:
    ``__import__('spam', globals(), locals(), [], -1)``; the statement
@@ -112,6 +110,15 @@ available.  They are listed here in alphabetical order.
    basestring)`` is equivalent to ``isinstance(obj, (str, unicode))``.
 
    .. versionadded:: 2.3
+
+
+.. function:: bin(x)
+
+   Convert an integer number to a binary string. The result is a valid Python
+   expression.  If *x* is not a Python :class:`int` object, it has to define an
+   :meth:`__index__` method that returns an integer.
+
+   .. versionadded:: 2.6
 
 
 .. function:: bool([x])
@@ -910,7 +917,8 @@ available.  They are listed here in alphabetical order.
    best explained with an example::
 
       class C(object):
-          def __init__(self): self._x = None
+          def __init__(self):
+              self._x = None
 
           @property
           def x(self):
@@ -1388,6 +1396,18 @@ available.  They are listed here in alphabetical order.
    The left-to-right evaluation order of the iterables is guaranteed. This
    makes possible an idiom for clustering a data series into n-length groups
    using ``zip(*[iter(s)]*n)``.
+
+   :func:`zip` in conjunction with the ``*`` operator can be used to unzip a
+   list::
+
+      >>> x = [1, 2, 3]
+      >>> y = [4, 5, 6]
+      >>> zipped = zip(x, y)
+      >>> zipped
+      [(1, 4), (2, 5), (3, 6)]
+      >>> x2, y2 = zip(*zipped)
+      >>> x == x2, y == y2
+      True
 
    .. versionadded:: 2.0
 

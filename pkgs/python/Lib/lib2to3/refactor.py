@@ -36,9 +36,7 @@ def get_all_fix_names(fixer_pkg, remove_prefix=True):
     pkg = __import__(fixer_pkg, [], [], ["*"])
     fixer_dir = os.path.dirname(pkg.__file__)
     fix_names = []
-    names = os.listdir(fixer_dir)
-    names.sort()
-    for name in names:
+    for name in sorted(os.listdir(fixer_dir)):
         if name.startswith("fix_") and name.endswith(".py"):
             if remove_prefix:
                 name = name[4:]
@@ -125,8 +123,8 @@ class RefactoringTool(object):
                                     logger=self.logger)
         self.pre_order, self.post_order = self.get_fixers()
 
-        self.pre_order = get_headnode_dict(self.pre_order)
-        self.post_order = get_headnode_dict(self.post_order)
+        self.pre_order_mapping = get_headnode_dict(self.pre_order)
+        self.post_order_mapping = get_headnode_dict(self.post_order)
 
         self.files = []  # List of files that were or should be modified
 
@@ -253,7 +251,7 @@ class RefactoringTool(object):
             there were errors during the parse.
         """
         try:
-            tree = self.driver.parse_string(data,1)
+            tree = self.driver.parse_string(data)
         except Exception, err:
             self.log_error("Can't parse %s: %s: %s",
                            name, err.__class__.__name__, err)
@@ -292,13 +290,12 @@ class RefactoringTool(object):
         # Two calls to chain are required because pre_order.values()
         #   will be a list of lists of fixers:
         #   [[<fixer ...>, <fixer ...>], [<fixer ...>]]
-        all_fixers = chain(chain(*self.pre_order.values()),\
-                           chain(*self.post_order.values()))
+        all_fixers = chain(self.pre_order, self.post_order)
         for fixer in all_fixers:
             fixer.start_tree(tree, name)
 
-        self.traverse_by(self.pre_order, tree.pre_order())
-        self.traverse_by(self.post_order, tree.post_order())
+        self.traverse_by(self.pre_order_mapping, tree.pre_order())
+        self.traverse_by(self.post_order_mapping, tree.post_order())
 
         for fixer in all_fixers:
             fixer.finish_tree(tree, name)
@@ -352,33 +349,22 @@ class RefactoringTool(object):
         else:
             self.log_debug("Not writing changes to %s", filename)
 
-    def write_file(self, new_text, filename, old_text=None):
+    def write_file(self, new_text, filename, old_text):
         """Writes a string to a file.
 
         It first shows a unified diff between the old text and the new text, and
         then rewrites the file; the latter is only done if the write option is
         set.
         """
-        backup = filename + ".bak"
-        if os.path.lexists(backup):
-            try:
-                os.remove(backup)
-            except os.error, err:
-                self.log_message("Can't remove backup %s", backup)
-        try:
-            os.rename(filename, backup)
-        except os.error, err:
-            self.log_message("Can't rename %s to %s", filename, backup)
         try:
             f = open(filename, "w")
         except os.error, err:
             self.log_error("Can't create %s: %s", filename, err)
             return
         try:
-            try:
-                f.write(new_text)
-            except os.error, err:
-                self.log_error("Can't write %s: %s", filename, err)
+            f.write(new_text)
+        except os.error, err:
+            self.log_error("Can't write %s: %s", filename, err)
         finally:
             f.close()
         self.log_debug("Wrote changes to %s", filename)

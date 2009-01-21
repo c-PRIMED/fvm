@@ -115,19 +115,19 @@ static char unicode_default_encoding[100];
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
-//     case 0x0009: /* HORIZONTAL TABULATION */
-//     case 0x000A: /* LINE FEED */
-//     case 0x000B: /* VERTICAL TABULATION */
-//     case 0x000C: /* FORM FEED */
-//     case 0x000D: /* CARRIAGE RETURN */
+/*     case 0x0009: * HORIZONTAL TABULATION */
+/*     case 0x000A: * LINE FEED */
+/*     case 0x000B: * VERTICAL TABULATION */
+/*     case 0x000C: * FORM FEED */
+/*     case 0x000D: * CARRIAGE RETURN */
 	0, 1, 1, 1, 1, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
-//     case 0x001C: /* FILE SEPARATOR */
-//     case 0x001D: /* GROUP SEPARATOR */
-//     case 0x001E: /* RECORD SEPARATOR */
-//     case 0x001F: /* UNIT SEPARATOR */
+/*     case 0x001C: * FILE SEPARATOR */
+/*     case 0x001D: * GROUP SEPARATOR */
+/*     case 0x001E: * RECORD SEPARATOR */
+/*     case 0x001F: * UNIT SEPARATOR */
 	0, 0, 0, 0, 1, 1, 1, 1,
-//     case 0x0020: /* SPACE */
+/*     case 0x0020: * SPACE */
 	1, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -146,13 +146,13 @@ const unsigned char _Py_ascii_whitespace[] = {
 /* Same for linebreaks */
 static unsigned char ascii_linebreak[] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
-//         0x000A, /* LINE FEED */
-//         0x000D, /* CARRIAGE RETURN */
+/*         0x000A, * LINE FEED */
+/*         0x000D, * CARRIAGE RETURN */
 	0, 0, 1, 0, 0, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
-//         0x001C, /* FILE SEPARATOR */
-//         0x001D, /* GROUP SEPARATOR */
-//         0x001E, /* RECORD SEPARATOR */
+/*         0x001C, * FILE SEPARATOR */
+/*         0x001D, * GROUP SEPARATOR */
+/*         0x001E, * RECORD SEPARATOR */
 	0, 0, 0, 0, 1, 1, 1, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -7070,7 +7070,7 @@ unicode_length(PyUnicodeObject *self)
 PyDoc_STRVAR(ljust__doc__,
 "S.ljust(width[, fillchar]) -> int\n\
 \n\
-Return S left justified in a Unicode string of length width. Padding is\n\
+Return S left-justified in a Unicode string of length width. Padding is\n\
 done using the specified fill character (default is a space).");
 
 static PyObject *
@@ -7456,7 +7456,7 @@ unicode_rindex(PyUnicodeObject *self, PyObject *args)
 PyDoc_STRVAR(rjust__doc__,
 "S.rjust(width[, fillchar]) -> unicode\n\
 \n\
-Return S right justified in a Unicode string of length width. Padding is\n\
+Return S right-justified in a Unicode string of length width. Padding is\n\
 done using the specified fill character (default is a space).");
 
 static PyObject *
@@ -7606,9 +7606,9 @@ PyUnicode_RPartition(PyObject *str_in, PyObject *sep_in)
 PyDoc_STRVAR(partition__doc__,
 "S.partition(sep) -> (head, sep, tail)\n\
 \n\
-Searches for the separator sep in S, and returns the part before it,\n\
+Search for the separator sep in S, and return the part before it,\n\
 the separator itself, and the part after it.  If the separator is not\n\
-found, returns S and two empty strings.");
+found, return S and two empty strings.");
 
 static PyObject*
 unicode_partition(PyUnicodeObject *self, PyObject *separator)
@@ -7619,9 +7619,9 @@ unicode_partition(PyUnicodeObject *self, PyObject *separator)
 PyDoc_STRVAR(rpartition__doc__,
 "S.rpartition(sep) -> (tail, sep, head)\n\
 \n\
-Searches for the separator sep in S, starting at the end of S, and returns\n\
+Search for the separator sep in S, starting at the end of S, and return\n\
 the part before it, the separator itself, and the part after it.  If the\n\
-separator is not found, returns two empty strings and S.");
+separator is not found, return two empty strings and S.");
 
 static PyObject*
 unicode_rpartition(PyUnicodeObject *self, PyObject *separator)
