@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -130,8 +130,7 @@ Double_Matrix generatePascalSerendipityTetrahedron(int order)
   }
   Double_Matrix monomialsMaxOrder = generateMonomialSubspace(3, order);
   int nbMaxOrder = monomialsMaxOrder.size1();
-    
-  Double_Matrix(monomials.touchSubmatrix(index, nbMaxOrder, 0, 3)).memcpy(monomialsMaxOrder);
+  monomials.copy(monomialsMaxOrder, 0, nbMaxOrder, 0, 3, index, 0);
   return monomials;
 }
 
@@ -147,7 +146,7 @@ Double_Matrix generatePascalTetrahedron(int order)
   for (int p = 0; p <= order; p++) {
     Double_Matrix monOrder = generateMonomialSubspace(3, p);
     int nb = monOrder.size1();
-    Double_Matrix(monomials.touchSubmatrix(index, nb, 0, 3)).memcpy(monOrder);
+    monomials.copy(monOrder, 0, nb, 0, 3, index, 0);
     index += nb;
   }
 
@@ -511,7 +510,7 @@ Double_Matrix gmshGeneratePointsTriangle(int order, bool serendip)
         Double_Matrix inner = gmshGeneratePointsTriangle(order - 3, serendip);
         inner.scale(1. - 3. * dd);
         inner.add(dd);
-        Double_Matrix(point.touchSubmatrix(index, nbPoints - index, 0, 2)).memcpy(inner);
+        point.copy(inner, 0, nbPoints - index, 0, 2, index, 0);
       }
     }
   }
@@ -527,10 +526,9 @@ Double_Matrix generateLagrangeMonomialCoefficients(const Double_Matrix& monomial
   }
   
   int ndofs = monomial.size1();
-  int dim   = monomial.size2();
+  int dim = monomial.size2();
   
   Double_Matrix Vandermonde(ndofs, ndofs);
-  
   for (int i = 0; i < ndofs; i++) {
     for (int j = 0; j < ndofs; j++) {
       double dd = 1.;
@@ -538,35 +536,19 @@ Double_Matrix generateLagrangeMonomialCoefficients(const Double_Matrix& monomial
       Vandermonde(i, j) = dd;
     }
   }
-  
-  // check for independence
-  
+
   double det = Vandermonde.determinant();
 
-  if (det == 0.0){
+  if (det == 0.){
     Msg::Fatal("Vandermonde matrix has zero determinant!?");
     return Double_Matrix(1, 1);
   }
-
   Double_Matrix coefficient(ndofs, ndofs);
-  
   for (int i = 0; i < ndofs; i++) {
     for (int j = 0; j < ndofs; j++) {
       int f = (i + j) % 2 == 0 ? 1 : -1;
       Double_Matrix cofactor = Vandermonde.cofactor(i, j);
       coefficient(i, j) = f * cofactor.determinant() / det;
-    }
-  }
-
-  Vandermonde.set_all(0.);
-  
-  for (int i = 0; i < ndofs; i++) {
-    for (int j = 0; j < ndofs; j++) {
-      double dd = 1.;
-      for (int k = 0; k < dim; k++) dd *= pow(point(i, k), monomial(j, k));
-      for (int k = 0; k < ndofs; k++) {
-        Vandermonde(i, k) += coefficient(k, j) * dd;
-      }
     }
   }
   return coefficient;
@@ -677,12 +659,12 @@ const gmshFunctionSpace &gmshFunctionSpaces::find(int tag)
   return fs[tag];
 }
 
-std::map<std::pair<int,int>, Double_Matrix> gmshFunctionSpaces::injector;
+std::map<std::pair<int, int>, Double_Matrix> gmshFunctionSpaces::injector;
 
-const Double_Matrix &gmshFunctionSpaces::findInjector(int tag1,int tag2)
+const Double_Matrix &gmshFunctionSpaces::findInjector(int tag1, int tag2)
 {
   std::pair<int,int> key(tag1,tag2);
-  std::map<std::pair<int,int>,Double_Matrix>::const_iterator it = injector.find(key);
+  std::map<std::pair<int, int>, Double_Matrix>::const_iterator it = injector.find(key);
   if (it != injector.end()) return it->second;
 
   const gmshFunctionSpace& fs1 = find(tag1);
@@ -692,11 +674,11 @@ const Double_Matrix &gmshFunctionSpaces::findInjector(int tag1,int tag2)
   
   double sf[256];
   
-  for (int i=0;i<fs1.points.size1();i++) {
-    fs2.f(fs1.points(i,0),fs1.points(i,1),fs1.points(i,2),sf);
-    for (int j=0;j<fs2.points.size1();j++) inj(i,j) = sf[j];
+  for (int i = 0; i < fs1.points.size1(); i++) {
+    fs2.f(fs1.points(i, 0), fs1.points(i, 1), fs1.points(i, 2), sf);
+    for (int j = 0; j < fs2.points.size1(); j++) inj(i, j) = sf[j];
   }
 
-  injector.insert(std::make_pair(key,inj));
+  injector.insert(std::make_pair(key, inj));
   return injector[key];
 }

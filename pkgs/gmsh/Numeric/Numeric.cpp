@@ -1,20 +1,19 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
+#include "GmshConfig.h"
 #include "GmshMessage.h"
 #include "Numeric.h"
-
-// Check GSL version. We need at least 1.2, since all versions <=
-// 1.1.1 have a buggy SVD routine (infinite loop fixed on Sun Jun 16
-// 11:45:29 2002 in GSL's cvs tree). We check this at run time since
-// Gmsh could be distributed with the gsl dynamically linked.
 
 #if defined(HAVE_GSL)
 
 #include <gsl/gsl_errno.h>
-#include <gsl/gsl_vector.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_min.h>
+#include <gsl/gsl_multimin.h>
+#include <gsl/gsl_multiroots.h>
 #include <gsl/gsl_linalg.h>
 
 void my_gsl_msg(const char *reason, const char *file, int line,
@@ -23,7 +22,7 @@ void my_gsl_msg(const char *reason, const char *file, int line,
   Msg::Error("GSL: %s (%s, line %d)", reason, file, line);
 }
 
-int check_gsl()
+int Init_Numeric()
 {
   // set new error handler
   gsl_set_error_handler(&my_gsl_msg);
@@ -33,90 +32,88 @@ int check_gsl()
   return 1;
 }
 
+static double (*f_statN) (double*, void *data); 
+
+static void (*df_statN) (double*, double*, double &, void *data);
+
+static double fobjN (const gsl_vector *x, void *data)
+{
+  return f_statN(x->data, data);
+}
+
+static void dfobjN(const gsl_vector *x, void *params, gsl_vector *g)
+{
+  double f;
+  df_statN(x->data, g->data, f, params);
+}
+
+static void fdfobjN(const gsl_vector *x, void *params, double *f, gsl_vector *g)
+{
+  df_statN(x->data, g->data, *f, params);
+}
+
+void minimize_N(int N, double (*f)(double*, void *data), 
+                void (*df)(double*, double*, double &, void *data),
+                void *data, int niter, double *U, double &res)
+{
+  f_statN = f;
+  df_statN = df;
+
+  int iter = 0;
+  int status;
+  
+  const gsl_multimin_fdfminimizer_type *T;
+  gsl_multimin_fdfminimizer *s;
+  gsl_vector *x;
+  gsl_multimin_function_fdf my_func;
+
+  my_func.f = &fobjN;
+  my_func.df = &dfobjN;
+  my_func.fdf = &fdfobjN;
+  my_func.n = N;
+  my_func.params = data;
+
+  x = gsl_vector_alloc(N);
+  for (int i = 0; i < N; i++)
+    gsl_vector_set(x, i, U[i]);
+
+  T = gsl_multimin_fdfminimizer_conjugate_fr;
+  s = gsl_multimin_fdfminimizer_alloc(T, N);
+
+  gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.01, 1e-4);
+
+  do{
+    iter++;
+    status = gsl_multimin_fdfminimizer_iterate(s);
+    
+    if (status)
+      break;
+    
+    status = gsl_multimin_test_gradient(s->gradient, 1e-3);
+  }
+  while (status == GSL_CONTINUE && iter < niter);
+  
+  for (int i = 0; i < N; i++)
+    U[i] = gsl_vector_get(s->x, i);
+  res = s->f;
+  gsl_multimin_fdfminimizer_free(s);
+  gsl_vector_free(x);
+}                                           
+
 #else
 
-#define NRANSI
-#include "nrutil.h"
-void dsvdcmp(double **a, int m, int n, double w[], double **v);
-
-int check_gsl()
+int Init_Numeric()
 {
-  // initilize robust geometric predicates
   gmsh::exactinit() ;
   return 1;
 }
 
-#endif
-
-void invert_singular_matrix3x3(double MM[3][3], double II[3][3])
+void minimize_N(int N, double (*f) (double*, void *data), 
+                void (*df) (double*, double*, double &, void *data) ,
+                void *data,int niter,
+                double *, double &res)
 {
-  int i, j, k, n = 3;
-  double TT[3][3];
-
-  for(i = 1; i <= n; i++) {
-    for(j = 1; j <= n; j++) {
-      II[i - 1][j - 1] = 0.0;
-      TT[i - 1][j - 1] = 0.0;
-    }
-  }
-
-#if defined(HAVE_GSL)
-  gsl_matrix *M = gsl_matrix_alloc(3, 3);
-  gsl_matrix *V = gsl_matrix_alloc(3, 3);
-  gsl_vector *W = gsl_vector_alloc(3);
-  gsl_vector *TMPVEC = gsl_vector_alloc(3);
-  for(i = 1; i <= n; i++) {
-    for(j = 1; j <= n; j++) {
-      gsl_matrix_set(M, i - 1, j - 1, MM[i - 1][j - 1]);
-    }
-  }
-  gsl_linalg_SV_decomp(M, V, W, TMPVEC);
-  for(i = 1; i <= n; i++) {
-    for(j = 1; j <= n; j++) {
-      double ww = gsl_vector_get(W, i - 1);
-      if(fabs(ww) > 1.e-16) {   //singular value precision
-        TT[i - 1][j - 1] += gsl_matrix_get(M, j - 1, i - 1) / ww;
-      }
-    }
-  }
-  for(i = 1; i <= n; i++) {
-    for(j = 1; j <= n; j++) {
-      for(k = 1; k <= n; k++) {
-        II[i - 1][j - 1] +=
-          gsl_matrix_get(V, i - 1, k - 1) * TT[k - 1][j - 1];
-      }
-    }
-  }
-  gsl_matrix_free(M);
-  gsl_matrix_free(V);
-  gsl_vector_free(W);
-  gsl_vector_free(TMPVEC);
-#else
-  double **M = dmatrix(1, 3, 1, 3);
-  double **V = dmatrix(1, 3, 1, 3);
-  double *W = dvector(1, 3);
-  for(i = 1; i <= n; i++) {
-    for(j = 1; j <= n; j++) {
-      M[i][j] = MM[i - 1][j - 1];
-    }
-  }
-  dsvdcmp(M, n, n, W, V);
-  for(i = 1; i <= n; i++) {
-    for(j = 1; j <= n; j++) {
-      if(fabs(W[i]) > 1.e-16) { //singular value precision
-        TT[i - 1][j - 1] += M[j][i] / W[i];
-      }
-    }
-  }
-  for(i = 1; i <= n; i++) {
-    for(j = 1; j <= n; j++) {
-      for(k = 1; k <= n; k++) {
-        II[i - 1][j - 1] += V[i][k] * TT[k - 1][j - 1];
-      }
-    }
-  }
-  free_dmatrix(M, 1, n, 1, n);
-  free_dmatrix(V, 1, n, 1, n);
-  free_dvector(W, 1, n);
-#endif
+  Msg::Error("Gmsh must be compiled with GSL support for minimize_N");
 }
+
+#endif

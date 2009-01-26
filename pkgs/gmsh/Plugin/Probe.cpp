@@ -1,15 +1,22 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
+#include "GmshConfig.h"
 #include "Probe.h"
 #include "Context.h"
 #include "OctreePost.h"
 
 #if defined(HAVE_FLTK)
-#include "GmshUI.h"
+#include <FL/gl.h>
+#include "drawContext.h"
 #include "Draw.h"
+#endif
+
+#if defined(WIN32)
+#undef min
+#undef max
 #endif
 
 extern Context_T CTX;
@@ -31,7 +38,7 @@ extern "C"
   }
 }
 
-void GMSH_ProbePlugin::draw()
+void GMSH_ProbePlugin::draw(void *context)
 {
 #if defined(HAVE_FLTK)
   int num = (int)ProbeOptions_Number[3].def;
@@ -40,6 +47,7 @@ void GMSH_ProbePlugin::draw()
     double x = ProbeOptions_Number[0].def;
     double y = ProbeOptions_Number[1].def;
     double z = ProbeOptions_Number[2].def;
+    drawContext *ctx = (drawContext*)context;
     glColor4ubv((GLubyte *) & CTX.color.fg);
     glLineWidth(CTX.line_width);
     SBoundingBox3d bb = PView::list[num]->getData()->getBoundingBox();
@@ -55,14 +63,14 @@ void GMSH_ProbePlugin::draw()
     }
     else{
       // draw 10-pixel marker
-      double d = 10 * CTX.pixel_equiv_x / CTX.s[0];
+      double d = 10 * ctx->pixel_equiv_x / ctx->s[0];
       glBegin(GL_LINES);
       glVertex3d(x - d, y, z); glVertex3d(x + d, y, z);
       glVertex3d(x, y - d, z); glVertex3d(x, y + d, z);
       glVertex3d(x, y, z - d); glVertex3d(x, y, z + d);
       glEnd();
     }
-    Draw_Sphere(CTX.point_size, x, y, z, 1);
+    ctx->drawSphere(CTX.point_size, x, y, z, 1);
   }
 #endif
 }

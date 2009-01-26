@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -11,7 +11,7 @@
 
 extern Context_T CTX;
 
-PViewDataList::PViewDataList(bool allocate)
+PViewDataList::PViewDataList(bool allocate, int numalloc)
   : PViewData(), DataSize(sizeof(double)), NbTimeStep(0), 
     Min(VAL_INF), Max(-VAL_INF), Time(0),
     NbSP(0), NbVP(0), NbTP(0), SP(0), VP(0), TP(0),
@@ -37,7 +37,7 @@ PViewDataList::PViewDataList(bool allocate)
   for(int i = 0; i < 24; i++) _index[i] = 0;
 
   if(allocate){
-#define LCD List_Create(1, 1000, sizeof(double))
+#define LCD List_Create(1, numalloc, sizeof(double))
     Time = LCD;
     SP = LCD; VP = LCD; TP = LCD;
     SL = LCD; VL = LCD; TL = LCD; SL2 = LCD; VL2 = LCD; TL2 = LCD; 
@@ -196,18 +196,13 @@ void PViewDataList::_stat(List_T *list, int nbcomp, int nbelm, int nbnod, int nb
   // compute statistics for element lists
   if(!nbelm) return;  
 
-  if(haveInterpolationScheme()){
-    std::vector<List_T *> is;
-    if(getInterpolationScheme(nbedg, is) == 4)
-      nbnod = List_Nbr(is[2]);
-  }
-
   int nbval = nbcomp * nbnod;
 
-  if(_interpolation.count(nbedg)){
-    nbval = nbcomp * List_Nbr(_interpolation[nbedg][0]);
-    if(nbval != nbcomp * nbnod)
-      Msg::Info("Adaptive view with %d values per element", nbval);
+  if(haveInterpolationMatrices()){
+    std::vector<Double_Matrix*> im;
+    if(getInterpolationMatrices(nbedg, im) == 4)
+      nbnod = im[2]->size1();
+    nbval = nbcomp * im[0]->size1();
   }
   
   int nb = List_Nbr(list) / nbelm;
@@ -254,10 +249,10 @@ void PViewDataList::_stat(List_T *list, int nbcomp, int nbelm, int nbnod, int nb
 void PViewDataList::_setLast(int ele, int dim, int nbnod, int nbcomp, int nbedg,
                              List_T *list, int nblist)
 {
-  if(haveInterpolationScheme()){
-    std::vector<List_T *> is;
-    if(getInterpolationScheme(nbedg, is) == 4)
-      nbnod = List_Nbr(is[2]);
+  if(haveInterpolationMatrices()){
+    std::vector<Double_Matrix*> im;
+    if(getInterpolationMatrices(nbedg, im) == 4)
+      nbnod = im[2]->size1();
   }
 
   _lastDimension = dim;
@@ -587,10 +582,10 @@ void PViewDataList::_splitCurvedElements()
 }
 
 static void generateConnectivities(List_T *list, int nbList, int nbTimeStep, 
-                                   int nbVert, smooth_data &data)
+                                   int nbVert, int nbComp, smooth_data &data)
 {
   if(!nbList) return;
-  double *vals = new double[nbTimeStep];
+  double *vals = new double[nbTimeStep * nbComp];
   int nb = List_Nbr(list) / nbList;
   for(int i = 0; i < List_Nbr(list); i += nb) {
     double *x = (double *)List_Pointer_Fast(list, i);
@@ -598,19 +593,20 @@ static void generateConnectivities(List_T *list, int nbList, int nbTimeStep,
     double *z = (double *)List_Pointer_Fast(list, i + 2 * nbVert);
     double *v = (double *)List_Pointer_Fast(list, i + 3 * nbVert);
     for(int j = 0; j < nbVert; j++) {
-      for(int k = 0; k < nbTimeStep; k++)
-        vals[k] = v[j + k * nbVert];
-      data.add(x[j], y[j], z[j], nbTimeStep, vals);
+      for(int ts = 0; ts < nbTimeStep; ts++)
+        for(int k = 0; k < nbComp; k++)
+          vals[nbComp * ts + k] = v[nbVert * nbComp * ts + nbComp * j + k];
+      data.add(x[j], y[j], z[j], nbTimeStep * nbComp, vals);
     }
   }
   delete [] vals;
 }
 
 static void smoothList(List_T *list, int nbList, int nbTimeStep,
-                       int nbVert, smooth_data &data)
+                       int nbVert, int nbComp, smooth_data &data)
 {
   if(!nbList) return;
-  double *vals = new double[nbTimeStep];
+  double *vals = new double[nbTimeStep * nbComp];
   int nb = List_Nbr(list)/nbList;
   for(int i = 0; i < List_Nbr(list); i += nb) {
     double *x = (double *)List_Pointer_Fast(list, i);
@@ -618,9 +614,10 @@ static void smoothList(List_T *list, int nbList, int nbTimeStep,
     double *z = (double *)List_Pointer_Fast(list, i + 2 * nbVert);
     double *v = (double *)List_Pointer_Fast(list, i + 3 * nbVert);
     for(int j = 0; j < nbVert; j++) {
-      if(data.get(x[j], y[j], z[j], nbTimeStep, vals)){
-        for(int k = 0; k < nbTimeStep; k++) 
-          v[j + k * nbVert] = vals[k];
+      if(data.get(x[j], y[j], z[j], nbTimeStep * nbComp, vals)){
+        for(int ts = 0; ts < nbTimeStep; ts++) 
+          for(int k = 0; k < nbComp; k++) 
+            v[nbVert * nbComp * ts + nbComp * j + k] = vals[nbComp * ts + k];
       }
     }
   }
@@ -632,20 +629,19 @@ void PViewDataList::smooth()
   double old_eps = xyzv::eps;
   xyzv::eps = CTX.lc * 1.e-8;
   smooth_data data;
-  generateConnectivities(SL, NbSL, NbTimeStep, 2, data);
-  generateConnectivities(ST, NbST, NbTimeStep, 3, data);
-  generateConnectivities(SQ, NbSQ, NbTimeStep, 4, data);
-  generateConnectivities(SS, NbSS, NbTimeStep, 4, data);
-  generateConnectivities(SH, NbSH, NbTimeStep, 8, data);
-  generateConnectivities(SI, NbSI, NbTimeStep, 6, data);
-  generateConnectivities(SY, NbSY, NbTimeStep, 5, data);
-  smoothList(SL, NbSL, NbTimeStep, 2, data);
-  smoothList(ST, NbST, NbTimeStep, 3, data);
-  smoothList(SQ, NbSQ, NbTimeStep, 4, data);
-  smoothList(SS, NbSS, NbTimeStep, 4, data);
-  smoothList(SH, NbSH, NbTimeStep, 8, data);
-  smoothList(SI, NbSI, NbTimeStep, 6, data);
-  smoothList(SY, NbSY, NbTimeStep, 5, data);
+
+  List_T *list = 0;
+  int *nbe = 0, nbc, nbn;
+  for(int i = 0; i < 24; i++){
+    getRawData(i, &list, &nbe, &nbc, &nbn);
+    if(nbn > 1)
+      generateConnectivities(list, *nbe, NbTimeStep, nbn, nbc, data);
+  }
+  for(int i = 0; i < 24; i++){
+    getRawData(i, &list, &nbe, &nbc, &nbn);
+    if(nbn > 1)
+      smoothList(list, *nbe, NbTimeStep, nbn, nbc, data);
+  }
   xyzv::eps = old_eps;
   finalize();
 }
@@ -670,8 +666,13 @@ bool PViewDataList::combineSpace(nameData &nd)
     }
 
     // copy interpolation from first merged dataset, if any
-    if(!i) _interpolation = l->_interpolation;
-
+    if(!i){
+      for(std::map<int, std::vector<Double_Matrix*> >::iterator it = 
+            l->_interpolation.begin(); it != l->_interpolation.end(); it++)
+        for(unsigned int i = 0; i < it->second.size(); i++)
+          _interpolation[it->first].push_back(new Double_Matrix(*it->second[i]));
+    }
+    
     // merge elememts
     List_Merge(l->SP, SP); NbSP += l->NbSP; List_Merge(l->VP, VP); NbVP += l->NbVP;
     List_Merge(l->TP, TP); NbTP += l->NbTP; List_Merge(l->SL, SL); NbSL += l->NbSL;
@@ -794,8 +795,11 @@ bool PViewDataList::combineTime(nameData &nd)
   }
   NbT2 = data[0]->NbT2;
   NbT3 = data[0]->NbT3;
-  _interpolation = data[0]->_interpolation;
-
+  for(std::map<int, std::vector<Double_Matrix*> >::iterator it = 
+        data[0]->_interpolation.begin(); it != data[0]->_interpolation.end(); it++)
+    for(unsigned int i = 0; i < it->second.size(); i++)
+      _interpolation[it->first].push_back(new Double_Matrix(*it->second[i]));
+  
   // merge values for all element types
   for(int i = 0; i < 24; i++){
     getRawData(i, &list, &nbe, &nbc, &nbn);
@@ -811,7 +815,7 @@ bool PViewDataList::combineTime(nameData &nd)
               List_Add(list, List_Pointer(list2, j * nb2 + l));
           }
           // copy values of elm j
-          for(int l = 0; l < data[k]->getNumTimeSteps() * nbc2 * nbn2; l++)
+          for(int l = 0; l < nb2 - 3 * nbn2; l++)
             List_Add(list, List_Pointer(list2, j * nb2 + 3 * nbn2 + l));
         }
       }

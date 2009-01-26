@@ -1,16 +1,18 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <math.h>
+#include "GmshConfig.h"
 #include "StreamLines.h"
 #include "OctreePost.h"
 #include "Context.h"
 #include "PViewOptions.h"
 
 #if defined(HAVE_FLTK)
-#include "GmshUI.h"
+#include <FL/gl.h>
+#include "drawContext.h"
 #include "Draw.h"
 #endif
 
@@ -43,15 +45,16 @@ extern "C"
   }
 }
 
-void GMSH_StreamLinesPlugin::draw()
+void GMSH_StreamLinesPlugin::draw(void *context)
 {
 #if defined(HAVE_FLTK)
   glColor4ubv((GLubyte *) & CTX.color.fg);
+  drawContext *ctx = (drawContext*)context;
   double p[3];
   for(int i = 0; i < getNbU(); ++i){
     for(int j = 0; j < getNbV(); ++j){
       getPoint(i, j, p);
-      Draw_Sphere(CTX.point_size, p[0], p[1], p[2], 1);
+      ctx->drawSphere(CTX.point_size, p[0], p[1], p[2], 1);
     }
   }
 #endif

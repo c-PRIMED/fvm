@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -9,6 +9,7 @@
 class mystack;
 class mymap;
 
+#include <string>
 #include <stdio.h>
 
 // Singleton, one function manager for all parsers. 
@@ -21,9 +22,9 @@ class FunctionManager
   static FunctionManager *instance;
  public :
   static FunctionManager* Instance();
-  int createFunction(char *name, FILE *f, char *filename, int lineno);
-  int enterFunction(char *name, FILE **f, char *filename, int &lineno) const;
-  int leaveFunction(FILE **f, char *filename, int &lineno);
+  int createFunction(char *name, FILE *f, std::string &filename, int lineno);
+  int enterFunction(char *name, FILE **f, std::string &filename, int &lineno) const;
+  int leaveFunction(FILE **f, std::string &filename, int &lineno);
 };
 
 #endif

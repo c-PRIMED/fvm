@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -34,16 +34,16 @@ void gmshNodalFemTerm::addNeumann(int physical,
 {
 }
 
-void gmshNodalFemTerm::addToMatrix (gmshAssembler &lsys) const
+void gmshNodalFemTerm::addToMatrix(gmshAssembler &lsys) const
 {
   if (_gm->getNumRegions()){
     for(GModel::riter it = _gm->firstRegion(); it != _gm->lastRegion(); ++it){
-      addToMatrix(lsys,*it);
+      addToMatrix(lsys, *it);
     }
   }
   else if(_gm->getNumFaces()){
     for(GModel::fiter it = _gm->firstFace(); it != _gm->lastFace(); ++it){
-      addToMatrix(lsys,*it);
+      addToMatrix(lsys, *it);
     }
   }  
 }

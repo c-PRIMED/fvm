@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -48,7 +48,7 @@ class GEdge : public GEntity {
   virtual void setVisibility(char val, bool recursive=false);
 
   // true if the edge is a seam for the given face.
-  virtual bool isSeam(GFace *face) const { return false; }
+  virtual bool isSeam(const GFace *face) const { return false; }
 
   // get the bounding box
   virtual SBoundingBox3d bounds() const;
@@ -56,15 +56,8 @@ class GEdge : public GEntity {
   // faces that this entity bounds
   virtual std::list<GFace*> faces() const { return l_faces; }
 
-  // get the parameter location for a point in space on the edge
-  // (returns std::numeric_limits<double>::max() if failed)
-  virtual double parFromPoint(const SPoint3 &) const = 0;
-
   // get the point for the given parameter location
   virtual GPoint point(double p) const = 0;
-
-  // get the closest point on the edge to the given point
-  virtual GPoint closestPoint(const SPoint3 & queryPoint) const;
 
   // true if the edge contains the given parameter
   virtual bool containsParam(double pt) const;
@@ -80,7 +73,7 @@ class GEdge : public GEntity {
   virtual double curvature(double par) const;
 
   // reparmaterize the point onto the given face
-  virtual SPoint2 reparamOnFace(GFace *face, double epar, int dir) const;
+  virtual SPoint2 reparamOnFace(const GFace *face, double epar, int dir) const;
 
   // return the minimum number of segments used for meshing the edge
   virtual int minimumMeshSegments() const { return 1; }

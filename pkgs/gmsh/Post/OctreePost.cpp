@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -26,7 +26,6 @@ static void minmax(int n, double *X, double *Y, double *Z,
   max[0] = X[0];
   max[1] = Y[0];
   max[2] = Z[0];
-
   for(int i = 1; i < n; i++) {
     min[0] = (X[i] < min[0]) ? X[i] : min[0];
     min[1] = (Y[i] < min[1]) ? Y[i] : min[1];
@@ -370,7 +369,7 @@ bool OctreePost::_getValue(void *in, int nbComp, double P[3], int timestep,
         }
       }
       for(int comp = 0; comp < nbComp; comp++){
-        double val = e->interpolate(nodeval, U[0], U[1], U[2], nbComp);
+        double val = e->interpolate(&nodeval[comp], U[0], U[1], U[2], nbComp);
         if(timestep < 0)
           values[nbComp * step + comp] = val;
         else
@@ -412,6 +411,22 @@ bool OctreePost::searchScalar(double x, double y, double z, double *values,
   }
   
   return false;
+}
+
+bool OctreePost::searchScalarWithTol(double x, double y, double z, double *values, 
+                                     int step, double *size, double tol)
+{
+  bool a = searchScalar(x, y, z, values, step, size);
+  if(!a){
+    double oldtol1 = element::getTolerance();
+    double oldtol2 = MElement::getTolerance();
+    element::setTolerance(tol);
+    MElement::setTolerance(tol);
+    a = searchScalar(x, y, z, values, step, size);
+    element::setTolerance(oldtol1);
+    MElement::setTolerance(oldtol2);
+  }    
+  return a;
 }
 
 bool OctreePost::searchVector(double x, double y, double z, double *values, 

@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -434,7 +434,7 @@ void FindCubicRoots(const double coef[4], double real[3], double imag[3])
   real[2] = -term1 + r13*cos((dum1 + 4.0*M_PI)/3.0);
 }
 
-void  eigsort(double d[3])
+void eigsort(double d[3])
 {
   int k, j, i;
   double p;
@@ -448,4 +448,77 @@ void  eigsort(double d[3])
       d[i]=p;
     }
   }
+}
+
+void invert_singular_matrix3x3(double MM[3][3], double II[3][3])
+{
+  int i, j, k, n = 3;
+  double TT[3][3];
+
+  for(i = 1; i <= n; i++) {
+    for(j = 1; j <= n; j++) {
+      II[i - 1][j - 1] = 0.0;
+      TT[i - 1][j - 1] = 0.0;
+    }
+  }
+
+  Double_Matrix M(3, 3), V(3, 3);
+  Double_Vector W(3);
+  for(i = 1; i <= n; i++){
+    for(j = 1; j <= n; j++){
+      M(i - 1, j - 1) = MM[i - 1][j - 1];
+    }
+  }
+  M.svd(V, W);
+  for(i = 1; i <= n; i++) {
+    for(j = 1; j <= n; j++) {
+      double ww = W(i - 1);
+      if(fabs(ww) > 1.e-16) { // singular value precision
+        TT[i - 1][j - 1] += M(j - 1, i - 1) / ww;
+      }
+    }
+  }
+  for(i = 1; i <= n; i++) {
+    for(j = 1; j <= n; j++) {
+      for(k = 1; k <= n; k++) {
+        II[i - 1][j - 1] += V(i - 1, k - 1) * TT[k - 1][j - 1];
+      }
+    }
+  }
+}
+
+bool newton_fd(void (*func)(Double_Vector &, Double_Vector &, void *),
+               Double_Vector &x, void *data, double relax, double tolx)
+{
+  const int MAXIT = 50;
+  const double EPS = 1.e-4;
+  const int N = x.size();
+  
+  Double_Matrix J(N, N);
+  Double_Vector f(N), feps(N), dx(N);
+  
+  for (int iter = 0; iter < MAXIT; iter++){
+    func(x, f, data);
+
+    for (int j = 0; j < N; j++){
+      double h = EPS * fabs(x(j));
+      if(h == 0.) h = EPS;
+      x(j) += h;
+      func(x, feps, data);
+      for (int i = 0; i < N; i++)
+        J(i, j) = (feps(i) - f(i)) / h;
+      x(j) -= h;
+    }
+    
+    if (N == 1)
+      dx(0) = f(0) / J(0, 0);
+    else
+      J.lu_solve(f, dx);
+    
+    for (int i = 0; i < N; i++)
+      x(i) -= relax * dx(i);
+
+    if(dx.norm() < tolx) return true; 
+  }
+  return false;
 }

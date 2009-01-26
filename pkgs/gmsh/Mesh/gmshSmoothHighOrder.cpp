@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -117,7 +117,7 @@ void gmshHighOrderSmoother::smooth ( std::vector<MElement*>  & all)
   }
 
   // 3 -> .4
-  printf("%d elements after adding %d layers\n", v.size(), nbLayers);
+  printf("%d elements after adding %d layers\n", (int)v.size(), nbLayers);
 
   addOneLayer(all, v, layer);
 
@@ -380,10 +380,9 @@ void optimizeNodeLocations(GFace *gf, smoothVertexDataHON &vdN, double eps = .2)
   double F = -smooth_obj_HighOrderN(uv, &vdN);
   if (F < eps){
     double val;
-    minimize_N(2 * vdN.v.size(), 
-               smooth_obj_HighOrderN, 
+    minimize_N(2 * vdN.v.size(), smooth_obj_HighOrderN, 
                deriv_smoothing_objective_function_HighOrderN, 
-               &vdN, 1, uv,val);
+               &vdN, 1, uv, val);
     double Fafter = -smooth_obj_HighOrderN(uv, &vdN);
     printf("%12.5E %12.5E\n", F, Fafter);
     if (F < Fafter){
@@ -399,20 +398,18 @@ void optimizeNodeLocations(GFace *gf, smoothVertexDataHON &vdN, double eps = .2)
   }
 }
 
-double angle3Points ( MVertex *p1, MVertex *p2, MVertex *p3 )
+double angle3Points(MVertex *p1, MVertex *p2, MVertex *p3)
 {
-  SVector3 a(p1->x()-p2->x(),p1->y()-p2->y(),p1->z()-p2->z());
-  SVector3 b(p3->x()-p2->x(),p3->y()-p2->y(),p3->z()-p2->z());
-  SVector3 c = crossprod(a,b);
+  SVector3 a(p1->x() - p2->x(), p1->y() - p2->y(), p1->z() - p2->z());
+  SVector3 b(p3->x() - p2->x(), p3->y() - p2->y(), p3->z() - p2->z());
+  SVector3 c = crossprod(a, b);
   double sinA = c.norm();
-  double cosA = dot(a,b);
+  double cosA = dot(a, b);
   //  printf("%d %d %d -> %g %g\n",p1->iD,p2->iD,p3->iD,cosA,sinA);
-  return atan2 (sinA,cosA);  
+  return atan2 (sinA, cosA);  
 }
 
-/*
-A curvilinear edge smooth and swap
-*/
+// A curvilinear edge smooth and swap
 
 typedef std::map<std::pair<MVertex*, MVertex*>, std::vector<MElement*> > edge2tris;
 
@@ -439,7 +436,8 @@ void localHarmonicMapping(GModel *gm,
   
   gmshLinearSystemGmm *lsys = new gmshLinearSystemGmm;
   gmshAssembler myAssembler(lsys);
-  gmshLaplaceTerm Laplace (gm,1.0,0);     
+  gmshFunction f(1.0);
+  gmshLaplaceTerm Laplace (gm,&f,0);     
   
   myAssembler.fixVertex ( n1 , 0 , 0 , -1.0);
   myAssembler.fixVertex ( n2 , 0 , 0 , -1.0);
@@ -453,7 +451,7 @@ void localHarmonicMapping(GModel *gm,
 
   gmshLinearSystemGmm *lsys1 = new gmshLinearSystemGmm;
   gmshAssembler myAssembler1(lsys1);
-  gmshLaplaceTerm Laplace1 (gm,1.0,1);     
+  gmshLaplaceTerm Laplace1 (gm,&f,1);     
   
   myAssembler1.fixVertex ( n2 , 0 , 1 , -1.0);
   myAssembler1.fixVertex ( n3 , 0 , 1 , -1.0);
@@ -516,47 +514,7 @@ bool optimizeHighOrderMesh(GFace *gf, edgeContainer &edgeVertices)
       e2t[p].push_back(t);
     }
   }
-  /*
-  v2t_cont :: iterator it = adjv.begin();      
-  while (it != adjv.end()){
-    MVertex *ver= it->first;
-    GEntity *ge = ver->onWhat();
-    if (ge->dim() == 2){
-      double initu,initv;
-      ver->getParameter(0, initu);
-      ver->getParameter(1, initv);        
 
-      smoothVertexDataHON vdN;
-      vdN.ts = it->second;
-      for (int i=0;i<vdN.ts.size();i++){
-        MTriangle *t = vdN.ts[i];
-      }
-
-      vdN.v = e;
-      vdN.gf = gf;
-
-      double val;      
-      double F = -smooth_obj_HighOrder(initu,initv, &vd);
-      if (F < .2){
-        minimize_2(smooth_obj_HighOrder, 
-             deriv_smoothing_objective_function_HighOrder, &vd, 1, initu,initv,val);
-        double Fafter = -smooth_obj_HighOrder(initu,initv, &vd);
-        if (F < Fafter){
-          success = true;
-          ver->setParameter(0,initu);
-          ver->setParameter(1,initv);
-          GPoint gp = gf->point(initu,initv);
-          ver->x() = gp.x();
-          ver->y() = gp.y();
-          ver->z() = gp.z();  
-        }
-      }                         
-    }
-    ++it;
-  }
-  */
-  bool success = false;
-  
   for(edge2tris::iterator it = e2t.begin(); it != e2t.end(); ++it){
     std::pair<MVertex*, MVertex*> edge = it->first;
     std::vector<MVertex*> e;
@@ -583,7 +541,7 @@ bool optimizeHighOrderMesh(GFace *gf, edgeContainer &edgeVertices)
     }
   }
 
-  return success;
+  return true;
 }
 
 static void parametricCoordinates(MVertex *v, GFace *gf, double &uu, double &vv)

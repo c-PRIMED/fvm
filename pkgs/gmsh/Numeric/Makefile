@@ -1,4 +1,4 @@
-# Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+# Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 #
 # See the LICENSE.txt file for license information. Please report all
 # bugs and problems to <gmsh@geuz.org>.
@@ -7,7 +7,7 @@ include ../variables
 
 LIB = ../lib/libGmshNumeric${LIBEXT}
 
-INC = ${DASH}I../Common ${DASH}I../Numeric ${DASH}I../contrib/NR ${DASH}I../Geo
+INC = ${DASH}I../Common ${DASH}I../Numeric ${DASH}I../Geo
 
 CFLAGS = ${OPTIM} ${FLAGS} ${INC} ${SYSINCLUDE}
 
@@ -19,10 +19,12 @@ SRC = Numeric.cpp\
       gmshElasticity.cpp\
       EigSolve.cpp\
       FunctionSpace.cpp\
-      gmsh_predicates.cpp\
-      gsl_newt.cpp\
-      gsl_min.cpp\
-      gsl_brent.cpp
+      GaussQuadratureTri.cpp\
+      GaussQuadratureQuad.cpp\
+      GaussQuadratureTet.cpp\
+      GaussQuadratureHex.cpp\
+      GaussLegendreSimplex.cpp\
+      GmshPredicates.cpp\
 
 OBJ = ${SRC:.cpp=${OBJEXT}}
 
@@ -43,20 +45,20 @@ clean:
 
 depend:
 	(sed '/^# DO NOT DELETE THIS LINE/q' Makefile && \
-	${CXX} -MM ${CFLAGS} ${SRC} \
-	) >Makefile.new
+         ${CXX} -MM ${CFLAGS} ${SRC} | sed 's/.o:/$${OBJEXT}:/g' \
+        ) > Makefile.new
 	cp Makefile Makefile.bak
 	cp Makefile.new Makefile
 	rm -f Makefile.new
 
 # DO NOT DELETE THIS LINE
-Numeric.o: Numeric.cpp ../Common/GmshMessage.h Numeric.h \
-  NumericEmbedded.h
-NumericEmbedded.o: NumericEmbedded.cpp NumericEmbedded.h \
-  ../Common/GmshMessage.h
-gmshAssembler.o: gmshAssembler.cpp ../Geo/MVertex.h ../Geo/SPoint2.h \
+Numeric${OBJEXT}: Numeric.cpp ../Common/GmshConfig.h ../Common/GmshMessage.h \
+  Numeric.h NumericEmbedded.h GmshMatrix.h
+NumericEmbedded${OBJEXT}: NumericEmbedded.cpp NumericEmbedded.h GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/GmshMessage.h
+gmshAssembler${OBJEXT}: gmshAssembler.cpp ../Geo/MVertex.h ../Geo/SPoint2.h \
   ../Geo/SPoint3.h gmshAssembler.h gmshLinearSystem.h
-gmshTermOfFormulation.o: gmshTermOfFormulation.cpp ../Common/Gmsh.h \
+gmshTermOfFormulation${OBJEXT}: gmshTermOfFormulation.cpp ../Common/Gmsh.h \
   ../Common/GmshMessage.h ../Geo/GModel.h ../Geo/GVertex.h \
   ../Geo/GEntity.h ../Geo/Range.h ../Geo/SPoint3.h \
   ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Geo/GPoint.h \
@@ -68,11 +70,28 @@ gmshTermOfFormulation.o: gmshTermOfFormulation.cpp ../Common/Gmsh.h \
   ../Geo/SBoundingBox3d.h ../Geo/MElement.h ../Common/GmshDefines.h \
   ../Geo/MVertex.h ../Geo/SPoint2.h ../Geo/SPoint3.h ../Geo/MEdge.h \
   ../Geo/MVertex.h ../Geo/SVector3.h ../Geo/MFace.h ../Geo/MVertex.h \
-  ../Geo/SVector3.h ../Numeric/FunctionSpace.h ../Common/GmshMatrix.h \
+  ../Geo/SVector3.h ../Numeric/FunctionSpace.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Numeric/Gauss.h GmshMatrix.h \
   gmshTermOfFormulation.h gmshFunction.h gmshLinearSystem.h \
   gmshAssembler.h
-gmshLaplace.o: gmshLaplace.cpp gmshLaplace.h gmshTermOfFormulation.h \
-  ../Common/GmshMatrix.h ../Common/Gmsh.h ../Common/GmshMessage.h \
+gmshLaplace${OBJEXT}: gmshLaplace.cpp gmshLaplace.h gmshTermOfFormulation.h \
+  GmshMatrix.h ../Common/GmshConfig.h ../Common/GmshMessage.h \
+  gmshFunction.h ../Common/Gmsh.h ../Common/GmshMessage.h ../Geo/GModel.h \
+  ../Geo/GVertex.h ../Geo/GEntity.h ../Geo/Range.h ../Geo/SPoint3.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Geo/GPoint.h \
+  ../Geo/SPoint2.h ../Geo/GEdge.h ../Geo/GEntity.h ../Geo/GVertex.h \
+  ../Geo/SVector3.h ../Geo/SPoint3.h ../Geo/SPoint3.h ../Geo/SPoint2.h \
+  ../Geo/GFace.h ../Geo/GEntity.h ../Geo/GPoint.h ../Geo/GEdgeLoop.h \
+  ../Geo/GEdge.h ../Geo/SPoint2.h ../Geo/SVector3.h ../Geo/Pair.h \
+  ../Geo/GRegion.h ../Geo/GEntity.h ../Geo/SPoint3.h \
+  ../Geo/SBoundingBox3d.h ../Geo/MElement.h ../Common/GmshDefines.h \
+  ../Geo/MVertex.h ../Geo/SPoint2.h ../Geo/SPoint3.h ../Geo/MEdge.h \
+  ../Geo/MVertex.h ../Geo/SVector3.h ../Geo/MFace.h ../Geo/MVertex.h \
+  ../Geo/SVector3.h ../Numeric/FunctionSpace.h ../Numeric/GmshMatrix.h \
+  ../Numeric/Gauss.h Numeric.h NumericEmbedded.h
+gmshElasticity${OBJEXT}: gmshElasticity.cpp gmshElasticity.h \
+  gmshTermOfFormulation.h GmshMatrix.h ../Common/GmshConfig.h \
+  ../Common/GmshMessage.h ../Common/Gmsh.h ../Common/GmshMessage.h \
   ../Geo/GModel.h ../Geo/GVertex.h ../Geo/GEntity.h ../Geo/Range.h \
   ../Geo/SPoint3.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
   ../Geo/GPoint.h ../Geo/SPoint2.h ../Geo/GEdge.h ../Geo/GEntity.h \
@@ -83,28 +102,15 @@ gmshLaplace.o: gmshLaplace.cpp gmshLaplace.h gmshTermOfFormulation.h \
   ../Geo/SBoundingBox3d.h ../Geo/MElement.h ../Common/GmshDefines.h \
   ../Geo/MVertex.h ../Geo/SPoint2.h ../Geo/SPoint3.h ../Geo/MEdge.h \
   ../Geo/MVertex.h ../Geo/SVector3.h ../Geo/MFace.h ../Geo/MVertex.h \
-  ../Geo/SVector3.h ../Numeric/FunctionSpace.h
-gmshElasticity.o: gmshElasticity.cpp gmshElasticity.h \
-  gmshTermOfFormulation.h ../Common/GmshMatrix.h ../Common/Gmsh.h \
-  ../Common/GmshMessage.h ../Geo/GModel.h ../Geo/GVertex.h \
-  ../Geo/GEntity.h ../Geo/Range.h ../Geo/SPoint3.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Geo/GPoint.h \
-  ../Geo/SPoint2.h ../Geo/GEdge.h ../Geo/GEntity.h ../Geo/GVertex.h \
-  ../Geo/SVector3.h ../Geo/SPoint3.h ../Geo/SPoint3.h ../Geo/SPoint2.h \
-  ../Geo/GFace.h ../Geo/GEntity.h ../Geo/GPoint.h ../Geo/GEdgeLoop.h \
-  ../Geo/GEdge.h ../Geo/SPoint2.h ../Geo/SVector3.h ../Geo/Pair.h \
-  ../Geo/GRegion.h ../Geo/GEntity.h ../Geo/SPoint3.h \
-  ../Geo/SBoundingBox3d.h ../Geo/MElement.h ../Common/GmshDefines.h \
-  ../Geo/MVertex.h ../Geo/SPoint2.h ../Geo/SPoint3.h ../Geo/MEdge.h \
-  ../Geo/MVertex.h ../Geo/SVector3.h ../Geo/MFace.h ../Geo/MVertex.h \
-  ../Geo/SVector3.h ../Numeric/FunctionSpace.h
-EigSolve.o: EigSolve.cpp
-FunctionSpace.o: FunctionSpace.cpp FunctionSpace.h ../Common/GmshMatrix.h \
-  ../Common/GmshDefines.h ../Common/GmshMessage.h
-gmsh_predicates.o: gmsh_predicates.cpp
-gsl_newt.o: gsl_newt.cpp ../Common/GmshMessage.h Numeric.h \
-  NumericEmbedded.h
-gsl_min.o: gsl_min.cpp ../Common/GmshMessage.h Numeric.h \
-  NumericEmbedded.h
-gsl_brent.o: gsl_brent.cpp ../Common/GmshMessage.h Numeric.h \
-  NumericEmbedded.h
+  ../Geo/SVector3.h ../Numeric/FunctionSpace.h ../Numeric/GmshMatrix.h \
+  ../Numeric/Gauss.h Numeric.h NumericEmbedded.h
+EigSolve${OBJEXT}: EigSolve.cpp
+FunctionSpace${OBJEXT}: FunctionSpace.cpp FunctionSpace.h GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/GmshMessage.h ../Common/GmshDefines.h
+GaussQuadratureTri${OBJEXT}: GaussQuadratureTri.cpp Gauss.h GaussLegendre1D.h
+GaussQuadratureQuad${OBJEXT}: GaussQuadratureQuad.cpp Gauss.h GaussLegendre1D.h
+GaussQuadratureTet${OBJEXT}: GaussQuadratureTet.cpp Gauss.h GaussLegendre1D.h
+GaussQuadratureHex${OBJEXT}: GaussQuadratureHex.cpp Gauss.h GaussLegendre1D.h
+GaussLegendreSimplex${OBJEXT}: GaussLegendreSimplex.cpp Gauss.h \
+  GaussLegendre1D.h
+GmshPredicates${OBJEXT}: GmshPredicates.cpp

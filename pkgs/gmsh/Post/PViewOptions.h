@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -52,16 +52,16 @@ class PViewOptions {
   int Type;
   int Position[2], Size[2], AutoPosition;
   char Format[256];
-  int Axes, AxesAutoPosition,AxesMikado, AxesTics[3];
+  int Axes, AxesAutoPosition, AxesMikado, AxesTics[3];
   char AxesFormat[3][256], AxesLabel[3][256];
   double AxesPosition[6];
   double CustomMin, CustomMax, TmpMin, TmpMax, ExternalMin, ExternalMax;
   SBoundingBox3d TmpBBox;
   double Offset[3], Raise[3], Transform[3][3], DisplacementFactor, NormalRaise;
   double Explode;
-  double ArrowSize, ArrowRelHeadRadius, ArrowRelStemRadius, ArrowRelStemLength;
+  double ArrowSizeMin, ArrowSizeMax;
   double Normals, Tangents;
-  int Visible, IntervalsType, NbIso, ArrowSizeProportional;
+  int Visible, IntervalsType, NbIso;
   int Light, LightTwoSide, LightLines, SmoothNormals;
   double AngleSmoothNormals;
   int SaturateValues, FakeTransparency;
@@ -83,8 +83,9 @@ class PViewOptions {
   double GenRaiseFactor;
   char GenRaiseX[256], GenRaiseY[256], GenRaiseZ[256];
   void *GenRaise_f[3];
+  int AdaptVisualizationGrid, MaxRecursionLevel;
   double TargetError;
-  int MaxRecursionLevel;
+  int Clip; // status of clip planes (bit array)
   struct{
     unsigned int point, line, triangle, quadrangle;
     unsigned int tetrahedron, hexahedron, prism, pyramid;

@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -56,7 +56,7 @@ class PViewDataList : public PViewData {
                   double &x, double &y, double &z, double &style);
   void _splitCurvedElements();
  public:
-  PViewDataList(bool allocate=true);
+  PViewDataList(bool allocate=true, int numalloc=1000);
   ~PViewDataList();
   bool finalize();
   int getNumTimeSteps(){ return NbTimeStep; }

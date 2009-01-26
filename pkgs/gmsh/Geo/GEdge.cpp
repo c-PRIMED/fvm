@@ -1,16 +1,17 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <sstream>
 #include <algorithm>
+#include "GmshConfig.h"
+#include "GmshDefines.h"
+#include "GmshMessage.h"
 #include "GModel.h"
 #include "GEdge.h"
 #include "GFace.h"
 #include "MElement.h"
-#include "GmshDefines.h"
-#include "GmshMessage.h"
 
 #if !defined(HAVE_GMSH_EMBEDDED)
 #include "GaussLegendre1D.h"
@@ -119,12 +120,6 @@ std::string GEdge::getAdditionalInfoString()
   return sstream.str();
 }
 
-GPoint GEdge::closestPoint(const SPoint3 & queryPoint) const
-{
-  Msg::Error("Closet point not implemented for this type of edge");
-  return GPoint(0, 0, 0);
-}
-
 bool GEdge::containsParam(double pt) const
 {
   Range<double> rg = parBounds(0);
@@ -140,7 +135,7 @@ SVector3 GEdge::secondDer(double par) const
   return 500 * (x2 - x1);
 }
 
-SPoint2 GEdge::reparamOnFace(GFace *face, double epar,int dir) const
+SPoint2 GEdge::reparamOnFace(const GFace *face, double epar,int dir) const
 {
   // reparmaterize the point onto the given face.
   const GPoint p3 = point(epar);

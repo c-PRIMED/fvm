@@ -1,10 +1,11 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
-#include "discreteFace.h"
+#include "GmshConfig.h"
 #include "GmshMessage.h"
+#include "discreteFace.h"
 
 #if !defined(HAVE_GMSH_EMBEDDED)
 #include "Geo.h"

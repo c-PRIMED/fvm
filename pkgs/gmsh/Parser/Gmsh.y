@@ -1,5 +1,5 @@
 %{
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -7,7 +7,9 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
+#include "GmshConfig.h"
 #include "GmshMessage.h"
+#include "GmshMatrix.h"
 #include "MallocUtils.h"
 #include "ListUtils.h"
 #include "TreeUtils.h"
@@ -39,9 +41,9 @@
 extern Context_T CTX;
 
 // Global parser variables
-char gmsh_yyname[256] = "";
-int  gmsh_yyerrorstate = 0;
-int  gmsh_yyviewindex = 0;
+std::string gmsh_yyname;
+int gmsh_yyerrorstate = 0;
+int gmsh_yyviewindex = 0;
 std::map<std::string, std::vector<double> > gmsh_yysymbols;
 
 // Static parser variables (accessible only in this file)
@@ -65,6 +67,7 @@ void yyerror(char *s);
 void yymsg(int level, const char *fmt, ...);
 void skip_until(const char *skip, const char *until);
 int PrintListOfDouble(char *format, List_T *list, char *buffer);
+Double_Matrix ListOfListOfDouble2Matrix(List_T *list);
 void FixRelativePath(const char *in, char *out);
 %}
 
@@ -106,7 +109,7 @@ void FixRelativePath(const char *in, char *out);
 %type <i> TransfiniteArrangement RecombineAngle
 %type <u> ColorExpr
 %type <c> StringExpr StringExprVar SendToFile
-%type <l> FExpr_Multi ListOfDouble RecursiveListOfDouble
+%type <l> FExpr_Multi ListOfDouble ListOfDoubleOrAll RecursiveListOfDouble
 %type <l> RecursiveListOfListOfDouble 
 %type <l> ListOfColor RecursiveListOfColor 
 %type <l> ListOfShapes Transform Extrude MultipleShape 
@@ -553,7 +556,8 @@ InterpolationMatrix :
 	(ViewData->NbSI || ViewData->NbVI) ? 9 : 
       	(ViewData->NbSH || ViewData->NbVH) ? 12 : 
 	0;
-      ViewData->setInterpolationScheme(type, $3, $6);
+      ViewData->setInterpolationMatrices(type, ListOfListOfDouble2Matrix($3), 
+                                         ListOfListOfDouble2Matrix($6));
 #endif
     }
  |  tInterpolationScheme '{' RecursiveListOfListOfDouble '}' 
@@ -569,7 +573,10 @@ InterpolationMatrix :
 	(ViewData->NbSS || ViewData->NbVS) ? 6 : 
       	(ViewData->NbSH || ViewData->NbVH) ? 12 : 
 	0;
-      ViewData->setInterpolationScheme(type, $3, $6, $9, $12);
+      ViewData->setInterpolationMatrices(type, ListOfListOfDouble2Matrix($3), 
+                                         ListOfListOfDouble2Matrix($6),
+                                         ListOfListOfDouble2Matrix($9), 
+                                         ListOfListOfDouble2Matrix($12));
 #endif
     }
 ;
@@ -1452,7 +1459,6 @@ Shape :
       $$.Type = MSH_PHYSICAL_SURFACE;
       $$.Num = num;
     }
-
   | tCompound tSurface '(' FExpr ')' tAFFECT ListOfDouble tSTRING '{' RecursiveListOfListOfDouble '}' tEND
     {
       int num = (int)$4;
@@ -1461,21 +1467,21 @@ Shape :
       }
       else{
 	List_T *temp = ListOfDouble2ListOfInt($7);
-	List_T *S[4] = {0,0,0,0};
-	for (int i=0;i<List_Nbr($10);i++){
+	List_T *S[4] = {0, 0, 0, 0};
+	for (int i = 0; i < List_Nbr($10); i++){
 	  List_T *ll;
-	  List_Read($10,i,&ll);
+	  List_Read($10, i, &ll);
 	  S[i] = ListOfDouble2ListOfInt(ll);
+          List_Delete(ll);
 	}
-	
 	PhysicalGroup *p = Create_PhysicalGroup(num, MSH_PHYSICAL_SURFACE, temp, S);
 	List_Delete(temp);
-	for (int i=0;i<List_Nbr($10);i++)
+	for (int i = 0; i < List_Nbr($10); i++)
 	  List_Delete(S[i]);
-	
-	List_Add(GModel::current()->getGEOInternals()->PhysicalGroups, &p);
+        List_Add(GModel::current()->getGEOInternals()->PhysicalGroups, &p);
       }
       List_Delete($7);
+      List_Delete($10);
       Free($8);
       $$.Type = MSH_PHYSICAL_SURFACE;
       $$.Num = num;
@@ -1589,9 +1595,9 @@ Transform :
   | tSplit tLine '(' FExpr ')' '{' RecursiveListOfDouble '}' tEND
     {
       $$ = List_Create(2, 1, sizeof(Shape*));
-      List_T *tmp=ListOfDouble2ListOfInt($7);
+      List_T *tmp = ListOfDouble2ListOfInt($7);
       List_Delete($7);
-      SplitCurve((int)$4,tmp,$$);
+      SplitCurve((int)$4, tmp, $$);
       List_Delete(tmp);
     }
 ;
@@ -1737,7 +1743,13 @@ Delete :
     }
   | tDelete tSTRING tEND
     {
-      if(!strcmp($2, "Model") || !strcmp($2, "Meshes") || !strcmp($2, "All")){
+      if(!strcmp($2, "Meshes") || !strcmp($2, "All")){
+        for(unsigned int i = 0; i < GModel::list.size(); i++){
+          GModel::list[i]->destroy();
+          GModel::list[i]->getGEOInternals()->destroy();
+        }
+      }
+      else if(!strcmp($2, "Model")){
 	GModel::current()->destroy();
 	GModel::current()->getGEOInternals()->destroy();
       }
@@ -1787,13 +1799,13 @@ Colorify :
 //  V I S I B I L I T Y
 
 Visibility :
-    tShow StringExprVar tEND
+    tShow tBIGSTR tEND
     {
       for(int i = 0; i < 4; i++)
 	VisibilityShape($2, i, 1);
       Free($2);
     }
-  | tHide StringExprVar tEND
+  | tHide tBIGSTR tEND
     {
       for(int i = 0; i < 4; i++)
 	VisibilityShape($2, i, 0);
@@ -1835,7 +1847,7 @@ Command :
 	// to modify FunctionManager to reopen the files instead of
 	// using the FILE pointer, but hey, I'm lazy...
 	Msg::StatusBar(2, true, "Reading '%s'", tmpstring);
-	ParseFile(tmpstring, 0, 1);
+	ParseFile(tmpstring, false, true);
 	SetBoundingBox();
 	Msg::StatusBar(2, true, "Read '%s'", tmpstring);
       }
@@ -1862,7 +1874,7 @@ Command :
 	// MergeWithBoundingBox is deprecated
 	char tmpstring[1024];
 	FixRelativePath($2, tmpstring);
-	MergeFile(tmpstring, 1);
+	MergeFile(tmpstring, true);
       }
       else if(!strcmp($1, "System"))
 	SystemCall($2);
@@ -2086,22 +2098,22 @@ Loop :
     }
   | tFunction tSTRING
     {
-      if(!FunctionManager::Instance()->createFunction($2, gmsh_yyin, gmsh_yyname,
-						      gmsh_yylineno))
+      if(!FunctionManager::Instance()->createFunction
+         ($2, gmsh_yyin, gmsh_yyname, gmsh_yylineno))
 	yymsg(0, "Redefinition of function %s", $2);
       skip_until(NULL, "Return");
       //FIXME: wee leak $2
     }
   | tReturn
     {
-      if(!FunctionManager::Instance()->leaveFunction(&gmsh_yyin, gmsh_yyname,
-						     gmsh_yylineno))
+      if(!FunctionManager::Instance()->leaveFunction
+         (&gmsh_yyin, gmsh_yyname, gmsh_yylineno))
 	yymsg(0, "Error while exiting function");
     } 
   | tCall tSTRING tEND
     {
-      if(!FunctionManager::Instance()->enterFunction($2, &gmsh_yyin, gmsh_yyname,
-						     gmsh_yylineno))
+      if(!FunctionManager::Instance()->enterFunction
+         ($2, &gmsh_yyin, gmsh_yyname, gmsh_yylineno))
 	yymsg(0, "Unknown function %s", $2);
       //FIXME: wee leak $2
     } 
@@ -2500,81 +2512,128 @@ RecombineAngle :
 ;
 
 Transfinite : 
-    tTransfinite tLine ListOfDouble tAFFECT FExpr TransfiniteType tEND
+    tTransfinite tLine ListOfDoubleOrAll tAFFECT FExpr TransfiniteType tEND
     {
       int type = (int)$6[0];
       double coef = fabs($6[1]);
-      for(int i = 0; i < List_Nbr($3); i++){
-	double d;
-	List_Read($3, i, &d);
-	int j = (int)fabs(d);
-        Curve *c = FindCurve(j);
-	if(c){
-	  c->Method = MESH_TRANSFINITE;
-	  c->nbPointsTransfinite = ($5 > 2) ? (int)$5 : 2;
-	  c->typeTransfinite = type * sign(d);
-	  c->coeffTransfinite = coef;
-	}
-        else{
-	  GEdge *ge = GModel::current()->getEdgeByTag(j);
-          if(ge){
-            ge->meshAttributes.Method = MESH_TRANSFINITE;
-            ge->meshAttributes.nbPointsTransfinite = ($5 > 2) ? (int)$5 : 2;
-            ge->meshAttributes.typeTransfinite = type * sign(d);
-            ge->meshAttributes.coeffTransfinite = coef;
+      if(!$3){
+        List_T *tmp = Tree2List(GModel::current()->getGEOInternals()->Curves);
+        if(List_Nbr(tmp)){
+          for(int i = 0; i < List_Nbr(tmp); i++){
+            Curve *c;
+            List_Read(tmp, i, &c);
+            c->Method = MESH_TRANSFINITE;
+            c->nbPointsTransfinite = ($5 > 2) ? (int)$5 : 2;
+            c->typeTransfinite = type;
+            c->coeffTransfinite = coef;
           }
-          else
-	    yymsg(0, "Unknown line %d", j);
         }
+        else{
+          for(GModel::eiter it = GModel::current()->firstEdge(); 
+              it != GModel::current()->lastEdge(); it++){
+            (*it)->meshAttributes.Method = MESH_TRANSFINITE;
+            (*it)->meshAttributes.nbPointsTransfinite = ($5 > 2) ? (int)$5 : 2;
+            (*it)->meshAttributes.typeTransfinite = type;
+            (*it)->meshAttributes.coeffTransfinite = coef;
+          }
+        }
+        List_Delete(tmp);
       }
-      List_Delete($3);
+      else{
+        for(int i = 0; i < List_Nbr($3); i++){
+          double d;
+          List_Read($3, i, &d);
+          int j = (int)fabs(d);
+          Curve *c = FindCurve(j);
+          if(c){
+            c->Method = MESH_TRANSFINITE;
+            c->nbPointsTransfinite = ($5 > 2) ? (int)$5 : 2;
+            c->typeTransfinite = type * sign(d);
+            c->coeffTransfinite = coef;
+          }
+          else{
+            GEdge *ge = GModel::current()->getEdgeByTag(j);
+            if(ge){
+              ge->meshAttributes.Method = MESH_TRANSFINITE;
+              ge->meshAttributes.nbPointsTransfinite = ($5 > 2) ? (int)$5 : 2;
+              ge->meshAttributes.typeTransfinite = type * sign(d);
+              ge->meshAttributes.coeffTransfinite = coef;
+            }
+            else
+              yymsg(0, "Unknown line %d", j);
+          }
+        }
+        List_Delete($3);
+      }
     }
-  | tTransfinite tSurface ListOfDouble TransfiniteCorners TransfiniteArrangement tEND
+  | tTransfinite tSurface ListOfDoubleOrAll TransfiniteCorners TransfiniteArrangement tEND
     {
       int k = List_Nbr($4);
       if(k != 0 && k != 3 && k != 4){
         yymsg(0, "Wrong definition of Transfinite Surface: 0, 3 or 4 points needed");
       }
       else{
-        for(int i = 0; i < List_Nbr($3); i++){
-          double d;
-          List_Read($3, i, &d);
-          Surface *s = FindSurface((int)d);
-          if(s){
-            s->Method = MESH_TRANSFINITE;
-            s->Recombine_Dir = $5;
-            List_Reset(s->TrsfPoints);
-            for(int j = 0; j < k; j++){
-              double p;
-              List_Read($4, j, &p);
-              Vertex *v = FindPoint((int)fabs(p));
-              if(v)
-                List_Add(s->TrsfPoints, &v);
-              else
-                yymsg(0, "Unknown point %d", (int)fabs(p));
+        if(!$3){
+          List_T *tmp = Tree2List(GModel::current()->getGEOInternals()->Surfaces);
+          if(List_Nbr(tmp)){
+            for(int i = 0; i < List_Nbr(tmp); i++){
+              Surface *s;
+              List_Read(tmp, i, &s);
+              s->Method = MESH_TRANSFINITE;
+              s->Recombine_Dir = $5;
+              List_Reset(s->TrsfPoints);
             }
           }
           else{
-            GFace *gf = GModel::current()->getFaceByTag((int)d);
-            if(gf){
-              gf->meshAttributes.Method = MESH_TRANSFINITE;
-              gf->meshAttributes.transfiniteArrangement = $5;
+            for(GModel::fiter it = GModel::current()->firstFace(); 
+                it != GModel::current()->lastFace(); it++){
+              (*it)->meshAttributes.Method = MESH_TRANSFINITE;
+              (*it)->meshAttributes.transfiniteArrangement = $5;
+            }
+          }
+          List_Delete(tmp);
+        }
+        else{
+          for(int i = 0; i < List_Nbr($3); i++){
+            double d;
+            List_Read($3, i, &d);
+            Surface *s = FindSurface((int)d);
+            if(s){
+              s->Method = MESH_TRANSFINITE;
+              s->Recombine_Dir = $5;
+              List_Reset(s->TrsfPoints);
               for(int j = 0; j < k; j++){
                 double p;
                 List_Read($4, j, &p);
-                GVertex *gv = GModel::current()->getVertexByTag((int)fabs(p));
-                if(gv)
-                  gf->meshAttributes.corners.push_back(gv);
+                Vertex *v = FindPoint((int)fabs(p));
+                if(v)
+                  List_Add(s->TrsfPoints, &v);
                 else
                   yymsg(0, "Unknown point %d", (int)fabs(p));
               }
             }
-            else
-              yymsg(0, "Unknown surface %d", (int)d);
+            else{
+              GFace *gf = GModel::current()->getFaceByTag((int)d);
+              if(gf){
+                gf->meshAttributes.Method = MESH_TRANSFINITE;
+                gf->meshAttributes.transfiniteArrangement = $5;
+                for(int j = 0; j < k; j++){
+                  double p;
+                  List_Read($4, j, &p);
+                  GVertex *gv = GModel::current()->getVertexByTag((int)fabs(p));
+                  if(gv)
+                    gf->meshAttributes.corners.push_back(gv);
+                  else
+                    yymsg(0, "Unknown point %d", (int)fabs(p));
+                }
+              }
+              else
+                yymsg(0, "Unknown surface %d", (int)d);
+            }
           }
+          List_Delete($3);
         }
       }
-      List_Delete($3);
       List_Delete($4);
     }
   | tElliptic tSurface '{' FExpr '}' tAFFECT ListOfDouble tEND
@@ -2582,69 +2641,115 @@ Transfinite :
       yymsg(1, "Elliptic Surface is deprecated: use Transfinite instead (with smoothing)");
       List_Delete($7);
     }
-  | tTransfinite tVolume '{' FExpr '}' tAFFECT ListOfDouble tEND
+  | tTransfinite tVolume ListOfDoubleOrAll TransfiniteCorners tEND
     {
-      int k = List_Nbr($7);
-      if(k != 6 && k != 8){
-        yymsg(0, "Wrong definition of Transfinite Volume %d: "
-              "%d points instead of 6 or 8" , (int)$4, k);
+      int k = List_Nbr($4);
+      if(k != 0 && k != 6 && k != 8){
+        yymsg(0, "Wrong definition of Transfinite Volume: "
+              "%d points instead of 6 or 8", k);
       }
       else{
-        Volume *v = FindVolume((int)$4);
-        if(v){
-          v->Method = MESH_TRANSFINITE;
-	  List_Reset(v->TrsfPoints);
-	  for(int i = 0; i < k; i++){
-	    double d;
-	    List_Read($7, i, &d);
-	    Vertex *vert = FindPoint((int)fabs(d));
-	    if(vert)
-	      List_Add(v->TrsfPoints, &vert);
-	    else
-	      yymsg(0, "Unknown point %d", (int)fabs(d));
-	  }
-	}
-        else{
-	  GRegion *gr = GModel::current()->getRegionByTag((int)$4);
-          if(gr){
-            gr->meshAttributes.Method = MESH_TRANSFINITE;
-            for(int i = 0; i < k; i++){
-              double d;
-              List_Read($7, i, &d);
-              GVertex *gv = GModel::current()->getVertexByTag((int)fabs(d));
-              if(gv)
-                gr->meshAttributes.corners.push_back(gv);
-              else
-                yymsg(0, "Unknown point %d", (int)fabs(d));
+        if(!$3){
+          List_T *tmp = Tree2List(GModel::current()->getGEOInternals()->Volumes);
+          if(List_Nbr(tmp)){
+            for(int i = 0; i < List_Nbr(tmp); i++){
+              Volume *v;
+              List_Read(tmp, i, &v);
+              v->Method = MESH_TRANSFINITE;
+              List_Reset(v->TrsfPoints);
             }
           }
-          else
-            yymsg(0, "Unknown volume %d", (int)$4);
-        }
-      }
-      List_Delete($7);
-    }
-  | tRecombine tSurface ListOfDouble RecombineAngle tEND
-    {
-      for(int i = 0; i < List_Nbr($3); i++){
-	double d;
-	List_Read($3, i, &d);
-        Surface *s = FindSurface((int)d);
-	if(s){
-	  s->Recombine = 1;
-	  s->RecombineAngle = $4;
+          else{
+            for(GModel::riter it = GModel::current()->firstRegion(); 
+                it != GModel::current()->lastRegion(); it++){
+              (*it)->meshAttributes.Method = MESH_TRANSFINITE;
+            }
+          }
+          List_Delete(tmp);
         }
         else{
-	  GFace *gf = GModel::current()->getFaceByTag((int)d);
-	  if(gf){
-            gf->meshAttributes.recombine = 1;
-            gf->meshAttributes.recombineAngle = $4;
+          for(int i = 0; i < List_Nbr($3); i++){
+            double d;
+            List_Read($3, i, &d);
+            Volume *v = FindVolume((int)d);
+            if(v){
+              v->Method = MESH_TRANSFINITE;
+              List_Reset(v->TrsfPoints);
+              for(int i = 0; i < k; i++){
+                double p;
+                List_Read($4, i, &p);
+                Vertex *vert = FindPoint((int)fabs(p));
+                if(vert)
+                  List_Add(v->TrsfPoints, &vert);
+                else
+                  yymsg(0, "Unknown point %d", (int)fabs(p));
+              }
+            }
+            else{
+              GRegion *gr = GModel::current()->getRegionByTag((int)d);
+              if(gr){
+                gr->meshAttributes.Method = MESH_TRANSFINITE;
+                for(int i = 0; i < k; i++){
+                  double p;
+                  List_Read($4, i, &p);
+                  GVertex *gv = GModel::current()->getVertexByTag((int)fabs(p));
+                  if(gv)
+                    gr->meshAttributes.corners.push_back(gv);
+                  else
+                    yymsg(0, "Unknown point %d", (int)fabs(p));
+                }
+              }
+              else
+                yymsg(0, "Unknown volume %d", (int)d);
+            }
           }
-          else
-	    yymsg(1, "Unknown surface %d", (int)d);
+          List_Delete($3);
         }
       }
-      List_Delete($3);
+      List_Delete($4);
+    }
+  | tRecombine tSurface ListOfDoubleOrAll RecombineAngle tEND
+    {
+      if(!$3){
+	List_T *tmp = Tree2List(GModel::current()->getGEOInternals()->Surfaces);
+        if(List_Nbr(tmp)){
+          for(int i = 0; i < List_Nbr(tmp); i++){
+            Surface *s;
+            List_Read(tmp, i, &s);
+            s->Recombine = 1;
+            s->RecombineAngle = $4;
+          }
+        }
+        else{
+          for(GModel::fiter it = GModel::current()->firstFace(); 
+              it != GModel::current()->lastFace(); it++){
+            (*it)->meshAttributes.recombine = 1;
+            (*it)->meshAttributes.recombineAngle = $4;
+          }
+        }
+        List_Delete(tmp);
+      }
+      else{
+        for(int i = 0; i < List_Nbr($3); i++){
+          double d;
+          List_Read($3, i, &d);
+          Surface *s = FindSurface((int)d);
+          if(s){
+            s->Recombine = 1;
+            s->RecombineAngle = $4;
+          }
+          else{
+            GFace *gf = GModel::current()->getFaceByTag((int)d);
+            if(gf){
+              gf->meshAttributes.recombine = 1;
+              gf->meshAttributes.recombineAngle = $4;
+            }
+            else
+              yymsg(1, "Unknown surface %d", (int)d);
+          }
+        }
+        List_Delete($3);
+      }
     }
   | tSmoother tSurface ListOfDouble tAFFECT FExpr tEND
     {
@@ -3043,6 +3148,22 @@ ListOfDouble :
     }
 ;
 
+ListOfDoubleOrAll :
+    ListOfDouble 
+    { 
+      $$ = $1; 
+    }
+  | tBIGSTR
+    {
+      if(!strcmp($1, "*") || !strcmp($1, "all"))
+        $$ = 0;
+      else{
+        yyerror("Unknown special string for list replacement");
+        $$ = List_Create(2, 1, sizeof(double));
+      }
+    }
+;
+
 FExpr_Multi :
     '-' FExpr_Multi %prec UNARYPREC
     {
@@ -3383,6 +3504,29 @@ int PrintListOfDouble(char *format, List_T *list, char *buffer)
   return 0;
 }
 
+Double_Matrix ListOfListOfDouble2Matrix(List_T *list)
+{
+  int M = List_Nbr(list);
+  int N = 0;
+  for(int i = 0; i < M; i++){
+    List_T *line = *(List_T**)List_Pointer_Fast(list, i);
+    N = std::max(N, List_Nbr(line));
+  }
+  Double_Matrix mat(M, N);
+  for(int i = 0; i < M; i++){
+    List_T *line = *(List_T**)List_Pointer_Fast(list, i);
+    for(int j = 0; j < List_Nbr(line); j++){
+      double val;
+      List_Read(line, j, &val);
+      mat(i, j) = val;
+    }
+  }
+  for(int i = 0; i < List_Nbr(list); i++)
+    List_Delete(*(List_T**)List_Pointer(list, i));
+  List_Delete(list);
+  return mat;
+}
+
 void FixRelativePath(const char *in, char *out)
 {
   if(in[0] == '/' || in[0] == '\\' || (strlen(in)>2 && in[1] == ':')){
@@ -3391,9 +3535,10 @@ void FixRelativePath(const char *in, char *out)
   }
   else{
     // append 'in' to the path of the parent file
-    strcpy(out, gmsh_yyname);
+    strcpy(out, gmsh_yyname.c_str());
     int i = strlen(out) - 1 ;
-    while(i >= 0 && gmsh_yyname[i] != '/' && gmsh_yyname[i] != '\\') i-- ;
+    while(i >= 0 && gmsh_yyname.c_str()[i] != '/' && 
+          gmsh_yyname.c_str()[i] != '\\') i-- ;
     out[i+1] = '\0';
     strcat(out, in);
   }
@@ -3401,7 +3546,8 @@ void FixRelativePath(const char *in, char *out)
 
 void yyerror(char *s)
 {
-  Msg::Error("'%s', line %d : %s (%s)", gmsh_yyname, gmsh_yylineno - 1, s, gmsh_yytext);
+  Msg::Error("'%s', line %d : %s (%s)", gmsh_yyname.c_str(), gmsh_yylineno - 1,
+             s, gmsh_yytext);
   gmsh_yyerrorstate++;
 }
 
@@ -3415,9 +3561,9 @@ void yymsg(int level, const char *fmt, ...)
   va_end(args);
 
   if(level == 0){
-    Msg::Error("'%s', line %d : %s", gmsh_yyname, gmsh_yylineno - 1, tmp);
+    Msg::Error("'%s', line %d : %s", gmsh_yyname.c_str(), gmsh_yylineno - 1, tmp);
     gmsh_yyerrorstate++;
   }
   else
-    Msg::Warning("'%s', line %d : %s", gmsh_yyname, gmsh_yylineno - 1, tmp);
+    Msg::Warning("'%s', line %d : %s", gmsh_yyname.c_str(), gmsh_yylineno - 1, tmp);
 }

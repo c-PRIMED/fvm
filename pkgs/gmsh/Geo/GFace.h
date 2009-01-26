@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -63,6 +63,9 @@ class GFace : public GEntity
   void addRegion(GRegion *r){ r1 ? r2 = r : r1 = r; }
   void delRegion(GRegion *r){ if(r1 == r) r1 = r2; r2 = 0; }
 
+  // get number of regions
+  int numRegions() const { int num=0; if(r1) num++; if(r2) num++; return num; }
+
   // add embedded vertices/edges
   void addEmbeddedVertex(GVertex *v){ embedded_vertices.push_back(v); }
   void addEmbeddedEdge(GEdge *e){ embedded_edges.push_back(e); }
@@ -76,6 +79,7 @@ class GFace : public GEntity
 
   // edges that bound the face
   virtual std::list<GEdge*> edges() const { return l_edges; }
+  virtual std::list<int> edgeOrientations() const { return l_dirs; }
 
   // edges that are embedded in the face
   virtual std::list<GEdge*> embeddedEdges() const { return embedded_edges; }

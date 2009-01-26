@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -6,6 +6,7 @@
 #ifndef _OCC_VERTEX_H_
 #define _OCC_VERTEX_H_
 
+#include "GmshConfig.h"
 #include "GModel.h"
 #include "GVertex.h"
 #include "OCCIncludes.h"
@@ -28,7 +29,7 @@ class OCCVertex : public GVertex {
   virtual void setPosition(GPoint &p);
   ModelType getNativeType() const { return OpenCascadeModel; }
   void * getNativePtr() const { return (void*)&v; }
-  virtual SPoint2 reparamOnFace(GFace *gf, int) const;
+  virtual SPoint2 reparamOnFace(const GFace *gf, int) const;
 };
 
 #endif

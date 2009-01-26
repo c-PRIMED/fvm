@@ -1,10 +1,11 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <string.h>
 #include <sstream>
+#include "GmshConfig.h"
 #include "GmshMessage.h"
 #include "Numeric.h"
 #include "StringUtils.h"
@@ -27,15 +28,16 @@ double evaluate_scalarfunction(std::string var, double val, std::string funct)
   return 0.;
 #else
   FILE *tempf = gmsh_yyin;
-  if(!(gmsh_yyin = fopen(CTX.tmp_filename_fullpath, "w"))) {
-    Msg::Error("Unable to open temporary file '%s'", CTX.tmp_filename_fullpath);
+  if(!(gmsh_yyin = fopen((CTX.home_dir + CTX.tmp_filename).c_str(), "w"))) {
+    Msg::Error("Unable to open temporary file '%s'", 
+               (CTX.home_dir + CTX.tmp_filename).c_str());
     return 0.;
   }
   // pose "variable = function" and evaluate function
   fprintf(gmsh_yyin, "%s = %.16g ;\n", var.c_str(), val);
   fprintf(gmsh_yyin, "ValeurTemporaire__ = %s ;\n", funct.c_str());
   fclose(gmsh_yyin);
-  gmsh_yyin = fopen(CTX.tmp_filename_fullpath, "r");
+  gmsh_yyin = fopen((CTX.home_dir + CTX.tmp_filename).c_str(), "r");
   while(!feof(gmsh_yyin)) {
     gmsh_yyparse();
   }
@@ -53,15 +55,16 @@ void add_infile(std::string text, std::string filename, bool deleted_something)
 #if defined(HAVE_NO_PARSER)
   Msg::Error("GEO file creation not available without Gmsh parser");
 #else
-  if(!(gmsh_yyin = fopen(CTX.tmp_filename_fullpath, "w"))) {
-    Msg::Error("Unable to open temporary file '%s'", CTX.tmp_filename_fullpath);
+  if(!(gmsh_yyin = fopen((CTX.home_dir + CTX.tmp_filename).c_str(), "w"))) {
+    Msg::Error("Unable to open temporary file '%s'", 
+               (CTX.home_dir + CTX.tmp_filename).c_str());
     return;
   }
 
   fprintf(gmsh_yyin, "%s\n", text.c_str());
   Msg::StatusBar(2, true, "%s", text.c_str());
   fclose(gmsh_yyin);
-  gmsh_yyin = fopen(CTX.tmp_filename_fullpath, "r");
+  gmsh_yyin = fopen((CTX.home_dir + CTX.tmp_filename).c_str(), "r");
   while(!feof(gmsh_yyin)) {
     gmsh_yyparse();
   }
@@ -133,7 +136,7 @@ void add_charlength(List_T *list, std::string filename, std::string lc)
 {
   std::ostringstream sstream;
   sstream << "Characteristic Length {" << list2string(list) << "} = " << lc << ";";
-  add_infile(sstream.str().c_str(), filename);
+  add_infile(sstream.str(), filename);
 }
 
 void add_recosurf(List_T *list, std::string filename)

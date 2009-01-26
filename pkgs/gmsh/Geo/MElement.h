@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -15,11 +15,7 @@
 #include "MFace.h"
 #include "GmshMessage.h"
 #include "FunctionSpace.h"
-
-struct IntPt{
-  double pt[3];
-  double weight;
-};
+#include "Gauss.h"
 
 class GFace;
 
@@ -37,6 +33,9 @@ class MElement
   // a visibility flag
   char _visible;
  protected:
+  // the tolerance used to determine if a point is inside an element,
+  // in parametric coordinates
+  static double _isInsideTolerance;
   void _getEdgeRep(MVertex *v0, MVertex *v1, 
                    double *x, double *y, double *z, SVector3 *n,
                    int faceIndex=-1);
@@ -58,6 +57,10 @@ class MElement
 
   // reset the global node number
   static void resetGlobalNumber(){ _globalNum = 0; }
+
+  // set/get the tolerance for isInside() test
+  static void setTolerance (const double tol){ _isInsideTolerance = tol; }
+  static double getTolerance () { return _isInsideTolerance; }
 
   // return the tag of the element
   virtual int getNum(){ return _num; }
@@ -162,11 +165,7 @@ class MElement
   virtual std::string getInfoString();
 
   // get the function space for the element
-  virtual const gmshFunctionSpace* getFunctionSpace(int order=-1) const
-  {
-    Msg::Error("Function space not implemented for this type of element");
-    return 0;
-  }
+  virtual const gmshFunctionSpace* getFunctionSpace(int order=-1) const { return 0; }
   
   // return the interpolating nodal shape functions evaluated at point
   // (u,v,w) in parametric coordinates (if order == -1, use the
@@ -195,7 +194,7 @@ class MElement
 
   // test if a point, given in parametric coordinates, belongs to the
   // element
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8) = 0;
+  virtual bool isInside(double u, double v, double w) = 0;
 
   // interpolate the given nodal data (resp. its gradient, curl and
   // divergence) at point (u,v,w) in parametric coordinates
@@ -304,7 +303,7 @@ class MPoint : public MElement {
   {
     s[0][0] = s[0][1] = s[0][2] = 0.;
   }
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  virtual bool isInside(double u, double v, double w)
   {
     return true;
   }
@@ -365,8 +364,9 @@ class MLine : public MElement {
     MVertex *tmp = _v[0]; _v[0] = _v[1]; _v[1] = tmp;
   }
   virtual const gmshFunctionSpace* getFunctionSpace(int o=-1) const;
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  virtual bool isInside(double u, double v, double w)
   {
+    double tol = _isInsideTolerance;
     if(u < -(1. + tol) || u > (1. + tol))
       return false;
     return true;
@@ -577,8 +577,9 @@ class MTriangle : public MElement {
     MVertex *tmp = _v[1]; _v[1] = _v[2]; _v[2] = tmp;
   }
   virtual const gmshFunctionSpace* getFunctionSpace(int o=-1) const;
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  virtual bool isInside(double u, double v, double w)
   {
+    double tol = _isInsideTolerance;
     if(u < (-tol) || v < (-tol) || u > ((1. + tol) - v))
       return false; 
     return true;
@@ -641,31 +642,16 @@ class MTriangle6 : public MTriangle {
     return getVertex(map[num]); 
   }
   virtual int getNumEdgeVertices() const { return 3; }
-  virtual int getNumEdgesRep(){ return 6; }
-  virtual void getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n)
-  {
-    static const int e[6][2] = {
-      {0, 3}, {3, 1},
-      {1, 4}, {4, 2},
-      {2, 5}, {5, 0}
-    }; 
-    _getEdgeRep(getVertex(e[num][0]), getVertex(e[num][1]), x, y, z, n, 0);
-  } 
+  virtual int getNumEdgesRep();
+  virtual void getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n);
   virtual void getEdgeVertices(const int num, std::vector<MVertex*> &v) const
   {
     v.resize(3);
     MTriangle::_getEdgeVertices(num, v);
     v[2] = _vs[num];
   }
-  virtual int getNumFacesRep(){ return 4; }
-  virtual void getFaceRep(int num, double *x, double *y, double *z, SVector3 *n)
-  { 
-    static const int f[4][3] = {
-      {0, 3, 5}, {1, 4, 3}, {2, 5, 4}, {3, 4, 5}
-    };
-    _getFaceRep(getVertex(f[num][0]), getVertex(f[num][1]), getVertex(f[num][2]),
-                x, y, z, n);
-  }
+  virtual int getNumFacesRep();
+  virtual void getFaceRep(int num, double *x, double *y, double *z, SVector3 *n);
   virtual void getFaceVertices(const int num, std::vector<MVertex*> &v) const
   {
     v.resize(6);
@@ -885,8 +871,9 @@ class MQuadrangle : public MElement {
     s[2][0] =  0.25 * (1. + v); s[2][1] =  0.25 * (1. + u); s[2][2] = 0.;
     s[3][0] = -0.25 * (1. + v); s[3][1] =  0.25 * (1. - u); s[3][2] = 0.;
   }
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  virtual bool isInside(double u, double v, double w)
   {
+    double tol = _isInsideTolerance;
     if(u < -(1. + tol) || v < -(1. + tol) || u > (1. + tol) || v > (1. + tol))
       return false;
     return true;
@@ -1213,8 +1200,9 @@ class MTetrahedron : public MElement {
   virtual double etaShapeMeasure();
   void xyz2uvw(double xyz[3], double uvw[3]);
   virtual const gmshFunctionSpace* getFunctionSpace(int o=-1) const;
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  virtual bool isInside(double u, double v, double w)
   {
+    double tol = _isInsideTolerance;
     if(u < (-tol) || v < (-tol) || w < (-tol) || u > ((1. + tol) - v - w))
       return false;
     return true;
@@ -1306,38 +1294,19 @@ class MTetrahedron10 : public MTetrahedron {
     return getVertex(map[num]); 
   }
   virtual int getNumEdgeVertices() const { return 6; }
-  virtual int getNumEdgesRep(){ return 12; }
-  virtual void getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n)
-  { 
-    static const int e[12][2] = {
-      {0, 4}, {4, 1},
-      {1, 5}, {5, 2},
-      {2, 6}, {6, 0},
-      {3, 7}, {7, 0},
-      {3, 8}, {8, 2},
-      {3, 9}, {9, 1}
-    };
-    static const int f[12] = {0, 0, 0, 1, 2, 3};
-    _getEdgeRep(getVertex(e[num][0]), getVertex(e[num][1]), x, y, z, n, f[num / 2]);
-  }
+
+  virtual void getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n);
+  virtual int getNumEdgesRep();
+  virtual void getFaceRep(int num, double *x, double *y, double *z, SVector3 *n);
+  virtual int getNumFacesRep();
+
   virtual void getEdgeVertices(const int num, std::vector<MVertex*> &v) const
   {
     v.resize(3);
     MTetrahedron::_getEdgeVertices(num, v);
     v[2] = _vs[num];
   }
-  virtual int getNumFacesRep(){ return 16; }
-  virtual void getFaceRep(int num, double *x, double *y, double *z, SVector3 *n)
-  { 
-    static const int f[16][3] = {
-      {0, 6, 4}, {2, 5, 6}, {1, 4, 5}, {6, 5, 4},
-      {0, 4, 7}, {1, 9, 4}, {3, 7, 9}, {4, 9, 7},
-      {0, 7, 6}, {3, 8, 7}, {2, 6, 8}, {7, 8, 6},
-      {3, 9, 8}, {1, 5, 9}, {2, 8, 5}, {9, 5, 8}
-    };
-    _getFaceRep(getVertex(f[num][0]), getVertex(f[num][1]), getVertex(f[num][2]),
-                x, y, z, n);
-  }
+
   virtual void getFaceVertices(const int num, std::vector<MVertex*> &v) const
   {
     v.resize(6);
@@ -1699,8 +1668,9 @@ class MHexahedron : public MElement {
     s[7][1] =  0.125 * (1. - u) * (1. + w);
     s[7][2] =  0.125 * (1. - u) * (1. + v);
   }
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  virtual bool isInside(double u, double v, double w)
   {
+    double tol = _isInsideTolerance;
     if(u < -(1. + tol) || v < -(1. + tol) || w < -(1. + tol) || 
        u > (1. + tol) || v > (1. + tol) || w > (1. + tol))
       return false;
@@ -2173,8 +2143,9 @@ class MPrism : public MElement {
     s[5][1] =  0.5 * (1. + w)    ;
     s[5][2] =  0.5 * v           ;
   }
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  virtual bool isInside(double u, double v, double w)
   {
+    double tol = _isInsideTolerance;
     if(w > (1. + tol) || w < -(1. + tol) || u < (1. + tol)
        || v < (1. + tol) || u > ((1. + tol) - v))
       return false;
@@ -2588,18 +2559,18 @@ class MPyramid : public MElement {
   virtual void getGradShapeFunctions(double u, double v, double w, double s[][3], int o) 
   {
     if(w == 1.) {
-        s[0][0] = -0.25 ; 
-        s[0][1] = -0.25 ;
-        s[0][2] = -0.25 ; 
-	s[1][0] =  0.25 ; 
-	s[1][1] = -0.25 ;
-	s[1][2] = -0.25 ; 
-	s[2][0] =  0.25 ; 
-	s[2][1] =  0.25 ;
-	s[2][2] = -0.25 ; 
-	s[3][0] = -0.25 ; 
-	s[3][1] =  0.25 ;
-	s[3][2] = -0.25 ; 
+      s[0][0] = -0.25 ; 
+      s[0][1] = -0.25 ;
+      s[0][2] = -0.25 ; 
+      s[1][0] =  0.25 ; 
+      s[1][1] = -0.25 ;
+      s[1][2] = -0.25 ; 
+      s[2][0] =  0.25 ; 
+      s[2][1] =  0.25 ;
+      s[2][2] = -0.25 ; 
+      s[3][0] = -0.25 ; 
+      s[3][1] =  0.25 ;
+      s[3][2] = -0.25 ; 
     }
     else{
       s[0][0] = 0.25 * ( -(1. - v) + v * w / (1. - w)) ;
@@ -2619,8 +2590,9 @@ class MPyramid : public MElement {
     s[4][1] = 0.;
     s[4][2] = 1.;
   }
-  virtual bool isInside(double u, double v, double w, double tol=1.e-8)
+  virtual bool isInside(double u, double v, double w)
   {
+    double tol = _isInsideTolerance;
     if(u < (w - (1. + tol)) || u > ((1. + tol) - w) || v < (w - (1. + tol)) ||
        v > ((1. + tol) - w) || w < (-tol) || w > (1. + tol))
       return false;

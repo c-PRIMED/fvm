@@ -1,14 +1,20 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
+#include "GmshConfig.h"
 #include "CutPlane.h"
 #include "Context.h"
 
 #if defined(HAVE_FLTK)
-#include "GmshUI.h"
+#include "drawContext.h"
 #include "Draw.h"
+#endif
+
+#if defined(WIN32)
+#undef min
+#undef max
 #endif
 
 extern Context_T CTX;
@@ -34,21 +40,22 @@ extern "C"
   }
 }
 
-void GMSH_CutPlanePlugin::draw()
+void GMSH_CutPlanePlugin::draw(void *context)
 {
 #if defined(HAVE_FLTK)
   int num = (int)CutPlaneOptions_Number[7].def;
+  drawContext *ctx = (drawContext*)context;
   if(num < 0) num = iview;
   if(num >= 0 && num < (int)PView::list.size()){
     glColor4ubv((GLubyte *) & CTX.color.fg);
     glLineWidth(CTX.line_width);
     SBoundingBox3d bb = PView::list[num]->getData()->getBoundingBox();
-    Draw_PlaneInBoundingBox(bb.min().x(), bb.min().y(), bb.min().z(), 
-                            bb.max().x(), bb.max().y(), bb.max().z(), 
-                            CutPlaneOptions_Number[0].def,
-                            CutPlaneOptions_Number[1].def,
-                            CutPlaneOptions_Number[2].def,
-                            CutPlaneOptions_Number[3].def);
+    ctx->drawPlaneInBoundingBox(bb.min().x(), bb.min().y(), bb.min().z(), 
+                                bb.max().x(), bb.max().y(), bb.max().z(), 
+                                CutPlaneOptions_Number[0].def,
+                                CutPlaneOptions_Number[1].def,
+                                CutPlaneOptions_Number[2].def,
+                                CutPlaneOptions_Number[3].def);
   }
 #endif
 }

@@ -1,14 +1,15 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
+#include "GmshConfig.h"
+#include "GmshMessage.h"
 #include "GModel.h"
 #include "GEdgeLoop.h"
 #include "OCCVertex.h"
 #include "OCCEdge.h"
 #include "OCCFace.h"
-#include "GmshMessage.h"
 #include "Numeric.h"
 #include "VertexArray.h"
 #include "Context.h"

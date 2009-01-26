@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -275,8 +275,7 @@ void ProtudeXYZ(double &x, double &y, double &z, ExtrudeParams *e);
 
 void ReplaceAllDuplicates();
 
-bool ProjectPointOnCurve(Curve *c, Vertex *v, Vertex *RES, Vertex *DER);
-bool ProjectPointOnSurface(Surface *s, Vertex &p, double u[2]);
+bool ProjectPointOnSurface(Surface *s, Vertex &p, double uv[2]);
 
 bool IntersectCurvesWithSurface(List_T *curve_ids, int surface_id, List_T *shapes);
 bool SplitCurve(int line_id, List_T *vertices_id, List_T *shapes);

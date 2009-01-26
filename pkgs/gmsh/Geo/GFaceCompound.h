@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -26,10 +26,15 @@ The compound can therefore be re-meshed using any surface mesh
 generator of gmsh!
 */
 
-typedef struct {
+class  GFaceCompoundTriangle {
+public:
   SPoint2 p1, p2, p3;
-  MTriangle *t;
-} GFaceCompoundTriangle;
+  SPoint2 gfp1, gfp2, gfp3;
+  SPoint3 v1, v2, v3;
+  GFace *gf;
+  GFaceCompoundTriangle () : gf(0)
+  {}
+} ;
 
 class Octree;
 
@@ -40,19 +45,17 @@ class GFaceCompound : public GFace {
   mutable GFaceCompoundTriangle *_gfct;
   mutable Octree *oct;
   mutable std::map<MVertex*,SPoint2> coordinates;
+  mutable std::map<MVertex*,SVector3> _normals;
   void buildOct() const ;
-  void parametrize(bool) const ;
-  void parametrize() const
-  {
-    if (!oct){
-      parametrize(0);
-      parametrize(1);
-      buildOct();
-    }
-  }
+  void parametrize(bool,int) const ;
+  void parametrize() const ;
+  void computeNormals () const;
   void getBoundingEdges();
-  void getTriangle(double u, double v, MTriangle **t, double &_u, double &_v) const;
- public:
+  void getTriangle(double u, double v, GFaceCompoundTriangle **lt, 
+                   double &_u, double &_v) const;
+  virtual double curvature(MTriangle *t) const;
+public:
+  typedef enum {UNITCIRCLE, CYLINDER, BIFURCATION, SQUARE} typeOfIsomorphism;
   GFaceCompound(GModel *m, int tag, 
 		std::list<GFace*> &compound,
 		std::list<GEdge*> &U0,
@@ -68,6 +71,9 @@ class GFaceCompound : public GFace {
   void * getNativePtr() const { return 0; }
   SPoint2 getCoordinates(MVertex *v) const { parametrize() ; return coordinates[v]; }
   virtual bool buildRepresentationCross(){ return false; }
+  virtual double curvature(const SPoint2 &param) const;
+private:
+  typeOfIsomorphism _type;
 };
 
 #endif

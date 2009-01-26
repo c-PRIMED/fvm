@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -28,6 +28,59 @@
 #include "HighOrder.h"
 
 extern Context_T CTX;
+
+void computeEdgeLoops(const GFace *gf,
+		      std::vector<MVertex*> &all_mvertices,
+		      std::vector<int> &indices)
+{
+  std::list<GEdge*> edges = gf->edges();
+  std::list<int> ori = gf->orientations();
+  std::list<GEdge*>::iterator it = edges.begin();
+  std::list<int>::iterator ito = ori.begin();
+
+  indices.push_back(0);
+  GVertex *start = ((*ito) == 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
+  GVertex *v_end = ((*ito) != 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
+  all_mvertices.push_back(start->mesh_vertices[0]);
+  if (*ito == 1)
+    for (unsigned int i = 0; i < (*it)->mesh_vertices.size(); i++)
+      all_mvertices.push_back((*it)->mesh_vertices[i]);
+  else
+    for (int i = (*it)->mesh_vertices.size() - 1; i >= 0; i--)
+      all_mvertices.push_back((*it)->mesh_vertices[i]);
+  
+  GVertex *v_start = start;
+  while(1){
+    ++it;
+    ++ito;
+    if(v_end == start){
+      indices.push_back(all_mvertices.size());
+      if(it == edges.end ()) break;
+      start = ((*ito) == 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
+      v_end = ((*ito) != 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
+      v_start = start;
+    }
+    else{
+      if(it == edges.end ()){
+	Msg::Error("Something wrong in edge loop computation");
+	return;
+      }
+      v_start = ((*ito) == 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
+      if(v_start != v_end){
+	Msg::Error("Something wrong in edge loop computation");
+	return;
+      }
+      v_end = ((*ito) != 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
+    }
+    all_mvertices.push_back(v_start->mesh_vertices[0]);
+    if(*ito == 1)
+      for(unsigned int i = 0; i < (*it)->mesh_vertices.size(); i++)
+        all_mvertices.push_back((*it)->mesh_vertices[i]);
+    else
+      for (int i = (*it)->mesh_vertices.size()-1; i >= 0; i--)
+        all_mvertices.push_back((*it)->mesh_vertices[i]);
+  }
+}
 
 void fourthPoint(double *p1, double *p2, double *p3, double *p4)
 {
@@ -149,59 +202,6 @@ static bool AlgoDelaunay2D(GFace *gf)
   return false;
 }
 
-void computeEdgeLoops(const GFace *gf,
-		      std::vector<MVertex*> &all_mvertices,
-		      std::vector<int> &indices)
-{
-  std::list<GEdge*> edges = gf->edges();
-  std::list<int> ori = gf->orientations();
-  std::list<GEdge*>::iterator it = edges.begin();
-  std::list<int>::iterator ito = ori.begin();
-
-  indices.push_back(0);
-  GVertex *start = ((*ito) == 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
-  GVertex *v_end = ((*ito) != 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
-  all_mvertices.push_back(start->mesh_vertices[0]);
-  if (*ito == 1)
-    for (unsigned int i = 0; i < (*it)->mesh_vertices.size(); i++)
-      all_mvertices.push_back((*it)->mesh_vertices[i]);
-  else
-    for (int i = (*it)->mesh_vertices.size() - 1; i >= 0; i--)
-      all_mvertices.push_back((*it)->mesh_vertices[i]);
-  
-  GVertex *v_start = start;
-  while(1){
-    ++it;
-    ++ito;
-    if(v_end == start){
-      indices.push_back(all_mvertices.size());
-      if(it == edges.end ()) break;
-      start = ((*ito) == 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
-      v_end = ((*ito) != 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
-      v_start = start;
-    }
-    else{
-      if(it == edges.end ()){
-	Msg::Error("Something wrong in edge loop computation");
-	return;
-      }
-      v_start = ((*ito) == 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
-      if(v_start != v_end){
-	Msg::Error("Something wrong in edge loop computation");
-	return;
-      }
-      v_end = ((*ito) != 1) ? (*it)->getBeginVertex() : (*it)->getEndVertex();
-    }
-    all_mvertices.push_back(v_start->mesh_vertices[0]);
-    if(*ito == 1)
-      for(unsigned int i = 0; i < (*it)->mesh_vertices.size(); i++)
-        all_mvertices.push_back((*it)->mesh_vertices[i]);
-    else
-      for (int i = (*it)->mesh_vertices.size()-1; i >= 0; i--)
-        all_mvertices.push_back((*it)->mesh_vertices[i]);
-  }
-}
-
 void computeElementShapes(GFace *gf, double &worst, double &avg, double &best,
                           int &nT, int &greaterThan)
 {
@@ -223,6 +223,51 @@ void computeElementShapes(GFace *gf, double &worst, double &avg, double &best,
 
 static bool recover_medge(BDS_Mesh *m, GEdge *ge, std::set<EdgeToRecover> *e2r, 
 			  std::set<EdgeToRecover> *not_recovered, int pass_)
+{
+  BDS_GeomEntity *g = 0;
+  if (pass_ == 2){
+    m->add_geom (ge->tag(), 1);
+    g = m->get_geom(ge->tag(),1);
+  }
+  
+  for (unsigned int i = 0; i < ge->lines.size(); i++){
+    MVertex *vstart = ge->lines[i]->getVertex(0);
+    MVertex *vend   = ge->lines[i]->getVertex(1);
+    if (pass_ == 1) e2r->insert(EdgeToRecover(vstart->getIndex(), vend->getIndex(), ge));
+    else{
+      BDS_Edge *e = m->recover_edge(vstart->getIndex(), vend->getIndex(), e2r, not_recovered);
+      if (e) e->g = g;
+      else {
+        // Msg::Error("Unable to recover an edge %g %g && %g %g (%d/%d)",
+        //            vstart->x(), vstart->y(), vend->x(), vend->y(), i, 
+        //            ge->mesh_vertices.size());
+        // return false;
+      }
+    }
+  }
+
+  if (pass_ == 2 && ge->getBeginVertex()){
+    MVertex *vstart = *(ge->getBeginVertex()->mesh_vertices.begin());
+    MVertex *vend = *(ge->getEndVertex()->mesh_vertices.begin());    
+    BDS_Point *pstart = m->find_point(vstart->getIndex());
+    BDS_Point *pend = m->find_point(vend->getIndex());
+    if(!pstart->g){
+      m->add_geom (vstart->getIndex(), 0);
+      BDS_GeomEntity *g0 = m->get_geom(vstart->getIndex(), 0);
+      pstart->g = g0;
+    }
+    if(!pend->g){
+      m->add_geom (vend->getIndex(), 0);
+      BDS_GeomEntity *g0 = m->get_geom(vend->getIndex(), 0);
+      pend->g = g0;
+    }
+  }
+
+  return true;
+}
+
+static bool recover_medge_old(BDS_Mesh *m, GEdge *ge, std::set<EdgeToRecover> *e2r, 
+			      std::set<EdgeToRecover> *not_recovered, int pass_)
 {
   BDS_GeomEntity *g = 0;
   if (pass_ == 2){
@@ -342,12 +387,6 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
 	all_vertices.insert((*it)->lines[i]->getVertex(0));
 	all_vertices.insert((*it)->lines[i]->getVertex(1));
       }      
-      //      all_vertices.insert((*it)->mesh_vertices.begin(), 
-      //                          (*it)->mesh_vertices.end());
-      //      all_vertices.insert((*it)->getBeginVertex()->mesh_vertices.begin(),
-      //                          (*it)->getBeginVertex()->mesh_vertices.end());
-      //      all_vertices.insert((*it)->getEndVertex()->mesh_vertices.begin(),
-      //                          (*it)->getEndVertex()->mesh_vertices.end());
     }
     ++it;
   }
@@ -393,6 +432,7 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
     reparamMeshVertexOnFace(here, gf, param);
     U_[count] = param[0];
     V_[count] = param[1];
+    //    printf("coucou : %g %g -> %g %g\n",here->x(),here->y(),param.x(),param.y());
     (*itv)->setIndex(count);
     numbered_vertices[(*itv)->getIndex()] = *itv;
     bbox += SPoint3(param.x(), param.y(), 0);
@@ -661,9 +701,6 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
     gmshOptimizeMeshBDS(gf, *m, 2);
     gmshRefineMeshBDS (gf,*m, CTX.mesh.refine_steps, false);
     gmshOptimizeMeshBDS(gf, *m, 2);
-    if (gf->meshAttributes.recombine){
-      m->recombineIntoQuads (gf->meshAttributes.recombineAngle,gf);
-    }
   }
 
   computeMeshSizeFieldAccuracy(gf, *m, gf->meshStatistics.efficiency_index,
@@ -711,8 +748,12 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
   // BDS mesh is passed in order not to recompute local coordinates of
   // vertices
   if(AlgoDelaunay2D(gf)){
-    gmshBowyerWatson(gf);
-    for (int i=0;i<CTX.mesh.nb_smoothing;i++)laplaceSmoothing(gf);
+    if (CTX.mesh.algo2d == ALGO_2D_FRONTAL)
+      gmshBowyerWatsonFrontal(gf);
+    else
+      gmshBowyerWatson(gf);
+    for (int i = 0; i < CTX.mesh.nb_smoothing; i++) 
+      laplaceSmoothing(gf);
   }
   else if (debug){
     char name[256];
@@ -721,11 +762,14 @@ static bool gmsh2DMeshGenerator(GFace *gf, int RECUR_ITER, bool debug = true)
     sprintf(name, "param%d.pos", gf->tag());
     outputScalarField(m->triangles, name,1);
   }
-  
+
   // delete the mesh
   delete m;
   delete [] U_;
   delete [] V_;
+
+  if (gf->meshAttributes.recombine)
+    gmshRecombineIntoQuads(gf);
 
   computeElementShapes(gf, gf->meshStatistics.worst_element_shape,
                        gf->meshStatistics.average_element_shape,
@@ -1191,9 +1235,6 @@ static bool gmsh2DMeshGeneratorPeriodic(GFace *gf, bool debug = true)
     gmshOptimizeMeshBDS(gf, *m, 2);
     gmshRefineMeshBDS (gf, *m, -CTX.mesh.refine_steps, false);
     gmshOptimizeMeshBDS(gf, *m, 2, &recover_map);
-    if (gf->meshAttributes.recombine){
-      m->recombineIntoQuads (gf->meshAttributes.recombineAngle, gf);
-    }
     // compute mesh statistics
     computeMeshSizeFieldAccuracy(gf, *m, gf->meshStatistics.efficiency_index,
                                  gf->meshStatistics.longest_edge_length,
@@ -1252,12 +1293,19 @@ static bool gmsh2DMeshGeneratorPeriodic(GFace *gf, bool debug = true)
   }
   
   if (AlgoDelaunay2D(gf)){
-    gmshBowyerWatson(gf);
-    laplaceSmoothing(gf);
+    if (CTX.mesh.algo2d == ALGO_2D_FRONTAL)
+      gmshBowyerWatsonFrontal(gf);
+    else
+      gmshBowyerWatson(gf);
+    for (int i = 0; i < CTX.mesh.nb_smoothing; i++) 
+      laplaceSmoothing(gf);
   }
-
+  
   // delete the mesh  
   delete m;
+
+  if (gf->meshAttributes.recombine)
+    gmshRecombineIntoQuads(gf);
 
   computeElementShapes(gf, gf->meshStatistics.worst_element_shape,
                        gf->meshStatistics.average_element_shape,
@@ -1318,12 +1366,10 @@ void meshGFace::operator() (GFace *gf)
   // compute loops on the fly (indices indicate start and end points
   // of a loop; loops are not yet oriented)
   Msg::Debug("Computing edge loops");
-  //  std::vector<MVertex*> points;
-  //  std::vector<int> indices;
-  //  computeEdgeLoops(gf, points, indices);
 
   Msg::Debug("Generating the mesh");
   if(noseam(gf) || gf->getNativeType() == GEntity::GmshModel || gf->edgeLoops.empty()){
+    //gmsh2DMeshGeneratorPeriodic(gf, debugSurface >= 0 || debugSurface == -100);
     gmsh2DMeshGenerator(gf, 0, debugSurface >= 0 || debugSurface == -100);
   }
   else{

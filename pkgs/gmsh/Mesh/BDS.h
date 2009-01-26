@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -17,8 +17,6 @@
 #include <functional>
 #include <list>
 #include <math.h>
-#include "GFace.h"
-#include "PView.h"
 #include "GmshMessage.h"
 
 class BDS_Edge;
@@ -29,17 +27,6 @@ class BDS_Vector;
 class GFace;
 class GEdge;
 class GVertex;
-
-void vector_triangle(BDS_Point *p1, BDS_Point *p2, BDS_Point *p3, double c[3]); 
-void normal_triangle(BDS_Point *p1, BDS_Point *p2, BDS_Point *p3, double c[3]); 
-double surface_triangle(BDS_Point *p1, BDS_Point *p2, BDS_Point *p3); 
-double surface_triangle_param(BDS_Point *p1, BDS_Point *p2, BDS_Point *p3); 
-void optimize_vertex_position(GFace *GF, BDS_Point *data, double su, double sv);
-void swap_config(BDS_Edge *e, 
-                 BDS_Point **p11, BDS_Point **p12, BDS_Point **p13,
-                 BDS_Point **p21, BDS_Point **p22, BDS_Point **p23,
-                 BDS_Point **p31, BDS_Point **p32, BDS_Point **p33,
-                 BDS_Point **p41, BDS_Point **p42, BDS_Point **p43);
 
 class BDS_GeomEntity
 {
@@ -100,9 +87,9 @@ public:
   }
   BDS_Vector& operator /= (const double &v)
   {
-    x/=v;
-    y/=v;
-    z/=v;
+    x /= v;
+    y /= v;
+    z /= v;
     return *this;
   }
   BDS_Vector operator / (const double &v)
@@ -135,11 +122,8 @@ public:
     return (x * v.x + y * v.y + z * v.z);
   }
   BDS_Vector(const BDS_Point &p2, const BDS_Point &p1);
-  
   BDS_Vector(const double X=0., const double Y=0., const double Z=0.)
-    : x(X), y(Y), z(Z)
-  {
-  }
+    : x(X), y(Y), z(Z) {}
   static double t;
 };
 
@@ -149,7 +133,7 @@ class BDS_Point
   // second one is dictated by charecteristic lengths at points and is
   // propagated
   double _lcBGM, _lcPTS;
-public:
+ public:
   double X, Y, Z;
   double u, v;
   bool config_modified;
@@ -178,16 +162,14 @@ public:
   void getTriangles(std::list<BDS_Face *> &t) const;
   BDS_Point(int id, double x=0, double y=0, double z=0)
     : _lcBGM(1.e22), _lcPTS(1.e22), X(x), Y(y), Z(z), u(0), v(0),
-      config_modified(true), iD(id), g(0)
-  {         
-  }
+      config_modified(true), iD(id), g(0) {}
 };
 
 class BDS_Edge
 {
   double _length;
   std::vector<BDS_Face*> _faces;
-public:
+ public:
   bool deleted;
   BDS_Point *p1, *p2;
   BDS_GeomEntity *g;
@@ -270,7 +252,7 @@ public:
 
 class BDS_Face
 {
-public:
+ public:
   bool deleted;
   BDS_Edge *e1, *e2, *e3, *e4;
   BDS_GeomEntity *g;
@@ -328,7 +310,7 @@ public:
 
 class GeomLessThan
 {
-public:
+ public:
   bool operator()(const BDS_GeomEntity *ent1, const BDS_GeomEntity *ent2) const
   {
     return *ent1 < *ent2;
@@ -337,7 +319,7 @@ public:
 
 class PointLessThan
 {
-public:
+ public:
   bool operator()(const BDS_Point *ent1, const BDS_Point *ent2) const
   {
     return *ent1 < *ent2;
@@ -346,7 +328,7 @@ public:
 
 class PointLessThanLexicographic
 {
-public:
+ public:
   static double t;
   bool operator()(const BDS_Point *ent1, const BDS_Point *ent2) const
   {
@@ -361,7 +343,7 @@ public:
 
 class EdgeLessThan
 {
-public:
+ public:
   bool operator()(const BDS_Edge *ent1, const BDS_Edge *ent2) const
   {
     return *ent1 < *ent2;
@@ -420,7 +402,7 @@ struct EdgeToRecover
 
 class BDS_Mesh 
 {    
-public:
+ public:
   int MAXPOINTNUMBER, SNAP_SUCCESS, SNAP_FAILURE;
   double Min[3], Max[3], LC;
   double scalingU, scalingV;
@@ -471,12 +453,16 @@ public:
   bool split_edge(BDS_Edge *, BDS_Point *);
   bool split_face(BDS_Face *, BDS_Point *);
   bool edge_constraint(BDS_Point *p1, BDS_Point *p2);
-  bool recombine_edge(BDS_Edge *e);
   // Global operators
   void cleanup();
-  void recombineIntoQuads(const double angle, GFace *gf);
 };
 
+void normal_triangle(BDS_Point *p1, BDS_Point *p2, BDS_Point *p3, double c[3]); 
+void swap_config(BDS_Edge *e, 
+                 BDS_Point **p11, BDS_Point **p12, BDS_Point **p13,
+                 BDS_Point **p21, BDS_Point **p22, BDS_Point **p23,
+                 BDS_Point **p31, BDS_Point **p32, BDS_Point **p33,
+                 BDS_Point **p41, BDS_Point **p42, BDS_Point **p43);
 void outputScalarField(std::list<BDS_Face*> t, const char *fn, int param, GFace *gf=0);
 void recur_tag(BDS_Face *t, BDS_GeomEntity *g);
 int Intersect_Edges_2d(double x1, double y1, double x2, double y2,

@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -53,7 +53,7 @@ class GVertex : public GEntity
   virtual SBoundingBox3d bounds() const { return SBoundingBox3d(SPoint3(x(), y(), z())); }
 
   // reparmaterize the point onto the given face
-  virtual SPoint2 reparamOnFace(GFace *gf, int) const;
+  virtual SPoint2 reparamOnFace(const GFace *gf, int) const;
 
   // return a type-specific additional information string
   virtual std::string getAdditionalInfoString();

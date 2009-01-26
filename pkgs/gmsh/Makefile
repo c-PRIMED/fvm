@@ -1,4 +1,4 @@
-# Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+# Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 #
 # See the LICENSE.txt file for license information. Please report all
 # bugs and problems to <gmsh@geuz.org>.
@@ -6,8 +6,8 @@
 include variables
 
 GMSH_MAJOR_VERSION = 2
-GMSH_MINOR_VERSION = 2
-GMSH_PATCH_VERSION = 6
+GMSH_MINOR_VERSION = 3
+GMSH_PATCH_VERSION = 0
 GMSH_EXTRA_VERSION =
 
 GMSH_VERSION = ${GMSH_MAJOR_VERSION}.${GMSH_MINOR_VERSION}.${GMSH_PATCH_VERSION}${GMSH_EXTRA_VERSION}
@@ -18,14 +18,19 @@ GMSH_VERSION_FILE = Common/GmshVersion.h
 GMSH_DATE = `date "+%Y%m%d"`
 
 GMSH_API = Geo/GModel.h Geo/GEntity.h Geo/GPoint.h\
-           Geo/GVertex.h Geo/GEdge.h Geo/GEdgeLoop.h Geo/GFace.h Geo/GRegion.h\
+           Geo/GVertex.h Geo/GEdge.h Geo/GFace.h Geo/GRegion.h\
+           Geo/GEdgeLoop.h Geo/GFaceCompound.h\
            Geo/MVertex.h Geo/MEdge.h Geo/MFace.h Geo/MElement.h\
            Geo/discreteVertex.h Geo/discreteEdge.h Geo/discreteFace.h Geo/discreteRegion.h\
            Geo/SPoint2.h Geo/SPoint3.h Geo/SVector3.h Geo/SBoundingBox3d.h\
-           Geo/Pair.h Geo/Range.h Numeric/FunctionSpace.h\
+           Geo/Pair.h Geo/Range.h\
+           Numeric/Gauss.h Numeric/FunctionSpace.h Numeric/GmshMatrix.h\
+           Numeric/gmshAssembler.h Numeric/gmshTermOfFormulation.h Numeric/gmshLaplace.h\
+           Numeric/gmshElasticity.h Numeric/gmshLinearSystem.h Numeric/gmshLinearSystemGmm.h\
+           Numeric/gmshLinearSystemFull.h Numeric/gmshFunction.h\
            Post/PView.h Post/PViewData.h Plugin/PluginManager.h\
            Common/VertexArray.h Common/GmshMessage.h\
-           Common/Gmsh.h Common/GmshDefines.h Common/GmshVersion.h Common/GmshMatrix.h
+           Common/Gmsh.h Common/GmshConfig.h Common/GmshDefines.h Common/GmshVersion.h 
 
 GMSH_EMBEDDED = ${GMSH_API} Geo/discrete*.cpp\
                 Geo/GModel.cpp Geo/GModelIO_Mesh.cpp\
@@ -201,16 +206,14 @@ else
 	erase Common\GmshVersion.h
 endif
 
-clean-most:
-	for i in doc lib ${GMSH_DIRS:contrib/Netgen=}; do (cd $$i && ${MAKE} clean); done
-	rm -f ${GMSH_VERSION_FILE}
-
 clean-fm:
 	rm -f Geo/fourier*.o Geo/GModelIO_Fourier.o Fltk/GUI_Projection.o 
 
 depend: initialtag
-	for i in ${GMSH_DIRS};\
-        do (cd $$i && ${MAKE} depend "FLAGS=-DHAVE_GSL -DHAVE_FLTK -DHAVE_METIS"); done
+	mv -f Common/GmshConfig.h .
+	cp -f utils/misc/GmshConfig.depend Common/GmshConfig.h
+	for i in ${GMSH_DIRS}; do (cd $$i && ${MAKE} depend); done
+	mv -f GmshConfig.h Common/
 
 nodepend:
 	for i in ${GMSH_DIRS} ; do \
@@ -251,7 +254,7 @@ source-tree: purge
 
 source: source-tree
 	cd gmsh-${GMSH_VERSION} && rm -rf ${GMSH_VERSION_FILE}\
-          contrib/NR contrib/Tetgen/*.{cxx,h} contrib/misc/variables.i*
+          Common/GmshConfig.h contrib/Tetgen/*.{cxx,h} contrib/misc/variables.i*
 	tar zcf gmsh-${GMSH_VERSION}-source.tgz gmsh-${GMSH_VERSION}
 
 # Rules to package the binaries

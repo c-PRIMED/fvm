@@ -9,10 +9,10 @@ Should all duplicate entities be automatically removed?@*
 Default value: @code{1}@*
 Saved in: @code{General.OptionsFileName}
 
-@item Geometry.CirclePoints
-Number of points used to draw a circle/ellipse@*
-Default value: @code{20}@*
-Saved in: @code{General.OptionsFileName}
+@item Geometry.Clip
+Enable clipping planes? (Plane[i]=2^i, i=0,...,5)@*
+Default value: @code{0}@*
+Saved in: @code{-}
 
 @item Geometry.ExtrudeReturnLateralEntities
 Add lateral entities in lists returned by extrusion commands?@*
@@ -69,6 +69,11 @@ Display size of normal vectors (in pixels)@*
 Default value: @code{0}@*
 Saved in: @code{General.OptionsFileName}
 
+@item Geometry.NumSubEdges
+Number of edge subdivisions between control points when displaying curves@*
+Default value: @code{20}@*
+Saved in: @code{General.OptionsFileName}
+
 @item Geometry.OCCFixSmallEdges
 Fix small edges in STEP, IGES and BRep models@*
 Default value: @code{1}@*
@@ -83,6 +88,21 @@ Saved in: @code{General.OptionsFileName}
 Sew faces in STEP, IGES and BRep models@*
 Default value: @code{0}@*
 Saved in: @code{General.OptionsFileName}
+
+@item Geometry.OffsetX
+Model diplay offset along X-axis (in model coordinates)@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.OffsetY
+Model diplay offset along Y-axis (in model coordinates)@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.OffsetZ
+Model diplay offset along Z-axis (in model coordinates)@*
+Default value: @code{0}@*
+Saved in: @code{-}
 
 @item Geometry.OldCircle
 Use old circle description (compatibility option for old Gmsh geometries)@*
@@ -163,6 +183,56 @@ Saved in: @code{General.OptionsFileName}
 Geometrical tolerance@*
 Default value: @code{1e-06}@*
 Saved in: @code{General.OptionsFileName}
+
+@item Geometry.Transform
+Transform model display coordinates (0=no, 1=scale)@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.TransformXX
+Element (1,1) of the 3x3 model display transformation matrix@*
+Default value: @code{1}@*
+Saved in: @code{-}
+
+@item Geometry.TransformXY
+Element (1,2) of the 3x3 model display transformation matrix@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.TransformXZ
+Element (1,3) of the 3x3 model display transformation matrix@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.TransformYX
+Element (2,1) of the 3x3 model display transformation matrix@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.TransformYY
+Element (2,2) of the 3x3 model display transformation matrix@*
+Default value: @code{1}@*
+Saved in: @code{-}
+
+@item Geometry.TransformYZ
+Element (2,3) of the 3x3 model display transformation matrix@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.TransformZX
+Element (3,1) of the 3x3 model display transformation matrix@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.TransformZY
+Element (3,2) of the 3x3 model display transformation matrix@*
+Default value: @code{0}@*
+Saved in: @code{-}
+
+@item Geometry.TransformZZ
+Element (3,3) of the 3x3 model display transformation matrix@*
+Default value: @code{1}@*
+Saved in: @code{-}
 
 @item Geometry.Volumes
 Display geometry volumes? (not implemented yet)@*

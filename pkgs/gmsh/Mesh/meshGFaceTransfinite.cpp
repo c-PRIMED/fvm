@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -37,14 +37,8 @@ extern Context_T CTX;
 // f(u,v) = u c2 (v) + (1-v) c1(u) + v c3(u) - u(1-v) s2 - uv s3
 #define TRAN_TRI(c1,c2,c3,s1,s2,s3,u,v) u*c2+(1.-v)*c1+v*c3-(u*(1.-v)*s2+u*v*s3)
 
-int MeshTransfiniteSurface(GFace *gf)
+void findTransfiniteCorners(GFace *gf, std::vector<MVertex*> &corners)
 {
-  if(gf->meshAttributes.Method != MESH_TRANSFINITE) return 0;
-
-  Msg::StatusBar(2, true, "Meshing surface %d (transfinite)", gf->tag());
-
-  std::vector<MVertex*> corners;
-
   if(gf->meshAttributes.corners.size()){
     // corners have been specified explicitly
     for(unsigned int i = 0; i < gf->meshAttributes.corners.size(); i++)
@@ -52,11 +46,49 @@ int MeshTransfiniteSurface(GFace *gf)
   }
   else{
     // try to find the corners automatically
-    GEdgeLoop el(gf->edges());
+    std::list<GEdge*> fedges = gf->edges();
+    GEdgeLoop el(fedges);
     for(GEdgeLoop::iter it = el.begin(); it != el.end(); it++)
       corners.push_back(it->getBeginVertex()->mesh_vertices[0]);
+    
+    // try reaaally hard for 3-sided faces
+    if(corners.size() == 3){
+      GEdge *first = 0, *last = 0;
+      for(std::list<GEdge*>::iterator it = fedges.begin(); it != fedges.end(); it++){
+        if(((*it)->getBeginVertex()->mesh_vertices[0] == corners[0] &&
+            (*it)->getEndVertex()->mesh_vertices[0] == corners[1]) ||
+           ((*it)->getBeginVertex()->mesh_vertices[0] == corners[1] &&
+            (*it)->getEndVertex()->mesh_vertices[0] == corners[0])){
+          first = *it;
+        }
+        if(((*it)->getBeginVertex()->mesh_vertices[0] == corners[2] &&
+            (*it)->getEndVertex()->mesh_vertices[0] == corners[0]) ||
+           ((*it)->getBeginVertex()->mesh_vertices[0] == corners[0] &&
+            (*it)->getEndVertex()->mesh_vertices[0] == corners[2])){
+          last = *it;
+        }
+      }
+      if(first && last){
+        if(first->mesh_vertices.size() != last->mesh_vertices.size()){
+          std::vector<MVertex*> corners2(3);
+          corners2[0] = corners[1];
+          corners2[1] = corners[2];
+          corners2[2] = corners[0];
+          corners = corners2;
+        }
+      }
+    }
   }
+}
 
+int MeshTransfiniteSurface(GFace *gf)
+{
+  if(gf->meshAttributes.Method != MESH_TRANSFINITE) return 0;
+
+  Msg::StatusBar(2, true, "Meshing surface %d (transfinite)", gf->tag());
+
+  std::vector<MVertex*> corners;
+  findTransfiniteCorners(gf, corners);
   if(corners.size () != 3 && corners.size () != 4){
     Msg::Error("Surface %d is transfinite but has %d corners",
 	       gf->tag(), corners.size());
@@ -104,10 +136,8 @@ int MeshTransfiniteSurface(GFace *gf)
 
   // get the indices of the interpolation corners as well as the u,v
   // coordinates of all the boundary vertices
-  int iCorner = 0;
-  int N[4] = {0, 0, 0, 0};
-  std::vector<double> U;
-  std::vector<double> V;
+  int iCorner = 0, N[4] = {0, 0, 0, 0};
+  std::vector<double> U, V;
   for(unsigned int i = 0; i < m_vertices.size(); i++){
     MVertex *v = m_vertices[i];
     if(v == corners[0] || v == corners[1] || v == corners[2] || 
@@ -119,38 +149,15 @@ int MeshTransfiniteSurface(GFace *gf)
       }
     }
     SPoint2 param;
-    if(v->onWhat()->dim() == 0){
-      GVertex *gv = (GVertex*)v->onWhat();
-      param = gv->reparamOnFace(gf, 1);
-    }
-    else if(v->onWhat()->dim() == 1){
-      GEdge *ge = (GEdge*)v->onWhat();
-      double UU;
-      v->getParameter(0, UU);
-      param = ge->reparamOnFace(gf, UU, 1);
-    }
-    else{
-      double UU, VV;
-      if(v->onWhat() == gf && v->getParameter(0, UU) && v->getParameter(1, VV))
-        param = SPoint2(UU, VV);
-      else
-        param = gf->parFromPoint(SPoint3(v->x(), v->y(), v->z()));
-    }
-    U.push_back(param.x());
-    V.push_back(param.y());
+    reparamMeshVertexOnFace(v, gf, param);
+    U.push_back(param[0]);
+    V.push_back(param[1]);
   }
 
-  int N1 = N[0];
-  int N2 = N[1];
-  int N3 = N[2];
-  int N4 = N[3];
-
-  int L = N2 - N1;
-  int H = N3 - N2;
-
+  int N1 = N[0], N2 = N[1], N3 = N[2], N4 = N[3];
+  int L = N2 - N1, H = N3 - N2;
   if(corners.size () == 4){
-    int Lb = N4 - N3;
-    int Hb = m_vertices.size() - N4;
+    int Lb = N4 - N3, Hb = m_vertices.size() - N4;
     if(Lb != L || Hb != H){
       Msg::Error("Surface %d cannot be meshed using the transfinite algo", 
 		 gf->tag());
@@ -166,10 +173,8 @@ int MeshTransfiniteSurface(GFace *gf)
     }      
   }
   
-  std::vector<double> lengths_i;
-  std::vector<double> lengths_j;
-  double L_i = 0;
-  double L_j = 0;
+  std::vector<double> lengths_i, lengths_j;
+  double L_i = 0, L_j = 0;
   lengths_i.push_back(0.);
   lengths_j.push_back(0.);
   for(int i = 0; i < L; i++){
@@ -230,12 +235,8 @@ int MeshTransfiniteSurface(GFace *gf)
     }
   }
 
-  double UC1 = U[N1];
-  double UC2 = U[N2];
-  double UC3 = U[N3];
-  double VC1 = V[N1];
-  double VC2 = V[N2];
-  double VC3 = V[N3];
+  double UC1 = U[N1], UC2 = U[N2], UC3 = U[N3];
+  double VC1 = V[N1], VC2 = V[N2], VC3 = V[N3];
 
   //create points using transfinite interpolation
   if(corners.size() == 4){

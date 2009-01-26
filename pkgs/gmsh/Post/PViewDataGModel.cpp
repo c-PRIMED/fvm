@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -55,7 +55,46 @@ bool PViewDataGModel::finalize()
     _max = std::max(_max, _steps[step]->getMax());
   }
 
+  // add interpolation data for known element types (this might be
+  // overidden later)
+  for(int step = 0; step < getNumTimeSteps(); step++){
+    GModel *m = _steps[step]->getModel();
+    for(GModel::eiter it = m->firstEdge(); it != m->lastEdge(); it++){
+      if((*it)->lines.size()) 
+        _addInterpolationMatricesForElement((*it)->lines[0]);
+    }
+    for(GModel::fiter it = m->firstFace(); it != m->lastFace(); it++){
+      if((*it)->triangles.size()) 
+        _addInterpolationMatricesForElement((*it)->triangles[0]);
+      if((*it)->quadrangles.size()) 
+        _addInterpolationMatricesForElement((*it)->quadrangles[0]);
+    }
+    for(GModel::riter it = m->firstRegion(); it != m->lastRegion(); it++){
+      if((*it)->tetrahedra.size()) 
+        _addInterpolationMatricesForElement((*it)->tetrahedra[0]);
+      if((*it)->hexahedra.size()) 
+        _addInterpolationMatricesForElement((*it)->hexahedra[0]);
+      if((*it)->prisms.size()) 
+        _addInterpolationMatricesForElement((*it)->prisms[0]);
+      if((*it)->pyramids.size()) 
+        _addInterpolationMatricesForElement((*it)->pyramids[0]);
+    }
+  }
+
   return PViewData::finalize();
+}
+
+void PViewDataGModel::_addInterpolationMatricesForElement(MElement *e)
+{
+  int edg = e->getNumEdges();
+  const gmshFunctionSpace *fs = e->getFunctionSpace();
+  if(fs){
+    if(e->getPolynomialOrder() > 1)
+      setInterpolationMatrices(edg, fs->coefficients, fs->monomials,
+                               fs->coefficients, fs->monomials);
+    else
+      setInterpolationMatrices(edg, fs->coefficients, fs->monomials);
+  }                               
 }
 
 MElement *PViewDataGModel::_getElement(int step, int ent, int ele)
@@ -235,8 +274,10 @@ int PViewDataGModel::getNumNodes(int step, int ent, int ele)
     return _steps[step]->getGaussPoints(e->getTypeForMSH()).size() / 3;
   }
   else{
-    //return e->getNumVertices();
-    return e->getNumPrimaryVertices();
+    if(isAdaptive())
+      return e->getNumVertices();
+    else
+      return e->getNumPrimaryVertices();
   }
 }
 
@@ -296,20 +337,29 @@ int PViewDataGModel::getNumComponents(int step, int ent, int ele)
 
 int PViewDataGModel::getNumValues(int step, int ent, int ele)
 {
-  if(_type == ElementNodeData){
+  if(_type == ElementNodeData || _type == NodeData){
     return getNumNodes(step, ent, ele) * getNumComponents(step, ent, ele);
   }
+  else if(_type == ElementData){
+    return getNumComponents(step, ent, ele);
+  }
   else{
-    Msg::Error("getNumValues should not be used on this type of view");
-    return 0;
+    Msg::Error("getNumValue() should not be used on this type of view");
+    return getNumComponents(step, ent, ele);
   }
 }
 
 void PViewDataGModel::getValue(int step, int ent, int ele, int idx, double &val)
 {
-  if(_type == ElementNodeData){
-    MElement *e = _getElement(step, ent, ele);
+  MElement *e = _getElement(step, ent, ele);
+  if(_type == ElementNodeData || _type == ElementData){
     val = _steps[step]->getData(e->getNum())[idx];
+  }
+  else if(_type == NodeData){
+    int numcomp = _steps[step]->getNumComponents();
+    int nod = idx / numcomp;
+    int comp = idx % numcomp;
+    val = _steps[step]->getData(e->getVertex(nod)->getNum())[comp];
   }
   else{
     Msg::Error("getValue(index) should not be used on this type of view");
@@ -324,10 +374,10 @@ void PViewDataGModel::getValue(int step, int ent, int ele, int nod, int comp, do
     val = _steps[step]->getData(e->getVertex(nod)->getNum())[comp];
     break;
   case ElementNodeData:
-  case GaussPointData: 
+  case GaussPointData:
     val = _steps[step]->getData(e->getNum())[_steps[step]->getNumComponents() * nod + comp];
     break;
-  case ElementData: 
+  case ElementData:
   default: 
     val = _steps[step]->getData(e->getNum())[comp];
     break;

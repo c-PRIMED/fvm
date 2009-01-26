@@ -1,4 +1,4 @@
-# Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+# Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 #
 # See the LICENSE.txt file for license information. Please report all
 # bugs and problems to <gmsh@geuz.org>.
@@ -9,8 +9,7 @@ LIB = ../lib/libGmshPlugin${LIBEXT}
 
 INC = ${DASH}I../Common ${DASH}I../Graphics ${DASH}I../Geo\
       ${DASH}I../Mesh ${DASH}I../Post ${DASH}I../Fltk ${DASH}I../Numeric\
-      ${DASH}I../contrib/ANN/include ${DASH}I../contrib/Triangle\
-      ${DASH}I../contrib/MathEval
+      ${DASH}I../contrib/ANN/include ${DASH}I../contrib/MathEval
 
 CFLAGS = ${OPTIM} ${FLAGS} ${INC} ${SYSINCLUDE}
 
@@ -53,114 +52,121 @@ clean:
 
 depend:
 	(sed '/^# DO NOT DELETE THIS LINE/q' Makefile && \
-	${CXX} -MM ${CFLAGS} ${SRC} \
-	) >Makefile.new
+         ${CXX} -MM ${CFLAGS} ${SRC} | sed 's/.o:/$${OBJEXT}:/g' \
+        ) > Makefile.new
 	cp Makefile Makefile.bak
 	cp Makefile.new Makefile
 	rm -f Makefile.new
 
 # DO NOT DELETE THIS LINE
-Plugin.o: Plugin.cpp Plugin.h ../Common/Options.h ../Post/ColorTable.h \
+Plugin${OBJEXT}: Plugin.cpp Plugin.h ../Common/Options.h ../Post/ColorTable.h \
   ../Common/GmshMessage.h ../Post/PView.h ../Geo/SPoint3.h \
   ../Post/PViewDataList.h ../Post/PViewData.h ../Geo/SBoundingBox3d.h \
-  ../Geo/SPoint3.h ../Common/ListUtils.h ../Common/GmshMatrix.h
-PluginManager.o: PluginManager.cpp Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h PluginManager.h CutMap.h Levelset.h CutGrid.h \
-  StreamLines.h CutPlane.h CutParametric.h CutSphere.h Skin.h \
-  ../Common/TreeUtils.h ../Common/avl.h ../Common/ListUtils.h Extract.h \
-  ExtractElements.h ExtractEdges.h HarmonicToTime.h ModulusPhase.h \
-  Integrate.h Gradient.h Curl.h Divergence.h Annotate.h Remove.h \
-  MakeSimplex.h Smooth.h Transform.h LongitudeLatitude.h Triangulate.h \
-  Warp.h SphericalRaise.h Eigenvectors.h Eigenvalues.h Lambda2.h \
-  Evaluate.h ../Post/OctreePost.h ../Common/Octree.h \
-  ../Common/OctreeInternals.h Probe.h FieldView.h GSHHS.h \
-  ../Common/Context.h ../Geo/CGNSOptions.h ../Mesh/PartitionOptions.h
-Levelset.o: Levelset.cpp Levelset.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h MakeSimplex.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h ../Post/adaptiveData.h
-CutPlane.o: CutPlane.cpp CutPlane.h Levelset.h Plugin.h \
+  ../Geo/SPoint3.h ../Numeric/GmshMatrix.h ../Common/GmshConfig.h \
+  ../Common/ListUtils.h
+PluginManager${OBJEXT}: PluginManager.cpp ../Common/GmshConfig.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h ../Common/Context.h \
-  ../Geo/CGNSOptions.h ../Mesh/PartitionOptions.h ../Common/GmshUI.h \
-  ../Graphics/Draw.h
-CutSphere.o: CutSphere.cpp CutSphere.h Levelset.h Plugin.h \
+  ../Numeric/GmshMatrix.h ../Common/ListUtils.h PluginManager.h CutMap.h \
+  Levelset.h CutGrid.h StreamLines.h CutPlane.h CutParametric.h \
+  CutSphere.h Skin.h ../Common/TreeUtils.h ../Common/avl.h \
+  ../Common/ListUtils.h Extract.h ExtractElements.h ExtractEdges.h \
+  HarmonicToTime.h ModulusPhase.h Integrate.h Gradient.h Curl.h \
+  Divergence.h Annotate.h Remove.h MakeSimplex.h Smooth.h Transform.h \
+  LongitudeLatitude.h Triangulate.h Warp.h SphericalRaise.h \
+  Eigenvectors.h Eigenvalues.h Lambda2.h Evaluate.h ../Post/OctreePost.h \
+  ../Common/Octree.h ../Common/OctreeInternals.h Probe.h FieldView.h \
+  GSHHS.h ../Common/Context.h ../Geo/CGNSOptions.h \
+  ../Mesh/meshPartitionOptions.h
+Levelset${OBJEXT}: Levelset.cpp Levelset.h Plugin.h ../Common/Options.h \
+  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
+  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h MakeSimplex.h \
+  ../Numeric/Numeric.h ../Numeric/NumericEmbedded.h \
+  ../Numeric/GmshMatrix.h ../Post/adaptiveData.h
+CutPlane${OBJEXT}: CutPlane.cpp ../Common/GmshConfig.h CutPlane.h Levelset.h \
+  Plugin.h ../Common/Options.h ../Post/ColorTable.h \
+  ../Common/GmshMessage.h ../Post/PView.h ../Geo/SPoint3.h \
+  ../Post/PViewDataList.h ../Post/PViewData.h ../Geo/SBoundingBox3d.h \
+  ../Geo/SPoint3.h ../Numeric/GmshMatrix.h ../Common/ListUtils.h \
+  ../Common/Context.h ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h \
+  ../Graphics/drawContext.h ../Fltk/Draw.h
+CutSphere${OBJEXT}: CutSphere.cpp ../Common/GmshConfig.h CutSphere.h Levelset.h \
+  Plugin.h ../Common/Options.h ../Post/ColorTable.h \
+  ../Common/GmshMessage.h ../Post/PView.h ../Geo/SPoint3.h \
+  ../Post/PViewDataList.h ../Post/PViewData.h ../Geo/SBoundingBox3d.h \
+  ../Geo/SPoint3.h ../Numeric/GmshMatrix.h ../Common/ListUtils.h \
+  ../Common/Context.h ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h \
+  ../Graphics/drawContext.h ../Fltk/Draw.h
+CutMap${OBJEXT}: CutMap.cpp CutMap.h Levelset.h Plugin.h ../Common/Options.h \
+  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
+  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h ../Common/Context.h \
+  ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h
+Smooth${OBJEXT}: Smooth.cpp Smooth.h Plugin.h ../Common/Options.h \
+  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
+  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h
+CutParametric${OBJEXT}: CutParametric.cpp ../Common/GmshConfig.h \
+  ../Post/OctreePost.h ../Common/Octree.h ../Common/OctreeInternals.h \
+  CutParametric.h Plugin.h ../Common/Options.h ../Post/ColorTable.h \
+  ../Common/GmshMessage.h ../Post/PView.h ../Geo/SPoint3.h \
+  ../Post/PViewDataList.h ../Post/PViewData.h ../Geo/SBoundingBox3d.h \
+  ../Geo/SPoint3.h ../Numeric/GmshMatrix.h ../Common/ListUtils.h \
+  ../Common/Context.h ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h \
+  ../Graphics/drawContext.h ../Fltk/Draw.h
+Lambda2${OBJEXT}: Lambda2.cpp Lambda2.h Plugin.h ../Common/Options.h \
+  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
+  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h ../Numeric/Numeric.h \
+  ../Numeric/NumericEmbedded.h ../Numeric/GmshMatrix.h
+Eigenvectors${OBJEXT}: Eigenvectors.cpp Eigenvectors.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h ../Common/Context.h \
-  ../Geo/CGNSOptions.h ../Mesh/PartitionOptions.h ../Common/GmshUI.h \
-  ../Graphics/Draw.h
-CutMap.o: CutMap.cpp CutMap.h Levelset.h Plugin.h ../Common/Options.h \
+  ../Numeric/GmshMatrix.h ../Common/GmshConfig.h ../Common/ListUtils.h \
+  ../Numeric/Numeric.h ../Numeric/NumericEmbedded.h \
+  ../Numeric/GmshMatrix.h ../Numeric/EigSolve.h
+Eigenvalues${OBJEXT}: Eigenvalues.cpp Eigenvalues.h Plugin.h ../Common/Options.h \
   ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
   ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Common/Context.h ../Geo/CGNSOptions.h \
-  ../Mesh/PartitionOptions.h
-Smooth.o: Smooth.cpp Smooth.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h
-CutParametric.o: CutParametric.cpp ../Post/OctreePost.h \
-  ../Common/Octree.h ../Common/OctreeInternals.h CutParametric.h Plugin.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h ../Numeric/Numeric.h \
+  ../Numeric/NumericEmbedded.h ../Numeric/GmshMatrix.h
+StreamLines${OBJEXT}: StreamLines.cpp ../Common/GmshConfig.h StreamLines.h \
+  Plugin.h ../Common/Options.h ../Post/ColorTable.h \
+  ../Common/GmshMessage.h ../Post/PView.h ../Geo/SPoint3.h \
+  ../Post/PViewDataList.h ../Post/PViewData.h ../Geo/SBoundingBox3d.h \
+  ../Geo/SPoint3.h ../Numeric/GmshMatrix.h ../Common/ListUtils.h \
+  ../Post/OctreePost.h ../Common/Octree.h ../Common/OctreeInternals.h \
+  ../Common/Context.h ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h \
+  ../Post/PViewOptions.h ../Post/ColorTable.h ../Graphics/drawContext.h \
+  ../Fltk/Draw.h
+CutGrid${OBJEXT}: CutGrid.cpp ../Common/GmshConfig.h ../Post/OctreePost.h \
+  ../Common/Octree.h ../Common/OctreeInternals.h CutGrid.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h ../Common/Context.h \
-  ../Geo/CGNSOptions.h ../Mesh/PartitionOptions.h ../Common/GmshUI.h \
-  ../Graphics/Draw.h
-Lambda2.o: Lambda2.cpp Lambda2.h Plugin.h ../Common/Options.h \
+  ../Numeric/GmshMatrix.h ../Common/ListUtils.h ../Common/Context.h \
+  ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h \
+  ../Graphics/drawContext.h ../Fltk/Draw.h
+Transform${OBJEXT}: Transform.cpp Transform.h Plugin.h ../Common/Options.h \
   ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
   ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h
-Eigenvectors.o: Eigenvectors.cpp Eigenvectors.h Plugin.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h
+LongitudeLatitude${OBJEXT}: LongitudeLatitude.cpp LongitudeLatitude.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h ../Numeric/EigSolve.h
-Eigenvalues.o: Eigenvalues.cpp Eigenvalues.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h
-StreamLines.o: StreamLines.cpp StreamLines.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Post/OctreePost.h ../Common/Octree.h \
-  ../Common/OctreeInternals.h ../Common/Context.h ../Geo/CGNSOptions.h \
-  ../Mesh/PartitionOptions.h ../Post/PViewOptions.h ../Post/ColorTable.h \
-  ../Common/GmshUI.h ../Graphics/Draw.h
-CutGrid.o: CutGrid.cpp ../Post/OctreePost.h ../Common/Octree.h \
-  ../Common/OctreeInternals.h CutGrid.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Common/Context.h ../Geo/CGNSOptions.h \
-  ../Mesh/PartitionOptions.h ../Common/GmshUI.h ../Graphics/Draw.h
-Transform.o: Transform.cpp Transform.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h
-LongitudeLatitude.o: LongitudeLatitude.cpp LongitudeLatitude.h Plugin.h \
-  ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
-  ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
-  ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h
-Triangulate.o: Triangulate.cpp ../Geo/GModel.h ../Geo/GVertex.h \
+  ../Numeric/GmshMatrix.h ../Common/GmshConfig.h ../Common/ListUtils.h \
+  ../Common/OpenFile.h
+Triangulate${OBJEXT}: Triangulate.cpp ../Geo/GModel.h ../Geo/GVertex.h \
   ../Geo/GEntity.h ../Geo/Range.h ../Geo/SPoint3.h \
   ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Geo/GPoint.h \
   ../Geo/SPoint2.h ../Geo/GEdge.h ../Geo/GEntity.h ../Geo/GVertex.h \
@@ -172,138 +178,137 @@ Triangulate.o: Triangulate.cpp ../Geo/GModel.h ../Geo/GVertex.h \
   ../Geo/GFace.h ../Mesh/DivideAndConquer.h ../Common/GmshMessage.h \
   ../Geo/MVertex.h ../Geo/SPoint2.h ../Geo/SPoint3.h Triangulate.h \
   Plugin.h ../Common/Options.h ../Post/ColorTable.h ../Post/PView.h \
-  ../Post/PViewDataList.h ../Post/PViewData.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Common/Context.h ../Geo/CGNSOptions.h \
-  ../Mesh/PartitionOptions.h
-Warp.o: Warp.cpp Warp.h Plugin.h ../Common/Options.h ../Post/ColorTable.h \
+  ../Post/PViewDataList.h ../Post/PViewData.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h ../Common/Context.h \
+  ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h
+Warp${OBJEXT}: Warp.cpp Warp.h Plugin.h ../Common/Options.h ../Post/ColorTable.h \
   ../Common/GmshMessage.h ../Post/PView.h ../Geo/SPoint3.h \
   ../Post/PViewDataList.h ../Post/PViewData.h ../Geo/SBoundingBox3d.h \
-  ../Geo/SPoint3.h ../Common/ListUtils.h ../Common/GmshMatrix.h \
-  ../Common/SmoothData.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h
-SphericalRaise.o: SphericalRaise.cpp SphericalRaise.h Plugin.h \
+  ../Geo/SPoint3.h ../Numeric/GmshMatrix.h ../Common/GmshConfig.h \
+  ../Common/ListUtils.h ../Common/SmoothData.h ../Numeric/Numeric.h \
+  ../Numeric/NumericEmbedded.h ../Numeric/GmshMatrix.h
+SphericalRaise${OBJEXT}: SphericalRaise.cpp SphericalRaise.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h
-Skin.o: Skin.cpp Skin.h Plugin.h ../Common/Options.h ../Post/ColorTable.h \
+  ../Numeric/GmshMatrix.h ../Common/GmshConfig.h ../Common/ListUtils.h \
+  ../Numeric/Numeric.h ../Numeric/NumericEmbedded.h \
+  ../Numeric/GmshMatrix.h
+Skin${OBJEXT}: Skin.cpp Skin.h Plugin.h ../Common/Options.h ../Post/ColorTable.h \
   ../Common/GmshMessage.h ../Post/PView.h ../Geo/SPoint3.h \
   ../Post/PViewDataList.h ../Post/PViewData.h ../Geo/SBoundingBox3d.h \
-  ../Geo/SPoint3.h ../Common/ListUtils.h ../Common/GmshMatrix.h \
-  ../Common/TreeUtils.h ../Common/avl.h ../Common/ListUtils.h \
-  ../Common/MallocUtils.h ../Common/Context.h ../Geo/CGNSOptions.h \
-  ../Mesh/PartitionOptions.h
-GSHHS.o: GSHHS.cpp GSHHS.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Mesh/Field.h ../Geo/GModel.h ../Geo/GVertex.h \
-  ../Geo/GEntity.h ../Geo/Range.h ../Geo/SPoint3.h \
+  ../Geo/SPoint3.h ../Numeric/GmshMatrix.h ../Common/GmshConfig.h \
+  ../Common/ListUtils.h ../Common/TreeUtils.h ../Common/avl.h \
+  ../Common/ListUtils.h ../Common/MallocUtils.h ../Common/Context.h \
+  ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h
+GSHHS${OBJEXT}: GSHHS.cpp ../Mesh/Field.h ../Common/GmshConfig.h ../Post/PView.h \
+  ../Geo/SPoint3.h ../Geo/SPoint2.h GSHHS.h Plugin.h ../Common/Options.h \
+  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PViewDataList.h \
+  ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
+  ../Numeric/GmshMatrix.h ../Common/ListUtils.h ../Geo/GModel.h \
+  ../Geo/GVertex.h ../Geo/GEntity.h ../Geo/Range.h ../Geo/SPoint3.h \
   ../Geo/SBoundingBox3d.h ../Geo/GPoint.h ../Geo/SPoint2.h ../Geo/GEdge.h \
   ../Geo/GEntity.h ../Geo/GVertex.h ../Geo/SVector3.h ../Geo/SPoint3.h \
   ../Geo/SPoint3.h ../Geo/SPoint2.h ../Geo/GFace.h ../Geo/GEntity.h \
   ../Geo/GPoint.h ../Geo/GEdgeLoop.h ../Geo/GEdge.h ../Geo/SPoint2.h \
   ../Geo/SVector3.h ../Geo/Pair.h ../Geo/GRegion.h ../Geo/GEntity.h \
   ../Geo/SPoint3.h ../Geo/SBoundingBox3d.h
-Extract.o: Extract.cpp Extract.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h
-ExtractElements.o: ExtractElements.cpp ExtractElements.h Plugin.h \
+Extract${OBJEXT}: Extract.cpp ../Common/GmshConfig.h Extract.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h
-ExtractEdges.o: ExtractEdges.cpp ExtractEdges.h Plugin.h \
+  ../Numeric/GmshMatrix.h ../Common/ListUtils.h
+ExtractElements${OBJEXT}: ExtractElements.cpp ExtractElements.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h ../Mesh/BDS.h \
-  ../Geo/GFace.h ../Geo/GEntity.h ../Geo/Range.h ../Geo/SPoint3.h \
-  ../Geo/SBoundingBox3d.h ../Geo/GPoint.h ../Geo/GEdgeLoop.h \
-  ../Geo/GEdge.h ../Geo/GEntity.h ../Geo/GVertex.h ../Geo/GEntity.h \
-  ../Geo/GPoint.h ../Geo/SPoint2.h ../Geo/SVector3.h ../Geo/SPoint3.h \
-  ../Geo/SPoint3.h ../Geo/SPoint2.h ../Geo/SPoint2.h ../Geo/SVector3.h \
-  ../Geo/Pair.h
-MakeSimplex.o: MakeSimplex.cpp MakeSimplex.h Plugin.h ../Common/Options.h \
+  ../Numeric/GmshMatrix.h ../Common/GmshConfig.h ../Common/ListUtils.h \
+  ../Numeric/Numeric.h ../Numeric/NumericEmbedded.h \
+  ../Numeric/GmshMatrix.h
+ExtractEdges${OBJEXT}: ExtractEdges.cpp ExtractEdges.h Plugin.h \
+  ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
+  ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
+  ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
+  ../Numeric/GmshMatrix.h ../Common/GmshConfig.h ../Common/ListUtils.h \
+  ../Mesh/BDS.h
+MakeSimplex${OBJEXT}: MakeSimplex.cpp MakeSimplex.h Plugin.h ../Common/Options.h \
   ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
   ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h
-Evaluate.o: Evaluate.cpp Evaluate.h Plugin.h ../Common/Options.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h
+Evaluate${OBJEXT}: Evaluate.cpp ../Common/GmshConfig.h Evaluate.h Plugin.h \
+  ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
+  ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
+  ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
+  ../Numeric/GmshMatrix.h ../Common/ListUtils.h ../Post/OctreePost.h \
+  ../Common/Octree.h ../Common/OctreeInternals.h
+FieldView${OBJEXT}: FieldView.cpp FieldView.h Plugin.h ../Common/Options.h \
   ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
   ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Post/OctreePost.h ../Common/Octree.h \
-  ../Common/OctreeInternals.h
-FieldView.o: FieldView.cpp FieldView.h Plugin.h ../Common/Options.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h ../Mesh/Field.h \
+  ../Geo/GModel.h ../Geo/GVertex.h ../Geo/GEntity.h ../Geo/Range.h \
+  ../Geo/SPoint3.h ../Geo/SBoundingBox3d.h ../Geo/GPoint.h \
+  ../Geo/SPoint2.h ../Geo/GEdge.h ../Geo/GEntity.h ../Geo/GVertex.h \
+  ../Geo/SVector3.h ../Geo/SPoint3.h ../Geo/SPoint3.h ../Geo/SPoint2.h \
+  ../Geo/GFace.h ../Geo/GEntity.h ../Geo/GPoint.h ../Geo/GEdgeLoop.h \
+  ../Geo/GEdge.h ../Geo/SPoint2.h ../Geo/SVector3.h ../Geo/Pair.h \
+  ../Geo/GRegion.h ../Geo/GEntity.h ../Geo/SPoint3.h \
+  ../Geo/SBoundingBox3d.h
+Integrate${OBJEXT}: Integrate.cpp Integrate.h Plugin.h ../Common/Options.h \
   ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
   ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Mesh/Field.h ../Geo/GModel.h ../Geo/GVertex.h \
-  ../Geo/GEntity.h ../Geo/Range.h ../Geo/SPoint3.h \
-  ../Geo/SBoundingBox3d.h ../Geo/GPoint.h ../Geo/SPoint2.h ../Geo/GEdge.h \
-  ../Geo/GEntity.h ../Geo/GVertex.h ../Geo/SVector3.h ../Geo/SPoint3.h \
-  ../Geo/SPoint3.h ../Geo/SPoint2.h ../Geo/GFace.h ../Geo/GEntity.h \
-  ../Geo/GPoint.h ../Geo/GEdgeLoop.h ../Geo/GEdge.h ../Geo/SPoint2.h \
-  ../Geo/SVector3.h ../Geo/Pair.h ../Geo/GRegion.h ../Geo/GEntity.h \
-  ../Geo/SPoint3.h ../Geo/SBoundingBox3d.h
-Integrate.o: Integrate.cpp Integrate.h Plugin.h ../Common/Options.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h ../Post/shapeFunctions.h \
+  ../Numeric/Numeric.h ../Numeric/NumericEmbedded.h \
+  ../Numeric/GmshMatrix.h ../Post/PViewOptions.h ../Post/ColorTable.h
+Gradient${OBJEXT}: Gradient.cpp Gradient.h Plugin.h ../Common/Options.h \
   ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
   ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Post/shapeFunctions.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h ../Post/PViewOptions.h \
-  ../Post/ColorTable.h
-Gradient.o: Gradient.cpp Gradient.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Post/shapeFunctions.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h
-Curl.o: Curl.cpp Curl.h Plugin.h ../Common/Options.h ../Post/ColorTable.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h ../Post/shapeFunctions.h \
+  ../Numeric/Numeric.h ../Numeric/NumericEmbedded.h \
+  ../Numeric/GmshMatrix.h
+Curl${OBJEXT}: Curl.cpp Curl.h Plugin.h ../Common/Options.h ../Post/ColorTable.h \
   ../Common/GmshMessage.h ../Post/PView.h ../Geo/SPoint3.h \
   ../Post/PViewDataList.h ../Post/PViewData.h ../Geo/SBoundingBox3d.h \
-  ../Geo/SPoint3.h ../Common/ListUtils.h ../Common/GmshMatrix.h \
-  ../Post/shapeFunctions.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h
-Divergence.o: Divergence.cpp Divergence.h Plugin.h ../Common/Options.h \
+  ../Geo/SPoint3.h ../Numeric/GmshMatrix.h ../Common/GmshConfig.h \
+  ../Common/ListUtils.h ../Post/shapeFunctions.h ../Numeric/Numeric.h \
+  ../Numeric/NumericEmbedded.h ../Numeric/GmshMatrix.h
+Divergence${OBJEXT}: Divergence.cpp Divergence.h Plugin.h ../Common/Options.h \
   ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
   ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Post/shapeFunctions.h ../Numeric/Numeric.h \
-  ../Numeric/NumericEmbedded.h
-Annotate.o: Annotate.cpp Annotate.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Common/Context.h ../Geo/CGNSOptions.h \
-  ../Mesh/PartitionOptions.h ../Common/GmshUI.h ../Fltk/GUI.h \
-  ../Fltk/Opengl_Window.h ../Fltk/Colorbar_Window.h \
-  ../Fltk/Popup_Button.h ../Fltk/SpherePosition_Widget.h ../Mesh/Field.h \
-  ../Graphics/Draw.h
-Remove.o: Remove.cpp Remove.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h
-Probe.o: Probe.cpp Probe.h Plugin.h ../Common/Options.h \
-  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
-  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
-  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Common/ListUtils.h \
-  ../Common/GmshMatrix.h ../Common/Context.h ../Geo/CGNSOptions.h \
-  ../Mesh/PartitionOptions.h ../Post/OctreePost.h ../Common/Octree.h \
-  ../Common/OctreeInternals.h ../Common/GmshUI.h ../Graphics/Draw.h
-HarmonicToTime.o: HarmonicToTime.cpp HarmonicToTime.h Plugin.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h ../Post/shapeFunctions.h \
+  ../Numeric/Numeric.h ../Numeric/NumericEmbedded.h \
+  ../Numeric/GmshMatrix.h
+Annotate${OBJEXT}: Annotate.cpp ../Common/GmshConfig.h Annotate.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h
-ModulusPhase.o: ModulusPhase.cpp ModulusPhase.h Plugin.h \
+  ../Numeric/GmshMatrix.h ../Common/ListUtils.h ../Common/Context.h \
+  ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h \
+  ../Graphics/drawContext.h ../Fltk/Draw.h ../Fltk/GUI.h
+Remove${OBJEXT}: Remove.cpp Remove.h Plugin.h ../Common/Options.h \
+  ../Post/ColorTable.h ../Common/GmshMessage.h ../Post/PView.h \
+  ../Geo/SPoint3.h ../Post/PViewDataList.h ../Post/PViewData.h \
+  ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h ../Numeric/GmshMatrix.h \
+  ../Common/GmshConfig.h ../Common/ListUtils.h
+Probe${OBJEXT}: Probe.cpp ../Common/GmshConfig.h Probe.h Plugin.h \
   ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
   ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
   ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
-  ../Common/ListUtils.h ../Common/GmshMatrix.h
+  ../Numeric/GmshMatrix.h ../Common/ListUtils.h ../Common/Context.h \
+  ../Geo/CGNSOptions.h ../Mesh/meshPartitionOptions.h \
+  ../Post/OctreePost.h ../Common/Octree.h ../Common/OctreeInternals.h \
+  ../Graphics/drawContext.h ../Fltk/Draw.h
+HarmonicToTime${OBJEXT}: HarmonicToTime.cpp HarmonicToTime.h Plugin.h \
+  ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
+  ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
+  ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
+  ../Numeric/GmshMatrix.h ../Common/GmshConfig.h ../Common/ListUtils.h
+ModulusPhase${OBJEXT}: ModulusPhase.cpp ModulusPhase.h Plugin.h \
+  ../Common/Options.h ../Post/ColorTable.h ../Common/GmshMessage.h \
+  ../Post/PView.h ../Geo/SPoint3.h ../Post/PViewDataList.h \
+  ../Post/PViewData.h ../Geo/SBoundingBox3d.h ../Geo/SPoint3.h \
+  ../Numeric/GmshMatrix.h ../Common/GmshConfig.h ../Common/ListUtils.h

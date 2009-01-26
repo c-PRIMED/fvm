@@ -1,16 +1,17 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <sstream>
+#include "GmshConfig.h"
+#include "GmshMessage.h"
 #include "GModel.h"
 #include "MElement.h"
 #include "discreteRegion.h"
 #include "discreteFace.h"
 #include "discreteEdge.h"
 #include "discreteVertex.h"
-#include "GmshMessage.h"
 
 #if defined(HAVE_GMSH_EMBEDDED)
 #include "GmshEmbedded.h"
@@ -29,8 +30,9 @@ std::vector<GModel*> GModel::list;
 int GModel::_current = -1;
 
 GModel::GModel(std::string name)
-  : _octree(0), _geo_internals(0), _occ_internals(0), _fm_internals(0), 
-    _fields(0), _currentMeshEntity(0), modelName(name), normals(0)
+  : _name(name), _visible(1), _octree(0), 
+    _geo_internals(0), _occ_internals(0), _fm_internals(0), 
+    _fields(0), _currentMeshEntity(0), normals(0)
 {
   partitionSize[0] = 0; partitionSize[1] = 0;
   list.push_back(this);
@@ -58,9 +60,11 @@ GModel::~GModel()
 
 GModel *GModel::current(int index)
 {
+  if(list.empty()){
+    Msg::Error("No current model available: creating one");
+    new GModel();
+  }
   if(index >= 0) _current = index;
-  if(list.empty()) return 0; // not an error
-
   if(_current < 0 || _current >= (int)list.size()) return list.back();
   return list[_current];
 }
@@ -75,6 +79,8 @@ GModel *GModel::findByName(std::string name)
 
 void GModel::destroy()
 {
+  _name.clear();
+
   for(riter it = firstRegion(); it != lastRegion(); ++it)
     delete *it;
   regions.clear();
@@ -898,4 +904,21 @@ int GModel::removeDuplicateMeshVertices(double tolerance)
   Msg::Info("Removed %d duplicate mesh vertices", diff);
     
   return diff;
+}
+
+void GModel::setSelection(int val)
+{
+  std::vector<GEntity*> entities;
+  getEntities(entities);
+
+  for(unsigned int i = 0; i < entities.size(); i++){
+    entities[i]->setSelection(val);
+    // reset selection in elements (stored in the visibility flag to
+    // save space)
+    if(val == 0){
+      for(int j = 0; j < entities[i]->getNumMeshElements(); j++)
+        if(entities[i]->getMeshElement(j)->getVisibility() == 2)
+          entities[i]->getMeshElement(j)->setVisibility(1);
+    }
+  }  
 }

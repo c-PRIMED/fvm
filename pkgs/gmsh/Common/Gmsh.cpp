@@ -1,9 +1,11 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <string>
+#include <time.h>
+#include "GmshConfig.h"
 #include "GmshDefines.h"
 #include "GModel.h"
 #include "GmshMessage.h"
@@ -16,7 +18,7 @@
 #include "Generator.h"
 #include "Field.h"
 #include "Context.h"
-#include "Partition.h"
+#include "meshPartition.h"
 #include "GmshDaemon.h"
 
 #if !defined(HAVE_NO_POST)
@@ -27,6 +29,10 @@ extern Context_T CTX;
 
 int GmshInitialize(int argc, char **argv)
 {
+  // we need at least one model during option parsing
+  GModel *dummy = 0;
+  if(GModel::list.empty()) dummy = new GModel();
+
   // Initialize messages (parallel stuff, etc.)
   Msg::Init(argc, argv);
 
@@ -44,8 +50,10 @@ int GmshInitialize(int argc, char **argv)
   GMSH_PluginManager::instance()->registerDefaultPlugins();
 #endif
 
-  // Check for buggy obsolete GSL versions
-  check_gsl();
+  // Initialize numeric library (gsl, robust predicates)
+  Init_Numeric();
+
+  if(dummy) delete dummy;
   return 1;
 }
 
@@ -71,7 +79,7 @@ int GmshSetOption(std::string category, std::string name, double value, int inde
 
 int GmshMergeFile(std::string fileName)
 {
-  return MergeFile(fileName.c_str(), 1);
+  return MergeFile(fileName, true);
 }
 
 int GmshFinalize()
@@ -81,18 +89,19 @@ int GmshFinalize()
 
 int GmshBatch()
 {
-  if(!GModel::current()) return 0;
+  Msg::Info("Running '%s'", Msg::GetCommandLine().c_str());
+  Msg::Info("Started on %s", Msg::GetLaunchDate().c_str());
 
-  OpenProject(CTX.filename);
+  OpenProject(GModel::current()->getFileName());
   for(unsigned int i = 1; i < CTX.files.size(); i++){
     if(CTX.files[i] == "-new")
-      new GModel;
+      new GModel();
     else
-      MergeFile(CTX.files[i].c_str());
+      MergeFile(CTX.files[i]);
   }
 
 #if !defined(HAVE_NO_POST)
-  if(CTX.bgm_filename) {
+  if(!CTX.bgm_filename.empty()) {
     MergeFile(CTX.bgm_filename);
     if(PView::list.size())
       GModel::current()->getFields()->set_background_mesh(PView::list.size() - 1);
@@ -116,13 +125,19 @@ int GmshBatch()
     else if(CTX.batch == 4)
       AdaptMesh(GModel::current());
     else if(CTX.batch == 5)
-      RefineMesh(GModel::current());
+      RefineMesh(GModel::current(), CTX.mesh.second_order_linear);
 #if defined(HAVE_CHACO) || defined(HAVE_METIS)
     if(CTX.batch_after_mesh == 1)
       PartitionMesh(GModel::current(), CTX.mesh.partition_options);
 #endif
     CreateOutputFile(CTX.output_filename, CTX.mesh.format);
   }
+
+  time_t now;
+  time(&now);
+  std::string currtime = ctime(&now);
+  currtime.resize(currtime.size() - 1);
+  Msg::Info("Stopped on %s", currtime.c_str());
 
   return 1;
 }

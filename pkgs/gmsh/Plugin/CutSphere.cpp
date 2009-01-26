@@ -1,14 +1,15 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <string.h>
+#include "GmshConfig.h"
 #include "CutSphere.h"
 #include "Context.h"
 
 #if defined(HAVE_FLTK)
-#include "GmshUI.h"
+#include "drawContext.h"
 #include "Draw.h"
 #endif
 
@@ -32,26 +33,19 @@ extern "C"
   }
 }
 
-void GMSH_CutSpherePlugin::draw()
+void GMSH_CutSpherePlugin::draw(void *context)
 {
 #if defined(HAVE_FLTK)
-  static GLUquadricObj *qua;
-  static int first = 1;
-  if(first) {
-    first = 0;
-    qua = gluNewQuadric();
-  }
   GLint mode[2];
   glGetIntegerv(GL_POLYGON_MODE, mode);
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  glPushMatrix();
   glColor4ubv((GLubyte *) & CTX.color.fg);
   glLineWidth(CTX.line_width);
-  glTranslated(CutSphereOptions_Number[0].def,
-               CutSphereOptions_Number[1].def,
-               CutSphereOptions_Number[2].def);
-  gluSphere(qua, CutSphereOptions_Number[3].def, 40, 40);
-  glPopMatrix();
+  drawContext *ctx = (drawContext*)context;
+  ctx->drawSphere(CutSphereOptions_Number[3].def,
+                  CutSphereOptions_Number[0].def,
+                  CutSphereOptions_Number[1].def,
+                  CutSphereOptions_Number[2].def, 40, 40, 1);
   glPolygonMode(GL_FRONT_AND_BACK, mode[1]);
 #endif
 }

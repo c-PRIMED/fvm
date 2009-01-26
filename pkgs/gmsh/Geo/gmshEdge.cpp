@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -40,34 +40,10 @@ GPoint gmshEdge::point(double par) const
   return GPoint(a.Pos.X, a.Pos.Y, a.Pos.Z, this, par);
 }
 
-GPoint gmshEdge::closestPoint(const SPoint3 &qp) const
-{
-  Vertex v;
-  Vertex a;
-  Vertex der;
-  v.Pos.X = qp.x();
-  v.Pos.Y = qp.y();
-  v.Pos.Z = qp.z();
-  ProjectPointOnCurve(c, &v, &a, &der);
-  return GPoint(a.Pos.X, a.Pos.Y, a.Pos.Z, this, a.u);
-}
-
 SVector3 gmshEdge::firstDer(double par) const
 {
   Vertex a = InterpolateCurve(c, par, 1);
   return SVector3(a.Pos.X, a.Pos.Y, a.Pos.Z);
-}
-
-double gmshEdge::parFromPoint(const SPoint3 &pt) const
-{
-  Vertex v;
-  Vertex a;
-  Vertex der;
-  v.Pos.X = pt.x();
-  v.Pos.Y = pt.y();
-  v.Pos.Z = pt.z();
-  ProjectPointOnCurve(c, &v, &a, &der);
-  return a.u;
 }
 
 GEntity::GeomType gmshEdge::geomType() const
@@ -109,13 +85,11 @@ int gmshEdge::minimumDrawSegments () const
 
   if(geomType() == Line && !c->geometry)
     return n;
-  else if(geomType() == Circle || geomType() == Ellipse)
-    return CTX.geom.circle_points;
   else
-    return 10 * n;
+    return CTX.geom.num_sub_edges * n;
 }
 
-SPoint2 gmshEdge::reparamOnFace(GFace *face, double epar,int dir) const
+SPoint2 gmshEdge::reparamOnFace(const GFace *face, double epar,int dir) const
 {
   Surface *s = (Surface*) face->getNativePtr();
 

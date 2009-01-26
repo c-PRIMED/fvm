@@ -1,11 +1,12 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <string>
-#include "GModel.h"
+#include "GmshConfig.h"
 #include "GmshMessage.h"
+#include "GModel.h"
 
 #if defined(HAVE_MED)
 
@@ -162,12 +163,15 @@ int GModel::readMED(const std::string &name)
   }
 
   int ret = 1;
-  // FIXME change this once we clarify Open/Merge/Clear behaviour
   MVertex::resetGlobalNumber();
   MElement::resetGlobalNumber();
   for(unsigned int i = 0; i < meshNames.size(); i++){
     GModel *m = findByName(meshNames[i]);
-    if(!m) m = new GModel(meshNames[i]);
+    if(!m){
+      for(unsigned int j = 0; j < GModel::list.size(); j++)
+        GModel::list[j]->setVisibility(0);
+      m = new GModel(meshNames[i]);
+    }
     ret = m->readMED(name, i);
     if(!ret) return 0;
   }

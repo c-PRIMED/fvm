@@ -1,15 +1,16 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <stdlib.h>
+#include "GmshConfig.h"
+#include "GmshMessage.h"
 #include "GModel.h"
 #include "Geo.h"
 #include "OpenFile.h"
 #include "Numeric.h"
 #include "ListUtils.h"
-#include "GmshMessage.h"
 #include "gmshVertex.h"
 #include "gmshFace.h"
 #include "GFaceCompound.h"
@@ -34,7 +35,7 @@ void GModel::_deleteGEOInternals()
 
 int GModel::readGEO(const std::string &name)
 {
-  ParseFile(name.c_str(), 1);
+  ParseFile(name.c_str(), true);
   return importGEOInternals();
 }
 

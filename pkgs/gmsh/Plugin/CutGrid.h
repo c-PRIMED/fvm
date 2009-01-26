@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -48,7 +48,7 @@ public:
   static double callbackU(int, int, double);
   static double callbackV(int, int, double);
   static double callbackConnect(int, int, double);
-  static void draw();
+  static void draw(void *context);
 };
 
 #endif

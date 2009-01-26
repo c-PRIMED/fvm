@@ -1,19 +1,10 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
-#if !defined(HAVE_NO_DLL)
-#include <dlfcn.h>
-#endif
-
 #include <map>
-
-#if defined(HAVE_FLTK)
-#include <FL/Fl.H>
-#include <FL/filename.H>
-#endif
-
+#include "GmshConfig.h"
 #include "Plugin.h"
 #include "PluginManager.h"
 #include "CutMap.h"
@@ -49,6 +40,15 @@
 #include "FieldView.h"
 #include "GSHHS.h"
 #include "Context.h"
+
+#if !defined(HAVE_NO_DLL)
+#include <dlfcn.h>
+#endif
+
+#if defined(HAVE_FLTK)
+#include <FL/Fl.H>
+#include <FL/filename.H>
+#endif
 
 extern Context_T CTX;
 
@@ -217,13 +217,13 @@ void GMSH_PluginManager::registerDefaultPlugins()
                       ("FieldView", GMSH_RegisterFieldViewPlugin()));
     allPlugins.insert(std::pair<const char*, GMSH_Plugin*>
                       ("Triangulate", GMSH_RegisterTriangulatePlugin()));
+    allPlugins.insert(std::pair<const char*, GMSH_Plugin*>
+                      ("GSHHS", GMSH_RegisterGSHHSPlugin()));
 #if defined(HAVE_MATH_EVAL)
     allPlugins.insert(std::pair<const char*, GMSH_Plugin*>
                       ("Evaluate", GMSH_RegisterEvaluatePlugin()));
     allPlugins.insert(std::pair<const char*, GMSH_Plugin*>
                       ("CutParametric", GMSH_RegisterCutParametricPlugin()));
-    allPlugins.insert(std::pair<const char*, GMSH_Plugin*>
-                      ("GSHHS", GMSH_RegisterGSHHSPlugin()));
 #endif
   }
 

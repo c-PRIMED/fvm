@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -39,11 +39,13 @@ class OctreePost
   // interpolated unless time step is set to a different value than
   // -1.
   bool searchScalar(double x, double y, double z, double *values, 
-                    int step = -1, double *size = 0);
+                    int step=-1, double *size=0);
+  bool searchScalarWithTol(double x, double y, double z, double *values, 
+                           int step=-1, double *size=0, double tol=1.e-2);
   bool searchVector(double x, double y, double z, double *values, 
-                    int step = -1, double *size = 0);
+                    int step=-1, double *size=0);
   bool searchTensor(double x, double y, double z, double *values, 
-                    int step = -1, double *size = 0);
+                    int step=-1, double *size=0);
 };
 
 #endif

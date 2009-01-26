@@ -1,7 +1,9 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
+
+#include "GmshConfig.h"
 #include "fourierEdge.h"
 #include "Context.h"
 
@@ -27,13 +29,6 @@ GPoint fourierEdge::point(double p) const
   return GPoint(x,y,z);
 }
 
-double fourierEdge::parFromPoint(const SPoint3 &pt) const
-{
-  double p;
-  edge->Inverse(pt.x(),pt.y(),pt.z(),p);
-  return p;
-}
-
 SVector3 fourierEdge::firstDer(double par) const
 {
   double x,y,z;
@@ -55,10 +50,8 @@ int fourierEdge::minimumDrawSegments() const
 
   if(geomType() == Line)
     return n;
-  else if(geomType() == Circle || geomType() == Ellipse)
-    return CTX.geom.circle_points;
   else
-    return 20 * n;
+    return CTX.geom.num_sub_edges * n;
 }
 
 #endif

@@ -1,19 +1,17 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <string.h>
-#include "ReadImg.h"
-#include "GmshMessage.h"
-#include "GmshUI.h"
-#include "PView.h"
-#include "PViewDataList.h"
-  
 #include <FL/Fl_JPEG_Image.H>
 #include <FL/Fl_PNM_Image.H>
 #include <FL/Fl_PNG_Image.H>
 #include <FL/Fl_BMP_Image.H>
+#include "ReadImg.h"
+#include "GmshMessage.h"
+#include "PView.h"
+#include "PViewDataList.h"
 
 // from an image, we create a post-procession view
 
@@ -110,26 +108,26 @@ static int EndPos(const char *name, PViewData *d)
   }
 }
 
-int read_pnm(const char *name) 
+int read_pnm(std::string fileName) 
 {
-  Fl_PNM_Image img(name);
-  return EndPos(name, Img2Data(img));
+  Fl_PNM_Image img(fileName.c_str());
+  return EndPos(fileName.c_str(), Img2Data(img));
 }
 
-int read_jpeg(const char *name) 
+int read_jpeg(std::string fileName) 
 {
-  Fl_JPEG_Image img(name);
-  return EndPos(name, Img2Data(img));
+  Fl_JPEG_Image img(fileName.c_str());
+  return EndPos(fileName.c_str(), Img2Data(img));
 }
 
-int read_png(const char *name) 
+int read_png(std::string fileName) 
 {
-  Fl_PNG_Image img(name);
-  return EndPos(name, Img2Data(img));
+  Fl_PNG_Image img(fileName.c_str());
+  return EndPos(fileName.c_str(), Img2Data(img));
 }
 
-int read_bmp(const char *name) 
+int read_bmp(std::string fileName) 
 {
-  Fl_BMP_Image img(name);
-  return EndPos(name, Img2Data(img));
+  Fl_BMP_Image img(fileName.c_str());
+  return EndPos(fileName.c_str(), Img2Data(img));
 }

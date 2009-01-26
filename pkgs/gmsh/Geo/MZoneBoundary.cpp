@@ -1,9 +1,11 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 //
 // MZoneBoundary.cpp - Copyright (C) 2008 S. Guzik, C. Geuzaine, J.-F. Remacle
+
+#include "GmshConfig.h"
 
 #if defined(HAVE_LIBCGNS)
 
@@ -152,7 +154,7 @@ class BCPatchIndex
  *   zoneBoVec          - (O) updated with domain boundary information for the
  *                            vertex
  *   patch              - (O) record BC patch index for an entity
- *   warnNormFromElem   - (I) wether a warning about obtaining normals from
+ *   warnNormFromElem   - (I) whether a warning about obtaining normals from
  *                            elements has already been given. 
  *                        (O) set to true if warning given in this call
  *
@@ -202,19 +204,22 @@ void updateBoVec
  *                            and from which the normal will be determined
  *   faces              - (I) All faces on the boundary connected to 'vertex'
  *   boNormal           - (O) The normal to the boundary face (edge in 2D)
+ *   onlyFace           - (I) If >= 0, only use this face to determine the
+ *                            interior vertex and normal to the mesh plane.
  *   returns            - (O) 0 - success
- *                            1 - parFromPoint() failed
+ *                            1 - no parameter found on edge for vertex
  *
  *============================================================================*/
 
 int edge_normal
 (const MVertex *const vertex, const int zoneIndex, const GEdge *const gEdge,
  const CCon::FaceVector<MZoneBoundary<2>::GlobalVertexData<MEdge>::FaceDataB>
- &faces, SVector3 &boNormal)
+ &faces, SVector3 &boNormal, const int onlyFace = -1)
 {
 
-  const double par = gEdge->parFromPoint(vertex->point());
-  if(par == std::numeric_limits<double>::max()) return 1;
+  double par;
+  // Note: const_cast used to match MVertex.cpp interface
+  if(!reparamMeshVertexOnEdge(vertex, gEdge, par)) return 1;
 
   const SVector3 tangent(gEdge->firstDer(par));
                                         // Tangent to the boundary face
@@ -225,8 +230,13 @@ int edge_normal
   // The interior point and mesh plane normal are computed from all elements in
   // the zone.
   int cFace = 0;
-  const int nFace = faces.size();
-  for(int iFace = 0; iFace != nFace; ++iFace) {
+  int iFace = 0;
+  int nFace = faces.size();
+  if ( onlyFace >= 0 ) {
+    iFace = onlyFace;
+    nFace = onlyFace + 1;
+  }
+  for(; iFace != nFace; ++iFace) {
     if(faces[iFace].zoneIndex == zoneIndex) {
       ++cFace;
       interior += faces[iFace].parentElement->barycenter();
@@ -288,7 +298,7 @@ void updateBoVec<2, MEdge>
         // Get the edge entities that are connected to the vertex
         std::list<GEdge*> gEdgeList = ent->edges();
         // Find edge entities that are connected to elements in the zone
-        std::vector<GEdge*> useGEdge;
+        std::vector<std::pair<GEdge*, int> > useGEdge;
         const int nFace = faces.size();
         for(int iFace = 0; iFace != nFace; ++iFace) {
           if(zoneIndex == faces[iFace].zoneIndex) {
@@ -302,7 +312,8 @@ void updateBoVec<2, MEdge>
             // edge entities that will be used to determine the normal
             GEntity *const ent2 = vertex2->onWhat();
             if(ent2->dim() == 1) {
-              useGEdge.push_back(static_cast<GEdge*>(ent2));
+              useGEdge.push_back(std::pair<GEdge*, int>
+                                 (static_cast<GEdge*>(ent2), iFace));
             }
           }
         }
@@ -321,7 +332,7 @@ void updateBoVec<2, MEdge>
         case 1:
           {
             const GEdge *const gEdge =
-              static_cast<const GEdge*>(useGEdge[0]);
+              static_cast<const GEdge*>(useGEdge[0].first);
             SVector3 boNormal;
             if(edge_normal(vertex, zoneIndex, gEdge, faces, boNormal))
                goto getNormalFromElements;
@@ -337,16 +348,18 @@ void updateBoVec<2, MEdge>
           {
             // Get the first normal
             const GEdge *const gEdge1 =
-              static_cast<const GEdge*>(useGEdge[0]);
+              static_cast<const GEdge*>(useGEdge[0].first);
             SVector3 boNormal1;
-            if(edge_normal(vertex, zoneIndex, gEdge1, faces, boNormal1))
+            if(edge_normal(vertex, zoneIndex, gEdge1, faces, boNormal1,
+                           useGEdge[0].second))
               goto getNormalFromElements;
 
             // Get the second normal
             const GEdge *const gEdge2 =
-              static_cast<const GEdge*>(useGEdge[1]);
+              static_cast<const GEdge*>(useGEdge[1].first);
             SVector3 boNormal2;
-            if(edge_normal(vertex, zoneIndex, gEdge2, faces, boNormal2))
+            if(edge_normal(vertex, zoneIndex, gEdge2, faces, boNormal2,
+                           useGEdge[1].second))
               goto getNormalFromElements;
 
             if(dot(boNormal1, boNormal2) < 0.98) {
@@ -629,8 +642,9 @@ void updateBoVec<3, MFace>
 
         for(std::list<const GFace*>::const_iterator gFIt = useGFace.begin();
             gFIt != useGFace.end(); ++gFIt) {
-          const SPoint2 par = (*gFIt)->parFromPoint(vertex->point());
-          if(par.x() == std::numeric_limits<double>::max())  //**?
+
+          SPoint2 par;
+          if(!reparamMeshVertexOnFace(vertex, *gFIt, par))
             goto getNormalFromElements;  // :P  After all that!
 
           SVector3 boNormal = (*gFIt)->normal(par);
@@ -663,8 +677,8 @@ void updateBoVec<3, MFace>
 
       {
         const GFace *const gFace = static_cast<const GFace*>(ent);
-        const SPoint2 par = gFace->parFromPoint(vertex->point());
-        if(par.x() == std::numeric_limits<double>::max())
+        SPoint2 par;
+        if(!reparamMeshVertexOnFace(vertex, gFace, par))
           goto getNormalFromElements;
 
         SVector3 boNormal = static_cast<const GFace*>(ent)->normal(par);

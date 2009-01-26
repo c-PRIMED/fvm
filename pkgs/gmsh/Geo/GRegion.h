@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -36,7 +36,8 @@ class GRegion : public GEntity {
 
   // get/set faces that bound the region
   virtual std::list<GFace*> faces() const{ return l_faces; }
-  void set(std::list<GFace*> &f) { l_faces= f; }
+  virtual std::list<int> faceOrientations() const{ return l_dirs; }
+  void set(std::list<GFace*> &f) { l_faces = f; }
 
   // edges that bound the region
   virtual std::list<GEdge*> edges() const;
@@ -67,6 +68,7 @@ class GRegion : public GEntity {
   virtual void resetMeshAttributes();
 
   struct {
+    // is this surface meshed using a transfinite interpolation
     char Method;
     // the extrusion parameters (if any)
     ExtrudeParams *extrude;

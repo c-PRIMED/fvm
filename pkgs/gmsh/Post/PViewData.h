@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -10,10 +10,10 @@
 #include <vector>
 #include <map>
 #include "SBoundingBox3d.h"
+#include "GmshMatrix.h"
 
 #define VAL_INF 1.e200
 
-class List_T;
 class adaptiveData;
 class GModel;
 class nameData;
@@ -35,7 +35,7 @@ class PViewData {
   adaptiveData *_adaptive;
   // interpolation matrices, indexed by the number of edges per
   // element (1 for lines, 3 for triangles, etc.)
-  std::map<int, std::vector<List_T*> > _interpolation;
+  std::map<int, std::vector<Double_Matrix*> > _interpolation;
 
  public:
   PViewData();
@@ -169,15 +169,25 @@ class PViewData {
   // check if the view is adaptive
   bool isAdaptive(){ return _adaptive ? true : false; }
 
+  // initialize/destroy adaptive data
+  void initAdaptiveData(int step, int level, double tol);
+  void destroyAdaptiveData();
+
   // return the adaptive data
   adaptiveData *getAdaptiveData(){ return _adaptive; }
 
   // set/get the interpolation matrices for elements with "type"
   // number of edges
-  void setInterpolationScheme(int type, List_T *coef, List_T *pol, 
-			      List_T *coefGeo=0, List_T *polGeo=0);
-  int getInterpolationScheme(int type, std::vector<List_T*> &p);
-  inline bool haveInterpolationScheme(){ return !_interpolation.empty(); }
+  void setInterpolationMatrices(int type, 
+                                const Double_Matrix &coefVal,
+                                const Double_Matrix &expVal);
+  void setInterpolationMatrices(int type, 
+                                const Double_Matrix &coefVal,
+                                const Double_Matrix &expVal,
+                                const Double_Matrix &coefGeo, 
+                                const Double_Matrix &expGeo);
+  int getInterpolationMatrices(int type, std::vector<Double_Matrix*> &p);
+  inline bool haveInterpolationMatrices(){ return !_interpolation.empty(); }
 
   // smooth the data in the view (makes it C0)
   virtual void smooth();

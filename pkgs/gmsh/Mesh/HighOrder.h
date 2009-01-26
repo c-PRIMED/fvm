@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -17,7 +17,6 @@ typedef std::map<std::pair<MVertex*, MVertex*>, std::vector<MVertex*> > edgeCont
 
 // for each face (a list of vertices) we build a list of vertices that
 // are the high order representation of the face
-// typedef std::map<std::vector<MVertex*>, std::vector<MVertex*>> faceContainer;
 typedef std::map<MFace, std::vector<MVertex*>, Less_Face> faceContainer;
 
 void SetOrder1(GModel *m);

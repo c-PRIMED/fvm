@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -41,7 +41,7 @@ class PView{
 
  public:
   // create a new view with list-based data, allocated or not
-  PView(bool allocate=true);
+  PView(bool allocate=true, int numalloc=1000);
   // construct a new view using the given data
   PView(PViewData *data);
   // construct a new view, alias of the view "ref"

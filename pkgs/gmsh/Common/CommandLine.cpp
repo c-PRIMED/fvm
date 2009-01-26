@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -6,7 +6,7 @@
 #include <string>
 #include <string.h>
 #include <stdlib.h>
-#include "GmshUI.h"
+#include "GmshConfig.h"
 #include "GmshDefines.h"
 #include "GmshVersion.h"
 #include "GmshMessage.h"
@@ -17,6 +17,17 @@
 #include "GModel.h"
 #include "CreateFile.h"
 #include "OS.h"
+
+#if defined(HAVE_FLTK)
+#include <FL/Fl.H>
+#if (FL_MAJOR_VERSION == 1) && (FL_MINOR_VERSION == 1) && (FL_PATCH_VERSION > 6)
+// OK
+#elif (FL_MAJOR_VERSION == 1) && (FL_MINOR_VERSION == 3)
+// also OK
+#else
+#error "Gmsh requires FLTK >= 1.1.7 or FLTK 1.3.x"
+#endif
+#endif
 
 #if !defined(HAVE_NO_POST)
 #include "PView.h"
@@ -43,14 +54,15 @@ void Print_Usage(const char *name)
   Msg::Direct("Mesh options:");
   Msg::Direct("  -1, -2, -3            Perform 1D, 2D or 3D mesh generation, then exit");
   Msg::Direct("  -refine               Perform uniform mesh refinement, then exit");
-  Msg::Direct("  -part                 Partition after batch mesh generation");
+  Msg::Direct("  -part int             Partition after batch mesh generation");
   Msg::Direct("  -saveall              Save all elements (discard physical group definitions)");
   Msg::Direct("  -o file               Specify mesh output file name");
   Msg::Direct("  -format string        Set output mesh format (msh, msh1, msh2, unv, vrml, stl, mesh,");
   Msg::Direct("                          bdf, p3d, cgns, med)");
   Msg::Direct("  -bin                  Use binary format when available");  
   Msg::Direct("  -parametric           Save vertices with their parametric coordinates");  
-  Msg::Direct("  -algo string          Select mesh algorithm (de, del2d, frontal, iso, netgen, tetgen)");
+  Msg::Direct("  -numsubedges          Set the number of subdivisions when displaying high order elements");  
+  Msg::Direct("  -algo string          Select mesh algorithm (iso, frontal, del2d, del3d, netgen)");
   Msg::Direct("  -smooth int           Set number of mesh smoothing steps");
   Msg::Direct("  -optimize[_netgen]    Optimize quality of tetrahedral elements");
   Msg::Direct("  -order int            Set mesh order (1, ..., 5)");
@@ -156,14 +168,10 @@ void Get_Options(int argc, char *argv[])
   int terminal = CTX.terminal;
   CTX.terminal = 1;
 
-  // Create a dummy model during option processing so we cannot crash
-  // the parser, and so we can load files for -convert
-  GModel *dummy = new GModel();
-
 #if !defined(HAVE_NO_PARSER)
   // Parse session and option files
-  ParseFile(CTX.session_filename_fullpath, 1);
-  ParseFile(CTX.options_filename_fullpath, 1);
+  ParseFile((CTX.home_dir + CTX.session_filename).c_str(), true);
+  ParseFile((CTX.home_dir + CTX.options_filename).c_str(), true);
 #endif
 
   // Get command line options
@@ -209,8 +217,13 @@ void Get_Options(int argc, char *argv[])
         i++;
       }
       else if(!strcmp(argv[i] + 1, "part")) {
-        CTX.batch_after_mesh = 1;
         i++;
+        if(argv[i] != NULL){
+          CTX.batch_after_mesh = 1;
+          opt_mesh_partition_num(0, GMSH_SET, atoi(argv[i++]));
+        }
+        else
+	  Msg::Fatal("Missing number");
       }
       else if(!strcmp(argv[i] + 1, "new")) {
         CTX.files.push_back("-new");
@@ -267,7 +280,7 @@ void Get_Options(int argc, char *argv[])
       else if(!strcmp(argv[i] + 1, "option")) {
         i++;
         if(argv[i] != NULL)
-          ParseFile(argv[i++], 1);
+          ParseFile(argv[i++], true);
         else
 	  Msg::Fatal("Missing file name");
       }
@@ -285,12 +298,25 @@ void Get_Options(int argc, char *argv[])
 	else
 	  Msg::Fatal("Missing file name");
       }
+      else if(!strcmp(argv[i] + 1, "nw")) {
+        i++;
+        if(argv[i] != NULL)
+          CTX.num_windows = atoi(argv[i++]);
+        else
+	  Msg::Fatal("Missing number");
+      }
+      else if(!strcmp(argv[i] + 1, "nt")) {
+        i++;
+        if(argv[i] != NULL)
+          CTX.num_tiles = atoi(argv[i++]);
+        else
+	  Msg::Fatal("Missing number");
+      }
       else if(!strcmp(argv[i] + 1, "convert")) {
         i++;
         CTX.batch = 1;
         while(i < argc) {
-          char filename[256];
-          sprintf(filename, "%s_new", argv[i]);
+          std::string fileName = std::string(argv[i]) + "_new";
 #if !defined(HAVE_NO_POST)
           unsigned int n = PView::list.size();
 #endif
@@ -298,13 +324,13 @@ void Get_Options(int argc, char *argv[])
 #if !defined(HAVE_NO_POST)
           // convert post-processing views to latest binary format
           for(unsigned int j = n; j < PView::list.size(); j++)
-            PView::list[j]->write(filename, 1, (j == n) ? false : true);
+            PView::list[j]->write(fileName, 1, (j == n) ? false : true);
 #endif
           // convert mesh to latest binary format
           if(GModel::current()->getMeshStatus() > 0){
             CTX.mesh.msh_file_version = 2.0;
             CTX.mesh.binary = 1;
-            CreateOutputFile(filename, FORMAT_MSH);
+            CreateOutputFile(fileName, FORMAT_MSH);
           }
           i++;
         }
@@ -414,6 +440,13 @@ void Get_Options(int argc, char *argv[])
         i++;
         if(argv[i] != NULL)
           opt_mesh_order(0, GMSH_SET, atof(argv[i++]));
+        else
+	  Msg::Fatal("Missing number");
+      }
+      else if(!strcmp(argv[i] + 1, "numsubedges")) {
+        i++;
+        if(argv[i] != NULL)
+          opt_mesh_num_sub_edges(0, GMSH_SET, atof(argv[i++]));
         else
 	  Msg::Fatal("Missing number");
       }
@@ -537,7 +570,7 @@ void Get_Options(int argc, char *argv[])
       }
       else if(!strcmp(argv[i] + 1, "help") || !strcmp(argv[i] + 1, "-help")) {
         fprintf(stderr, "Gmsh, a 3D mesh generator with pre- and post-processing facilities\n");
-        fprintf(stderr, "Copyright (C) 1997-2008 Christophe Geuzaine and Jean-Francois Remacle\n");
+        fprintf(stderr, "Copyright (C) 1997-2009 Christophe Geuzaine and Jean-Francois Remacle\n");
         Print_Usage(argv[0]);
 	Msg::Exit(0);
       }
@@ -591,6 +624,13 @@ void Get_Options(int argc, char *argv[])
         else
 	  Msg::Fatal("Missing number");
       }
+      else if(!strcmp(argv[i] + 1, "deltafontsize")) {
+        i++;
+        if(argv[i] != NULL)
+          CTX.deltafontsize = atoi(argv[i++]);
+        else
+	  Msg::Fatal("Missing number");
+      }
       else if(!strcmp(argv[i] + 1, "theme") || !strcmp(argv[i] + 1, "scheme")) {
         i++;
         if(argv[i] != NULL)
@@ -627,12 +667,12 @@ void Get_Options(int argc, char *argv[])
 
   }
 
-  if(CTX.files.empty())
-    strncpy(CTX.filename, CTX.default_filename_fullpath, 255);
+  if(CTX.files.empty()){
+    std::string base = (getenv("PWD") ? "" : CTX.home_dir);
+    GModel::current()->setFileName((base + CTX.default_filename).c_str());
+  }
   else
-    strncpy(CTX.filename, CTX.files[0].c_str(), 255);
-
-  delete dummy;
+    GModel::current()->setFileName(CTX.files[0]);
 
   CTX.terminal = terminal;
 }

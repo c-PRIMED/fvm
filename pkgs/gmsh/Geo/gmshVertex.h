@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -32,7 +32,7 @@ class gmshVertex : public GVertex {
     meshSize = l;
     v->lc = meshSize;
   }
-  virtual SPoint2 reparamOnFace(GFace *gf, int) const;
+  virtual SPoint2 reparamOnFace(const GFace *gf, int) const;
 };
 
 #endif

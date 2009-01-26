@@ -1,10 +1,12 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
-#include "gmshSurface.h"
+#include "GmshConfig.h"
 #include "GmshMessage.h"
+#include "gmshSurface.h"
+
 #if defined(HAVE_MATH_EVAL)
 #include "matheval.h"
 #endif
@@ -79,14 +81,15 @@ gmshSurface *gmshPolarSphere::NewPolarSphere(int iSphere, double x, double y, do
   return sph;
 }
 
-SPoint3 gmshPolarSphere::point(double parA, double parB) const
+gmshPolarSphere::gmshPolarSphere(double x, double y, double z, double _r) : r(_r), o(x,y,z) {
+}
+SPoint3 gmshPolarSphere::point(double u, double v) const
 {
   //stereographic projection from the south pole, origin of the axis
   //at the center of the sphere 
-  //parA=2rx/(r+z) parB=2ry/(r+z)
-  double rp2 = parA * parA + parB * parB;
-  SPoint3 p(2*parA/(1+rp2),2*parB/(1+rp2),(rp2-1)/(rp2+1));
-  p *= -r;
+  //u=-x/(r+z) v=-y/(r+z)
+  double rp2 = u*u+v*v;
+  SPoint3 p(-2*r*u/(1+rp2),-2*r*v/(1+rp2),r*(1-rp2)/(1+rp2));
   p += o;
   return p;
 }
@@ -131,7 +134,7 @@ SPoint3 gmshParametricSurface::point(double par1, double par2) const
   Msg::Error("MathEval is not compiled in this version of Gmsh");
   return SPoint3(0.,0.,0.);
 #else
-  char *names[2] = {"u", "v"};
+  char *names[2] = {(char*)"u", (char*)"v"};
   double values [2] = {par1, par2};
   const double x = evaluator_evaluate(evalX, 2, names, values);
   const double y = evaluator_evaluate(evalY, 2, names, values);

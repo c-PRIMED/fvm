@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -38,7 +38,7 @@ public:
   static const char *callbackText(int, int, const char *);
   static const char *callbackFont(int, int, const char *);
   static const char *callbackAlign(int, int, const char *);
-  static void draw();
+  static void draw(void *context);
 };
 
 #endif

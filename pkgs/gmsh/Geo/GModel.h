@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -28,6 +28,15 @@ class CGNSOptions;
 class GModel
 {
  private:
+  // the name of the model
+  std::string _name;
+
+  // the name of the file the model was read from
+  std::string _fileName;
+
+  // the visibility flag
+  char _visible;
+
   // vertex cache to speed-up direct access by vertex number (used for
   // post-processing I/O)
   std::vector<MVertex*> _vertexVectorCache;
@@ -75,7 +84,6 @@ class GModel
   static int _current;
 
  protected:
-  std::string modelName;
   std::set<GRegion*, GEntityLessThan> regions;
   std::set<GFace*, GEntityLessThan> faces;
   std::set<GEdge*, GEntityLessThan> edges;
@@ -114,8 +122,16 @@ class GModel
   FieldManager *getFields(){ return _fields; }
 
   // get/set the model name
-  void setName(std::string name){ modelName = name; }
-  std::string getName(){ return modelName; }
+  void setName(std::string name){ _name = name; }
+  std::string getName(){ return _name; }
+
+  // get/set the model file name
+  void setFileName(std::string fileName){ _fileName = fileName; }
+  std::string getFileName(){ return _fileName; }
+
+  // get/set the visibility flag
+  char getVisibility(){ return _visible; }
+  void setVisibility(char val){ _visible = val; }
 
   // get the number of entities in this model
   int getNumRegions() const { return regions.size(); }
@@ -191,6 +207,9 @@ class GModel
 
   // get the name (if any) of a given physical group
   std::string getPhysicalName(int number);
+
+  // set the selection flag on all entities
+  void setSelection(int val);
 
   // the bounding box
   SBoundingBox3d bounds();

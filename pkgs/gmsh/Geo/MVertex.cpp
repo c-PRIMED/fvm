@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -30,10 +30,16 @@ void MVertex::writeMSH(FILE *fp, bool binary, bool saveParametric, double scalin
 {
   if(_index < 0) return; // negative index vertices are never saved
 
+  //  printf("tag = %d index %d pos = %g %g %g\n",onWhat()->tag(),_index,x(),y(),z());
+
   int myDim = 0, myTag = 0;
-  if(saveParametric && onWhat()){
-    myDim = onWhat()->dim(); 
-    myTag = onWhat()->tag();
+  if(saveParametric){
+    if(onWhat()){
+      myDim = onWhat()->dim(); 
+      myTag = onWhat()->tag();
+    }
+    else
+      saveParametric = false;
   }
 
   if(!binary){
@@ -202,6 +208,14 @@ MVertex::linearSearch(std::set<MVertex*, MVertexLessThanLexicographic> &pos)
 static void getAllParameters(MVertex *v, GFace *gf, std::vector<SPoint2> &params)
 {
   params.clear();
+
+  if (gf->geomType() == GEntity::CompoundSurface &&
+      v->onWhat()->dim() < 2){
+    GFaceCompound *gfc = (GFaceCompound*) gf;
+    params.push_back(gfc->getCoordinates(v));
+    return;
+  }
+
   if(v->onWhat()->dim() == 0){
     GVertex *gv = (GVertex*)v->onWhat();
     std::list<GEdge*> ed = gv->edges();
@@ -244,6 +258,7 @@ static void getAllParameters(MVertex *v, GFace *gf, std::vector<SPoint2> &params
 bool reparamMeshEdgeOnFace(MVertex *v1, MVertex *v2, GFace *gf, 
                            SPoint2 &param1, SPoint2 &param2)
 {
+
   std::vector<SPoint2> p1, p2;
   getAllParameters(v1, gf, p1);
   getAllParameters(v2, gf, p2);
@@ -288,11 +303,12 @@ bool reparamMeshEdgeOnFace(MVertex *v1, MVertex *v2, GFace *gf,
   }
 }
 
-bool reparamMeshVertexOnFace(MVertex *v, GFace *gf, SPoint2 &param)
+bool reparamMeshVertexOnFace(const MVertex *v, const GFace *gf, SPoint2 &param)
 {
-  if (gf->geomType() == GEntity::CompoundSurface){
+  if (gf->geomType() == GEntity::CompoundSurface &&
+      v->onWhat()->dim() < 2){
     GFaceCompound *gfc = (GFaceCompound*) gf;
-    param = gfc->getCoordinates(v);
+    param = gfc->getCoordinates(const_cast<MVertex*>(v));
     return true;
   }
 
@@ -304,8 +320,11 @@ bool reparamMeshVertexOnFace(MVertex *v, GFace *gf, SPoint2 &param)
 
   if(v->onWhat()->dim() == 0){
     GVertex *gv = (GVertex*)v->onWhat();
-    param = gv->reparamOnFace(gf, 1);
-
+    // hack for bug in periodic curves
+    if (gv->getNativeType() == GEntity::GmshModel && gf->geomType() == GEntity::Plane)
+      param = gf->parFromPoint(SPoint3(v->x(), v->y(), v->z()));
+    else
+      param = gv->reparamOnFace(gf, 1);
     // shout, we could be on a seam
     std::list<GEdge*> ed = gv->edges();
     for(std::list<GEdge*>::iterator it = ed.begin(); it != ed.end(); it++)
@@ -334,7 +353,7 @@ bool reparamMeshVertexOnFace(MVertex *v, GFace *gf, SPoint2 &param)
   return true;
 }
 
-bool reparamMeshVertexOnEdge(MVertex *v, GEdge *ge, double &param)
+bool reparamMeshVertexOnEdge(const MVertex *v, const GEdge *ge, double &param)
 {
   param = 1.e6;
   Range<double> bounds = ge->parBounds(0);

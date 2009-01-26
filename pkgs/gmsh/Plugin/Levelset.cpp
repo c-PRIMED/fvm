@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -393,7 +393,7 @@ void GMSH_LevelsetPlugin::_cutAndAddElements(PViewData *vdata, PViewData *wdata,
 PView *GMSH_LevelsetPlugin::execute(PView *v)
 {
   if(v->getData()->isAdaptive()){
-    v->getData()->getAdaptiveData()->changeResolution(_recurLevel, _targetError, this);
+    v->getData()->getAdaptiveData()->changeResolution(0, _recurLevel, _targetError, this);
     v->setChanged(true);
   }
 
@@ -404,7 +404,7 @@ PView *GMSH_LevelsetPlugin::execute(PView *v)
   }
   else if(_valueView > (int)PView::list.size() - 1){
     Msg::Error("View[%d] does not exist: reverting to View[%d]", 
-        _valueView, v->getIndex());
+               _valueView, v->getIndex());
     wdata = vdata;
   }
   else{

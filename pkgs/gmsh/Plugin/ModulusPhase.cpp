@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -66,7 +66,7 @@ PView *GMSH_ModulusPhasePlugin::execute(PView *v)
 
   PViewData *data1 = v1->getData();
   if(data1->hasMultipleMeshes()){
-    Msg::Error("Gradient plugin cannot be run on multi-mesh views");
+    Msg::Error("ModulusPhase plugin cannot be run on multi-mesh views");
     return v;
   }
 

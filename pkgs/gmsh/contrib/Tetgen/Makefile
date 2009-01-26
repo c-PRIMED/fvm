@@ -1,4 +1,4 @@
-# Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+# Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 #
 # See the LICENSE.txt file for license information. Please report all
 # bugs and problems to <gmsh@geuz.org>.
@@ -30,12 +30,12 @@ clean:
 
 depend:
 	(sed '/^# DO NOT DELETE THIS LINE/q' Makefile && \
-	${CXX} -MM ${CFLAGS} ${SRC} \
-	) >Makefile.new
+         ${CXX} -MM ${CFLAGS} ${SRC} | sed 's/.o:/$${OBJEXT}:/g' \
+        ) > Makefile.new
 	cp Makefile Makefile.bak
 	cp Makefile.new Makefile
 	rm -f Makefile.new
 
 # DO NOT DELETE THIS LINE
-predicates.o: predicates.cxx tetgen.h
-tetgen.o: tetgen.cxx tetgen.h
+predicates${OBJEXT}: predicates.cxx tetgen.h
+tetgen${OBJEXT}: tetgen.cxx tetgen.h

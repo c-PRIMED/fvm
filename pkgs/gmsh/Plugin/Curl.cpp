@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -79,7 +79,7 @@ PView *GMSH_CurlPlugin::execute(PView *v)
     return v;
   }
 
-  PView *v2 = new PView(true);
+  PView *v2 = new PView(true, data1->getNumElements());
   PViewDataList *data2 = getDataList(v2);
 
   for(int ent = 0; ent < data1->getNumEntities(0); ent++){

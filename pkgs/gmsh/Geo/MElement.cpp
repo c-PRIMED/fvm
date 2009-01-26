@@ -1,14 +1,15 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <stdlib.h>
 #include <math.h>
+#include "GmshConfig.h"
+#include "GmshMessage.h"
 #include "MElement.h"
 #include "GEntity.h"
 #include "GFace.h"
-#include "GmshMessage.h"
 #include "StringUtils.h"
 
 #if defined(HAVE_GMSH_EMBEDDED)
@@ -27,6 +28,7 @@
 extern Context_T CTX;
 
 int MElement::_globalNum = 0;
+double MElement::_isInsideTolerance = 1.e-6;
 double MElementLessThanLexicographic::tolerance = 1.e-6;
 
 void MElement::_getEdgeRep(MVertex *v0, MVertex *v1, 
@@ -98,6 +100,7 @@ void MElement::getShapeFunctions(double u, double v, double w, double s[], int o
 #if !defined(HAVE_GMSH_EMBEDDED)
   const gmshFunctionSpace* fs = getFunctionSpace(o);
   if(fs) fs->f(u, v, w, s);
+  else Msg::Error("Function space not implemented for this type of element");
 #endif
 }
 
@@ -106,6 +109,7 @@ void MElement::getGradShapeFunctions(double u, double v, double w, double s[][3]
 #if !defined(HAVE_GMSH_EMBEDDED)
   const gmshFunctionSpace* fs = getFunctionSpace(o);
   if(fs) fs->df(u, v, w, s);
+  else Msg::Error("Function space not implemented for this type of element");
 #endif
 }
 
@@ -813,20 +817,18 @@ const gmshFunctionSpace* MTriangle::getFunctionSpace(int o) const
   return 0;
 }
 
-#define NUM_SUB_EDGES (_order)
+int MTriangleN::getNumEdgesRep(){ return 3 * CTX.mesh.num_sub_edges; }
+int MTriangle6::getNumEdgesRep(){ return 3 * CTX.mesh.num_sub_edges; }
 
-int MTriangleN::getNumEdgesRep(){ return 3 * NUM_SUB_EDGES; }
-
-void MTriangleN::getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n)
+static void _myGetEdgeRep(MTriangle *t, int num, double *x, double *y, double *z,
+                          SVector3 *n, int numSubEdges)
 {
-  int numSubEdges = NUM_SUB_EDGES;
-
-  n[0] = n[1] = n[2] = getFace(0).normal();
+  n[0] = n[1] = n[2] = t->getFace(0).normal();
 
   if (num < numSubEdges){
     SPoint3 pnt1, pnt2;
-    pnt((double)num / numSubEdges, 0., 0.,pnt1);
-    pnt((double)(num + 1) / numSubEdges, 0., 0, pnt2);
+    t->pnt((double)num / numSubEdges, 0., 0.,pnt1);
+    t->pnt((double)(num + 1) / numSubEdges, 0., 0, pnt2);
     x[0] = pnt1.x(); x[1] = pnt2.x();
     y[0] = pnt1.y(); y[1] = pnt2.y();
     z[0] = pnt1.z(); z[1] = pnt2.z();
@@ -835,8 +837,8 @@ void MTriangleN::getEdgeRep(int num, double *x, double *y, double *z, SVector3 *
   if (num < 2 * numSubEdges){
     SPoint3 pnt1, pnt2;
     num -= numSubEdges;
-    pnt(1. - (double)num / numSubEdges, (double)num / numSubEdges, 0, pnt1);
-    pnt(1. - (double)(num + 1) / numSubEdges, (double)(num + 1) / numSubEdges, 0, pnt2);
+    t->pnt(1. - (double)num / numSubEdges, (double)num / numSubEdges, 0, pnt1);
+    t->pnt(1. - (double)(num + 1) / numSubEdges, (double)(num + 1) / numSubEdges, 0, pnt2);
     x[0] = pnt1.x(); x[1] = pnt2.x();
     y[0] = pnt1.y(); y[1] = pnt2.y();
     z[0] = pnt1.z(); z[1] = pnt2.z();
@@ -845,23 +847,34 @@ void MTriangleN::getEdgeRep(int num, double *x, double *y, double *z, SVector3 *
   {
     SPoint3 pnt1, pnt2;
     num -= 2 * numSubEdges;
-    pnt(0, (double)num / numSubEdges, 0,pnt1);
-    pnt(0, (double)(num + 1) / numSubEdges, 0,pnt2);
+    t->pnt(0, (double)num / numSubEdges, 0,pnt1);
+    t->pnt(0, (double)(num + 1) / numSubEdges, 0,pnt2);
     x[0] = pnt1.x(); x[1] = pnt2.x();
     y[0] = pnt1.y(); y[1] = pnt2.y();
     z[0] = pnt1.z(); z[1] = pnt2.z();
   }
 }
 
-int MTriangleN::getNumFacesRep(){ return NUM_SUB_EDGES * NUM_SUB_EDGES; }
-
-void MTriangleN::getFaceRep(int num, double *x, double *y, double *z, SVector3 *n)
+void MTriangleN::getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n)
 {
-  int numSubEdges = NUM_SUB_EDGES;
+  _myGetEdgeRep(this, num, x, y, z, n, CTX.mesh.num_sub_edges);
+}
 
-  //  on the first layer, we have (numSubEdges-1) * 2 + 1 triangles
-  //  on the second layer, we have (numSubEdges-2) * 2 + 1 triangles
-  //  on the ith layer, we have (numSubEdges-1-i) * 2 + 1 triangles
+void MTriangle6::getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n)
+{
+  _myGetEdgeRep(this, num, x, y, z, n, CTX.mesh.num_sub_edges);
+}
+
+int MTriangle6::getNumFacesRep(){ return SQU(CTX.mesh.num_sub_edges); }
+int MTriangleN::getNumFacesRep(){ return SQU(CTX.mesh.num_sub_edges); }
+
+static void _myGetFaceRep(MTriangle *t, int num, double *x, double *y, double *z,
+                          SVector3 *n, int numSubEdges)
+{
+
+  // on the first layer, we have (numSubEdges-1) * 2 + 1 triangles
+  // on the second layer, we have (numSubEdges-2) * 2 + 1 triangles
+  // on the ith layer, we have (numSubEdges-1-i) * 2 + 1 triangles
   int ix = 0, iy = 0;
   int nbt = 0;
   for (int i = 0; i < numSubEdges; i++){
@@ -879,20 +892,20 @@ void MTriangleN::getFaceRep(int num, double *x, double *y, double *z, SVector3 *
   SPoint3 pnt1, pnt2, pnt3;
   double J1[3][3], J2[3][3], J3[3][3];
   if (ix % 2 == 0){
-    pnt(ix / 2 * d, iy * d, 0, pnt1);
-    pnt((ix / 2 + 1) * d, iy * d, 0, pnt2);
-    pnt(ix / 2 * d, (iy + 1) * d, 0, pnt3);
-    getJacobian(ix / 2 * d, iy * d, 0, J1);
-    getJacobian((ix / 2 + 1) * d, iy * d, 0, J2);
-    getJacobian(ix / 2 * d, (iy + 1) * d, 0, J3);
+    t->pnt(ix / 2 * d, iy * d, 0, pnt1);
+    t->pnt((ix / 2 + 1) * d, iy * d, 0, pnt2);
+    t->pnt(ix / 2 * d, (iy + 1) * d, 0, pnt3);
+    t->getJacobian(ix / 2 * d, iy * d, 0, J1);
+    t->getJacobian((ix / 2 + 1) * d, iy * d, 0, J2);
+    t->getJacobian(ix / 2 * d, (iy + 1) * d, 0, J3);
   }
   else{
-    pnt((ix / 2 + 1) * d, iy * d, 0, pnt1);
-    pnt((ix / 2 + 1) * d, (iy + 1) * d, 0, pnt2);
-    pnt(ix / 2 * d, (iy + 1) * d, 0, pnt3);
-    getJacobian((ix / 2 + 1) * d, iy * d, 0, J1);
-    getJacobian((ix / 2 + 1) * d, (iy + 1) * d, 0, J2);
-    getJacobian(ix / 2 * d, (iy + 1) * d, 0, J3);
+    t->pnt((ix / 2 + 1) * d, iy * d, 0, pnt1);
+    t->pnt((ix / 2 + 1) * d, (iy + 1) * d, 0, pnt2);
+    t->pnt(ix / 2 * d, (iy + 1) * d, 0, pnt3);
+    t->getJacobian((ix / 2 + 1) * d, iy * d, 0, J1);
+    t->getJacobian((ix / 2 + 1) * d, (iy + 1) * d, 0, J2);
+    t->getJacobian(ix / 2 * d, (iy + 1) * d, 0, J3);
   }
   {
     SVector3 d1(J1[0][0], J1[0][1], J1[0][2]);
@@ -918,11 +931,18 @@ void MTriangleN::getFaceRep(int num, double *x, double *y, double *z, SVector3 *
   z[0] = pnt1.z(); z[1] = pnt2.z(); z[2] = pnt3.z();
 }
 
+void MTriangleN::getFaceRep(int num, double *x, double *y, double *z, SVector3 *n)
+{
+  _myGetFaceRep(this, num, x, y, z, n, CTX.mesh.num_sub_edges);
+}
+void MTriangle6::getFaceRep(int num, double *x, double *y, double *z, SVector3 *n)
+{
+  _myGetFaceRep(this, num, x, y, z, n, CTX.mesh.num_sub_edges);
+}
+
 void MTriangle::getIntegrationPoints(int pOrder, int *npts, IntPt **pts) const
 {
 #if !defined(HAVE_GMSH_EMBEDDED)
-  extern int getNGQTPts(int order);
-  extern IntPt *getGQTPts (int order);
   *npts = getNGQTPts(pOrder);
   *pts = getGQTPts(pOrder);
 #endif
@@ -931,8 +951,6 @@ void MTriangle::getIntegrationPoints(int pOrder, int *npts, IntPt **pts) const
 void MQuadrangle::getIntegrationPoints(int pOrder, int *npts, IntPt **pts) const
 {
 #if !defined(HAVE_GMSH_EMBEDDED)
-  extern int getNGQQPts(int order);
-  extern IntPt *getGQQPts(int order);
   *npts = getNGQQPts(pOrder);
   *pts = getGQQPts(pOrder);
 #endif
@@ -964,7 +982,7 @@ double MTetrahedronN::distoShapeMeasure()
 #if defined(HAVE_GMSH_EMBEDDED)
   return 1.;
 #else
-  //  if (_disto < -1.e21)
+  // if (_disto < -1.e21)
   _disto = qmDistorsionOfMapping(this);
   return _disto;
 #endif
@@ -1036,12 +1054,12 @@ const gmshFunctionSpace* MTetrahedron::getFunctionSpace(int o) const
   return 0;
 }
 
-int MTetrahedronN::getNumEdgesRep(){ return 6 * NUM_SUB_EDGES; }
+int MTetrahedron10::getNumEdgesRep(){ return 6 * CTX.mesh.num_sub_edges; }
+int MTetrahedronN::getNumEdgesRep(){ return 6 * CTX.mesh.num_sub_edges; }
 
-void MTetrahedronN::getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n)
+static void _myGetEdgeRep(MTetrahedron *tet, int num, double *x, double *y, double *z,
+                          SVector3 *n, int numSubEdges)
 {
-  int numSubEdges = NUM_SUB_EDGES;
-
   static double pp[4][3] = {{0,0,0},{1,0,0},{0,1,0},{0,0,1}};
   static int ed [6][2] = {{0,1},{0,2},{0,3},{1,2},{1,3},{2,3}};
   int iEdge = num / numSubEdges;
@@ -1049,38 +1067,52 @@ void MTetrahedronN::getEdgeRep(int num, double *x, double *y, double *z, SVector
 
   int iVertex1 = ed [iEdge][0];
   int iVertex2 = ed [iEdge][1];
-  double t1 = (double)iSubEdge / (double)numSubEdges;
-  double u1 = pp[iVertex1][0] * (1. - t1) + pp[iVertex2][0] * t1;
-  double v1 = pp[iVertex1][1] * (1. - t1) + pp[iVertex2][1] * t1;
-  double w1 = pp[iVertex1][2] * (1. - t1) + pp[iVertex2][2] * t1;
+  double t1 = (double) iSubEdge / (double) numSubEdges;
+  double u1 = pp[iVertex1][0] * (1.-t1) + pp[iVertex2][0] * t1;
+  double v1 = pp[iVertex1][1] * (1.-t1) + pp[iVertex2][1] * t1;
+  double w1 = pp[iVertex1][2] * (1.-t1) + pp[iVertex2][2] * t1;
 
-  double t2 = (double)(iSubEdge + 1) / (double)numSubEdges;
-  double u2 = pp[iVertex1][0] * (1. - t2) + pp[iVertex2][0] * t2;
-  double v2 = pp[iVertex1][1] * (1. - t2) + pp[iVertex2][1] * t2;
-  double w2 = pp[iVertex1][2] * (1. - t2) + pp[iVertex2][2] * t2;
+  double t2 = (double) (iSubEdge+1) / (double) numSubEdges;
+  double u2 = pp[iVertex1][0] * (1.-t2) + pp[iVertex2][0] * t2;
+  double v2 = pp[iVertex1][1] * (1.-t2) + pp[iVertex2][1] * t2;
+  double w2 = pp[iVertex1][2] * (1.-t2) + pp[iVertex2][2] * t2;
 
   SPoint3 pnt1, pnt2;
-  pnt(u1, v1, w1, pnt1);
-  pnt(u2, v2, w2, pnt2);
+  tet->pnt(u1,v1,w1,pnt1);
+  tet->pnt(u2,v2,w2,pnt2);
   x[0] = pnt1.x(); x[1] = pnt2.x(); 
   y[0] = pnt1.y(); y[1] = pnt2.y();
   z[0] = pnt1.z(); z[1] = pnt2.z();
+
+  // not great, but better than nothing
+  static const int f[6] = {0, 0, 0, 1, 2, 3};
+  n[0] = n[1] = tet->getFace(f[iEdge]).normal();
 }
 
-int MTetrahedronN::getNumFacesRep(){ return 4 * NUM_SUB_EDGES * NUM_SUB_EDGES; }
-
-void MTetrahedronN::getFaceRep(int num, double *x, double *y, double *z, SVector3 *n)
+void MTetrahedron10::getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n)
 {
-  int numSubEdges = NUM_SUB_EDGES;
+  _myGetEdgeRep(this, num, x, y, z, n, CTX.mesh.num_sub_edges);
+}
 
+void MTetrahedronN::getEdgeRep(int num, double *x, double *y, double *z, SVector3 *n)
+{
+  _myGetEdgeRep(this, num, x, y, z, n, CTX.mesh.num_sub_edges);
+}
+
+int MTetrahedronN::getNumFacesRep(){ return 4 * SQU(CTX.mesh.num_sub_edges); }
+int MTetrahedron10::getNumFacesRep(){ return 4 * SQU(CTX.mesh.num_sub_edges); }
+
+static void _myGetFaceRep(MTetrahedron *tet, int num, double *x, double *y, double *z, 
+                          SVector3 *n, int numSubEdges)
+{
   static double pp[4][3] = {{0,0,0},{1,0,0},{0,1,0},{0,0,1}};
   static int fak [4][3] = {{0,1,2},{0,1,3},{0,2,3},{1,2,3}};
   int iFace    = num / (numSubEdges * numSubEdges);
   int iSubFace = num % (numSubEdges * numSubEdges);  
   
-  int iVertex1 = fak [iFace][0];
-  int iVertex2 = fak [iFace][1];
-  int iVertex3 = fak [iFace][2];
+  int iVertex1 = fak[iFace][0];
+  int iVertex2 = fak[iFace][1];
+  int iVertex3 = fak[iFace][2];
 
   /*
     0
@@ -1091,9 +1123,9 @@ void MTetrahedronN::getFaceRep(int num, double *x, double *y, double *z, SVector
     0 1 2 3 4 5
   */
 
-  //  on the first layer, we have (numSubEdges-1) * 2 + 1 triangles
-  //  on the second layer, we have (numSubEdges-2) * 2 + 1 triangles
-  //  on the ith layer, we have (numSubEdges-1-i) * 2 + 1 triangles
+  // on the first layer, we have (numSubEdges-1) * 2 + 1 triangles
+  // on the second layer, we have (numSubEdges-2) * 2 + 1 triangles
+  // on the ith layer, we have (numSubEdges-1-i) * 2 + 1 triangles
   int ix = 0, iy = 0;
   int nbt = 0;
   for (int i = 0; i < numSubEdges; i++){
@@ -1134,15 +1166,13 @@ void MTetrahedronN::getFaceRep(int num, double *x, double *y, double *z, SVector
   double W2 = pp[iVertex1][2] * (1.-u2-v2) + pp[iVertex2][2] * u2 + pp[iVertex3][2] * v2;
   double W3 = pp[iVertex1][2] * (1.-u3-v3) + pp[iVertex2][2] * u3 + pp[iVertex3][2] * v3;
 
-  pnt(U1,V1,W1,pnt1);
-  pnt(U2,V2,W2,pnt2);
-  pnt(U3,V3,W3,pnt3);
+  tet->pnt(U1,V1,W1,pnt1);
+  tet->pnt(U2,V2,W2,pnt2);
+  tet->pnt(U3,V3,W3,pnt3);
 
   x[0] = pnt1.x(); x[1] = pnt2.x(); x[2] = pnt3.x();
   y[0] = pnt1.y(); y[1] = pnt2.y(); y[2] = pnt3.y();
   z[0] = pnt1.z(); z[1] = pnt2.z(); z[2] = pnt3.z();
-
-  // facetted first
 
   SVector3 d1(x[1]-x[0],y[1]-y[0],z[1]-z[0]);
   SVector3 d2(x[2]-x[0],y[2]-y[0],z[2]-z[0]);
@@ -1150,35 +1180,21 @@ void MTetrahedronN::getFaceRep(int num, double *x, double *y, double *z, SVector
   n[0].normalize();
   n[1] = n[0];
   n[2] = n[0];
- 
-  return;
- 
-  {
-    SVector3 d1(J1[0][0], J1[0][1], J1[0][2]);
-    SVector3 d2(J1[1][0], J1[1][1], J1[1][2]);
-    n[0] = crossprod(d1, d2);
-    n[0].normalize();
-  }
-  {
-    SVector3 d1(J2[0][0], J2[0][1], J2[0][2]);
-    SVector3 d2(J2[1][0], J2[1][1], J2[1][2]);
-    n[1] = crossprod(d1, d2);
-    n[1].normalize();
-  }
-  {
-    SVector3 d1(J3[0][0], J3[0][1], J3[0][2]);
-    SVector3 d2(J3[1][0], J3[1][1], J3[1][2]);
-    n[2] = crossprod(d1, d2);
-    n[2].normalize();
-  }
 }
 
+void MTetrahedronN::getFaceRep(int num, double *x, double *y, double *z, SVector3 *n)
+{
+  _myGetFaceRep(this, num, x, y, z, n, CTX.mesh.num_sub_edges);
+}
+
+void MTetrahedron10::getFaceRep(int num, double *x, double *y, double *z, SVector3 *n)
+{
+  _myGetFaceRep(this, num, x, y, z, n, CTX.mesh.num_sub_edges);
+}
 
 void MTetrahedron::getIntegrationPoints(int pOrder, int *npts, IntPt **pts) const
 {
 #if !defined(HAVE_GMSH_EMBEDDED)
-  extern int getNGQTetPts(int order);
-  extern IntPt *getGQTetPts(int order);
   *npts = getNGQTetPts(pOrder);
   *pts = getGQTetPts(pOrder);
 #endif
@@ -1202,8 +1218,6 @@ int MHexahedron::getVolumeSign()
 void MHexahedron::getIntegrationPoints(int pOrder, int *npts, IntPt **pts) const
 {
 #if !defined(HAVE_GMSH_EMBEDDED)
-  extern int getNGQHPts(int order);
-  extern IntPt *getGQHPts(int order);
   *npts = getNGQHPts(pOrder);
   *pts = getGQHPts(pOrder);
 #endif

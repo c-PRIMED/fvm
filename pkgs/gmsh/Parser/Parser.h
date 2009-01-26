@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -19,7 +19,7 @@ extern FILE *gmsh_yyin;
 extern int gmsh_yylineno;
 extern char *gmsh_yytext;
 extern int gmsh_yyviewindex;
-extern char gmsh_yyname[256];
+extern std::string gmsh_yyname;
 extern int gmsh_yyerrorstate;
 extern std::map<std::string, std::vector<double> > gmsh_yysymbols;
 

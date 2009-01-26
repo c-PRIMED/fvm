@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -62,6 +62,6 @@ PView *GMSH_FieldViewPlugin::execute(PView *v)
   }
   PView *v1 = getView(iView, v);
   if(!v1) return v;
-        field->put_on_view(v1);
+  field->put_on_view(v1);
   return v1;
 }

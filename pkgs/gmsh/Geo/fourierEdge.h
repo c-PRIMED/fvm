@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -6,6 +6,7 @@
 #ifndef _FOURIER_EDGE_H_
 #define _FOURIER_EDGE_H_
 
+#include "GmshConfig.h"
 #include "GEdge.h"
 #include "GModel.h"
 #include "fourierVertex.h"
@@ -26,7 +27,6 @@ class fourierEdge : public GEdge {
   virtual GeomType geomType() const { return ParametricCurve; }
   virtual GPoint point(double p) const;
   virtual SVector3 firstDer(double par) const;
-  virtual double parFromPoint(const SPoint3 &pt) const;
   virtual int minimumMeshSegments () const;
   virtual int minimumDrawSegments () const;
   ModelType getNativeType() const { return FourierModel; }

@@ -1,12 +1,13 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 //
 // GModelIO_CGNS.cpp - Copyright (C) 2008 S. Guzik, C. Geuzaine, J.-F. Remacle
 
-#include "GModel.h"
+#include "GmshConfig.h"
 #include "GmshMessage.h"
+#include "GModel.h"
 #include "CGNSOptions.h"
 
 #if defined(HAVE_LIBCGNS)

@@ -99,6 +99,9 @@ ${LIB}: ${OBJ} ${OBJX}
 	${AR} ${ARFLAGS}${LIB} ${OBJ} ${OBJX} 
 	${RANLIB} ${LIB}
 
+cpobj: ${OBJ} ${OBJX} 
+	cp -f ${OBJ} ${OBJX} ../../lib/
+
 .c${OBJEXT}:
 	${CC} ${CFLAGS} ${DASH}c $< ${DASH}o ${<:.c=${OBJEXT}}
 
@@ -108,13 +111,7 @@ ${LIB}: ${OBJ} ${OBJX}
 clean:
 	rm -f */*.o */*.obj
 
-# Doesn't quite work
-# depend:
-# 	(sed '/^# DO NOT DELETE THIS LINE/q' Makefile && \
-# 	${CXX} -MM ${CFLAGS} ${SRC} \
-# 	) >Makefile.new
-# 	cp Makefile Makefile.bak
-# 	cp Makefile.new Makefile
-# 	rm -f Makefile.new
+depend:
+	true
 
 # DO NOT DELETE THIS LINE

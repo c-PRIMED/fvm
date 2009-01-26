@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -19,15 +19,13 @@ class gmshEdge : public GEdge {
   virtual Range<double> parBounds(int i) const;
   virtual GeomType geomType() const;
   virtual GPoint point(double p) const;
-  virtual GPoint closestPoint(const SPoint3 & queryPoint) const;
   virtual SVector3 firstDer(double par) const;
   ModelType getNativeType() const { return GmshModel; }
   void * getNativePtr() const { return c; }
-  virtual double parFromPoint(const SPoint3 &pt) const;
   virtual int minimumMeshSegments() const;
   virtual int minimumDrawSegments() const;
   virtual void resetMeshAttributes();
-  virtual SPoint2 reparamOnFace(GFace *face, double epar, int dir) const;
+  virtual SPoint2 reparamOnFace(const GFace *face, double epar, int dir) const;
 };
 
 #endif

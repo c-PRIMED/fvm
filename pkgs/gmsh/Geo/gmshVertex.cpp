@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -39,7 +39,7 @@ GEntity::GeomType gmshVertex::geomType() const
     return Point;
 }
 
-SPoint2 gmshVertex::reparamOnFace(GFace *face, int dir) const
+SPoint2 gmshVertex::reparamOnFace(const GFace *face, int dir) const
 {
   Surface *s = (Surface*)face->getNativePtr();
 

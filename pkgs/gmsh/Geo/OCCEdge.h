@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -6,6 +6,7 @@
 #ifndef _OCC_EDGE_H_
 #define _OCC_EDGE_H_
 
+#include "GmshConfig.h"
 #include "GEdge.h"
 #include "GModel.h"
 #include "OCCVertex.h"
@@ -32,15 +33,14 @@ class OCCEdge : public GEdge {
   virtual GPoint point(double p) const;
   virtual SVector3 firstDer(double par) const;
   virtual double curvature (double par) const;
-  virtual SPoint2 reparamOnFace(GFace * face, double epar, int dir) const ;
+  virtual SPoint2 reparamOnFace(const GFace *face, double epar, int dir) const;
   ModelType getNativeType() const { return OpenCascadeModel; }
   void * getNativePtr() const { return (void*)&c; }
-  virtual double parFromPoint(const SPoint3 &pt) const;
   virtual int minimumMeshSegments () const;
   virtual int minimumDrawSegments () const;
   bool is3D() const { return !curve.IsNull(); }
   void setTrimmed(OCCFace *);
-  bool isSeam(GFace *) const;
+  bool isSeam(const GFace *) const;
 };
 
 #endif

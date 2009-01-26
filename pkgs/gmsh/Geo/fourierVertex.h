@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -6,6 +6,7 @@
 #ifndef _FOURIER_VERTEX_H_
 #define _FOURIER_VERTEX_H_
 
+#include "GmshConfig.h"
 #include "GModel.h"
 #include "GVertex.h"
 #include "MVertex.h"

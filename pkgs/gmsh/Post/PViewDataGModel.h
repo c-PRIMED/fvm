@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -123,6 +123,8 @@ class PViewDataGModel : public PViewData {
   DataType _type;
   // cache last element to speed up loops
   MElement *_getElement(int step, int ent, int ele);
+  // helper function to populate the interpolation matrix list
+  void _addInterpolationMatricesForElement(MElement *e);
  public:
   PViewDataGModel(DataType type=NodeData);
   ~PViewDataGModel();

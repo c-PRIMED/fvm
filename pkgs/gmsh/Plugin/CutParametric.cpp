@@ -1,15 +1,17 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <math.h>
+#include "GmshConfig.h"
 #include "OctreePost.h"
 #include "CutParametric.h"
 #include "Context.h"
 
 #if defined(HAVE_FLTK)
-#include "GmshUI.h"
+#include <FL/gl.h>
+#include "drawContext.h"
 #include "Draw.h"
 #endif
 
@@ -101,7 +103,7 @@ int GMSH_CutParametricPlugin::fillXYZ()
 #endif
 }
 
-void GMSH_CutParametricPlugin::draw()
+void GMSH_CutParametricPlugin::draw(void *context)
 {
 #if defined(HAVE_FLTK)
   if(recompute){
@@ -118,8 +120,9 @@ void GMSH_CutParametricPlugin::draw()
     glEnd();
   }
   else{
+    drawContext *ctx = (drawContext*)context;
     for(unsigned int i = 0; i < x.size(); ++i)
-      Draw_Sphere(CTX.point_size, x[i], y[i], z[i], 1);
+      ctx->drawSphere(CTX.point_size, x[i], y[i], z[i], 1);
   }
 #endif
 }

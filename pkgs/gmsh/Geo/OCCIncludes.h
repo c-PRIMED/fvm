@@ -1,10 +1,12 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #ifndef _OCC_INCLUDES_
 #define _OCC_INCLUDES_
+
+#include "GmshConfig.h"
 
 #if defined(HAVE_OCC)
 

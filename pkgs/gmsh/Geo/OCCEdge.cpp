@@ -1,14 +1,16 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <limits>
-#include "GModel.h"
+#include "GmshConfig.h"
 #include "GmshMessage.h"
+#include "GModel.h"
 #include "OCCEdge.h"
 #include "OCCFace.h"
 #include "Context.h"
+
 extern Context_T CTX;
 
 #if defined(HAVE_OCC)
@@ -64,7 +66,7 @@ void OCCEdge::setTrimmed (OCCFace *f)
   }
 }
 
-SPoint2 OCCEdge::reparamOnFace(GFace *face, double epar, int dir) const
+SPoint2 OCCEdge::reparamOnFace(const GFace *face, double epar, int dir) const
 {
   const TopoDS_Face *s = (TopoDS_Face*) face->getNativePtr();
   double t0, t1;
@@ -107,7 +109,7 @@ SPoint2 OCCEdge::reparamOnFace(GFace *face, double epar, int dir) const
 }
 
 // True if the edge is a seam for the given face
-bool OCCEdge::isSeam(GFace *face) const
+bool OCCEdge::isSeam(const GFace *face) const
 {
   if (face->geomType() == GEntity::CompoundSurface)return false; 
   const TopoDS_Face *s = (TopoDS_Face*) face->getNativePtr();
@@ -144,12 +146,6 @@ SVector3 OCCEdge::firstDer(double par) const
   prop.SetParameter (par);
   gp_Vec d1 = prop.D1();
   return SVector3(d1.X(), d1.Y(), d1.Z());
-}
-
-double OCCEdge::parFromPoint(const SPoint3 &pt) const
-{
-  Msg::Error("parFromPoint not implemented for OCCEdge");
-  return std::numeric_limits<double>::max();
 }
 
 GEntity::GeomType OCCEdge::geomType() const
@@ -222,10 +218,8 @@ int OCCEdge::minimumDrawSegments() const
 {
   if(geomType() == Line)
     return GEdge::minimumDrawSegments();
-  else if(geomType() == Circle || geomType() == Ellipse)
-    return CTX.geom.circle_points;
   else
-    return 20 * GEdge::minimumDrawSegments();
+    return CTX.geom.num_sub_edges * GEdge::minimumDrawSegments();
 }
 
 double OCCEdge::curvature(double par) const 

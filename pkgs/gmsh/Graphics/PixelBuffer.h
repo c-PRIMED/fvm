@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -6,10 +6,11 @@
 #ifndef _PIXEL_BUFFER_H_
 #define _PIXEL_BUFFER_H_
 
-#include "GmshUI.h"
+#include <FL/gl.h>
+#include "GmshConfig.h"
 #include "GmshMessage.h"
-#include "MallocUtils.h"
 #include "Draw.h"
+#include "MallocUtils.h"
 
 #if defined(HAVE_OSMESA)
 #include <GL/osmesa.h>
@@ -63,10 +64,7 @@ class PixelBuffer{
   void Fill(int offscreen)
   {
     if(!offscreen){
-      SetOpenglContext();
-      ClearOpengl();
-      Draw3d();
-      Draw2d();
+      DrawCurrentOpenglWindow(true);
       glFinish();
       glPixelStorei(GL_PACK_ALIGNMENT, 1);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -86,9 +84,7 @@ class PixelBuffer{
       if(!OSMesaMakeCurrent(ctx, _pixels, GL_UNSIGNED_BYTE, _width, _height)){
 	Msg::Error("OSMesaMakeCurrent failed");
       }
-      ClearOpengl();
-      Draw3d();
-      Draw2d();
+      DrawCurrentOpenglWindow(false);
       glFinish();
       OSMesaDestroyContext(ctx);
 #else

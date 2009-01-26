@@ -1,8 +1,9 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
+#include "GmshConfig.h"
 #include "GModel.h"
 #include "MVertex.h"
 #include "MElement.h"
@@ -65,7 +66,7 @@ double OCCVertex::max_curvature_of_surfaces() const
   return max_curvature;
 }
 
-SPoint2 OCCVertex::reparamOnFace(GFace *gf, int dir) const
+SPoint2 OCCVertex::reparamOnFace(const GFace *gf, int dir) const
 {
   std::list<GEdge*>::const_iterator it = l_edges.begin();
   while(it != l_edges.end()){

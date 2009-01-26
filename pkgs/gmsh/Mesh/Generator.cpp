@@ -1,9 +1,10 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
 
 #include <stdlib.h>
+#include "GmshConfig.h"
 #include "GmshMessage.h"
 #include "Numeric.h"
 #include "Context.h"
@@ -17,6 +18,7 @@
 #include "BackgroundMesh.h"
 #include "BoundaryLayers.h"
 #include "HighOrder.h"
+#include "Generator.h"
 
 #if !defined(HAVE_NO_POST)
 #include "PView.h"
@@ -212,26 +214,26 @@ void GetStatistics(double stat[50], double quality[4][100])
       for(GModel::fiter it = m->firstFace(); it != m->lastFace(); ++it){
 	GetQualityMeasure((*it)->quadrangles, gamma, gammaMin, gammaMax,
 			  eta, etaMin, etaMax, rho, rhoMin, rhoMax, 
-			  disto, distoMin,distoMax,quality);
+			  disto, distoMin, distoMax, quality);
 	GetQualityMeasure((*it)->triangles, gamma, gammaMin, gammaMax,
 			  eta, etaMin, etaMax, rho, rhoMin, rhoMax,
-			  disto, distoMin,distoMax,quality);
+			  disto, distoMin, distoMax, quality);
       }
     }
     else{
       for(GModel::riter it = m->firstRegion(); it != m->lastRegion(); ++it){
 	GetQualityMeasure((*it)->tetrahedra, gamma, gammaMin, gammaMax,
 			  eta, etaMin, etaMax, rho, rhoMin, rhoMax, 
-			  disto, distoMin,distoMax,quality);
+			  disto, distoMin, distoMax, quality);
 	GetQualityMeasure((*it)->hexahedra, gamma, gammaMin, gammaMax,
 			  eta, etaMin, etaMax, rho, rhoMin, rhoMax,
-			  disto, distoMin,distoMax,quality);
+			  disto, distoMin, distoMax, quality);
 	GetQualityMeasure((*it)->prisms, gamma, gammaMin, gammaMax,
 			  eta, etaMin, etaMax, rho, rhoMin, rhoMax,
-			  disto, distoMin,distoMax,quality);
+			  disto, distoMin, distoMax,quality);
 	GetQualityMeasure((*it)->pyramids, gamma, gammaMin, gammaMax,
 			  eta, etaMin, etaMax, rho, rhoMin, rhoMax,
-			  disto, distoMin,distoMax,quality);
+			  disto, distoMin, distoMax, quality);
       }
     }
     double N = stat[9] + stat[10] + stat[11] + stat[12];
@@ -252,7 +254,7 @@ void GetStatistics(double stat[50], double quality[4][100])
 #if !defined(HAVE_NO_POST)
   stat[26] = PView::list.size();
   for(unsigned int i = 0; i < PView::list.size(); i++) {
-    PViewData *data = PView::list[i]->getData();
+    PViewData *data = PView::list[i]->getData(true);
     stat[27] += data->getNumPoints();
     stat[28] += data->getNumLines();
     stat[29] += data->getNumTriangles();
@@ -356,7 +358,7 @@ static void PrintMesh2dStatistics(GModel *m)
             "#e\t\ttau\t\t#Egood\t\t#Egood/#e\tCPU\n");
   }
 
-  fprintf(statreport,"\t%16s\t%d\t\t%d\t\t", CTX.base_filename, numFaces, nUnmeshed);
+  fprintf(statreport,"\t%16s\t%d\t\t%d\t\t", m->getName().c_str(), numFaces, nUnmeshed);
   fprintf(statreport,"%d\t\t%8.7f\t%8.7f\t%8.7f\t%d\t\t%8.7f\t",
           nTotT, avg / (double)nTotT, best, worst, nTotGoodQuality,
           (double)nTotGoodQuality / nTotT);
@@ -406,8 +408,8 @@ static void Mesh2D(GModel *m)
       if(nIter++ > 10) break;
     }
   }
-
-  gmshCollapseSmallEdges (*m);
+  
+  // gmshCollapseSmallEdges (*m);
 
   double t2 = Cpu();
   CTX.mesh_timer[1] = t2 - t1;
@@ -557,6 +559,12 @@ void GenerateMesh(GModel *m, int ask)
       if(CTX.mesh.optimize_netgen > i) OptimizeMeshNetgen(m);
     }
   }
+
+  // Subdivide into quads or hexas
+  if(m->getMeshStatus() == 2 && CTX.mesh.algo_subdivide == 1) 
+    RefineMesh(m, CTX.mesh.second_order_linear, true);
+  else if(m->getMeshStatus() == 3 && CTX.mesh.algo_subdivide == 2) 
+    RefineMesh(m, CTX.mesh.second_order_linear, false, true);
   
   // Create high order elements
   if(m->getMeshStatus() && CTX.mesh.order > 1) 

@@ -1,4 +1,4 @@
-// Gmsh - Copyright (C) 1997-2008 C. Geuzaine, J.-F. Remacle
+// Gmsh - Copyright (C) 1997-2009 C. Geuzaine, J.-F. Remacle
 //
 // See the LICENSE.txt file for license information. Please report all
 // bugs and problems to <gmsh@geuz.org>.
@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include "GmshConfig.h"
 #include "GmshMessage.h"
 #include "Gmsh.h"
 #include "Options.h"
@@ -17,9 +19,10 @@
 #endif
 
 #if defined(HAVE_FLTK)
+#include <FL/fl_ask.H>
 #include "GUI.h"
-#include "GUI_Extras.h"
-extern GUI *WID;
+#include "messageWindow.h"
+#include "extraDialogs.h"
 #endif
 
 extern Context_T CTX;
@@ -33,6 +36,8 @@ std::map<std::string, double> Msg::_timers;
 int Msg::_warningCount = 0;
 int Msg::_errorCount = 0;
 GmshMessage *Msg::_callback = 0;
+std::string Msg::_commandLine;
+std::string Msg::_launchDate;
 
 #if defined(HAVE_NO_VSNPRINTF)
 static int vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
@@ -58,12 +63,21 @@ void Msg::Init(int argc, char **argv)
   MPI_Comm_size(MPI_COMM_WORLD, &_commSize);
   MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 #endif
+  time_t now;
+  time(&now);
+  _launchDate = ctime(&now);
+  _launchDate.resize(_launchDate.size() - 1);
+  _commandLine.clear();
+  for(int i = 0; i < argc; i++){
+    if(i) _commandLine += " ";
+    _commandLine += argv[i];
+  }
 }
 
 void Msg::Exit(int level)
 {
   // delete the temp file
-  if(!_commRank) UnlinkFile(CTX.tmp_filename_fullpath);
+  if(!_commRank) UnlinkFile(CTX.home_dir + CTX.tmp_filename);
 
   // exit directly on abnormal program termination (level != 0). We
   // used to call abort() to flush open streams, but on modern OSes
@@ -79,44 +93,13 @@ void Msg::Exit(int level)
 #if defined(HAVE_FLTK)
   // if we exit cleanly (level==0) and we are in full GUI mode, save
   // the persistent info to disk
-  if(WID && !CTX.batch && !_commRank) {
-    if(CTX.session_save) {
-      CTX.position[0] = WID->m_window->x();
-      CTX.position[1] = WID->m_window->y();
-      CTX.gl_position[0] = WID->g_window->x();
-      CTX.gl_position[1] = WID->g_window->y();
-      CTX.msg_position[0] = WID->msg_window->x();
-      CTX.msg_position[1] = WID->msg_window->y();
-      CTX.msg_size[0] = WID->msg_window->w();
-      CTX.msg_size[1] = WID->msg_window->h();
-      CTX.opt_position[0] = WID->opt_window->x();
-      CTX.opt_position[1] = WID->opt_window->y();
-      CTX.plugin_position[0] = WID->plugin_window->x();
-      CTX.plugin_position[1] = WID->plugin_window->y();
-      CTX.plugin_size[0] = WID->plugin_window->w();
-      CTX.plugin_size[1] = WID->plugin_window->h();
-      CTX.field_position[0] = WID->field_window->x();
-      CTX.field_position[1] = WID->field_window->y();
-      CTX.field_size[0] = WID->field_window->w();
-      CTX.field_size[1] = WID->field_window->h();
-      CTX.stat_position[0] = WID->stat_window->x();
-      CTX.stat_position[1] = WID->stat_window->y();
-      CTX.vis_position[0] = WID->vis_window->x();
-      CTX.vis_position[1] = WID->vis_window->y();
-      CTX.clip_position[0] = WID->clip_window->x();
-      CTX.clip_position[1] = WID->clip_window->y();
-      CTX.manip_position[0] = WID->manip_window->x();
-      CTX.manip_position[1] = WID->manip_window->y();
-      CTX.ctx_position[0] = WID->context_geometry_window->x();
-      CTX.ctx_position[1] = WID->context_geometry_window->y();
-      CTX.solver_position[0] = WID->solver[0].window->x();
-      CTX.solver_position[1] = WID->solver[0].window->y();
-      file_chooser_get_position(&CTX.file_chooser_position[0],
-                                &CTX.file_chooser_position[1]);
-      Print_Options(0, GMSH_SESSIONRC, 0, 0, CTX.session_filename_fullpath);
-    }
+  if(GUI::available() && !_commRank) {
+    if(CTX.session_save)
+      Print_Options(0, GMSH_SESSIONRC, 0, 0, 
+                    (CTX.home_dir + CTX.session_filename).c_str());
     if(CTX.options_save)
-      Print_Options(0, GMSH_OPTIONSRC, 1, 0, CTX.options_filename_fullpath);
+      Print_Options(0, GMSH_OPTIONSRC, 1, 0, 
+                    (CTX.home_dir + CTX.options_filename).c_str());
   }
 #endif
 
@@ -139,13 +122,15 @@ void Msg::Fatal(const char *fmt, ...)
   if(_callback) (*_callback)("Fatal", str);
 
 #if defined(HAVE_FLTK)
-  if(WID){
-    WID->check();
+  if(GUI::available()){
+    GUI::instance()->check();
     std::string tmp = std::string("@C1@.") + "Fatal   : " + str;
-    WID->add_message(tmp.c_str());
-    WID->create_message_window();
-    WID->save_message(CTX.error_filename_fullpath);
-    WID->fatal_error(CTX.error_filename_fullpath);
+    GUI::instance()->messages->add(tmp.c_str());
+    GUI::instance()->messages->show();
+    GUI::instance()->messages->save((CTX.home_dir + CTX.error_filename).c_str());
+    fl_alert("A fatal error has occurred which will force Gmsh to abort.\n"
+             "The error messages have been saved in the following file:\n\n%s",
+             (CTX.home_dir + CTX.error_filename).c_str());
   }
 #endif
 
@@ -176,11 +161,11 @@ void Msg::Error(const char *fmt, ...)
   if(_callback) (*_callback)("Error", str);
 
 #if defined(HAVE_FLTK)
-  if(WID){
-    WID->check();
+  if(GUI::available()){
+    GUI::instance()->check();
     std::string tmp = std::string("@C1@.") + "Error   : " + str;
-    WID->add_message(tmp.c_str());
-    WID->create_message_window();
+    GUI::instance()->messages->add(tmp.c_str());
+    GUI::instance()->messages->show();
   }
 #endif
 
@@ -208,10 +193,10 @@ void Msg::Warning(const char *fmt, ...)
   if(_callback) (*_callback)("Warning", str);
 
 #if defined(HAVE_FLTK)
-  if(WID){
-    WID->check();
+  if(GUI::available()){
+    GUI::instance()->check();
     std::string tmp = std::string("@C1@.") + "Warning : " + str;
-    WID->add_message(tmp.c_str());
+    GUI::instance()->messages->add(tmp.c_str());
   }
 #endif
 
@@ -234,10 +219,10 @@ void Msg::Info(const char *fmt, ...)
   if(_callback) (*_callback)("Info", str);
 
 #if defined(HAVE_FLTK)
-  if(WID){
-    WID->check();
+  if(GUI::available()){
+    GUI::instance()->check();
     std::string tmp = std::string("Info    : ") + str;
-    WID->add_message(tmp.c_str());
+    GUI::instance()->messages->add(tmp.c_str());
   }
 #endif
 
@@ -273,16 +258,16 @@ void Msg::Direct(int level, const char *fmt, ...)
   if(_callback) (*_callback)("Direct", str);
 
 #if defined(HAVE_FLTK)
-  if(WID){
-    WID->check();
+  if(GUI::available()){
+    GUI::instance()->check();
     std::string tmp;
     if(level < 3)
       tmp = std::string("@C1@.") + str;
     else
       tmp = std::string("@C4@.") + str;
-    WID->add_message(tmp.c_str());
+    GUI::instance()->messages->add(tmp.c_str());
     if(level == 1)
-      WID->create_message_window();
+      GUI::instance()->messages->show();
   }
 #endif
   
@@ -306,12 +291,12 @@ void Msg::StatusBar(int num, bool log, const char *fmt, ...)
   if(_callback && log) (*_callback)("Info", str);
 
 #if defined(HAVE_FLTK)
-  if(WID){
-    if(log) WID->check();
-    WID->set_status(str, num - 1);
+  if(GUI::available()){
+    if(log) GUI::instance()->check();
+    GUI::instance()->setStatus(str, num - 1);
     if(log){
       std::string tmp = std::string("Info    : ") + str;
-      WID->add_message(tmp.c_str());
+      GUI::instance()->messages->add(tmp.c_str());
     }
   }
 #endif
@@ -335,9 +320,9 @@ void Msg::Debug(const char *fmt, ...)
   if(_callback) (*_callback)("Debug", str);
 
 #if defined(HAVE_FLTK)
-  if(WID){
+  if(GUI::available()){
     std::string tmp = std::string("Debug   : ") + str;
-    WID->add_message(tmp.c_str());
+    GUI::instance()->messages->add(tmp.c_str());
   }
 #endif
 
@@ -370,9 +355,9 @@ void Msg::ProgressMeter(int n, int N, const char *fmt, ...)
     strcat(str, str2);
 
 #if defined(HAVE_FLTK)
-    if(WID){
-      WID->set_status(str, 1);
-      WID->check();
+    if(GUI::available()){
+      GUI::instance()->setStatus(str, 1);
+      GUI::instance()->check();
     }
 #endif
     if(CTX.terminal){
@@ -386,7 +371,7 @@ void Msg::ProgressMeter(int n, int N, const char *fmt, ...)
 
   if(n > N - 1){
 #if defined(HAVE_FLTK)
-    if(WID) WID->set_status("", 1);
+    if(GUI::available()) GUI::instance()->setStatus("", 1);
 #endif
     if(CTX.terminal){
       fprintf(stdout, "Done!                                              \r");
@@ -430,16 +415,16 @@ void Msg::PrintErrorCounter(const char *title)
   sprintf(err, "%5d error%s", _errorCount, _errorCount == 1 ? "" : "s");
 
 #if defined(HAVE_FLTK)
-  if(WID){
+  if(GUI::available()){
     std::string red("@C1@.");
-    WID->add_message((red + prefix + line).c_str());
-    WID->add_message((red + prefix + title).c_str());
-    WID->add_message((red + prefix + warn).c_str());
-    WID->add_message((red + prefix + err).c_str());
-    WID->add_message((red + prefix + help).c_str());
-    WID->add_message((red + prefix + line).c_str());
+    GUI::instance()->messages->add((red + prefix + line).c_str());
+    GUI::instance()->messages->add((red + prefix + title).c_str());
+    GUI::instance()->messages->add((red + prefix + warn).c_str());
+    GUI::instance()->messages->add((red + prefix + err).c_str());
+    GUI::instance()->messages->add((red + prefix + help).c_str());
+    GUI::instance()->messages->add((red + prefix + line).c_str());
     if(_errorCount){
-      WID->create_message_window();
+      GUI::instance()->messages->show();
       fl_beep();
     }
   }
@@ -461,7 +446,7 @@ double Msg::GetValue(const char *text, double defaultval)
   if(CTX.nopopup || _callback) return defaultval;
 
 #if defined(HAVE_FLTK)
-  if(!CTX.batch){
+  if(GUI::available()){
     char defaultstr[256];
     sprintf(defaultstr, "%.16g", defaultval);
     const char *ret = fl_input(text, defaultstr);
@@ -489,7 +474,7 @@ bool Msg::GetBinaryAnswer(const char *question, const char *yes,
   if(CTX.nopopup || _callback) return defaultval;
 
 #if defined(HAVE_FLTK)
-  if(!CTX.batch){
+  if(GUI::available()){
     if(fl_choice(question, no, yes, NULL))
       return true;
     else
