@@ -16,6 +16,7 @@
 #include "DiffusionDiscretization.h"
 #include "ConvectionDiscretization.h"
 #include "TimeDerivativeDiscretization.h"
+#include "IbmDiscretization.h"
 
 #include "Underrelaxer.h"
 #include "MomentumPressureGradientDiscretization.h"
@@ -358,7 +359,14 @@ public:
         
         discretizations.push_back(td);
     }
-    
+    #if 1
+    shared_ptr<Discretization>
+      id(new IbmDiscretization<VectorT3,DiagTensorT3,T>
+         (_meshes,_geomFields, _flowFields));
+
+    discretizations.push_back(id);
+    #endif
+
     Linearizer linearizer;
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
@@ -1428,19 +1436,21 @@ public:
 
   void advance(const int niter)
   {
+
     for(int n=0; n<niter; n++)
     { 
         MFRPtr mNorm = solveMomentum();
-        MFRPtr cNorm = solveContinuity();
+#if 0
+        //MFRPtr cNorm = solveContinuity();
 
         if (_niters < 5)
         {
             _initialMomentumNorm->setMax(*mNorm);
-            _initialContinuityNorm->setMax(*cNorm);
+	    //  _initialContinuityNorm->setMax(*cNorm);
         }
         
         MFRPtr mNormRatio((*mNorm)/(*_initialMomentumNorm));
-        MFRPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
+	// MFRPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
         
         if (_options.printNormalizedResiduals)
           cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
@@ -1451,6 +1461,7 @@ public:
         if ((*mNormRatio < _options.momentumTolerance) &&
             (*cNormRatio < _options.continuityTolerance))
           break;
+#endif
     }
   }
 
