@@ -66,9 +66,9 @@ public:
     const VectorT3 zeroVelocity(NumTypeTraits<VectorT3>::getZero());
     VectorT3 dR;        //local variable dR=r[c]-r[j]
     //set up solid cell veloicty to be solidVelocity
-    ofstream fp1, fp2;
-    fp1.open ("/home/linsun/Work/prism/app-memosa/src/fvm/test/ibm_velocity");
-    fp2.open ("/home/linsun/Work/prism/app-memosa/src/fvm/test/solid_velocity");
+    //ofstream fp1, fp2;
+    //fp1.open ("/home/linsun/Work/prism/app-memosa/src/fvm/test/ibm_velocity");
+    //fp2.open ("/home/linsun/Work/prism/app-memosa/src/fvm/test/solid_velocity");
     
     // fp=fopen("/home/linsun/Work/prism/app-memosa/src/fvm/test/ibm_velocity","w");
     for (int c=0; c<nCells; c++)
@@ -90,7 +90,7 @@ public:
 	rCell[c]=0;                     //residual is zero
 	//rCell[c]= NumTypeTraits<VectorT3>::getZero;
 	//fprintf(fp, "%i\t%f\t%f\t%f\n", c,cellVelocity[c][0],cellVelocity[c][1],cellVelocity[c][2]);
-	fp2 << c << cellVelocity[c] << endl;
+	//fp2 << c << cellVelocity[c] << endl;
  
       }
       //fclose(fp);
@@ -121,13 +121,13 @@ public:
 	  rCell[c]-=offdiag[nbpos]*cellVelocity[j];
 	}
 	rCell[c]+=cellVelocity[c];
-	fp1 << c << cellVelocity[c] << endl;
+	//fp1 << c << cellVelocity[c] << endl;
 
       }
       #endif
     }
- fp1.close();
- fp2.close();
+ //fp1.close();
+ //fp2.close();
   }
 
   private:
