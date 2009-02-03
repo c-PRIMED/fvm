@@ -162,6 +162,14 @@ public:
   {
     return mag2() < tolerance*tolerance;
   }
+
+  bool greaterThanElementwise(const Vector& y) const
+  {
+    for(int i=0; i<N; i++)
+      if (_data[i] <= y[i])
+        return false;
+    return true;
+  }
   
   static Vector getZero()
   {
