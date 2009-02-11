@@ -119,9 +119,16 @@ public:
   void setCoordinates(shared_ptr<Array<VecD3> > x) {_coordinates = x;}
   void setFaceNodes(shared_ptr<CRConnectivity> faceNodes);
   void setFaceCells(shared_ptr<CRConnectivity> faceCells);
-  
+
+  void setConnectivity(const StorageSite& rowSite, const StorageSite& colSite,
+                       shared_ptr<CRConnectivity> conn)
+  {
+    SSPair key(&rowSite,&colSite);
+    _connectivityMap[key] = conn;
+  }
 
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
+  ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
 
   const Array<int>& getIBType() const;
 
