@@ -87,15 +87,19 @@ def main():
 
     if options.all:
         os.system("/bin/rm -rf %s" % os.path.join(os.getcwd(), "build-%s" % cname))
-        
+
     BuildPkg.setup(cname, srcpath)
-    build_utils.run_commands('before',0)
+    build_utils.run_commands('before',0)        
     fix_path('PATH', BuildPkg.bindir, 1, 0)
-    fix_path('PYTHONPATH', BuildPkg.libdir, 1, 0)
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
     os.environ['MEMOSA_HOME'] = BuildPkg.blddir
     os.environ['MEMOSA_CONFNAME'] = cname
     bs = be = ts = te = 0
+    try:
+        oldpypath = os.environ['PYTHONPATH']
+    except:
+        oldpypath = None
+    BuildPkg.pypath = set_python_path(BuildPkg.blddir)    
 
     # if no options, default to build
     if not options.build and not options.test and not options.submit and not options.update:
@@ -153,21 +157,29 @@ def main():
     if options.build and not build_failed:
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
         print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
-        print >>f, "export PYTHONPATH="+BuildPkg.libdir+":$PYTHONPATH"
+        try:
+            if os.environ['PYTHONPATH']:
+                print >>f, "export PYTHONPATH="+os.environ['PYTHONPATH']
+        except:
+            pass
         print >>f, "export PATH=%s:$PATH" % BuildPkg.bindir
         print >>f, "\n# Need this to recompile MPM in its directory."
         print >>f, "export MEMOSA_CONFNAME=%s" % cname
         f.close
         print "\nDONE\nYou need to do the following to use the build."
         print "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
-        print "export PYTHONPATH="+BuildPkg.libdir+":$PYTHONPATH"
+        try:
+            if os.environ['PYTHONPATH']:
+                print "export PYTHONPATH="+os.environ['PYTHONPATH']
+        except:
+            pass
         print "export PATH=%s:$PATH" % BuildPkg.bindir
         print "OR source env.sh"
 
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
-    fix_path('PYTHONPATH', BuildPkg.libdir, 1, 1)
+    if oldpypath:
+        os.environ['PYTHONPATH'] = oldpypath 
     fix_path('PATH', BuildPkg.bindir, 1, 1)
 
-        
 if __name__ == "__main__":
     main()

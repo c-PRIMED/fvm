@@ -5,7 +5,7 @@
 Build package definitions.
 """
 
-import sys, os, testing, cgi
+import sys, os, testing, cgi, string
 from build_utils import *
 from config import config
 
@@ -54,6 +54,8 @@ class BuildPkg:
     setup = staticmethod(setup)
 
     def __init__(self, sdir, copytype):
+        if not hasattr(self, 'name'):
+            self.name = string.lower(self.__class__.__name__)
         self.sdir = os.path.join(self.topdir, sdir)
         self.copy_sources = copytype
         self.bdir = os.path.join(self.blddir, "build", self.name)
@@ -163,7 +165,6 @@ class BuildPkg:
 #########################################################
 
 class Lammps(BuildPkg):
-    name = "lammps"
     def _build(self):
         os.chdir('src')
         ret = self.sys_log("make -j4");
@@ -184,7 +185,6 @@ class Lammps(BuildPkg):
         return ret
 
 class Gmsh(BuildPkg):
-    name = "gmsh"
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s --with-fltk-prefix= %s --with-gsl-prefix=%s" \
                                 % (self.sdir, self.blddir, self.blddir, self.blddir))
@@ -196,12 +196,10 @@ class Gmsh(BuildPkg):
         return self.sys_log("make clean")
 
 class Numpy(BuildPkg):
-    name = "numpy"
     def _install(self):
         return self.sys_log("python setup.py install")
 
 class Numeric(BuildPkg):
-    name = "numeric"
     def _build(self):
         return self.sys_log("python setup.py build")
     def _install(self):
@@ -210,13 +208,12 @@ class Numeric(BuildPkg):
 class NetCDF4(BuildPkg):
     name = "netCDF4"
     def _install(self):
-        return self.sys_log("NETCDF3_DIR=%s python setup-nc3.py install" % self.blddir)
+        return self.sys_log("NETCDF3_DIR=%s python setup-nc3.py install --prefix=%s" % (self.blddir, self.blddir))
 
 # FLTK (pronounced "fulltick") is a cross-platform C++ GUI toolkit.
 # http://www.fltk.org/
 # Version 1.1.9 required by gmsh
 class Fltk(BuildPkg):
-    name = "fltk"
     def _configure(self):
         return self.sys_log("%s/configure --enable-xft --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
@@ -227,18 +224,17 @@ class Fltk(BuildPkg):
         return self.sys_log("make clean")
     
 class Python(BuildPkg):
-    name = "python"
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s --enable-shared" % (self.sdir, self.blddir))
     def _build(self):
         return self.sys_log("make -j4")
     def _install(self):
-        return self.sys_log("make install")
+        self.sys_log("make install")
+        BuildPkg.pypath = set_python_path(self.blddir)
     def _clean(self):
         return self.sys_log("make clean")
 
 class Netcdf(BuildPkg):
-    name = "netcdf"
     def _configure(self):
         return self.sys_log("%s/configure --with-pic -prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
@@ -253,7 +249,6 @@ class Netcdf(BuildPkg):
 # numerical analysis, written in C. 
 # http://www.gnu.org/software/gsl/
 class Gsl(BuildPkg):
-    name = "gsl"
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
@@ -289,7 +284,6 @@ class Gsl(BuildPkg):
         return ok, errs
 
 class Rlog(BuildPkg):
-    name = "rlog"
     def _configure(self):
         return self.sys_log("%s/configure --disable-docs --disable-valgrind --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
@@ -300,7 +294,6 @@ class Rlog(BuildPkg):
         return self.sys_log("make clean")
 
 class Swig(BuildPkg):
-    name = "swig"
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
@@ -311,7 +304,6 @@ class Swig(BuildPkg):
         return self.sys_log("make clean")
 
 class Fftw(BuildPkg):
-    name = "fftw"
     def _configure(self):
         return self.sys_log("%s/configure --enable-float --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
@@ -323,7 +315,6 @@ class Fftw(BuildPkg):
 
 # We don't build boost, just use the headers
 class Boost(BuildPkg):
-    name = 'boost'
     def _install(self):
         idir = os.path.join(self.blddir, "include")
         return self.sys_log("/bin/ln -fs %s %s" % (self.sdir, idir))
@@ -353,7 +344,6 @@ class MPM(BuildPkg):
         return self.sys_log("make clean")
 
 class Fvm(BuildPkg):
-    name = "fvm"
     # from fvm sources
     def getArch(self):
         if sys.platform == 'linux2':
@@ -383,8 +373,9 @@ class Fvm(BuildPkg):
             vers = '4.2.1'
         pdir = os.path.join(self.sdir, "build", self.getArch(), vers, "debug", "bin")
         os.chdir(pdir)
+
         self.sys_log("install testLinearSolver %s" % self.bindir)
-        self.sys_log("install *.so *.py %s" % self.libdir)
+        self.sys_log("install *.so *.py %s" % self.pypath)
         
         # install scripts
         pdir = os.path.join(self.sdir, "scripts")
@@ -392,6 +383,5 @@ class Fvm(BuildPkg):
         self.sys_log("install *.py %s" % self.bindir)     
         return 0
 
-# self.__class__.__name__
 
 
