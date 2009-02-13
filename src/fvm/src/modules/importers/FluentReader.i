@@ -8,6 +8,7 @@
 %include "std_vector.i"
 
 %include "Mesh.i"
+%include "Field.i"
 
 using namespace std;
 
