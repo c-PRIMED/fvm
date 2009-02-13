@@ -48,8 +48,14 @@ def qsub(bp, cname):
     f.write('cd  $PBS_O_WORKDIR\n')
     f.write('source env.sh\n')
     
-    for cmd in config.config('before', 0):
-        f.write(cmd + '\n')
+    # Load Modules
+    modules = config.config('Testing', 'modules')
+    if modules:
+        for m in modules.split():
+            f.write('module load %s\n' % m)            
+
+    # Execute optional command
+    f.write(config.config('Testing', 'before') + '\n')
 
     f.write('./make.py --test %s\n' % cname)
     f.close()

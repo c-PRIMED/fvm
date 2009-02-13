@@ -94,15 +94,15 @@ def remove_file(name):
     except OSError:
         pass
 
-def do_env(c):
+def do_env(c, unload=False):
     a = c.split('=')
-    if len(a) == 1 or a[1] == '':
-        debug("unset "+a[0])
+    if unload:
+        debug("Unset "+a[0])
         os.unsetenv(a[0])
-    elif len(a) > 2:
+    elif len(a) != 2:
         fatal("Cannot parse command: env",c)
     else:
-        debug("%s=%s" % (a[0], a[1]))
+        debug("Set %s=%s" % (a[0], a[1]))
         os.putenv(a[0],a[1])
 
 def fix_path(k, v, prepend, unload):
@@ -138,9 +138,9 @@ def fix_path(k, v, prepend, unload):
 # modify the current environment.
 def module_load(m, unload=False):
     if unload:
-        debug("module_unload: "+m)
+        debug("Unoading module "+m)
     else:
-        debug("module_load: "+m)
+        debug("Loading module "+m)
         
     for line in os.popen("/bin/bash -l -c 'module show %s 2>&1'" % m):
         x = line.split()
@@ -173,31 +173,32 @@ def module_load(m, unload=False):
             if x[0].find('ERROR') > 0:
                 fatal("ERROR loading module '%s'" %  m, -1, 0)
 
-def run_commands(section, pkg):
-    if pkg == 0:
-        c = config(section, 0)
-    else:
-        c = config(pkg, section)
-    if c:
-        for cmd in c:
-            cargs = cmd.split(' ')
-            if cargs[0] == "module":
-                if cargs[1] == "load":
-                    for m in cargs[2:]:
-                        module_load(m)
-                elif cargs[1] == "unload":
-                    for m in cargs[2:]:
-                        module_load(m, 1)
-            elif cargs[0] == 'env':
-                do_env(''.join(cargs[1:]))
-            else:
-                debug("executing: "+cmd)
-                s = os.system(cmd)
-                if s:
-                    error("While running 'before' commands. Execution of")
-                    print cmd
-                    print "failed."
-                    sys.exit(-1)
+# pkg = 'ALL' or package name
+# section = 'before' or 'after'
+# Runs commands and [un]loads modules and [un]sets env variables
+def run_commands(pkg, section):
+
+    # First load modules
+    mods = config(pkg, 'modules')
+    if mods:
+        for m in mods.split():
+            module_load(m, section=='after')
+
+    # Optionally set an environment variable
+    env = config(pkg, 'env')
+    if env:
+        do_env(env, section=='after')
+
+    # Optionally run a command
+    cmd = config(pkg, section)
+    if cmd:
+        debug("executing: "+cmd)
+        s = os.system(cmd)
+        if s:
+            error("While running 'before' commands. Execution of")
+            print cmd
+            print "failed."
+            sys.exit(-1)
 
 def copytree(src, dst, ctype):
     names = os.listdir(src)

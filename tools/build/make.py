@@ -89,7 +89,7 @@ def main():
         os.system("/bin/rm -rf %s" % os.path.join(os.getcwd(), "build-%s" % cname))
 
     BuildPkg.setup(cname, srcpath)
-    build_utils.run_commands('before',0)        
+    build_utils.run_commands('ALL', 'before')        
     fix_path('PATH', BuildPkg.bindir, 1, 0)
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
     os.environ['MEMOSA_HOME'] = BuildPkg.blddir
@@ -152,7 +152,7 @@ def main():
     if options.submit:
         cdash.submit(BuildPkg, cname, sys.argv, options.nightly)
 
-    build_utils.run_commands('after',0)
+    build_utils.run_commands('ALL', 'after')
 
     if options.build and not build_failed:
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')

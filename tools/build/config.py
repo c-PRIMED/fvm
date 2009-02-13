@@ -21,7 +21,7 @@ _config_srcs = {
 
 def config(x,y):
     try:
-        #print "GET %s %s -> %s" % (x, y, _config[x][y])
+        # print "GET %s %s -> %s" % (x, y, _config[x][y])
         return _config[x][y]
     except:
         return ''
@@ -36,34 +36,20 @@ def set_section(sec):
 
 def set_value(val):
     global section
-    #print "SET %s %s" %(section, val)
+    # print "SET %s %s" %(section, val)
     if section == '':
         print "Error: No section set."
         return False
-    if section == 'before' or section == 'after':
-        try:
-            _config[section][0].append(val)
-        except:
-            _config[section] = {0: [val]}
-    else:
-        val = val.split('=')
-        if val[0] == 'skip' and len(val) == 1:
-            val.append(1)
-        if len(val) != 2:
-            return False
-        if val[0] == 'before' or val[0] == 'after':
-            try:
-                _config[section][val[0]].append(val[1])
-            except:
-                try: 
-                    _config[section][val[0]] = [val[1]]
-                except KeyError: 
-                    _config[section] = {val[0]:[val[1]]}
-        else:
-            try: 
-                _config[section][val[0]] = val[1]
-            except KeyError: 
-                _config[section] = {val[0]:val[1]}
+
+    eq = val.find('=')
+    if eq < 0:
+        return False
+    lval = val[:eq]
+    rval = val[eq+1:]           
+    try: 
+        _config[section][lval] = rval
+    except KeyError: 
+        _config[section] = {lval:rval}
     return True
 
 def read(srcpath, filename, sources, packages):

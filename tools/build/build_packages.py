@@ -83,7 +83,7 @@ class BuildPkg:
         # get new sources
         copytree(self.sdir, self.bdir, self.copy_sources)
         os.chdir(self.bdir)
-        run_commands('before',self.name)
+        run_commands(self.name, 'before')
         self.pstatus(self._configure())
 
     def clean(self):
@@ -111,7 +111,7 @@ class BuildPkg:
         pmess("INSTALL",self.name,self.blddir)
         os.chdir(self.bdir)
         self.pstatus(self._install())
-        run_commands('after',self.name)
+        run_commands(self.name, 'after')
 
     def test(self):
         self.state = 'testing'
@@ -123,7 +123,7 @@ class BuildPkg:
             cprint('YELLOW', "%s OK, %s FAIL" % (ok, errs))
         else:
             cprint('GREEN', "%s OK" % ok)
-        run_commands('after',self.name)
+        run_commands(self.name,'after')
         return ok, errs
         
     def sys_log(self, cmd):
