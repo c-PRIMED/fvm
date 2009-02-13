@@ -589,6 +589,13 @@ public:
     logDtor();
   }
 
+  void setDirichlet(const int nr)
+  {
+    for (int nb = _row[nr]; nb<_row[nr+1]; nb++)
+      _offDiag[nb] = NumTypeTraits<OffDiag>::getZero();
+    _diag[nr] = NumTypeTraits<Diag>::getNegativeUnity();
+  }
+  
   void setBoundary(const int nr)
   {
     _isBoundary[nr] = true;
