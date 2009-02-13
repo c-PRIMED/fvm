@@ -23,6 +23,7 @@
 #include "AMG.h"
 #include "Linearizer.h"
 #include "GradientModel.h"
+#include "MomentumIBDiscretization.h"
 
 template<class T>
 class FlowModel<T>::Impl
@@ -194,10 +195,11 @@ public:
 
             const FlowBC<T>& bc = *_bcMap[fg.id];
 
-            VectorT3 bVelocity;
-            bVelocity[0] = bc["specifiedXVelocity"];
-            bVelocity[1] = bc["specifiedYVelocity"];
-            bVelocity[2] = bc["specifiedZVelocity"];
+            FloatValEvaluator<VectorT3>
+              bVelocity(bc.getVal("specifiedXVelocity"),
+                        bc.getVal("specifiedYVelocity"),
+                        bc.getVal("specifiedZVelocity"),
+                        faces);
 
             const int nFaces = faces.getCount();
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
@@ -214,7 +216,7 @@ public:
                 for(int f=0; f<nFaces; f++)
                 {
                     const int c0 = faceCells(f,0);
-                    massFlux[f] = density[c0]*dot(bVelocity,faceArea[f]);
+                    massFlux[f] = density[c0]*dot(bVelocity[f],faceArea[f]);
                 }
             }
             else if (bc.bcType == "SpecifiedPressure")
@@ -367,6 +369,11 @@ public:
     discretizations.push_back(id);
     #endif
 
+    shared_ptr<Discretization>
+      ibm(new MomentumIBDiscretization<VectorT3,DiagTensorT3,T>
+             (_meshes,_geomFields,_flowFields));
+      
+    discretizations.push_back(ibm);
     Linearizer linearizer;
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
@@ -395,10 +402,11 @@ public:
             const TArray& massFlux = dynamic_cast<const TArray&>(_flowFields.massFlux[faces]);
             //            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
     
-            VectorT3 bVelocity;
-            bVelocity[0] = bc["specifiedXVelocity"];
-            bVelocity[1] = bc["specifiedYVelocity"];
-            bVelocity[2] = bc["specifiedZVelocity"];
+            FloatValEvaluator<VectorT3>
+              bVelocity(bc.getVal("specifiedXVelocity"),
+                        bc.getVal("specifiedYVelocity"),
+                        bc.getVal("specifiedZVelocity"),
+                        faces);
 
             if (bc.bcType == "NoSlipWall")
             {
@@ -415,7 +423,7 @@ public:
                     }
                     else
                     {
-                        gbc.applyDirichletBC(f,bVelocity);
+                        gbc.applyDirichletBC(f,bVelocity[f]);
                     }
                 }
             }
@@ -476,7 +484,7 @@ public:
   }
 
 
-  void discretizeMassFluxInterior(const Mesh& mesh,
+  T discretizeMassFluxInterior(const Mesh& mesh,
                                   const StorageSite& faces,
                                   MultiFieldMatrix& mfmatrix,
                                   const MultiField& xField, MultiField& rField)
@@ -521,6 +529,17 @@ public:
     const T momURF(_options["momentumURF"]);
     const T OneMinusmomURF(T(1.0)-momURF);
     
+    const Array<int>& ibType = mesh.getIBType();
+
+    const VectorT3Array& ibVelocity =
+      dynamic_cast<const VectorT3Array&>(_flowFields.velocity[mesh.getIBFaces()]);
+
+    // the net flux from ib faces
+    T boundaryFlux=0;
+      
+    // used to keep track of the current ib face index
+    int ibFace =0;
+    
     const int nFaces = faces.getCount();
     for(int f=0; f<nFaces; f++)
     {
@@ -555,17 +574,60 @@ public:
 
         const T pCoeff = rhoF*aByMomAp*(cellVolume[c0]+cellVolume[c1])/(dot(Af,ds));
 
-        massFlux[f] = rhoF*Vn - pCoeff*(p[c0]-p[c1]) + (1-momURF)*massFlux[f];
-        //massFlux[f] = rhoF*Vn  + OneMinusmomURF*massFlux[f];
+        if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
+            (ibType[c1] == Mesh::IBTYPE_FLUID))
+        {
+            massFlux[f] = rhoF*Vn - pCoeff*(p[c0]-p[c1]) + (1-momURF)*massFlux[f];
+            //massFlux[f] = rhoF*Vn  + OneMinusmomURF*massFlux[f];
+            
+            rCell[c0] -= massFlux[f];
+            rCell[c1] += massFlux[f];
+            
+            ppAssembler.getCoeff01(f) -=pCoeff;
+            ppAssembler.getCoeff10(f) -=pCoeff;
+            
+            ppDiag[c0] += pCoeff;
+            ppDiag[c1] += pCoeff;
+        }
+        else if ((ibType[c0] == Mesh::IBTYPE_SOLID) &&
+                 (ibType[c1] == Mesh::IBTYPE_SOLID))
+        {
+            // setup to get zero corrections
+            massFlux[f]=0;
+            ppDiag[c0] = -1;
+            ppDiag[c1] = -1;
+        }
+        else
+        {
+            // this is an iBFace, determine which cell is interior and which boundary
+            int interiorCell = c0;
+            int boundaryCell = c1;
+            if (ibType[c0] != Mesh::IBTYPE_FLUID)
+            {
+                interiorCell = c1;
+                boundaryCell = c0;
+                ppAssembler.getCoeff01(f)=1;
+                ppAssembler.getCoeff10(f)=0;
+            }
+            else
+            {
+                ppAssembler.getCoeff01(f)=0;
+                ppAssembler.getCoeff10(f)=1;
+            }
+            const VectorT3& faceVelocity = ibVelocity[ibFace];
+                
+            massFlux[f]= rho[interiorCell]*dot(Af,faceVelocity);
+            boundaryFlux += massFlux[f];
+            
+            rCell[interiorCell] -= massFlux[f];
+            rCell[boundaryCell] = 0;
+            
+            ppDiag[boundaryCell] = -1;
 
-        rCell[c0] -= massFlux[f];
-        rCell[c1] += massFlux[f];
-        
-        ppAssembler.getCoeff01(f) -=pCoeff;
-        ppAssembler.getCoeff10(f) -=pCoeff;
+            // increment count of ib faces
+            ibFace++;
+        }
 
-        ppDiag[c0] += pCoeff;
-        ppDiag[c1] += pCoeff;
     }
 
 #if 1
@@ -600,6 +662,7 @@ public:
         }
     }
 #endif
+    return boundaryFlux;
   }
 
   T fixedFluxContinuityBC(const StorageSite& faces,
@@ -1176,7 +1239,7 @@ public:
         
         // interior
         
-        discretizeMassFluxInterior(mesh,iFaces,matrix,x,b);
+        netFlux += discretizeMassFluxInterior(mesh,iFaces,matrix,x,b);
         
         // boundaries
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
@@ -1622,7 +1685,7 @@ public:
         cout << "    bc type " << pos.second->bcType << endl;
         foreach(typename FlowBC<T>::value_type& vp, *pos.second)
         {
-            cout << "   " << vp.first << " "  << vp.second <<  endl;
+            cout << "   " << vp.first << " "  << vp.second.constant <<  endl;
         }
     }
   }

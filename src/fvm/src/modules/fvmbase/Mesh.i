@@ -8,6 +8,14 @@
 
 using namespace std;
 
+class StorageSite
+{
+public:
+  int getCount() const;
+private:
+  StorageSite();
+};
+
 struct FaceGroup
 {
   const int id;
@@ -36,10 +44,17 @@ public:
   void setIBTypeForCell(const int c, const int type);
 
   VecD3 getCellCoordinate(const int c) const;
-
+  const StorageSite& getCells() const;
+  ArrayBase* getNodeCoordinates();
+  
   %extend
   {
     int getNumberOfCells() {return self->getCells().getCount();}
+    ArrayBase* getCoordinates()
+    {
+        cout << "mesh ext" << endl;
+        return self->getNodeCoordinates();
+    }
   }
   //  const FaceGroup&  getFaceGroup(const int i) const;
   

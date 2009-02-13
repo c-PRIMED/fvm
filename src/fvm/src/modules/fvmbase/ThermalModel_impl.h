@@ -236,7 +236,7 @@ public:
         cout << "    bc type " << pos.second->bcType << endl;
         foreach(typename ThermalBC<T>::value_type& vp, *pos.second)
         {
-            cout << "   " << vp.first << " "  << vp.second <<  endl;
+            cout << "   " << vp.first << " "  << vp.second.constant <<  endl;
         }
     }
   }

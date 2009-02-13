@@ -75,8 +75,12 @@ public:
   StorageSite& getCells() {return _cells;}
   StorageSite& getNodes() {return _nodes;}
 
-  //  const CRConnectivity& getConnectivity(const StorageSite& from,
-  //                                      const StorageSite& to) const;
+  // this should only be used when we know that the connectivity
+  // exists, for connectivities that are computed on demand the
+  // specific functions below should be used
+  
+  const CRConnectivity& getConnectivity(const StorageSite& from,
+                                        const StorageSite& to) const;
 
   const CRConnectivity& getAllFaceNodes() const;
   const CRConnectivity& getAllFaceCells() const;
@@ -138,6 +142,12 @@ public:
 
   VecD3 getCellCoordinate(const int c) const;
   //Array<int>& getIBType();
+
+  StorageSite& getIBFaces() {return _ibFaces;}
+  const StorageSite& getIBFaces() const {return _ibFaces;}
+
+  void setIBFaces(shared_ptr<Array<int> > faceList) {_ibFaceList = faceList;}
+  const Array<int>& getIbFaceList() const {return *_ibFaceList;}
   
 protected:
   const int _dimension;
@@ -156,7 +166,9 @@ protected:
   mutable shared_ptr<Array<int> > _ibType;
 
   Array<int>& getOrCreateIBType() const;
-  
+
+  StorageSite _ibFaces;
+  shared_ptr<Array<int> > _ibFaceList;
   //mutable Array<int> *_cellTypes;
   //mutable Array<int> *_cellTypeCount;
 };

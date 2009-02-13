@@ -16,7 +16,8 @@ Mesh::Mesh(const int dimension, const int id):
   _interfaceGroups(),
   _connectivityMap(),
   _coordinates(),
-  _ibType()
+  _ibType(),
+  _ibFaces(0)
 {
   logCtor();
 }
@@ -100,6 +101,16 @@ Mesh::getFaceNodes(const StorageSite& faces) const
     getAllFaceNodes().createOffset(faces,faces.getOffset(),faces.getCount());
   _connectivityMap[key] = thisFaceNodes;
   return *thisFaceNodes;
+}
+
+const CRConnectivity&
+Mesh::getConnectivity(const StorageSite& from, const StorageSite& to) const
+{
+  SSPair key(&from,&to);
+  ConnectivityMap::const_iterator pos = _connectivityMap.find(key);
+  if (pos != _connectivityMap.end())
+    return *pos->second;
+  throw CException("connectivity not defined");
 }
 
 const CRConnectivity&
