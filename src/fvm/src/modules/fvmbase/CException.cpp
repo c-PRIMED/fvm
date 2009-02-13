@@ -29,19 +29,23 @@ CException::CException(const string& what) :
             string s(traceStrings[x]);
             size_t funcNameBegin = s.find("(");
             size_t funcNameEnd = s.find("+");
-            if (funcNameBegin == string::npos) funcNameBegin=0;
-            if (funcNameEnd == string::npos) funcNameEnd=s.size();
-            
-            string funcNameMangled(s.begin()+funcNameBegin+1,s.begin()+funcNameEnd);
-
-            string fileName(s.begin(),s.begin()+funcNameBegin);
-
-            string offset(s.begin() + funcNameEnd, s.end());
-            
-            char *realName = abi::__cxa_demangle(funcNameMangled.c_str(), 0, 0, &status);
-            
-            std::cout << x << " :  " << realName   << endl;
-            free(realName);
+            if (funcNameBegin != string::npos &&
+                funcNameEnd != string::npos)
+            {
+                string funcNameMangled(s.begin()+funcNameBegin+1,
+                                       s.begin()+funcNameEnd);
+                
+                string fileName(s.begin(),s.begin()+funcNameBegin);
+                
+                string offset(s.begin() + funcNameEnd, s.end());
+                
+                char *realName = abi::__cxa_demangle(funcNameMangled.c_str(), 0, 0, &status);
+                
+                std::cout << x << " :  " << realName   << endl;
+                free(realName);
+            }
+            else
+                std::cout << x << " :  " << s   << endl;
         }
     }
     cout << "Backtrace...end " << endl;
