@@ -107,6 +107,12 @@ public:
       applyDirichletBC(i,bValue);
   }
   
+  void applyDirichletBC(const FloatValEvaluator<X>& bValue) const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+      applyDirichletBC(i,bValue[i]);
+  }
+  
   void applyNeumannBC(const int f,
                       const X& specifiedFlux) const
   {
@@ -152,6 +158,12 @@ public:
   {
     for(int i=0; i<_faces.getCount(); i++)
       applyNeumannBC(i,bFlux);
+  }
+  
+  void applyNeumannBC(const FloatValEvaluator<X>& bFlux) const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+      applyNeumannBC(i,bFlux[i]);
   }
   
   // boundary value = cell value, flux as defined by interior discretization

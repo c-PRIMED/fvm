@@ -7,9 +7,20 @@
 
 using namespace std;
 
+enum PrimType
+  {
+    PRIM_TYPE_BOOL,
+    PRIM_TYPE_INT,
+    PRIM_TYPE_FLOAT,
+    PRIM_TYPE_DOUBLE
+  };
+
 template<class T>
 struct NumTypeTraits : public T
-{};
+{
+  //default to double, override in the ones that aren't
+  static PrimType getPrimType() {return PRIM_TYPE_DOUBLE;}
+};
 
 template<>
 struct   NumTypeTraits<bool>
@@ -18,6 +29,7 @@ struct   NumTypeTraits<bool>
   typedef bool T_Scalar;
   typedef bool T_BuiltIn;
 
+  static PrimType getPrimType() {return PRIM_TYPE_BOOL;}
   static string getTypeName() {return "bool";}
   static int getDimension() {return 0;}
   static void getShape(int *shp) {}
@@ -46,6 +58,7 @@ struct   NumTypeTraits<int>
   typedef int T_Scalar;
   typedef int T_BuiltIn;
 
+  static PrimType getPrimType() {return PRIM_TYPE_INT;}
   static string getTypeName() {return "int";}
   static int getDimension() {return 0;}
   static void getShape(int *shp) {}
@@ -72,6 +85,8 @@ struct   NumTypeTraits<double>
   typedef double This_T;
   typedef double T_Scalar;
   typedef double T_BuiltIn;
+
+  static PrimType getPrimType() {return PRIM_TYPE_DOUBLE;}
   static string getTypeName() {return "double";}
   static int getDimension() {return 0;}
   static void getShape(int *shp) {}
@@ -99,6 +114,8 @@ struct NumTypeTraits<float>
   typedef float T_Scalar;
   typedef float This_T;
   typedef float T_BuiltIn;
+
+  static PrimType getPrimType() {return PRIM_TYPE_FLOAT;}
 
   static string getTypeName() {return "float";}
   static int getDimension() {return 0;}
