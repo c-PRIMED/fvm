@@ -76,6 +76,11 @@ public:
 
   int getLength() const {return _length;}
 
+  virtual PrimType getPrimType() const
+  {
+    return NumTypeTraits<T>::getPrimType();
+  }
+  
   virtual void getShape(int* shp) const
   {
     *shp = _length;
@@ -396,7 +401,6 @@ public:
   {
     return shared_ptr<Array>(new Array(*this,offset,length));
   }
-  
 
 private:
   Array(const Array&);

@@ -5,6 +5,7 @@
  
 #include "IContainer.h"
 
+  
 class ArrayBase : public IContainer
 {
 public:
@@ -57,6 +58,12 @@ public:
   virtual shared_ptr<ArrayBase>  dotWith(const ArrayBase& a) const=0;
   virtual shared_ptr<ArrayBase>  reduceSum() const=0;
   virtual void setSum(const ArrayBase& sumBase) = 0;
+
+  virtual int getDimension() const =0;
+  virtual void getShape(int *shape) const = 0;
+  virtual void *getData() const = 0;
+  virtual PrimType getPrimType() const = 0;
+  
 };
 
 #endif

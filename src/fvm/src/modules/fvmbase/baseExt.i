@@ -1,12 +1,18 @@
 %module fvmbaseExt
 %{
+#define SWIG_FILE_WITH_INIT
+  %}
+%{
 #include "CException.h"
 #include <rlog/StdioNode.h>
 #include <rlog/RLogChannel.h>
 #include "AMG.h"
 #include "BCGStab.h"
+#include "ArrayBase.h"
+  
 rlog::StdioNode *stdLog;
 %}
+
 
 %include "std_string.i"
 %include "std_vector.i"
@@ -32,14 +38,13 @@ namespace std{
 }
 
 using namespace std;
-
+%include "ArrayBase.i"
 %include "Mesh.i"
 %include "AMG.i"
 %include "BCGStab.i"
+%include "Field.i"
 
 %inline %{
-  
-
   void enableDebug(const string channel)
   {
           stdLog->subscribeTo(rlog::GetGlobalChannel(channel.c_str()));
@@ -49,6 +54,8 @@ using namespace std;
   %}
 
 %init %{
+
+  import_array();
 stdLog = new rlog::StdioNode();
 
 %}
