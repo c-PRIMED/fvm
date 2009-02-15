@@ -98,7 +98,7 @@ def main():
     try:
         oldpypath = os.environ['PYTHONPATH']
     except:
-        oldpypath = None
+        oldpypath = ''
     BuildPkg.pypath = set_python_path(BuildPkg.blddir)    
 
     # if no options, default to build

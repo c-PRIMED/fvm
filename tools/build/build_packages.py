@@ -373,9 +373,8 @@ class Fvm(BuildPkg):
             vers = '4.2.1'
         pdir = os.path.join(self.sdir, "build", self.getArch(), vers, "debug", "bin")
         os.chdir(pdir)
-
         self.sys_log("install testLinearSolver %s" % self.bindir)
-        self.sys_log("install *.so *.py %s" % self.pypath)
+        self.sys_log("install *.py *.so %s" % self.libdir)
         
         # install scripts
         pdir = os.path.join(self.sdir, "scripts")

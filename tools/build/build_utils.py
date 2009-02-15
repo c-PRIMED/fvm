@@ -234,16 +234,14 @@ def set_python_path(dir):
     py = os.popen("/bin/bash -c 'which python 2>&1'").readline()    
     ver = os.popen("/bin/bash -c 'python -V 2>&1'").readline()
     a,b = re.compile(r'Python ([^.]*).([^.]*)').findall(ver)[0]
+    libpath = os.path.join(dir, 'lib')
     pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a,b), 'site-packages')
     pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a,b), 'site-packages')
     pypath = pypath1 + ':' + pypath2
     if os.path.dirname(py) == os.path.join(dir, 'bin'):
-        os.environ['PYTHONPATH'] = ""
+        os.environ['PYTHONPATH'] = libpath
     else:
-        try:
-            os.environ['PYTHONPATH'] = pypath + ':' + os.environ['PYTHONPATH']
-        except:
-            os.environ['PYTHONPATH'] = pypath
+        os.environ['PYTHONPATH'] = libpath + ':' + pypath
     return pypath1
 
 if __name__ == '__main__':
