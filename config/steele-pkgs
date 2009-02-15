@@ -1,7 +1,16 @@
 # config file for steele builds
+# Format updated 13 Feb 2009
 
+# Unfortunately the installed python is too old for the latest numpy
+# and the optional python modules don't include required libraries.
 python:
-	Build=False
+	Build=True
+
+# needed for netCDF4 and general array usage
+numpy:
+	Build=True
+
+# needed for FVM
 rlog:
 	Build=True
 boost:
@@ -9,13 +18,18 @@ boost:
 swig:
 	Build=True
 
+# needed for gmsh and lammps
 fftw:
-	before=module load intel
-	after=module unload intel
 	Build=True
 
+# needed for MPM
 netcdf:
-	before=module load intel
-	after=module unload intel
+	env=F90=ifort
+	env=CC=icc
 	Build=True
+
+# Needed for MPM scripts
+netCDF4:
+	Build=True
+
 
