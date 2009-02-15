@@ -197,7 +197,7 @@ class Gmsh(BuildPkg):
 
 class Numpy(BuildPkg):
     def _install(self):
-        return self.sys_log("python setup.py install")
+        return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
 
 class Numeric(BuildPkg):
     def _build(self):

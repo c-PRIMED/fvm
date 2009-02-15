@@ -25,6 +25,7 @@ colors = {
 
 maxlen = 20
 verbose = False
+myenv = {}
 
 def _reset_types():
     global g_type
@@ -95,15 +96,26 @@ def remove_file(name):
         pass
 
 def do_env(c, unload=False):
-    a = c.split('=')
-    if unload:
-        debug("Unset "+a[0])
-        os.unsetenv(a[0])
-    elif len(a) != 2:
+    try:
+        a,b = c.split('=')
+    except:
         fatal("Cannot parse command: env",c)
+    if unload:
+        try:
+            old = myenv[a].pop()
+            os.environ[a] = old
+            if not myenv[a]:
+                del myenv[a]
+            debug("Set %s back to %s" % (a,old))
+        except:
+            debug("Unset "+a)
+            os.environ.pop(a)
     else:
-        debug("Set %s=%s" % (a[0], a[1]))
-        os.putenv(a[0],a[1])
+        debug("Set %s=%s" % (a,b))
+        if not myenv.has_key(a):
+            myenv[a] = []
+        os.environ[a] = b
+        myenv[a].append(os.environ[a])
 
 def fix_path(k, v, prepend, unload):
     if unload:
@@ -122,7 +134,7 @@ def fix_path(k, v, prepend, unload):
         e = ''
         
     if unload:
-        os.environ[k] = e.replace(v,'').strip(':')
+        os.environ[k] = e.replace(v,'',1).strip(':')
     else:
         if prepend:
             os.environ[k] = (v + ':' + e).strip(':')
@@ -147,12 +159,7 @@ def module_load(m, unload=False):
         if not x: continue
         if x[0] == 'setenv':
             val = ' '.join(x[2:])
-            if unload:
-                debug("unsetenv %s" % x[1])
-                os.unsetenv(x[1])
-            else:
-                debug("%s=%s" % (x[1], val))
-                os.putenv(x[1],val)
+            do_env("%s=%s" % (x[1], val), unload)
         elif x[0] == 'prepend-path':
             val = ' '.join(x[2:])
             fix_path(x[1], val, 1, unload)
@@ -161,7 +168,6 @@ def module_load(m, unload=False):
             fix_path(x[1], val, 0, unload)
         elif x[0] == 'module-whatis':
             val = ' '.join(x[1:])
-            debug ("[un]loading %s: %s" % (m, val))
         elif x[0] == 'module':
             if x[1] == 'load':
                 val = ' '.join(x[2:])
@@ -225,8 +231,8 @@ def copytree(src, dst, ctype):
         raise Error, errors
 
 def set_python_path(dir):
-    py = os.popen("/bin/bash -c 'which python 2>&1'").readline()
-    ver = os.popen("/bin/bash -c 'python --version 2>&1'").readline()
+    py = os.popen("/bin/bash -c 'which python 2>&1'").readline()    
+    ver = os.popen("/bin/bash -c 'python -V 2>&1'").readline()
     a,b = re.compile(r'Python ([^.]*).([^.]*)').findall(ver)[0]
     pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a,b), 'site-packages')
     pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a,b), 'site-packages')
