@@ -361,13 +361,14 @@ public:
         
         discretizations.push_back(td);
     }
-    #if 1
+
+#if 0
     shared_ptr<Discretization>
       id(new IbmDiscretization<VectorT3,DiagTensorT3,T>
          (_meshes,_geomFields, _flowFields));
 
     discretizations.push_back(id);
-    #endif
+#endif
 
     shared_ptr<Discretization>
       ibm(new MomentumIBDiscretization<VectorT3,DiagTensorT3,T>
@@ -531,8 +532,10 @@ public:
     
     const Array<int>& ibType = mesh.getIBType();
 
-    const VectorT3Array& ibVelocity =
-      dynamic_cast<const VectorT3Array&>(_flowFields.velocity[mesh.getIBFaces()]);
+    const StorageSite& ibFaces = mesh.getIBFaces();
+    
+    const VectorT3Array* ibVelocity = (ibFaces.getCount() > 0) ?
+      &(dynamic_cast<const VectorT3Array&>(_flowFields.velocity[mesh.getIBFaces()])) : 0;
 
     // the net flux from ib faces
     T boundaryFlux=0;
@@ -614,7 +617,7 @@ public:
                 ppAssembler.getCoeff01(f)=0;
                 ppAssembler.getCoeff10(f)=1;
             }
-            const VectorT3& faceVelocity = ibVelocity[ibFace];
+            const VectorT3& faceVelocity = (*ibVelocity)[ibFace];
                 
             massFlux[f]= rho[interiorCell]*dot(Af,faceVelocity);
             boundaryFlux += massFlux[f];
@@ -1503,17 +1506,16 @@ public:
     for(int n=0; n<niter; n++)
     { 
         MFRPtr mNorm = solveMomentum();
-#if 0
-        //MFRPtr cNorm = solveContinuity();
+        MFRPtr cNorm = solveContinuity();
 
         if (_niters < 5)
         {
             _initialMomentumNorm->setMax(*mNorm);
-	    //  _initialContinuityNorm->setMax(*cNorm);
+            _initialContinuityNorm->setMax(*cNorm);
         }
         
         MFRPtr mNormRatio((*mNorm)/(*_initialMomentumNorm));
-	// MFRPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
+	MFRPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
         
         if (_options.printNormalizedResiduals)
           cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
@@ -1524,7 +1526,6 @@ public:
         if ((*mNormRatio < _options.momentumTolerance) &&
             (*cNormRatio < _options.continuityTolerance))
           break;
-#endif
     }
   }
 
