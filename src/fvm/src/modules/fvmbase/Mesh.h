@@ -7,8 +7,12 @@
 #include "Vector.h"
 #include "Field.h"
 #include "FieldLabel.h"
+#include "MPM_Particles.h"
+
 
 class CRConnectivity;
+
+class MPM;
 
 struct FaceGroup
 {
@@ -70,11 +74,13 @@ public:
   const StorageSite& getFaces() const {return _faces;}
   const StorageSite& getCells() const {return _cells;}
   const StorageSite& getNodes() const {return _nodes;}
-
+  const StorageSite& getIBFaces() const {return _ibFaces;}
+  
   StorageSite& getFaces() {return _faces;}
   StorageSite& getCells() {return _cells;}
   StorageSite& getNodes() {return _nodes;}
-
+  StorageSite& getIBFaces() {return _ibFaces;}
+ 
   // this should only be used when we know that the connectivity
   // exists, for connectivities that are computed on demand the
   // specific functions below should be used
@@ -91,9 +97,7 @@ public:
   const CRConnectivity& getCellFaces() const;
   const CRConnectivity& getCellCells() const;
 
-  //const Array<int>& getCellTypes() const;
-  //const Array<int>& getCellTypeCount() const;
-
+  
   const FaceGroup& getInteriorFaceGroup() const {return *_interiorFaceGroup;}
   
   int getFaceGroupCount() const {return _faceGroups.size();}
@@ -123,16 +127,13 @@ public:
   void setCoordinates(shared_ptr<Array<VecD3> > x) {_coordinates = x;}
   void setFaceNodes(shared_ptr<CRConnectivity> faceNodes);
   void setFaceCells(shared_ptr<CRConnectivity> faceCells);
-
+  
   void setConnectivity(const StorageSite& rowSite, const StorageSite& colSite,
-                       shared_ptr<CRConnectivity> conn)
-  {
-    SSPair key(&rowSite,&colSite);
-    _connectivityMap[key] = conn;
-  }
+		       shared_ptr<CRConnectivity> conn);
+  
+  
 
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
-  ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
 
   const Array<int>& getIBType() const;
 
@@ -141,14 +142,17 @@ public:
   void setIBTypeForCell(const int c, const int type);
 
   VecD3 getCellCoordinate(const int c) const;
-  //Array<int>& getIBType();
 
-  StorageSite& getIBFaces() {return _ibFaces;}
-  const StorageSite& getIBFaces() const {return _ibFaces;}
+
+  void addIBFace(const int i, const int c);
+
+  const Array<int>& getIBFaceList() const;
+ 
+  void createIBFaceList(const int size) const;
 
   void setIBFaces(shared_ptr<Array<int> > faceList) {_ibFaceList = faceList;}
-  const Array<int>& getIbFaceList() const {return *_ibFaceList;}
-  
+
+
 protected:
   const int _dimension;
   const int _id;
@@ -156,6 +160,9 @@ protected:
   StorageSite _cells;
   StorageSite _faces;
   StorageSite _nodes;
+
+  StorageSite _ibFaces;
+ 
   shared_ptr<FaceGroup> _interiorFaceGroup;
   FaceGroupList _faceGroups;
   FaceGroupList _boundaryGroups;
@@ -165,10 +172,12 @@ protected:
 
   mutable shared_ptr<Array<int> > _ibType;
 
+  mutable shared_ptr<Array<int> > _ibFaceList;
+
   Array<int>& getOrCreateIBType() const;
 
-  StorageSite _ibFaces;
-  shared_ptr<Array<int> > _ibFaceList;
+ 
+ 
   //mutable Array<int> *_cellTypes;
   //mutable Array<int> *_cellTypeCount;
 };

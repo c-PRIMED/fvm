@@ -4,12 +4,14 @@
 #include "StorageSite.h"
 #include "CRConnectivity.h"
 
+
 Mesh::Mesh(const int dimension, const int id):
   _dimension(dimension),
   _id(id),
   _cells(0),
   _faces(0),
   _nodes(0),
+  _ibFaces(0),
   _interiorFaceGroup(),
   _faceGroups(),
   _boundaryGroups(),
@@ -17,7 +19,7 @@ Mesh::Mesh(const int dimension, const int id):
   _connectivityMap(),
   _coordinates(),
   _ibType(),
-  _ibFaces(0)
+  _ibFaceList()
 {
   logCtor();
 }
@@ -54,6 +56,15 @@ Mesh::createBoundaryFaceGroup(const int size, const int offset, const int id, co
   _boundaryGroups.push_back(fg);
   return fg->site;
 }
+
+
+void Mesh::setConnectivity(const StorageSite& rowSite, const StorageSite& colSite,
+	                       shared_ptr<CRConnectivity> conn)
+{
+  SSPair key(&rowSite,&colSite);
+  _connectivityMap[key] = conn;
+}
+
 
 const CRConnectivity&
 Mesh::getAllFaceNodes() const
@@ -165,6 +176,7 @@ Mesh::getCellCells() const
 }
 
 
+
 void
 Mesh::setFaceNodes(shared_ptr<CRConnectivity> faceNodes)
 {
@@ -216,3 +228,22 @@ Mesh::getCellCoordinate(const int c) const
 {
   return (*_coordinates)[c];
 }
+
+void
+Mesh::createIBFaceList(const int size) const
+{
+  _ibFaceList = shared_ptr<Array<int> >(new Array<int> (size));
+}
+
+const Array<int>&
+Mesh::getIBFaceList() const
+{
+  if (_ibFaceList)  return (*_ibFaceList);
+}
+
+void
+Mesh::addIBFace(const int i, const int c)
+{
+  (*_ibFaceList)[i]=c;
+}
+

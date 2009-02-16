@@ -151,6 +151,7 @@ public:
   
 
 private:
+  CRConnectivity(const CRConnectivity&);
   mutable StorageSite const *_rowSite;
   mutable StorageSite const *_colSite;
   mutable int _rowDim;

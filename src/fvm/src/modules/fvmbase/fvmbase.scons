@@ -21,7 +21,11 @@ srcBase = ['CException.cpp',
            'ThermalFields.cpp',
            'FlowFields.cpp',
            'Discretization.cpp',
-           'Linearizer.cpp'
+           'Linearizer.cpp',
+	   'CellMark_impl.cpp',
+	   'Octree.cpp',
+	   'CellMark.cpp',
+	   'MPM_Particles.cpp'
            ]
 
 env.createSharedLibrary('fvmbase',srcBase,['rlog'])

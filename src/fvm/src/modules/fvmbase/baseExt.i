@@ -42,7 +42,13 @@ using namespace std;
 %include "Mesh.i"
 %include "AMG.i"
 %include "BCGStab.i"
+
+%include "CellMark.i"
+%include "MPM_Particles.i"
+%include "Octree.i"
+
 %include "Field.i"
+
 
 %inline %{
   void enableDebug(const string channel)
