@@ -134,6 +134,7 @@ public:
   
 
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
+  ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
 
   const Array<int>& getIBType() const;
 
