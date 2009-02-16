@@ -22,8 +22,8 @@ from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
 fileBase = None
-numIterations = 1
-fileBase = "/home/sm/prism-meshes/case1/case1"
+numIterations = 10
+fileBase = "/home/sm/app-memosa/src/fvm/test/cav32"
 #fileBase = "/home/sm/a/data/wj"
 
 def usage():
@@ -79,19 +79,19 @@ reader.importFlowBCs(fmodel)
 
 momSolver = fvmbaseExt.AMG()
 momSolver.relativeTolerance = 1e-1
-#momSolver.nMaxIterations = 20
-#momSolver.maxCoarseLevels=20
+momSolver.nMaxIterations = 20
+momSolver.maxCoarseLevels=20
 momSolver.verbosity=0
 
-#contSolver = fvmbaseExt.AMG()
-pc = fvmbaseExt.AMG()
-pc.verbosity=0
-contSolver = fvmbaseExt.BCGStab()
-contSolver.preconditioner = pc
+contSolver = fvmbaseExt.AMG()
+#pc = fvmbaseExt.AMG()
+#pc.verbosity=0
+#contSolver = fvmbaseExt.BCGStab()
+#contSolver.preconditioner = pc
 contSolver.relativeTolerance = 1e-1
 contSolver.nMaxIterations = 20
 contSolver.verbosity=0
-#contSolver.maxCoarseLevels=20
+contSolver.maxCoarseLevels=20
 
 foptions = fmodel.getOptions()
 
@@ -100,8 +100,8 @@ foptions.pressureLinearSolver = contSolver
 
 foptions.momentumTolerance=1e-3
 foptions.continuityTolerance=1e-3
-foptions.setVar("momentumURF",0.95)
-foptions.setVar("pressureURF",0.1)
+foptions.setVar("momentumURF",0.7)
+foptions.setVar("pressureURF",0.3)
 foptions.printNormalizedResiduals=False
 
 """
@@ -119,15 +119,6 @@ advance(fmodel,numIterations)
 t1 = time.time()
 if outfile != '/dev/stdout':
     print '\nsolution time = %f' % (t1-t0)
-
-print 'solution time = %f' % (t1-t0)
-
-print '\n\npressure integrals\n'
-fmodel.printPressureIntegrals()
-
-print '\n\nmomentum flux integrals\n'
-fmodel.printMomentumFluxIntegrals()
-
 
 writer = exporters.FluentDataExporterA(reader,fileBase+"-prism.dat",False,0)
 
