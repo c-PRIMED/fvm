@@ -44,6 +44,11 @@ public:
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
                   MultiField& xField, MultiField& rField)
   {
+    const StorageSite& ibFaces = mesh.getIBFaces();
+
+    if (ibFaces.getCount() == 0)
+      return;
+    
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getCells();
     
