@@ -877,8 +877,8 @@ FluentReader::getGhostCellMap(const FluentCellZone& cz, const Array<int>& indice
 
   if (thisZoneCells == 0) return shared_ptr<OneToOneIndexMap>();
   
-  Array<int> *fromPtr = new Array<int>(thisZoneCells);
-  Array<int> *toPtr = new Array<int>(thisZoneCells);
+  shared_ptr<Array<int> >fromPtr(new Array<int>(thisZoneCells));
+  shared_ptr<Array<int> >toPtr(new Array<int>(thisZoneCells));
 
   Array<int>& from = *fromPtr;
   Array<int>& to = *toPtr;

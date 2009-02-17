@@ -291,8 +291,8 @@ MultiField::syncLocal()
           ArrayIndex oIndex(_arrayIndices[i].first,&oSite);
           if (_arrayMap.find(oIndex) != _arrayMap.end())
           {
-              const Array<int>& fromIndices = pos->second->fromIndices;
-              const Array<int>& toIndices = pos->second->toIndices;
+              const Array<int>& fromIndices = pos->second->getFromIndices();
+              const Array<int>& toIndices = pos->second->getToIndices();
               const ArrayBase& otherArray = *_arrays[_arrayMap[oIndex]];
               a.setSubsetFromSubset(otherArray,fromIndices,toIndices);
           }
@@ -316,8 +316,8 @@ MultiField::syncLocal(const ArrayIndex& i)
       ArrayIndex oIndex(i.first,&oSite);
       if (_arrayMap.find(oIndex) != _arrayMap.end())
       {
-          const Array<int>& fromIndices = pos->second->fromIndices;
-          const Array<int>& toIndices = pos->second->toIndices;
+          const Array<int>& fromIndices = pos->second->getFromIndices();
+          const Array<int>& toIndices = pos->second->getToIndices();
           const ArrayBase& otherArray = *_arrays[_arrayMap[oIndex]];
           a.setSubsetFromSubset(otherArray,fromIndices,toIndices);
       }

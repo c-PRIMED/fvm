@@ -313,7 +313,7 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
           ++pos)
         {
           const StorageSite& oSite = *pos->first;
-          const Array<int>& toIndices = pos->second->toIndices;
+          const Array<int>& toIndices = pos->second->getToIndices();
 
           map<int,int> otherToMyMapping;
 
@@ -338,8 +338,8 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
           }
 
           const int coarseMappersSize = otherToMyMapping.size();
-          Array<int> * coarseToIndices = new Array<int>(coarseMappersSize);
-          Array<int> * coarseFromIndices = new Array<int>(coarseMappersSize);
+          shared_ptr<Array<int> > coarseToIndices(new Array<int>(coarseMappersSize));
+          shared_ptr<Array<int> > coarseFromIndices(new Array<int>(coarseMappersSize));
           
           int ncm=0;
           for(map<int,int>::const_iterator pos =otherToMyMapping.begin();

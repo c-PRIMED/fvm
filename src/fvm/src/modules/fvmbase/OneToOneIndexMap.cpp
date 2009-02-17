@@ -1,9 +1,9 @@
 #include "OneToOneIndexMap.h"
 
-OneToOneIndexMap::OneToOneIndexMap(const Array<int>* fromIndices,
-                                   const Array<int>* toIndices) :
-  fromIndices(*fromIndices),
-  toIndices(*toIndices)
+OneToOneIndexMap::OneToOneIndexMap(shared_ptr<Array<int> > fromIndices,
+                                   shared_ptr<Array<int> > toIndices) :
+  _fromIndices(fromIndices),
+  _toIndices(toIndices)
 {
   logCtor();
 }

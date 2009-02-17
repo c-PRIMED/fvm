@@ -6,16 +6,20 @@
 class OneToOneIndexMap 
 {
 public:
-  OneToOneIndexMap(const Array<int>* fromIndices,
-                   const Array<int>* toIndices);
+  OneToOneIndexMap(shared_ptr<Array<int> > fromIndices,
+                   shared_ptr<Array<int> > toIndices);
   
   
   virtual ~OneToOneIndexMap();
 
   DEFINE_TYPENAME("OneToOneIndexMap");
 
-  const Array<int>& fromIndices;
-  const Array<int>& toIndices;
+  const Array<int>& getFromIndices() {return *_fromIndices;}
+  const Array<int>& getToIndices() {return *_toIndices;}
+  
+private:
+  shared_ptr<Array<int> > _fromIndices;
+  shared_ptr<Array<int> > _toIndices;
 };
 
 #endif
