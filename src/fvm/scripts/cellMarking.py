@@ -68,11 +68,23 @@ fmodel.init()
 import time
 t0 = time.time()
 
-#MPM solid
+solid = fvmbaseExt.MPM()
 
-#fvmbaseExt.Octree octree
+octree = fvmbaseExt.Octree() 
 
-fvmbaseExt.CellMark_Impl(mesh0, geomFields) #, solid, octree)
+option = 2
+
+fvmbaseExt.CellMark_Impl(mesh0, geomFields, fileBase, octree, solid, option)
+
+cells = mesh0.getCells()
+
+nCells = cells.getSelfCount()
+
+print nCells
+
+
+
+
 
 t1 = time.time()
 if outfile != '/dev/stdout':
