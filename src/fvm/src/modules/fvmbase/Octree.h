@@ -71,21 +71,19 @@ class   Octree
 
   const int               getNode(const double x, const double y, const double z);
 
-  const int               getNode(VectorT3 coordinate);
+  const int               getNode(const VectorT3 coordinate);
 
-  const int               getNode(VectorT3 coordinate,  double& shortestDistance);
+  const int               getNode(const VectorT3 coordinate,  double& shortestDistance);
 
-  const double            borderDistance(VectorT3 coordinate);
+  const double            borderDistance(const VectorT3 coordinate);
 
-  const vector<int>       getNodes(VectorT3 coordinate,  double radius);
+  void                    getNodes(const  VectorT3 coordinate,  const double radius, vector<int>& cellList);
 
-  const int               Naive_getNode(VectorT3 coordinate, int count, Point * points);
+  const int               Naive_getNode(const VectorT3 coordinate, const int count, const Point * points);
 
-  const vector<int>       Naive_getNodes(VectorT3 coordinate, int count, Point * points, double radius);
+  const vector<int>       Naive_getNodes(const VectorT3 coordinate, const int count, const Point * points, const double radius);
 
-  const bool              MPM_Points_Write(char *file);
-  
-  const shared_ptr<VectorT3Array>  MPM_Points_Read(char *file);
+ 
 
 
 //virtual const   bool            traverse(callback proc, void *data) const;

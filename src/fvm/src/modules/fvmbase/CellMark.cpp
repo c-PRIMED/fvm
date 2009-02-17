@@ -54,39 +54,7 @@ inCell(const int cellIndex,
 }
 
 
-const  shared_ptr<CRConnectivity> getSolidCells(const int nMPM, const int nCells, 
-				const Array<int> & MPM_PointstoCells )
-{
-  
-  StorageSite solid(nMPM,0);            //rowSite
-  StorageSite cells(nCells,0);          //colSite
 
-  shared_ptr<CRConnectivity> solidCells (new CRConnectivity (solid, cells));
-
-  //initCount: new Array for row
-  (*solidCells).initCount();
-
-  //specify the number of nonzeros for each row
-  //here, each solid point only has connectivity with one cell
-  //so for each row, it has only one nonzero
-  for(int p=0; p<nMPM; p++){
-    (*solidCells).addCount(p, 1);
-  }
-
-  //finishCount: allocate col array and reset row array
-  //ready to get the entries for nonzeros
-  (*solidCells).finishCount();
-
-  //add in the entries for each row
-  for(int p=0; p<nMPM; p++){
-    int value=MPM_PointstoCells[p];
-    (*solidCells).add(p, value);
-  }
-
-  (*solidCells).finishAdd();
-  return(solidCells);
-
-}
 
 
 void markCell( Mesh& mesh, const int nCells, 
@@ -200,7 +168,7 @@ void markIBFaces(Mesh& mesh, const int nCells,
     //then, allocate an array for ibFace
     mesh.createIBFaceList(ibFaceCount);
 
-    //insert the entries for ibface array
+    //insert the entries to ibface array
     ibFaceCount=0;
     for(int c=0; c<nCells; c++){
       int ibType = mesh.getIBTypeForCell(c);
@@ -302,7 +270,9 @@ const shared_ptr<CRConnectivity> setibFaceCells
 			   const Array<int>& ibFaceList,
 			   const StorageSite& ibFaces, 
 			   const StorageSite& cells,
-			   const CRConnectivity& faceCells)
+			   const CRConnectivity& faceCells,
+			   Octree& O,
+			   const VecD3Array& faceCentroid)
 {
 
   shared_ptr<CRConnectivity> ibFaceCells (new CRConnectivity (ibFaces, cells));
@@ -312,14 +282,28 @@ const shared_ptr<CRConnectivity> setibFaceCells
   
   const int rowSize = ibFaces.getCount();
 
+  //specify a radius for search
+  const int nCells = cells.getCount();
+  const double radius = 0.05;
+
   //specify the number of nonzeros for each row
-  
+ 
   for(int p=0; p<rowSize; p++){
     const int faceIndex = ibFaceList [p];
-    const int nP=1;
-    (*ibFaceCells).addCount(p, nP);   
+    const VecD3 center = faceCentroid[faceIndex];
+    int count=0;
+    //find the neighbors of center point within a radius
+    vector<int> cellIndexList;
+    O.getNodes(center, radius, cellIndexList);
+    for(int c=0; c<cellIndexList.size(); c++){
+      const int cellCandidate = cellIndexList[c];
+      if (mesh.getIBTypeForCell(cellCandidate) == 1) //if it is a fluid cell
+	count++;
+    }
+    (*ibFaceCells).addCount(p, count);   
   }
-
+    
+  
   //finishCount: allocate col array and reset row array
   //ready to get the entries for nonzeros
   (*ibFaceCells).finishCount();
@@ -327,18 +311,16 @@ const shared_ptr<CRConnectivity> setibFaceCells
   //add in the entries for each row
   for(int p=0; p<rowSize; p++){
     const int faceIndex = ibFaceList [p];
-    const int C0 = faceCells(faceIndex, 0);
-    const int C1 = faceCells(faceIndex, 1);
-    if (mesh.getIBTypeForCell(C0) == 1){
-      int value=C1;
-      (*ibFaceCells).add(p, value);
-    }
-    else if(mesh.getIBTypeForCell(C1) == 1){
-       int value=C0;
-      (*ibFaceCells).add(p, value);
+    const VecD3 center = faceCentroid[faceIndex];
+    vector<int> cellIndexList;
+    O.getNodes(center, radius, cellIndexList);
+    for(int c=0; c<cellIndexList.size(); c++){
+      const int cellCandidate = cellIndexList[c];
+      if (mesh.getIBTypeForCell(cellCandidate) == 1) //if it is a fluid cell
+	(*ibFaceCells).add(p, cellCandidate);
     }
   }
-  
+   
   (*ibFaceCells).finishAdd();
   
   return (ibFaceCells);

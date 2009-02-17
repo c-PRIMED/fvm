@@ -1,0 +1,25 @@
+﻿<summary>
+Build up Octree strcture for cell centroid;
+Locate each MPM particle into background cells;
+Mark cells as Fluid, Solid and IB types;
+Set up and store connectivities for further use.
+
+<script> --> cellMarking.py
+	1. define Object of octree
+	2. define Object of MPM
+	3. call main function to finish all cellmarking work
+	4. retrieve connectivity
+
+<main function> CellMark_Impl()
+	Note: search options
+	options 1 and 2 can provide fast search
+	options 3 and 4 are slow search by looping over all cells. Used for validation.
+	In option 2, the radius needs to be pre-defined. 
+
+<class Octree>
+	1. Octree build up
+	2. Octree search to find the nearest neighbor or neighbor list within a range
+
+<class MPM>
+	contains storagesite and particle coordinate and velocity
+

@@ -48,6 +48,7 @@ using namespace std;
 %include "Octree.i"
 
 %include "Field.i"
+%include "CRConnectivity.i"
 
 
 %inline %{

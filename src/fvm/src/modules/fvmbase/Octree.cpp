@@ -335,7 +335,7 @@ const bool Octree::report(FILE *fp)
  /// to a point. If the point is inside the bounds, return 0.
  /// <returns> closest distance to the point. </returns>
 
-const double Octree::borderDistance(VectorT3 coordinate){
+const double Octree::borderDistance(const VectorT3 coordinate){
   double x=coordinate[0];
   double y=coordinate[1];
   double z=coordinate[2];
@@ -371,6 +371,7 @@ const double Octree::borderDistance(VectorT3 coordinate){
   //note: it actually return the distance square
 }
 
+
 /// <summary> Get an object closest to a x/y/z. If there are branches at
 /// this node, then the branches are searched. The branches are
 /// checked first, to see if they are closer than the best distance
@@ -379,7 +380,7 @@ const double Octree::borderDistance(VectorT3 coordinate){
 /// <param name="x">left-right location in Octree Grid</param>
 /// <returns> the object that matches the best distance, null if no closer objects were found.</returns>
 
-const int Octree::getNode(VectorT3 coordinate,  double& shortestDistance)
+const int Octree::getNode(const VectorT3 coordinate,  double& shortestDistance)
 {
   static int node;
   double distance;
@@ -434,7 +435,7 @@ const int Octree::getNode(VectorT3 coordinate,  double& shortestDistance)
 // for this case, the data is an integer (cellIndex)
 // -----------------------------------------------------------------------------    
 	    
-const int Octree::getNode(double x, double y, double z)
+const int Octree::getNode(const double x, const double y, const double z)
 {
   int node;
   VectorT3 coordinate;
@@ -446,7 +447,7 @@ const int Octree::getNode(double x, double y, double z)
   return(node); 
 }
 
-const int Octree::getNode(VectorT3 coordinate)
+const int Octree::getNode(const VectorT3 coordinate)
 {
   int node;
   double LargeNumber=1.0e20;
@@ -459,9 +460,9 @@ const int Octree::getNode(VectorT3 coordinate)
 /// search mechanism similar to getNode(coordinate)
 /**********************************************************************/
 
-const vector<int> Octree::getNodes(VectorT3 coordinate,  double radius)
+void  Octree::getNodes(const VectorT3 coordinate,  const double radius, vector<int>& cellList)
 {
-  static vector<int> node;
+ 
   double distance;
   VectorT3 dR;
 
@@ -471,10 +472,9 @@ const vector<int> Octree::getNodes(VectorT3 coordinate,  double radius)
       dR=_points[i].coordinate-coordinate;
       distance=mag2(dR);
       if(distance < radius*radius){
-	node.push_back(_points[i].cellIndex);
+	cellList.push_back(_points[i].cellIndex);
       }
-    }
-    return node;
+    }  
   }
    //if it is a node, recursively traverse to child node
   else if(_nodeType==0){
@@ -488,13 +488,11 @@ const vector<int> Octree::getNodes(VectorT3 coordinate,  double radius)
       else{
 	double childDistance=_child[i]->borderDistance(coordinate);
 	if (childDistance < radius*radius){
-	   _child[i]->getNodes(coordinate, radius);	 
+	  _child[i]->getNodes(coordinate, radius, cellList);	 
 	}
       }
     }
   }
-
-  return(node);
 }
 
 /**********************************************************************/
@@ -502,7 +500,7 @@ const vector<int> Octree::getNodes(VectorT3 coordinate,  double radius)
 /// by simply looping over all the points
 /**********************************************************************/
 
-const int Octree::Naive_getNode(VectorT3 coordinate, int count, Point * points)
+const int Octree::Naive_getNode(const VectorT3 coordinate, const int count, const Point * points)
 {
   
   //naive search by looping over all points
@@ -523,7 +521,7 @@ const int Octree::Naive_getNode(VectorT3 coordinate, int count, Point * points)
 }
 
 
-const vector<int> Octree::Naive_getNodes(VectorT3 coordinate, int count, Point * points, double radius)
+const vector<int> Octree::Naive_getNodes(const VectorT3 coordinate, const int count, const Point * points, const double radius)
 {
   
   //naive search by looping over all points
@@ -540,71 +538,4 @@ const vector<int> Octree::Naive_getNodes(VectorT3 coordinate, int count, Point *
     return(cellIndexList);
 }
 
-const bool Octree::MPM_Points_Write(char *file)
 
-{
-
-  //here, we want to build up a solid circle 
-  //the number of solid points and coordiantes are written to file
-    FILE *fp;
-   
-
-    int nX=20, nY=20, nZ=1;
-    double gapX=1.0/nX, gapY=1.0/nY, gapZ=1.0/nZ;
-    double radius=0.2;
-    VectorT3 center;
-    center[0]=0.5;
-    center[1]=0.5;
-    center[2]=0.0;
-
-    int count=0;
-    VectorT3 temp;
-    VectorT3 solidPoint[nX*nY*nZ];
-    
-    for(int i=0; i<nX; i++){
-      for(int j=0; j<nY; j++){
-	for(int k=0; k<nZ; k++){
-	  temp[0]=i*gapX;
-	  temp[1]=j*gapY;
-	  temp[2]=k*gapZ;
-	  VectorT3 ds=temp-center;
-	  if(mag2(ds) <= radius*radius){
-	    solidPoint[count][0]=temp[0];
-	    solidPoint[count][1]=temp[1];
-	    solidPoint[count][2]=temp[2];	  
-	    count+=1;
-	  }
-	}
-      }
-    }
-
-    fp=fopen(file,"w");
-    fprintf(fp,"%i\n",count);
-    for(int p=0; p<count; p++){
-      fprintf(fp, "%lf\t%lf\t%lf\n", solidPoint[p][0],solidPoint[p][1],solidPoint[p][2]);
-    } 
-    fclose(fp);
-    return (true);
-}
-    
-const shared_ptr<VectorT3Array> Octree::MPM_Points_Read(char *file)
-
-{
-    FILE *fp;
-    int nMPM;
-    double x=0, y=0, z=0;
-
-    fp=fopen(file,"r");
-    fscanf(fp,"%i\n",&nMPM);
-    //VectorT3 MPM_Points[nMPM];
-    shared_ptr<VectorT3Array> MPM_Points ( new VectorT3Array(nMPM));
-    for(int i=0; i<nMPM; i++){
-      fscanf(fp,"%lf\t%lf\t%lf\n", &x, &y, &z);
-      (*MPM_Points)[i][0]=x;
-      (*MPM_Points)[i][1]=y;
-      (*MPM_Points)[i][2]=z;
-    }
-    fclose(fp);
-   
-    return (MPM_Points);
-}

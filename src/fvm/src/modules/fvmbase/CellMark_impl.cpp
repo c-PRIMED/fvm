@@ -10,7 +10,8 @@ typedef Octree::Bounds Bounds;
 typedef Vector<double, 3> VecD3;
 typedef Array<VecD3> VecD3Array;
 
-void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBase, Octree& O, MPM& solid)
+void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBase, 
+		   Octree& O, MPM& solid, const int option)
 
 {
 
@@ -58,19 +59,20 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     //build Octree
     O.build(points, count, threshold, maxDepth, bounds, currentDepth);
 
-    //Report Octree
-   
-    string fileName1=fileBase+"Octree_report.dat";
+#if 0
+    //Report Octree    
+    const string fileName1=fileBase+"Octree_report.dat";
     char* file1;
     file1=&fileName1[0];
     FILE *fp;
     fp=fopen(file1,"w");
     O.report(fp);
     fclose(fp);
+#endif
     
 
     //---so far, we have the Octree ready for search---//
-#if 1
+
 
    
     /**************************************************************************************/
@@ -82,9 +84,9 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     // MPM solid;
     //initialize particle velocity and coordinate and write into file
-    solid.setandwriteParticles(file2);
+    //solid.setandwriteParticles(file2);
 
-    //get coordinates
+    //get coordinate
     const shared_ptr<VecD3Array> MPM_Coordinates = solid.readCoordinates(file2);
 
     //get velocity
@@ -97,9 +99,9 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     
     const int nMPM = particles.getCount();
 
-    cout<<"nMPM is "<<nMPM<<endl;
+    //cout<<"nMPM is "<<nMPM<<endl;
 
-    const shared_ptr<VecD3Array> MPM_Points = solid.getCoordinates();
+    const shared_ptr<VecD3Array>& MPM_Points = solid.getCoordinates();
     
    
  
@@ -109,9 +111,9 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     
     //a temporary array to store point to cell connectivity
     Array<int> MPM_PointstoCells (nMPM);
-    int option = 2; 
+   
     //search options:
-    //option 1: search the nearest cell to this particle and judge if this particle falls to 
+    //option 1: search the nearest cell to this particle and see if this particle falls to 
     //--->this cell; if not, search the neighbors of this cell, until find the cell which 
     //--->contains this particle
     //option 2: search the cells within a radius to this particle using Octree,
@@ -121,11 +123,40 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     //---> find out which cell contains the particle
     //option 4: naive search all the cells and find out which cell contains the particle
    
-    if (option == 2){
-      double radius = 0.03;
+    if (option == 1){
       for(int p=0; p<nMPM; p++){
-	VecD3 MPM_point = (*MPM_Points)[p];
-	vector<int> cellIndexList=O.getNodes(MPM_point, radius);
+	const VecD3 MPM_point = (*MPM_Points)[p];
+	const int nearestCell = O.getNode(MPM_point);
+	int flag=0;
+	int inCellorNot=inCell(nearestCell, MPM_point, faceCells, cellFaces,
+			       faceArea,faceCentroid);
+	if (inCellorNot==1) {
+	  flag = 1;
+	  MPM_PointstoCells[p]=nearestCell;
+	}
+	while (flag == 0){
+	  const int nc = cellCells.getCount(nearestCell);
+	  for (int c = 0; c < nc; c ++){
+	    int cellCandidate = cellCells(nearestCell, c);
+	    inCellorNot=inCell(cellCandidate, MPM_point, faceCells, cellFaces,
+			       faceArea,faceCentroid);
+	    if (inCellorNot==1) {
+	      flag = 1;
+	      MPM_PointstoCells[p]=cellCandidate;
+	    }
+	  }
+	}
+      }
+    }
+	
+
+
+    if (option == 2){
+      const double radius = 0.05;
+      for(int p=0; p<nMPM; p++){
+	const VecD3 MPM_point = (*MPM_Points)[p];
+	vector<int> cellIndexList;
+	O.getNodes(MPM_point, radius, cellIndexList);
 	MPM_PointstoCells[p]=-1;
 	for (int i=0; i< cellIndexList.size(); i++)    {
 	  int cellCandidate = cellIndexList[i];
@@ -168,6 +199,14 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	 }
        }
     }
+
+
+    //for(int p=0; p<nMPM; p++){
+    // cout<<p<<" "<< MPM_PointstoCells[p]<<endl;
+    //}
+
+   
+
 	  
     /************************************************************************************/
     //---create the CRconnectivity for solid and cells---//
@@ -193,6 +232,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     const CRConnectivity& cellParticles = mesh.getConnectivity(cells, particles);
 
+    /*
     //test
     for(int c=0; c<nCells; c++){
       //for each solid point, find out how many cells have connectivity to it
@@ -202,6 +242,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	cout<<"cell "<<c<<"  has  "<<cellParticles(c,p)<<endl;
       }
     } 
+    */
 
     /**************************mark cell**********************************/
     markCell ( mesh, nCells, cellParticles, cellCells);
@@ -219,6 +260,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     const StorageSite&  ibFaces = mesh.getIBFaces();
    
     const Array<int>& ibFaceList = mesh.getIBFaceList();
+
     /************create ibFace to Particle connectivity****************/
 
     shared_ptr<CRConnectivity> ibFaceParticlesCR = 
@@ -228,17 +270,36 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     mesh.setConnectivity(ibFaces, particles, ibFaceParticlesCR);
 
+    const CRConnectivity& ibFaceParticles = mesh.getConnectivity(ibFaces, particles);
+
    
     /************************create ibFace to Cells connectivity**********/
 
      shared_ptr<CRConnectivity> ibFaceCellsCR = 
-       setibFaceCells (mesh, ibFaceList, ibFaces,  cells, faceCells);
+       setibFaceCells (mesh, ibFaceList, ibFaces,  cells, faceCells, O, faceCentroid);
   
   //store the CRconnectivity to mesh class
 
      mesh.setConnectivity(ibFaces, cells, ibFaceCellsCR);   
+
+     const CRConnectivity& ibFaceCells = mesh.getConnectivity(ibFaces, cells);
+
   
+     //test
+     for(int f=0; f<ibFaces.getCount(); f++){
+       const int faceIndex = ibFaceList[f];
+       //cout << faceCentroid[faceIndex] << endl;
+      //for each ibface find out how many fluid cells have connectivity to it
+      int nc = ibFaceParticles.getCount(f);
+      //what they are
+      for(int c=0; c<nc; c++){
+	//cout<<"face "<<faceIndex<<"  has  "<<ibFaceCells(f, c)<<endl;
+	cout<<(*MPM_Points)[ibFaceParticles(f,c)]<<endl;
+      }
+    } 
+     
+    
+ 
    
-   
-#endif
+ 
 }

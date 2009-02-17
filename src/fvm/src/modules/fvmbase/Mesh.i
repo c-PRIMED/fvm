@@ -12,6 +12,7 @@ class StorageSite
 {
 public:
   int getCount() const;
+  int getSelfCount() const;
 private:
   StorageSite();
 };
@@ -45,7 +46,11 @@ public:
 
   VecD3 getCellCoordinate(const int c) const;
   const StorageSite& getCells() const;
+  const StorageSite& getIBFaces() const;
   ArrayBase* getNodeCoordinates();
+
+  const CRConnectivity& getConnectivity(const StorageSite& from,
+                                        const StorageSite& to) const;
   
   %extend
   {

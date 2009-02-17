@@ -14,13 +14,13 @@ MPM::MPM():
 MPM::~MPM() { }
 
 
-void MPM::setandwriteParticles(char *file)
+void MPM::setandwriteParticles(const char *file)
 {
  //here, we want to build up a solid circle 
  //the number of solid points and coordiantes are written to file
     FILE *fp;
    
-    int nX=50, nY=50, nZ=1;
+    int nX=65, nY=65, nZ=1;
     double gapX=1.0/nX, gapY=1.0/nY, gapZ=1.0/nZ;
     double radius=0.2;
     VecD3 center;
@@ -70,7 +70,7 @@ void MPM::setandwriteParticles(char *file)
 }
 
 
-const shared_ptr<Array<VecD3> > MPM::readCoordinates(char *file)
+const shared_ptr<Array<VecD3> > MPM::readCoordinates(const char *file)
 
 {
     FILE *fp;
@@ -92,7 +92,7 @@ const shared_ptr<Array<VecD3> > MPM::readCoordinates(char *file)
     return (MPM_Points);
 }
 
-const shared_ptr<Array<VecD3> > MPM::readVelocities(char *file)
+const shared_ptr<Array<VecD3> > MPM::readVelocities(const char *file)
 
 {
     FILE *fp;
@@ -118,8 +118,8 @@ const shared_ptr<Array<VecD3> > MPM::readVelocities(char *file)
     return (MPM_Points);
 }
 
-void MPM::Init(shared_ptr<Array<VecD3> > coordinates,
-	       shared_ptr<Array<VecD3> > velocities )
+void MPM::Init(const shared_ptr<Array<VecD3> > coordinates,
+	       const shared_ptr<Array<VecD3> > velocities )
 {
 
   const int n = (*coordinates).getLength();  //number of particles

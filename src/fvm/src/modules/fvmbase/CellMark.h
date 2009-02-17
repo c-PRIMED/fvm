@@ -25,8 +25,6 @@ int inCell(const int cellIndex,
 	   const VecD3Array& faceArea,
 	   const VecD3Array& faceCentroid);
 
-const shared_ptr<CRConnectivity>  getSolidCells(const int nMPM, const int nCells, 
-				const Array<int> & MPM_PointstoCells );
 
 void reportCellMark (const Mesh& mesh, const int nCells, 
 		     const VecD3Array& cellCentroid,
@@ -45,7 +43,9 @@ const shared_ptr<CRConnectivity> setibFaceCells
 			   const Array<int>& ibFaceGroup,
 			   const StorageSite& ibFaces, 
 			   const StorageSite& cells,
-			   const CRConnectivity& faceCells);
+			   const CRConnectivity& faceCells,
+			   Octree& O,
+			   const VecD3Array& faceCentroid );
 
 const shared_ptr<CRConnectivity> setibFaceParticles 
                           (const Mesh& mesh,

@@ -19,23 +19,23 @@ class MPM
 
   const StorageSite& getParticles() const {return _particles;}
   
-  shared_ptr<Array<VecD3> > getCoordinates() {return  _coordinates;}
+  const shared_ptr<Array<VecD3> >& getCoordinates() {return  _coordinates;}
    
-  shared_ptr<Array<VecD3> > getVelocities() {return  _velocities;}
+  const shared_ptr<Array<VecD3> >& getVelocities() {return  _velocities;}
   
   
-  void setCoordinates(shared_ptr<Array<VecD3> > x) {_coordinates = x;}
+  void setCoordinates(const shared_ptr<Array<VecD3> > x) {_coordinates = x;}
  
-  void setVelocities(shared_ptr<Array<VecD3> > x) {_velocities = x;}
+  void setVelocities(const shared_ptr<Array<VecD3> > x) {_velocities = x;}
  
-  void setandwriteParticles(char *file);
+  void setandwriteParticles(const char *file);
 
-  const shared_ptr<Array<VecD3> > readVelocities(char *file);
+  const shared_ptr<Array<VecD3> > readVelocities(const char *file);
 
-  const shared_ptr<Array<VecD3> > readCoordinates(char *file);
+  const shared_ptr<Array<VecD3> > readCoordinates(const char *file);
    
-  void Init (shared_ptr<Array<VecD3> > coordinates,
-	     shared_ptr<Array<VecD3> > velocities );
+  void Init (const shared_ptr<Array<VecD3> > coordinates,
+	     const shared_ptr<Array<VecD3> > velocities );
 
  
  protected:

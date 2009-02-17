@@ -16,7 +16,8 @@
 
  
 
-void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBase, Octree& O, MPM& solid);
+void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBase, 
+		   Octree& O, MPM& solid, const int option);
 
 
  
