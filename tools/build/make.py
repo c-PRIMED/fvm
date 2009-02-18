@@ -152,7 +152,8 @@ def main():
     if options.submit:
         cdash.submit(BuildPkg, cname, sys.argv, options.nightly)
 
-    build_utils.run_commands('ALL', 'after')
+    if not options.test:
+        build_utils.run_commands('ALL', 'after')
 
     if options.build and not build_failed:
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
