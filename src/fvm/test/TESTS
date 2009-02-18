@@ -1,4 +1,4 @@
 Fvm001 mtest.py testLinearSolver MatrixMarket226.dat rhs226.dat --golden testLinearSolver.out
-Fvm002 mtest.py testFlowModel.py cav32 /dev/stdout --golden cav32-prism.dat
+Fvm002 mtest.py FvmTestFlowModel.py cav32 /dev/stdout --golden cav32-prism.dat
 
 
