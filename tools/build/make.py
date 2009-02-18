@@ -178,7 +178,9 @@ def main():
 
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
     if oldpypath:
-        os.environ['PYTHONPATH'] = oldpypath 
+        os.environ['PYTHONPATH'] = oldpypath
+    else:
+        del os.environ['PYTHONPATH']
     fix_path('PATH', BuildPkg.bindir, 1, 1)
 
 if __name__ == "__main__":

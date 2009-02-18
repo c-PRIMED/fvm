@@ -85,11 +85,16 @@ def run_all_tests(bp):
     fix_path('PATH', tooldir, 1, 0)
     fix_path('PATH', bp.bindir, 1, 0)
     fix_path('LD_LIBRARY_PATH', bp.libdir, 1, 0)
-    fix_path('PYTHONPATH', bp.libdir, 1, 0)
+    try:
+        oldpypath = os.environ['PYTHONPATH']
+    except:
+        oldpypath = ''    
+    set_python_path(bp.blddir)
 
     # test each package
     for p in bp.packages:
-        if not config(p.name,'Build'):
+        x = config(p.name,'Build')
+        if x == '' or not eval(x):
             debug ("Skipping " + p.name)
             continue
         tok, terrs =  p.test()
@@ -118,7 +123,10 @@ def run_all_tests(bp):
 
 
     # restore paths
-    fix_path('PYTHONPATH', bp.libdir, 1, 1)
+    if oldpypath:
+        os.environ['PYTHONPATH'] = oldpypath 
+    else:
+        del os.environ['PYTHONPATH']
     fix_path('LD_LIBRARY_PATH', bp.libdir, 1, 1)
     fix_path('PATH', bp.bindir, 1, 1)
     fix_path('PATH', tooldir, 1, 1)
