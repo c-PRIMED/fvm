@@ -23,7 +23,7 @@ from FluentCase import FluentCase
 
 fileBase = None
 numIterations = 10
-fileBase = "/home/sm/app-memosa/src/fvm/test/cav32"
+#fileBase = "/home/sm/app-memosa/src/fvm/test/cav32"
 #fileBase = "/home/sm/a/data/wj"
 
 def usage():
