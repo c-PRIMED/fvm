@@ -15,6 +15,7 @@ inCell(const int cellIndex,
   
   int faceNumber=cellFaces.getCount(cellIndex);
   int flag[faceNumber];
+  int throwFlag;
   int sum=0;
   VectorT3 Af;
  
@@ -43,14 +44,25 @@ inCell(const int cellIndex,
     VectorT3 ds=point-faceCentroid[f];
     double product=dot(Af,ds);
     
-    if(product >= 0.0) flag[nf]=1;
-    else if (product < 0.0) flag[nf]=-1;
+    if(product > 0.0){ flag[nf]=1;}
+    else if (product < 0.0) {flag[nf]=-1;}
+    else {
+      //cout<<cellIndex<<endl;
+      throwFlag = 1;
+    }
     sum+=flag[nf];
   }
-  if (sum==faceNumber){
-    return (1);   
+  //particle is on face or vertex, throw it away
+  if (throwFlag == 1){
+    return (0);
   }
-  else return (-1);
+  //particle is in or out of cell
+  else{
+    if (sum==faceNumber){
+      return (1);   
+    }
+    else return (-1);
+  }
 }
 
 

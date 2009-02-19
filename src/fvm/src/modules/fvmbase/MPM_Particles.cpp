@@ -20,8 +20,9 @@ void MPM::setandwriteParticles(const char *file)
  //the number of solid points and coordiantes are written to file
     FILE *fp;
    
-    int nX=65, nY=65, nZ=1;
-    double gapX=1.0/nX, gapY=1.0/nY, gapZ=1.0/nZ;
+    int nX=20, nY=200, nZ=1;
+    // double gapX=0.5/nX, gapY=0.2/nY, gapZ=1.0/nZ;
+    
     double radius=0.2;
     VecD3 center;
     center[0]=0.5;
@@ -31,15 +32,40 @@ void MPM::setandwriteParticles(const char *file)
     int count=0;
     VecD3 temp;
     VecD3 solidPoint[nX*nY*nZ];
-
     VecD3 solidVelocity[nX*nY*nZ];
-    //set up particle coordinate
+#if 0
+    //set up particle cartesian coordinate
     for(int i=0; i<nX; i++){
       for(int j=0; j<nY; j++){
 	for(int k=0; k<nZ; k++){
-	  temp[0]=i*gapX;
-	  temp[1]=j*gapY;
+	  temp[0]=i*gapX+0.25;
+	  temp[1]=j*gapY+0.4;
 	  temp[2]=k*gapZ;
+	  VecD3 ds=temp-center;
+	  //if(mag2(ds) <= radius*radius){
+	    solidPoint[count][0]=temp[0];
+	    solidPoint[count][1]=temp[1];
+	    solidPoint[count][2]=temp[2];
+	   
+	    count+=1;
+	    //}
+	}
+      }
+    }
+
+#endif
+
+#if 1
+    double radius1=0., radius2=0.2;
+    double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
+    
+    //polar coordinate 
+     for(int i=1; i<nX; i++){
+      for(int j=0; j<nY; j++){
+	for(int k=0; k<nZ; k++){
+	  temp[0]=(radius1+i*gapR)*(cos(j*gapAngle))+center[0];
+	  temp[1]=(radius1+i*gapR)*(sin(j*gapAngle))+center[1];
+	  temp[2]=k*gapZ+center[2];
 	  VecD3 ds=temp-center;
 	  if(mag2(ds) <= radius*radius){
 	    solidPoint[count][0]=temp[0];
@@ -51,6 +77,9 @@ void MPM::setandwriteParticles(const char *file)
 	}
       }
     }
+
+#endif
+
     //set up particle velocity
     for(int p=0; p<count; p++){
       solidVelocity[p][0]=0.0;
