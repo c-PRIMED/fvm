@@ -58,6 +58,33 @@ struct FlowModelOptions : public FloatVarDict<T>
   LinearSolver *momentumLinearSolver;
   LinearSolver *pressureLinearSolver;
   LinearSolver *coupledLinearSolver;
-  
+
+#ifndef SWIG
+  LinearSolver& getMomentumLinearSolver()
+  {
+    if (this->momentumLinearSolver == 0)
+    {
+        LinearSolver* ls(new AMG());
+        ls->relativeTolerance = 1e-1;
+        ls->nMaxIterations = 20;
+        ls->verbosity=0;
+        this->momentumLinearSolver = ls;
+    }
+    return *this->momentumLinearSolver ;
+  }
+
+  LinearSolver& getPressureLinearSolver()
+  {
+    if (this->pressureLinearSolver == 0)
+    {
+        LinearSolver* ls(new AMG());
+        ls->relativeTolerance = 1e-1;
+        ls->nMaxIterations = 20;
+        ls->verbosity=0;
+        this->pressureLinearSolver = ls;
+    }
+    return *this->pressureLinearSolver ;
+  }
+#endif
 };
 
