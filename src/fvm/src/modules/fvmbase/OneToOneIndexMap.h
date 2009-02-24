@@ -14,8 +14,8 @@ public:
 
   DEFINE_TYPENAME("OneToOneIndexMap");
 
-  const Array<int>& getFromIndices() {return *_fromIndices;}
-  const Array<int>& getToIndices() {return *_toIndices;}
+  const Array<int>& getFromIndices() const {return *_fromIndices;}
+  const Array<int>& getToIndices() const {return *_toIndices;}
   
 private:
   shared_ptr<Array<int> > _fromIndices;
