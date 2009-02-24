@@ -28,12 +28,16 @@ public:
 
   virtual void init();
 
+  void computeIBInterpolationMatrices(const StorageSite& particles);
+
+
   DEFINE_TYPENAME("MeshMetricsCalculator<"+NumTypeTraits<T>::getTypeName()+">");
 
 #ifdef USING_ATYPE_TANGENT
   void setTangentCoords(int meshID, int faceZoneID, int dim);
 #endif
 private:
+  GeomFields& _geomFields;
   Field& _coordField;
   Field& _areaField;
   Field& _areaMagField;
@@ -50,6 +54,9 @@ private:
   virtual void calculateFaceAreaMag(const Mesh& mesh);
       
   virtual void calculateCellVolumes(const Mesh& mesh);
+
+  void computeIBInterpolationMatrices(const Mesh& mesh,
+                                      const StorageSite& particles);
 
 };
 

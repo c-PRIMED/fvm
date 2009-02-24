@@ -7,6 +7,7 @@
 #include "CRConnectivity.h"
 #include "StorageSite.h"
 #include "GlobalFields.h"
+#include "CRMatrixTranspose.h"
 
 #include "Mesh.h"
 
@@ -321,10 +322,91 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
 }
   
     
+template<class T>
+void
+MeshMetricsCalculator<T>::computeIBInterpolationMatrices
+(const Mesh& mesh,
+ const StorageSite& mpmParticles)
+{
+  typedef CRMatrixTranspose<T,T,T> IMatrix;
+  
+  const StorageSite& ibFaces = mesh.getIBFaces();
+  const StorageSite& cells = mesh.getCells();
+  const StorageSite& faces = mesh.getFaces();
+  const CRConnectivity& ibFaceToCells = mesh.getConnectivity(ibFaces,cells);
+  const CRConnectivity& ibFaceToParticles
+    = mesh.getConnectivity(ibFaces,cells);
+
+  const VectorT3Array& xFaces =
+    dynamic_cast<const VectorT3Array&>(_coordField[faces]);
+
+  const VectorT3Array& xCells =
+    dynamic_cast<const VectorT3Array&>(_coordField[cells]);
+
+  const VectorT3Array& xParticles =
+    dynamic_cast<const VectorT3Array&>(_coordField[mpmParticles]);
+
+  const Array<int>& ibFCRow = ibFaceToCells.getRow();
+  const Array<int>& ibFCCol = ibFaceToCells.getCol();
+
+  const Array<int>& ibFPRow = ibFaceToParticles.getRow();
+  const Array<int>& ibFPCol = ibFaceToParticles.getCol();
+  
+  const int nIBFaces = ibFaces.getCount();
+
+  const Array<int>& ibFaceIndices = mesh.getIBFaceList();
+  
+  shared_ptr<IMatrix> cellToIB(new IMatrix(ibFaceToCells));
+  shared_ptr<IMatrix> particlesToIB(new IMatrix(ibFaceToParticles));
+
+  Array<T>& cellToIBCoeff = cellToIB->getCoeff();
+  Array<T>& particlesToIBCoeff = particlesToIB->getCoeff();
+
+  for(int n=0; n<nIBFaces; n++)
+  {
+      const int f = ibFaceIndices[n];
+      T wtSum(0);
+
+      for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
+      {
+          const int c = ibFCCol[nc];
+          VectorT3 dr(xCells[c]-xFaces[f]);
+          T wt = 1.0/dot(dr,dr);
+          cellToIBCoeff[nc] = wt;
+          wtSum += wt;
+      }
+      for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
+      {
+          const int p = ibFPCol[np];
+          VectorT3 dr(xParticles[p]-xFaces[f]);
+          T wt = 1.0/dot(dr,dr);
+          particlesToIBCoeff[np] = wt;
+          wtSum += wt;
+      }
       
+      for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
+      {
+          cellToIBCoeff[nc] /= wtSum;
+      }
+
+      for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
+      {
+          particlesToIBCoeff[np] /= wtSum;
+      }
+  }
+
+  GeomFields::SSPair key1(&ibFaces,&cells);
+  this->_geomFields._interpolationMatrices[key1] = cellToIB;
+
+  GeomFields::SSPair key2(&ibFaces,&mpmParticles);
+  this->_geomFields._interpolationMatrices[key2] = particlesToIB;
+  
+}
+
 template<class T>
 MeshMetricsCalculator<T>::MeshMetricsCalculator(GeomFields& geomFields,const MeshList& meshes) :
   Model(meshes),
+  _geomFields(geomFields),
   _coordField(geomFields.coordinate),
   _areaField(geomFields.area),
   _areaMagField(geomFields.areaMag),
@@ -348,6 +430,18 @@ MeshMetricsCalculator<T>::init()
       calculateFaceCentroids(mesh);
       calculateCellCentroids(mesh);
       calculateCellVolumes(mesh);
+  }
+}
+
+template<class T>
+void
+MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p)
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      computeIBInterpolationMatrices(mesh,p);
   }
 }
 
