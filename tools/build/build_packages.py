@@ -5,7 +5,7 @@
 Build package definitions.
 """
 
-import sys, os, testing, cgi, string
+import sys, os, testing, cgi, string, re
 from build_utils import *
 from config import config
 
@@ -368,7 +368,7 @@ class Fvm(BuildPkg):
     def _install(self):
         try:
             line = os.popen("/bin/bash -c 'gcc --version 2>&1'").readline()
-            vers = "gcc-" + line.split()[2]
+            vers = "gcc-" + re.compile(r'[^(]*[^)]*\) ([^\n ]*)').findall(line)[0]
         except:
             vers = '4.2.1'
         pdir = os.path.join(self.sdir, "build", self.getArch(), vers, "debug", "bin")
