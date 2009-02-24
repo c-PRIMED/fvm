@@ -12,7 +12,7 @@ def generate(env):
     if not env.get('CXXVERSION'):
         try:
             line = os.popen("/bin/bash -c 'gcc --version 2>&1'").readline()
-            env['CXXVERSION'] = line.split()[2]
+            env['CXXVERSION'] = re.compile(r'[^(]*[^)]*\) ([^\n ]*)').findall(line)[0]
         except:
             env['CXXVERSION'] = '4.2.1'
 
