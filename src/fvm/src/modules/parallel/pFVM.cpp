@@ -6,7 +6,7 @@
 #include "Array.h"
 
 #include "PartMesh.h"
-#include "MPIProcess.h"
+
 #include "FluentReader.h"
 #include "Mesh.h"
 
@@ -25,13 +25,12 @@ int main(int argc, char *argv[])
   solver.solve(*ls); */
 
 
-   //MPI::Init(argc, argv);
+   MPI::Init(argc, argv);
 
    //PartMesh*  partMesh = new PartMesh( MPI::COMM_WORLD.Get_rank() );
 
-   MPIProcess* proc = new MPIProcess(argc, argv);
 
-   string file_name( argv[1] );
+  string file_name("/home/sm/prism-meshes/test_tri_100by100.cas");
    FluentReader* fluent_reader = new FluentReader( file_name );
 
    fluent_reader->readMesh();
@@ -42,7 +41,7 @@ int main(int argc, char *argv[])
 
 
   //mesh_list
-   vector<int> npart( mesh_list.size(), proc->totalProcs() );
+   vector<int> npart( mesh_list.size(),  MPI::COMM_WORLD.Get_size() );
    vector<PartMesh::ETYPE> etype( mesh_list.size(), PartMesh::TRI);
 
   //constructer to PartMesh
@@ -66,9 +65,7 @@ int main(int argc, char *argv[])
    //cout << " file-name = " << file_name << endl;
 
    
-   delete proc;
-
-
+   MPI::Finalize();
    return 0;
 }
 

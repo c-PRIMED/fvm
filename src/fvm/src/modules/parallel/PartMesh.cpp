@@ -134,7 +134,9 @@ PartMesh::dumpTecplot()
 //just for mesh 0;
     MPI::COMM_WORLD.Barrier();
 
-   const Array<Mesh::VecD3>&  coord = _meshList.at(0)->getNodeCoordinates();
+    const Mesh& mesh = *(_meshList.at(0));
+    const Array<Mesh::VecD3>&  coord = mesh.getNodeCoordinates();
+
    int tot_nodes = coord.getLength();
 
     if ( _procID == 0 ) {
@@ -1334,8 +1336,9 @@ void
 PartMesh::coordinates()
 {
 
-     for ( int id = 0; id < _nmesh; id++){
-        const Array<Mesh::VecD3>&   global_coord = _meshList.at(id)->getNodeCoordinates();
+  for ( int id = 0; id < _nmesh; id++){
+      const Mesh& mesh = *(_meshList.at(id));
+        const Array<Mesh::VecD3>&   global_coord = mesh.getNodeCoordinates();
         int node_count = _partNodes.at(id)->getCount( _procID );
         _coord.push_back( ArrayVecD3Ptr(new Array<Mesh::VecD3>(node_count)) );
         const Array<int>&    rowPartNodes = _partNodes.at(id)->getRow();
@@ -1758,8 +1761,9 @@ PartMesh::mesh_tecplot()
      ss << "mesh_proc" << _procID << ".dat";
      ofstream  mesh_file( (ss.str()).c_str() );
 
-     const CRConnectivity&  cellNodes = _meshListLocal.at(0)->getCellNodes();
-     const Array<Mesh::VecD3>&  coord = _meshListLocal.at(0)->getNodeCoordinates();
+     const Mesh& mesh = *(_meshListLocal.at(0));
+     const CRConnectivity&  cellNodes = mesh.getCellNodes();
+     const Array<Mesh::VecD3>&  coord = mesh.getNodeCoordinates();
      int tot_elems = cellNodes.getRowDim();
      int tot_nodes = cellNodes.getColDim();
 
