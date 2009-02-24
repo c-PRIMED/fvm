@@ -4,17 +4,22 @@
 #include "StorageSite.h"
 #include "CRConnectivity.h"
 
+
 Mesh::Mesh(const int dimension, const int id):
   _dimension(dimension),
   _id(id),
   _cells(0),
   _faces(0),
   _nodes(0),
+  _ibFaces(0),
   _interiorFaceGroup(),
   _faceGroups(),
   _boundaryGroups(),
   _interfaceGroups(),
-  _connectivityMap()
+  _connectivityMap(),
+  _coordinates(),
+  _ibType(),
+  _ibFaceList()
 {
   logCtor();
 }
@@ -51,6 +56,15 @@ Mesh::createBoundaryFaceGroup(const int size, const int offset, const int id, co
   _boundaryGroups.push_back(fg);
   return fg->site;
 }
+
+
+void Mesh::setConnectivity(const StorageSite& rowSite, const StorageSite& colSite,
+	                       shared_ptr<CRConnectivity> conn)
+{
+  SSPair key(&rowSite,&colSite);
+  _connectivityMap[key] = conn;
+}
+
 
 const CRConnectivity&
 Mesh::getAllFaceNodes() const
@@ -98,6 +112,16 @@ Mesh::getFaceNodes(const StorageSite& faces) const
     getAllFaceNodes().createOffset(faces,faces.getOffset(),faces.getCount());
   _connectivityMap[key] = thisFaceNodes;
   return *thisFaceNodes;
+}
+
+const CRConnectivity&
+Mesh::getConnectivity(const StorageSite& from, const StorageSite& to) const
+{
+  SSPair key(&from,&to);
+  ConnectivityMap::const_iterator pos = _connectivityMap.find(key);
+  if (pos != _connectivityMap.end())
+    return *pos->second;
+  throw CException("connectivity not defined");
 }
 
 const CRConnectivity&
@@ -152,6 +176,7 @@ Mesh::getCellCells() const
 }
 
 
+
 void
 Mesh::setFaceNodes(shared_ptr<CRConnectivity> faceNodes)
 {
@@ -167,11 +192,64 @@ Mesh::setFaceCells(shared_ptr<CRConnectivity> faceCells)
   _connectivityMap[key] = faceCells;
 }
 
+const Array<int>&
+Mesh::getIBType() const
+{
+  return getOrCreateIBType();
+}
 
+void
+Mesh::setIBTypeForCell(const int c, const int type)
+{
+  Array<int>& ibType = getOrCreateIBType();
+  ibType[c]=type;
+}
+
+int
+Mesh::getIBTypeForCell(const int c) const
+{
+  Array<int>& ibType = getOrCreateIBType();
+  return ibType[c];
+}
+
+Array<int>&
+Mesh::getOrCreateIBType() const
+{
+  if (!_ibType)
+  {
+      _ibType = shared_ptr<Array<int> >(new Array<int>(_cells.getCount()));
+      *_ibType = IBTYPE_FLUID;
+  }
+  return *_ibType;
+}
+  
+Mesh::VecD3
+Mesh::getCellCoordinate(const int c) const
+{
+  return (*_coordinates)[c];
+}
+
+void
+Mesh::createIBFaceList(const int size) const
+{
+  _ibFaceList = shared_ptr<Array<int> >(new Array<int> (size));
+}
+
+const Array<int>&
+Mesh::getIBFaceList() const
+{
+  if (_ibFaceList)  return (*_ibFaceList);
+  throw CException("ib face list not defined");
+}
+
+void
+Mesh::addIBFace(const int i, const int c)
+{
+  (*_ibFaceList)[i]=c;
+}
 
 void 
 Mesh::createGhostCellSite( int id, shared_ptr<StorageSite> site )
 {
-    _ghostCellSiteMap.insert( pair<int, shared_ptr<StorageSite> >( id, site ) );
-     
+  _ghostCellSiteMap.insert( pair<int, shared_ptr<StorageSite> >( id, site ) );
 }
