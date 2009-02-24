@@ -274,6 +274,50 @@ public:
         vN1 = v;
     }
   }
+
+  void computeIBFaceVelocity(const StorageSite& particles)
+  {
+    typedef CRMatrixTranspose<T,T,T> IMatrix;
+    typedef CRMatrixTranspose<T,VectorT3,VectorT3> IMatrixV3;
+
+    const VectorT3Array& pV =
+      dynamic_cast<const VectorT3Array&>(_flowFields.velocity[particles]);
+    
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+
+        const StorageSite& cells = mesh.getCells();
+        const StorageSite& ibFaces = mesh.getIBFaces();
+
+        GeomFields::SSPair key1(&ibFaces,&cells);
+        const IMatrix& mIC =
+          dynamic_cast<const IMatrix&>
+          (*_geomFields._interpolationMatrices[key1]);
+
+        IMatrixV3 mICV(mIC);
+
+        GeomFields::SSPair key2(&ibFaces,&particles);
+        const IMatrix& mIP =
+          dynamic_cast<const IMatrix&>
+          (*_geomFields._interpolationMatrices[key2]);
+
+        IMatrixV3 mIPV(mIP);
+
+        shared_ptr<VectorT3Array> ibV(new VectorT3Array(ibFaces.getCount()));
+
+        ibV->zero();
+        
+        const VectorT3Array& cV =
+          dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
+
+        mICV.multiplyAndAdd(*ibV,cV);
+        mIPV.multiplyAndAdd(*ibV,pV);
+
+        _flowFields.velocity.addArray(ibFaces,ibV);
+    }
+  }
   
   void initMomentumLinearization(LinearSystem& ls)
   {
@@ -457,7 +501,7 @@ public:
     _previousVelocity = dynamic_pointer_cast<Field>(_flowFields.velocity.newCopy());
 
     //AMG solver(ls);
-    MFRPtr rNorm = _options.momentumLinearSolver->solve(ls);
+    MFRPtr rNorm = _options.getMomentumLinearSolver().solve(ls);
 
     if (!_initialMomentumNorm) _initialMomentumNorm = rNorm;
         
@@ -1484,7 +1528,7 @@ public:
     // discard previous velocity
     _previousVelocity = shared_ptr<Field>();
 
-    MFRPtr rNorm = _options.pressureLinearSolver->solve(*ls);
+    MFRPtr rNorm = _options.getPressureLinearSolver().solve(*ls);
 
     if (!_initialContinuityNorm) _initialContinuityNorm = rNorm;
         
@@ -1955,6 +1999,13 @@ Vector<T,3>
 FlowModel<T>::getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupId)
 {
  return  _impl->getMomentumFluxIntegral(mesh,faceGroupId);
+}
+
+template<class T>
+void
+FlowModel<T>::computeIBFaceVelocity(const StorageSite& particles)
+{
+  return _impl->computeIBFaceVelocity(particles);
 }
 
 #ifndef USING_ATYPE_TANGENT

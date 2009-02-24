@@ -48,6 +48,8 @@ public:
   void printMomentumFluxIntegrals();
   void printMassFluxIntegrals();
   
+  void computeIBFaceVelocity(const StorageSite& particles);
+  
   //LinearSolver& getMomentumSolver();
   //LinearSolver& getContinuitySolver();
 
