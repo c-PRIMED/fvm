@@ -20,9 +20,9 @@ class MPM
 
  const StorageSite& getParticles() const {return _particles;}
   
- const shared_ptr<Array<VecD3> >& getCoordinates() {return  _coordinates;}
+  const boost::shared_ptr<ArrayBase> getCoordinates() {return  _coordinates;}
    
- const shared_ptr<Array<VecD3> >& getVelocities() {return  _velocities;}
+  const boost::shared_ptr<ArrayBase> getVelocities() {return  _velocities;}
 
 
 };

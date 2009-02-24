@@ -16,9 +16,13 @@ public:
 
   %extend
   {
-    ArrayBase* __getitem__(const StorageSite* s)
+    boost::shared_ptr<ArrayBase> __getitem__(const StorageSite* s)
     {
-        return &(self->operator[](*s));
+        return self->getArrayPtr(*s);
+    }
+    void __setitem__(const StorageSite* s, boost::shared_ptr<ArrayBase> a)
+    {
+      self->addArray(*s,a);
     }
   }
 private:
