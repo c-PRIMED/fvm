@@ -9,35 +9,50 @@
 #endif
 #include <numpy/arrayobject.h>
   
-%}
+  %}
 
-%typemap(out) ArrayBase*
+%include "boost_shared_ptr.i"
+SWIG_SHARED_PTR(ArrayPtr,ArrayBase)
+class ArrayBase
 {
-  int dim = $1->getDimension();
-  
-  Py_intptr_t pyshape[10];
-  int shape[10];
-  $1->getShape(shape);
-  for(int i=0; i<10; i++) pyshape[i]=shape[i];
-  PrimType primType = $1->getPrimType();
-
-  int pyArrayType;
-
-  switch(primType)
+public:
+  int getDimension();
+  %extend
   {
-  case PRIM_TYPE_BOOL:
-    pyArrayType = NPY_BOOL;
-    break;
-  case PRIM_TYPE_INT:
-    pyArrayType = NPY_INT32;
-    break;
-  case PRIM_TYPE_FLOAT:
-    pyArrayType = NPY_FLOAT;
-    break;
-  default:
-    pyArrayType = NPY_DOUBLE;
-    break;
+    PyObject* asNumPyArray()
+    {
+        int dim = self->getDimension();
+  
+        Py_intptr_t pyshape[10];
+        int shape[10];
+        self->getShape(shape);
+        for(int i=0; i<10; i++) pyshape[i]=shape[i];
+        PrimType primType = self->getPrimType();
+
+        int pyArrayType;
+
+        switch(primType)
+        {
+        case PRIM_TYPE_BOOL:
+          pyArrayType = NPY_BOOL;
+          break;
+        case PRIM_TYPE_INT:
+          pyArrayType = NPY_INT32;
+          break;
+        case PRIM_TYPE_FLOAT:
+          pyArrayType = NPY_FLOAT;
+          break;
+        default:
+          pyArrayType = NPY_DOUBLE;
+          break;
+        }
+        cerr << "numpy array creation" << endl;
+        return PyArray_SimpleNewFromData(dim,pyshape,pyArrayType,self->getData());
+    }
   }
-  cerr << "numpy array creation" << endl;
-  $result = PyArray_SimpleNewFromData(dim,pyshape,pyArrayType,$1->getData());
-}
+private:
+  ArrayBase();
+};
+
+
+
