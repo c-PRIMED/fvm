@@ -67,7 +67,7 @@ public:
       dynamic_cast<const VectorT3Array&>(_flowFields.velocity[mesh.getIBFaces()]);
 
     const Array<int>& ibType = mesh.getIBType();
-
+    const int nIBFaces = ibFaces.getCount();
       
     // used to keep track of the current ib face index
     int ibFace =0;
@@ -79,12 +79,12 @@ public:
         const int c1 = faceCells(f,1);
 
         if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
-            (ibType[c0] == Mesh::IBTYPE_FLUID))
+            (ibType[c1] == Mesh::IBTYPE_FLUID))
         {
             // leave as  is
         }
         else if ((ibType[c0] == Mesh::IBTYPE_SOLID) &&
-                 (ibType[c0] == Mesh::IBTYPE_SOLID))
+                 (ibType[c1] == Mesh::IBTYPE_SOLID))
         {
             // setup to get zero corrections
             rCell[c0].zero();
@@ -94,6 +94,8 @@ public:
         }
         else
         {
+            if (ibFace >= nIBFaces)
+              throw CException("incorrect number of IB faces");
             // this is an iBFace, determine which cell is interior and which boundary
             const VectorT3& faceVelocity = ibVelocity[ibFace];
             if (ibType[c0] != Mesh::IBTYPE_FLUID)
@@ -113,6 +115,8 @@ public:
             ibFace++;
         }
     }
+    if (ibFace != nIBFaces)
+      throw CException("incorrect number of IB faces");
   }
 
 private:
