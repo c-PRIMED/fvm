@@ -162,7 +162,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	vector<int> cellIndexList;
 	O.getNodes(MPM_point, radius, cellIndexList);
 	MPM_PointstoCells[p]=-1;
-	for (int i=0; i< cellIndexList.size(); i++)    {
+	for (int i=0; i< (int) cellIndexList.size(); i++)    {
 	  int cellCandidate = cellIndexList[i];
 	  const int inCellorNot=inCell(cellCandidate, MPM_point, faceCells, cellFaces,
 				       faceArea,faceCentroid);
@@ -179,7 +179,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	 VecD3 MPM_point = (*MPM_Points)[p];
 	 vector<int> cellIndexList=O.Naive_getNodes(MPM_point, count, points, radius);
 	 MPM_PointstoCells[p]=-1;
-	 for (int i=0; i< cellIndexList.size(); i++)    {
+	 for (int i=0; i< (int) cellIndexList.size(); i++)    {
 	   int cellCandidate = cellIndexList[i];
 	   const int inCellorNot=inCell(cellCandidate, MPM_point, faceCells, cellFaces,
 				       faceArea,faceCentroid);
@@ -222,7 +222,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     mesh.setConnectivity( particles, cells, particleCellsCR);
 
-    const CRConnectivity& particleCells = mesh.getConnectivity(particles, cells); 
+    //    const CRConnectivity& particleCells = mesh.getConnectivity(particles, cells); 
    
     /*
     //test
@@ -301,12 +301,12 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
      mesh.setConnectivity(ibFaces, cells, ibFaceCellsCR);   
 
-     const CRConnectivity& ibFaceCells = mesh.getConnectivity(ibFaces, cells);
+     //     const CRConnectivity& ibFaceCells = mesh.getConnectivity(ibFaces, cells);
 
      /*
      //test
      for(int f=0; f<ibFaces.getCount(); f++){
-       const int faceIndex = ibFaceList[f];
+         //       const int faceIndex = ibFaceList[f];
        //cout << faceCentroid[faceIndex] << endl;
       //for each ibface find out how many fluid cells have connectivity to it
       int nc = ibFaceParticles.getCount(f);

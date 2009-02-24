@@ -295,7 +295,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
   const int rowSize = ibFaces.getCount();
 
   //specify a radius for search
-  const int nCells = cells.getCount();
+  //const int nCells = cells.getCount();
   const double radius = 0.05;
 
   //specify the number of nonzeros for each row
@@ -307,7 +307,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
     //find the neighbors of center point within a radius
     vector<int> cellIndexList;
     O.getNodes(center, radius, cellIndexList);
-    for(int c=0; c<cellIndexList.size(); c++){
+    for(int c=0; c< (int)cellIndexList.size(); c++){
       const int cellCandidate = cellIndexList[c];
       if (mesh.getIBTypeForCell(cellCandidate) == 1) //if it is a fluid cell
 	count++;
@@ -326,7 +326,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
     const VecD3 center = faceCentroid[faceIndex];
     vector<int> cellIndexList;
     O.getNodes(center, radius, cellIndexList);
-    for(int c=0; c<cellIndexList.size(); c++){
+    for(int c=0; c< (int) cellIndexList.size(); c++){
       const int cellCandidate = cellIndexList[c];
       if (mesh.getIBTypeForCell(cellCandidate) == 1) //if it is a fluid cell
 	(*ibFaceCells).add(p, cellCandidate);
@@ -345,7 +345,7 @@ const  shared_ptr<CRConnectivity> setParticleCells
 			   const Array<int> & connectivity)
 {
   const int rowSize = rowSite.getCount();
-  const int colSize = colSite.getCount();
+  //  const int colSize = colSite.getCount();
 
   shared_ptr<CRConnectivity> rowCol (new CRConnectivity (rowSite, colSite));
 
