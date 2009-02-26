@@ -23,15 +23,14 @@ def find_tests(startdir):
 def run_tests(pname, file, logfile):
     errs = ok = 0
     f = open(logfile, 'a')
-    pdir = os.path.join(os.path.dirname(logfile),pname)
-    if not os.path.isdir(pdir):
-        try:
-            os.makedirs(pdir)
-        except:
-            fatal("error creating directory " + pdir)
-
     for line in open(file):
         if line[0] == '\n' or line[0] == '#': continue
+        pdir = os.path.join(os.path.dirname(logfile),pname)
+        if not os.path.isdir(pdir):
+            try:
+                os.makedirs(pdir)
+            except:
+                fatal("error creating directory " + pdir)
         tname = line.split()[0]
         if line.find('TESTDIR') >= 0:
             pdir = os.path.join(pdir, tname)
