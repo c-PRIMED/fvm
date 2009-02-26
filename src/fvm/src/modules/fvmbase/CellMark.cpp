@@ -114,7 +114,7 @@ void reportCellMark (const Mesh& mesh, const int nCells,
 		     const string fileBase)
 {
     
-    string fileName=fileBase+"CellMark.dat";
+    string fileName=fileBase+"Output/CellMark_ring.dat";
     char* file;
     file=&fileName[0];
     FILE *fp=fopen(file,"w");
@@ -125,9 +125,9 @@ void reportCellMark (const Mesh& mesh, const int nCells,
     } 
     fclose(fp);  
 
-    string fileName1 = fileBase+"FluidCell.dat";
-    string fileName2 = fileBase+"SolidCell.dat";
-    string fileName3 = fileBase+"IBMCell.dat";
+    string fileName1 = fileBase+"Output/FluidCell_ring.dat";
+    string fileName2 = fileBase+"Output/SolidCell_ring.dat";
+    string fileName3 = fileBase+"Output/IBMCell_ring.dat";
     char* file1;
     char* file2;
     char* file3;
@@ -177,6 +177,8 @@ void markIBFaces(Mesh& mesh, const int nCells,
       }
     }
     //cout<<"ibFaceCount is "<<ibFaceCount<<endl;
+
+      
     //then, allocate an array for ibFace
     mesh.createIBFaceList(ibFaceCount);
 
@@ -356,7 +358,10 @@ const  shared_ptr<CRConnectivity> setParticleCells
   //here, each solid point only has connectivity with one cell
   //so for each row, it has only one nonzero
   for(int p=0; p<rowSize; p++){
-    (*rowCol).addCount(p, 1);
+    int value = connectivity[p];
+    if (value == -1)                //throw away this particle
+    (*rowCol).addCount(p, 0);
+    else  (*rowCol).addCount(p, 1);
   }
 
   //finishCount: allocate col array and reset row array
@@ -366,7 +371,8 @@ const  shared_ptr<CRConnectivity> setParticleCells
   //add in the entries for each row
   for(int p=0; p<rowSize; p++){
     int value = connectivity[p];
-    (*rowCol).add(p, value);
+    if (value != -1)
+      (*rowCol).add(p, value);
   }
 
   (*rowCol).finishAdd();

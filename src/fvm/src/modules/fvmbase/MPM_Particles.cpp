@@ -19,36 +19,28 @@ void MPM::setandwriteParticles(const char *file)
  //here, we want to build up a solid circle 
  //the number of solid points and coordiantes are written to file
     FILE *fp;
-   
-    int nX=20, nY=200, nZ=1;
-    // double gapX=0.5/nX, gapY=0.2/nY, gapZ=1.0/nZ;
-    
-    double radius=0.2;
+           
     VecD3 center;
     center[0]=0.5;
     center[1]=0.5;
     center[2]=0.0;
 
-    int count=0;
-    VecD3 temp;
-    VecD3 solidPoint[nX*nY*nZ];
-    VecD3 solidVelocity[nX*nY*nZ];
+    int count=0;   
+   
 #if 0
     //set up particle cartesian coordinate
+    int nX=200, nY=30, nZ=1;
+    double gapX=0.5/nX, gapY=0.2/nY, gapZ=1.0/nZ;
+    VecD3 solidPoint[nX*nY*nZ];
+    VecD3 solidVelocity[nX*nY*nZ];
+
     for(int i=0; i<nX; i++){
       for(int j=0; j<nY; j++){
-	for(int k=0; k<nZ; k++){
-	  temp[0]=i*gapX+0.25;
-	  temp[1]=j*gapY+0.4;
-	  temp[2]=k*gapZ;
-	  VecD3 ds=temp-center;
-	  //if(mag2(ds) <= radius*radius){
-	    solidPoint[count][0]=temp[0];
-	    solidPoint[count][1]=temp[1];
-	    solidPoint[count][2]=temp[2];
-	   
-	    count+=1;
-	    //}
+	for(int k=0; k<nZ; k++){	  
+	  solidPoint[count][0]=i*gapX+0.25;
+	  solidPoint[count][1]=j*gapY+0.4;
+	  solidPoint[count][2]=k*gapZ;
+	  count+=1;
 	}
       }
     }
@@ -56,24 +48,20 @@ void MPM::setandwriteParticles(const char *file)
 #endif
 
 #if 1
-    double radius1=0., radius2=0.2;
+    int nX=20, nY=200, nZ=1;
+    double radius1=0.1, radius2=0.2;
     double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
-    
+    VecD3 solidPoint[nX*nY*nZ];
+    VecD3 solidVelocity[nX*nY*nZ];
+
     //polar coordinate 
      for(int i=1; i<nX; i++){
       for(int j=0; j<nY; j++){
-	for(int k=0; k<nZ; k++){
-	  temp[0]=(radius1+i*gapR)*(cos(j*gapAngle))+center[0];
-	  temp[1]=(radius1+i*gapR)*(sin(j*gapAngle))+center[1];
-	  temp[2]=k*gapZ+center[2];
-	  VecD3 ds=temp-center;
-	  if(mag2(ds) <= radius*radius){
-	    solidPoint[count][0]=temp[0];
-	    solidPoint[count][1]=temp[1];
-	    solidPoint[count][2]=temp[2];
-	   
-	    count+=1;
-	  }
+	for(int k=0; k<nZ; k++){	 
+	  solidPoint[count][0]=(radius1+i*gapR)*(cos(j*gapAngle))+center[0];
+	  solidPoint[count][1]=(radius1+i*gapR)*(sin(j*gapAngle))+center[1];
+	  solidPoint[count][2]=k*gapZ+center[2];
+	  count+=1;
 	}
       }
     }

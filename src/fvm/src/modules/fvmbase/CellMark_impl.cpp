@@ -77,7 +77,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
    
     /**************************************************************************************/
     //---set up MPM particles---//
-    string fileName2=fileBase+"MPMs.dat";
+    string fileName2=fileBase+"Output/MPM_ring.dat";
     char* file2;
     file2=&fileName2[0];
     
@@ -204,13 +204,6 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
        }
     }
 
-
-    //for(int p=0; p<nMPM; p++){
-    // cout<<p<<" "<< MPM_PointstoCells[p]<<endl;
-    //}
-
-   
-
 	  
     /************************************************************************************/
     //---create the CRconnectivity for solid and cells---//
@@ -271,10 +264,24 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     reportCellMark (mesh, nCells, cellCentroid, fileBase);
 
  
-
+#if 0
     /***************************mark IBFaces********************/
 
     markIBFaces (mesh, nCells, cellCells, cellFaces, faceCells);
+   
+
+    int count=0;
+    //double check ibFaceCount
+    for (f=0; f<nFaces; f++){
+      int c0 = faceCells(f, 0);
+      int c1 = faceCells(f, 1);
+      int ibType0 = mesh.getIBTypeForCell(c0);
+      int ibType1 = mesh.getIBTypeForCell(c1);
+      if(!(ibType0==ibType1))
+	count++;
+    }
+
+
 
     const StorageSite&  ibFaces = mesh.getIBFaces();
    
@@ -331,7 +338,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
       } 
      */
     
-
+#endif
    
  
 }
