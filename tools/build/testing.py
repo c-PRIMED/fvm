@@ -23,23 +23,29 @@ def find_tests(startdir):
 def run_tests(pname, file, logfile):
     errs = ok = 0
     f = open(logfile, 'a')
+    pdir = os.path.join(os.path.dirname(logfile),pname)
+    if not os.path.isdir(pdir):
+        try:
+            os.makedirs(pdir)
+        except:
+            fatal("error creating directory " + pdir)
 
     for line in open(file):
-        line = line.split()
-        if len(line) == 0 or line[0][0] == '#': continue
-        tname = line[0]
-        cmd = ' '.join(line[1:])
-
-        # special hack for mtest.  append --datafile
-        if line[1].strip("\"") == "mtest.py" or line[1].strip("\"") == "lammps_cmp.py":
-            pdir = os.path.join(os.path.dirname(logfile),pname)
+        if line[0] == '\n' or line[0] == '#': continue
+        tname = line.split()[0]
+        if line.find('TESTDIR') >= 0:
+            pdir = os.path.join(pdir, tname)
+            line = line.replace('TESTDIR',pdir)
             if not os.path.isdir(pdir):
                 try:
                     os.makedirs(pdir)
                 except:
                     fatal("error creating directory " + pdir)
-            cmd += " --datafile %s/%s.dat" % (pdir, tname)
-
+            
+        outfile = os.path.join(pdir, tname + '.dat')
+        line = line.replace('TESTOUT', outfile)
+        line = line.split()
+        cmd = ' '.join(line[1:])
         debug("Test %s: %s" % (tname, cmd))
         ostr = "\t<Name>%s</Name>\n" % tname
         ostr += "\t<Path>%s</Path>\n" % os.path.dirname(file)

@@ -8,11 +8,11 @@ but not both.
 
 Usage: mtest.py [options] exe [args]
 Options:
-  --expect       Expected string.
-  --golden       Golden file
-  --compare      Comparison executable. Default is "diff".
-The options below are used by the test framework.
-  --datafile     File where test data is stored.
+  --expect str       Expected string.
+  --golden file      Golden file
+  --datafile file    Write stdout and stderr to this file.
+  --output file      Use this file for comparison with golden.
+  --compare exe      Comparison executable. Default is "diff".
 """
 
 import sys, os, tempfile, re
@@ -35,12 +35,22 @@ def main():
                       action="store", dest="golden", help="Golden filename")
     parser.add_option("--datafile",
                       action="store", dest="datafile", help="Data filename")
+    parser.add_option("--output",
+                      action="store", dest="output", help="Output filename")
     parser.add_option("--compare",
                       action="store", dest="compare", help="Comparison executable. Default is \"diff\".")
     (options, args) = parser.parse_args()
 
     if options.golden and options.expect:
         print "Cannot have both --golden and --expect."
+        usage()
+
+    if options.datafile and options.output:
+        print "Cannot have both --datafile and --output."
+        usage()
+
+    if options.expect and (options.datafile or options.output):
+        print "Cannot use --expect with --datafile or --output."
         usage()
 
     if options.compare:
@@ -50,16 +60,20 @@ def main():
 
     delete_datafile = 0
     datafile = options.datafile
-    if not datafile:
+    if not datafile and not options.output:
         datafile = tempfile.mkstemp()[1]
         delete_datafile = 1
 
 
     ret = 0
     if options.golden:
-        # run the test executable and send stdout and stderr to the data file.
-        cmd = ' '.join(args) + " >" + datafile + " 2>&1"
-        print "cmd=",cmd
+        if datafile:
+            # run the test executable and send stdout and stderr to the data file.
+            cmd = ' '.join(args) + " >" + datafile + " 2>&1"
+        else:
+            cmd = ' '.join(args)
+            datafile = options.output
+
         if os.system("/bin/bash -c '%s'" % cmd):
             cleanup(-1, datafile, delete_datafile)
         count = 0

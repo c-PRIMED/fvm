@@ -6,8 +6,8 @@
 # Quotes are optional except when white space must be preserved.
 
 # these fail
-test0 false
-test00 python -c "import sys; sys.exit(42)"
+#test0 false
+#test00 python -c "import sys; sys.exit(42)"
 
 # these succeed
 test1 true
@@ -19,7 +19,7 @@ test3 echo Hello World
 # with a pattern or golden file. 
 
 # fails
-test4 mtest.py false
+#test4 mtest.py false
 
 # OK
 test4a mtest.py echo FOO
@@ -27,4 +27,4 @@ test5 "mtest.py" "echo" "Hello World" "--expect" "Hello World"
 test6 mtest.py echo "Hello World" --expect "[hH]ello World"
 
 # fails because the output doesn't match the regular expression
-test7 "mtest.py" "echo" "Hello" "--expect" "[J-Z]ello"
+#test7 "mtest.py" "echo" "Hello" "--expect" "[J-Z]ello"
