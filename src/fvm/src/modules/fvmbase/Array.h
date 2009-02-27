@@ -362,7 +362,8 @@ public:
     const Array<int>& coarseIndex = dynamic_cast<const Array<int>& >(coarseIndexI);
 
     for(int i=0; i<length; i++)
-      coarse[coarseIndex[i]] += _data[i];
+      if (coarseIndex[i]>=0)
+        coarse[coarseIndex[i]] += _data[i];
   }
 
   virtual void
@@ -372,7 +373,8 @@ public:
     const Array<int>& coarseIndex = dynamic_cast<const Array<int>& >(coarseIndexI);
 
     for(int i=0; i<length; i++)
-      _data[i] += coarse[coarseIndex[i]];
+      if (coarseIndex[i]>=0)
+        _data[i] += coarse[coarseIndex[i]];
   }
 
   virtual shared_ptr<IContainer>

@@ -98,6 +98,7 @@ public:
     _isBoundary(_conn.getRowDim())
   {
     logCtor();
+    _isBoundary = false;
   }
 
   
@@ -290,7 +291,7 @@ public:
     coarseCount = 0;
     
     for(int nr=0; nr<nRows; nr++)
-      if (coarseIndex[nr] == -1)
+      if (coarseIndex[nr] == -1 && !_isBoundary[nr])
       {
           // the row that we are going to go through looking for
           // neighbours to group with; it starts off being the current
@@ -321,8 +322,8 @@ public:
               {
                   const int nc = _col[nb];
 
-                  //skip ghost
-                  if (nc < nRows)
+                  //skip ghost and boundaries
+                  if (nc < nRows  && !_isBoundary[nc])
                   {
                       double diagMeasure0 =
                         NumTypeTraits<Diag>::doubleMeasure(_diag[nr]);
@@ -594,6 +595,7 @@ public:
     for (int nb = _row[nr]; nb<_row[nr+1]; nb++)
       _offDiag[nb] = NumTypeTraits<OffDiag>::getZero();
     _diag[nr] = NumTypeTraits<Diag>::getNegativeUnity();
+    _isBoundary[nr] = true;
   }
   
   void setBoundary(const int nr)
