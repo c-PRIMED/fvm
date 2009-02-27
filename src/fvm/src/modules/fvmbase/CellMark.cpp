@@ -2,6 +2,7 @@
 typedef Vector<double, 3> VectorT3;
 typedef Array<Vector<double, 3> > VectorT3Array;
 
+
 int 
 inCell(const int cellIndex, 
        const VectorT3& point, 
@@ -80,10 +81,10 @@ void markCell( Mesh& mesh, const int nCells,
       const int particleCount = cellParticles.getCount(c);
       //if no particle in cell, mark as fluid
       if (particleCount == 0) {
-	mesh.setIBTypeForCell(c,0);
+	mesh.setIBTypeForCell(c,Mesh::IBTYPE_FLUID);
       }
       //if has particle in cell, mark as solid
-      else { mesh.setIBTypeForCell(c,2); }
+      else { mesh.setIBTypeForCell(c,Mesh::IBTYPE_SOLID); }
     }
 
    //step2: in solid cells, mark cells with no fluid neighbors as solid
@@ -93,17 +94,17 @@ void markCell( Mesh& mesh, const int nCells,
       const int ibType = mesh.getIBTypeForCell(c);
       int flag;
       //search all solid cells
-      if(ibType==2){
+      if(ibType == Mesh::IBTYPE_SOLID){
 	flag=1;  //true for solid cells
 	const int ncNumber=cellCells.getCount(c);
 	for(int nc=0; nc<ncNumber; nc++){
 	  const int cellIndex=cellCells(c,nc);
-	  if(mesh.getIBTypeForCell(cellIndex)==0){  //has fluid cell neighbor
+	  if(mesh.getIBTypeForCell(cellIndex)==Mesh::IBTYPE_FLUID){ 
 	    flag=0;   
 	  }
 	}
 	//if solid cell has at least one fluid cell neighbor, mark as IBM type
-	if(flag==0) mesh.setIBTypeForCell(c,1);
+	if(flag==0) mesh.setIBTypeForCell(c,Mesh::IBTYPE_BOUNDARY);
       }
     }
 }
@@ -141,13 +142,13 @@ void reportCellMark (const Mesh& mesh, const int nCells,
    
     for(int c=0; c<nCells; c++){
       int ibType = mesh.getIBTypeForCell(c);
-      if(ibType==0){
+      if(ibType == Mesh::IBTYPE_FLUID){
 	fprintf(fp1, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
-      else if(ibType==1){
+      else if(ibType==Mesh::IBTYPE_BOUNDARY){
 	fprintf(fp2, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
-      else{
+      else if(ibType==Mesh::IBTYPE_SOLID){
 	fprintf(fp3, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
     } 
@@ -162,15 +163,16 @@ void markIBFaces(Mesh& mesh, const int nCells,
 		 const CRConnectivity& cellFaces,
 		 const CRConnectivity& faceCells)
 {
+  //definition of ibFaces: the faces between IB cells and Fluid cells
   //first, count the number of ibFaces
     int ibFaceCount=0;
     for(int c=0; c<nCells; c++){
       int ibType = mesh.getIBTypeForCell(c);
-      if(ibType==1){
+      if(ibType==Mesh::IBTYPE_BOUNDARY){
 	const int ncNumber=cellCells.getCount(c);
 	for(int nc=0; nc<ncNumber; nc++){
 	  const int cellIndex=cellCells(c,nc);
-	  if(mesh.getIBTypeForCell(cellIndex)==0){  //has fluid cell neighbor
+	  if(mesh.getIBTypeForCell(cellIndex)==Mesh::IBTYPE_FLUID){ 
 	    ibFaceCount++;   
 	  }
 	}	
@@ -186,17 +188,17 @@ void markIBFaces(Mesh& mesh, const int nCells,
     ibFaceCount=0;
     for(int c=0; c<nCells; c++){
       int ibType = mesh.getIBTypeForCell(c);
-      if(ibType==1){
+      if(ibType==Mesh::IBTYPE_BOUNDARY){
 	const int faceNumber=cellFaces.getCount(c);
 	for(int f=0; f<faceNumber; f++){
 	  const int faceIndex=cellFaces(c,f);
 	  const int c0 = faceCells(faceIndex,0);
 	  const int c1 = faceCells(faceIndex,1);
-	  if((c0 == c)&&(mesh.getIBTypeForCell(c1)==0)){
+	  if((c0 == c)&&(mesh.getIBTypeForCell(c1)==Mesh::IBTYPE_FLUID)){
 	    mesh.addIBFace(ibFaceCount, faceIndex);
 	    ibFaceCount++;
 	  }
-	  if((c1 == c)&&(mesh.getIBTypeForCell(c0)==0)){
+	  if((c1 == c)&&(mesh.getIBTypeForCell(c0)==Mesh::IBTYPE_FLUID)){
 	    mesh.addIBFace(ibFaceCount, faceIndex);
 	    ibFaceCount++;
 	  }
@@ -239,11 +241,11 @@ const shared_ptr<CRConnectivity> setibFaceParticles
     const int faceIndex = ibFaceList [p];
     const int C0 = faceCells(faceIndex, 0);
     const int C1 = faceCells(faceIndex, 1);
-    if (mesh.getIBTypeForCell(C0) == 1){  //ib cells
+    if (mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_BOUNDARY){  
       const int nP = cellParticles.getCount(C0);
      (*ibFaceParticles).addCount(p, nP);
     }
-    else if(mesh.getIBTypeForCell(C1) == 1){  //ib cells
+    else if(mesh.getIBTypeForCell(C1) == Mesh::IBTYPE_BOUNDARY){  
       const int nP = cellParticles.getCount(C1);
      (*ibFaceParticles).addCount(p, nP);
     }
@@ -258,14 +260,14 @@ const shared_ptr<CRConnectivity> setibFaceParticles
     const int faceIndex = ibFaceList [p];
     const int C0 = faceCells(faceIndex, 0);
     const int C1 = faceCells(faceIndex, 1);
-    if (mesh.getIBTypeForCell(C0) == 1){   //ib cells
+    if (mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_BOUNDARY){   //ib cells
       const int nP = cellParticles.getCount(C0);
       for(int n=0; n<nP; n++){
 	int value=cellParticles(C0,n);
 	(*ibFaceParticles).add(p, value);
       }
     }
-    else if(mesh.getIBTypeForCell(C1) == 1){ //ib cells
+    else if(mesh.getIBTypeForCell(C1) == Mesh::IBTYPE_BOUNDARY){ //ib cells
       const int nP = cellParticles.getCount(C1);
       for(int n=0; n<nP; n++){
 	int value=cellParticles(C1,n);
@@ -311,7 +313,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
     O.getNodes(center, radius, cellIndexList);
     for(int c=0; c< (int)cellIndexList.size(); c++){
       const int cellCandidate = cellIndexList[c];
-      if (mesh.getIBTypeForCell(cellCandidate) == 0)    //fluid cells
+      if (mesh.getIBTypeForCell(cellCandidate) == Mesh::IBTYPE_FLUID)    
 	count++;
     }
     (*ibFaceCells).addCount(p, count);   
@@ -330,7 +332,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
     O.getNodes(center, radius, cellIndexList);
     for(int c=0; c< (int) cellIndexList.size(); c++){
       const int cellCandidate = cellIndexList[c];
-      if (mesh.getIBTypeForCell(cellCandidate) == 0)   //fluid cells
+      if (mesh.getIBTypeForCell(cellCandidate) == Mesh::IBTYPE_FLUID)  
 	(*ibFaceCells).add(p, cellCandidate);
     }
   }
