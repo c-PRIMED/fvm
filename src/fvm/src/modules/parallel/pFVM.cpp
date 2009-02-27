@@ -9,6 +9,8 @@
 
 #include "FluentReader.h"
 #include "Mesh.h"
+#include "NcDataWriter.h"
+#include "NcDataReader.h"
 
 using namespace std;
 
@@ -30,7 +32,7 @@ int main(int argc, char *argv[])
    //PartMesh*  partMesh = new PartMesh( MPI::COMM_WORLD.Get_rank() );
 
 
-  string file_name("/home/sm/prism-meshes/test_tri_100by100.cas");
+   string file_name( argv[1] );
    FluentReader* fluent_reader = new FluentReader( file_name );
 
    fluent_reader->readMesh();
@@ -59,15 +61,18 @@ int main(int argc, char *argv[])
    part_mesh.mesh_debug();
 
    delete fluent_reader;
+   stringstream ss;
+     ss << "test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
+     NcDataWriter  nc_writer( part_mesh.meshList(), ss.str() );
+     nc_writer.record();
+     NcDataReader  nc_reader( ss.str() );
+     nc_reader.read();
 
-
-   //string  file_name(argv[1]);
-   //cout << " file-name = " << file_name << endl;
-
-   
    MPI::Finalize();
    return 0;
 }
+
+
 
 
 
