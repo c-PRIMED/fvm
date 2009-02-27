@@ -1077,28 +1077,27 @@ PartMesh::mesh_setup()
         //interior faces
         _meshListLocal.at(id)->createInteriorFaceGroup( count_interior_faces(id) );
 
-        //boundary faces
-       set<int>::const_iterator it_set;
-       for ( it_set = _boundarySet.at(id).begin(); it_set != _boundarySet.at(id).end(); it_set++){
-          int bndryID = *it_set;
-          int size   =  _mapBounIDAndCell.at(id).count(bndryID);
-          if ( size > 0 ){
-             int offset =  _bndryOffsets.at(id)[ bndryID ] ;
-             string boundaryType = _mapBounIDAndBounType.at(id)[bndryID];
-             _meshListLocal.at(id)->createBoundaryFaceGroup( size, offset, bndryID, boundaryType);
+         //boundary faces
+        set<int>::const_iterator it_set;
+        for ( it_set = _boundarySet.at(id).begin(); it_set != _boundarySet.at(id).end(); it_set++){
+           int bndryID = *it_set;
+           int size   =  _mapBounIDAndCell.at(id).count(bndryID);
+           if ( size > 0 ){
+              int offset =  _bndryOffsets.at(id)[ bndryID ] ;
+              string boundaryType = _mapBounIDAndBounType.at(id)[bndryID];
+              _meshListLocal.at(id)->createBoundaryFaceGroup( size, offset, bndryID, boundaryType);
+           }
          }
 
-       }
 
-
-       //then interface faces
-       for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++){
-          int interfaceID = *it_set;
-          int size = int(_interfaceMap.at(id).count( interfaceID ) );
-          int offset = _interfaceOffsets.at(id)[ interfaceID];
-          _meshListLocal.at(id)->createInterfaceGroup( size, offset, interfaceID );
-          _meshListLocal.at(id)->createGhostCellSite( interfaceID, shared_ptr<StorageSite>( new StorageSite(size) ) );
-      }
+        //then interface faces
+        for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++){
+           int interfaceID = *it_set;
+           int size = int(_interfaceMap.at(id).count( interfaceID ) );
+           int offset = _interfaceOffsets.at(id)[ interfaceID];
+           _meshListLocal.at(id)->createInterfaceGroup( size, offset, interfaceID );
+           _meshListLocal.at(id)->createGhostCellSite( interfaceID, shared_ptr<StorageSite>( new StorageSite(size) ) );
+         }
 
 
        _meshListLocal.at(id)->setCoordinates( _coord.at(id) );
