@@ -16,7 +16,7 @@ inCell(const int cellIndex,
   
   int faceNumber=cellFaces.getCount(cellIndex);
   int flag[faceNumber];
-  int throwFlag;
+  int throwFlag=0;
   int sum=0;
   VectorT3 Af;
  
