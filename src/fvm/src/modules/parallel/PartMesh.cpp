@@ -107,7 +107,7 @@ PartMesh::mesh()
     mesh_setup();
     mappers();
 
-   // debug_print();
+    //debug_print();
 
 }
 
@@ -1065,12 +1065,12 @@ PartMesh::mesh_setup()
 
         //total cells = interiorcells + boundary ghost cells + interface ghost cells
         int nface_local = _partFaces.at(id)->getCount( _procID );
-        int ncell_local = _nelemsWithGhosts.at(id) + _interfaceMap.at(id).size();
+        //int nGhostCell_local =  _nelemsWithGhosts.at(id) - _nelems.at(id) + _interfaceMap.at(id).size();
+        int nGhostCell_local =  _nonInteriorCells.at(id).size();
         int nnode_local =_partNodes.at(id)->getCount( _procID );
-
         //Storage sites
         faceSite.setCount( nface_local );
-        cellSite.setCount( ncell_local );
+        cellSite.setCount( _nelems.at(id), nGhostCell_local );
         nodeSite.setCount( nnode_local );
 
 
@@ -1081,10 +1081,13 @@ PartMesh::mesh_setup()
        set<int>::const_iterator it_set;
        for ( it_set = _boundarySet.at(id).begin(); it_set != _boundarySet.at(id).end(); it_set++){
           int bndryID = *it_set;
-          int size   = int( _interfaceMap.at(id).count(bndryID) );
-          int offset =  _bndryOffsets.at(id)[ bndryID ] ;
-          string boundaryType = _mapBounIDAndBounType.at(id)[bndryID];
-         _meshListLocal.at(id)->createBoundaryFaceGroup( size, offset, bndryID, boundaryType);
+          int size   =  _mapBounIDAndCell.at(id).count(bndryID);
+          if ( size > 0 ){
+             int offset =  _bndryOffsets.at(id)[ bndryID ] ;
+             string boundaryType = _mapBounIDAndBounType.at(id)[bndryID];
+             _meshListLocal.at(id)->createBoundaryFaceGroup( size, offset, bndryID, boundaryType);
+         }
+
        }
 
 
