@@ -366,7 +366,8 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   {
       const int f = ibFaceIndices[n];
       T wtSum(0);
-
+      int nnb(0);
+      
       for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
       {
           const int c = ibFCCol[nc];
@@ -374,6 +375,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
           T wt = 1.0/dot(dr,dr);
           cellToIBCoeff[nc] = wt;
           wtSum += wt;
+          nnb++;
       }
       for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
       {
@@ -382,7 +384,11 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
           T wt = 1.0/dot(dr,dr);
           particlesToIBCoeff[np] = wt;
           wtSum += wt;
+          nnb++;
       }
+
+      if (nnb == 0)
+        throw CException("no cell or particle neighbors for ib face");
       
       for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
       {
