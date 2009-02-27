@@ -27,9 +27,9 @@ void MPM::setandwriteParticles(const char *file)
 
     int count=0;   
    
-#if 0
+#if 1
     //set up particle cartesian coordinate
-    int nX=200, nY=30, nZ=1;
+    int nX=100, nY=20, nZ=1;
     double gapX=0.5/nX, gapY=0.2/nY, gapZ=1.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
@@ -47,9 +47,9 @@ void MPM::setandwriteParticles(const char *file)
 
 #endif
 
-#if 1
+#if 0
     int nX=20, nY=200, nZ=1;
-    double radius1=0.1, radius2=0.2;
+    double radius1=0., radius2=0.2;
     double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];

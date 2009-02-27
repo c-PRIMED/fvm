@@ -126,8 +126,8 @@ void reportCellMark (const Mesh& mesh, const int nCells,
     fclose(fp);  
 
     string fileName1 = fileBase+"Output/FluidCell_ring.dat";
-    string fileName2 = fileBase+"Output/SolidCell_ring.dat";
-    string fileName3 = fileBase+"Output/IBMCell_ring.dat";
+    string fileName2 = fileBase+"Output/IBMCell_ring.dat";
+    string fileName3 = fileBase+"Output/SolidCell_ring.dat";
     char* file1;
     char* file2;
     char* file3;
@@ -145,10 +145,10 @@ void reportCellMark (const Mesh& mesh, const int nCells,
 	fprintf(fp1, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
       else if(ibType==1){
-	fprintf(fp3, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
+	fprintf(fp2, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
       else{
-	fprintf(fp2, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
+	fprintf(fp3, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
     } 
     fclose(fp1);  
@@ -239,11 +239,11 @@ const shared_ptr<CRConnectivity> setibFaceParticles
     const int faceIndex = ibFaceList [p];
     const int C0 = faceCells(faceIndex, 0);
     const int C1 = faceCells(faceIndex, 1);
-    if (mesh.getIBTypeForCell(C0) == 1){
+    if (mesh.getIBTypeForCell(C0) == 1){  //ib cells
       const int nP = cellParticles.getCount(C0);
      (*ibFaceParticles).addCount(p, nP);
     }
-    else if(mesh.getIBTypeForCell(C1) == 1){
+    else if(mesh.getIBTypeForCell(C1) == 1){  //ib cells
       const int nP = cellParticles.getCount(C1);
      (*ibFaceParticles).addCount(p, nP);
     }
@@ -258,14 +258,14 @@ const shared_ptr<CRConnectivity> setibFaceParticles
     const int faceIndex = ibFaceList [p];
     const int C0 = faceCells(faceIndex, 0);
     const int C1 = faceCells(faceIndex, 1);
-    if (mesh.getIBTypeForCell(C0) == 1){
+    if (mesh.getIBTypeForCell(C0) == 1){   //ib cells
       const int nP = cellParticles.getCount(C0);
       for(int n=0; n<nP; n++){
 	int value=cellParticles(C0,n);
 	(*ibFaceParticles).add(p, value);
       }
     }
-    else if(mesh.getIBTypeForCell(C1) == 1){
+    else if(mesh.getIBTypeForCell(C1) == 1){ //ib cells
       const int nP = cellParticles.getCount(C1);
       for(int n=0; n<nP; n++){
 	int value=cellParticles(C1,n);
@@ -311,7 +311,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
     O.getNodes(center, radius, cellIndexList);
     for(int c=0; c< (int)cellIndexList.size(); c++){
       const int cellCandidate = cellIndexList[c];
-      if (mesh.getIBTypeForCell(cellCandidate) == 1) //if it is a fluid cell
+      if (mesh.getIBTypeForCell(cellCandidate) == 0)    //fluid cells
 	count++;
     }
     (*ibFaceCells).addCount(p, count);   
@@ -330,7 +330,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
     O.getNodes(center, radius, cellIndexList);
     for(int c=0; c< (int) cellIndexList.size(); c++){
       const int cellCandidate = cellIndexList[c];
-      if (mesh.getIBTypeForCell(cellCandidate) == 1) //if it is a fluid cell
+      if (mesh.getIBTypeForCell(cellCandidate) == 0)   //fluid cells
 	(*ibFaceCells).add(p, cellCandidate);
     }
   }

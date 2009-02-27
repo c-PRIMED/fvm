@@ -77,14 +77,14 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
    
     /**************************************************************************************/
     //---set up MPM particles---//
-    string fileName2=fileBase+"Output/MPM_ring.dat";
+    string fileName2=fileBase+"MPMs.dat";
     char* file2;
     file2=&fileName2[0];
     
 
     // MPM solid;
     //initialize particle velocity and coordinate and write into file
-    solid.setandwriteParticles(file2);
+    // solid.setandwriteParticles(file2);
 
     //get coordinate
     const shared_ptr<VecD3Array> MPM_Coordinates = solid.readCoordinates(file2);
@@ -261,27 +261,14 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     //test mark cell
     
-    reportCellMark (mesh, nCells, cellCentroid, fileBase);
+    //reportCellMark (mesh, nCells, cellCentroid, fileBase);
 
  
-#if 0
+
     /***************************mark IBFaces********************/
 
     markIBFaces (mesh, nCells, cellCells, cellFaces, faceCells);
    
-
-    int count=0;
-    //double check ibFaceCount
-    for (f=0; f<nFaces; f++){
-      int c0 = faceCells(f, 0);
-      int c1 = faceCells(f, 1);
-      int ibType0 = mesh.getIBTypeForCell(c0);
-      int ibType1 = mesh.getIBTypeForCell(c1);
-      if(!(ibType0==ibType1))
-	count++;
-    }
-
-
 
     const StorageSite&  ibFaces = mesh.getIBFaces();
    
@@ -338,7 +325,5 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
       } 
      */
     
-#endif
-   
  
 }
