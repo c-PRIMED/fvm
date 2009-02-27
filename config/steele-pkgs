@@ -32,4 +32,6 @@ netcdf:
 netCDF4:
 	Build=True
 
-
+# Needed for MPM
+parmetis:
+	Build=True
