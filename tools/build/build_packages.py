@@ -36,7 +36,6 @@ class BuildPkg:
         BuildPkg.packages = [
             Python("pkgs/python", 0),
             Numpy("pkgs/numpy", 1),
-            Numeric("pkgs/numeric", 1),
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
@@ -46,6 +45,7 @@ class BuildPkg:
             Fftw("pkgs/fftw", 0),
             Netcdf("pkgs/netcdf", 1),
             NetCDF4("pkgs/netCDF4", 1),
+            ParMetis("pkgs/ParMetis", 1),
             Lammps("src/lammps", 1),
             Fvm("src/fvm", 0),
             MPM("src/MPM", 1),
@@ -199,11 +199,13 @@ class Numpy(BuildPkg):
     def _install(self):
         return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
 
-class Numeric(BuildPkg):
+class ParMetis(BuildPkg):
     def _build(self):
-        return self.sys_log("python setup.py build")
+        return self.sys_log("make")
     def _install(self):
-        return self.sys_log("python setup.py install")
+        idir = os.path.join(self.blddir, "include")
+        self.sys_log("install --mode=444 parmetis.h %s" % idir)
+        return self.sys_log("install *.a %s" % self.libdir)
 
 class NetCDF4(BuildPkg):
     name = "netCDF4"
