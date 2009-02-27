@@ -43,6 +43,15 @@ private :
     void  setVars();
     void  set_var_values();
 
+    void get_var_values();
+    void  get_boundary_vals( int id );
+    void  get_interface_vals( int id );
+    void  add_attributes();
+    void  write_values();
+
+
+
+
      const MeshList& _meshList;
      string  _fname;
 
@@ -51,6 +60,7 @@ private :
      NcDim    *_nmesh;
      NcDim    *_nBoun;
      NcDim    *_charSize;
+     NcDim    *_nInterface;
      //NcVars
      NcVar*  _dimension;
      NcVar*  _meshID;
@@ -60,12 +70,18 @@ private :
      NcVar*  _nodesCount;
      NcVar*  _mapCount;
      NcVar*  _interiorFaceGroup;
+     
      NcVar*  _boundaryGroup;
      NcVar*  _boundarySize;
      NcVar*  _boundaryOffset;
      NcVar*  _boundaryID;
      NcVar*  _boundaryType;
 
+     NcVar*  _interfaceGroup;
+     NcVar*  _interfaceSize;
+     NcVar*  _interfaceOffset;
+     NcVar*  _interfaceID;
+     
 
      //variable values
      vector< int >  _dimensionVals;
@@ -83,6 +99,12 @@ private :
      vector< int > _boundaryOffsetVals;
      vector< int > _boundaryIDVals;
      vector< const char* > _boundaryTypeVals;
+
+
+     vector< int > _interfaceGroupVals;
+     vector< int > _interfaceSizeVals;
+     vector< int > _interfaceOffsetVals;
+     vector< int > _interfaceIDVals;
 
 
      const int MAX_CHAR;

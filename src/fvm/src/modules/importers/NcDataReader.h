@@ -49,6 +49,13 @@ private :
     void  meshList();
     void  mappers( int id );
 
+    void storage_sites( int id );
+    void boundary_faces( int id );
+    void allocate_vars();
+    void get_bndry_vals();
+
+
+
     string _fname;
 
 
