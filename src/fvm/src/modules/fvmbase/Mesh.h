@@ -115,6 +115,9 @@ public:
   const FaceGroupList& getBoundaryFaceGroups() const
   {return _boundaryGroups;}
 
+  const FaceGroupList& getInterfaceGroups() const
+  {return _interfaceGroups;}
+  
 #if 0
   const FaceGroup&
   getFaceGroup(const int i) const {return *_faceGroups[i];}
