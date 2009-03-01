@@ -1368,118 +1368,6 @@ PartMesh::count_interior_faces( int id )
 
 //interface and boundary cells which are always stored as second element 
 //faceCellsOrdered(face,0) => interior cells, faceCellsOrdered(face,1)=>boundary or interface cells
-void 
-PartMesh::order_faceCells_faceNodes()
-{
-   
-     for ( int id = 0; id < _nmesh; id++ ){
-
-        _faceCellsOrdered.push_back( CRConnectivityPtr( new  CRConnectivity(*_faceSite.at(id), *_cellSite.at(id)) ) );
-        _faceNodesOrdered.push_back( CRConnectivityPtr( new  CRConnectivity(*_faceSite.at(id), *_nodeSite.at(id)) ) );
-          //faceCells 
-         _faceCellsOrdered.at(id)->initCount();
-         _faceNodesOrdered.at(id)->initCount();
-
-         int nface = _partFaces.at(id)->getCount(_procID);
-         for ( int face = 0; face < nface; face++){
-            _faceCellsOrdered.at(id)->addCount(face,2);  //two cells 
-            _faceNodesOrdered.at(id)->addCount(face,2);  //two nodes
-         }
-
-         _faceCellsOrdered.at(id)->finishCount();
-         _faceNodesOrdered.at(id)->finishCount();
-
-
-
-         //start with interior faces
-         int face_track = 0;
-         int nface_local = _partFaces.at(id)->getCount( _procID );
-         for ( int face = 0; face < nface_local; face++){
-             int cell_0 = (*_faceCells.at(id))(face,0);
-             int cell_1 = (*_faceCells.at(id))(face,1);
-             bool is_interior = _nonInteriorCells.at(id).count(cell_0) == 0 &&
-                                _nonInteriorCells.at(id).count(cell_1) == 0; 
-              if ( is_interior ) {
-                 _faceCellsOrdered.at(id)->add(face_track,cell_0);
-                 _faceCellsOrdered.at(id)->add(face_track,cell_1);
-
-                  int node_0 = (*_faceNodes.at(id))( face, 0 );
-                  int node_1 = (*_faceNodes.at(id))( face, 1 );
-                 _faceNodesOrdered.at(id)->add( face_track, node_0 );
-                 _faceNodesOrdered.at(id)->add( face_track, node_1 );
-                  face_track++;
-              }
-         }
-
-        //then boundary faces
-       multimap<int,int>::const_iterator it_cell;
-       pair<multimap<int,int>::const_iterator,multimap<int,int>::const_iterator> it;
-       set<int> ::const_iterator it_set;
-       int offset = face_track;
-       //loop over boundaries
-       for ( it_set = _boundarySet.at(id).begin(); it_set != _boundarySet.at(id).end(); it_set++){
-          int bndryID = *it_set;
-
-          it = _mapBounIDAndCell.at(id).equal_range(bndryID);
-          //if it is not empty
-          if ( _mapBounIDAndCell.at(id).count( bndryID ) > 0 )
-             _bndryOffsets.at(id).insert( pair<int,int>(bndryID, offset) );
- 
-          for ( it_cell = it.first; it_cell != it.second; it_cell++ ){
-               
-               int elem_0 =  _faceCells.at(id)->getGlobalToLocalMap()[it_cell->second];
-               int elem_1 =  (*_cellCells.at(id))(elem_0, 0);
-              _faceCellsOrdered.at(id)->add(face_track, elem_1);
-              _faceCellsOrdered.at(id)->add(face_track, elem_0);
-              
-               //boundary elements have been surrounded only by two points
-               int node_0 = (*_cellNodes.at(id))(elem_0,0);
-               int node_1 = (*_cellNodes.at(id))(elem_0,1);
-              _faceNodesOrdered.at(id)->add( face_track, node_0 );
-              _faceNodesOrdered.at(id)->add( face_track, node_1 );            
-              
-              face_track++;
-              offset++;
-          }
-       }
-
-
-       //then interface faces
-       multimap<int,int>::const_iterator it_face;
-       for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++){
-          int interfaceID = *it_set;
-          it = _interfaceMap.at(id).equal_range( interfaceID );
-          _interfaceOffsets.at(id).insert( pair<int,int>(interfaceID,offset) ) ;
-          for ( it_face = it.first; it_face != it.second; it_face++ ){
-              int face_id = it_face->second;
-              int elem_0 =  (*_faceCells.at(id))(face_id,0);
-              int elem_1 =  (*_faceCells.at(id))(face_id,1);
-  
-
-             if ( _nonInteriorCells.at(id).count( elem_1 ) > 0 ){ //if elem_1 is non-interior cell
-                _faceCellsOrdered.at(id)->add(face_track,elem_0);
-                _faceCellsOrdered.at(id)->add(face_track,elem_1);
-             } else { 
-                _faceCellsOrdered.at(id)->add(face_track,elem_1);
-                _faceCellsOrdered.at(id)->add(face_track,elem_0);
-             }
-
-              int node_0 = (*_faceNodes.at(id))( face_id, 0 );
-              int node_1 = (*_faceNodes.at(id))( face_id, 1 );
-              _faceNodesOrdered.at(id)->add( face_track, node_0 );
-              _faceNodesOrdered.at(id)->add( face_track, node_1 );
-
-              face_track++;
-              offset++;
-          }
-       }
-
-        _faceCellsOrdered.at(id)->finishAdd(); 
-        _faceNodesOrdered.at(id)->finishAdd();
-
-     }
-
-}
 
 
 void
@@ -1518,6 +1406,120 @@ PartMesh::non_interior_cells()
         }
 
     }
+
+}
+
+
+
+void 
+PartMesh::order_faceCells_faceNodes()
+{
+   
+     for ( int id = 0; id < _nmesh; id++ ){
+
+        _faceCellsOrdered.push_back( CRConnectivityPtr( new  CRConnectivity(*_faceSite.at(id), *_cellSite.at(id)) ) );
+        _faceNodesOrdered.push_back( CRConnectivityPtr( new  CRConnectivity(*_faceSite.at(id), *_nodeSite.at(id)) ) );
+          //faceCells 
+         _faceCellsOrdered.at(id)->initCount();
+         _faceNodesOrdered.at(id)->initCount();
+
+         int nface = _partFaces.at(id)->getCount(_procID);
+         int count_node = _faceNodes.at(id)->getRow()[1] - _faceNodes.at(id)->getRow()[0];
+         int count_cell = _faceCells.at(id)->getRow()[1] - _faceCells.at(id)->getRow()[0];
+         for ( int face = 0; face < nface; face++){
+            _faceCellsOrdered.at(id)->addCount(face,count_cell);  //two cells (always)
+            _faceNodesOrdered.at(id)->addCount(face,count_node);  //two, three or four nodes
+         }
+
+         _faceCellsOrdered.at(id)->finishCount();
+         _faceNodesOrdered.at(id)->finishCount();
+
+
+
+         //start with interior faces
+         int face_track = 0;
+         int nface_local = _partFaces.at(id)->getCount( _procID );
+         for ( int face = 0; face < nface_local; face++){
+             int cell_0 = (*_faceCells.at(id))(face,0);
+             int cell_1 = (*_faceCells.at(id))(face,1);
+             bool is_interior = _nonInteriorCells.at(id).count(cell_0) == 0 &&
+                                _nonInteriorCells.at(id).count(cell_1) == 0; 
+              if ( is_interior ) {
+                 _faceCellsOrdered.at(id)->add(face_track,cell_0);
+                 _faceCellsOrdered.at(id)->add(face_track,cell_1);
+
+                 for  ( int node = 0; node < count_node; node++)
+                    _faceNodesOrdered.at(id)->add( face_track, (*_faceNodes.at(id))( face, node ) );
+   
+                 face_track++;
+              }
+         }
+
+        //then boundary faces
+       multimap<int,int>::const_iterator it_cell;
+       pair<multimap<int,int>::const_iterator,multimap<int,int>::const_iterator> it;
+       set<int> ::const_iterator it_set;
+       int offset = face_track;
+       //loop over boundaries
+       for ( it_set = _boundarySet.at(id).begin(); it_set != _boundarySet.at(id).end(); it_set++){
+          int bndryID = *it_set;
+
+          it = _mapBounIDAndCell.at(id).equal_range(bndryID);
+          //if it is not empty
+          if ( _mapBounIDAndCell.at(id).count( bndryID ) > 0 )
+             _bndryOffsets.at(id).insert( pair<int,int>(bndryID, offset) );
+ 
+          for ( it_cell = it.first; it_cell != it.second; it_cell++ ){
+               
+               int elem_0 =  _faceCells.at(id)->getGlobalToLocalMap()[it_cell->second];
+               int elem_1 =  (*_cellCells.at(id))(elem_0, 0);
+              _faceCellsOrdered.at(id)->add(face_track, elem_1);
+              _faceCellsOrdered.at(id)->add(face_track, elem_0);
+              
+               
+               int count_node = _faceNodes.at(id)->getRow()[1] - _faceNodes.at(id)->getRow()[0];
+               for  ( int node = 0; node < count_node; node++)
+                    _faceNodesOrdered.at(id)->add( face_track, (*_cellNodes.at(id))(elem_0,node) );
+
+              face_track++;
+              offset++;
+          }
+       }
+
+
+       //then interface faces
+       multimap<int,int>::const_iterator it_face;
+       for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++){
+          int interfaceID = *it_set;
+          it = _interfaceMap.at(id).equal_range( interfaceID );
+          _interfaceOffsets.at(id).insert( pair<int,int>(interfaceID,offset) ) ;
+          for ( it_face = it.first; it_face != it.second; it_face++ ){
+              int face_id = it_face->second;
+              int elem_0 =  (*_faceCells.at(id))(face_id,0);
+              int elem_1 =  (*_faceCells.at(id))(face_id,1);
+  
+
+             if ( _nonInteriorCells.at(id).count( elem_1 ) > 0 ){ //if elem_1 is non-interior cell
+                _faceCellsOrdered.at(id)->add(face_track,elem_0);
+                _faceCellsOrdered.at(id)->add(face_track,elem_1);
+             } else { 
+                _faceCellsOrdered.at(id)->add(face_track,elem_1);
+                _faceCellsOrdered.at(id)->add(face_track,elem_0);
+             }
+
+             int count_node = _faceNodes.at(id)->getRow()[1] - _faceNodes.at(id)->getRow()[0];
+             for  ( int  node = 0; node < count_node; node++)
+                    _faceNodesOrdered.at(id)->add( face_track, (*_faceNodes.at(id))( face_id, node ) );
+
+              face_track++;
+              offset++;
+          }
+       }
+
+        _faceCellsOrdered.at(id)->finishAdd(); 
+        _faceNodesOrdered.at(id)->finishAdd();
+
+     }
 
 }
 
