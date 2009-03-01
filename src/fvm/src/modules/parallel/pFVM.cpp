@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
   //actions
    part_mesh.partition();
-   part_mesh.dumpTecplot();	//there is bug for quadrilateral elements in this method find it after turkey
+   //part_mesh.dumpTecplot();	//there is bug for quadrilateral elements in this method find it after turkey
 
    part_mesh.mesh();
    part_mesh.mesh_debug();
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
      NcDataWriter  nc_writer( part_mesh.meshList(), ss.str() );
      nc_writer.record();
      NcDataReader  nc_reader( ss.str() );
-     nc_reader.read();
+    nc_reader.read();
 
    MPI::Finalize();
    return 0;
