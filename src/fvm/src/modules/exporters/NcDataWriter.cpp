@@ -12,14 +12,18 @@
 
 #include <iostream>
 #include <cassert>
+#include <numeric>
 
 #include "NcDataWriter.h"
 #include "netcdfcpp.h"
 #include "StorageSite.h"
+#include "Array.h"
 #include "mpi.h"
 
+
 NcDataWriter::NcDataWriter( const MeshList& meshes, const string& fname )
-: _meshList( meshes ), _fname( fname ), MAX_CHAR(40)
+: _meshList( meshes ), _fname( fname ), _ncFile(NULL), _xVals(NULL), _yVals(NULL), _zVals(NULL),
+_faceCellsRowVals(NULL), _faceCellsColVals(NULL), _faceNodesRowVals(NULL), _faceNodesColVals(NULL), MAX_CHAR(40)
 {
 
    init();
@@ -29,6 +33,15 @@ NcDataWriter::NcDataWriter( const MeshList& meshes, const string& fname )
 
 NcDataWriter::~NcDataWriter()
 {
+   if ( _xVals ) delete [] _xVals;
+   if ( _yVals ) delete [] _yVals;
+   if ( _zVals ) delete [] _zVals;
+
+   if ( _faceCellsRowVals ) delete []  _faceCellsRowVals;
+   if ( _faceCellsColVals ) delete []  _faceCellsColVals;
+   if ( _faceNodesRowVals ) delete []  _faceNodesRowVals;
+   if ( _faceNodesColVals ) delete []  _faceNodesColVals;
+
    if ( _ncFile ) delete _ncFile;
 // // // //    vector< char* > ::iterator it;
 // // // //    for ( it = _boundaryTypeVals.begin(); it != _boundaryTypeVals.end(); it++)
@@ -58,7 +71,7 @@ NcDataWriter::record()
 void
 NcDataWriter::init()
 {
-    _ncFile = NULL;
+    //_ncFile = NULL;
 
 }
 
@@ -80,18 +93,50 @@ NcDataWriter::setDims()
      
     int index_boun = 0;
     int index_interface = 0;
+    int  nnodes = 0;
+    int  nfaces = 0;
+    int  ncells = 0;
+    int  nface_row = 0;
+    int  nfaceCells_col = 0;
+    int  nfaceNodes_col = 0;
+
      for ( int id = 0; id < _nmesh->size(); id++ ){
          index_boun      += _meshList.at(id)->getBoundaryGroupCount();
          index_interface += _meshList.at(id)->getInterfaceGroupCount();
+         nnodes          += _meshList.at(id)->getNodes().getCount();
+         nfaces          += _meshList.at(id)->getFaces().getCount();
+         ncells          += _meshList.at(id)->getCells().getCount();
+         nface_row       += _meshList.at(id)->getAllFaceCells().getRow().getLength();
+         nfaceCells_col  += _meshList.at(id)->getAllFaceCells().getCol().getLength();
+         nfaceNodes_col  += _meshList.at(id)->getAllFaceNodes().getCol().getLength();
+         
      }
+
       _nBoun     = _ncFile->add_dim("boun_type_dim", index_boun );
       _charSize  = _ncFile->add_dim("char_dim", MAX_CHAR );
       _nInterface = _ncFile->add_dim("nInterface", index_interface ); 
+
+      _nnodes     = _ncFile->add_dim("nnodes", nnodes);
+      _nfaces     = _ncFile->add_dim("nfaces", nfaces);
+      _ncells     = _ncFile->add_dim("ncells", ncells);
+
+      _nfaceRow  = _ncFile->add_dim("nface_row", nface_row);
+      _nfaceCellsCol = _ncFile->add_dim("nfaceCells_col", nfaceCells_col);
+      _nfaceNodesCol = _ncFile->add_dim("nfaceNodes_col", nfaceNodes_col);
+
 
       assert( _ncFile->add_att("nmesh", "number of total meshes") );
       assert( _ncFile->add_att("boun_type_dim", "total count of boundary types") );
       assert( _ncFile->add_att("char_dim", "maximum capacity of char variable" ) );
       assert( _ncFile->add_att("interface_count", "count of interfaces")  );
+
+      assert( _ncFile->add_att("nnodes", "number of nodes" ) );
+      assert( _ncFile->add_att("nfaces", "number of faces" ) );
+      assert( _ncFile->add_att("ncells", "number of cells" ) );
+ 
+      assert( _ncFile->add_att("nface_row", "row dimension of face connectivity" ) );
+      assert( _ncFile->add_att("nfaceCells_col", "col dimension of faceCells connectivity" ) );
+      assert( _ncFile->add_att("nfaceNodes_col", "col dimension of faceNodes connectivity" ) );
 
 }
 
@@ -120,6 +165,15 @@ NcDataWriter::setVars()
     _interfaceOffset = _ncFile->add_var("interface_offset", ncInt, _nInterface );
     _interfaceID     = _ncFile->add_var("interface_id"    , ncInt, _nInterface ); 
 
+    _x  = _ncFile->add_var("x", ncDouble, _nnodes );
+    _y  = _ncFile->add_var("y", ncDouble, _nnodes );
+    _z  = _ncFile->add_var("z", ncDouble, _nnodes );
+
+    _faceCellsRow = _ncFile->add_var("face_cells_row", ncInt, _nfaceRow );
+    _faceCellsCol = _ncFile->add_var("face_cells_col", ncInt, _nfaceCellsCol );
+    _faceNodesRow = _ncFile->add_var("face_nodes_row", ncInt, _nfaceRow );
+    _faceNodesCol = _ncFile->add_var("face_nodes_col", ncInt, _nfaceNodesCol );
+
 }
 
 //assign values to NcVars
@@ -144,6 +198,19 @@ NcDataWriter::set_var_values()
 void 
 NcDataWriter::get_var_values()
 {
+
+     assert( !_xVals );
+     assert( !_yVals );
+     assert( !_zVals );
+
+    _xVals = new double [ _nnodes->size() ];
+    _yVals = new double [ _nnodes->size() ];
+    _zVals = new double [ _nnodes->size() ];
+
+    _faceCellsRowVals = new int [ _nfaces->size() ];
+    _faceCellsColVals = new int [ _ncells->size() ];
+    _faceNodesRowVals = new int [ _nfaces->size() ];
+    _faceNodesColVals = new int [ _nnodes->size() ];
 
     for ( long id = 0; id < _nmesh->size(); id++ ){
        //dimension-s
@@ -172,7 +239,11 @@ NcDataWriter::get_var_values()
        //interface values
         get_interface_vals( id );
 
+       //x, y, z
+        get_coords( id );
 
+       //connectivities
+       connectivities( id );
     }
 }
 
@@ -190,7 +261,7 @@ NcDataWriter::get_boundary_vals( int id )
            _boundaryTypeVals.push_back( bounFaceList.at(boun)->groupType.c_str() );
             //assign values
            _boundaryType->set_cur(boun); 
-           assert(  int(bounFaceList.at(boun)->groupType.size()) < MAX_CHAR );
+            assert(  int(bounFaceList.at(boun)->groupType.size()) < MAX_CHAR );
            _boundaryType->put( _boundaryTypeVals[boun], 1, bounFaceList.at(boun)->groupType.size() );
        }
 
@@ -211,7 +282,54 @@ NcDataWriter::get_interface_vals( int id )
 
 }
 
+//coordinate values
+void
+NcDataWriter::get_coords( int id )
+{
+      int nn = _nodesCountVals.at(id);   
+      const Mesh& mesh = *(_meshList.at(id));
+      const Array<Mesh::VecD3>&  coord = mesh.getNodeCoordinates();
+      for ( int n = 0; n < nn; n++ ){
+         _xVals[n] = coord[n][0];
+         _yVals[n] = coord[n][1];
+         _zVals[n] = coord[n][2];
+      }
 
+       _x->put( _xVals, nn );
+       _y->put( _yVals, nn );
+       _z->put( _zVals, nn );
+
+       _x->set_cur( nn );
+       _y->set_cur( nn );
+       _z->set_cur( nn );
+}
+
+//connectivities
+void
+NcDataWriter::connectivities( int id )
+{
+     //rows
+     const Mesh& mesh = *(_meshList.at(id));
+     const CRConnectivity& faceCells = mesh.getAllFaceCells();
+     const CRConnectivity& faceNodes = mesh.getAllFaceNodes();
+
+     int nRow = faceCells.getRow().getLength();
+     _faceCellsRow->put( reinterpret_cast<int*> (faceCells.getRow().getData()), nRow );
+     _faceNodesRow->put( reinterpret_cast<int*> (faceNodes.getRow().getData()), nRow );
+     _faceCellsRow->set_cur( nRow );
+     _faceNodesRow->set_cur( nRow );
+
+    //cols
+     int ncells = faceCells.getCol().getLength();
+     _faceCellsCol->put( reinterpret_cast<int*> (faceCells.getCol().getData()), ncells );
+     _faceCellsCol->set_cur( ncells );
+
+     //cols (faceNodes)
+     int nnodes = faceNodes.getCol().getLength();
+     _faceNodesCol->put( reinterpret_cast<int*> (faceNodes.getCol().getData()), nnodes );
+     _faceNodesCol->set_cur( nnodes );
+
+}
 
 //attributes
 void 
@@ -237,6 +355,16 @@ NcDataWriter::add_attributes()
      assert( _interfaceSize->add_att("interface_size", " size of interface" ) );
      assert( _interfaceOffset->add_att("interface_offset", " offset of interface" ) );
      assert( _interfaceID->add_att("interface_id", " interface id " ) );
+
+     assert( _x->add_att("x", "x-coordinate") );
+     assert( _y->add_att("y", "y-coordinate") );
+     assert( _z->add_att("z", "z-coordinate") );
+
+     assert( _faceCellsRow->add_att("face_cells_row", "row values of faceCells CRconnctivities") );
+     assert( _faceNodesRow->add_att("face_nodes_row", "row values of faceNodes CRconnctivities") );
+     assert( _faceCellsCol->add_att("face_cells_col", "col values of faceCells CRconnctivities") );
+     assert( _faceNodesCol->add_att("face_nodes_col", "col values of faceNodes CRconnctivities") );
+
 
 
 }

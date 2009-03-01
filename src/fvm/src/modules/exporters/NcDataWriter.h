@@ -43,9 +43,12 @@ private :
     void  setVars();
     void  set_var_values();
 
-    void get_var_values();
+    void  get_var_values();
     void  get_boundary_vals( int id );
     void  get_interface_vals( int id );
+    void  get_coords( int id );
+    void  connectivities( int id );
+
     void  add_attributes();
     void  write_values();
 
@@ -61,6 +64,14 @@ private :
      NcDim    *_nBoun;
      NcDim    *_charSize;
      NcDim    *_nInterface;
+     NcDim    *_nnodes;
+     NcDim    *_nfaces;
+     NcDim    *_ncells;
+
+     NcDim    *_nfaceRow;
+     NcDim    *_nfaceCellsCol;
+     NcDim    *_nfaceNodesCol;
+
      //NcVars
      NcVar*  _dimension;
      NcVar*  _meshID;
@@ -81,7 +92,15 @@ private :
      NcVar*  _interfaceSize;
      NcVar*  _interfaceOffset;
      NcVar*  _interfaceID;
-     
+
+     NcVar*  _x;
+     NcVar*  _y;
+     NcVar*  _z;
+
+     NcVar* _faceCellsRow;
+     NcVar* _faceCellsCol;
+     NcVar* _faceNodesRow;
+     NcVar* _faceNodesCol;
 
      //variable values
      vector< int >  _dimensionVals;
@@ -106,6 +125,14 @@ private :
      vector< int > _interfaceOffsetVals;
      vector< int > _interfaceIDVals;
 
+     double  *_xVals; 
+     double  *_yVals;
+     double  *_zVals;
+
+     int  *_faceCellsRowVals;
+     int  *_faceCellsColVals;
+     int  *_faceNodesRowVals;
+     int  *_faceNodesColVals;
 
      const int MAX_CHAR;
 

@@ -17,6 +17,7 @@
 
 #include "Mesh.h"
 
+
 using namespace std;
 
 /**
@@ -26,6 +27,10 @@ using namespace std;
 class NcFile;
 class NcDim;
 class NcVar;
+
+
+typedef   shared_ptr< StorageSite >  StorageSitePtr; 
+typedef   shared_ptr< CRConnectivity > CRConnectivityPtr;
 
 
 class NcDataReader {
@@ -44,16 +49,23 @@ private :
     void  setNcFile();
     void  getDims();
     void  getVars();
+
     void  get_var_values();
+    void  allocate_vars();
+    void  get_bndry_vals();
+    void  get_interface_vals();
+    void  get_coord_vals();
+    void  get_connectivity_vals();
+
 
     void  meshList();
-    void  mappers( int id );
-
-    void storage_sites( int id );
-    void boundary_faces( int id );
-    void allocate_vars();
-    void get_bndry_vals();
-
+    void  storage_sites( int id );
+    void  boundary_faces( int id );
+    void  interfaces( int id );
+    void  coords( int id );
+    void  face_cells( int id );
+    void  face_nodes( int id );
+//    void  mappers( int id );
 
 
     string _fname;
@@ -64,6 +76,13 @@ private :
     int  _nmesh;
     int  _nBoun;
     int  _charSize;
+    int  _nInterface;
+    int  _nnodes;
+
+    int   _nfaceRow;
+    int   _nfaceCellsCol;
+    int   _nfaceNodesCol;
+
 
 
     NcVar *_dimension;
@@ -80,6 +99,22 @@ private :
     NcVar*  _boundaryOffset;
     NcVar*  _boundaryID;
     NcVar*  _boundaryType;
+
+
+    NcVar*  _interfaceGroup;
+    NcVar*  _interfaceSize;
+    NcVar*  _interfaceOffset;
+    NcVar*  _interfaceID;
+  
+    NcVar*  _x;
+    NcVar*  _y;
+    NcVar*  _z;
+
+    NcVar* _faceCellsRow;
+    NcVar* _faceCellsCol;
+    NcVar* _faceNodesRow;
+    NcVar* _faceNodesCol;
+
 
     int*  _dimensionVals;
     int*  _meshIDVals;
@@ -98,8 +133,23 @@ private :
     int * _boundaryIDVals;
     vector<char*>  _boundaryTypeVals;
 
+    int  *_interfaceGroupVals;
+    int  *_interfaceSizeVals;
+    int  *_interfaceOffsetVals;
+    int  *_interfaceIDVals;
 
-    MeshList   _meshList;
+    double  *_xVals;
+    double  *_yVals;
+    double  *_zVals;
+    
+     int  *_faceCellsRowVals;
+     int  *_faceCellsColVals;
+     int  *_faceNodesRowVals;
+     int  *_faceNodesColVals;
+    
+
+
+     MeshList   _meshList;
 };
 
 #endif
