@@ -138,7 +138,7 @@ def main():
         config.read(srcpath, cname, True, False)
 
     # TESTING
-    if not build_failed and options.test and not pbs.start(BuildPkg, cname):
+    if options.test and not pbs.start(BuildPkg, cname):
         ts = time.time()
         open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
         try:
@@ -155,7 +155,7 @@ def main():
     if not options.test:
         build_utils.run_commands('ALL', 'after')
 
-    if options.build and not build_failed:
+    if options.build:
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
         print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
         try:

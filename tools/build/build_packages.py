@@ -43,12 +43,12 @@ class BuildPkg:
             Boost("pkgs/boost", 0),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
-            Netcdf("pkgs/netcdf", 1),
+            Netcdf("pkgs/netcdf", 2),
             NetCDF4("pkgs/netCDF4", 1),
             ParMetis("pkgs/ParMetis", 1),
             Lammps("src/lammps", 1),
-            Fvm("src/fvm", 0),
             MPM("src/MPM", 1),
+            Fvm("src/fvm", 0),
             ]
         
     setup = staticmethod(setup)
