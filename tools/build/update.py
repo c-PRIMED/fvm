@@ -62,9 +62,9 @@ def svn_up(f):
 
    exe = os.popen("svn update")
    for line in exe:
-      if line[0] == 'U' or (line[0] == 'A' and line[1] == ' '):
+      if (line[0] == 'U' or line[0] == 'A') and line[1] == ' ':
          write_update(f, line.split()[1], "Updated")
-      elif line[0] == 'D':
+      elif line[0] == 'D' and line[1] == ' ':
          write_update(f, line.split()[1], "Deleted")
    ret = exe.close()
    if ret:
