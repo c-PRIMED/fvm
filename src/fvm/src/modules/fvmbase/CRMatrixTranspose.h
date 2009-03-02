@@ -108,7 +108,7 @@ public:
         for (int nb = _row[nr]; nb<_row[nr+1]; nb++)
         {
             const int j = _col[nb];
-            y[j] += _coeff[nb]*x[nr];
+            y[nr] += _coeff[nb]*x[j];
         }
     }
   }
