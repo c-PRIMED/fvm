@@ -81,8 +81,33 @@ fmodel = models.FlowModelA(geomFields,flowFields,meshes)
 
 reader.importFlowBCs(fmodel)
 fmodel.init()
+
+
+momSolver = fvmbaseExt.AMG()
+momSolver.relativeTolerance = 1e-1
+momSolver.nMaxIterations = 20
+momSolver.maxCoarseLevels=20
+momSolver.verbosity=0
+
+contSolver = fvmbaseExt.AMG()
+#pc = fvmbaseExt.AMG()
+#pc.verbosity=0
+#contSolver = fvmbaseExt.BCGStab()
+#contSolver.preconditioner = pc
+contSolver.relativeTolerance = 1e-1
+contSolver.nMaxIterations = 20
+contSolver.verbosity=0
+contSolver.maxCoarseLevels=20
+
+foptions = fmodel.getOptions()
+
+foptions.momentumLinearSolver = momSolver
+foptions.pressureLinearSolver = contSolver
+
 import time
 t0 = time.time()
+
+#import debug
 
 solid = fvmbaseExt.MPM()
 
@@ -105,10 +130,9 @@ pv = solid.getVelocities()
 geomFields.coordinate[particles]=px
 flowFields.velocity[particles]=pv
 
-import debug
 metricsCalculator.computeIBInterpolationMatrices(particles)
 
-advance(fmodel,particles,1)
+advance(fmodel,particles,200)
 
 saveData(flowFields,reader,caseBase)
 

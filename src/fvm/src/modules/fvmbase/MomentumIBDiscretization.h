@@ -50,7 +50,7 @@ public:
       return;
     
     const StorageSite& cells = mesh.getCells();
-    const StorageSite& faces = mesh.getCells();
+    const StorageSite& faces = mesh.getFaces();
     
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
 
@@ -68,7 +68,7 @@ public:
 
     const Array<int>& ibType = mesh.getIBType();
     const int nIBFaces = ibFaces.getCount();
-      
+
     // used to keep track of the current ib face index
     int ibFace =0;
     
@@ -78,27 +78,14 @@ public:
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
 
-        if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
-            (ibType[c1] == Mesh::IBTYPE_FLUID))
-        {
-            // leave as  is
-        }
-        else if ((ibType[c0] == Mesh::IBTYPE_SOLID) &&
-                 (ibType[c1] == Mesh::IBTYPE_SOLID))
-        {
-            // setup to get zero corrections
-            rCell[c0].zero();
-            rCell[c1].zero();
-            matrix.setDirichlet(c0);
-            matrix.setDirichlet(c1);
-        }
-        else
+        if (((ibType[c0] == Mesh::IBTYPE_FLUID) && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+            ((ibType[c1] == Mesh::IBTYPE_FLUID) && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
         {
             if (ibFace >= nIBFaces)
               throw CException("incorrect number of IB faces");
             // this is an iBFace, determine which cell is interior and which boundary
             const VectorT3& faceVelocity = ibVelocity[ibFace];
-            if (ibType[c0] != Mesh::IBTYPE_FLUID)
+            if (ibType[c0] == Mesh::IBTYPE_FLUID)
             {
                 rCell[c0] += assembler.getCoeff01(f)*(faceVelocity-cellVelocity[c1]);
                 rCell[c1].zero();
@@ -113,6 +100,19 @@ public:
                 matrix.setDirichlet(c0);
             }
             ibFace++;
+        }
+        else if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
+            (ibType[c1] == Mesh::IBTYPE_FLUID))
+        {
+            // leave as  is
+        }
+        else
+        {
+            // setup to get zero corrections
+            rCell[c0].zero();
+            rCell[c1].zero();
+            matrix.setDirichlet(c0);
+            matrix.setDirichlet(c1);
         }
     }
     if (ibFace != nIBFaces)

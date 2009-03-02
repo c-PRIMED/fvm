@@ -636,45 +636,49 @@ public:
             ppDiag[c0] += pCoeff;
             ppDiag[c1] += pCoeff;
         }
-        else if ((ibType[c0] == Mesh::IBTYPE_SOLID) &&
-                 (ibType[c1] == Mesh::IBTYPE_SOLID))
+        else if (((ibType[c0] == Mesh::IBTYPE_FLUID)
+                  && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+                 ((ibType[c1] == Mesh::IBTYPE_FLUID)
+                  && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
         {
+            const VectorT3& faceVelocity = (*ibVelocity)[ibFace];
+
+            // this is an iBFace, determine which cell is interior and
+            // which boundary. Treat as a fixed flux boundary. 
+            if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+                massFlux[f]= rho[c0]*dot(Af,faceVelocity);
+                rCell[c0] -= massFlux[f];
+                rCell[c1] = 0;
+                ppMatrix.setDirichlet(c1);
+                boundaryFlux += massFlux[f];
+            }
+            else
+            {
+                massFlux[f]= rho[c1]*dot(Af,faceVelocity);
+                rCell[c1] += massFlux[f];
+                rCell[c0] = 0;
+                ppMatrix.setDirichlet(c0);
+                boundaryFlux -= massFlux[f];
+            }
+                
+            
+            // increment count of ib faces
+            ibFace++;
+        }
+        else 
+        {
+            if ((ibType[c0] == Mesh::IBTYPE_FLUID) ||
+                (ibType[c1] == Mesh::IBTYPE_FLUID))
+              throw CException("invalid face to skip");
+            
             // setup to get zero corrections
             massFlux[f]=0;
             ppDiag[c0] = -1;
             ppDiag[c1] = -1;
+            ppMatrix.setDirichlet(c0);
+            ppMatrix.setDirichlet(c1);
         }
-        else
-        {
-            // this is an iBFace, determine which cell is interior and which boundary
-            int interiorCell = c0;
-            int boundaryCell = c1;
-            if (ibType[c0] != Mesh::IBTYPE_FLUID)
-            {
-                interiorCell = c1;
-                boundaryCell = c0;
-                ppAssembler.getCoeff01(f)=1;
-                ppAssembler.getCoeff10(f)=0;
-            }
-            else
-            {
-                ppAssembler.getCoeff01(f)=0;
-                ppAssembler.getCoeff10(f)=1;
-            }
-            const VectorT3& faceVelocity = (*ibVelocity)[ibFace];
-                
-            massFlux[f]= rho[interiorCell]*dot(Af,faceVelocity);
-            boundaryFlux += massFlux[f];
-            
-            rCell[interiorCell] -= massFlux[f];
-            rCell[boundaryCell] = 0;
-            
-            ppDiag[boundaryCell] = -1;
-
-            // increment count of ib faces
-            ibFace++;
-        }
-
     }
 
 #if 1
@@ -709,6 +713,7 @@ public:
         }
     }
 #endif
+    cout << "net IB Flux = " << boundaryFlux << endl;
     return boundaryFlux;
   }
 
@@ -966,32 +971,62 @@ public:
     const TArray& rho = dynamic_cast<const TArray&>(_flowFields.density[cells]);
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
+    const Array<int>& ibType = mesh.getIBType();
     const int nFaces = faces.getCount();
     for(int f=0; f<nFaces; f++)
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
 
-        const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
-        const VectorT3& Af = faceArea[f];
-
-        const T aByMomAp0 = Af[0]*Af[0] / momAp[c0][0] +
-          Af[1]*Af[1] / momAp[c0][1] +
-          Af[2]*Af[2] / momAp[c0][2];
-
-        const T aByMomAp1 = Af[0]*Af[0] / momAp[c1][0] +
-          Af[1]*Af[1] / momAp[c1][1] +
-          Af[2]*Af[2] / momAp[c1][2];
-
-        const T Adotes = dot(Af,ds)/mag(ds);
-        const T coeff0  = cellVolume[c0]*rho[c0]*aByMomAp0/Adotes;
-        const T coeff1  = cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
-        
-        const T ppFace = (coeff0*pp[c0]+coeff1*pp[c1])/(coeff0+coeff1);
-        const VectorT3 ppA = ppFace*faceArea[f];
-
-        V[c0] += ppA/momAp[c0];
-        V[c1] -= ppA/momAp[c1];
+        if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
+            (ibType[c1] == Mesh::IBTYPE_FLUID))
+        {
+            const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
+            const VectorT3& Af = faceArea[f];
+            
+            const T aByMomAp0 = Af[0]*Af[0] / momAp[c0][0] +
+              Af[1]*Af[1] / momAp[c0][1] +
+              Af[2]*Af[2] / momAp[c0][2];
+            
+            const T aByMomAp1 = Af[0]*Af[0] / momAp[c1][0] +
+              Af[1]*Af[1] / momAp[c1][1] +
+              Af[2]*Af[2] / momAp[c1][2];
+            
+            const T Adotes = dot(Af,ds)/mag(ds);
+            const T coeff0  = cellVolume[c0]*rho[c0]*aByMomAp0/Adotes;
+            const T coeff1  = cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
+            
+            const T ppFace = (coeff0*pp[c0]+coeff1*pp[c1])/(coeff0+coeff1);
+            const VectorT3 ppA = ppFace*faceArea[f];
+            
+            V[c0] += ppA/momAp[c0];
+            V[c1] -= ppA/momAp[c1];
+        }
+        else if (((ibType[c0] == Mesh::IBTYPE_FLUID)
+                  && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+                 ((ibType[c1] == Mesh::IBTYPE_FLUID)
+                  && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+        {
+            // this is an iBFace, determine which cell is interior and
+            // which boundary. Correct the interior cell's velocity
+            // using the cell pressure correction as the face pressure
+            // correction
+            if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+                const T ppFace = pp[c0];
+                const VectorT3 ppA = ppFace*faceArea[f];
+                
+                V[c0] += ppA/momAp[c0];
+            }
+            else
+            {
+                const T ppFace = pp[c1];
+                const VectorT3 ppA = ppFace*faceArea[f];
+                
+                V[c1] -= ppA/momAp[c1];
+            }
+        }
+        // nothing needs to be done for the solid/solid or solid/ib faces
     }
   }
 
@@ -1013,27 +1048,51 @@ public:
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
     const int nFaces = faces.getCount();
+    const Array<int>& ibType = mesh.getIBType();
     for(int f=0; f<nFaces; f++)
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
 
-        const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
-        const VectorT3& Af = faceArea[f];
-
-        const T aByMomAp0 = Af[0]*Af[0] / momAp[c0][0] +
-          Af[1]*Af[1] / momAp[c0][1] +
-          Af[2]*Af[2] / momAp[c0][2];
-
-        const T aByMomAp1 = Af[0]*Af[0] / momAp[c1][0] +
-          Af[1]*Af[1] / momAp[c1][1] +
-          Af[2]*Af[2] / momAp[c1][2];
-
-        const T Adotes = dot(Af,ds)/mag(ds);
-        const T coeff0  = cellVolume[c0]*rho[c0]*aByMomAp0/Adotes;
-        const T coeff1  = cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
-        
-        pFace[f] = (coeff0*pCell[c0]+coeff1*pCell[c1])/(coeff0+coeff1);
+        if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
+            (ibType[c1] == Mesh::IBTYPE_FLUID))
+        {
+            const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
+            const VectorT3& Af = faceArea[f];
+            
+            const T aByMomAp0 = Af[0]*Af[0] / momAp[c0][0] +
+              Af[1]*Af[1] / momAp[c0][1] +
+              Af[2]*Af[2] / momAp[c0][2];
+            
+            const T aByMomAp1 = Af[0]*Af[0] / momAp[c1][0] +
+              Af[1]*Af[1] / momAp[c1][1] +
+              Af[2]*Af[2] / momAp[c1][2];
+            
+            const T Adotes = dot(Af,ds)/mag(ds);
+            const T coeff0  = cellVolume[c0]*rho[c0]*aByMomAp0/Adotes;
+            const T coeff1  = cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
+            
+            pFace[f] = (coeff0*pCell[c0]+coeff1*pCell[c1])/(coeff0+coeff1);
+        }
+        else if (((ibType[c0] == Mesh::IBTYPE_FLUID)
+                  && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+                 ((ibType[c1] == Mesh::IBTYPE_FLUID)
+                  && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+        {
+            // this is an iBFace, determine which cell is interior and
+            // which boundary. copy pressure from the fluid cell
+            if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+                pFace[f] = pCell[c0];
+            }
+            else
+            {
+                pFace[f] = pCell[c1];
+            }
+        }
+        else
+          // for solid/solid and solid/ib faces pressure is never used
+          pFace[f]=0;
     }
   }
 
@@ -1115,6 +1174,8 @@ public:
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
 
+        // should work for ib and ib/solid etc faces as well since the
+        // coefficients at such faces are all zero
         massFlux[f] -= ppAssembler.getCoeff01(f)*pp[c1] -
           ppAssembler.getCoeff10(f)*pp[c0];
     }
@@ -1321,14 +1382,25 @@ public:
 
     if (this->_useReferencePressure)
     {
+        // we have all fixed mass flux boundary problem. In case the
+        // net mass flux sum over all the boundaries does not add up
+        // to zero we distribute that over the cells as a volumetric
+        // as a matching source/sink so that the continuity equation
+        // can converge to a zero residual. In case of immersed
+        // boundary problems we need to use only the fluid cells since
+        // all the other cells will always have zero corrections.
+        
         T volumeSum(0.);
         
         for (int n=0; n<numMeshes; n++)
         {
             const Mesh& mesh = *_meshes[n];
+            const Array<int>& ibType = mesh.getIBType();
             const StorageSite& cells = mesh.getCells();
             const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-            for(int c=0; c<cells.getSelfCount(); c++) volumeSum += cellVolume[c];
+            for(int c=0; c<cells.getSelfCount(); c++)
+              if (ibType[c] == Mesh::IBTYPE_FLUID)
+                volumeSum += cellVolume[c];
         }
 
         netFlux /= volumeSum;
@@ -1336,6 +1408,7 @@ public:
         for (int n=0; n<numMeshes; n++)
         {
             const Mesh& mesh = *_meshes[n];
+            const Array<int>& ibType = mesh.getIBType();
             const StorageSite& cells = mesh.getCells();
             const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
             
@@ -1344,11 +1417,16 @@ public:
             
             for(int c=0; c<cells.getSelfCount(); c++)
             {
+              if (ibType[c] == Mesh::IBTYPE_FLUID)
                 rCell[c] += netFlux*cellVolume[c];
             }
         }
+
+        // when all the mass fluxes are specified the continuity
+        // equation also has an extra degree of freedom. This sets the
+        // first cell to have a zero correction to account for this.
+        setDirichlet(matrix,b);
     }
-    setDirichlet(matrix,b);
   }
 
   void setReferencePP(const MultiField& ppField)
@@ -1531,7 +1609,7 @@ public:
     MFRPtr rNorm = _options.getPressureLinearSolver().solve(*ls);
 
     if (!_initialContinuityNorm) _initialContinuityNorm = rNorm;
-        
+
     ls->postSolve();
     _options.pressureLinearSolver->cleanup();
     
