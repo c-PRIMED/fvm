@@ -56,7 +56,7 @@ private :
     void  get_interface_vals();
     void  get_coord_vals();
     void  get_connectivity_vals();
-
+    void  get_mapper_vals();
 
     void  meshList();
     void  storage_sites( int id );
@@ -65,8 +65,7 @@ private :
     void  coords( int id );
     void  face_cells( int id );
     void  face_nodes( int id );
-//    void  mappers( int id );
-
+    void  mappers( );
 
     string _fname;
 
@@ -76,12 +75,13 @@ private :
     int  _nmesh;
     int  _nBoun;
     int  _charSize;
-    int  _nInterface;
+    int  _nNeighMesh;
     int  _nnodes;
 
     int   _nfaceRow;
     int   _nfaceCellsCol;
     int   _nfaceNodesCol;
+    int   _nInterface;
 
 
 
@@ -115,6 +115,8 @@ private :
     NcVar* _faceNodesRow;
     NcVar* _faceNodesCol;
 
+    NcVar* _fromIndices;
+    NcVar* _toIndices;
 
     int*  _dimensionVals;
     int*  _meshIDVals;
@@ -142,11 +144,14 @@ private :
     double  *_yVals;
     double  *_zVals;
     
-     int  *_faceCellsRowVals;
-     int  *_faceCellsColVals;
-     int  *_faceNodesRowVals;
-     int  *_faceNodesColVals;
+    int  *_faceCellsRowVals;
+    int  *_faceCellsColVals;
+    int  *_faceNodesRowVals;
+    int  *_faceNodesColVals;
     
+    int  *_fromIndicesVals;
+    int  *_toIndicesVals;
+
 
 
      MeshList   _meshList;

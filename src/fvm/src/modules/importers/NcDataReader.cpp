@@ -17,7 +17,8 @@
 #include "NcDataReader.h"
 #include "netcdfcpp.h"
 #include "mpi.h"
-
+#include "PartMesh.h"
+#include "OneToOneIndexMap.h"
 
 
 NcDataReader::NcDataReader( const string& fname )
@@ -63,6 +64,10 @@ NcDataReader::~NcDataReader()
     if ( _faceNodesRowVals ) delete [] _faceNodesRowVals;
     if ( _faceCellsColVals ) delete [] _faceCellsColVals;
     if ( _faceNodesColVals ) delete [] _faceNodesColVals;
+
+
+    if ( _fromIndicesVals  ) delete [] _fromIndicesVals;
+    if ( _toIndicesVals    ) delete [] _toIndicesVals;
    
 
     if ( _ncFile        ) delete _ncFile;
@@ -116,6 +121,9 @@ NcDataReader::init()
     _faceNodesRowVals = NULL;
     _faceCellsColVals = NULL;
     _faceCellsColVals = NULL;
+
+    _fromIndicesVals = NULL;
+    _toIndicesVals   = NULL;
 }		   
 
 //Setting NcFile
@@ -136,11 +144,12 @@ NcDataReader::getDims()
    _nmesh    = _ncFile->get_dim("nmesh")->size();
    _nBoun    = _ncFile->get_dim("boun_type_dim")->size();
    _charSize = _ncFile->get_dim("char_dim")->size();
-   _nInterface = _ncFile->get_dim("nInterface")->size();
+   _nNeighMesh = _ncFile->get_dim("nNeighMesh")->size();
    _nnodes     = _ncFile->get_dim("nnodes")->size();
    _nfaceRow   = _ncFile->get_dim("nface_row")->size();
    _nfaceCellsCol = _ncFile->get_dim("nfaceCells_col")->size();
    _nfaceNodesCol = _ncFile->get_dim("nfaceNodes_col")->size();
+   _nInterface    = _ncFile->get_dim("nInterface")->size();
 
 
 }
@@ -179,6 +188,9 @@ NcDataReader::getVars()
     _faceNodesRow = _ncFile->get_var("face_nodes_row");
     _faceNodesCol = _ncFile->get_var("face_nodes_col");
 
+    _fromIndices = _ncFile->get_var("from_indices");
+    _toIndices   = _ncFile->get_var("to_indices");
+
 
   
 }
@@ -203,6 +215,7 @@ NcDataReader::get_var_values()
      get_interface_vals(); 
      get_coord_vals();
      get_connectivity_vals();
+     get_mapper_vals();
 
      //if ( MPI::COMM_WORLD.Get_rank() == 0) cout << _boundaryTypeVals[0] << "  " << _boundaryTypeVals[1] << endl;
 
@@ -231,9 +244,9 @@ NcDataReader::allocate_vars()
          _boundaryTypeVals.push_back( new char[ _charSize ] );
 
     _interfaceGroupVals  = new int [ _nmesh  ];
-    _interfaceSizeVals   = new int [ _nInterface ];
-    _interfaceOffsetVals = new int [ _nInterface ];
-    _interfaceIDVals     = new int [ _nInterface ];
+    _interfaceSizeVals   = new int [ _nNeighMesh ];
+    _interfaceOffsetVals = new int [ _nNeighMesh ];
+    _interfaceIDVals     = new int [ _nNeighMesh ];
 
     _xVals = new double [ _nnodes ];
     _yVals = new double [ _nnodes ];
@@ -244,6 +257,9 @@ NcDataReader::allocate_vars()
    _faceCellsColVals = new int [ _nfaceCellsCol ];
    _faceNodesRowVals = new int [ _nfaceRow ];
    _faceNodesColVals = new int [ _nfaceNodesCol ];
+   
+   _fromIndicesVals  = new int [ _nInterface ];
+   _toIndicesVals    = new int [ _nInterface ];
 
 
 
@@ -271,11 +287,11 @@ NcDataReader::get_bndry_vals()
 void 
 NcDataReader::get_interface_vals()
 {
-   if ( _nInterface  > 0 ){
+   if ( _nNeighMesh  > 0 ){
       _interfaceGroup->get (_interfaceGroupVals, _nmesh );
-      _interfaceSize->get  (_interfaceSizeVals,  _nInterface );
-      _interfaceOffset->get( _interfaceOffsetVals, _nInterface );
-      _interfaceID->get ( _interfaceIDVals, _nInterface );
+      _interfaceSize->get  (_interfaceSizeVals,  _nNeighMesh );
+      _interfaceOffset->get( _interfaceOffsetVals, _nNeighMesh );
+      _interfaceID->get ( _interfaceIDVals, _nNeighMesh );
    }
 
 
@@ -297,13 +313,22 @@ NcDataReader::get_coord_vals()
 void
 NcDataReader::get_connectivity_vals()
 {
-
     _faceCellsRow->get( _faceCellsRowVals, _nfaceRow );
     _faceNodesRow->get( _faceNodesRowVals, _nfaceRow );
     _faceCellsCol->get( _faceCellsColVals, _nfaceCellsCol );
     _faceNodesCol->get( _faceNodesColVals, _nfaceNodesCol );
 
 }
+
+//get mapper values
+void
+NcDataReader::get_mapper_vals()
+{
+    _fromIndices->get( _fromIndicesVals, _nInterface );
+      _toIndices->get( _toIndicesVals  , _nInterface );
+
+}
+
 
 
 //forming MeshList
@@ -322,18 +347,16 @@ NcDataReader::meshList()
         if ( _nBoun > 0 )
            boundary_faces( id );
 
-        if ( _nInterface > 0 )
+        if ( _nNeighMesh > 0 )
           interfaces( id );
 
         coords( id );
         face_cells( id );
         face_nodes( id );
 
-
-        // mappers( id );
-
-
      }
+
+    mappers();
 }
 
 
@@ -453,13 +476,34 @@ NcDataReader::face_nodes( int id )
 
 
 
-// void 
-// NcDataReader::mappers( int id )
-// {
-// 
-// }
+void 
+NcDataReader::mappers(  )
+{
+
+    int indx = 0;
+    for ( int id = 0; id < _nmesh; id++){
+        StorageSite::MappersMap&   cellMappers = _meshList.at(id)->getCells().getMappers();
+       //loop over mesh interfaces
+        int offset = accumulate( _interfaceGroupVals, _interfaceGroupVals+id,0);
+        for ( int n = 0; n  < _interfaceGroupVals[id]; n++){
+           int neighMeshID =  _interfaceIDVals[ offset + n ];
+           int size = _interfaceSizeVals[ offset + n ];
+           PartMesh::ArrayIntPtr  fromIndices( new Array<int>( size ) );
+           PartMesh::ArrayIntPtr  toIndices  ( new Array<int>( size ) );
+
+           //get portion values
+           for ( int i = 0; i < size; i++){
+              (*fromIndices)[i] = _fromIndicesVals[indx];
+              (*toIndices)[i]   = _toIndicesVals[indx];
+              indx++;
+           }
+           shared_ptr< OneToOneIndexMap >  oneToOneMapPtr( new OneToOneIndexMap(fromIndices, toIndices)  );
+           cellMappers[ _meshList.at(id)->getGhostCellSite( neighMeshID ) ] =  oneToOneMapPtr;
+       }
+    }
 
 
+}
 
 
 

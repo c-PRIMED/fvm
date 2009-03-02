@@ -18,12 +18,14 @@
 #include "netcdfcpp.h"
 #include "StorageSite.h"
 #include "Array.h"
+#include "OneToOneIndexMap.h"
 #include "mpi.h"
 
 
 NcDataWriter::NcDataWriter( const MeshList& meshes, const string& fname )
 : _meshList( meshes ), _fname( fname ), _ncFile(NULL), _xVals(NULL), _yVals(NULL), _zVals(NULL),
-_faceCellsRowVals(NULL), _faceCellsColVals(NULL), _faceNodesRowVals(NULL), _faceNodesColVals(NULL), MAX_CHAR(40)
+_faceCellsRowVals(NULL), _faceCellsColVals(NULL), _faceNodesRowVals(NULL), _faceNodesColVals(NULL), 
+_fromIndicesVals(NULL), _toIndicesVals(NULL), MAX_CHAR(40)
 {
 
    init();
@@ -41,6 +43,9 @@ NcDataWriter::~NcDataWriter()
    if ( _faceCellsColVals ) delete []  _faceCellsColVals;
    if ( _faceNodesRowVals ) delete []  _faceNodesRowVals;
    if ( _faceNodesColVals ) delete []  _faceNodesColVals;
+
+   if ( _fromIndicesVals  ) delete []  _fromIndicesVals;
+   if ( _toIndicesVals    ) delete []  _toIndicesVals;
 
    if ( _ncFile ) delete _ncFile;
 // // // //    vector< char* > ::iterator it;
@@ -98,7 +103,8 @@ NcDataWriter::setDims()
     int  ncells = 0;
     int  nface_row = 0;
     int  nfaceCells_col = 0;
-    int  nfaceNodes_col = 0;
+    int  nfaceNodes_col = 0; 
+    int  ninterface = 0;
 
      for ( int id = 0; id < _nmesh->size(); id++ ){
          index_boun      += _meshList.at(id)->getBoundaryGroupCount();
@@ -109,12 +115,18 @@ NcDataWriter::setDims()
          nface_row       += _meshList.at(id)->getAllFaceCells().getRow().getLength();
          nfaceCells_col  += _meshList.at(id)->getAllFaceCells().getCol().getLength();
          nfaceNodes_col  += _meshList.at(id)->getAllFaceNodes().getCol().getLength();
-         
+
+         const StorageSite::MappersMap&   mappers = _meshList.at(id)->getCells().getMappers();
+         //loop over neighbour mesh to count interfaces
+         StorageSite::MappersMap::const_iterator it;
+         for ( it = mappers.begin(); it != mappers.end(); it++ )
+             ninterface += it->second->getFromIndices().getLength();  //or it->secon->toIndices.getLength()
+
      }
 
       _nBoun     = _ncFile->add_dim("boun_type_dim", index_boun );
       _charSize  = _ncFile->add_dim("char_dim", MAX_CHAR );
-      _nInterface = _ncFile->add_dim("nInterface", index_interface ); 
+      _nNeighMesh= _ncFile->add_dim("nNeighMesh", index_interface ); 
 
       _nnodes     = _ncFile->add_dim("nnodes", nnodes);
       _nfaces     = _ncFile->add_dim("nfaces", nfaces);
@@ -123,12 +135,12 @@ NcDataWriter::setDims()
       _nfaceRow  = _ncFile->add_dim("nface_row", nface_row);
       _nfaceCellsCol = _ncFile->add_dim("nfaceCells_col", nfaceCells_col);
       _nfaceNodesCol = _ncFile->add_dim("nfaceNodes_col", nfaceNodes_col);
-
+      _nInterface    = _ncFile->add_dim("nInterface", ninterface);
 
       assert( _ncFile->add_att("nmesh", "number of total meshes") );
       assert( _ncFile->add_att("boun_type_dim", "total count of boundary types") );
       assert( _ncFile->add_att("char_dim", "maximum capacity of char variable" ) );
-      assert( _ncFile->add_att("interface_count", "count of interfaces")  );
+      assert( _ncFile->add_att("nNeighMesh", "count of neighbour meshes")  );
 
       assert( _ncFile->add_att("nnodes", "number of nodes" ) );
       assert( _ncFile->add_att("nfaces", "number of faces" ) );
@@ -137,6 +149,7 @@ NcDataWriter::setDims()
       assert( _ncFile->add_att("nface_row", "row dimension of face connectivity" ) );
       assert( _ncFile->add_att("nfaceCells_col", "col dimension of faceCells connectivity" ) );
       assert( _ncFile->add_att("nfaceNodes_col", "col dimension of faceNodes connectivity" ) );
+      assert( _ncFile->add_att("nInterface", "total interfaces") );
 
 }
 
@@ -161,9 +174,9 @@ NcDataWriter::setVars()
     _boundaryType   = _ncFile->add_var("boundary_type", ncChar, _nBoun, _charSize );
 
     _interfaceGroup  = _ncFile->add_var("interface_group" , ncInt, _nmesh      );
-    _interfaceSize   = _ncFile->add_var("interface_size"  , ncInt, _nInterface );
-    _interfaceOffset = _ncFile->add_var("interface_offset", ncInt, _nInterface );
-    _interfaceID     = _ncFile->add_var("interface_id"    , ncInt, _nInterface ); 
+    _interfaceSize   = _ncFile->add_var("interface_size"  , ncInt, _nNeighMesh );
+    _interfaceOffset = _ncFile->add_var("interface_offset", ncInt, _nNeighMesh );
+    _interfaceID     = _ncFile->add_var("interface_id"    , ncInt, _nNeighMesh ); 
 
     _x  = _ncFile->add_var("x", ncDouble, _nnodes );
     _y  = _ncFile->add_var("y", ncDouble, _nnodes );
@@ -173,6 +186,9 @@ NcDataWriter::setVars()
     _faceCellsCol = _ncFile->add_var("face_cells_col", ncInt, _nfaceCellsCol );
     _faceNodesRow = _ncFile->add_var("face_nodes_row", ncInt, _nfaceRow );
     _faceNodesCol = _ncFile->add_var("face_nodes_col", ncInt, _nfaceNodesCol );
+
+    _fromIndices  = _ncFile->add_var("from_indices", ncInt, _nInterface);
+    _toIndices    = _ncFile->add_var("to_indices", ncInt, _nInterface);
 
 }
 
@@ -212,6 +228,9 @@ NcDataWriter::get_var_values()
     _faceNodesRowVals = new int [ _nfaces->size() ];
     _faceNodesColVals = new int [ _nnodes->size() ];
 
+    _fromIndicesVals  = new int [ _nInterface->size() ];
+    _toIndicesVals    = new int [ _nInterface->size() ];
+
     for ( long id = 0; id < _nmesh->size(); id++ ){
        //dimension-s
        _dimensionVals.push_back( _meshList.at(id)->getDimension() );
@@ -244,6 +263,11 @@ NcDataWriter::get_var_values()
 
        //connectivities
        connectivities( id );
+       
+       //mappers
+       mappers( id );
+
+       
     }
 }
 
@@ -331,6 +355,44 @@ NcDataWriter::connectivities( int id )
 
 }
 
+
+//MappersMap
+void
+NcDataWriter::mappers( int id )
+{
+     const StorageSite::MappersMap&   mappers = _meshList.at(id)->getCells().getMappers();
+     //loop over neighbour mesh to count interfaces
+     StorageSite::MappersMap::const_iterator it;
+     int  indx = mappers_index( id );
+
+     for ( it = mappers.begin(); it != mappers.end(); it++ ){
+         int nend = it->second->getFromIndices().getLength();
+         for ( int n = 0; n < nend; n++ ){
+           _fromIndicesVals[indx] = it->second->getFromIndices()[n];  //or it->secon->toIndices.getLength() 
+           _toIndicesVals[indx]   = it->second->getToIndices()[n];
+            indx++;
+         }
+     }
+
+}
+
+//mappers index 
+int
+NcDataWriter::mappers_index( int mesh_end )
+{
+  int ninterface  = 0;
+   for ( int id = 0; id < mesh_end; id++ ){
+         const StorageSite::MappersMap&   mappers = _meshList.at(id)->getCells().getMappers();
+         //loop over neighbour mesh to count interfaces
+         StorageSite::MappersMap::const_iterator it;
+         for ( it = mappers.begin(); it != mappers.end(); it++ )
+             ninterface += it->second->getFromIndices().getLength();  //or it->secon->toIndices.getLength()
+
+     }
+
+    return ninterface;
+}
+
 //attributes
 void 
 NcDataWriter::add_attributes()
@@ -364,7 +426,9 @@ NcDataWriter::add_attributes()
      assert( _faceNodesRow->add_att("face_nodes_row", "row values of faceNodes CRconnctivities") );
      assert( _faceCellsCol->add_att("face_cells_col", "col values of faceCells CRconnctivities") );
      assert( _faceNodesCol->add_att("face_nodes_col", "col values of faceNodes CRconnctivities") );
-
+     
+     assert( _fromIndices->add_att("from_indices", "trom indices from other neightbour mesh " ) );
+     assert( _toIndices->add_att("to_indices",     "to  indices in current mesh") );
 
 
 }
@@ -392,5 +456,9 @@ NcDataWriter::write_values()
     _interfaceSize->put( &_interfaceSizeVals[0], _interfaceSizeVals.size()  );
     _interfaceOffset->put( &_interfaceOffsetVals[0], _interfaceOffsetVals.size() );
     _interfaceID->put( &_interfaceIDVals[0], _interfaceIDVals.size() );
+
+    _fromIndices->put( _fromIndicesVals, _nInterface->size() );
+    _toIndices->put( _toIndicesVals, _nInterface->size() );
+
 
 }
