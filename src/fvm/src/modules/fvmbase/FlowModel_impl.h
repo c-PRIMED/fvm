@@ -1622,7 +1622,7 @@ public:
   }
 
 
-  void advance(const int niter)
+  bool advance(const int niter)
   {
 
     for(int n=0; n<niter; n++)
@@ -1647,11 +1647,12 @@ public:
         _niters++;
         if ((*mNormRatio < _options.momentumTolerance) &&
             (*cNormRatio < _options.continuityTolerance))
-          break;
+          return true;
     }
+    return false;
   }
 
-  void advanceCoupled(const int niter)
+  bool advanceCoupled(const int niter)
   {
     const int numMeshes = _meshes.size();
     for(int n=0; n<niter; n++)
@@ -1729,8 +1730,9 @@ public:
         _momApField = shared_ptr<Field>();
 
         if (*normRatio < _options.momentumTolerance)
-          break;
+          return true;
     }
+    return false;
   }
   
 #ifndef USING_ATYPE_TANGENT
@@ -2008,17 +2010,17 @@ FlowModel<T>::printBCs()
 }
 
 template<class T>
-void
+bool
 FlowModel<T>::advance(const int niter)
 {
-  _impl->advance(niter);
+  return _impl->advance(niter);
 }
 
 template<class T>
-void
+bool
 FlowModel<T>::advanceCoupled(const int niter)
 {
-  _impl->advanceCoupled(niter);
+  return _impl->advanceCoupled(niter);
 }
 
 #if 0
