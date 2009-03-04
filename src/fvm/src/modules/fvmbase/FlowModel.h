@@ -36,8 +36,9 @@ public:
 
   void printBCs();
 
-  void advance(const int niter);
-  void advanceCoupled(const int niter);
+  // do the specified number of iterations, return true if converged 
+  bool advance(const int niter);
+  bool advanceCoupled(const int niter);
 
   void updateTime();
 
