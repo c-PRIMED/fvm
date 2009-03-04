@@ -27,7 +27,8 @@ def advance(fmodel,particles,niter):
     for i in range(0,niter):
         try:
             fmodel.computeIBFaceVelocity(particles)
-            fmodel.advance(1)
+            if fmodel.advance(1):
+                break
         except KeyboardInterrupt:
             break
         
