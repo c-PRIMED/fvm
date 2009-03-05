@@ -55,6 +55,7 @@ private :
     void  write_values();
 
     
+     static int _writeAction;
 
 
 
@@ -101,6 +102,11 @@ private :
      NcVar*  _x;
      NcVar*  _y;
      NcVar*  _z;
+    
+     NcVar* _faceCellsRowCount;
+     NcVar* _faceCellsColCount;
+     NcVar* _faceNodesRowCount;
+     NcVar* _faceNodesColCount;
 
      NcVar* _faceCellsRow;
      NcVar* _faceCellsCol;
@@ -137,10 +143,10 @@ private :
      double  *_yVals;
      double  *_zVals;
 
-     int  *_faceCellsRowVals;
-     int  *_faceCellsColVals;
-     int  *_faceNodesRowVals;
-     int  *_faceNodesColVals;
+     vector< int > _faceCellsRowCountVals;
+     vector< int > _faceCellsColCountVals;
+     vector< int > _faceNodesRowCountVals;
+     vector< int > _faceNodesColCountVals;
 
      int* _fromIndicesVals;
      int* _toIndicesVals;

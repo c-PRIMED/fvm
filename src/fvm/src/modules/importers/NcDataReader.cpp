@@ -70,7 +70,12 @@ NcDataReader::~NcDataReader()
     if ( _toIndicesVals    ) delete [] _toIndicesVals;
    
 
-    if ( _ncFile        ) delete _ncFile;
+    if ( _ncFile        ) delete _ncFile;   
+
+    MeshList::iterator it_mesh;
+   for ( it_mesh = _meshList.begin(); it_mesh != _meshList.end(); it_mesh++)
+       delete  *it_mesh;
+
 
 }
 
@@ -117,10 +122,15 @@ NcDataReader::init()
     _yVals = NULL;
     _zVals = NULL;
 
+    _faceCellsRowCountVals = NULL;
+    _faceNodesRowCountVals = NULL;
+    _faceCellsColCountVals = NULL;
+    _faceNodesColCountVals = NULL;
+
     _faceCellsRowVals = NULL;
     _faceNodesRowVals = NULL;
     _faceCellsColVals = NULL;
-    _faceCellsColVals = NULL;
+    _faceNodesColVals = NULL;
 
     _fromIndicesVals = NULL;
     _toIndicesVals   = NULL;
@@ -181,7 +191,13 @@ NcDataReader::getVars()
 
     _x = _ncFile->get_var("x");
     _y = _ncFile->get_var("y");
-    _z = _ncFile->get_var("z");
+    _z = _ncFile->get_var("z");     
+
+    _faceCellsRowCount = _ncFile->get_var("face_cells_row_count");
+    _faceCellsColCount = _ncFile->get_var("face_cells_col_count");
+    _faceNodesRowCount = _ncFile->get_var("face_nodes_row_count");
+    _faceNodesColCount = _ncFile->get_var("face_nodes_col_count");
+
 
     _faceCellsRow = _ncFile->get_var("face_cells_row");
     _faceCellsCol = _ncFile->get_var("face_cells_col");
@@ -253,6 +269,12 @@ NcDataReader::allocate_vars()
     _zVals = new double [ _nnodes ];
  
 
+
+   _faceCellsRowCountVals = new int [ _nmesh ];
+   _faceCellsColCountVals = new int [ _nmesh ];
+   _faceNodesRowCountVals = new int [ _nmesh ];
+   _faceNodesColCountVals = new int [ _nmesh ];
+
    _faceCellsRowVals = new int [ _nfaceRow ];
    _faceCellsColVals = new int [ _nfaceCellsCol ];
    _faceNodesRowVals = new int [ _nfaceRow ];
@@ -313,10 +335,17 @@ NcDataReader::get_coord_vals()
 void
 NcDataReader::get_connectivity_vals()
 {
+    _faceCellsRowCount->get( _faceCellsRowCountVals, _nmesh );
+    _faceNodesRowCount->get( _faceNodesRowCountVals, _nmesh );
+    _faceCellsColCount->get( _faceCellsColCountVals, _nmesh );
+    _faceNodesColCount->get( _faceNodesColCountVals, _nmesh );
+
     _faceCellsRow->get( _faceCellsRowVals, _nfaceRow );
     _faceNodesRow->get( _faceNodesRowVals, _nfaceRow );
     _faceCellsCol->get( _faceCellsColVals, _nfaceCellsCol );
     _faceNodesCol->get( _faceNodesColVals, _nfaceNodesCol );
+    
+
 
 }
 
@@ -348,7 +377,7 @@ NcDataReader::meshList()
            boundary_faces( id );
 
         if ( _nNeighMesh > 0 )
-          interfaces( id );
+           interfaces( id );
 
         coords( id );
         face_cells( id );
@@ -378,13 +407,15 @@ void
 NcDataReader::boundary_faces( int id )
 {
        //boundary faces
-       int boun_end = _boundaryGroupVals[id];
-       for ( int boun = 0; boun < boun_end; boun++){
-          int bndryID = _boundaryIDVals[boun];
-          int size    = _boundarySizeVals[boun];
-          int offset  = _boundaryOffsetVals[boun] ;
-          string boundaryType (_boundaryTypeVals.at(boun) );
+       int indx = accumulate( _boundaryGroupVals, _boundaryGroupVals+id, 0 );
+       int nboun   = _boundaryGroupVals[id];
+       for ( int boun = 0; boun < nboun; boun++){
+          int bndryID = _boundaryIDVals[indx];
+          int size    = _boundarySizeVals[indx];
+          int offset  = _boundaryOffsetVals[indx] ;
+          string boundaryType (_boundaryTypeVals.at(indx) );
          _meshList.at(id)->createBoundaryFaceGroup( size, offset, bndryID, boundaryType);
+         indx++;
        }
  
 }
@@ -392,15 +423,19 @@ NcDataReader::boundary_faces( int id )
 void
 NcDataReader::interfaces( int id )
 {
-         //then interface faces
-     int interface_end = _interfaceGroupVals[id];
-     for ( int interface = 0; interface < interface_end; interface++ ){
-         int interfaceID = _interfaceIDVals[interface];
-         int size        = _interfaceSizeVals[interface]; 
-         int offset      = _interfaceOffsetVals[interface];
+     //then interface faces
+     int indx = accumulate( _interfaceGroupVals, _interfaceGroupVals+id,0);
+     int  ninterfaces = _interfaceGroupVals[id];
+     for ( int interface = 0; interface < ninterfaces; interface++ ){
+         int interfaceID = _interfaceIDVals[indx];
+         int size        = _interfaceSizeVals[indx]; 
+         int offset      = _interfaceOffsetVals[indx];
          _meshList.at(id)->createInterfaceGroup( size, offset, interfaceID );
          _meshList.at(id)->createGhostCellSite( interfaceID, shared_ptr<StorageSite>( new StorageSite(size) ) );
+         indx++;
      }
+
+
 }
 
 void
@@ -412,8 +447,8 @@ NcDataReader::coords( int id )
 
      for ( int n = 0; n < nnodes; n++ ){
           (*coord)[n][0] = _xVals[indx];
-          (*coord)[n][0] = _yVals[indx];
-          (*coord)[n][0] = _zVals[indx];
+          (*coord)[n][1] = _yVals[indx];
+          (*coord)[n][2] = _zVals[indx];
           indx++;
       }
 
@@ -440,12 +475,16 @@ NcDataReader::face_cells( int id )
 
      faceCells->finishCount();
 
-     int indx =  accumulate(_facesCountVals, _facesCountVals+id,0);
-     for ( int n = 0; n < nfaces; n++ )
-         faceCells->add( n, _faceCellsColVals[indx] );
+     int indx =  accumulate(_faceCellsColCountVals, _faceCellsColCountVals+id, 0);
+     for ( int n = 0; n < nfaces; n++ ){
+         for ( int cell = 0; cell < 2; cell++){ //two cells around a face always
+             faceCells->add( n, _faceCellsColVals[indx] );
+         indx++;
+         }
+     }
 
      faceCells->finishAdd(); 
-
+    _meshList.at(id)->setFaceCells( faceCells );
 }
 
 //connectivities
@@ -460,17 +499,23 @@ NcDataReader::face_nodes( int id )
      CRConnectivityPtr  faceNodes ( new CRConnectivity( *rowSite, *colSite ) );
 
      faceNodes->initCount();
-     int count_node = _faceNodesRowVals[1] - _faceNodesRowVals[0];   
+     int node_count = _faceNodesRowVals[1] - _faceNodesRowVals[0];   
      for ( int n = 0; n < nfaces; n++ ) 
-         faceNodes->addCount(n, count_node);
+         faceNodes->addCount(n, node_count);
 
      faceNodes->finishCount();
 
-     int indx =  accumulate(_facesCountVals, _facesCountVals+id,0);
-     for ( int n = 0; n < nfaces; n++ )
-         faceNodes->add( n, _faceNodesColVals[indx] );
+     int indx =  accumulate(_faceNodesColCountVals, _faceNodesColCountVals+id, 0);
+     for ( int n = 0; n < nfaces; n++ ){
+         for ( int node = 0; node < node_count; node++){
+            faceNodes->add( n, _faceNodesColVals[indx] );
+            indx++;
+         }
+     }
 
      faceNodes->finishAdd(); 
+     _meshList.at(id)->setFaceNodes  ( faceNodes );
+
 
 }
 
@@ -491,17 +536,32 @@ NcDataReader::mappers(  )
            PartMesh::ArrayIntPtr  fromIndices( new Array<int>( size ) );
            PartMesh::ArrayIntPtr  toIndices  ( new Array<int>( size ) );
 
-           //get portion values
-           for ( int i = 0; i < size; i++){
+
+          //get portion values
+          for ( int i = 0; i < size; i++){
               (*fromIndices)[i] = _fromIndicesVals[indx];
               (*toIndices)[i]   = _toIndicesVals[indx];
+ 
+           if ( MPI::COMM_WORLD.Get_rank() == 0 ){
+              cout << " neighMeshID = " << neighMeshID << " from =     "
+                   << _fromIndicesVals[indx] << "  to =   " << _toIndicesVals[indx] << " size = " << size << endl;
+           }
               indx++;
+          
+
            }
            shared_ptr< OneToOneIndexMap >  oneToOneMapPtr( new OneToOneIndexMap(fromIndices, toIndices)  );
            cellMappers[ _meshList.at(id)->getGhostCellSite( neighMeshID ) ] =  oneToOneMapPtr;
        }
     }
 
+
+//  if ( MPI::COMM_WORLD.Get_rank() == 0 ){
+//    const Mesh::GhostCellSiteMap& ghostCellSiteMap = _meshList.at(0)->getGhostCellSiteMap() ;
+//    Mesh::GhostCellSiteMap::const_iterator it;
+//    for ( it = ghostCellSiteMap.begin(); it != ghostCellSiteMap.end(); it++)
+//       cout << " neigh mesh id =  " << it->first <<endl;
+// }
 
 }
 

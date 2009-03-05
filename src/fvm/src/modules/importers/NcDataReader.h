@@ -40,6 +40,7 @@ public :
     NcDataReader( const string& fname );
     
     void    read();
+    const MeshList&  getMeshList() const { return _meshList;};
 
     ~NcDataReader();
 
@@ -110,6 +111,11 @@ private :
     NcVar*  _y;
     NcVar*  _z;
 
+    NcVar* _faceCellsRowCount;
+    NcVar* _faceCellsColCount;
+    NcVar* _faceNodesRowCount;
+    NcVar* _faceNodesColCount;
+
     NcVar* _faceCellsRow;
     NcVar* _faceCellsCol;
     NcVar* _faceNodesRow;
@@ -143,6 +149,11 @@ private :
     double  *_xVals;
     double  *_yVals;
     double  *_zVals;
+
+    int  *_faceCellsRowCountVals;
+    int  *_faceCellsColCountVals;
+    int  *_faceNodesRowCountVals;
+    int  *_faceNodesColCountVals;
     
     int  *_faceCellsRowVals;
     int  *_faceCellsColVals;
