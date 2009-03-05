@@ -1062,7 +1062,6 @@ PartMesh::mesh_setup()
         StorageSite& faceSite = _meshListLocal.at(id)->getFaces();
         StorageSite& cellSite = _meshListLocal.at(id)->getCells();
         StorageSite& nodeSite = _meshListLocal.at(id)->getNodes();
-
         //total cells = interiorcells + boundary ghost cells + interface ghost cells
         int nface_local = _partFaces.at(id)->getCount( _procID );
         //int nGhostCell_local =  _nelemsWithGhosts.at(id) - _nelems.at(id) + _interfaceMap.at(id).size();
