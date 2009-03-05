@@ -65,8 +65,20 @@ int main(int argc, char *argv[])
      ss << "test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
      NcDataWriter  nc_writer( part_mesh.meshList(), ss.str() );
      nc_writer.record();
+
      NcDataReader  nc_reader( ss.str() );
-    nc_reader.read();
+     nc_reader.read();
+
+     //nface_row       += nc_reader.getMeshList().at(id)->getAllFaceCells().getRow().getLength();
+     //nfaceCells_col  += nc_reader.getMeshList().at(id)->getAllFaceCells().getCol().getLength();
+    //cout << " proc id =  " << MPI::COMM_WORLD.Get_rank() << " nface_row = " << nface_row << endl;
+
+     stringstream ss_test;
+     ss_test << "test_test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
+     //cout <<  ss_test.str() << endl;
+     NcDataWriter  nc_writer_test( nc_reader.getMeshList(), ss_test.str() );
+     nc_writer_test.record();
+
 
    MPI::Finalize();
    return 0;
