@@ -34,6 +34,8 @@ public :
 
     void  record();
 
+     static int _writeAction;
+
 private :
     NcDataWriter( const NcDataWriter& nc_writer);
 
@@ -55,7 +57,7 @@ private :
     void  write_values();
 
     
-     static int _writeAction;
+
 
 
 

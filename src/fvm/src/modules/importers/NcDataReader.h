@@ -36,6 +36,7 @@ typedef   shared_ptr< CRConnectivity > CRConnectivityPtr;
 class NcDataReader {
 
 public :
+    typedef   shared_ptr< Array<int> >     ArrayIntPtr;
 
     NcDataReader( const string& fname );
     

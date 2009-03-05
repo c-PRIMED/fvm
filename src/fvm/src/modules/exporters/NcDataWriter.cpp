@@ -353,25 +353,26 @@ void
 NcDataWriter::mappers( int id )
 {
      const StorageSite::MappersMap&   mappers = _meshList.at(id)->getCells().getMappers();
+     const Mesh::GhostCellSiteMap&    ghostCellSiteMap = _meshList.at(id)->getGhostCellSiteMap();
      //loop over neighbour mesh to count interfaces
-     StorageSite::MappersMap::const_iterator it;
+     StorageSite::MappersMap::const_iterator it_mapper;
+     Mesh::GhostCellSiteMap::const_iterator  it;
+ 
      int  indx = mappers_index( id );
      
-     for ( it = mappers.begin(); it != mappers.end(); it++ ){
-         int nend = it->second->getFromIndices().getLength();
+     for ( it = ghostCellSiteMap.begin(); it != ghostCellSiteMap.end(); it++ ){
+         const StorageSite* site = it->second.get();
+         it_mapper = mappers.find( site );
+         int nend = it_mapper->second->getFromIndices().getLength();
+         //int nend = it->second->getFromIndices().getLength();
    
          for ( int n = 0; n < nend; n++ ){
-           _fromIndicesVals[indx] = it->second->getFromIndices()[n];  //or it->secon->toIndices.getLength() 
-           _toIndicesVals[indx]   = it->second->getToIndices()[n];
-
-         if ( MPI::COMM_WORLD.Get_rank() == 2 ){
-             cout << " from writer = " << _writeAction  <<  "  fromIndices = " << _fromIndicesVals[indx] << 
-                     "      " << _toIndicesVals[indx] << endl;
-         }
-
+           _fromIndicesVals[indx] = it_mapper->second->getFromIndices()[n];  //or it->secon->toIndices.getLength() 
+           _toIndicesVals[indx]   = it_mapper->second->getToIndices()[n];
             indx++;
          }
      }
+
 
 }
 
@@ -465,9 +466,9 @@ NcDataWriter::write_values()
      _faceCellsColCount->put( &_faceCellsColCountVals[0], _nmesh->size() );
      _faceNodesRowCount->put( &_faceNodesRowCountVals[0], _nmesh->size() );
      _faceNodesColCount->put( &_faceNodesColCountVals[0], _nmesh->size() );
-     
-    _fromIndices->put( &_fromIndicesVals[0], _nInterface->size() );
-    _toIndices->put( &_toIndicesVals[0], _nInterface->size() );
+
+    _fromIndices->put( _fromIndicesVals, _nInterface->size() );
+    _toIndices->put( _toIndicesVals, _nInterface->size() );
 
 
 }

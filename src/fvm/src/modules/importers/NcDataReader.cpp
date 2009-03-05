@@ -17,7 +17,6 @@
 #include "NcDataReader.h"
 #include "netcdfcpp.h"
 #include "mpi.h"
-#include "PartMesh.h"
 #include "OneToOneIndexMap.h"
 
 
@@ -233,9 +232,6 @@ NcDataReader::get_var_values()
      get_connectivity_vals();
      get_mapper_vals();
 
-     //if ( MPI::COMM_WORLD.Get_rank() == 0) cout << _boundaryTypeVals[0] << "  " << _boundaryTypeVals[1] << endl;
-
-
 }
 
 void 
@@ -282,8 +278,6 @@ NcDataReader::allocate_vars()
    
    _fromIndicesVals  = new int [ _nInterface ];
    _toIndicesVals    = new int [ _nInterface ];
-
-
 
 }
 
@@ -344,7 +338,6 @@ NcDataReader::get_connectivity_vals()
     _faceNodesRow->get( _faceNodesRowVals, _nfaceRow );
     _faceCellsCol->get( _faceCellsColVals, _nfaceCellsCol );
     _faceNodesCol->get( _faceNodesColVals, _nfaceNodesCol );
-    
 
 
 }
@@ -419,7 +412,7 @@ NcDataReader::boundary_faces( int id )
        }
  
 }
-
+1
 void
 NcDataReader::interfaces( int id )
 {
@@ -434,6 +427,7 @@ NcDataReader::interfaces( int id )
          _meshList.at(id)->createGhostCellSite( interfaceID, shared_ptr<StorageSite>( new StorageSite(size) ) );
          indx++;
      }
+
 
 
 }
@@ -533,22 +527,15 @@ NcDataReader::mappers(  )
         for ( int n = 0; n  < _interfaceGroupVals[id]; n++){
            int neighMeshID =  _interfaceIDVals[ offset + n ];
            int size = _interfaceSizeVals[ offset + n ];
-           PartMesh::ArrayIntPtr  fromIndices( new Array<int>( size ) );
-           PartMesh::ArrayIntPtr  toIndices  ( new Array<int>( size ) );
+           ArrayIntPtr  fromIndices( new Array<int>( size ) );
+           ArrayIntPtr  toIndices  ( new Array<int>( size ) );
 
 
           //get portion values
           for ( int i = 0; i < size; i++){
               (*fromIndices)[i] = _fromIndicesVals[indx];
               (*toIndices)[i]   = _toIndicesVals[indx];
- 
-           if ( MPI::COMM_WORLD.Get_rank() == 0 ){
-              cout << " neighMeshID = " << neighMeshID << " from =     "
-                   << _fromIndicesVals[indx] << "  to =   " << _toIndicesVals[indx] << " size = " << size << endl;
-           }
               indx++;
-          
-
            }
            shared_ptr< OneToOneIndexMap >  oneToOneMapPtr( new OneToOneIndexMap(fromIndices, toIndices)  );
            cellMappers[ _meshList.at(id)->getGhostCellSite( neighMeshID ) ] =  oneToOneMapPtr;
@@ -556,14 +543,10 @@ NcDataReader::mappers(  )
     }
 
 
-//  if ( MPI::COMM_WORLD.Get_rank() == 0 ){
-//    const Mesh::GhostCellSiteMap& ghostCellSiteMap = _meshList.at(0)->getGhostCellSiteMap() ;
-//    Mesh::GhostCellSiteMap::const_iterator it;
-//    for ( it = ghostCellSiteMap.begin(); it != ghostCellSiteMap.end(); it++)
-//       cout << " neigh mesh id =  " << it->first <<endl;
-// }
-
 }
+
+
+
 
 
 
