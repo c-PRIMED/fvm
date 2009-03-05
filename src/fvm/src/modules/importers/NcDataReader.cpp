@@ -412,7 +412,7 @@ NcDataReader::boundary_faces( int id )
        }
  
 }
-1
+
 void
 NcDataReader::interfaces( int id )
 {
