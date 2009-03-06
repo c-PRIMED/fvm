@@ -16,7 +16,6 @@
 
 #include "NcDataReader.h"
 #include "netcdfcpp.h"
-#include "mpi.h"
 #include "OneToOneIndexMap.h"
 
 

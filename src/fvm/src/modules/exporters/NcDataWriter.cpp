@@ -19,7 +19,6 @@
 #include "StorageSite.h"
 #include "Array.h"
 #include "OneToOneIndexMap.h"
-#include "mpi.h"
 
 int NcDataWriter::_writeAction = 0;
 
