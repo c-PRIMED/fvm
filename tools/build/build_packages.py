@@ -363,10 +363,11 @@ class Fvm(BuildPkg):
         pdir = os.path.join(self.sdir, "packages")
         self.sys_log("/bin/mkdir -p %s" % pdir)
         pdir = os.path.join(pdir, self.getArch())
-        return self.sys_log("/bin/ln -fs %s %s" % (self.blddir, pdir))
+        return self.sys_log("/bin/ln -fsn %s %s" % (self.blddir, pdir))
     def _build(self):
         os.putenv("PYTHONPATH",os.path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
-        return self.sys_log("%s/etc/buildsystem/build -C %s" % (self.sdir, self.sdir))
+        #return self.sys_log("%s/etc/buildsystem/build -C %s VERSION='release'" % (self.sdir, self.sdir))
+        return self.sys_log("%s/etc/buildsystem/build -C %s COMPACTOUTPUT=False" % (self.sdir, self.sdir))
     def _install(self):
         try:
             line = os.popen("/bin/bash -c 'gcc --version 2>&1'").readline()
