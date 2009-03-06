@@ -4,9 +4,9 @@ src = [
     'PartMesh.cpp',
     ]
 
-env.createSharedLibrary('fvmparallel',src,['rlog','fvmbase'])
+env.createSharedLibrary('fvmparallel',src,['rlog','fvmbase','importers','exporters'])
 #env.createSwigModule('importers',sources=['FluentReader.i'],
 #                     deplibs=['fvmbase','importers','rlog'])
 
 env.createExe('pFVM',['pFVM.cpp'],
-              deplibs=['fvmbase','fvmparallel','importers','rlog','openmpi'])
+              deplibs=['fvmbase','fvmparallel','importers','exporters','rlog','parmetis'])

@@ -4,12 +4,13 @@ src = [
     'Reader.cpp',
     'SchemeReader.cpp',
     'FluentReader.cpp',
-    'MMReader.cpp'
+    'MMReader.cpp',
+    'NcDataReader.cpp'
     ]
 
-env.createSharedLibrary('importers',src,['rlog','fvmbase'])
+env.createSharedLibrary('importers',src,['rlog','fvmbase','netcdf_c++','netcdf'])
 env.createSwigModule('importers',sources=['FluentReader.i'],
-                     deplibs=['fvmbase','importers','rlog'])
+                     deplibs=['fvmbase','importers','exporters','rlog'])
 
 env.createExe('testLinearSolver',['testLinearSolver.cpp'],
-              deplibs=['fvmbase','importers','rlog'])
+              deplibs=['fvmbase','importers','exporters', 'rlog'])

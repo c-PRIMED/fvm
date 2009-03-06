@@ -1,4 +1,9 @@
 Import('env')
 
+src = [
+    'NcDataWriter.cpp'
+    ]
+
+env.createSharedLibrary('exporters',src,['rlog','fvmbase'])
 env.createATypedSwigModule('exporters_atyped',sources=['FluentDataExporter.i'],
-                           deplibs=['fvmbase','importers','rlog'])
+                           deplibs=['fvmbase','exporters','importers','rlog'])
