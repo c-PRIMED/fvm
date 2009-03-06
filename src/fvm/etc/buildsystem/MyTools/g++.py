@@ -33,7 +33,7 @@ def generate(env):
         env.Append(CXXFLAGS=['-fopenmp'])
     
     env['CCFLAGS'] = env['CXXFLAGS']
-    env['CC'] = 'mpicxx'
+    env['CXX'] = 'mpicxx'
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')
 
 def exists(env):
