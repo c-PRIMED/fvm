@@ -1,5 +1,8 @@
 include ../Makefile.in
 
+.SUFFIXES: .c .lo .o
+
+all: ../libmetis.a ../libmetis.so
 
 CFLAGS = $(COPTIONS) $(OPTFLAGS) -I. $(INCDIR)
 
@@ -19,15 +22,25 @@ OBJS = coarsen.o fm.o initpart.o match.o ccgraph.o \
 .c.o:
 	$(CC) $(CFLAGS) -c $*.c
 
+SHLOBJS = $(OBJS:.o=.lo)
+
+.c.lo:
+	$(CC) $(CFLAGS) -fPIC -DPIC -c $< -o $@
+
 ../libmetis.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 	$(RANLIB) $@
 
+../libmetis.so: $(SHLOBJS)
+	$(CC) -shared $^ -Wl,-soname,libmetis.so.3.1.1 -o $@.3.1.1 \
+	$(LIBDIR) -lmpi
+	ln -s libmetis.so.3.1.1 $@
+
 clean:
-	rm -f *.o 
+	rm -f *.o *.lo
 
 realclean:
-	rm -f *.o ; rm -f ../libmetis.a
+	rm -f *.o *.lo; rm -f ../libmetis.*
 
 
 checkin:

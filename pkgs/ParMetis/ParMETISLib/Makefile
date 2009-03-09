@@ -1,5 +1,8 @@
 include ../Makefile.in
 
+.SUFFIXES: .c .lo .o
+
+all: ../libparmetis.a ../libparmetis.so
 
 CFLAGS = $(COPTIONS) $(OPTFLAGS) -I. $(INCDIR)
 
@@ -21,17 +24,26 @@ OBJS = comm.o util.o debug.o setup.o grsetup.o timer.o \
 .c.o:
 	$(CC) $(CFLAGS) -c $*.c
 
+SHLOBJS = $(OBJS:.o=.lo)
+
+.c.lo:
+	$(CC) $(CFLAGS) -fPIC -DPIC -c $< -o $@
+
 
 ../libparmetis.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 	$(RANLIB) $@
 
+../libparmetis.so: $(SHLOBJS)
+	$(CC) -shared $^ -Wl,-soname,libparmetis.so.3.1.1 -o $@.3.1.1 \
+	  $(LIBDIR) -lmpi
+	ln -s libparmetis.so.3.1.1 $@
+
 clean:
-	rm -f *.o 
+	rm -f *.o *.lo
 
 realclean:
-	rm -f *.o ; rm -f ../libparmetis.a
-
+	rm -f *.o *.lo; rm -f ../libparmetis.*
 
 checkin:
 	@for file in *.[c,h]; \
