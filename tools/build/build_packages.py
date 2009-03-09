@@ -205,7 +205,7 @@ class ParMetis(BuildPkg):
     def _install(self):
         idir = os.path.join(self.blddir, "include")
         self.sys_log("install --mode=444 parmetis.h %s" % idir)
-        return self.sys_log("install *.a %s" % self.libdir)
+        return self.sys_log("install *.a *.so *.so.* %s" % self.libdir)
 
 class NetCDF4(BuildPkg):
     name = "netCDF4"
