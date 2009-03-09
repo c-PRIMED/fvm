@@ -45,7 +45,8 @@ public:
     enum NUMFLAG{ C_STYLE = 0, FORTRAN_STYLE = 1 };
     enum CELLTYPE{ INTERIOR = 1, GHOST_BOUNDARY_CELL = 2, GHOST_INTERFACE_CELL};
 
-    explicit PartMesh(const MeshList& mesh_list, vector<int> npart, vector<ETYPE> eType);
+  explicit PartMesh(const MeshList& mesh_list, vector<int> npart,
+                    vector<int> eType);
     ~PartMesh();
 
     void partition();
@@ -116,7 +117,7 @@ private:
    vector< int  > _numFlag;
    vector< int  > _ncon;
    vector< int  > _ncommonNodes;
-   vector< ETYPE > _eType;
+   vector< int > _eType;
    vector< float* > _tpwgts;
    vector< float* > _ubvec;
    int _options;

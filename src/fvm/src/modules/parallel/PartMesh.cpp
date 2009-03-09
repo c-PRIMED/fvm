@@ -27,7 +27,8 @@
 
 
 
-PartMesh::PartMesh( const MeshList &mesh_list, vector<int> nPart, vector<ETYPE> eType ):
+PartMesh::PartMesh( const MeshList &mesh_list, vector<int> nPart,
+                    vector<int> eType ):
 _meshList(mesh_list), _nPart(nPart), _eType(eType), _options(0)
 {
 

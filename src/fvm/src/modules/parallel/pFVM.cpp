@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
   //mesh_list
    vector<int> npart( mesh_list.size(),  MPI::COMM_WORLD.Get_size() );
-   vector<PartMesh::ETYPE> etype( mesh_list.size(), PartMesh::TRI);
+   vector<int> etype( mesh_list.size(), PartMesh::TRI);
 
   //constructer to PartMesh
    PartMesh part_mesh(mesh_list, npart, etype );
