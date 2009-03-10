@@ -7,7 +7,7 @@
  * Language base class functions.  Default C++ handling is also implemented here.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_lang_cxx[] = "$Id: lang.cxx 10540 2008-06-21 15:23:02Z wsfulton $";
+char cvsroot_lang_cxx[] = "$Id: lang.cxx 11092 2009-01-28 18:45:13Z wsfulton $";
 
 #include "swigmod.h"
 #include "cparse.h"
@@ -61,7 +61,7 @@ static String *AttributeFunctionGet = 0;
 static String *AttributeFunctionSet = 0;
 static Node *CurrentClass = 0;
 int line_number = 0;
-char *input_file = 0;
+String *input_file = 0;
 int SmartPointer = 0;
 static Hash *classhash;
 
@@ -352,7 +352,7 @@ int Language::emit_one(Node *n) {
     Extend = 1;
 
   line_number = Getline(n);
-  input_file = Char(Getfile(n));
+  input_file = Getfile(n);
 
   /*
      symtab = Getattr(n,"symtab");
@@ -830,9 +830,8 @@ int Language::cDeclaration(Node *n) {
       if (!(directorsEnabled() && ((is_member_director(CurrentClass, n) && need_nonpublic_member(n)) || is_non_virtual_protected_access(n)))) {
           return SWIG_NOWRAP;
       }
-#if 0
-// I don't see why this is needed - WSF
-      /* prevent wrapping the method twice due to overload */
+      // Prevent wrapping protected overloaded director methods more than once -
+      // This bit of code is only needed due to the cDeclaration call in classHandler()
       String *wrapname = NewStringf("nonpublic_%s%s", symname, Getattr(n, "sym:overname"));
       if (Getattr(CurrentClass, wrapname)) {
 	Delete(wrapname);
@@ -840,7 +839,6 @@ int Language::cDeclaration(Node *n) {
       }
       SetFlag(CurrentClass, wrapname);
       Delete(wrapname);
-#endif
     }
   }
 
@@ -2476,6 +2474,13 @@ int Language::classHandler(Node *n) {
 	  Node *m = Copy(method);
 	  Setattr(m, "director", "1");
 	  Setattr(m, "parentNode", n);
+	  /*
+	   * There is a bug that needs fixing still... 
+	   * This area of code is creating methods which have not been overidden in a derived class (director methods that are protected in the base)
+	   * If the method is overloaded, then Swig_overload_dispatch() incorrectly generates a call to the base wrapper, _wrap_xxx method
+	   * See director_protected_overloaded.i - Possibly sym:overname needs correcting here.
+	  Printf(stdout, "new method: %s::%s(%s)\n", Getattr(parentNode(m), "name"), Getattr(m, "name"), ParmList_str_defaultargs(Getattr(m, "parms")));
+	  */
 	  cDeclaration(m);
 	  Delete(m);
 	}
@@ -2955,14 +2960,9 @@ Node *Language::classLookup(SwigType *s) {
   n = Getattr(classtypes, s);
   if (!n) {
     Symtab *stab = 0;
-//    SwigType *lt = SwigType_ltype(s);
-//    SwigType *ty1 = SwigType_typedef_resolve_all(lt);
     SwigType *ty1 = SwigType_typedef_resolve_all(s);
     SwigType *ty2 = SwigType_strip_qualifiers(ty1);
-//    Printf(stdout, "   stages... ty1: %s ty2: %s\n", ty1, ty2);
-//    Delete(lt);
     Delete(ty1);
-//    lt = 0;
     ty1 = 0;
 
     String *base = SwigType_base(ty2);
@@ -2970,6 +2970,12 @@ Node *Language::classLookup(SwigType *s) {
     Replaceall(base, "class ", "");
     Replaceall(base, "struct ", "");
     Replaceall(base, "union ", "");
+
+    if (strncmp(Char(base), "::", 2) == 0) {
+      String *oldbase = base;
+      base = NewString(Char(base) + 2);
+      Delete(oldbase);
+    }
 
     String *prefix = SwigType_prefix(ty2);
 
@@ -3043,6 +3049,12 @@ Node *Language::enumLookup(SwigType *s) {
 
     Replaceall(base, "enum ", "");
     String *prefix = SwigType_prefix(ty2);
+
+    if (strncmp(Char(base), "::", 2) == 0) {
+      String *oldbase = base;
+      base = NewString(Char(base) + 2);
+      Delete(oldbase);
+    }
 
     /* Look for type in symbol table */
     while (!n) {

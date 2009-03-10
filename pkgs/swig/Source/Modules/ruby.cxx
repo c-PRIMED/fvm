@@ -7,7 +7,7 @@
  * Ruby language module for SWIG.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_ruby_cxx[] = "$Id: ruby.cxx 10540 2008-06-21 15:23:02Z wsfulton $";
+char cvsroot_ruby_cxx[] = "$Id: ruby.cxx 11080 2009-01-24 13:15:51Z bhy $";
 
 #include "swigmod.h"
 #include "cparse.h"
@@ -78,7 +78,7 @@ public:
     Delete(temp);
   }
 
-  void set_name(const String_or_char *cn, const String_or_char *rn, const String_or_char *valn) {
+  void set_name(const_String_or_char_ptr cn, const_String_or_char_ptr rn, const_String_or_char_ptr valn) {
     /* Original C/C++ class (or struct) name */
     Clear(cname);
     Append(cname, cn);
@@ -104,7 +104,7 @@ public:
     Printv(prefix, (rn ? rn : cn), "_", NIL);
   }
 
-  char *strip(const String_or_char *s) {
+  char *strip(const_String_or_char_ptr s) {
     Clear(temp);
     Append(temp, s);
     if (Strncmp(s, prefix, Len(prefix)) == 0) {
@@ -992,7 +992,7 @@ public:
       SWIG_exit(EXIT_FAILURE);
     }
 
-    f_runtime = NewFile(outfile, "w");
+    f_runtime = NewFile(outfile, "w", SWIG_output_files());
     if (!f_runtime) {
       FileErrorDisplay(outfile);
       SWIG_exit(EXIT_FAILURE);
@@ -1003,7 +1003,7 @@ public:
         Printf(stderr, "Unable to determine outfile_h\n");
         SWIG_exit(EXIT_FAILURE);
       }
-      f_runtime_h = NewFile(outfile_h, "w");
+      f_runtime_h = NewFile(outfile_h, "w", SWIG_output_files());
       if (!f_runtime_h) {
 	FileErrorDisplay(outfile_h);
 	SWIG_exit(EXIT_FAILURE);
@@ -1042,6 +1042,8 @@ public:
     if (directorsEnabled()) {
       Printf(f_runtime, "#define SWIG_DIRECTORS\n");
     }
+
+    Printf(f_runtime, "\n");
 
     /* typedef void *VALUE */
     SwigType *value = NewSwigType(T_VOID);
@@ -1226,7 +1228,7 @@ public:
   /**
    * Process the comma-separated list of aliases (if any).
    */
-  void defineAliases(Node *n, const String_or_char *iname) {
+  void defineAliases(Node *n, const_String_or_char_ptr iname) {
     String *aliasv = Getattr(n, "feature:alias");
     if (aliasv) {
       List *aliases = Split(aliasv, ',', INT_MAX);
@@ -1260,7 +1262,7 @@ public:
    * as another instance of the same class.
    * --------------------------------------------------------------------- */
 
-  void create_command(Node *n, const String_or_char *iname) {
+  void create_command(Node *n, const_String_or_char_ptr iname) {
 
     String *alloc_func = Swig_name_wrapper(iname);
     String *wname = Swig_name_wrapper(iname);
@@ -2564,7 +2566,7 @@ public:
 
     /* First wrap the allocate method */
     current = CONSTRUCTOR_ALLOCATE;
-    Swig_name_register((String_or_char *) "construct", (String_or_char *) "%c_allocate");
+    Swig_name_register((const_String_or_char_ptr ) "construct", (const_String_or_char_ptr ) "%c_allocate");
 
 
     Language::constructorHandler(n);
@@ -2599,7 +2601,7 @@ public:
     Delete(docs);
 
     current = CONSTRUCTOR_INITIALIZE;
-    Swig_name_register((String_or_char *) "construct", (String_or_char *) "new_%c");
+    Swig_name_register((const_String_or_char_ptr ) "construct", (const_String_or_char_ptr ) "new_%c");
     Language::constructorHandler(n);
 
     /* Restore original parameter list */
@@ -2607,7 +2609,7 @@ public:
     Swig_restore(n);
 
     /* Done */
-    Swig_name_unregister((String_or_char *) "construct");
+    Swig_name_unregister((const_String_or_char_ptr ) "construct");
     current = NO_CPP;
     klass->constructor_defined = 1;
     return SWIG_OK;
@@ -2621,7 +2623,7 @@ public:
 
     /* First wrap the allocate method */
     current = CONSTRUCTOR_ALLOCATE;
-    Swig_name_register((String_or_char *) "construct", (String_or_char *) "%c_allocate");
+    Swig_name_register((const_String_or_char_ptr ) "construct", (const_String_or_char_ptr ) "%c_allocate");
 
     return Language::copyconstructorHandler(n);
   }

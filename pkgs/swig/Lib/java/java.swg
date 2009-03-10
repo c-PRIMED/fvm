@@ -620,7 +620,8 @@
 %typemap(directorin,descriptor="L$packagepath/$javaclassname;") SWIGTYPE &
 %{ *($&1_ltype)&$input = ($1_ltype) &$1; %}
 
-%typemap(javadirectorin) SWIGTYPE *, SWIGTYPE (CLASS::*), SWIGTYPE & "new $javaclassname($jniinput, false)"
+%typemap(javadirectorin) SWIGTYPE *, SWIGTYPE (CLASS::*) "($jniinput == 0) ? null : new $javaclassname($jniinput, false)"
+%typemap(javadirectorin) SWIGTYPE & "new $javaclassname($jniinput, false)"
 %typemap(javadirectorout) SWIGTYPE *, SWIGTYPE (CLASS::*), SWIGTYPE & "$javaclassname.getCPtr($javacall)"
 
 /* Default array handling */
@@ -1190,7 +1191,8 @@ SWIG_PROXY_CONSTRUCTOR(true, true, SWIGTYPE)
 #define %javaenum(wrapapproach)     %feature("java:enum","wrapapproach")
 #define %javamethodmodifiers        %feature("java:methodmodifiers")
 #define %javaexception(exceptionclasses) %feature("except",throws=exceptionclasses)
-#define %nojavaexception                 %feature("except","",throws="")
+#define %nojavaexception            %feature("except","0",throws="")
+#define %clearjavaexception         %feature("except","",throws="")
 
 %pragma(java) jniclassclassmodifiers="class"
 %pragma(java) moduleclassmodifiers="public class"

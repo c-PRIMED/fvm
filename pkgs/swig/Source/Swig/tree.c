@@ -8,7 +8,7 @@
  * parse trees.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_tree_c[] = "$Id: tree.c 10193 2007-12-16 20:37:25Z wsfulton $";
+char cvsroot_tree_c[] = "$Id: tree.c 11080 2009-01-24 13:15:51Z bhy $";
 
 #include "swig.h"
 #include <stdarg.h>
@@ -229,7 +229,7 @@ Node *copyNode(Node *n) {
  * checkAttribute()
  * ----------------------------------------------------------------------------- */
 
-int checkAttribute(Node *n, const String_or_char *name, const String_or_char *value) {
+int checkAttribute(Node *n, const_String_or_char_ptr name, const_String_or_char_ptr value) {
   String *v = Getattr(n, name);
   return v ? Equal(v, value) : 0;
 }

@@ -10,7 +10,7 @@
  * See the file LICENSE for information on usage and redistribution.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_base_c[] = "$Id: base.c 9629 2006-12-30 18:27:47Z beazley $";
+char cvsroot_base_c[] = "$Id: base.c 11097 2009-01-30 10:27:37Z bhy $";
 
 #include "dohint.h"
 
@@ -827,7 +827,7 @@ void DohSetfile(DOH *ho, DOH *file) {
 /* -----------------------------------------------------------------------------
  * DohGetFile()
  * ----------------------------------------------------------------------------- */
-DOH *DohGetfile(DOH *ho) {
+DOH *DohGetfile(const DOH *ho) {
   DohBase *h = (DohBase *) ho;
   DohObjInfo *objinfo;
   if (!h)
@@ -854,7 +854,7 @@ void DohSetline(DOH *ho, int l) {
 /* -----------------------------------------------------------------------------
  * DohGetLine()
  * ----------------------------------------------------------------------------- */
-int DohGetline(DOH *ho) {
+int DohGetline(const DOH *ho) {
   DohBase *h = (DohBase *) ho;
   DohObjInfo *objinfo;
   if (!h)

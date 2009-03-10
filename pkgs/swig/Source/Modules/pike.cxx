@@ -25,7 +25,7 @@
  *
  */
 
-char cvsroot_pike_cxx[] = "$Id: pike.cxx 10453 2008-05-15 21:18:44Z wsfulton $";
+char cvsroot_pike_cxx[] = "$Id: pike.cxx 11080 2009-01-24 13:15:51Z bhy $";
 
 #include "swigmod.h"
 
@@ -123,7 +123,7 @@ public:
     String *outfile = Getattr(n, "outfile");
 
     /* Open the output file */
-    f_runtime = NewFile(outfile, "w");
+    f_runtime = NewFile(outfile, "w", SWIG_output_files());
     if (!f_runtime) {
       FileErrorDisplay(outfile);
       SWIG_exit(EXIT_FAILURE);
@@ -142,6 +142,9 @@ public:
 
     /* Standard stuff for the SWIG runtime section */
     Swig_banner(f_runtime);
+
+    Printf(f_runtime, "#define SWIGPIKE\n");
+    Printf(f_runtime, "\n");
 
     Printf(f_header, "#define SWIG_init    pike_module_init\n");
     Printf(f_header, "#define SWIG_name    \"%s\"\n\n", module);
@@ -221,7 +224,7 @@ public:
    * name (i.e. "enum_test").
    * ------------------------------------------------------------ */
 
-  String *strip(const DOHString_or_char *name) {
+  String *strip(const DOHconst_String_or_char_ptr name) {
     String *s = Copy(name);
     if (Strncmp(name, PrefixPlusUnderscore, Len(PrefixPlusUnderscore)) != 0) {
       return s;
@@ -234,7 +237,7 @@ public:
    * add_method()
    * ------------------------------------------------------------ */
 
-  void add_method(const DOHString_or_char *name, const DOHString_or_char *function, const DOHString_or_char *description) {
+  void add_method(const DOHconst_String_or_char_ptr name, const DOHconst_String_or_char_ptr function, const DOHconst_String_or_char_ptr description) {
     String *rename = NULL;
     switch (current) {
     case NO_CPP:

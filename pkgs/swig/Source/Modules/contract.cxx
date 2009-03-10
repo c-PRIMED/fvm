@@ -7,7 +7,7 @@
  * Support for Wrap by Contract in SWIG.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_contract_cxx[] = "$Id: contract.cxx 10440 2008-05-11 20:25:12Z wsfulton $";
+char cvsroot_contract_cxx[] = "$Id: contract.cxx 11049 2009-01-10 01:15:03Z wsfulton $";
 
 #include "swigmod.h"
 
@@ -46,6 +46,7 @@ public:
   int extendDirective(Node *n);
   int importDirective(Node *n);
   int includeDirective(Node *n);
+  int namespaceDeclaration(Node *n);
   int classDeclaration(Node *n);
   virtual int top(Node *n);
 };
@@ -320,13 +321,20 @@ int Contracts::constructorDeclaration(Node *n) {
 int Contracts::externDeclaration(Node *n) {
   return emit_children(n);
 }
+
 int Contracts::extendDirective(Node *n) {
   return emit_children(n);
 }
+
 int Contracts::importDirective(Node *n) {
   return emit_children(n);
 }
+
 int Contracts::includeDirective(Node *n) {
+  return emit_children(n);
+}
+
+int Contracts::namespaceDeclaration(Node *n) {
   return emit_children(n);
 }
 

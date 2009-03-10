@@ -7,7 +7,7 @@
  * A parse tree represented as Lisp s-expressions.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_s_exp_cxx[] = "$Id: s-exp.cxx 10003 2007-10-17 21:42:11Z wsfulton $";
+char cvsroot_s_exp_cxx[] = "$Id: s-exp.cxx 11017 2008-12-29 23:56:03Z wsfulton $";
 
 #include "swigmod.h"
 #include "dohint.h"
@@ -29,6 +29,9 @@ public:
   }
 
   virtual void main(int argc, char *argv[]) {
+    // Add a symbol to the parser for conditional compilation
+    Preprocessor_define("SWIGSEXP 1", 0);
+
     SWIG_typemap_lang("sexp");
     for (int iX = 0; iX < argc; iX++) {
       if (strcmp(argv[iX], "-typemaplang") == 0) {
@@ -42,9 +45,6 @@ public:
 	fputs(usage, stdout);
       }
     }
-
-    // Add a symbol to the parser for conditional compilation
-    Preprocessor_define("SWIGSEXP 1", 0);
   }
 
   DOHHash *print_circle_hash;
@@ -59,7 +59,7 @@ public:
       String *outfile = Getattr(n, "outfile");
       Replaceall(outfile, "_wrap.cxx", ".lisp");
       Replaceall(outfile, "_wrap.c", ".lisp");
-      out = NewFile(outfile, "w");
+      out = NewFile(outfile, "w", SWIG_output_files());
       if (!out) {
 	FileErrorDisplay(outfile);
 	SWIG_exit(EXIT_FAILURE);
@@ -71,7 +71,10 @@ public:
     Swig_register_filebyname("runtime", f_sink);
     Swig_register_filebyname("init", f_sink);
 
+    Swig_banner_target_lang(out, ";;;");
+
     Language::top(n);
+    Printf(out, "\n");
     Printf(out, ";;; Lisp parse tree produced by SWIG\n");
     print_circle_hash = DohNewHash();
     print_circle_count = 0;

@@ -7,7 +7,7 @@
  * Ocaml language module for SWIG.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_ocaml_cxx[] = "$Id: ocaml.cxx 10453 2008-05-15 21:18:44Z wsfulton $";
+char cvsroot_ocaml_cxx[] = "$Id: ocaml.cxx 11018 2008-12-30 00:38:34Z wsfulton $";
 
 #include "swigmod.h"
 
@@ -214,7 +214,7 @@ public:
     /* Initialize all of the output files */
     String *outfile = Getattr(n, "outfile");
 
-    f_runtime = NewFile(outfile, "w");
+    f_runtime = NewFile(outfile, "w", SWIG_output_files());
     if (!f_runtime) {
       FileErrorDisplay(outfile);
       SWIG_exit(EXIT_FAILURE);
@@ -262,7 +262,9 @@ public:
       Swig_name_register("get", "%v__get__");
     }
 
-    Printf(f_runtime, "/* -*- buffer-read-only: t -*- vi: set ro: */\n");
+    Swig_banner(f_runtime);
+
+    Printf(f_runtime, "#define SWIGOCAML\n");
     Printf(f_runtime, "#define SWIG_MODULE \"%s\"\n", module);
     /* Module name */
     Printf(f_mlbody, "let module_name = \"%s\"\n", module);
@@ -276,11 +278,11 @@ public:
 
     Printf(f_int_to_enum, "let int_to_enum x y =\n" "    match (x : c_enum_type) with\n" "      `unknown -> C_enum (`Int y)\n");
 
-    Swig_banner(f_runtime);
-
     if (directorsEnabled()) {
       Printf(f_runtime, "#define SWIG_DIRECTORS\n");
     }
+
+    Printf(f_runtime, "\n");
 
     /* Produce the enum_to_int and int_to_enum functions */
 
@@ -293,12 +295,12 @@ public:
     Printv(mlifile, module, ".mli", NIL);
 
     String *mlfilen = NewStringf("%s%s", SWIG_output_directory(), mlfile);
-    if ((f_mlout = NewFile(mlfilen, "w")) == 0) {
+    if ((f_mlout = NewFile(mlfilen, "w", SWIG_output_files())) == 0) {
       FileErrorDisplay(mlfilen);
       SWIG_exit(EXIT_FAILURE);
     }
     String *mlifilen = NewStringf("%s%s", SWIG_output_directory(), mlifile);
-    if ((f_mliout = NewFile(mlifilen, "w")) == 0) {
+    if ((f_mliout = NewFile(mlifilen, "w", SWIG_output_files())) == 0) {
       FileErrorDisplay(mlifilen);
       SWIG_exit(EXIT_FAILURE);
     }
@@ -1292,56 +1294,50 @@ public:
    * which means looking up and registering by typedef and enum name. */
   int enumDeclaration(Node *n) {
     String *name = Getattr(n, "name");
-    String *oname = name ? NewString(name) : NULL;
-    /* name is now fully qualified */
-    String *fully_qualified_name = NewString(name);
-    bool seen_enum = false;
-    if (name_qualifier)
-      Delete(name_qualifier);
-    char *strip_position;
-    name_qualifier = fully_qualify_enum_name(n, NewString(""));
+    if (name) {
+      String *oname = NewString(name);
+      /* name is now fully qualified */
+      String *fully_qualified_name = NewString(name);
+      bool seen_enum = false;
+      if (name_qualifier)
+        Delete(name_qualifier);
+      char *strip_position;
+      name_qualifier = fully_qualify_enum_name(n, NewString(""));
 
-    /* Recent changes have distrubed enum and template naming again.
-     * Will try to keep it consistent by can't guarantee much given
-     * that these things move around a lot.
-     *
-     * I need to figure out a way to isolate this module better.
-     */
-    if (oname) {
       strip_position = strstr(Char(oname), "::");
 
       while (strip_position) {
-	strip_position += 2;
-	oname = NewString(strip_position);
-	strip_position = strstr(Char(oname), "::");
-      }
-    }
-
-    seen_enum = oname ? (Getattr(seen_enums, fully_qualified_name) ? true : false) : false;
-
-    if (oname && !seen_enum) {
-      const_enum = true;
-      Printf(f_enum_to_int, "| `%s -> (match y with\n", oname);
-      Printf(f_int_to_enum, "| `%s -> C_enum (\n", oname);
-      /* * * * A note about enum name resolution * * * *
-       * This code should now work, but I think we can do a bit better.
-       * The problem I'm having is that swig isn't very precise about
-       * typedef name resolution.  My opinion is that SwigType_typedef
-       * resolve_all should *always* return the enum tag if one exists,
-       * rather than the admittedly friendlier enclosing typedef.
-       * 
-       * This would make one of the cases below unnecessary. 
-       * * * */
-      Printf(f_mlbody, "let _ = Callback.register \"%s_marker\" (`%s)\n", fully_qualified_name, oname);
-      if (!strncmp(Char(fully_qualified_name), "enum ", 5)) {
-	String *fq_noenum = NewString(Char(fully_qualified_name) + 5);
-	Printf(f_mlbody,
-	       "let _ = Callback.register \"%s_marker\" (`%s)\n" "let _ = Callback.register \"%s_marker\" (`%s)\n", fq_noenum, oname, fq_noenum, name);
+        strip_position += 2;
+        oname = NewString(strip_position);
+        strip_position = strstr(Char(oname), "::");
       }
 
-      Printf(f_enumtypes_type, "| `%s\n", oname);
-      Insert(fully_qualified_name, 0, "enum ");
-      Setattr(seen_enums, fully_qualified_name, n);
+      seen_enum = (Getattr(seen_enums, fully_qualified_name) ? true : false);
+
+      if (!seen_enum) {
+        const_enum = true;
+        Printf(f_enum_to_int, "| `%s -> (match y with\n", oname);
+        Printf(f_int_to_enum, "| `%s -> C_enum (\n", oname);
+        /* * * * A note about enum name resolution * * * *
+         * This code should now work, but I think we can do a bit better.
+         * The problem I'm having is that swig isn't very precise about
+         * typedef name resolution.  My opinion is that SwigType_typedef
+         * resolve_all should *always* return the enum tag if one exists,
+         * rather than the admittedly friendlier enclosing typedef.
+         * 
+         * This would make one of the cases below unnecessary. 
+         * * * */
+        Printf(f_mlbody, "let _ = Callback.register \"%s_marker\" (`%s)\n", fully_qualified_name, oname);
+        if (!strncmp(Char(fully_qualified_name), "enum ", 5)) {
+          String *fq_noenum = NewString(Char(fully_qualified_name) + 5);
+          Printf(f_mlbody,
+                 "let _ = Callback.register \"%s_marker\" (`%s)\n" "let _ = Callback.register \"%s_marker\" (`%s)\n", fq_noenum, oname, fq_noenum, name);
+        }
+
+        Printf(f_enumtypes_type, "| `%s\n", oname);
+        Insert(fully_qualified_name, 0, "enum ");
+        Setattr(seen_enums, fully_qualified_name, n);
+      }
     }
 
     int ret = Language::enumDeclaration(n);

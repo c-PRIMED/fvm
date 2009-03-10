@@ -7,7 +7,7 @@
  * Expands a template into a specialized version.   
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_templ_c[] = "$Id: templ.c 10540 2008-06-21 15:23:02Z wsfulton $";
+char cvsroot_templ_c[] = "$Id: templ.c 11097 2009-01-30 10:27:37Z bhy $";
 
 #include "swig.h"
 #include "cparse.h"
@@ -15,7 +15,7 @@ char cvsroot_templ_c[] = "$Id: templ.c 10540 2008-06-21 15:23:02Z wsfulton $";
 static int template_debug = 0;
 
 
-String *baselists[3];
+const char *baselists[3];
 
 void SwigType_template_init() {
   baselists[0] = "baselist";
@@ -167,18 +167,21 @@ static int cparse_template_expand(Node *n, String *tname, String *rname, String 
     add_parms(Getattr(n, "throws"), cpatchlist, typelist);
   } else if (Equal(nodeType, "destructor")) {
     String *name = Getattr(n, "name");
-    if (name && strchr(Char(name), '<')) {
-      Append(patchlist, Getattr(n, "name"));
-    } else {
-      Append(name, templateargs);
+    if (name) {
+      if (strchr(Char(name), '<'))
+        Append(patchlist, Getattr(n, "name"));
+      else
+        Append(name, templateargs);
     }
     name = Getattr(n, "sym:name");
-    if (name && strchr(Char(name), '<')) {
-      String *sn = Copy(tname);
-      Setattr(n, "sym:name", sn);
-      Delete(sn);
-    } else {
-      Replace(name, tname, rname, DOH_REPLACE_ANY);
+    if (name) {
+      if (strchr(Char(name), '<')) {
+        String *sn = Copy(tname);
+        Setattr(n, "sym:name", sn);
+        Delete(sn);
+      } else {
+        Replace(name, tname, rname, DOH_REPLACE_ANY);
+      }
     }
     /* Setattr(n,"sym:name",name); */
     Append(cpatchlist, Getattr(n, "code"));

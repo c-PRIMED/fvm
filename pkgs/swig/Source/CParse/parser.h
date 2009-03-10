@@ -296,7 +296,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 1373 "parser.y"
+#line 1438 "parser.y"
 {
   char  *id;
   List  *bases;

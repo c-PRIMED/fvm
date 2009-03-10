@@ -10,7 +10,7 @@
  * See the file LICENSE for information on usage and redistribution.	
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_file_c[] = "$Id: file.c 10211 2008-01-18 19:51:46Z olly $";
+char cvsroot_file_c[] = "$Id: file.c 10898 2008-11-03 12:51:45Z wsfulton $";
 
 #include "dohint.h"
 
@@ -228,15 +228,16 @@ static DohObjInfo DohFileType = {
  * NewFile()
  *
  * Create a new file from a given filename and mode.
+ * If newfiles is non-zero, the filename is added to the list of new files.
  * ----------------------------------------------------------------------------- */
 
-DOH *DohNewFile(DOH *fn, const char *mode) {
+DOH *DohNewFile(DOH *filename, const char *mode, DOHList *newfiles) {
   DohFile *f;
   FILE *file;
-  char *filename;
+  char *filen;
 
-  filename = Char(fn);
-  file = fopen(filename, mode);
+  filen = Char(filename);
+  file = fopen(filen, mode);
   if (!file)
     return 0;
 
@@ -245,6 +246,8 @@ DOH *DohNewFile(DOH *fn, const char *mode) {
     fclose(file);
     return 0;
   }
+  if (newfiles)
+    Append(newfiles, filename);
   f->filep = file;
   f->fd = 0;
   f->closeondel = 1;

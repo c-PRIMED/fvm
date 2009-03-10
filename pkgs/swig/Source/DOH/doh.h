@@ -8,7 +8,7 @@
  * Copyright (C) 1999-2000.  The University of Chicago
  * See the file LICENSE for information on usage and redistribution.
  *
- * $Id: doh.h 9631 2007-01-03 05:23:20Z beazley $
+ * $Id: doh.h 11097 2009-01-30 10:27:37Z bhy $
  * ----------------------------------------------------------------------------- */
 
 #ifndef _DOH_H
@@ -144,6 +144,9 @@ typedef void DOH;
 #define DOHString_or_char  DOH
 #define DOHObj_or_char     DOH
 
+typedef const DOHString_or_char * const_String_or_char_ptr;
+typedef const DOHString_or_char * DOHconst_String_or_char_ptr;
+
 #define DOH_BEGIN          -1
 #define DOH_END            -2
 #define DOH_CUR            -3
@@ -234,9 +237,9 @@ extern DohIterator DohNext(DohIterator x);
 
 /* Positional */
 
-extern int DohGetline(DOH *obj);
+extern int DohGetline(const DOH *obj);
 extern void DohSetline(DOH *obj, int line);
-extern DOH *DohGetfile(DOH *obj);
+extern DOH *DohGetfile(const DOH *obj);
 extern void DohSetfile(DOH *obj, DOH *file);
 
   /* String Methods */
@@ -271,7 +274,7 @@ extern int DohGetmark(DOH *obj);
  * Strings.
  * ----------------------------------------------------------------------------- */
 
-extern DOHString *DohNewStringEmpty();
+extern DOHString *DohNewStringEmpty(void);
 extern DOHString *DohNewString(const DOH *c);
 extern DOHString *DohNewStringWithSize(const DOH *c, int len);
 extern DOHString *DohNewStringf(const DOH *fmt, ...);
@@ -297,7 +300,7 @@ extern char *DohStrchr(const DOHString_or_char *s1, int ch);
  * Files
  * ----------------------------------------------------------------------------- */
 
-extern DOHFile *DohNewFile(DOH *file, const char *mode);
+extern DOHFile *DohNewFile(DOH *filename, const char *mode, DOHList *outfiles);
 extern DOHFile *DohNewFileFromFile(FILE *f);
 extern DOHFile *DohNewFileFromFd(int fd);
 extern void DohFileErrorDisplay(DOHString * filename);
@@ -309,14 +312,14 @@ extern int DohCopyto(DOHFile * input, DOHFile * output);
  * List
  * ----------------------------------------------------------------------------- */
 
-extern DOHList *DohNewList();
+extern DOHList *DohNewList(void);
 extern void DohSortList(DOH *lo, int (*cmp) (const DOH *, const DOH *));
 
 /* -----------------------------------------------------------------------------
  * Hash
  * ----------------------------------------------------------------------------- */
 
-extern DOHHash *DohNewHash();
+extern DOHHash *DohNewHash(void);
 
 /* -----------------------------------------------------------------------------
  * Void

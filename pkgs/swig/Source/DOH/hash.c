@@ -9,7 +9,7 @@
  * See the file LICENSE for information on usage and redistribution.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_hash_c[] = "$Id: hash.c 10540 2008-06-21 15:23:02Z wsfulton $";
+char cvsroot_hash_c[] = "$Id: hash.c 10926 2008-11-11 22:17:40Z wsfulton $";
 
 #include "dohint.h"
 
@@ -535,7 +535,7 @@ DohObjInfo DohHashType = {
  * Create a new hash table.
  * ----------------------------------------------------------------------------- */
 
-DOH *DohNewHash() {
+DOH *DohNewHash(void) {
   Hash *h;
   int i;
   h = (Hash *) DohMalloc(sizeof(Hash));

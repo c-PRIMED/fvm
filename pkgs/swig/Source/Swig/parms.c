@@ -7,7 +7,7 @@
  * Parameter list class.
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_parms_c[] = "$Id: parms.c 9633 2007-01-10 23:43:07Z beazley $";
+char cvsroot_parms_c[] = "$Id: parms.c 11080 2009-01-24 13:15:51Z bhy $";
 
 #include "swig.h"
 
@@ -17,7 +17,7 @@ char cvsroot_parms_c[] = "$Id: parms.c 9633 2007-01-10 23:43:07Z beazley $";
  * Create a new parameter from datatype 'type' and name 'name'.
  * ------------------------------------------------------------------------ */
 
-Parm *NewParm(SwigType *type, const String_or_char *name) {
+Parm *NewParm(SwigType *type, const_String_or_char_ptr name) {
   Parm *p = NewHash();
   set_nodeType(p, "parm");
   if (type) {

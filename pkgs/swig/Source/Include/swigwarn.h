@@ -16,7 +16,7 @@
  * numbers in this file.
  * ----------------------------------------------------------------------------- */
 
-/* $Id: swigwarn.h 10450 2008-05-14 22:12:31Z wsfulton $ */
+/* $Id: swigwarn.h 10969 2008-12-06 23:15:20Z wsfulton $ */
 
 #ifndef SWIGWARN_H_
 #define SWIGWARN_H_
@@ -49,6 +49,7 @@
 #define WARN_DEPRECATED_NOEXTERN      122
 #define WARN_DEPRECATED_NODEFAULT     123
 #define WARN_DEPRECATED_TYPEMAP_LANG  124
+#define WARN_DEPRECATED_INPUT_FILE    125
 
 /* -- Preprocessor -- */
 
@@ -247,10 +248,17 @@
 
 /* please leave 850-869 free for Modula 3 */
 
-#define WARN_PHP4_MULTIPLE_INHERITANCE         870
-#define WARN_PHP4_UNKNOWN_PRAGMA               871
+/* These are needed for backward compatibility, but you don't need to add
+ * PHP4 versions of new warnings since existing user interface files can't
+ * be using them.
+ */
+#define WARN_PHP_MULTIPLE_INHERITANCE         870
+#define WARN_PHP_UNKNOWN_PRAGMA               871
 
-/* please leave 870-889 free for Php */
+#define WARN_PHP_MULTIPLE_INHERITANCE         870
+#define WARN_PHP_UNKNOWN_PRAGMA               871
+
+/* please leave 870-889 free for PHP */
 
 
 /* Feel free to claim any number in this space that's not currently being used. Just make sure you

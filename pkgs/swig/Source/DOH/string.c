@@ -10,7 +10,7 @@
  * See the file LICENSE for information on usage and redistribution.	
  * ----------------------------------------------------------------------------- */
 
-char cvsroot_string_c[] = "$Id: string.c 10211 2008-01-18 19:51:46Z olly $";
+char cvsroot_string_c[] = "$Id: string.c 10926 2008-11-11 22:17:40Z wsfulton $";
 
 #include "dohint.h"
 
@@ -1056,7 +1056,7 @@ DOHString *DohNewString(const DOH *so) {
  * NewStringEmpty() - Create a new string
  * ----------------------------------------------------------------------------- */
 
-DOHString *DohNewStringEmpty() {
+DOHString *DohNewStringEmpty(void) {
   int max = INIT_MAXSIZE;
   String *str = (String *) DohMalloc(sizeof(String));
   str->hashkey = 0;

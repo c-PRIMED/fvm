@@ -327,7 +327,7 @@
 
 #define yylex yylex
 
-char cvsroot_parser_y[] = "$Id: parser.y 10540 2008-06-21 15:23:02Z wsfulton $";
+char cvsroot_parser_y[] = "$Id: parser.y 11097 2009-01-30 10:27:37Z bhy $";
 
 #include "swig.h"
 #include "cparse.h"
@@ -380,7 +380,7 @@ static void yyerror (const char *e) {
   (void)e;
 }
 
-static Node *new_node(const String_or_char *tag) {
+static Node *new_node(const_String_or_char_ptr tag) {
   Node *n = NewHash();
   set_nodeType(n,tag);
   Setfile(n,cparse_file);
@@ -517,7 +517,7 @@ static String *yyrename = 0;
 static String *resolve_node_scope(String *cname);
 
 
-Hash *Swig_cparse_features() {
+Hash *Swig_cparse_features(void) {
   static Hash   *features_hash = 0;
   if (!features_hash) features_hash = NewHash();
   return features_hash;
@@ -1316,6 +1316,68 @@ static void add_nested(Nested *n) {
   }
 }
 
+/* Strips C-style and C++-style comments from string in-place. */
+static void strip_comments(char *string) {
+  int state = 0; /* 
+                  * 0 - not in comment
+                  * 1 - in c-style comment
+                  * 2 - in c++-style comment
+                  * 3 - in string
+                  * 4 - after reading / not in comments
+                  * 5 - after reading * in c-style comments
+                  * 6 - after reading \ in strings
+                  */
+  char * c = string;
+  while (*c) {
+    switch (state) {
+    case 0:
+      if (*c == '\"')
+        state = 3;
+      else if (*c == '/')
+        state = 4;
+      break;
+    case 1:
+      if (*c == '*')
+        state = 5;
+      *c = ' ';
+      break;
+    case 2:
+      if (*c == '\n')
+        state = 0;
+      else
+        *c = ' ';
+      break;
+    case 3:
+      if (*c == '\"')
+        state = 0;
+      else if (*c == '\\')
+        state = 6;
+      break;
+    case 4:
+      if (*c == '/') {
+        *(c-1) = ' ';
+        *c = ' ';
+        state = 2;
+      } else if (*c == '*') {
+        *(c-1) = ' ';
+        *c = ' ';
+        state = 1;
+      } else
+        state = 0;
+      break;
+    case 5:
+      if (*c == '/')
+        state = 0;
+      *c = ' ';
+      break;
+    case 6:
+      state = 3;
+      break;
+    }
+    ++c;
+  }
+}
+
 /* Dump all of the nested class declarations to the inline processor
  * However.  We need to do a few name replacements and other munging
  * first.  This function must be called before closing a class! */
@@ -1366,6 +1428,9 @@ static Node *dump_nested(const char *parent) {
        set_nextSibling(retx,ret);
        ret = retx; 
     */
+
+    /* Strip comments - further code may break in presence of comments. */
+    strip_comments(Char(n->code));
 
     /* Make all SWIG created typedef structs/unions/classes unnamed else 
        redefinition errors occur - nasty hack alert.*/
@@ -1674,7 +1739,7 @@ static void default_arguments(Node *n) {
  * Used by the parser to mark subtypes with extra information.
  * ----------------------------------------------------------------------------- */
 
-static void tag_nodes(Node *n, const String_or_char *attrname, DOH *value) {
+static void tag_nodes(Node *n, const_String_or_char_ptr attrname, DOH *value) {
   while (n) {
     Setattr(n, attrname, value);
     tag_nodes(firstChild(n), attrname, value);
@@ -1704,7 +1769,7 @@ static void tag_nodes(Node *n, const String_or_char *attrname, DOH *value) {
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 1373 "parser.y"
+#line 1438 "parser.y"
 {
   char  *id;
   List  *bases;
@@ -1748,7 +1813,7 @@ typedef union YYSTYPE
   Node         *node;
 }
 /* Line 187 of yacc.c.  */
-#line 1752 "y.tab.c"
+#line 1817 "y.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -1761,7 +1826,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 1765 "y.tab.c"
+#line 1830 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -2260,53 +2325,53 @@ static const yytype_int16 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,  1526,  1526,  1539,  1543,  1546,  1549,  1552,  1555,  1560,
-    1565,  1570,  1571,  1572,  1573,  1574,  1580,  1596,  1606,  1607,
-    1608,  1609,  1610,  1611,  1612,  1613,  1614,  1615,  1616,  1617,
-    1618,  1619,  1620,  1621,  1622,  1623,  1624,  1625,  1626,  1633,
-    1633,  1705,  1715,  1726,  1747,  1769,  1780,  1789,  1808,  1814,
-    1820,  1825,  1832,  1839,  1843,  1856,  1865,  1880,  1893,  1893,
-    1943,  1944,  1951,  1971,  2002,  2006,  2016,  2021,  2039,  2079,
-    2085,  2098,  2104,  2130,  2136,  2143,  2144,  2147,  2148,  2156,
-    2202,  2248,  2259,  2262,  2289,  2294,  2299,  2304,  2311,  2316,
-    2321,  2326,  2333,  2334,  2335,  2338,  2343,  2353,  2389,  2390,
-    2420,  2437,  2445,  2458,  2483,  2489,  2493,  2496,  2507,  2512,
-    2525,  2537,  2810,  2820,  2827,  2828,  2832,  2832,  2863,  2924,
-    2928,  2950,  2956,  2962,  2968,  2974,  2987,  3002,  3012,  3090,
-    3141,  3142,  3143,  3144,  3145,  3146,  3152,  3152,  3384,  3384,
-    3506,  3507,  3519,  3539,  3539,  3774,  3780,  3783,  3786,  3789,
-    3792,  3795,  3800,  3830,  3834,  3837,  3840,  3845,  3849,  3854,
-    3864,  3895,  3895,  3924,  3924,  3946,  3973,  3988,  3988,  3998,
-    3999,  4000,  4000,  4016,  4017,  4034,  4035,  4036,  4037,  4038,
-    4039,  4040,  4041,  4042,  4043,  4044,  4045,  4046,  4047,  4048,
-    4049,  4058,  4083,  4107,  4148,  4163,  4181,  4200,  4207,  4214,
-    4222,  4245,  4245,  4280,  4280,  4311,  4311,  4329,  4330,  4336,
-    4339,  4343,  4346,  4347,  4348,  4349,  4350,  4351,  4352,  4353,
-    4356,  4361,  4368,  4376,  4384,  4395,  4401,  4402,  4410,  4411,
-    4412,  4413,  4414,  4415,  4422,  4433,  4437,  4440,  4444,  4448,
-    4458,  4466,  4474,  4487,  4491,  4494,  4498,  4502,  4530,  4538,
-    4549,  4563,  4572,  4580,  4590,  4594,  4598,  4605,  4622,  4639,
-    4647,  4655,  4664,  4668,  4677,  4688,  4700,  4710,  4723,  4730,
-    4738,  4754,  4762,  4773,  4784,  4795,  4814,  4822,  4839,  4847,
-    4854,  4865,  4876,  4887,  4906,  4912,  4918,  4925,  4934,  4937,
-    4946,  4953,  4960,  4970,  4981,  4992,  5003,  5010,  5017,  5020,
-    5037,  5047,  5054,  5060,  5065,  5071,  5075,  5081,  5082,  5083,
-    5089,  5095,  5099,  5100,  5104,  5111,  5114,  5115,  5116,  5117,
-    5118,  5120,  5123,  5128,  5153,  5156,  5210,  5214,  5218,  5222,
-    5226,  5230,  5234,  5238,  5242,  5246,  5250,  5254,  5258,  5262,
-    5268,  5268,  5294,  5295,  5298,  5311,  5319,  5327,  5344,  5347,
-    5362,  5363,  5382,  5383,  5387,  5392,  5393,  5407,  5414,  5420,
-    5427,  5434,  5442,  5446,  5452,  5453,  5454,  5455,  5456,  5457,
-    5458,  5461,  5465,  5469,  5473,  5477,  5481,  5485,  5489,  5493,
-    5497,  5501,  5505,  5509,  5513,  5527,  5534,  5538,  5544,  5548,
-    5552,  5556,  5560,  5576,  5581,  5581,  5582,  5585,  5602,  5611,
-    5624,  5637,  5638,  5639,  5643,  5647,  5653,  5656,  5660,  5666,
-    5667,  5670,  5675,  5680,  5685,  5692,  5699,  5706,  5714,  5722,
-    5730,  5731,  5734,  5735,  5738,  5744,  5750,  5753,  5754,  5757,
-    5758,  5761,  5766,  5770,  5773,  5776,  5779,  5784,  5788,  5791,
-    5798,  5804,  5813,  5818,  5822,  5825,  5828,  5831,  5836,  5840,
-    5843,  5846,  5852,  5857,  5860,  5863,  5867,  5872,  5885,  5889,
-    5894,  5900,  5904,  5909,  5913,  5920,  5923,  5928
+       0,  1591,  1591,  1604,  1608,  1611,  1614,  1617,  1620,  1625,
+    1630,  1635,  1636,  1637,  1638,  1639,  1645,  1661,  1671,  1672,
+    1673,  1674,  1675,  1676,  1677,  1678,  1679,  1680,  1681,  1682,
+    1683,  1684,  1685,  1686,  1687,  1688,  1689,  1690,  1691,  1698,
+    1698,  1770,  1780,  1791,  1812,  1834,  1845,  1854,  1873,  1879,
+    1885,  1890,  1897,  1904,  1908,  1921,  1930,  1945,  1958,  1958,
+    2013,  2014,  2021,  2041,  2072,  2076,  2086,  2091,  2109,  2149,
+    2155,  2168,  2174,  2200,  2206,  2213,  2214,  2217,  2218,  2226,
+    2272,  2318,  2329,  2332,  2359,  2365,  2371,  2377,  2385,  2391,
+    2397,  2403,  2411,  2412,  2413,  2416,  2421,  2431,  2467,  2468,
+    2498,  2515,  2523,  2536,  2561,  2567,  2571,  2574,  2585,  2590,
+    2603,  2615,  2888,  2898,  2905,  2906,  2910,  2910,  2941,  3002,
+    3006,  3028,  3034,  3040,  3046,  3052,  3065,  3080,  3090,  3168,
+    3219,  3220,  3221,  3222,  3223,  3224,  3230,  3230,  3462,  3462,
+    3584,  3585,  3597,  3617,  3617,  3852,  3858,  3861,  3864,  3867,
+    3870,  3873,  3878,  3908,  3912,  3915,  3918,  3923,  3927,  3932,
+    3942,  3973,  3973,  4002,  4002,  4024,  4051,  4066,  4066,  4076,
+    4077,  4078,  4078,  4094,  4095,  4112,  4113,  4114,  4115,  4116,
+    4117,  4118,  4119,  4120,  4121,  4122,  4123,  4124,  4125,  4126,
+    4127,  4136,  4161,  4185,  4226,  4241,  4259,  4278,  4285,  4292,
+    4300,  4323,  4323,  4358,  4358,  4389,  4389,  4407,  4408,  4414,
+    4417,  4421,  4424,  4425,  4426,  4427,  4428,  4429,  4430,  4431,
+    4434,  4439,  4446,  4454,  4462,  4473,  4479,  4480,  4488,  4489,
+    4490,  4491,  4492,  4493,  4500,  4511,  4515,  4518,  4522,  4526,
+    4536,  4544,  4552,  4565,  4569,  4572,  4576,  4580,  4608,  4616,
+    4627,  4641,  4650,  4658,  4668,  4672,  4676,  4683,  4700,  4717,
+    4725,  4733,  4742,  4746,  4755,  4766,  4778,  4788,  4801,  4808,
+    4816,  4832,  4840,  4851,  4862,  4873,  4892,  4900,  4917,  4925,
+    4932,  4943,  4954,  4965,  4984,  4990,  4996,  5003,  5012,  5015,
+    5024,  5031,  5038,  5048,  5059,  5070,  5081,  5088,  5095,  5098,
+    5115,  5125,  5132,  5138,  5143,  5149,  5153,  5159,  5160,  5161,
+    5167,  5173,  5177,  5178,  5182,  5189,  5192,  5193,  5194,  5195,
+    5196,  5198,  5201,  5206,  5231,  5234,  5288,  5292,  5296,  5300,
+    5304,  5308,  5312,  5316,  5320,  5324,  5328,  5332,  5336,  5340,
+    5346,  5346,  5372,  5373,  5376,  5389,  5397,  5405,  5422,  5425,
+    5440,  5441,  5460,  5461,  5465,  5470,  5471,  5485,  5492,  5498,
+    5505,  5512,  5520,  5524,  5530,  5531,  5532,  5533,  5534,  5535,
+    5536,  5539,  5543,  5547,  5551,  5555,  5559,  5563,  5567,  5571,
+    5575,  5579,  5583,  5587,  5591,  5605,  5612,  5616,  5622,  5626,
+    5630,  5634,  5638,  5654,  5659,  5659,  5660,  5663,  5680,  5689,
+    5702,  5715,  5716,  5717,  5721,  5725,  5731,  5734,  5738,  5744,
+    5745,  5748,  5753,  5758,  5763,  5770,  5777,  5784,  5792,  5800,
+    5808,  5809,  5812,  5813,  5816,  5822,  5828,  5831,  5832,  5835,
+    5836,  5839,  5844,  5848,  5851,  5854,  5857,  5862,  5866,  5869,
+    5876,  5882,  5891,  5896,  5900,  5903,  5906,  5909,  5914,  5918,
+    5921,  5924,  5930,  5935,  5938,  5941,  5945,  5950,  5963,  5967,
+    5972,  5978,  5982,  5987,  5991,  5998,  6001,  6006
 };
 #endif
 
@@ -4439,7 +4504,7 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 1526 "parser.y"
+#line 1591 "parser.y"
     {
                    if (!classes) classes = NewHash();
 		   Setattr((yyvsp[(1) - (1)].node),"classes",classes); 
@@ -4456,7 +4521,7 @@ yyreduce:
     break;
 
   case 3:
-#line 1539 "parser.y"
+#line 1604 "parser.y"
     {
                  top = Copy(Getattr((yyvsp[(2) - (3)].p),"type"));
 		 Delete((yyvsp[(2) - (3)].p));
@@ -4464,42 +4529,42 @@ yyreduce:
     break;
 
   case 4:
-#line 1543 "parser.y"
+#line 1608 "parser.y"
     {
                  top = 0;
                }
     break;
 
   case 5:
-#line 1546 "parser.y"
+#line 1611 "parser.y"
     {
                  top = (yyvsp[(2) - (3)].p);
                }
     break;
 
   case 6:
-#line 1549 "parser.y"
+#line 1614 "parser.y"
     {
                  top = 0;
                }
     break;
 
   case 7:
-#line 1552 "parser.y"
+#line 1617 "parser.y"
     {
                  top = (yyvsp[(3) - (5)].pl);
                }
     break;
 
   case 8:
-#line 1555 "parser.y"
+#line 1620 "parser.y"
     {
                  top = 0;
                }
     break;
 
   case 9:
-#line 1560 "parser.y"
+#line 1625 "parser.y"
     {  
                    /* add declaration to end of linked list (the declaration isn't always a single declaration, sometimes it is a linked list itself) */
                    appendChild((yyvsp[(1) - (2)].node),(yyvsp[(2) - (2)].node));
@@ -4508,34 +4573,34 @@ yyreduce:
     break;
 
   case 10:
-#line 1565 "parser.y"
+#line 1630 "parser.y"
     {
                    (yyval.node) = new_node("top");
                }
     break;
 
   case 11:
-#line 1570 "parser.y"
+#line 1635 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 12:
-#line 1571 "parser.y"
+#line 1636 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 13:
-#line 1572 "parser.y"
+#line 1637 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 14:
-#line 1573 "parser.y"
+#line 1638 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 15:
-#line 1574 "parser.y"
+#line 1639 "parser.y"
     {
                   (yyval.node) = 0;
 		  Swig_error(cparse_file, cparse_line,"Syntax error in input(1).\n");
@@ -4544,7 +4609,7 @@ yyreduce:
     break;
 
   case 16:
-#line 1580 "parser.y"
+#line 1645 "parser.y"
     { 
                   if ((yyval.node)) {
    		      add_symbols((yyval.node));
@@ -4554,7 +4619,7 @@ yyreduce:
     break;
 
   case 17:
-#line 1596 "parser.y"
+#line 1661 "parser.y"
     {
                   (yyval.node) = 0;
                   skip_decl();
@@ -4562,112 +4627,112 @@ yyreduce:
     break;
 
   case 18:
-#line 1606 "parser.y"
+#line 1671 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 19:
-#line 1607 "parser.y"
+#line 1672 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 20:
-#line 1608 "parser.y"
+#line 1673 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 21:
-#line 1609 "parser.y"
+#line 1674 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 22:
-#line 1610 "parser.y"
+#line 1675 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 23:
-#line 1611 "parser.y"
+#line 1676 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 24:
-#line 1612 "parser.y"
+#line 1677 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 25:
-#line 1613 "parser.y"
+#line 1678 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 26:
-#line 1614 "parser.y"
+#line 1679 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 27:
-#line 1615 "parser.y"
+#line 1680 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 28:
-#line 1616 "parser.y"
+#line 1681 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 29:
-#line 1617 "parser.y"
+#line 1682 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 30:
-#line 1618 "parser.y"
+#line 1683 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 31:
-#line 1619 "parser.y"
+#line 1684 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 32:
-#line 1620 "parser.y"
+#line 1685 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 33:
-#line 1621 "parser.y"
+#line 1686 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 34:
-#line 1622 "parser.y"
+#line 1687 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 35:
-#line 1623 "parser.y"
+#line 1688 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 36:
-#line 1624 "parser.y"
+#line 1689 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 37:
-#line 1625 "parser.y"
+#line 1690 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 38:
-#line 1626 "parser.y"
+#line 1691 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 39:
-#line 1633 "parser.y"
+#line 1698 "parser.y"
     {
                Node *cls;
 	       String *clsname;
@@ -4700,7 +4765,7 @@ yyreduce:
     break;
 
   case 40:
-#line 1661 "parser.y"
+#line 1726 "parser.y"
     {
                String *clsname;
 	       extendmode = 0;
@@ -4742,7 +4807,7 @@ yyreduce:
     break;
 
   case 41:
-#line 1705 "parser.y"
+#line 1770 "parser.y"
     {
                     (yyval.node) = new_node("apply");
                     Setattr((yyval.node),"pattern",Getattr((yyvsp[(2) - (5)].p),"pattern"));
@@ -4751,7 +4816,7 @@ yyreduce:
     break;
 
   case 42:
-#line 1715 "parser.y"
+#line 1780 "parser.y"
     {
 		 (yyval.node) = new_node("clear");
 		 appendChild((yyval.node),(yyvsp[(2) - (3)].p));
@@ -4759,7 +4824,7 @@ yyreduce:
     break;
 
   case 43:
-#line 1726 "parser.y"
+#line 1791 "parser.y"
     {
 		   if (((yyvsp[(4) - (5)].dtype).type != T_ERROR) && ((yyvsp[(4) - (5)].dtype).type != T_SYMBOL)) {
 		     SwigType *type = NewSwigType((yyvsp[(4) - (5)].dtype).type);
@@ -4783,7 +4848,7 @@ yyreduce:
     break;
 
   case 44:
-#line 1747 "parser.y"
+#line 1812 "parser.y"
     {
 		 if (((yyvsp[(4) - (5)].dtype).type != T_ERROR) && ((yyvsp[(4) - (5)].dtype).type != T_SYMBOL)) {
 		   SwigType_push((yyvsp[(2) - (5)].type),(yyvsp[(3) - (5)].decl).type);
@@ -4809,7 +4874,7 @@ yyreduce:
     break;
 
   case 45:
-#line 1769 "parser.y"
+#line 1834 "parser.y"
     {
 		 Swig_warning(WARN_PARSE_BAD_VALUE,cparse_file,cparse_line,"Bad constant value (ignored).\n");
 		 (yyval.node) = 0;
@@ -4817,7 +4882,7 @@ yyreduce:
     break;
 
   case 46:
-#line 1780 "parser.y"
+#line 1845 "parser.y"
     {
 		 char temp[64];
 		 Replace((yyvsp[(2) - (2)].str),"$file",cparse_file, DOH_REPLACE_ANY);
@@ -4830,7 +4895,7 @@ yyreduce:
     break;
 
   case 47:
-#line 1789 "parser.y"
+#line 1854 "parser.y"
     {
 		 char temp[64];
 		 String *s = NewString((yyvsp[(2) - (2)].id));
@@ -4844,7 +4909,7 @@ yyreduce:
     break;
 
   case 48:
-#line 1808 "parser.y"
+#line 1873 "parser.y"
     {
                     skip_balanced('{','}');
 		    (yyval.node) = 0;
@@ -4853,7 +4918,7 @@ yyreduce:
     break;
 
   case 49:
-#line 1814 "parser.y"
+#line 1879 "parser.y"
     {
                     skip_balanced('{','}');
 		    (yyval.node) = 0;
@@ -4862,7 +4927,7 @@ yyreduce:
     break;
 
   case 50:
-#line 1820 "parser.y"
+#line 1885 "parser.y"
     {
 		 (yyval.node) = 0;
 		 Swig_warning(WARN_DEPRECATED_EXCEPT,cparse_file, cparse_line, "%%except is deprecated.  Use %%exception instead.\n");
@@ -4870,7 +4935,7 @@ yyreduce:
     break;
 
   case 51:
-#line 1825 "parser.y"
+#line 1890 "parser.y"
     {
 		 (yyval.node) = 0;
 		 Swig_warning(WARN_DEPRECATED_EXCEPT,cparse_file, cparse_line, "%%except is deprecated.  Use %%exception instead.\n");
@@ -4878,7 +4943,7 @@ yyreduce:
     break;
 
   case 52:
-#line 1832 "parser.y"
+#line 1897 "parser.y"
     {		 
                  (yyval.node) = NewHash();
                  Setattr((yyval.node),"value",(yyvsp[(1) - (4)].id));
@@ -4887,7 +4952,7 @@ yyreduce:
     break;
 
   case 53:
-#line 1839 "parser.y"
+#line 1904 "parser.y"
     {
                  (yyval.node) = NewHash();
                  Setattr((yyval.node),"value",(yyvsp[(1) - (1)].id));
@@ -4895,14 +4960,14 @@ yyreduce:
     break;
 
   case 54:
-#line 1843 "parser.y"
+#line 1908 "parser.y"
     {
                 (yyval.node) = (yyvsp[(1) - (1)].node);
               }
     break;
 
   case 55:
-#line 1856 "parser.y"
+#line 1921 "parser.y"
     {
                    Hash *p = (yyvsp[(5) - (7)].node);
 		   (yyval.node) = new_node("fragment");
@@ -4915,7 +4980,7 @@ yyreduce:
     break;
 
   case 56:
-#line 1865 "parser.y"
+#line 1930 "parser.y"
     {
 		   Hash *p = (yyvsp[(5) - (7)].node);
 		   String *code;
@@ -4934,7 +4999,7 @@ yyreduce:
     break;
 
   case 57:
-#line 1880 "parser.y"
+#line 1945 "parser.y"
     {
 		   (yyval.node) = new_node("fragment");
 		   Setattr((yyval.node),"value",Getattr((yyvsp[(3) - (5)].node),"value"));
@@ -4944,16 +5009,21 @@ yyreduce:
     break;
 
   case 58:
-#line 1893 "parser.y"
+#line 1958 "parser.y"
     {
                      (yyvsp[(1) - (4)].loc).filename = Copy(cparse_file);
 		     (yyvsp[(1) - (4)].loc).line = cparse_line;
 		     scanner_set_location(NewString((yyvsp[(3) - (4)].id)),1);
+                     if ((yyvsp[(2) - (4)].node)) { 
+		       String *maininput = Getattr((yyvsp[(2) - (4)].node), "maininput");
+		       if (maininput)
+		         scanner_set_main_input_file(NewString(maininput));
+		     }
                }
     break;
 
   case 59:
-#line 1897 "parser.y"
+#line 1967 "parser.y"
     {
                      String *mname = 0;
                      (yyval.node) = (yyvsp[(6) - (7)].node);
@@ -5001,17 +5071,17 @@ yyreduce:
     break;
 
   case 60:
-#line 1943 "parser.y"
+#line 2013 "parser.y"
     { (yyval.loc).type = (char *) "include"; }
     break;
 
   case 61:
-#line 1944 "parser.y"
+#line 2014 "parser.y"
     { (yyval.loc).type = (char *) "import"; ++import_mode;}
     break;
 
   case 62:
-#line 1951 "parser.y"
+#line 2021 "parser.y"
     {
                  String *cpps;
 		 if (Namespaceprefix) {
@@ -5035,7 +5105,7 @@ yyreduce:
     break;
 
   case 63:
-#line 1971 "parser.y"
+#line 2041 "parser.y"
     {
                  String *cpps;
 		 int start_line = cparse_line;
@@ -5060,7 +5130,7 @@ yyreduce:
     break;
 
   case 64:
-#line 2002 "parser.y"
+#line 2072 "parser.y"
     {
                  (yyval.node) = new_node("insert");
 		 Setattr((yyval.node),"code",(yyvsp[(1) - (1)].str));
@@ -5068,7 +5138,7 @@ yyreduce:
     break;
 
   case 65:
-#line 2006 "parser.y"
+#line 2076 "parser.y"
     {
 		 String *code = NewStringEmpty();
 		 (yyval.node) = new_node("insert");
@@ -5082,7 +5152,7 @@ yyreduce:
     break;
 
   case 66:
-#line 2016 "parser.y"
+#line 2086 "parser.y"
     {
 		 (yyval.node) = new_node("insert");
 		 Setattr((yyval.node),"section",(yyvsp[(3) - (5)].id));
@@ -5091,7 +5161,7 @@ yyreduce:
     break;
 
   case 67:
-#line 2021 "parser.y"
+#line 2091 "parser.y"
     {
 		 String *code;
                  skip_balanced('{','}');
@@ -5106,7 +5176,7 @@ yyreduce:
     break;
 
   case 68:
-#line 2039 "parser.y"
+#line 2109 "parser.y"
     {
                  (yyval.node) = new_node("module");
 		 if ((yyvsp[(2) - (3)].node)) {
@@ -5143,7 +5213,7 @@ yyreduce:
     break;
 
   case 69:
-#line 2079 "parser.y"
+#line 2149 "parser.y"
     {
                  Swig_warning(WARN_DEPRECATED_NAME,cparse_file,cparse_line, "%%name is deprecated.  Use %%rename instead.\n");
 		 Delete(yyrename);
@@ -5153,7 +5223,7 @@ yyreduce:
     break;
 
   case 70:
-#line 2085 "parser.y"
+#line 2155 "parser.y"
     {
 		 Swig_warning(WARN_DEPRECATED_NAME,cparse_file,cparse_line, "%%name is deprecated.  Use %%rename instead.\n");
 		 (yyval.node) = 0;
@@ -5162,7 +5232,7 @@ yyreduce:
     break;
 
   case 71:
-#line 2098 "parser.y"
+#line 2168 "parser.y"
     {
                  (yyval.node) = new_node("native");
 		 Setattr((yyval.node),"name",(yyvsp[(3) - (7)].id));
@@ -5172,7 +5242,7 @@ yyreduce:
     break;
 
   case 72:
-#line 2104 "parser.y"
+#line 2174 "parser.y"
     {
 		 if (!SwigType_isfunction((yyvsp[(7) - (8)].decl).type)) {
 		   Swig_error(cparse_file,cparse_line,"%%native declaration '%s' is not a function.\n", (yyvsp[(7) - (8)].decl).id);
@@ -5193,7 +5263,7 @@ yyreduce:
     break;
 
   case 73:
-#line 2130 "parser.y"
+#line 2200 "parser.y"
     {
                  (yyval.node) = new_node("pragma");
 		 Setattr((yyval.node),"lang",(yyvsp[(2) - (5)].id));
@@ -5203,7 +5273,7 @@ yyreduce:
     break;
 
   case 74:
-#line 2136 "parser.y"
+#line 2206 "parser.y"
     {
 		(yyval.node) = new_node("pragma");
 		Setattr((yyval.node),"lang",(yyvsp[(2) - (3)].id));
@@ -5212,27 +5282,27 @@ yyreduce:
     break;
 
   case 75:
-#line 2143 "parser.y"
+#line 2213 "parser.y"
     { (yyval.str) = NewString((yyvsp[(1) - (1)].id)); }
     break;
 
   case 76:
-#line 2144 "parser.y"
+#line 2214 "parser.y"
     { (yyval.str) = (yyvsp[(1) - (1)].str); }
     break;
 
   case 77:
-#line 2147 "parser.y"
+#line 2217 "parser.y"
     { (yyval.id) = (yyvsp[(2) - (3)].id); }
     break;
 
   case 78:
-#line 2148 "parser.y"
+#line 2218 "parser.y"
     { (yyval.id) = (char *) "swig"; }
     break;
 
   case 79:
-#line 2156 "parser.y"
+#line 2226 "parser.y"
     {
                 SwigType *t = (yyvsp[(2) - (4)].decl).type;
 		Hash *kws = NewHash();
@@ -5282,7 +5352,7 @@ yyreduce:
     break;
 
   case 80:
-#line 2202 "parser.y"
+#line 2272 "parser.y"
     {
 		String *fixname;
 		Hash *kws = (yyvsp[(3) - (7)].node);
@@ -5332,7 +5402,7 @@ yyreduce:
     break;
 
   case 81:
-#line 2248 "parser.y"
+#line 2318 "parser.y"
     {
 		if ((yyvsp[(1) - (6)].ivalue)) {
 		  Swig_name_rename_add(Namespaceprefix,(yyvsp[(5) - (6)].id),0,(yyvsp[(3) - (6)].node),0);
@@ -5345,108 +5415,116 @@ yyreduce:
     break;
 
   case 82:
-#line 2259 "parser.y"
+#line 2329 "parser.y"
     {
 		    (yyval.ivalue) = 1;
                 }
     break;
 
   case 83:
-#line 2262 "parser.y"
+#line 2332 "parser.y"
     {
                     (yyval.ivalue) = 0;
                 }
     break;
 
   case 84:
-#line 2289 "parser.y"
+#line 2359 "parser.y"
     {
                     String *val = (yyvsp[(7) - (7)].str) ? NewString((yyvsp[(7) - (7)].str)) : NewString("1");
                     new_feature((yyvsp[(3) - (7)].id), val, 0, (yyvsp[(5) - (7)].decl).id, (yyvsp[(5) - (7)].decl).type, (yyvsp[(5) - (7)].decl).parms, (yyvsp[(6) - (7)].dtype).qualifier);
                     (yyval.node) = 0;
+                    scanner_clear_rename();
                   }
     break;
 
   case 85:
-#line 2294 "parser.y"
+#line 2365 "parser.y"
     {
                     String *val = Len((yyvsp[(5) - (9)].id)) ? NewString((yyvsp[(5) - (9)].id)) : 0;
                     new_feature((yyvsp[(3) - (9)].id), val, 0, (yyvsp[(7) - (9)].decl).id, (yyvsp[(7) - (9)].decl).type, (yyvsp[(7) - (9)].decl).parms, (yyvsp[(8) - (9)].dtype).qualifier);
                     (yyval.node) = 0;
+                    scanner_clear_rename();
                   }
     break;
 
   case 86:
-#line 2299 "parser.y"
+#line 2371 "parser.y"
     {
                     String *val = (yyvsp[(8) - (8)].str) ? NewString((yyvsp[(8) - (8)].str)) : NewString("1");
                     new_feature((yyvsp[(3) - (8)].id), val, (yyvsp[(4) - (8)].node), (yyvsp[(6) - (8)].decl).id, (yyvsp[(6) - (8)].decl).type, (yyvsp[(6) - (8)].decl).parms, (yyvsp[(7) - (8)].dtype).qualifier);
                     (yyval.node) = 0;
+                    scanner_clear_rename();
                   }
     break;
 
   case 87:
-#line 2304 "parser.y"
+#line 2377 "parser.y"
     {
                     String *val = Len((yyvsp[(5) - (10)].id)) ? NewString((yyvsp[(5) - (10)].id)) : 0;
                     new_feature((yyvsp[(3) - (10)].id), val, (yyvsp[(6) - (10)].node), (yyvsp[(8) - (10)].decl).id, (yyvsp[(8) - (10)].decl).type, (yyvsp[(8) - (10)].decl).parms, (yyvsp[(9) - (10)].dtype).qualifier);
                     (yyval.node) = 0;
+                    scanner_clear_rename();
                   }
     break;
 
   case 88:
-#line 2311 "parser.y"
+#line 2385 "parser.y"
     {
                     String *val = (yyvsp[(5) - (5)].str) ? NewString((yyvsp[(5) - (5)].str)) : NewString("1");
                     new_feature((yyvsp[(3) - (5)].id), val, 0, 0, 0, 0, 0);
                     (yyval.node) = 0;
+                    scanner_clear_rename();
                   }
     break;
 
   case 89:
-#line 2316 "parser.y"
+#line 2391 "parser.y"
     {
                     String *val = Len((yyvsp[(5) - (7)].id)) ? NewString((yyvsp[(5) - (7)].id)) : 0;
                     new_feature((yyvsp[(3) - (7)].id), val, 0, 0, 0, 0, 0);
                     (yyval.node) = 0;
+                    scanner_clear_rename();
                   }
     break;
 
   case 90:
-#line 2321 "parser.y"
+#line 2397 "parser.y"
     {
                     String *val = (yyvsp[(6) - (6)].str) ? NewString((yyvsp[(6) - (6)].str)) : NewString("1");
                     new_feature((yyvsp[(3) - (6)].id), val, (yyvsp[(4) - (6)].node), 0, 0, 0, 0);
                     (yyval.node) = 0;
+                    scanner_clear_rename();
                   }
     break;
 
   case 91:
-#line 2326 "parser.y"
+#line 2403 "parser.y"
     {
                     String *val = Len((yyvsp[(5) - (8)].id)) ? NewString((yyvsp[(5) - (8)].id)) : 0;
                     new_feature((yyvsp[(3) - (8)].id), val, (yyvsp[(6) - (8)].node), 0, 0, 0, 0);
                     (yyval.node) = 0;
+                    scanner_clear_rename();
                   }
     break;
 
   case 92:
-#line 2333 "parser.y"
+#line 2411 "parser.y"
     { (yyval.str) = (yyvsp[(1) - (1)].str); }
     break;
 
   case 93:
-#line 2334 "parser.y"
+#line 2412 "parser.y"
     { (yyval.str) = 0; }
     break;
 
   case 94:
-#line 2335 "parser.y"
+#line 2413 "parser.y"
     { (yyval.str) = (yyvsp[(3) - (5)].pl); }
     break;
 
   case 95:
-#line 2338 "parser.y"
+#line 2416 "parser.y"
     {
 		  (yyval.node) = NewHash();
 		  Setattr((yyval.node),"name",(yyvsp[(2) - (4)].id));
@@ -5455,7 +5533,7 @@ yyreduce:
     break;
 
   case 96:
-#line 2343 "parser.y"
+#line 2421 "parser.y"
     {
 		  (yyval.node) = NewHash();
 		  Setattr((yyval.node),"name",(yyvsp[(2) - (5)].id));
@@ -5465,7 +5543,7 @@ yyreduce:
     break;
 
   case 97:
-#line 2353 "parser.y"
+#line 2431 "parser.y"
     {
                  Parm *val;
 		 String *name;
@@ -5504,12 +5582,12 @@ yyreduce:
     break;
 
   case 98:
-#line 2389 "parser.y"
+#line 2467 "parser.y"
     { (yyval.pl) = (yyvsp[(1) - (1)].pl); }
     break;
 
   case 99:
-#line 2390 "parser.y"
+#line 2468 "parser.y"
     { 
 		  int i;
 		  int n;
@@ -5532,7 +5610,7 @@ yyreduce:
     break;
 
   case 100:
-#line 2420 "parser.y"
+#line 2498 "parser.y"
     {
 		   (yyval.node) = 0;
 		   if ((yyvsp[(3) - (6)].tmap).op) {
@@ -5553,7 +5631,7 @@ yyreduce:
     break;
 
   case 101:
-#line 2437 "parser.y"
+#line 2515 "parser.y"
     {
 		 (yyval.node) = 0;
 		 if ((yyvsp[(3) - (6)].tmap).op) {
@@ -5565,7 +5643,7 @@ yyreduce:
     break;
 
   case 102:
-#line 2445 "parser.y"
+#line 2523 "parser.y"
     {
 		   (yyval.node) = 0;
 		   if ((yyvsp[(3) - (8)].tmap).op) {
@@ -5578,7 +5656,7 @@ yyreduce:
     break;
 
   case 103:
-#line 2458 "parser.y"
+#line 2536 "parser.y"
     {
 		 Hash *p;
 		 String *name;
@@ -5605,7 +5683,7 @@ yyreduce:
     break;
 
   case 104:
-#line 2483 "parser.y"
+#line 2561 "parser.y"
     {
                  (yyval.p) = (yyvsp[(1) - (2)].p);
 		 set_nextSibling((yyval.p),(yyvsp[(2) - (2)].p));
@@ -5613,7 +5691,7 @@ yyreduce:
     break;
 
   case 105:
-#line 2489 "parser.y"
+#line 2567 "parser.y"
     {
                  (yyval.p) = (yyvsp[(2) - (3)].p);
 		 set_nextSibling((yyval.p),(yyvsp[(3) - (3)].p));
@@ -5621,12 +5699,12 @@ yyreduce:
     break;
 
   case 106:
-#line 2493 "parser.y"
+#line 2571 "parser.y"
     { (yyval.p) = 0;}
     break;
 
   case 107:
-#line 2496 "parser.y"
+#line 2574 "parser.y"
     {
                   Parm *parm;
 		  SwigType_push((yyvsp[(1) - (2)].type),(yyvsp[(2) - (2)].decl).type);
@@ -5641,7 +5719,7 @@ yyreduce:
     break;
 
   case 108:
-#line 2507 "parser.y"
+#line 2585 "parser.y"
     {
                   (yyval.p) = new_node("typemapitem");
 		  Setattr((yyval.p),"pattern",(yyvsp[(2) - (3)].pl));
@@ -5650,7 +5728,7 @@ yyreduce:
     break;
 
   case 109:
-#line 2512 "parser.y"
+#line 2590 "parser.y"
     {
 		 (yyval.p) = new_node("typemapitem");
 		 Setattr((yyval.p),"pattern", (yyvsp[(2) - (6)].pl));
@@ -5660,7 +5738,7 @@ yyreduce:
     break;
 
   case 110:
-#line 2525 "parser.y"
+#line 2603 "parser.y"
     {
                    (yyval.node) = new_node("types");
 		   Setattr((yyval.node),"parms",(yyvsp[(3) - (5)].pl));
@@ -5670,7 +5748,7 @@ yyreduce:
     break;
 
   case 111:
-#line 2537 "parser.y"
+#line 2615 "parser.y"
     {
                   Parm *p, *tp;
 		  Node *n;
@@ -5940,7 +6018,7 @@ yyreduce:
     break;
 
   case 112:
-#line 2810 "parser.y"
+#line 2888 "parser.y"
     {
 		  Swig_warning(0,cparse_file, cparse_line,"%s\n", (yyvsp[(2) - (2)].id));
 		  (yyval.node) = 0;
@@ -5948,7 +6026,7 @@ yyreduce:
     break;
 
   case 113:
-#line 2820 "parser.y"
+#line 2898 "parser.y"
     {
                     (yyval.node) = (yyvsp[(1) - (1)].node); 
                     if ((yyval.node)) {
@@ -5959,17 +6037,17 @@ yyreduce:
     break;
 
   case 114:
-#line 2827 "parser.y"
+#line 2905 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 115:
-#line 2828 "parser.y"
+#line 2906 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 116:
-#line 2832 "parser.y"
+#line 2910 "parser.y"
     {
 		  if (Strcmp((yyvsp[(2) - (3)].id),"C") == 0) {
 		    cparse_externc = 1;
@@ -5978,7 +6056,7 @@ yyreduce:
     break;
 
   case 117:
-#line 2836 "parser.y"
+#line 2914 "parser.y"
     {
 		  cparse_externc = 0;
 		  if (Strcmp((yyvsp[(2) - (6)].id),"C") == 0) {
@@ -6003,7 +6081,7 @@ yyreduce:
     break;
 
   case 118:
-#line 2863 "parser.y"
+#line 2941 "parser.y"
     {
               (yyval.node) = new_node("cdecl");
 	      if ((yyvsp[(4) - (5)].dtype).qualifier) SwigType_push((yyvsp[(3) - (5)].decl).type,(yyvsp[(4) - (5)].dtype).qualifier);
@@ -6064,7 +6142,7 @@ yyreduce:
     break;
 
   case 119:
-#line 2924 "parser.y"
+#line 3002 "parser.y"
     { 
                    (yyval.node) = 0;
                    Clear(scanner_ccode); 
@@ -6072,7 +6150,7 @@ yyreduce:
     break;
 
   case 120:
-#line 2928 "parser.y"
+#line 3006 "parser.y"
     {
 		 (yyval.node) = new_node("cdecl");
 		 if ((yyvsp[(3) - (4)].dtype).qualifier) SwigType_push((yyvsp[(2) - (4)].decl).type,(yyvsp[(3) - (4)].dtype).qualifier);
@@ -6098,7 +6176,7 @@ yyreduce:
     break;
 
   case 121:
-#line 2950 "parser.y"
+#line 3028 "parser.y"
     { 
                    skip_balanced('{','}');
                    (yyval.node) = 0;
@@ -6106,7 +6184,7 @@ yyreduce:
     break;
 
   case 122:
-#line 2956 "parser.y"
+#line 3034 "parser.y"
     { 
                    (yyval.dtype) = (yyvsp[(1) - (1)].dtype); 
                    (yyval.dtype).qualifier = 0;
@@ -6116,7 +6194,7 @@ yyreduce:
     break;
 
   case 123:
-#line 2962 "parser.y"
+#line 3040 "parser.y"
     { 
                    (yyval.dtype) = (yyvsp[(2) - (2)].dtype); 
 		   (yyval.dtype).qualifier = (yyvsp[(1) - (2)].str);
@@ -6126,7 +6204,7 @@ yyreduce:
     break;
 
   case 124:
-#line 2968 "parser.y"
+#line 3046 "parser.y"
     { 
 		   (yyval.dtype) = (yyvsp[(5) - (5)].dtype); 
                    (yyval.dtype).qualifier = 0;
@@ -6136,7 +6214,7 @@ yyreduce:
     break;
 
   case 125:
-#line 2974 "parser.y"
+#line 3052 "parser.y"
     { 
                    (yyval.dtype) = (yyvsp[(6) - (6)].dtype); 
                    (yyval.dtype).qualifier = (yyvsp[(1) - (6)].str);
@@ -6146,7 +6224,7 @@ yyreduce:
     break;
 
   case 126:
-#line 2987 "parser.y"
+#line 3065 "parser.y"
     {
 		   SwigType *ty = 0;
 		   (yyval.node) = new_node("enumforward");
@@ -6159,7 +6237,7 @@ yyreduce:
     break;
 
   case 127:
-#line 3002 "parser.y"
+#line 3080 "parser.y"
     {
 		  SwigType *ty = 0;
                   (yyval.node) = new_node("enum");
@@ -6173,7 +6251,7 @@ yyreduce:
     break;
 
   case 128:
-#line 3012 "parser.y"
+#line 3090 "parser.y"
     {
 		 Node *n;
 		 SwigType *ty = 0;
@@ -6253,7 +6331,7 @@ yyreduce:
     break;
 
   case 129:
-#line 3090 "parser.y"
+#line 3168 "parser.y"
     {
                    /* This is a sick hack.  If the ctor_end has parameters,
                       and the parms parameter only has 1 parameter, this
@@ -6302,37 +6380,37 @@ yyreduce:
     break;
 
   case 130:
-#line 3141 "parser.y"
+#line 3219 "parser.y"
     {  (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 131:
-#line 3142 "parser.y"
+#line 3220 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 132:
-#line 3143 "parser.y"
+#line 3221 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 133:
-#line 3144 "parser.y"
+#line 3222 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 134:
-#line 3145 "parser.y"
+#line 3223 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 135:
-#line 3146 "parser.y"
+#line 3224 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 136:
-#line 3152 "parser.y"
+#line 3230 "parser.y"
     {
                    List *bases = 0;
 		   Node *scope = 0;
@@ -6440,7 +6518,7 @@ yyreduce:
 		       } else {
 			   max_class_levels *= 2;
 		       }
-		       class_decl = realloc(class_decl, sizeof(Node*) * max_class_levels);
+		       class_decl = (Node**) realloc(class_decl, sizeof(Node*) * max_class_levels);
 		       if (!class_decl) {
 			   Swig_error(cparse_file, cparse_line, "realloc() failed\n");
 		       }
@@ -6451,7 +6529,7 @@ yyreduce:
     break;
 
   case 137:
-#line 3266 "parser.y"
+#line 3344 "parser.y"
     {
 		 Node *p;
 		 SwigType *ty;
@@ -6570,7 +6648,7 @@ yyreduce:
     break;
 
   case 138:
-#line 3384 "parser.y"
+#line 3462 "parser.y"
     {
 	       String *unnamed;
 	       unnamed = make_unnamed();
@@ -6595,7 +6673,7 @@ yyreduce:
 		   } else {
 		       max_class_levels *= 2;
 		   }
-		   class_decl = realloc(class_decl, sizeof(Node*) * max_class_levels);
+		   class_decl = (Node**) realloc(class_decl, sizeof(Node*) * max_class_levels);
 		   if (!class_decl) {
 		       Swig_error(cparse_file, cparse_line, "realloc() failed\n");
 		   }
@@ -6609,7 +6687,7 @@ yyreduce:
     break;
 
   case 139:
-#line 3418 "parser.y"
+#line 3496 "parser.y"
     {
 	       String *unnamed;
 	       Node *n;
@@ -6699,12 +6777,12 @@ yyreduce:
     break;
 
   case 140:
-#line 3506 "parser.y"
+#line 3584 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 141:
-#line 3507 "parser.y"
+#line 3585 "parser.y"
     {
                         (yyval.node) = new_node("cdecl");
                         Setattr((yyval.node),"name",(yyvsp[(1) - (2)].decl).id);
@@ -6715,7 +6793,7 @@ yyreduce:
     break;
 
   case 142:
-#line 3519 "parser.y"
+#line 3597 "parser.y"
     {
               if ((yyvsp[(1) - (4)].id) && (Strcmp((yyvsp[(1) - (4)].id),"friend") == 0)) {
 		/* Ignore */
@@ -6733,12 +6811,12 @@ yyreduce:
     break;
 
   case 143:
-#line 3539 "parser.y"
+#line 3617 "parser.y"
     { template_parameters = (yyvsp[(3) - (4)].tparms); }
     break;
 
   case 144:
-#line 3539 "parser.y"
+#line 3617 "parser.y"
     {
 		      String *tname = 0;
 		      int     error = 0;
@@ -6977,7 +7055,7 @@ yyreduce:
     break;
 
   case 145:
-#line 3774 "parser.y"
+#line 3852 "parser.y"
     {
 		  Swig_warning(WARN_PARSE_EXPLICIT_TEMPLATE, cparse_file, cparse_line, "Explicit template instantiation ignored.\n");
                    (yyval.node) = 0; 
@@ -6985,49 +7063,49 @@ yyreduce:
     break;
 
   case 146:
-#line 3780 "parser.y"
+#line 3858 "parser.y"
     {
 		  (yyval.node) = (yyvsp[(1) - (1)].node);
                 }
     break;
 
   case 147:
-#line 3783 "parser.y"
+#line 3861 "parser.y"
     {
                    (yyval.node) = (yyvsp[(1) - (1)].node);
                 }
     break;
 
   case 148:
-#line 3786 "parser.y"
+#line 3864 "parser.y"
     {
                    (yyval.node) = (yyvsp[(1) - (1)].node);
                 }
     break;
 
   case 149:
-#line 3789 "parser.y"
+#line 3867 "parser.y"
     {
 		  (yyval.node) = 0;
                 }
     break;
 
   case 150:
-#line 3792 "parser.y"
+#line 3870 "parser.y"
     {
                   (yyval.node) = (yyvsp[(1) - (1)].node);
                 }
     break;
 
   case 151:
-#line 3795 "parser.y"
+#line 3873 "parser.y"
     {
                   (yyval.node) = (yyvsp[(1) - (1)].node);
                 }
     break;
 
   case 152:
-#line 3800 "parser.y"
+#line 3878 "parser.y"
     {
 		   /* Rip out the parameter names */
 		  Parm *p = (yyvsp[(1) - (1)].pl);
@@ -7059,7 +7137,7 @@ yyreduce:
     break;
 
   case 153:
-#line 3830 "parser.y"
+#line 3908 "parser.y"
     {
                       set_nextSibling((yyvsp[(1) - (2)].p),(yyvsp[(2) - (2)].pl));
                       (yyval.pl) = (yyvsp[(1) - (2)].p);
@@ -7067,26 +7145,26 @@ yyreduce:
     break;
 
   case 154:
-#line 3834 "parser.y"
+#line 3912 "parser.y"
     { (yyval.pl) = 0; }
     break;
 
   case 155:
-#line 3837 "parser.y"
+#line 3915 "parser.y"
     {
 		    (yyval.p) = NewParm(NewString((yyvsp[(1) - (1)].id)), 0);
                   }
     break;
 
   case 156:
-#line 3840 "parser.y"
+#line 3918 "parser.y"
     {
                     (yyval.p) = (yyvsp[(1) - (1)].p);
                   }
     break;
 
   case 157:
-#line 3845 "parser.y"
+#line 3923 "parser.y"
     {
                          set_nextSibling((yyvsp[(2) - (3)].p),(yyvsp[(3) - (3)].pl));
                          (yyval.pl) = (yyvsp[(2) - (3)].p);
@@ -7094,12 +7172,12 @@ yyreduce:
     break;
 
   case 158:
-#line 3849 "parser.y"
+#line 3927 "parser.y"
     { (yyval.pl) = 0; }
     break;
 
   case 159:
-#line 3854 "parser.y"
+#line 3932 "parser.y"
     {
                   String *uname = Swig_symbol_type_qualify((yyvsp[(2) - (3)].str),0);
 		  String *name = Swig_scopename_last((yyvsp[(2) - (3)].str));
@@ -7113,7 +7191,7 @@ yyreduce:
     break;
 
   case 160:
-#line 3864 "parser.y"
+#line 3942 "parser.y"
     {
 	       Node *n = Swig_symbol_clookup((yyvsp[(3) - (4)].str),0);
 	       if (!n) {
@@ -7146,7 +7224,7 @@ yyreduce:
     break;
 
   case 161:
-#line 3895 "parser.y"
+#line 3973 "parser.y"
     { 
                 Hash *h;
                 (yyvsp[(1) - (3)].node) = Swig_symbol_current();
@@ -7169,7 +7247,7 @@ yyreduce:
     break;
 
   case 162:
-#line 3913 "parser.y"
+#line 3991 "parser.y"
     {
                 Node *n = (yyvsp[(5) - (6)].node);
 		set_nodeType(n,"namespace");
@@ -7184,7 +7262,7 @@ yyreduce:
     break;
 
   case 163:
-#line 3924 "parser.y"
+#line 4002 "parser.y"
     {
 	       Hash *h;
 	       (yyvsp[(1) - (2)].node) = Swig_symbol_current();
@@ -7201,7 +7279,7 @@ yyreduce:
     break;
 
   case 164:
-#line 3936 "parser.y"
+#line 4014 "parser.y"
     {
 	       (yyval.node) = (yyvsp[(4) - (5)].node);
 	       set_nodeType((yyval.node),"namespace");
@@ -7215,7 +7293,7 @@ yyreduce:
     break;
 
   case 165:
-#line 3946 "parser.y"
+#line 4024 "parser.y"
     {
 	       /* Namespace alias */
 	       Node *n;
@@ -7244,7 +7322,7 @@ yyreduce:
     break;
 
   case 166:
-#line 3973 "parser.y"
+#line 4051 "parser.y"
     {
                    (yyval.node) = (yyvsp[(1) - (2)].node);
                    /* Insert cpp_member (including any siblings) to the front of the cpp_members linked list */
@@ -7263,7 +7341,7 @@ yyreduce:
     break;
 
   case 167:
-#line 3988 "parser.y"
+#line 4066 "parser.y"
     { 
                   if (cplus_mode != CPLUS_PUBLIC) {
 		     Swig_error(cparse_file,cparse_line,"%%extend can only be used in a public section\n");
@@ -7272,7 +7350,7 @@ yyreduce:
     break;
 
   case 168:
-#line 3992 "parser.y"
+#line 4070 "parser.y"
     {
 	       (yyval.node) = new_node("extend");
 	       tag_nodes((yyvsp[(4) - (6)].node),"feature:extend",(char*) "1");
@@ -7282,17 +7360,17 @@ yyreduce:
     break;
 
   case 169:
-#line 3998 "parser.y"
+#line 4076 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 170:
-#line 3999 "parser.y"
+#line 4077 "parser.y"
     { (yyval.node) = 0;}
     break;
 
   case 171:
-#line 4000 "parser.y"
+#line 4078 "parser.y"
     {
 	       int start_line = cparse_line;
 	       skip_decl();
@@ -7302,19 +7380,19 @@ yyreduce:
     break;
 
   case 172:
-#line 4005 "parser.y"
+#line 4083 "parser.y"
     { 
 		 (yyval.node) = (yyvsp[(3) - (3)].node);
    	     }
     break;
 
   case 173:
-#line 4016 "parser.y"
+#line 4094 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 174:
-#line 4017 "parser.y"
+#line 4095 "parser.y"
     { 
                  (yyval.node) = (yyvsp[(1) - (1)].node); 
 		 if (extendmode) {
@@ -7335,87 +7413,87 @@ yyreduce:
     break;
 
   case 175:
-#line 4034 "parser.y"
+#line 4112 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 176:
-#line 4035 "parser.y"
+#line 4113 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 177:
-#line 4036 "parser.y"
+#line 4114 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 178:
-#line 4037 "parser.y"
+#line 4115 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 179:
-#line 4038 "parser.y"
+#line 4116 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 180:
-#line 4039 "parser.y"
+#line 4117 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 181:
-#line 4040 "parser.y"
+#line 4118 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 182:
-#line 4041 "parser.y"
+#line 4119 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 183:
-#line 4042 "parser.y"
+#line 4120 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 184:
-#line 4043 "parser.y"
+#line 4121 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 185:
-#line 4044 "parser.y"
+#line 4122 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 186:
-#line 4045 "parser.y"
+#line 4123 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 187:
-#line 4046 "parser.y"
+#line 4124 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 188:
-#line 4047 "parser.y"
+#line 4125 "parser.y"
     {(yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 189:
-#line 4048 "parser.y"
+#line 4126 "parser.y"
     {(yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 190:
-#line 4049 "parser.y"
+#line 4127 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 191:
-#line 4058 "parser.y"
+#line 4136 "parser.y"
     {
               if (Classprefix) {
 		 SwigType *decl = NewStringEmpty();
@@ -7440,7 +7518,7 @@ yyreduce:
     break;
 
   case 192:
-#line 4083 "parser.y"
+#line 4161 "parser.y"
     {
                String *name = NewStringf("%s",(yyvsp[(2) - (6)].str));
 	       if (*(Char(name)) != '~') Insert(name,0,"~");
@@ -7465,7 +7543,7 @@ yyreduce:
     break;
 
   case 193:
-#line 4107 "parser.y"
+#line 4185 "parser.y"
     {
 		String *name;
 		char *c = 0;
@@ -7506,7 +7584,7 @@ yyreduce:
     break;
 
   case 194:
-#line 4148 "parser.y"
+#line 4226 "parser.y"
     {
                  (yyval.node) = new_node("cdecl");
                  Setattr((yyval.node),"type",(yyvsp[(3) - (8)].type));
@@ -7525,7 +7603,7 @@ yyreduce:
     break;
 
   case 195:
-#line 4163 "parser.y"
+#line 4241 "parser.y"
     {
 		 SwigType *decl;
                  (yyval.node) = new_node("cdecl");
@@ -7546,7 +7624,7 @@ yyreduce:
     break;
 
   case 196:
-#line 4181 "parser.y"
+#line 4259 "parser.y"
     {
 		String *t = NewStringEmpty();
 		(yyval.node) = new_node("cdecl");
@@ -7565,7 +7643,7 @@ yyreduce:
     break;
 
   case 197:
-#line 4200 "parser.y"
+#line 4278 "parser.y"
     {
                  skip_balanced('{','}');
                  (yyval.node) = 0;
@@ -7573,7 +7651,7 @@ yyreduce:
     break;
 
   case 198:
-#line 4207 "parser.y"
+#line 4285 "parser.y"
     { 
                 (yyval.node) = new_node("access");
 		Setattr((yyval.node),"kind","public");
@@ -7582,7 +7660,7 @@ yyreduce:
     break;
 
   case 199:
-#line 4214 "parser.y"
+#line 4292 "parser.y"
     { 
                 (yyval.node) = new_node("access");
                 Setattr((yyval.node),"kind","private");
@@ -7591,7 +7669,7 @@ yyreduce:
     break;
 
   case 200:
-#line 4222 "parser.y"
+#line 4300 "parser.y"
     { 
 		(yyval.node) = new_node("access");
 		Setattr((yyval.node),"kind","protected");
@@ -7600,13 +7678,13 @@ yyreduce:
     break;
 
   case 201:
-#line 4245 "parser.y"
+#line 4323 "parser.y"
     { cparse_start_line = cparse_line; skip_balanced('{','}');
 	      }
     break;
 
   case 202:
-#line 4246 "parser.y"
+#line 4324 "parser.y"
     {
 	        (yyval.node) = 0;
 		if (cplus_mode == CPLUS_PUBLIC) {
@@ -7643,13 +7721,13 @@ yyreduce:
     break;
 
   case 203:
-#line 4280 "parser.y"
+#line 4358 "parser.y"
     { cparse_start_line = cparse_line; skip_balanced('{','}');
               }
     break;
 
   case 204:
-#line 4281 "parser.y"
+#line 4359 "parser.y"
     {
 	        (yyval.node) = 0;
 		if (cplus_mode == CPLUS_PUBLIC) {
@@ -7678,13 +7756,13 @@ yyreduce:
     break;
 
   case 205:
-#line 4311 "parser.y"
+#line 4389 "parser.y"
     { cparse_start_line = cparse_line; skip_balanced('{','}');
               }
     break;
 
   case 206:
-#line 4312 "parser.y"
+#line 4390 "parser.y"
     {
 	        (yyval.node) = 0;
 		if (cplus_mode == CPLUS_PUBLIC) {
@@ -7694,72 +7772,72 @@ yyreduce:
     break;
 
   case 207:
-#line 4329 "parser.y"
+#line 4407 "parser.y"
     { (yyval.decl) = (yyvsp[(1) - (1)].decl);}
     break;
 
   case 208:
-#line 4330 "parser.y"
+#line 4408 "parser.y"
     { (yyval.decl).id = 0; }
     break;
 
   case 209:
-#line 4336 "parser.y"
+#line 4414 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 210:
-#line 4339 "parser.y"
+#line 4417 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 211:
-#line 4343 "parser.y"
+#line 4421 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 212:
-#line 4346 "parser.y"
+#line 4424 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 213:
-#line 4347 "parser.y"
+#line 4425 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 214:
-#line 4348 "parser.y"
+#line 4426 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 215:
-#line 4349 "parser.y"
+#line 4427 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 216:
-#line 4350 "parser.y"
+#line 4428 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 217:
-#line 4351 "parser.y"
+#line 4429 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 218:
-#line 4352 "parser.y"
+#line 4430 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 219:
-#line 4353 "parser.y"
+#line 4431 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 220:
-#line 4356 "parser.y"
+#line 4434 "parser.y"
     {
 	            Clear(scanner_ccode);
 		    (yyval.dtype).throws = (yyvsp[(1) - (2)].dtype).throws;
@@ -7768,7 +7846,7 @@ yyreduce:
     break;
 
   case 221:
-#line 4361 "parser.y"
+#line 4439 "parser.y"
     { 
 		    skip_balanced('{','}'); 
 		    (yyval.dtype).throws = (yyvsp[(1) - (2)].dtype).throws;
@@ -7777,7 +7855,7 @@ yyreduce:
     break;
 
   case 222:
-#line 4368 "parser.y"
+#line 4446 "parser.y"
     { 
                      Clear(scanner_ccode);
                      (yyval.dtype).val = 0;
@@ -7789,7 +7867,7 @@ yyreduce:
     break;
 
   case 223:
-#line 4376 "parser.y"
+#line 4454 "parser.y"
     { 
                      Clear(scanner_ccode);
                      (yyval.dtype).val = (yyvsp[(3) - (4)].dtype).val;
@@ -7801,7 +7879,7 @@ yyreduce:
     break;
 
   case 224:
-#line 4384 "parser.y"
+#line 4462 "parser.y"
     { 
                      skip_balanced('{','}');
                      (yyval.dtype).val = 0;
@@ -7813,17 +7891,17 @@ yyreduce:
     break;
 
   case 225:
-#line 4395 "parser.y"
+#line 4473 "parser.y"
     { }
     break;
 
   case 226:
-#line 4401 "parser.y"
+#line 4479 "parser.y"
     { (yyval.id) = "extern"; }
     break;
 
   case 227:
-#line 4402 "parser.y"
+#line 4480 "parser.y"
     { 
                    if (strcmp((yyvsp[(2) - (2)].id),"C") == 0) {
 		     (yyval.id) = "externc";
@@ -7835,37 +7913,37 @@ yyreduce:
     break;
 
   case 228:
-#line 4410 "parser.y"
+#line 4488 "parser.y"
     { (yyval.id) = "static"; }
     break;
 
   case 229:
-#line 4411 "parser.y"
+#line 4489 "parser.y"
     { (yyval.id) = "typedef"; }
     break;
 
   case 230:
-#line 4412 "parser.y"
+#line 4490 "parser.y"
     { (yyval.id) = "virtual"; }
     break;
 
   case 231:
-#line 4413 "parser.y"
+#line 4491 "parser.y"
     { (yyval.id) = "friend"; }
     break;
 
   case 232:
-#line 4414 "parser.y"
+#line 4492 "parser.y"
     { (yyval.id) = "explicit"; }
     break;
 
   case 233:
-#line 4415 "parser.y"
+#line 4493 "parser.y"
     { (yyval.id) = 0; }
     break;
 
   case 234:
-#line 4422 "parser.y"
+#line 4500 "parser.y"
     {
                  Parm *p;
 		 (yyval.pl) = (yyvsp[(1) - (1)].pl);
@@ -7878,7 +7956,7 @@ yyreduce:
     break;
 
   case 235:
-#line 4433 "parser.y"
+#line 4511 "parser.y"
     {
                   set_nextSibling((yyvsp[(1) - (2)].p),(yyvsp[(2) - (2)].pl));
                   (yyval.pl) = (yyvsp[(1) - (2)].p);
@@ -7886,12 +7964,12 @@ yyreduce:
     break;
 
   case 236:
-#line 4437 "parser.y"
+#line 4515 "parser.y"
     { (yyval.pl) = 0; }
     break;
 
   case 237:
-#line 4440 "parser.y"
+#line 4518 "parser.y"
     {
                  set_nextSibling((yyvsp[(2) - (3)].p),(yyvsp[(3) - (3)].pl));
 		 (yyval.pl) = (yyvsp[(2) - (3)].p);
@@ -7899,12 +7977,12 @@ yyreduce:
     break;
 
   case 238:
-#line 4444 "parser.y"
+#line 4522 "parser.y"
     { (yyval.pl) = 0; }
     break;
 
   case 239:
-#line 4448 "parser.y"
+#line 4526 "parser.y"
     {
                    SwigType_push((yyvsp[(1) - (2)].type),(yyvsp[(2) - (2)].decl).type);
 		   (yyval.p) = NewParm((yyvsp[(1) - (2)].type),(yyvsp[(2) - (2)].decl).id);
@@ -7917,7 +7995,7 @@ yyreduce:
     break;
 
   case 240:
-#line 4458 "parser.y"
+#line 4536 "parser.y"
     {
                   (yyval.p) = NewParm(NewStringf("template<class> %s %s", (yyvsp[(5) - (7)].id),(yyvsp[(6) - (7)].str)), 0);
 		  Setfile((yyval.p),cparse_file);
@@ -7929,7 +8007,7 @@ yyreduce:
     break;
 
   case 241:
-#line 4466 "parser.y"
+#line 4544 "parser.y"
     {
 		  SwigType *t = NewString("v(...)");
 		  (yyval.p) = NewParm(t, 0);
@@ -7939,7 +8017,7 @@ yyreduce:
     break;
 
   case 242:
-#line 4474 "parser.y"
+#line 4552 "parser.y"
     {
                  Parm *p;
 		 (yyval.p) = (yyvsp[(1) - (1)].p);
@@ -7954,7 +8032,7 @@ yyreduce:
     break;
 
   case 243:
-#line 4487 "parser.y"
+#line 4565 "parser.y"
     {
                   set_nextSibling((yyvsp[(1) - (2)].p),(yyvsp[(2) - (2)].p));
                   (yyval.p) = (yyvsp[(1) - (2)].p);
@@ -7962,12 +8040,12 @@ yyreduce:
     break;
 
   case 244:
-#line 4491 "parser.y"
+#line 4569 "parser.y"
     { (yyval.p) = 0; }
     break;
 
   case 245:
-#line 4494 "parser.y"
+#line 4572 "parser.y"
     {
                  set_nextSibling((yyvsp[(2) - (3)].p),(yyvsp[(3) - (3)].p));
 		 (yyval.p) = (yyvsp[(2) - (3)].p);
@@ -7975,12 +8053,12 @@ yyreduce:
     break;
 
   case 246:
-#line 4498 "parser.y"
+#line 4576 "parser.y"
     { (yyval.p) = 0; }
     break;
 
   case 247:
-#line 4502 "parser.y"
+#line 4580 "parser.y"
     {
 		  (yyval.p) = (yyvsp[(1) - (1)].p);
 		  {
@@ -8012,7 +8090,7 @@ yyreduce:
     break;
 
   case 248:
-#line 4530 "parser.y"
+#line 4608 "parser.y"
     {
                   (yyval.p) = NewParm(0,0);
                   Setfile((yyval.p),cparse_file);
@@ -8022,7 +8100,7 @@ yyreduce:
     break;
 
   case 249:
-#line 4538 "parser.y"
+#line 4616 "parser.y"
     { 
                   (yyval.dtype) = (yyvsp[(2) - (2)].dtype); 
 		  if ((yyvsp[(2) - (2)].dtype).type == T_ERROR) {
@@ -8037,7 +8115,7 @@ yyreduce:
     break;
 
   case 250:
-#line 4549 "parser.y"
+#line 4627 "parser.y"
     { 
 		  (yyval.dtype) = (yyvsp[(2) - (5)].dtype);
 		  if ((yyvsp[(2) - (5)].dtype).type == T_ERROR) {
@@ -8055,7 +8133,7 @@ yyreduce:
     break;
 
   case 251:
-#line 4563 "parser.y"
+#line 4641 "parser.y"
     {
 		 skip_balanced('{','}');
 		 (yyval.dtype).val = 0;
@@ -8068,7 +8146,7 @@ yyreduce:
     break;
 
   case 252:
-#line 4572 "parser.y"
+#line 4650 "parser.y"
     { 
 		 (yyval.dtype).val = 0;
 		 (yyval.dtype).rawval = 0;
@@ -8080,7 +8158,7 @@ yyreduce:
     break;
 
   case 253:
-#line 4580 "parser.y"
+#line 4658 "parser.y"
     {
                  (yyval.dtype).val = 0;
                  (yyval.dtype).rawval = 0;
@@ -8092,7 +8170,7 @@ yyreduce:
     break;
 
   case 254:
-#line 4590 "parser.y"
+#line 4668 "parser.y"
     {
                  (yyval.decl) = (yyvsp[(1) - (2)].decl);
 		 (yyval.decl).defarg = (yyvsp[(2) - (2)].dtype).rawval ? (yyvsp[(2) - (2)].dtype).rawval : (yyvsp[(2) - (2)].dtype).val;
@@ -8100,7 +8178,7 @@ yyreduce:
     break;
 
   case 255:
-#line 4594 "parser.y"
+#line 4672 "parser.y"
     {
               (yyval.decl) = (yyvsp[(1) - (2)].decl);
 	      (yyval.decl).defarg = (yyvsp[(2) - (2)].dtype).rawval ? (yyvsp[(2) - (2)].dtype).rawval : (yyvsp[(2) - (2)].dtype).val;
@@ -8108,7 +8186,7 @@ yyreduce:
     break;
 
   case 256:
-#line 4598 "parser.y"
+#line 4676 "parser.y"
     {
    	      (yyval.decl).type = 0;
               (yyval.decl).id = 0;
@@ -8117,7 +8195,7 @@ yyreduce:
     break;
 
   case 257:
-#line 4605 "parser.y"
+#line 4683 "parser.y"
     {
                  (yyval.decl) = (yyvsp[(1) - (1)].decl);
 		 if (SwigType_isfunction((yyvsp[(1) - (1)].decl).type)) {
@@ -8138,7 +8216,7 @@ yyreduce:
     break;
 
   case 258:
-#line 4622 "parser.y"
+#line 4700 "parser.y"
     {
               (yyval.decl) = (yyvsp[(1) - (1)].decl);
 	      if (SwigType_isfunction((yyvsp[(1) - (1)].decl).type)) {
@@ -8159,7 +8237,7 @@ yyreduce:
     break;
 
   case 259:
-#line 4639 "parser.y"
+#line 4717 "parser.y"
     {
    	      (yyval.decl).type = 0;
               (yyval.decl).id = 0;
@@ -8168,7 +8246,7 @@ yyreduce:
     break;
 
   case 260:
-#line 4647 "parser.y"
+#line 4725 "parser.y"
     {
               (yyval.decl) = (yyvsp[(2) - (2)].decl);
 	      if ((yyval.decl).type) {
@@ -8180,7 +8258,7 @@ yyreduce:
     break;
 
   case 261:
-#line 4655 "parser.y"
+#line 4733 "parser.y"
     {
               (yyval.decl) = (yyvsp[(3) - (3)].decl);
 	      SwigType_add_reference((yyvsp[(1) - (3)].type));
@@ -8193,7 +8271,7 @@ yyreduce:
     break;
 
   case 262:
-#line 4664 "parser.y"
+#line 4742 "parser.y"
     {
               (yyval.decl) = (yyvsp[(1) - (1)].decl);
 	      if (!(yyval.decl).type) (yyval.decl).type = NewStringEmpty();
@@ -8201,7 +8279,7 @@ yyreduce:
     break;
 
   case 263:
-#line 4668 "parser.y"
+#line 4746 "parser.y"
     { 
 	     (yyval.decl) = (yyvsp[(2) - (2)].decl);
 	     (yyval.decl).type = NewStringEmpty();
@@ -8214,7 +8292,7 @@ yyreduce:
     break;
 
   case 264:
-#line 4677 "parser.y"
+#line 4755 "parser.y"
     { 
 	     SwigType *t = NewStringEmpty();
 
@@ -8229,7 +8307,7 @@ yyreduce:
     break;
 
   case 265:
-#line 4688 "parser.y"
+#line 4766 "parser.y"
     { 
 	     SwigType *t = NewStringEmpty();
 	     (yyval.decl) = (yyvsp[(4) - (4)].decl);
@@ -8245,7 +8323,7 @@ yyreduce:
     break;
 
   case 266:
-#line 4700 "parser.y"
+#line 4778 "parser.y"
     { 
 	     (yyval.decl) = (yyvsp[(5) - (5)].decl);
 	     SwigType_add_memberpointer((yyvsp[(1) - (5)].type),(yyvsp[(2) - (5)].str));
@@ -8259,7 +8337,7 @@ yyreduce:
     break;
 
   case 267:
-#line 4710 "parser.y"
+#line 4788 "parser.y"
     { 
 	     SwigType *t = NewStringEmpty();
 	     (yyval.decl) = (yyvsp[(4) - (4)].decl);
@@ -8274,7 +8352,7 @@ yyreduce:
     break;
 
   case 268:
-#line 4723 "parser.y"
+#line 4801 "parser.y"
     {
                 /* Note: This is non-standard C.  Template declarator is allowed to follow an identifier */
                  (yyval.decl).id = Char((yyvsp[(1) - (1)].str));
@@ -8285,7 +8363,7 @@ yyreduce:
     break;
 
   case 269:
-#line 4730 "parser.y"
+#line 4808 "parser.y"
     {
                   (yyval.decl).id = Char(NewStringf("~%s",(yyvsp[(2) - (2)].str)));
                   (yyval.decl).type = 0;
@@ -8295,7 +8373,7 @@ yyreduce:
     break;
 
   case 270:
-#line 4738 "parser.y"
+#line 4816 "parser.y"
     {
                   (yyval.decl).id = Char((yyvsp[(2) - (3)].str));
                   (yyval.decl).type = 0;
@@ -8305,7 +8383,7 @@ yyreduce:
     break;
 
   case 271:
-#line 4754 "parser.y"
+#line 4832 "parser.y"
     {
 		    (yyval.decl) = (yyvsp[(3) - (4)].decl);
 		    if ((yyval.decl).type) {
@@ -8317,7 +8395,7 @@ yyreduce:
     break;
 
   case 272:
-#line 4762 "parser.y"
+#line 4840 "parser.y"
     {
 		    SwigType *t;
 		    (yyval.decl) = (yyvsp[(4) - (5)].decl);
@@ -8332,7 +8410,7 @@ yyreduce:
     break;
 
   case 273:
-#line 4773 "parser.y"
+#line 4851 "parser.y"
     { 
 		    SwigType *t;
 		    (yyval.decl) = (yyvsp[(1) - (3)].decl);
@@ -8347,7 +8425,7 @@ yyreduce:
     break;
 
   case 274:
-#line 4784 "parser.y"
+#line 4862 "parser.y"
     { 
 		    SwigType *t;
 		    (yyval.decl) = (yyvsp[(1) - (4)].decl);
@@ -8362,7 +8440,7 @@ yyreduce:
     break;
 
   case 275:
-#line 4795 "parser.y"
+#line 4873 "parser.y"
     {
 		    SwigType *t;
                     (yyval.decl) = (yyvsp[(1) - (4)].decl);
@@ -8383,7 +8461,7 @@ yyreduce:
     break;
 
   case 276:
-#line 4814 "parser.y"
+#line 4892 "parser.y"
     {
                 /* Note: This is non-standard C.  Template declarator is allowed to follow an identifier */
                  (yyval.decl).id = Char((yyvsp[(1) - (1)].str));
@@ -8394,7 +8472,7 @@ yyreduce:
     break;
 
   case 277:
-#line 4822 "parser.y"
+#line 4900 "parser.y"
     {
                   (yyval.decl).id = Char(NewStringf("~%s",(yyvsp[(2) - (2)].str)));
                   (yyval.decl).type = 0;
@@ -8404,7 +8482,7 @@ yyreduce:
     break;
 
   case 278:
-#line 4839 "parser.y"
+#line 4917 "parser.y"
     {
 		    (yyval.decl) = (yyvsp[(3) - (4)].decl);
 		    if ((yyval.decl).type) {
@@ -8416,7 +8494,7 @@ yyreduce:
     break;
 
   case 279:
-#line 4847 "parser.y"
+#line 4925 "parser.y"
     {
                     (yyval.decl) = (yyvsp[(3) - (4)].decl);
 		    if (!(yyval.decl).type) {
@@ -8427,7 +8505,7 @@ yyreduce:
     break;
 
   case 280:
-#line 4854 "parser.y"
+#line 4932 "parser.y"
     {
 		    SwigType *t;
 		    (yyval.decl) = (yyvsp[(4) - (5)].decl);
@@ -8442,7 +8520,7 @@ yyreduce:
     break;
 
   case 281:
-#line 4865 "parser.y"
+#line 4943 "parser.y"
     { 
 		    SwigType *t;
 		    (yyval.decl) = (yyvsp[(1) - (3)].decl);
@@ -8457,7 +8535,7 @@ yyreduce:
     break;
 
   case 282:
-#line 4876 "parser.y"
+#line 4954 "parser.y"
     { 
 		    SwigType *t;
 		    (yyval.decl) = (yyvsp[(1) - (4)].decl);
@@ -8472,7 +8550,7 @@ yyreduce:
     break;
 
   case 283:
-#line 4887 "parser.y"
+#line 4965 "parser.y"
     {
 		    SwigType *t;
                     (yyval.decl) = (yyvsp[(1) - (4)].decl);
@@ -8493,7 +8571,7 @@ yyreduce:
     break;
 
   case 284:
-#line 4906 "parser.y"
+#line 4984 "parser.y"
     {
 		    (yyval.decl).type = (yyvsp[(1) - (1)].type);
                     (yyval.decl).id = 0;
@@ -8503,7 +8581,7 @@ yyreduce:
     break;
 
   case 285:
-#line 4912 "parser.y"
+#line 4990 "parser.y"
     { 
                      (yyval.decl) = (yyvsp[(2) - (2)].decl);
                      SwigType_push((yyvsp[(1) - (2)].type),(yyvsp[(2) - (2)].decl).type);
@@ -8513,7 +8591,7 @@ yyreduce:
     break;
 
   case 286:
-#line 4918 "parser.y"
+#line 4996 "parser.y"
     {
 		    (yyval.decl).type = (yyvsp[(1) - (2)].type);
 		    SwigType_add_reference((yyval.decl).type);
@@ -8524,7 +8602,7 @@ yyreduce:
     break;
 
   case 287:
-#line 4925 "parser.y"
+#line 5003 "parser.y"
     {
 		    (yyval.decl) = (yyvsp[(3) - (3)].decl);
 		    SwigType_add_reference((yyvsp[(1) - (3)].type));
@@ -8537,14 +8615,14 @@ yyreduce:
     break;
 
   case 288:
-#line 4934 "parser.y"
+#line 5012 "parser.y"
     {
 		    (yyval.decl) = (yyvsp[(1) - (1)].decl);
                   }
     break;
 
   case 289:
-#line 4937 "parser.y"
+#line 5015 "parser.y"
     {
 		    (yyval.decl) = (yyvsp[(2) - (2)].decl);
 		    (yyval.decl).type = NewStringEmpty();
@@ -8557,7 +8635,7 @@ yyreduce:
     break;
 
   case 290:
-#line 4946 "parser.y"
+#line 5024 "parser.y"
     { 
                     (yyval.decl).id = 0;
                     (yyval.decl).parms = 0;
@@ -8568,7 +8646,7 @@ yyreduce:
     break;
 
   case 291:
-#line 4953 "parser.y"
+#line 5031 "parser.y"
     { 
 		    (yyval.decl).type = NewStringEmpty();
                     SwigType_add_memberpointer((yyval.decl).type,(yyvsp[(1) - (2)].str));
@@ -8579,7 +8657,7 @@ yyreduce:
     break;
 
   case 292:
-#line 4960 "parser.y"
+#line 5038 "parser.y"
     { 
 		    SwigType *t = NewStringEmpty();
                     (yyval.decl).type = (yyvsp[(1) - (3)].type);
@@ -8593,7 +8671,7 @@ yyreduce:
     break;
 
   case 293:
-#line 4970 "parser.y"
+#line 5048 "parser.y"
     { 
 		    (yyval.decl) = (yyvsp[(4) - (4)].decl);
 		    SwigType_add_memberpointer((yyvsp[(1) - (4)].type),(yyvsp[(2) - (4)].str));
@@ -8606,7 +8684,7 @@ yyreduce:
     break;
 
   case 294:
-#line 4981 "parser.y"
+#line 5059 "parser.y"
     { 
 		    SwigType *t;
 		    (yyval.decl) = (yyvsp[(1) - (3)].decl);
@@ -8621,7 +8699,7 @@ yyreduce:
     break;
 
   case 295:
-#line 4992 "parser.y"
+#line 5070 "parser.y"
     { 
 		    SwigType *t;
 		    (yyval.decl) = (yyvsp[(1) - (4)].decl);
@@ -8636,7 +8714,7 @@ yyreduce:
     break;
 
   case 296:
-#line 5003 "parser.y"
+#line 5081 "parser.y"
     { 
 		    (yyval.decl).type = NewStringEmpty();
 		    (yyval.decl).id = 0;
@@ -8647,7 +8725,7 @@ yyreduce:
     break;
 
   case 297:
-#line 5010 "parser.y"
+#line 5088 "parser.y"
     { 
 		    (yyval.decl).type = NewStringEmpty();
 		    (yyval.decl).id = 0;
@@ -8658,14 +8736,14 @@ yyreduce:
     break;
 
   case 298:
-#line 5017 "parser.y"
+#line 5095 "parser.y"
     {
                     (yyval.decl) = (yyvsp[(2) - (3)].decl);
 		  }
     break;
 
   case 299:
-#line 5020 "parser.y"
+#line 5098 "parser.y"
     {
 		    SwigType *t;
                     (yyval.decl) = (yyvsp[(1) - (4)].decl);
@@ -8686,7 +8764,7 @@ yyreduce:
     break;
 
   case 300:
-#line 5037 "parser.y"
+#line 5115 "parser.y"
     {
                     (yyval.decl).type = NewStringEmpty();
                     SwigType_add_function((yyval.decl).type,(yyvsp[(2) - (3)].pl));
@@ -8697,7 +8775,7 @@ yyreduce:
     break;
 
   case 301:
-#line 5047 "parser.y"
+#line 5125 "parser.y"
     { 
                (yyval.type) = NewStringEmpty();
                SwigType_add_pointer((yyval.type));
@@ -8708,7 +8786,7 @@ yyreduce:
     break;
 
   case 302:
-#line 5054 "parser.y"
+#line 5132 "parser.y"
     {
 	     (yyval.type) = NewStringEmpty();
 	     SwigType_add_pointer((yyval.type));
@@ -8718,7 +8796,7 @@ yyreduce:
     break;
 
   case 303:
-#line 5060 "parser.y"
+#line 5138 "parser.y"
     { 
 	     	(yyval.type) = NewStringEmpty();	
 		SwigType_add_pointer((yyval.type));
@@ -8727,7 +8805,7 @@ yyreduce:
     break;
 
   case 304:
-#line 5065 "parser.y"
+#line 5143 "parser.y"
     {
 	      (yyval.type) = NewStringEmpty();
 	      SwigType_add_pointer((yyval.type));
@@ -8735,7 +8813,7 @@ yyreduce:
     break;
 
   case 305:
-#line 5071 "parser.y"
+#line 5149 "parser.y"
     {
 	          (yyval.str) = NewStringEmpty();
 	          if ((yyvsp[(1) - (1)].id)) SwigType_add_qualifier((yyval.str),(yyvsp[(1) - (1)].id));
@@ -8743,7 +8821,7 @@ yyreduce:
     break;
 
   case 306:
-#line 5075 "parser.y"
+#line 5153 "parser.y"
     {
 		  (yyval.str) = (yyvsp[(2) - (2)].str);
 	          if ((yyvsp[(1) - (2)].id)) SwigType_add_qualifier((yyval.str),(yyvsp[(1) - (2)].id));
@@ -8751,22 +8829,22 @@ yyreduce:
     break;
 
   case 307:
-#line 5081 "parser.y"
+#line 5159 "parser.y"
     { (yyval.id) = "const"; }
     break;
 
   case 308:
-#line 5082 "parser.y"
+#line 5160 "parser.y"
     { (yyval.id) = "volatile"; }
     break;
 
   case 309:
-#line 5083 "parser.y"
+#line 5161 "parser.y"
     { (yyval.id) = 0; }
     break;
 
   case 310:
-#line 5089 "parser.y"
+#line 5167 "parser.y"
     {
                    (yyval.type) = (yyvsp[(1) - (1)].type);
                    Replace((yyval.type),"typename ","", DOH_REPLACE_ANY);
@@ -8774,7 +8852,7 @@ yyreduce:
     break;
 
   case 311:
-#line 5095 "parser.y"
+#line 5173 "parser.y"
     {
                    (yyval.type) = (yyvsp[(2) - (2)].type);
 	           SwigType_push((yyval.type),(yyvsp[(1) - (2)].str));
@@ -8782,12 +8860,12 @@ yyreduce:
     break;
 
   case 312:
-#line 5099 "parser.y"
+#line 5177 "parser.y"
     { (yyval.type) = (yyvsp[(1) - (1)].type); }
     break;
 
   case 313:
-#line 5100 "parser.y"
+#line 5178 "parser.y"
     {
 		  (yyval.type) = (yyvsp[(1) - (2)].type);
 	          SwigType_push((yyval.type),(yyvsp[(2) - (2)].str));
@@ -8795,7 +8873,7 @@ yyreduce:
     break;
 
   case 314:
-#line 5104 "parser.y"
+#line 5182 "parser.y"
     {
 		  (yyval.type) = (yyvsp[(2) - (3)].type);
 	          SwigType_push((yyval.type),(yyvsp[(3) - (3)].str));
@@ -8804,53 +8882,53 @@ yyreduce:
     break;
 
   case 315:
-#line 5111 "parser.y"
+#line 5189 "parser.y"
     { (yyval.type) = (yyvsp[(1) - (1)].type);
                   /* Printf(stdout,"primitive = '%s'\n", $$);*/
                 }
     break;
 
   case 316:
-#line 5114 "parser.y"
+#line 5192 "parser.y"
     { (yyval.type) = (yyvsp[(1) - (1)].type); }
     break;
 
   case 317:
-#line 5115 "parser.y"
+#line 5193 "parser.y"
     { (yyval.type) = (yyvsp[(1) - (1)].type); }
     break;
 
   case 318:
-#line 5116 "parser.y"
+#line 5194 "parser.y"
     { (yyval.type) = NewStringf("%s%s",(yyvsp[(1) - (2)].type),(yyvsp[(2) - (2)].id)); }
     break;
 
   case 319:
-#line 5117 "parser.y"
+#line 5195 "parser.y"
     { (yyval.type) = NewStringf("enum %s", (yyvsp[(2) - (2)].str)); }
     break;
 
   case 320:
-#line 5118 "parser.y"
+#line 5196 "parser.y"
     { (yyval.type) = (yyvsp[(1) - (1)].type); }
     break;
 
   case 321:
-#line 5120 "parser.y"
+#line 5198 "parser.y"
     {
 		  (yyval.type) = (yyvsp[(1) - (1)].str);
                }
     break;
 
   case 322:
-#line 5123 "parser.y"
+#line 5201 "parser.y"
     { 
 		 (yyval.type) = NewStringf("%s %s", (yyvsp[(1) - (2)].id), (yyvsp[(2) - (2)].str));
                }
     break;
 
   case 323:
-#line 5128 "parser.y"
+#line 5206 "parser.y"
     {
 		 if (!(yyvsp[(1) - (1)].ptype).type) (yyvsp[(1) - (1)].ptype).type = NewString("int");
 		 if ((yyvsp[(1) - (1)].ptype).us) {
@@ -8877,14 +8955,14 @@ yyreduce:
     break;
 
   case 324:
-#line 5153 "parser.y"
+#line 5231 "parser.y"
     { 
                  (yyval.ptype) = (yyvsp[(1) - (1)].ptype);
                }
     break;
 
   case 325:
-#line 5156 "parser.y"
+#line 5234 "parser.y"
     {
                     if ((yyvsp[(1) - (2)].ptype).us && (yyvsp[(2) - (2)].ptype).us) {
 		      Swig_error(cparse_file, cparse_line, "Extra %s specifier.\n", (yyvsp[(2) - (2)].ptype).us);
@@ -8939,7 +9017,7 @@ yyreduce:
     break;
 
   case 326:
-#line 5210 "parser.y"
+#line 5288 "parser.y"
     { 
 		    (yyval.ptype).type = NewString("int");
                     (yyval.ptype).us = 0;
@@ -8947,7 +9025,7 @@ yyreduce:
     break;
 
   case 327:
-#line 5214 "parser.y"
+#line 5292 "parser.y"
     { 
                     (yyval.ptype).type = NewString("short");
                     (yyval.ptype).us = 0;
@@ -8955,7 +9033,7 @@ yyreduce:
     break;
 
   case 328:
-#line 5218 "parser.y"
+#line 5296 "parser.y"
     { 
                     (yyval.ptype).type = NewString("long");
                     (yyval.ptype).us = 0;
@@ -8963,7 +9041,7 @@ yyreduce:
     break;
 
   case 329:
-#line 5222 "parser.y"
+#line 5300 "parser.y"
     { 
                     (yyval.ptype).type = NewString("char");
                     (yyval.ptype).us = 0;
@@ -8971,7 +9049,7 @@ yyreduce:
     break;
 
   case 330:
-#line 5226 "parser.y"
+#line 5304 "parser.y"
     { 
                     (yyval.ptype).type = NewString("wchar_t");
                     (yyval.ptype).us = 0;
@@ -8979,7 +9057,7 @@ yyreduce:
     break;
 
   case 331:
-#line 5230 "parser.y"
+#line 5308 "parser.y"
     { 
                     (yyval.ptype).type = NewString("float");
                     (yyval.ptype).us = 0;
@@ -8987,7 +9065,7 @@ yyreduce:
     break;
 
   case 332:
-#line 5234 "parser.y"
+#line 5312 "parser.y"
     { 
                     (yyval.ptype).type = NewString("double");
                     (yyval.ptype).us = 0;
@@ -8995,7 +9073,7 @@ yyreduce:
     break;
 
   case 333:
-#line 5238 "parser.y"
+#line 5316 "parser.y"
     { 
                     (yyval.ptype).us = NewString("signed");
                     (yyval.ptype).type = 0;
@@ -9003,7 +9081,7 @@ yyreduce:
     break;
 
   case 334:
-#line 5242 "parser.y"
+#line 5320 "parser.y"
     { 
                     (yyval.ptype).us = NewString("unsigned");
                     (yyval.ptype).type = 0;
@@ -9011,7 +9089,7 @@ yyreduce:
     break;
 
   case 335:
-#line 5246 "parser.y"
+#line 5324 "parser.y"
     { 
                     (yyval.ptype).type = NewString("complex");
                     (yyval.ptype).us = 0;
@@ -9019,7 +9097,7 @@ yyreduce:
     break;
 
   case 336:
-#line 5250 "parser.y"
+#line 5328 "parser.y"
     { 
                     (yyval.ptype).type = NewString("__int8");
                     (yyval.ptype).us = 0;
@@ -9027,7 +9105,7 @@ yyreduce:
     break;
 
   case 337:
-#line 5254 "parser.y"
+#line 5332 "parser.y"
     { 
                     (yyval.ptype).type = NewString("__int16");
                     (yyval.ptype).us = 0;
@@ -9035,7 +9113,7 @@ yyreduce:
     break;
 
   case 338:
-#line 5258 "parser.y"
+#line 5336 "parser.y"
     { 
                     (yyval.ptype).type = NewString("__int32");
                     (yyval.ptype).us = 0;
@@ -9043,7 +9121,7 @@ yyreduce:
     break;
 
   case 339:
-#line 5262 "parser.y"
+#line 5340 "parser.y"
     { 
                     (yyval.ptype).type = NewString("__int64");
                     (yyval.ptype).us = 0;
@@ -9051,12 +9129,12 @@ yyreduce:
     break;
 
   case 340:
-#line 5268 "parser.y"
+#line 5346 "parser.y"
     { /* scanner_check_typedef(); */ }
     break;
 
   case 341:
-#line 5268 "parser.y"
+#line 5346 "parser.y"
     {
                    (yyval.dtype) = (yyvsp[(2) - (2)].dtype);
 		   if ((yyval.dtype).type == T_STRING) {
@@ -9072,17 +9150,17 @@ yyreduce:
     break;
 
   case 342:
-#line 5294 "parser.y"
+#line 5372 "parser.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id); }
     break;
 
   case 343:
-#line 5295 "parser.y"
+#line 5373 "parser.y"
     { (yyval.id) = (char *) 0;}
     break;
 
   case 344:
-#line 5298 "parser.y"
+#line 5376 "parser.y"
     { 
 
                   /* Ignore if there is a trailing comma in the enum list */
@@ -9099,7 +9177,7 @@ yyreduce:
     break;
 
   case 345:
-#line 5311 "parser.y"
+#line 5389 "parser.y"
     { 
                    (yyval.node) = (yyvsp[(1) - (1)].node); 
                    if ((yyvsp[(1) - (1)].node)) {
@@ -9109,7 +9187,7 @@ yyreduce:
     break;
 
   case 346:
-#line 5319 "parser.y"
+#line 5397 "parser.y"
     {
 		   SwigType *type = NewSwigType(T_INT);
 		   (yyval.node) = new_node("enumitem");
@@ -9121,7 +9199,7 @@ yyreduce:
     break;
 
   case 347:
-#line 5327 "parser.y"
+#line 5405 "parser.y"
     {
 		   (yyval.node) = new_node("enumitem");
 		   Setattr((yyval.node),"name",(yyvsp[(1) - (3)].id));
@@ -9142,12 +9220,12 @@ yyreduce:
     break;
 
   case 348:
-#line 5344 "parser.y"
+#line 5422 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 349:
-#line 5347 "parser.y"
+#line 5425 "parser.y"
     {
                    (yyval.dtype) = (yyvsp[(1) - (1)].dtype);
 		   if (((yyval.dtype).type != T_INT) && ((yyval.dtype).type != T_UINT) &&
@@ -9162,12 +9240,12 @@ yyreduce:
     break;
 
   case 350:
-#line 5362 "parser.y"
+#line 5440 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 351:
-#line 5363 "parser.y"
+#line 5441 "parser.y"
     {
 		 Node *n;
 		 (yyval.dtype).val = (yyvsp[(1) - (1)].type);
@@ -9188,12 +9266,12 @@ yyreduce:
     break;
 
   case 352:
-#line 5382 "parser.y"
+#line 5460 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 353:
-#line 5383 "parser.y"
+#line 5461 "parser.y"
     {
 		    (yyval.dtype).val = NewString((yyvsp[(1) - (1)].id));
                     (yyval.dtype).type = T_STRING;
@@ -9201,7 +9279,7 @@ yyreduce:
     break;
 
   case 354:
-#line 5387 "parser.y"
+#line 5465 "parser.y"
     {
 		  SwigType_push((yyvsp[(3) - (5)].type),(yyvsp[(4) - (5)].decl).type);
 		  (yyval.dtype).val = NewStringf("sizeof(%s)",SwigType_str((yyvsp[(3) - (5)].type),0));
@@ -9210,12 +9288,12 @@ yyreduce:
     break;
 
   case 355:
-#line 5392 "parser.y"
+#line 5470 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 356:
-#line 5393 "parser.y"
+#line 5471 "parser.y"
     {
 		  (yyval.dtype).val = NewString((yyvsp[(1) - (1)].str));
 		  if (Len((yyval.dtype).val)) {
@@ -9231,7 +9309,7 @@ yyreduce:
     break;
 
   case 357:
-#line 5407 "parser.y"
+#line 5485 "parser.y"
     {
    	            (yyval.dtype).val = NewStringf("(%s)",(yyvsp[(2) - (3)].dtype).val);
 		    (yyval.dtype).type = (yyvsp[(2) - (3)].dtype).type;
@@ -9239,7 +9317,7 @@ yyreduce:
     break;
 
   case 358:
-#line 5414 "parser.y"
+#line 5492 "parser.y"
     {
                  (yyval.dtype) = (yyvsp[(4) - (4)].dtype);
 		 if ((yyvsp[(4) - (4)].dtype).type != T_STRING) {
@@ -9249,7 +9327,7 @@ yyreduce:
     break;
 
   case 359:
-#line 5420 "parser.y"
+#line 5498 "parser.y"
     {
                  (yyval.dtype) = (yyvsp[(5) - (5)].dtype);
 		 if ((yyvsp[(5) - (5)].dtype).type != T_STRING) {
@@ -9260,7 +9338,7 @@ yyreduce:
     break;
 
   case 360:
-#line 5427 "parser.y"
+#line 5505 "parser.y"
     {
                  (yyval.dtype) = (yyvsp[(5) - (5)].dtype);
 		 if ((yyvsp[(5) - (5)].dtype).type != T_STRING) {
@@ -9271,7 +9349,7 @@ yyreduce:
     break;
 
   case 361:
-#line 5434 "parser.y"
+#line 5512 "parser.y"
     {
                  (yyval.dtype) = (yyvsp[(6) - (6)].dtype);
 		 if ((yyvsp[(6) - (6)].dtype).type != T_STRING) {
@@ -9283,7 +9361,7 @@ yyreduce:
     break;
 
   case 362:
-#line 5442 "parser.y"
+#line 5520 "parser.y"
     {
 		 (yyval.dtype) = (yyvsp[(2) - (2)].dtype);
                  (yyval.dtype).val = NewStringf("&%s",(yyvsp[(2) - (2)].dtype).val);
@@ -9291,7 +9369,7 @@ yyreduce:
     break;
 
   case 363:
-#line 5446 "parser.y"
+#line 5524 "parser.y"
     {
 		 (yyval.dtype) = (yyvsp[(2) - (2)].dtype);
                  (yyval.dtype).val = NewStringf("*%s",(yyvsp[(2) - (2)].dtype).val);
@@ -9299,42 +9377,42 @@ yyreduce:
     break;
 
   case 364:
-#line 5452 "parser.y"
+#line 5530 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 365:
-#line 5453 "parser.y"
+#line 5531 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 366:
-#line 5454 "parser.y"
+#line 5532 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 367:
-#line 5455 "parser.y"
+#line 5533 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 368:
-#line 5456 "parser.y"
+#line 5534 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 369:
-#line 5457 "parser.y"
+#line 5535 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 370:
-#line 5458 "parser.y"
+#line 5536 "parser.y"
     { (yyval.dtype) = (yyvsp[(1) - (1)].dtype); }
     break;
 
   case 371:
-#line 5461 "parser.y"
+#line 5539 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s+%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote((yyvsp[(1) - (3)].dtype).type,(yyvsp[(3) - (3)].dtype).type);
@@ -9342,7 +9420,7 @@ yyreduce:
     break;
 
   case 372:
-#line 5465 "parser.y"
+#line 5543 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s-%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote((yyvsp[(1) - (3)].dtype).type,(yyvsp[(3) - (3)].dtype).type);
@@ -9350,7 +9428,7 @@ yyreduce:
     break;
 
   case 373:
-#line 5469 "parser.y"
+#line 5547 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s*%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote((yyvsp[(1) - (3)].dtype).type,(yyvsp[(3) - (3)].dtype).type);
@@ -9358,7 +9436,7 @@ yyreduce:
     break;
 
   case 374:
-#line 5473 "parser.y"
+#line 5551 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s/%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote((yyvsp[(1) - (3)].dtype).type,(yyvsp[(3) - (3)].dtype).type);
@@ -9366,7 +9444,7 @@ yyreduce:
     break;
 
   case 375:
-#line 5477 "parser.y"
+#line 5555 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s%%%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote((yyvsp[(1) - (3)].dtype).type,(yyvsp[(3) - (3)].dtype).type);
@@ -9374,7 +9452,7 @@ yyreduce:
     break;
 
   case 376:
-#line 5481 "parser.y"
+#line 5559 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s&%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote((yyvsp[(1) - (3)].dtype).type,(yyvsp[(3) - (3)].dtype).type);
@@ -9382,7 +9460,7 @@ yyreduce:
     break;
 
   case 377:
-#line 5485 "parser.y"
+#line 5563 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s|%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote((yyvsp[(1) - (3)].dtype).type,(yyvsp[(3) - (3)].dtype).type);
@@ -9390,7 +9468,7 @@ yyreduce:
     break;
 
   case 378:
-#line 5489 "parser.y"
+#line 5567 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s^%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote((yyvsp[(1) - (3)].dtype).type,(yyvsp[(3) - (3)].dtype).type);
@@ -9398,7 +9476,7 @@ yyreduce:
     break;
 
   case 379:
-#line 5493 "parser.y"
+#line 5571 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s << %s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote_type((yyvsp[(1) - (3)].dtype).type);
@@ -9406,7 +9484,7 @@ yyreduce:
     break;
 
   case 380:
-#line 5497 "parser.y"
+#line 5575 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s >> %s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = promote_type((yyvsp[(1) - (3)].dtype).type);
@@ -9414,7 +9492,7 @@ yyreduce:
     break;
 
   case 381:
-#line 5501 "parser.y"
+#line 5579 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s&&%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = T_INT;
@@ -9422,7 +9500,7 @@ yyreduce:
     break;
 
   case 382:
-#line 5505 "parser.y"
+#line 5583 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s||%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = T_INT;
@@ -9430,7 +9508,7 @@ yyreduce:
     break;
 
   case 383:
-#line 5509 "parser.y"
+#line 5587 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s==%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = T_INT;
@@ -9438,7 +9516,7 @@ yyreduce:
     break;
 
   case 384:
-#line 5513 "parser.y"
+#line 5591 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s!=%s",(yyvsp[(1) - (3)].dtype).val,(yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = T_INT;
@@ -9446,7 +9524,7 @@ yyreduce:
     break;
 
   case 385:
-#line 5527 "parser.y"
+#line 5605 "parser.y"
     {
 		 /* Putting >= in the expression literally causes an infinite
 		  * loop somewhere in the type system.  Just workaround for now
@@ -9457,7 +9535,7 @@ yyreduce:
     break;
 
   case 386:
-#line 5534 "parser.y"
+#line 5612 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s SWIG_LE %s", (yyvsp[(1) - (3)].dtype).val, (yyvsp[(3) - (3)].dtype).val);
 		 (yyval.dtype).type = T_INT;
@@ -9465,7 +9543,7 @@ yyreduce:
     break;
 
   case 387:
-#line 5538 "parser.y"
+#line 5616 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("%s?%s:%s", (yyvsp[(1) - (5)].dtype).val, (yyvsp[(3) - (5)].dtype).val, (yyvsp[(5) - (5)].dtype).val);
 		 /* This may not be exactly right, but is probably good enough
@@ -9475,7 +9553,7 @@ yyreduce:
     break;
 
   case 388:
-#line 5544 "parser.y"
+#line 5622 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("-%s",(yyvsp[(2) - (2)].dtype).val);
 		 (yyval.dtype).type = (yyvsp[(2) - (2)].dtype).type;
@@ -9483,7 +9561,7 @@ yyreduce:
     break;
 
   case 389:
-#line 5548 "parser.y"
+#line 5626 "parser.y"
     {
                  (yyval.dtype).val = NewStringf("+%s",(yyvsp[(2) - (2)].dtype).val);
 		 (yyval.dtype).type = (yyvsp[(2) - (2)].dtype).type;
@@ -9491,7 +9569,7 @@ yyreduce:
     break;
 
   case 390:
-#line 5552 "parser.y"
+#line 5630 "parser.y"
     {
 		 (yyval.dtype).val = NewStringf("~%s",(yyvsp[(2) - (2)].dtype).val);
 		 (yyval.dtype).type = (yyvsp[(2) - (2)].dtype).type;
@@ -9499,7 +9577,7 @@ yyreduce:
     break;
 
   case 391:
-#line 5556 "parser.y"
+#line 5634 "parser.y"
     {
                  (yyval.dtype).val = NewStringf("!%s",(yyvsp[(2) - (2)].dtype).val);
 		 (yyval.dtype).type = T_INT;
@@ -9507,7 +9585,7 @@ yyreduce:
     break;
 
   case 392:
-#line 5560 "parser.y"
+#line 5638 "parser.y"
     {
 		 String *qty;
                  skip_balanced('(',')');
@@ -9525,29 +9603,29 @@ yyreduce:
     break;
 
   case 393:
-#line 5576 "parser.y"
+#line 5654 "parser.y"
     {
 		 (yyval.bases) = (yyvsp[(1) - (1)].bases);
                }
     break;
 
   case 394:
-#line 5581 "parser.y"
+#line 5659 "parser.y"
     { inherit_list = 1; }
     break;
 
   case 395:
-#line 5581 "parser.y"
+#line 5659 "parser.y"
     { (yyval.bases) = (yyvsp[(3) - (3)].bases); inherit_list = 0; }
     break;
 
   case 396:
-#line 5582 "parser.y"
+#line 5660 "parser.y"
     { (yyval.bases) = 0; }
     break;
 
   case 397:
-#line 5585 "parser.y"
+#line 5663 "parser.y"
     {
 		   Hash *list = NewHash();
 		   Node *base = (yyvsp[(1) - (1)].node);
@@ -9567,7 +9645,7 @@ yyreduce:
     break;
 
   case 398:
-#line 5602 "parser.y"
+#line 5680 "parser.y"
     {
 		   Hash *list = (yyvsp[(1) - (3)].bases);
 		   Node *base = (yyvsp[(3) - (3)].node);
@@ -9578,7 +9656,7 @@ yyreduce:
     break;
 
   case 399:
-#line 5611 "parser.y"
+#line 5689 "parser.y"
     {
 		 (yyval.node) = NewHash();
 		 Setfile((yyval.node),cparse_file);
@@ -9595,7 +9673,7 @@ yyreduce:
     break;
 
   case 400:
-#line 5624 "parser.y"
+#line 5702 "parser.y"
     {
 		 (yyval.node) = NewHash();
 		 Setfile((yyval.node),cparse_file);
@@ -9610,22 +9688,22 @@ yyreduce:
     break;
 
   case 401:
-#line 5637 "parser.y"
+#line 5715 "parser.y"
     { (yyval.id) = (char*)"public"; }
     break;
 
   case 402:
-#line 5638 "parser.y"
+#line 5716 "parser.y"
     { (yyval.id) = (char*)"private"; }
     break;
 
   case 403:
-#line 5639 "parser.y"
+#line 5717 "parser.y"
     { (yyval.id) = (char*)"protected"; }
     break;
 
   case 404:
-#line 5643 "parser.y"
+#line 5721 "parser.y"
     { 
                    (yyval.id) = (char*)"class"; 
 		   if (!inherit_list) last_cpptype = (yyval.id);
@@ -9633,7 +9711,7 @@ yyreduce:
     break;
 
   case 405:
-#line 5647 "parser.y"
+#line 5725 "parser.y"
     { 
                    (yyval.id) = (char *)"typename"; 
 		   if (!inherit_list) last_cpptype = (yyval.id);
@@ -9641,14 +9719,14 @@ yyreduce:
     break;
 
   case 406:
-#line 5653 "parser.y"
+#line 5731 "parser.y"
     {
                  (yyval.id) = (yyvsp[(1) - (1)].id);
                }
     break;
 
   case 407:
-#line 5656 "parser.y"
+#line 5734 "parser.y"
     { 
                    (yyval.id) = (char*)"struct"; 
 		   if (!inherit_list) last_cpptype = (yyval.id);
@@ -9656,7 +9734,7 @@ yyreduce:
     break;
 
   case 408:
-#line 5660 "parser.y"
+#line 5738 "parser.y"
     {
                    (yyval.id) = (char*)"union"; 
 		   if (!inherit_list) last_cpptype = (yyval.id);
@@ -9664,7 +9742,7 @@ yyreduce:
     break;
 
   case 411:
-#line 5670 "parser.y"
+#line 5748 "parser.y"
     {
                     (yyval.dtype).qualifier = (yyvsp[(1) - (1)].str);
                     (yyval.dtype).throws = 0;
@@ -9673,7 +9751,7 @@ yyreduce:
     break;
 
   case 412:
-#line 5675 "parser.y"
+#line 5753 "parser.y"
     {
                     (yyval.dtype).qualifier = 0;
                     (yyval.dtype).throws = (yyvsp[(3) - (4)].pl);
@@ -9682,7 +9760,7 @@ yyreduce:
     break;
 
   case 413:
-#line 5680 "parser.y"
+#line 5758 "parser.y"
     {
                     (yyval.dtype).qualifier = (yyvsp[(1) - (5)].str);
                     (yyval.dtype).throws = (yyvsp[(4) - (5)].pl);
@@ -9691,7 +9769,7 @@ yyreduce:
     break;
 
   case 414:
-#line 5685 "parser.y"
+#line 5763 "parser.y"
     { 
                     (yyval.dtype).qualifier = 0; 
                     (yyval.dtype).throws = 0;
@@ -9700,7 +9778,7 @@ yyreduce:
     break;
 
   case 415:
-#line 5692 "parser.y"
+#line 5770 "parser.y"
     { 
                     Clear(scanner_ccode); 
                     (yyval.decl).have_parms = 0; 
@@ -9711,7 +9789,7 @@ yyreduce:
     break;
 
   case 416:
-#line 5699 "parser.y"
+#line 5777 "parser.y"
     { 
                     skip_balanced('{','}'); 
                     (yyval.decl).have_parms = 0; 
@@ -9722,7 +9800,7 @@ yyreduce:
     break;
 
   case 417:
-#line 5706 "parser.y"
+#line 5784 "parser.y"
     { 
                     Clear(scanner_ccode); 
                     (yyval.decl).parms = (yyvsp[(2) - (4)].pl); 
@@ -9734,7 +9812,7 @@ yyreduce:
     break;
 
   case 418:
-#line 5714 "parser.y"
+#line 5792 "parser.y"
     {
                     skip_balanced('{','}'); 
                     (yyval.decl).parms = (yyvsp[(2) - (4)].pl); 
@@ -9746,7 +9824,7 @@ yyreduce:
     break;
 
   case 419:
-#line 5722 "parser.y"
+#line 5800 "parser.y"
     { 
                     (yyval.decl).have_parms = 0; 
                     (yyval.decl).defarg = (yyvsp[(2) - (3)].dtype).val; 
@@ -9756,7 +9834,7 @@ yyreduce:
     break;
 
   case 424:
-#line 5738 "parser.y"
+#line 5816 "parser.y"
     {
 	            skip_balanced('(',')');
                     Clear(scanner_ccode);
@@ -9764,7 +9842,7 @@ yyreduce:
     break;
 
   case 425:
-#line 5744 "parser.y"
+#line 5822 "parser.y"
     { 
                      String *s = NewStringEmpty();
                      SwigType_add_template(s,(yyvsp[(2) - (3)].p));
@@ -9774,32 +9852,32 @@ yyreduce:
     break;
 
   case 426:
-#line 5750 "parser.y"
+#line 5828 "parser.y"
     { (yyval.id) = (char*)"";  }
     break;
 
   case 427:
-#line 5753 "parser.y"
+#line 5831 "parser.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id); }
     break;
 
   case 428:
-#line 5754 "parser.y"
+#line 5832 "parser.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id); }
     break;
 
   case 429:
-#line 5757 "parser.y"
+#line 5835 "parser.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id); }
     break;
 
   case 430:
-#line 5758 "parser.y"
+#line 5836 "parser.y"
     { (yyval.id) = 0; }
     break;
 
   case 431:
-#line 5761 "parser.y"
+#line 5839 "parser.y"
     { 
                   (yyval.str) = 0;
 		  if (!(yyval.str)) (yyval.str) = NewStringf("%s%s", (yyvsp[(1) - (2)].str),(yyvsp[(2) - (2)].str));
@@ -9808,7 +9886,7 @@ yyreduce:
     break;
 
   case 432:
-#line 5766 "parser.y"
+#line 5844 "parser.y"
     { 
 		 (yyval.str) = NewStringf("::%s%s",(yyvsp[(3) - (4)].str),(yyvsp[(4) - (4)].str));
                  Delete((yyvsp[(4) - (4)].str));
@@ -9816,35 +9894,35 @@ yyreduce:
     break;
 
   case 433:
-#line 5770 "parser.y"
+#line 5848 "parser.y"
     {
 		 (yyval.str) = NewString((yyvsp[(1) - (1)].str));
    	       }
     break;
 
   case 434:
-#line 5773 "parser.y"
+#line 5851 "parser.y"
     {
 		 (yyval.str) = NewStringf("::%s",(yyvsp[(3) - (3)].str));
                }
     break;
 
   case 435:
-#line 5776 "parser.y"
+#line 5854 "parser.y"
     {
                  (yyval.str) = NewString((yyvsp[(1) - (1)].str));
 	       }
     break;
 
   case 436:
-#line 5779 "parser.y"
+#line 5857 "parser.y"
     {
                  (yyval.str) = NewStringf("::%s",(yyvsp[(3) - (3)].str));
                }
     break;
 
   case 437:
-#line 5784 "parser.y"
+#line 5862 "parser.y"
     {
                    (yyval.str) = NewStringf("::%s%s",(yyvsp[(2) - (3)].str),(yyvsp[(3) - (3)].str));
 		   Delete((yyvsp[(3) - (3)].str));
@@ -9852,28 +9930,28 @@ yyreduce:
     break;
 
   case 438:
-#line 5788 "parser.y"
+#line 5866 "parser.y"
     {
                    (yyval.str) = NewStringf("::%s",(yyvsp[(2) - (2)].str));
                }
     break;
 
   case 439:
-#line 5791 "parser.y"
+#line 5869 "parser.y"
     {
                    (yyval.str) = NewStringf("::%s",(yyvsp[(2) - (2)].str));
                }
     break;
 
   case 440:
-#line 5798 "parser.y"
+#line 5876 "parser.y"
     {
 		 (yyval.str) = NewStringf("::~%s",(yyvsp[(2) - (2)].str));
                }
     break;
 
   case 441:
-#line 5804 "parser.y"
+#line 5882 "parser.y"
     {
                   (yyval.str) = NewStringf("%s%s",(yyvsp[(1) - (2)].id),(yyvsp[(2) - (2)].id));
 		  /*		  if (Len($2)) {
@@ -9883,7 +9961,7 @@ yyreduce:
     break;
 
   case 442:
-#line 5813 "parser.y"
+#line 5891 "parser.y"
     { 
                   (yyval.str) = 0;
 		  if (!(yyval.str)) (yyval.str) = NewStringf("%s%s", (yyvsp[(1) - (2)].id),(yyvsp[(2) - (2)].str));
@@ -9892,7 +9970,7 @@ yyreduce:
     break;
 
   case 443:
-#line 5818 "parser.y"
+#line 5896 "parser.y"
     { 
 		 (yyval.str) = NewStringf("::%s%s",(yyvsp[(3) - (4)].id),(yyvsp[(4) - (4)].str));
                  Delete((yyvsp[(4) - (4)].str));
@@ -9900,35 +9978,35 @@ yyreduce:
     break;
 
   case 444:
-#line 5822 "parser.y"
+#line 5900 "parser.y"
     {
 		 (yyval.str) = NewString((yyvsp[(1) - (1)].id));
    	       }
     break;
 
   case 445:
-#line 5825 "parser.y"
+#line 5903 "parser.y"
     {
 		 (yyval.str) = NewStringf("::%s",(yyvsp[(3) - (3)].id));
                }
     break;
 
   case 446:
-#line 5828 "parser.y"
+#line 5906 "parser.y"
     {
                  (yyval.str) = NewString((yyvsp[(1) - (1)].str));
 	       }
     break;
 
   case 447:
-#line 5831 "parser.y"
+#line 5909 "parser.y"
     {
                  (yyval.str) = NewStringf("::%s",(yyvsp[(3) - (3)].str));
                }
     break;
 
   case 448:
-#line 5836 "parser.y"
+#line 5914 "parser.y"
     {
                    (yyval.str) = NewStringf("::%s%s",(yyvsp[(2) - (3)].id),(yyvsp[(3) - (3)].str));
 		   Delete((yyvsp[(3) - (3)].str));
@@ -9936,28 +10014,28 @@ yyreduce:
     break;
 
   case 449:
-#line 5840 "parser.y"
+#line 5918 "parser.y"
     {
                    (yyval.str) = NewStringf("::%s",(yyvsp[(2) - (2)].id));
                }
     break;
 
   case 450:
-#line 5843 "parser.y"
+#line 5921 "parser.y"
     {
                    (yyval.str) = NewStringf("::%s",(yyvsp[(2) - (2)].str));
                }
     break;
 
   case 451:
-#line 5846 "parser.y"
+#line 5924 "parser.y"
     {
 		 (yyval.str) = NewStringf("::~%s",(yyvsp[(2) - (2)].id));
                }
     break;
 
   case 452:
-#line 5852 "parser.y"
+#line 5930 "parser.y"
     { 
                    (yyval.id) = (char *) malloc(strlen((yyvsp[(1) - (2)].id))+strlen((yyvsp[(2) - (2)].id))+1);
                    strcpy((yyval.id),(yyvsp[(1) - (2)].id));
@@ -9966,19 +10044,19 @@ yyreduce:
     break;
 
   case 453:
-#line 5857 "parser.y"
+#line 5935 "parser.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id);}
     break;
 
   case 454:
-#line 5860 "parser.y"
+#line 5938 "parser.y"
     {
 		 (yyval.str) = NewString((yyvsp[(1) - (1)].id));
                }
     break;
 
   case 455:
-#line 5863 "parser.y"
+#line 5941 "parser.y"
     {
                   skip_balanced('{','}');
 		  (yyval.str) = NewString(scanner_ccode);
@@ -9986,14 +10064,14 @@ yyreduce:
     break;
 
   case 456:
-#line 5867 "parser.y"
+#line 5945 "parser.y"
     {
 		 (yyval.str) = (yyvsp[(1) - (1)].str);
               }
     break;
 
   case 457:
-#line 5872 "parser.y"
+#line 5950 "parser.y"
     {
                   Hash *n;
                   (yyval.node) = NewHash();
@@ -10010,12 +10088,12 @@ yyreduce:
     break;
 
   case 458:
-#line 5885 "parser.y"
+#line 5963 "parser.y"
     { (yyval.node) = 0; }
     break;
 
   case 459:
-#line 5889 "parser.y"
+#line 5967 "parser.y"
     {
 		 (yyval.node) = NewHash();
 		 Setattr((yyval.node),"name",(yyvsp[(1) - (3)].id));
@@ -10024,7 +10102,7 @@ yyreduce:
     break;
 
   case 460:
-#line 5894 "parser.y"
+#line 5972 "parser.y"
     {
 		 (yyval.node) = NewHash();
 		 Setattr((yyval.node),"name",(yyvsp[(1) - (5)].id));
@@ -10034,7 +10112,7 @@ yyreduce:
     break;
 
   case 461:
-#line 5900 "parser.y"
+#line 5978 "parser.y"
     {
                  (yyval.node) = NewHash();
                  Setattr((yyval.node),"name",(yyvsp[(1) - (1)].id));
@@ -10042,7 +10120,7 @@ yyreduce:
     break;
 
   case 462:
-#line 5904 "parser.y"
+#line 5982 "parser.y"
     {
                  (yyval.node) = NewHash();
                  Setattr((yyval.node),"name",(yyvsp[(1) - (3)].id));
@@ -10051,7 +10129,7 @@ yyreduce:
     break;
 
   case 463:
-#line 5909 "parser.y"
+#line 5987 "parser.y"
     {
                  (yyval.node) = (yyvsp[(3) - (3)].node);
 		 Setattr((yyval.node),"name",(yyvsp[(1) - (3)].id));
@@ -10059,7 +10137,7 @@ yyreduce:
     break;
 
   case 464:
-#line 5913 "parser.y"
+#line 5991 "parser.y"
     {
                  (yyval.node) = (yyvsp[(3) - (5)].node);
 		 Setattr((yyval.node),"name",(yyvsp[(1) - (5)].id));
@@ -10068,14 +10146,14 @@ yyreduce:
     break;
 
   case 465:
-#line 5920 "parser.y"
+#line 5998 "parser.y"
     {
 		 (yyval.id) = (yyvsp[(1) - (1)].id);
                }
     break;
 
   case 466:
-#line 5923 "parser.y"
+#line 6001 "parser.y"
     {
                  (yyval.id) = Char((yyvsp[(1) - (1)].dtype).val);
                }
@@ -10083,7 +10161,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 10087 "y.tab.c"
+#line 10165 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -10297,7 +10375,7 @@ yyreturn:
 }
 
 
-#line 5930 "parser.y"
+#line 6008 "parser.y"
 
 
 SwigType *Swig_cparse_type(String *s) {
