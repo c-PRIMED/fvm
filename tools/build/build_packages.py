@@ -365,16 +365,20 @@ class Fvm(BuildPkg):
         pdir = os.path.join(pdir, self.getArch())
         return self.sys_log("/bin/ln -fsn %s %s" % (self.blddir, pdir))
     def _build(self):
+        par = config(self.name, 'parallel')
+        comp = config(self.name, 'compiler')
+        ver = config(self.name, 'version')
         os.putenv("PYTHONPATH",os.path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
-        #return self.sys_log("%s/etc/buildsystem/build -C %s VERSION='release'" % (self.sdir, self.sdir))
-        return self.sys_log("%s/etc/buildsystem/build -C %s COMPACTOUTPUT=False" % (self.sdir, self.sdir))
+        return self.sys_log("%s/etc/buildsystem/build -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s" \
+                                % (self.sdir, self.sdir, par, ver, comp))
     def _install(self):
         try:
             line = os.popen("/bin/bash -c 'gcc --version 2>&1'").readline()
             vers = "gcc-" + re.compile(r'[^(]*[^)]*\) ([^\n ]*)').findall(line)[0]
         except:
             vers = '4.2.1'
-        pdir = os.path.join(self.sdir, "build", self.getArch(), vers, "debug", "bin")
+        rel = config(self.name, 'version')
+        pdir = os.path.join(self.sdir, "build", self.getArch(), vers, rel, "bin")
         os.chdir(pdir)
         self.sys_log("install testLinearSolver %s" % self.bindir)
         self.sys_log("install *.py *.so %s" % self.libdir)

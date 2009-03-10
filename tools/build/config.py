@@ -17,6 +17,11 @@ _config_srcs = {
     'lammps': {
         'build': 'openmpi',
         },
+    'fvm': {
+        'parallel': False,
+        'version': 'debug',
+        'compiler': 'gcc',
+        },
 }
 
 def config(x,y):
@@ -81,8 +86,12 @@ def read(srcpath, filename, sources, packages):
                 continue
             if line[-1] == ':' and set_section(line[:-1]):
                 continue
-            if line[0].isspace() and set_value(line.lstrip()):
-                continue
+            if line[0].isspace():
+                line = line.lstrip()
+                if line[0] in '#;':
+                    continue
+                if set_value(line):
+                    continue
             print "Cannot parse line %s in %s: %s" % (lnum, fn, line)
             return False
     return  True

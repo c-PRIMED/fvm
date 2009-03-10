@@ -32,10 +32,15 @@ def generate(env):
     if env['OPENMP']:
         env.Append(CXXFLAGS=['-fopenmp'])
     
+    if env['PARALLEL']:
+        env['CXX'] = 'mpicxx'
+
     env['CCFLAGS'] = env['CXXFLAGS']
-    env['CXX'] = 'mpicxx'
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')
 
 def exists(env):
-    return env.Detect(['mpicxx'])
+    if env['PARALLEL']:
+        return env.Detect(['mpicxx'])
+    else:
+        return env.Detect(['g++'])
 

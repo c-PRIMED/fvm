@@ -14,6 +14,7 @@ optionsList = [
   ('VERSION', 'debug', 'Build version (default debug, profile)'),
   ('OPENMP', False, 'Compile with OpenMP'),
   ('COMPILER', None, 'C++ compiler (default is the one found in path)'),
+  ('PARALLEL', False, 'Build using MPI'),
   ('ATYPES', ['double'],'The atypes to build (e.g., float,double,tangent)'),
   ('BUILDDIR', None, 'build directory (default build)'),
   ('PACKAGESDIR', None, 'packages tree (default packages)'),
@@ -266,18 +267,21 @@ class MyEnvironment(SConsEnvironment):
         return pathname
 
     def locateComponents(self):
+        env = self.myClone()
         def findComponents(dir):
             for entry in os.listdir(dir):
                 if entry in ['.svn']:
                     continue
                 subdir = os.path.join(dir, entry)
                 if os.path.isdir(subdir):
-                    sconsFile = os.path.join(subdir,'%s.scons' % entry)
-                    if os.path.isfile(sconsFile):
-                        yield entry, subdir
-                    else:
-                        for comp in findComponents(subdir):
-                            yield comp
+                    # skip the parallel module for non-parallel builds
+                    if entry != 'parallel' or env['PARALLEL']:
+                        sconsFile = os.path.join(subdir,'%s.scons' % entry)
+                        if os.path.isfile(sconsFile):
+                            yield entry, subdir
+                        else:
+                            for comp in findComponents(subdir):
+                                yield comp
         srcDir = self.getAbsPath('$SRCDIR')
         for comp in findComponents(srcDir):
             self._compDirMap[comp[0]] = comp[1]
