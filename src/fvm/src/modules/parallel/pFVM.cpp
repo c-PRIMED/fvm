@@ -50,8 +50,8 @@ int main(int argc, char *argv[])
    PartMesh part_mesh(mesh_list, npart, etype );
 
   //set properties of Partition
-   part_mesh.setWeightType(PartMesh::NOWEIGHTS);
-   part_mesh.setNumFlag(PartMesh::C_STYLE);
+   part_mesh.setWeightType(0);
+   part_mesh.setNumFlag(0);
 
   //actions
    part_mesh.partition();
