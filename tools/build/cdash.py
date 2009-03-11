@@ -4,7 +4,12 @@ Functions to submit build and test information to CDash
 
 import cgi, time, datetime, os, socket, config
 import sys, httplib, urlparse, build_utils
-from sets import Set
+
+try:
+   set
+except NameError:
+   # my python is old
+   from sets import Set as set
 
 def barf(msg):
    print >> sys.stderr, "Error! %s" % msg
@@ -35,9 +40,9 @@ def putfile(f, uri, username=None, password=None):
    """HTTP PUT the file f to uri, with optional auth data."""
    host, port, path = parseuri(uri)
 
-   redirect = Set([301, 302, 307])
-   authenticate = Set([401])
-   okay = Set([200, 201, 204])
+   redirect = set([301, 302, 307])
+   authenticate = set([401])
+   okay = set([200, 201, 204])
 
    authorized = False
    authorization = None
