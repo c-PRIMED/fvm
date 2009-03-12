@@ -40,9 +40,9 @@ public :
 
     NcDataReader( const string& fname );
     
-    void    read();
-    const MeshList&  getMeshList() const { return _meshList;};
+    MeshList    getMeshList();
 
+    static void  destroyMeshList( MeshList meshList );
     ~NcDataReader();
 
 private :
@@ -60,14 +60,14 @@ private :
     void  get_connectivity_vals();
     void  get_mapper_vals();
 
-    void  meshList();
-    void  storage_sites( int id );
-    void  boundary_faces( int id );
-    void  interfaces( int id );
-    void  coords( int id );
-    void  face_cells( int id );
-    void  face_nodes( int id );
-    void  mappers( );
+    MeshList  meshList();
+    void  storage_sites ( int id, const MeshList&  meshList );
+    void  boundary_faces( int id, const MeshList&  meshList );
+    void  interfaces    ( int id, const MeshList&  meshList );
+    void  coords        ( int id, const MeshList&  meshList );
+    void  face_cells    ( int id, const MeshList&  meshList );
+    void  face_nodes    ( int id, const MeshList&  meshList );
+    void  mappers( const MeshList& );
 
     string _fname;
 
@@ -166,7 +166,6 @@ private :
 
 
 
-     MeshList   _meshList;
 };
 
 #endif

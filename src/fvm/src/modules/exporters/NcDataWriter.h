@@ -61,7 +61,7 @@ private :
 
 
 
-     const MeshList& _meshList;
+     const MeshList _meshList;
      string  _fname;
 
      NcFile   *_ncFile;
@@ -118,6 +118,11 @@ private :
      NcVar* _fromIndices;
      NcVar* _toIndices;
 
+
+     NcVar* _bounBoolVar;
+     NcVar* _neighMeshBoolVar;
+     NcVar* _interfaceBoolVar;
+
      //variable values
      vector< int >  _dimensionVals;
      vector< int >  _meshIDVals;
@@ -154,6 +159,9 @@ private :
      int* _toIndicesVals;
 
      const int MAX_CHAR;
+     bool BOUN_TYPE_DIM;
+     bool NEIGH_MESH;
+     bool INTERFACE;
 
 };
 

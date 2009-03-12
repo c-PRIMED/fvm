@@ -24,7 +24,7 @@ int NcDataWriter::_writeAction = 0;
 
 NcDataWriter::NcDataWriter( const MeshList& meshes, const string& fname )
 : _meshList( meshes ), _fname( fname ), _ncFile(NULL), _xVals(NULL), _yVals(NULL), _zVals(NULL),
-_fromIndicesVals(NULL), _toIndicesVals(NULL), MAX_CHAR(40)
+_fromIndicesVals(NULL), _toIndicesVals(NULL), MAX_CHAR(40), BOUN_TYPE_DIM(false), NEIGH_MESH( false ), INTERFACE( false )
 {
 
    init();
@@ -75,11 +75,13 @@ NcDataWriter::setNcFile()
 }
 
 //set NcDims
+//set NcDims
 void
 NcDataWriter::setDims()
 {
-    _nmesh = _ncFile->add_dim("nmesh",  long( _meshList.size() ) );
-     
+
+    _nmesh = _ncFile->add_dim("nmesh",   _meshList.size()  );
+    assert( _ncFile->add_att("nmesh", "number of total meshes") );
     int index_boun = 0;
     int index_interface = 0;
     int  nnodes = 0;
@@ -109,32 +111,44 @@ NcDataWriter::setDims()
 
      }
 
-      _nBoun     = _ncFile->add_dim("boun_type_dim", index_boun );
+
+      if ( index_boun > 0 ){
+          BOUN_TYPE_DIM = true;
+         _nBoun     = _ncFile->add_dim("boun_type_dim", index_boun );
+         assert( _ncFile->add_att("boun_type_dim", "total count of boundary types") );
+      }
+
+
       _charSize  = _ncFile->add_dim("char_dim", MAX_CHAR );
-      _nNeighMesh= _ncFile->add_dim("nNeighMesh", index_interface ); 
+      assert( _ncFile->add_att("char_dim", "maximum capacity of char variable" ) );
+
+      if ( index_interface > 0 ){
+         NEIGH_MESH = true;
+         _nNeighMesh= _ncFile->add_dim("nNeighMesh", index_interface ); 
+          assert( _ncFile->add_att("nNeighMesh", "count of neighbour meshes")  );
+      }
 
       _nnodes     = _ncFile->add_dim("nnodes", nnodes);
       _nfaces     = _ncFile->add_dim("nfaces", nfaces);
       _ncells     = _ncFile->add_dim("ncells", ncells);
-
-      _nfaceRow  = _ncFile->add_dim("nface_row", nface_row);
-      _nfaceCellsCol = _ncFile->add_dim("nfaceCells_col", nfaceCells_col);
-      _nfaceNodesCol = _ncFile->add_dim("nfaceNodes_col", nfaceNodes_col);
-      _nInterface    = _ncFile->add_dim("nInterface", ninterface);
-
-      assert( _ncFile->add_att("nmesh", "number of total meshes") );
-      assert( _ncFile->add_att("boun_type_dim", "total count of boundary types") );
-      assert( _ncFile->add_att("char_dim", "maximum capacity of char variable" ) );
-      assert( _ncFile->add_att("nNeighMesh", "count of neighbour meshes")  );
-
       assert( _ncFile->add_att("nnodes", "number of nodes" ) );
       assert( _ncFile->add_att("nfaces", "number of faces" ) );
       assert( _ncFile->add_att("ncells", "number of cells" ) );
  
+
+      _nfaceRow  = _ncFile->add_dim("nface_row", nface_row);
+      _nfaceCellsCol = _ncFile->add_dim("nfaceCells_col", nfaceCells_col);
+      _nfaceNodesCol = _ncFile->add_dim("nfaceNodes_col", nfaceNodes_col);
       assert( _ncFile->add_att("nface_row", "row dimension of face connectivity" ) );
       assert( _ncFile->add_att("nfaceCells_col", "col dimension of faceCells connectivity" ) );
       assert( _ncFile->add_att("nfaceNodes_col", "col dimension of faceNodes connectivity" ) );
-      assert( _ncFile->add_att("nInterface", "total interfaces") );
+
+       if ( ninterface > 0 ){
+           INTERFACE = true;
+          _nInterface    = _ncFile->add_dim("nInterface", ninterface);
+          assert( _ncFile->add_att("nInterface", "total interfaces") );
+       }
+
 
 }
 
@@ -153,15 +167,19 @@ NcDataWriter::setVars()
     _interiorFaceGroup = _ncFile->add_var("interior_faces_group", ncInt, _nmesh);
 
     _boundaryGroup  = _ncFile->add_var("boundary_group", ncInt, _nmesh); 
-    _boundarySize   = _ncFile->add_var("boundary_size", ncInt, _nBoun);
-    _boundaryOffset = _ncFile->add_var("boundary_offset", ncInt, _nBoun);
-    _boundaryID     = _ncFile->add_var("boundary_id", ncInt, _nBoun);
-    _boundaryType   = _ncFile->add_var("boundary_type", ncChar, _nBoun, _charSize );
+     if ( BOUN_TYPE_DIM ){
+        _boundarySize   = _ncFile->add_var("boundary_size", ncInt, _nBoun);
+        _boundaryOffset = _ncFile->add_var("boundary_offset", ncInt, _nBoun);
+        _boundaryID     = _ncFile->add_var("boundary_id", ncInt, _nBoun);
+        _boundaryType   = _ncFile->add_var("boundary_type", ncChar, _nBoun, _charSize );
+     }
 
     _interfaceGroup  = _ncFile->add_var("interface_group" , ncInt, _nmesh      );
-    _interfaceSize   = _ncFile->add_var("interface_size"  , ncInt, _nNeighMesh );
-    _interfaceOffset = _ncFile->add_var("interface_offset", ncInt, _nNeighMesh );
-    _interfaceID     = _ncFile->add_var("interface_id"    , ncInt, _nNeighMesh ); 
+    if ( NEIGH_MESH ){
+       _interfaceSize   = _ncFile->add_var("interface_size"  , ncInt, _nNeighMesh );
+       _interfaceOffset = _ncFile->add_var("interface_offset", ncInt, _nNeighMesh );
+       _interfaceID     = _ncFile->add_var("interface_id"    , ncInt, _nNeighMesh ); 
+    }
 
     _x  = _ncFile->add_var("x", ncDouble, _nnodes );
     _y  = _ncFile->add_var("y", ncDouble, _nnodes );
@@ -176,9 +194,17 @@ NcDataWriter::setVars()
     _faceCellsCol = _ncFile->add_var("face_cells_col", ncInt, _nfaceCellsCol );
     _faceNodesRow = _ncFile->add_var("face_nodes_row", ncInt, _nfaceRow );
     _faceNodesCol = _ncFile->add_var("face_nodes_col", ncInt, _nfaceNodesCol );
+     
+     if ( INTERFACE ){
+        _fromIndices  = _ncFile->add_var("from_indices", ncInt, _nInterface);
+        _toIndices    = _ncFile->add_var("to_indices"  , ncInt, _nInterface);
+     }
 
-    _fromIndices  = _ncFile->add_var("from_indices", ncInt, _nInterface);
-    _toIndices    = _ncFile->add_var("to_indices"  , ncInt, _nInterface);
+    _bounBoolVar      = _ncFile->add_var("is_bounTypeDim_Valid", ncInt);
+    _neighMeshBoolVar = _ncFile->add_var("is_neighMesh_Valid", ncInt);
+    _interfaceBoolVar = _ncFile->add_var("is_interface_Valid", ncInt);
+
+
 
 }
 
@@ -201,6 +227,7 @@ NcDataWriter::set_var_values()
 
 
 //getting values from meshes
+//getting values from meshes
 void 
 NcDataWriter::get_var_values()
 {
@@ -215,8 +242,10 @@ NcDataWriter::get_var_values()
     _yVals = new double [ _nnodes->size() ];
     _zVals = new double [ _nnodes->size() ];
 
-    _fromIndicesVals  = new int [ _nInterface->size() ];
-    _toIndicesVals    = new int [ _nInterface->size() ];
+     if ( INTERFACE ){
+       _fromIndicesVals  = new int [ _nInterface->size() ];
+       _toIndicesVals    = new int [ _nInterface->size() ];
+     }
 
     for ( long id = 0; id < _nmesh->size(); id++ ){
        //dimension-s
@@ -250,14 +279,13 @@ NcDataWriter::get_var_values()
 
        //connectivities
        connectivities( id );
-       
-       //mappers
-       mappers( id );
 
-       
+       //mappers
+       if ( INTERFACE )
+          mappers( id );
+
     }
 }
-
 //boundary face data
 void
 NcDataWriter::get_boundary_vals( int id )
@@ -265,15 +293,17 @@ NcDataWriter::get_boundary_vals( int id )
        //boundary face
        const FaceGroupList& bounFaceList = _meshList.at(id)->getBoundaryFaceGroups();
        _boundaryGroupVals.push_back ( bounFaceList.size() );
-       for ( int boun = 0; boun < int(bounFaceList.size()); boun++ ) {
-           _boundarySizeVals.push_back( bounFaceList.at(boun)->site.getCount() );
-           _boundaryOffsetVals.push_back( bounFaceList.at(boun)->site.getOffset() );
-           _boundaryIDVals.push_back( bounFaceList.at(boun)->id );
-           _boundaryTypeVals.push_back( bounFaceList.at(boun)->groupType.c_str() );
-            //assign values
-           _boundaryType->set_cur(boun); 
-            assert(  int(bounFaceList.at(boun)->groupType.size()) < MAX_CHAR );
-           _boundaryType->put( _boundaryTypeVals[boun], 1, bounFaceList.at(boun)->groupType.size() );
+       if ( BOUN_TYPE_DIM ) {
+         for ( int boun = 0; boun < int(bounFaceList.size()); boun++ ) {
+             _boundarySizeVals.push_back( bounFaceList.at(boun)->site.getCount() );
+             _boundaryOffsetVals.push_back( bounFaceList.at(boun)->site.getOffset() );
+             _boundaryIDVals.push_back( bounFaceList.at(boun)->id );
+             _boundaryTypeVals.push_back( bounFaceList.at(boun)->groupType.c_str() );
+              //assign values
+             _boundaryType->set_cur(boun); 
+              assert(  int(bounFaceList.at(boun)->groupType.size()) < MAX_CHAR );
+             _boundaryType->put( _boundaryTypeVals[boun], 1, bounFaceList.at(boun)->groupType.size() );
+          }
        }
 
 }
@@ -285,10 +315,12 @@ NcDataWriter::get_interface_vals( int id )
        //interface 
        const FaceGroupList& interfaceList = _meshList.at(id)->getInterfaceGroups();
        _interfaceGroupVals.push_back ( interfaceList.size() );
-       for ( int interface = 0; interface < int( interfaceList.size() ); interface++ ){
-           _interfaceSizeVals.push_back  (  interfaceList.at(interface)->site.getCount() );
-           _interfaceOffsetVals.push_back(  interfaceList.at(interface)->site.getOffset() );
-           _interfaceIDVals.push_back    (  interfaceList.at(interface)->id ); 
+       if ( NEIGH_MESH ){
+          for ( int interface = 0; interface < int( interfaceList.size() ); interface++ ){
+             _interfaceSizeVals.push_back  (  interfaceList.at(interface)->site.getCount() );
+             _interfaceOffsetVals.push_back(  interfaceList.at(interface)->site.getOffset() );
+             _interfaceIDVals.push_back    (  interfaceList.at(interface)->id ); 
+          }
        }
 
 }
@@ -407,15 +439,20 @@ NcDataWriter::add_attributes()
      assert( _interiorFaceGroup->add_att("interior_face_group", "total interior faces") );
 
      assert( _boundaryGroup->add_att("boundary_group", " total boundary faces") );
-     assert( _boundarySize->add_att("boundary_size", " size of boundary" ) );
-     assert( _boundaryOffset->add_att("boundary_offset", " offset of boundary" ) );
-     assert( _boundaryID->add_att("boundary_id", " boundary id " ) );
-     assert( _boundaryType->add_att("boundary_type", " type of boundary condition ") );
+     if ( BOUN_TYPE_DIM ){
+        assert( _boundarySize->add_att("boundary_size", " size of boundary" ) );
+        assert( _boundaryOffset->add_att("boundary_offset", " offset of boundary" ) );
+        assert( _boundaryID->add_att("boundary_id", " boundary id " ) );
+        assert( _boundaryType->add_att("boundary_type", " type of boundary condition ") );
+     }
 
      assert( _interfaceGroup->add_att("interface_group", " total interfaces") );
-     assert( _interfaceSize->add_att("interface_size", " size of interface" ) );
-     assert( _interfaceOffset->add_att("interface_offset", " offset of interface" ) );
-     assert( _interfaceID->add_att("interface_id", " interface id " ) );
+
+     if ( NEIGH_MESH ){
+        assert( _interfaceSize->add_att("interface_size", " size of interface" ) );
+        assert( _interfaceOffset->add_att("interface_offset", " offset of interface" ) );
+        assert( _interfaceID->add_att("interface_id", " interface id " ) );
+     }
 
      assert( _x->add_att("x", "x-coordinate") );
      assert( _y->add_att("y", "y-coordinate") );
@@ -430,12 +467,13 @@ NcDataWriter::add_attributes()
      assert( _faceNodesRow->add_att("face_nodes_row", "row values of faceNodes CRconnctivities") );
      assert( _faceCellsCol->add_att("face_cells_col", "col values of faceCells CRconnctivities") );
      assert( _faceNodesCol->add_att("face_nodes_col", "col values of faceNodes CRconnctivities") );
-     
-     assert( _fromIndices->add_att("from_indices", "trom indices from other neightbour mesh " ) );
-     assert( _toIndices->add_att("to_indices",     "to  indices in current mesh") );
-
+     if ( INTERFACE ){     
+        assert( _fromIndices->add_att("from_indices", "trom indices from other neightbour mesh " ) );
+        assert( _toIndices->add_att("to_indices",     "to  indices in current mesh") );
+     }
 
 }
+
 
 
 //write values
@@ -452,22 +490,36 @@ NcDataWriter::write_values()
     _interiorFaceGroup->put( &_interiorFaceGroupVals[0], _nmesh->size() );
 
     _boundaryGroup->put(&_boundaryGroupVals[0], _nmesh->size() );
-    _boundarySize->put( &_boundarySizeVals[0], _boundarySizeVals.size()  );
-    _boundaryOffset->put( &_boundaryOffsetVals[0], _boundaryOffsetVals.size() );
-    _boundaryID->put( &_boundaryIDVals[0], _boundaryIDVals.size() );
+     if ( BOUN_TYPE_DIM ){
+       _boundarySize->put( &_boundarySizeVals[0], _boundarySizeVals.size()  );
+       _boundaryOffset->put( &_boundaryOffsetVals[0], _boundaryOffsetVals.size() );
+       _boundaryID->put( &_boundaryIDVals[0], _boundaryIDVals.size() );
+     }
 
     _interfaceGroup->put(&_interfaceGroupVals[0], _nmesh->size() );
-    _interfaceSize->put( &_interfaceSizeVals[0], _interfaceSizeVals.size()  );
-    _interfaceOffset->put( &_interfaceOffsetVals[0], _interfaceOffsetVals.size() );
-    _interfaceID->put( &_interfaceIDVals[0], _interfaceIDVals.size() );
+
+     if ( NEIGH_MESH ){
+       _interfaceSize->put( &_interfaceSizeVals[0], _interfaceSizeVals.size()  );
+       _interfaceOffset->put( &_interfaceOffsetVals[0], _interfaceOffsetVals.size() );
+       _interfaceID->put( &_interfaceIDVals[0], _interfaceIDVals.size() );
+     }
 
      _faceCellsRowCount->put( &_faceCellsRowCountVals[0], _nmesh->size() );
      _faceCellsColCount->put( &_faceCellsColCountVals[0], _nmesh->size() );
      _faceNodesRowCount->put( &_faceNodesRowCountVals[0], _nmesh->size() );
      _faceNodesColCount->put( &_faceNodesColCountVals[0], _nmesh->size() );
 
-    _fromIndices->put( _fromIndicesVals, _nInterface->size() );
-    _toIndices->put( _toIndicesVals, _nInterface->size() );
+    if ( INTERFACE ){
+       _fromIndices->put( _fromIndicesVals, _nInterface->size() );
+       _toIndices->put( _toIndicesVals, _nInterface->size() );
+    }
+
+     int boun_bool = int( BOUN_TYPE_DIM );
+     int neigh_bool= int( NEIGH_MESH );
+     int interface_bool = int ( INTERFACE );
+    _bounBoolVar->put(  &boun_bool );
+    _neighMeshBoolVar->put( &neigh_bool );
+    _interfaceBoolVar->put( &interface_bool );
 
 
 }
