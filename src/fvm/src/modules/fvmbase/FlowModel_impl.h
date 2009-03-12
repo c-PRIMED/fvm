@@ -81,29 +81,32 @@ public:
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
-            FlowBC<T> *bc(new FlowBC<T>());
-            
-            _bcMap[fg.id] = bc;
-            if ((fg.groupType == "wall"))
+            if (_bcMap.find(fg.id) == _bcMap.end())
             {
-                bc->bcType = "NoSlipWall";
+                FlowBC<T> *bc(new FlowBC<T>());
+                
+                _bcMap[fg.id] = bc;
+                if ((fg.groupType == "wall"))
+                {
+                    bc->bcType = "NoSlipWall";
+                }
+                else if ((fg.groupType == "velocity-inlet"))
+                {
+                    bc->bcType = "VelocityBoundary";
+                }
+                else if ((fg.groupType == "pressure-inlet") ||
+                         (fg.groupType == "pressure-outlet"))
+                {
+                    bc->bcType = "PressureBoundary";
+                }
+                else if ((fg.groupType == "symmetry"))
+                {
+                    bc->bcType = "Symmetry";
+                }
+                else
+                  throw CException("FlowModel: unknown face group type "
+                                   + fg.groupType);
             }
-            else if ((fg.groupType == "velocity-inlet"))
-            {
-                bc->bcType = "VelocityBoundary";
-            }
-            else if ((fg.groupType == "pressure-inlet") ||
-                     (fg.groupType == "pressure-outlet"))
-            {
-                bc->bcType = "PressureBoundary";
-            }
-            else if ((fg.groupType == "symmetry"))
-            {
-                bc->bcType = "Symmetry";
-            }
-            else
-              throw CException("FlowModel: unknown face group type "
-                               + fg.groupType);
         }
     }
   }
