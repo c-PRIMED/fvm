@@ -83,7 +83,7 @@ def run_all_tests(bp):
     errs = ok = 0
 
     # run any before commands
-    run_commands('before', 'Testing')
+    run_commands('Testing', 'before')
     
     # add some dirs to our path
     tooldir = os.path.join(bp.topdir, "tools", "test")
@@ -95,7 +95,7 @@ def run_all_tests(bp):
     except:
         oldpypath = ''    
     set_python_path(bp.blddir)
-
+        
     # test each package
     for p in bp.packages:
         x = config(p.name,'Build')

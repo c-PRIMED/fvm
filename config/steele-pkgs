@@ -32,6 +32,7 @@ netcdf:
 netCDF4:
 	Build=True
 
-# Needed for MPM
+# Needed for FVM
 parmetis:
+	modules=mpich2-intel
 	Build=True
