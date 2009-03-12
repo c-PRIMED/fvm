@@ -21,6 +21,7 @@ struct FaceGroup
 {
   const int id;
   const string groupType;
+  const StorageSite site;
 private:
   FaceGroup();
 };
@@ -38,15 +39,23 @@ public:
       IBTYPE_SOLID,
       IBTYPE_BOUNDARY
     };
-
-  int getFaceGroupCount() const;
   int getIBTypeForCell(const int c) const;
   
   void setIBTypeForCell(const int c, const int type);
 
   VecD3 getCellCoordinate(const int c) const;
   const StorageSite& getCells() const;
+  const StorageSite& getNodes() const;
+  const StorageSite& getFaces() const;
+
   const StorageSite& getIBFaces() const;
+  
+  const FaceGroup& getInteriorFaceGroup() const;
+  
+  int getFaceGroupCount() const;
+  int getBoundaryGroupCount() const;
+  int getInterfaceGroupCount() const;
+  
   ArrayBase* getNodeCoordinates();
 
   const CRConnectivity& getConnectivity(const StorageSite& from,
