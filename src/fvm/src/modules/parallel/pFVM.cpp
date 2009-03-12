@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
   //mesh_list
    vector<int> npart( mesh_list.size(),  MPI::COMM_WORLD.Get_size() );
-   vector<int> etype( mesh_list.size(), PartMesh::TRI);
+   vector<int> etype( mesh_list.size(), 1);
 
   //constructer to PartMesh
    PartMesh part_mesh(mesh_list, npart, etype );
@@ -67,18 +67,14 @@ int main(int argc, char *argv[])
      nc_writer.record();
 
      NcDataReader  nc_reader( ss.str() );
-     nc_reader.read();
-
-     //nface_row       += nc_reader.getMeshList().at(id)->getAllFaceCells().getRow().getLength();
-     //nfaceCells_col  += nc_reader.getMeshList().at(id)->getAllFaceCells().getCol().getLength();
-    //cout << " proc id =  " << MPI::COMM_WORLD.Get_rank() << " nface_row = " << nface_row << endl;
-
+// 
      stringstream ss_test;
      ss_test << "test_test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
-     //cout <<  ss_test.str() << endl;
-     NcDataWriter  nc_writer_test( nc_reader.getMeshList(), ss_test.str() );
-     nc_writer_test.record();
-
+     cout <<  ss_test.str() << endl;
+       MeshList meshes = nc_reader.getMeshList();
+       NcDataWriter  nc_writer_test( meshes, ss_test.str() );
+       nc_writer_test.record();
+       NcDataReader::destroyMeshList( meshes );
 
    MPI::Finalize();
    return 0;
