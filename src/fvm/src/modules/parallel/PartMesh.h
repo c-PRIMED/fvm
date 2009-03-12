@@ -45,9 +45,8 @@ public:
     enum NUMFLAG{ C_STYLE = 0, FORTRAN_STYLE = 1 };
     enum CELLTYPE{ INTERIOR = 1, GHOST_BOUNDARY_CELL = 2, GHOST_INTERFACE_CELL};
 
-  explicit PartMesh(const MeshList& mesh_list, vector<int> npart,
-                    vector<int> eType);
-    ~PartMesh();
+   explicit PartMesh(const MeshList& mesh_list, vector<int> npart, vector<int> eType);
+   ~PartMesh();
 
     void partition();
     void mesh();
@@ -60,8 +59,8 @@ public:
 
 
     // set property methods
-    void setWeightType(PartMesh::WTYPE weight_type);
-    void setNumFlag(PartMesh::NUMFLAG num_flag);
+    void setWeightType( int weight_type );
+    void setNumFlag( int num_flag);
 
 private:
 
@@ -103,7 +102,7 @@ private:
    void mesh_file();
 
 
-   const MeshList& _meshList;
+   const MeshList _meshList;
    vector<int> _nPart;
    vector<int> _totElems;
    vector<int> _totElemsAndGhosts;

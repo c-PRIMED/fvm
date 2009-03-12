@@ -27,11 +27,10 @@
 
 
 
-PartMesh::PartMesh( const MeshList &mesh_list, vector<int> nPart,
-                    vector<int> eType ):
+PartMesh::PartMesh( const MeshList &mesh_list, vector<int> nPart,  vector<int> eType ):
 _meshList(mesh_list), _nPart(nPart), _eType(eType), _options(0)
 {
-
+  // if ( !MPI::Is_initialized() )  MPI::Init();
    init();
 }
 
@@ -87,7 +86,7 @@ PartMesh::~PartMesh()
    for ( it_mesh = _meshListLocal.begin(); it_mesh != _meshListLocal.end(); it_mesh++)
         delete *it_mesh;
    
-
+   //if ( !MPI::Is_finalized() )  MPI::Finalize();
 }
 
 
@@ -116,13 +115,13 @@ PartMesh::mesh()
 void
 PartMesh::partition()
 {
-
+ 
    compute_elem_dist();
-   elem_connectivity();
-   parmetis_mesh();
-   map_part_elms();
-   count_elems_part();
-   exchange_part_elems();
+    elem_connectivity();
+    parmetis_mesh();
+    map_part_elms();
+    count_elems_part();
+    exchange_part_elems();
   
 
 }
@@ -668,20 +667,19 @@ PartMesh::debug_print()
 
              //SET PROPERTIES METHODS
 void 
-PartMesh::setWeightType(PartMesh::WTYPE weight_type)
+PartMesh::setWeightType( int weight_type )
 {
    for ( int id = 0; id < _nmesh; id++)
-      _wghtFlag.at(id) = int( weight_type );
+      _wghtFlag.at(id) =  weight_type;
 
 }
 
 void 
-PartMesh::setNumFlag(PartMesh::NUMFLAG num_flag)
+PartMesh::setNumFlag( int num_flag )
 {
   for ( int id = 0; id < _nmesh; id++)
-      _numFlag.at(id) = int( num_flag );
+      _numFlag.at(id) = num_flag;
 
-  //cout << " NUM_FLAG = " << _numFlag.at(0) << endl;
 }
 
            // PRIVATE METHODS
@@ -821,8 +819,8 @@ PartMesh::elem_connectivity()
       _eInd.push_back( new int[local_nodes(id)] );
 
  
-      //setting ePtr and eInd for ParMETIS
-      set_eptr_eind(id);
+//       //setting ePtr and eInd for ParMETIS
+       set_eptr_eind(id);
 
      _part.push_back( new  int[mesh_nlocal] );
       for ( int n = 0; n < mesh_nlocal; n++)
@@ -853,27 +851,20 @@ PartMesh::set_eptr_eind( int id )
 {
       const Mesh* mesh = _meshList[id];
       const CRConnectivity& cellNodes = mesh->getCellNodes();
-     // const StorageSite&    cellSite  = cellNodes.getRowSite();
-     // const StorageSite&    nodesSite = cellNodes.getColSite();
 
       int elem_start   = (*_globalIndx.at(id))[_procID];
       int elem_finish  = elem_start + (*_elemDist[id])[_procID];
       int indxInd   = 0;
       int indxPtr   = 0;
       _ePtr.at(id)[indxPtr] = 0;
-      //cout << " elem_start = " << elem_start << " elem_finish = " << elem_finish << endl;
       for ( int elem = elem_start; elem < elem_finish; elem++ ){
-          
           _eElm.at(id)[indxPtr] = elem;
            indxPtr++;
           _ePtr.at(id)[indxPtr] = _ePtr.at(id)[indxPtr-1] +  cellNodes.getCount(elem);
           for (  int node = 0; node < cellNodes.getCount(elem); node++)
              _eInd.at(id)[indxInd++] = cellNodes(elem,node);
-         // if (_procID == 0)
-          //cout << " ePtr[" << indxPtr << "] = " << _ePtr.at(id)[indxPtr] << endl;
-
       }
-     // cout << " indxIndx = " << indxInd << endl;
+
 }
 
 
