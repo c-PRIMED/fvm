@@ -1,6 +1,7 @@
-%module parallel
+%module fvmparallel
 %{
 #include "PartMesh.h"
+#include "mpi.h"
 %}
 
 %include "std_vector.i"
@@ -19,10 +20,11 @@ public:
     enum NUMFLAG{ C_STYLE = 0, FORTRAN_STYLE = 1 };
     enum CELLTYPE{ INTERIOR = 1, GHOST_BOUNDARY_CELL = 2, GHOST_INTERFACE_CELL};
 
-  PartMesh(const MeshList& mesh_list, vector<int> npart,
-                    vector<int> eType);
-  void partition();
+    PartMesh(const MeshList& mesh_list, vector<int> npart,
+             vector<int> eType);
+    void partition();
     void mesh();
+    const MeshList&  meshList();
     void dumpTecplot();
     void mesh_debug();
 
@@ -30,5 +32,7 @@ public:
     // set property methods
     void setWeightType(PartMesh::WTYPE weight_type);
     void setNumFlag(PartMesh::NUMFLAG num_flag);
+ 
 };
+
 
