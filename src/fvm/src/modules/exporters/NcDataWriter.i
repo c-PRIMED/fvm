@@ -1,4 +1,3 @@
-%module NcWriter
 %{
 #include "NcDataWriter.h"
 %}

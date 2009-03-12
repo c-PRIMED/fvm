@@ -57,3 +57,5 @@ public:
   FaceZonesMap& getFaceZones();
   CellZonesMap& getCellZones();
 };
+
+%include "NcDataReader.i"

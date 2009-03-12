@@ -4,6 +4,6 @@ src = [
     'NcDataWriter.cpp'
     ]
 
-env.createSharedLibrary('exporters',src,['rlog','fvmbase'])
+env.createSharedLibrary('exporters',src,['rlog','fvmbase', 'netcdf'])
 env.createATypedSwigModule('exporters_atyped',sources=['FluentDataExporter.i'],
-                           deplibs=['fvmbase','exporters','importers','rlog'])
+                           deplibs=['fvmbase','exporters','importers','rlog','netcdf'])

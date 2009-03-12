@@ -26,3 +26,6 @@ public:
 };
 
 %template(FluentDataExporterA) FluentDataExporter<ATYPE_STR>;
+
+%include "NcDataWriter.i"
+
