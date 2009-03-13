@@ -107,7 +107,7 @@ PartMesh::mesh()
     mesh_setup();
     mappers();
 
-    //debug_print();
+    debug_print();
 
 }
 
@@ -710,6 +710,7 @@ PartMesh::init()
    _nonInteriorCells.resize(_nmesh ); //local numbering
    _bndryOffsets.resize( _nmesh );
    _interfaceOffsets.resize( _nmesh );
+   _mapCellToOrderedCell.resize( _nmesh );
    _windowSize.resize( _nmesh );
    _fromIndices.resize( _nmesh );
    _toIndices.resize( _nmesh );
@@ -1309,7 +1310,7 @@ PartMesh::interfaces()
     _interfaceMap.resize( _nmesh );
     for ( int id = 0; id < _nmesh; id++){
        int nface =   _partFaces.at(id)->getCount( _procID );
-        for ( int face = 0; face < nface; face++){
+        for ( int face = 0; face < nface; face++ ){
              int face_globalID = (*_partFaces.at(id))(_procID,face);
 
             if (_faceParts.at(id)->getCount(face_globalID) == 2 ){  // ==2 means sharing interface
@@ -1369,6 +1370,8 @@ PartMesh::local_number_elems()
          for ( int n = 0; n < _nelems.at(id); n++){
                int local_elem_id = globalToLocal[ _elem.at(id)[n] ];
                _elemLocal.at(id).insert(local_elem_id);
+               if ( MPI::COMM_WORLD.Get_rank() == 0)
+                 cout <<  " elem = " << n << ", local id = " << local_elem_id << endl;
          }
     }
 
@@ -1385,7 +1388,7 @@ PartMesh::non_interior_cells()
            _nonInteriorCells.at(id).insert( local_cell_id );
         }
 
-        for ( it = _interfaceMap.at(id).begin(); it != _interfaceMap.at(id).end(); it++){
+        for ( it = _interfaceMap.at(id).begin(); it != _interfaceMap.at(id).end(); it++ ){
             int cell_0 = (*_faceCells.at(id))(it->second,0);
             int cell_1 = (*_faceCells.at(id))(it->second,1);
             if ( _elemLocal.at(id).count(cell_0) == 0 )
@@ -1405,7 +1408,6 @@ PartMesh::non_interior_cells()
 void 
 PartMesh::order_faceCells_faceNodes()
 {
-   
      for ( int id = 0; id < _nmesh; id++ ){
 
         _faceCellsOrdered.push_back( CRConnectivityPtr( new  CRConnectivity(*_faceSite.at(id), *_cellSite.at(id)) ) );
@@ -1425,9 +1427,8 @@ PartMesh::order_faceCells_faceNodes()
          _faceCellsOrdered.at(id)->finishCount();
          _faceNodesOrdered.at(id)->finishCount();
 
-
-
          //start with interior faces
+         int cellID = 0;
          int face_track = 0;
          int nface_local = _partFaces.at(id)->getCount( _procID );
          for ( int face = 0; face < nface_local; face++){
@@ -1436,12 +1437,17 @@ PartMesh::order_faceCells_faceNodes()
              bool is_interior = _nonInteriorCells.at(id).count(cell_0) == 0 &&
                                 _nonInteriorCells.at(id).count(cell_1) == 0; 
               if ( is_interior ) {
+
+
                  _faceCellsOrdered.at(id)->add(face_track,cell_0);
                  _faceCellsOrdered.at(id)->add(face_track,cell_1);
 
+                  _mapCellToOrderedCell.at(id).insert( pair<int,int>(cellID, cell_0) );
+                  _mapCellToOrderedCell.at(id).insert( pair<int,int>(cellID, cell_1) );
+
                  for  ( int node = 0; node < count_node; node++)
                     _faceNodesOrdered.at(id)->add( face_track, (*_faceNodes.at(id))( face, node ) );
-   
+
                  face_track++;
               }
          }
@@ -1461,13 +1467,12 @@ PartMesh::order_faceCells_faceNodes()
              _bndryOffsets.at(id).insert( pair<int,int>(bndryID, offset) );
  
           for ( it_cell = it.first; it_cell != it.second; it_cell++ ){
-               
+
                int elem_0 =  _faceCells.at(id)->getGlobalToLocalMap()[it_cell->second];
                int elem_1 =  (*_cellCells.at(id))(elem_0, 0);
               _faceCellsOrdered.at(id)->add(face_track, elem_1);
               _faceCellsOrdered.at(id)->add(face_track, elem_0);
-              
-               
+
                int count_node = _faceNodes.at(id)->getRow()[1] - _faceNodes.at(id)->getRow()[0];
                for  ( int node = 0; node < count_node; node++)
                     _faceNodesOrdered.at(id)->add( face_track, (*_cellNodes.at(id))(elem_0,node) );

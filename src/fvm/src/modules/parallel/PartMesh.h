@@ -174,6 +174,8 @@ private:
 
    vector< map<int,int> > _bndryOffsets;
    vector< map<int,int> > _interfaceOffsets;
+   vector< map<int,int> > _mapCellToOrderedCell;
+
   //variables aglomorated for MPI communications
    vector< ArrayIntPtr >  _interfaceMeshCounts; //ArrayIntPtr[0] = value , 0th mesh has total "value" neigh interfaced meshes
    vector< ArrayIntPtr >  _offsetInterfaceCells; //this start location of interfaces, need at communuctation a lot 
