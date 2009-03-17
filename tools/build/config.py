@@ -5,9 +5,7 @@ import os
 
 # defaults
 
-_config_pkgs = {}
-
-_config_srcs = {
+_config = {
     'Testing': {
         'queue': 'standby',
         'cpus' : '8',
@@ -57,19 +55,13 @@ def set_value(val):
         _config[section] = {lval:rval}
     return True
 
-def read(srcpath, filename, sources, packages):
+def read(srcpath, filename, packages):
     global _config
 
     if filename == '': return False
-    if sources:
-        _config = _config_srcs.copy()
-    else:
-        _config = _config_pkgs.copy()
 
     filename = os.path.join(srcpath, "config", filename)
-    filenames = []
-    if sources:
-        filenames.append(filename)
+    filenames = [filename]
     if packages:
         filenames.append(filename+'-pkgs')
 

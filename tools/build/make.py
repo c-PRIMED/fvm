@@ -78,11 +78,8 @@ def main():
         where = cname.find("-pkgs")
         cname = cname[0:where]
         packages = True
-        sources = False
-    else:
-        sources = True
 
-    if cname == '' or not config.read(srcpath, cname, sources, packages):
+    if cname == '' or not config.read(srcpath, cname, packages):
         usage()
 
     if options.all:
@@ -132,10 +129,6 @@ def main():
                 break
         be = time.time()
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
-
-    # Reread config file because we don't test or report compile errors on packages, only memosa sources
-    if packages:
-        config.read(srcpath, cname, True, False)
 
     # TESTING
     if options.test and not pbs.start(BuildPkg, cname):
