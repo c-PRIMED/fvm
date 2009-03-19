@@ -483,10 +483,7 @@ NcDataReader::face_cells( int id, const MeshList&  meshList )
 {
      //faceCells
     int nfaces = _facesCountVals[id];
-     StorageSitePtr  rowSite( new StorageSite( nfaces ) );
-     StorageSitePtr  colSite( new StorageSite( _cellsCountVals[id], _ghostCellsCountVals[id] ) );
-
-     CRConnectivityPtr  faceCells ( new CRConnectivity( *rowSite, *colSite ) );
+     CRConnectivityPtr  faceCells ( new CRConnectivity( meshList.at(id)->getFaces(), meshList.at(id)->getCells() ) );
 
      faceCells->initCount();
 
@@ -513,10 +510,7 @@ NcDataReader::face_nodes( int id, const MeshList&  meshList )
 {
      //faceNodes
     int nfaces = _facesCountVals[id];
-     StorageSitePtr  rowSite( new StorageSite( nfaces ) );
-     StorageSitePtr  colSite( new StorageSite( _nodesCountVals[id]) );
-
-     CRConnectivityPtr  faceNodes ( new CRConnectivity( *rowSite, *colSite ) );
+     CRConnectivityPtr  faceNodes ( new CRConnectivity( meshList.at(id)->getFaces(), meshList.at(id)->getNodes() ) );
 
      faceNodes->initCount();
      int node_count = _faceNodesRowVals[1] - _faceNodesRowVals[0];   
