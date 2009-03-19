@@ -95,7 +95,8 @@ private:
    void create_window( int id );
    void free_window( );
    void fence_window();
-   int get_window_displ( int id, int neigh_mesh_id );
+   int  get_window_displ( int id, int neigh_mesh_id );
+   void construct_mesh( int id );
 
     
    void mesh_tecplot();
@@ -174,7 +175,13 @@ private:
 
    vector< map<int,int> > _bndryOffsets;
    vector< map<int,int> > _interfaceOffsets;
-   vector< map<int,int> > _mapCellToOrderedCell;
+   vector< vector<int> > _cellToOrderedCell;
+   vector< vector<bool> > _isOneToOneMap;
+   vector< multimap<int,int> > _globalToLocalMappers; 
+   vector< multimap<int,int> > _localToGlobalMappers;
+
+  vector< ArrayIntPtr > _globalToLocalMap;
+  vector< ArrayIntPtr > _localToGlobalMap;
 
   //variables aglomorated for MPI communications
    vector< ArrayIntPtr >  _interfaceMeshCounts; //ArrayIntPtr[0] = value , 0th mesh has total "value" neigh interfaced meshes
