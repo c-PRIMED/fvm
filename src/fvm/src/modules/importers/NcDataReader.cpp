@@ -404,6 +404,8 @@ NcDataReader::meshList()
     if ( _nInterface > 0 )
        mappers( meshList);
 
+
+
      return meshList;
 }
 
@@ -550,7 +552,6 @@ NcDataReader::mappers( const MeshList&  meshList )
            ArrayIntPtr  fromIndices( new Array<int>( size ) );
            ArrayIntPtr  toIndices  ( new Array<int>( size ) );
 
-
           //get portion values
           for ( int i = 0; i < size; i++){
               (*fromIndices)[i] = _fromIndicesVals[indx];
@@ -560,11 +561,29 @@ NcDataReader::mappers( const MeshList&  meshList )
            shared_ptr< OneToOneIndexMap >  oneToOneMapPtr( new OneToOneIndexMap(fromIndices, toIndices)  );
            cellMappers[ meshList.at(id)->getGhostCellSite( neighMeshID ) ] =  oneToOneMapPtr;
        }
+        meshList.at(id)->getCells().scatterGatherMaps( );
+//
+//         const StorageSite& cells  = meshList.at(id)->getCells();
+//         const StorageSite::ScatterMap& scatterMap = cells.getScatterMap();
+//         const StorageSite::GatherMap&  gatherMap  = cells.getGatherMap();
+//        if ( _fname == "test_3.cdf" ){
+//           const StorageSite* site =  meshList.at(id)->getGhostCellSite(2);
+//           const Array<int> & scatter_array =  *(scatterMap.find(site)->second);
+//           const Array<int> & gather_array  =  *(gatherMap.find(site)->second);
+//         
+//           for ( int n = 0; n < scatter_array.getLength(); n++)
+//              cout <<  "scatter array[" << n << "]=" << scatter_array[n] <<  endl;
+// 
+//           for ( int n = 0; n < gather_array.getLength(); n++)
+//              cout <<  "gather array[" << n << "]=" << gather_array[n] <<  endl;
+// 
+//        }
+
+
     }
 
 
 }
-
 
 
 
