@@ -8,9 +8,8 @@
 #include "StorageSite.h"
 #include "GlobalFields.h"
 #include "CRMatrixTranspose.h"
-
 #include "Mesh.h"
-
+#include "MatrixOperation.h"
 
   
 /**
@@ -335,7 +334,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   const StorageSite& faces = mesh.getFaces();
   const CRConnectivity& ibFaceToCells = mesh.getConnectivity(ibFaces,cells);
   const CRConnectivity& ibFaceToParticles
-    = mesh.getConnectivity(ibFaces,cells);
+    = mesh.getConnectivity(ibFaces,mpmParticles);
 
   const VectorT3Array& xFaces =
     dynamic_cast<const VectorT3Array&>(_coordField[faces]);
@@ -361,6 +360,9 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 
   Array<T>& cellToIBCoeff = cellToIB->getCoeff();
   Array<T>& particlesToIBCoeff = particlesToIB->getCoeff();
+
+#if 1
+  /******distance weighted interpolation******/
 
   for(int n=0; n<nIBFaces; n++)
   {
@@ -388,18 +390,137 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       }
 
       if (nnb == 0)
-        throw CException("no cell or particle neighbors for ib face");
+	throw CException("no cell or particle neighbors for ib face");
       
       for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
       {
-          cellToIBCoeff[nc] /= wtSum;
+	cellToIBCoeff[nc] /= wtSum;
       }
 
       for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
       {
-          particlesToIBCoeff[np] /= wtSum;
+	particlesToIBCoeff[np] /= wtSum;
       }
   }
+#endif
+
+#if 0
+
+  /**********linear least square interpolation*********/
+  // X=x-xf  Y=y-yf  Z=Z-zf
+  //matrix M=[1 X1 Y1 Z1]
+  //         [1 X2 Y2 Z2]
+  //         ...........
+  //         [1 Xn Yn Zn]
+  //coefficient matrix A=[a, b, c, d]T
+  //velocity element v = M * A
+  //linear relation v = a + b*X + c*Y + d*Z
+  //to make least square
+  //matrix A = (M(T)*M)^(-1)*M(T)*v
+  //so, velocity at face is vface = a + b*Xf + c*Yf + d*Zf = a
+  //which is the first row of matrix A
+  //so, the weight function should be the first row of  (M(T)*M)^(-1)*M(T)
+  //note Q = M(T)*M  and Qinv = Q^(-1)
+  //the following code is to calculate it
+  //insteading of doing full matrix operation, only nessesary operation on entries are performed
+
+ 
+
+  for(int n=0; n<nIBFaces; n++)
+  {
+      const int f = ibFaceIndices[n];
+      T wt(0);
+       int nnb(0);
+       //calculate Q (4x4)
+      T Q[4][4];
+      T Qinv[4][4];
+
+      for(int i=0; i<4; i++){
+	for(int j=0; j<4; j++){
+	  Q[i][j]=Qinv[i][j]=0;
+	}
+      }
+      
+
+       for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
+      {
+          const int c = ibFCCol[nc];
+          VectorT3 dr(xCells[c]-xFaces[f]);
+	  //cout<<n<<" cells "<<c<<" "<<xCells[c]<<endl;
+	  //cout<<n<<" faces "<<f<<" "<<xFaces[f]<<endl;
+	  Q[0][0] += 1.0;
+	  Q[0][1] += dr[0];
+	  Q[0][2] += dr[1];
+	  Q[0][3] += dr[2];
+	  Q[1][1] += dr[0]*dr[0];
+	  Q[1][2] += dr[0]*dr[1];
+	  Q[1][3] += dr[0]*dr[2];
+	  Q[2][2] += dr[1]*dr[1];
+	  Q[2][3] += dr[1]*dr[2];
+	  Q[3][3] += dr[2]*dr[2];          
+          nnb++;
+      }
+      for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
+      {
+          const int p = ibFPCol[np];
+          VectorT3 dr(xParticles[p]-xFaces[f]);
+	  // cout<<n<<" particles "<<p<<" "<<xParticles[p]<<endl;
+	  Q[0][0] += 1.0;
+	  Q[0][1] += dr[0];
+	  Q[0][2] += dr[1];
+	  Q[0][3] += dr[2];
+	  Q[1][1] += dr[0]*dr[0];
+	  Q[1][2] += dr[0]*dr[1];
+	  Q[1][3] += dr[0]*dr[2];
+	  Q[2][2] += dr[1]*dr[1];
+	  Q[2][3] += dr[1]*dr[2];
+	  Q[3][3] += dr[2]*dr[2];      
+	  nnb++;
+      }
+      
+      if (nnb == 0)
+	throw CException("no cell or particle neighbors for ib face");
+
+      //symetric matrix
+      for(int i=0; i<4; i++){
+	for(int j=0; j<i; j++){
+	  Q[i][j]=Q[j][i];
+	}
+      }
+     
+      //calculate the inverse of Q(4x4)
+     
+      matrix<T> matrix;
+      matrix.Invert4x4(Q, Qinv);
+
+     
+
+
+      //calculate Qinv*M(T) get the first row element, put in coeffMatrix
+       for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
+      {
+          const int c = ibFCCol[nc];
+          VectorT3 dr(xCells[c]-xFaces[f]);
+	  wt = Qinv[0][0];
+	  for (int i=1; i<=3; i++){
+	    wt += Qinv[0][i]*dr[i-1];
+	  }
+	  cellToIBCoeff[nc] = wt;
+	  //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
+      }
+       for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
+      {
+          const int p = ibFPCol[np];
+          VectorT3 dr(xParticles[p]-xFaces[f]);
+	  wt = Qinv[0][0];
+	  for (int i=1; i<=3; i++){
+	    wt += Qinv[0][i]*dr[i-1];
+	  }
+	  particlesToIBCoeff[np] = wt;
+	  // cout<<n<<" particles  "<<np<<" "<<particlesToIBCoeff[np]<<endl;
+      }
+  }
+#endif
 
   GeomFields::SSPair key1(&ibFaces,&cells);
   this->_geomFields._interpolationMatrices[key1] = cellToIB;
@@ -438,6 +559,161 @@ MeshMetricsCalculator<T>::init()
       calculateCellVolumes(mesh);
   }
 }
+//***********************************************************************//
+
+template<class T>
+void
+MeshMetricsCalculator<T>::computeGridInterpolationMatrices
+(const Mesh& mesh,
+ const StorageSite& grids)
+{
+  typedef CRMatrixTranspose<T,T,T> IMatrix;
+  
+  const StorageSite& faces = mesh.getFaces();
+ 
+  const CRConnectivity& faceToGrids = mesh.getConnectivity(faces, grids );
+
+  const VectorT3Array& xFaces =
+    dynamic_cast<const VectorT3Array&>(_coordField[faces]);
+
+  const VectorT3Array& xGrids =
+    dynamic_cast<const VectorT3Array&>(_coordField[grids]);
+
+  const Array<int>& FGRow = faceToGrids.getRow();
+  const Array<int>& FGCol = faceToGrids.getCol();
+  
+  const int nGrids = grids.getCount();
+
+  const int nFaces = faces.getCount();
+  
+  shared_ptr<IMatrix> gridToFaces (new IMatrix(faceToGrids));
+ 
+  Array<T>& gridToFaceCoeff = gridToFaces->getCoeff(); 
+
+#if 0
+  /* distance weighted */
+  for(int n=0; n<nFaces; n++)
+  {
+     
+      T wtSum(0);
+      int nnb(0);
+      
+      for(int nc = FGRow[n]; nc < FGRow[n+1]; nc ++)
+      {
+	  
+          const int c = FGCol[nc ];	 
+          VectorT3 dr(xGrids[c]-xFaces[n]);	 
+          T wt = 1.0/dot(dr,dr);
+          gridToFaceCoeff[nc ] = wt;
+          wtSum += wt;
+          nnb++;
+      }
+     
+     
+      
+      for(int nc=FGRow[n]; nc<FGRow[n+1]; nc++)
+      {
+          gridToFaceCoeff[nc] /= wtSum;	
+      }
+     
+  }
+#endif 
+
+
+#if 1
+   /* linear interpolation */
+   // v = a + b*x +c*y
+   //solve a, b, c 
+   T Q[3][3];
+   T Qinv[3][3];
+
+ 
+   for(int n=0; n<nFaces; n++)
+     {
+      T wt(0);
+      int nnb(0);
+         
+      for(int i=0; i<3; i++){
+	for(int j=0; j<3; j++){
+	  Q[i][j]=Qinv[i][j]=0;
+	}
+      }
+      int size = FGRow[n+1]-FGRow[n];
+     
+      // if(size == 3){
+      for(int nc=FGRow[n]; nc<FGRow[n+1]; nc++)
+	{
+          const int c = FGCol[nc];
+	  VectorT3 dr(xGrids[c]-xFaces[n]);
+	  //VectorT3 dr(xGrids[c]);
+	  Q[nnb][0]=1.0;
+	  Q[nnb][1]=dr[0];
+	  Q[nnb][2]=dr[1];
+          nnb++;
+      }
+       
+      matrix<T> matrix;
+      matrix.Invert3x3(Q, Qinv);
+      nnb = 0;
+      for(int nc=FGRow[n]; nc<FGRow[n+1]; nc++)
+	{	  
+	  //wt = Qinv[0][nnb]+xFaces[n][0]*Qinv[1][nnb]+xFaces[n][1]*Qinv[2][nnb];
+	  wt = Qinv[0][nnb];
+	  gridToFaceCoeff[nc] = wt;
+	  nnb++;
+
+	}
+      //}
+     }
+ 
+ 
+ 
+#endif
+
+
+
+#if 0
+   //bi-linear average 
+   for(int n=0; n<nFaces; n++)
+     {
+       const int ncSize = FGRow[n+1] - FGRow[n];
+       T dX[ncSize];
+       T dY[ncSize];
+       T dZ[ncSize];
+       T wt[ncSize];
+       int count = 0;
+       for(int nc=FGRow[n]; nc<FGRow[n+1]; nc++)
+	{
+          const int c = FGCol[nc];
+          VectorT3 dr(xGrids[c]-xFaces[n]);
+	  dX[count] = fabs(dr[0]);
+	  dY[count] = fabs(dr[1]);
+	  dZ[count] = fabs(dr[2]);
+	  count++;	  
+	}
+       const T u = dX[0]/(dX[0]+dX[2]);
+       const T v = dY[0]/(dY[0]+dY[1]);
+       wt[3] = u*v;
+       wt[2] = u*(1.-v);
+       wt[1] = (1.-u)*v;
+       wt[0] = (1.-u)*(1.-v);
+       count = 0;
+       for(int nc=FGRow[n]; nc<FGRow[n+1]; nc++)
+       {
+	 gridToFaceCoeff[nc] = wt[count];
+	 count++;
+       }
+       
+     }
+
+
+#endif
+ 
+  GeomFields::SSPair key1(&faces,&grids);
+  this->_geomFields._interpolationMatrices[key1] = gridToFaces;
+  
+}
+//**************************************************************************//
 
 template<class T>
 void
@@ -450,6 +726,18 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p)
       computeIBInterpolationMatrices(mesh,p);
   }
 }
+template<class T>
+void
+MeshMetricsCalculator<T>::computeGridInterpolationMatrices(const StorageSite& g)
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      computeGridInterpolationMatrices(mesh,g);
+  }
+}
+
 
 template<class T>
 MeshMetricsCalculator<T>::~MeshMetricsCalculator()

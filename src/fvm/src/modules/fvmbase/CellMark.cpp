@@ -115,7 +115,7 @@ void reportCellMark (const Mesh& mesh, const int nCells,
 		     const string fileBase)
 {
     
-    string fileName=fileBase+"Output/CellMark_ring.dat";
+    string fileName=fileBase+"Debug2/CellMark.dat";
     char* file;
     file=&fileName[0];
     FILE *fp=fopen(file,"w");
@@ -126,9 +126,9 @@ void reportCellMark (const Mesh& mesh, const int nCells,
     } 
     fclose(fp);  
 
-    string fileName1 = fileBase+"Output/FluidCell_ring.dat";
-    string fileName2 = fileBase+"Output/IBMCell_ring.dat";
-    string fileName3 = fileBase+"Output/SolidCell_ring.dat";
+    string fileName1 = fileBase+"Debug2/FluidCell.dat";
+    string fileName2 = fileBase+"Debug2/IBMCell.dat";
+    string fileName3 = fileBase+"Debug2/SolidCell.dat";
     char* file1;
     char* file2;
     char* file3;
@@ -178,7 +178,7 @@ void markIBFaces(Mesh& mesh, const int nCells,
 	}	
       }
     }
-    //cout<<"ibFaceCount is "<<ibFaceCount<<endl;
+    cout<<"ibFaceCount is "<<ibFaceCount<<endl;
 
       
     //then, allocate an array for ibFace
@@ -205,7 +205,7 @@ void markIBFaces(Mesh& mesh, const int nCells,
 	}
       }
     }
-        
+   
     //initialize storagesite ibFaces
     StorageSite&  ibFaces = mesh.getIBFaces();
     ibFaces.setCount(ibFaceCount);
@@ -226,11 +226,16 @@ const shared_ptr<CRConnectivity> setibFaceParticles
 			   const Array<int>& ibFaceList,
 			   const StorageSite& particles,
 			   const CRConnectivity& faceCells, 
-			   const CRConnectivity& cellParticles)
+			   const CRConnectivity& cellParticles,
+			   const Array<int>& particleType)
 {
+
+  //CR connectivity cellParticles includes all the particles located in each cell
+  //here, we want to create ibFace to Particles in which only the surface particles are counted in
+  //surface particles are identified by particle type 1
 					       
   shared_ptr<CRConnectivity> ibFaceParticles (new CRConnectivity (ibFaces, particles));
-
+  int maxcount = 0;
   //initCount: new Array for row
   (*ibFaceParticles).initCount();
   const int rowSize = ibFaces.getCount();
@@ -243,14 +248,44 @@ const shared_ptr<CRConnectivity> setibFaceParticles
     const int C1 = faceCells(faceIndex, 1);
     if (mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_BOUNDARY){  
       const int nP = cellParticles.getCount(C0);
-     (*ibFaceParticles).addCount(p, nP);
+      if(nP>=maxcount) 
+	maxcount=nP;    
+      int count=0;
+      for(int n=0; n<nP; n++){
+	int pID = cellParticles(C0, n);
+	if(particleType[pID] == 1){
+	  count++;
+	  }
+      }
+      if(count < 2){
+	cout<<"Warning!!! Not enough surface particles to interpolate!"<<count<<endl;
+      }
+      //cout<<"face-cell-particle# "<<faceIndex<<" "<<C0<<" "<<count<<endl;
+      
+      (*ibFaceParticles).addCount(p, count);      
     }
     else if(mesh.getIBTypeForCell(C1) == Mesh::IBTYPE_BOUNDARY){  
       const int nP = cellParticles.getCount(C1);
-     (*ibFaceParticles).addCount(p, nP);
+      if(nP>=maxcount) 
+	maxcount=nP;    
+      int count=0;
+      for(int n=0; n<nP; n++){
+	int pID = cellParticles(C1, n);
+	if(particleType[pID] == 1){
+	  count++;
+	}
+      }
+      if(count < 2){
+	cout<<"Warning!!! Not enough surface particles to interpolate!"<<count<<endl;
+      }
+      cout<<"face-cell-particle# "<<faceIndex<<" "<<C0<<" "<<count<<endl;
+      
+      (*ibFaceParticles).addCount(p, count);           
     }
+    else cout<<"ibface to particle error!"<<endl;
   }
 
+  cout<<"max count of particles in IB Cells is "<<maxcount<<endl;
   //finishCount: allocate col array and reset row array
   //ready to get the entries for nonzeros
   (*ibFaceParticles).finishCount();
@@ -263,17 +298,22 @@ const shared_ptr<CRConnectivity> setibFaceParticles
     if (mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_BOUNDARY){   //ib cells
       const int nP = cellParticles.getCount(C0);
       for(int n=0; n<nP; n++){
-	int value=cellParticles(C0,n);
-	(*ibFaceParticles).add(p, value);
+	int pID=cellParticles(C0,n);
+	if(particleType[pID] == 1){
+	  (*ibFaceParticles).add(p, pID);
+	}
       }
     }
     else if(mesh.getIBTypeForCell(C1) == Mesh::IBTYPE_BOUNDARY){ //ib cells
       const int nP = cellParticles.getCount(C1);
       for(int n=0; n<nP; n++){
-	int value=cellParticles(C1,n);
-	(*ibFaceParticles).add(p, value);
+	int pID=cellParticles(C1,n);
+	if(particleType[pID] == 1){
+	  (*ibFaceParticles).add(p, pID);
+	}
       }     
     }
+     else cout<<"ibface to particle error!"<<endl;
   }
   
   (*ibFaceParticles).finishAdd();
@@ -292,7 +332,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
 {
 
   shared_ptr<CRConnectivity> ibFaceCells (new CRConnectivity (ibFaces, cells));
-
+  int maxcount=0;
   //initCount: new Array for row
   (*ibFaceCells).initCount();
   
@@ -300,10 +340,11 @@ const shared_ptr<CRConnectivity> setibFaceCells
 
   //specify a radius for search
   //const int nCells = cells.getCount();
-  const double radius = 0.05;
+  const double radius = 0.013;
 
   //specify the number of nonzeros for each row
  
+
   for(int p=0; p<rowSize; p++){
     const int faceIndex = ibFaceList [p];
     const VecD3 center = faceCentroid[faceIndex];
@@ -317,8 +358,11 @@ const shared_ptr<CRConnectivity> setibFaceCells
 	count++;
     }
     (*ibFaceCells).addCount(p, count);   
+    if (count>=maxcount)
+      maxcount=count;
   }
     
+  cout<<"max Cell neibhbors  "<<maxcount<<endl;
   
   //finishCount: allocate col array and reset row array
   //ready to get the entries for nonzeros
@@ -361,9 +405,8 @@ const  shared_ptr<CRConnectivity> setParticleCells
   //so for each row, it has only one nonzero
   for(int p=0; p<rowSize; p++){
     int value = connectivity[p];
-    if (value == -1)                //throw away this particle
-    (*rowCol).addCount(p, 0);
-    else  (*rowCol).addCount(p, 1);
+    if (value != -1)
+      (*rowCol).addCount(p, 1);
   }
 
   //finishCount: allocate col array and reset row array

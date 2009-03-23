@@ -40,8 +40,8 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->defineVar("velocityURF",T(1.0));
     this->defineVar("pressureURF",T(0.3));
     this->defineVar("timeStep",T(0.1));
-    this->momentumTolerance=1e-3;
-    this->continuityTolerance=1e-3;
+    this->momentumTolerance=1e-4;
+    this->continuityTolerance=1e-4;
     this->printNormalizedResiduals = true;
     this->transient = false;
     this->timeDiscretizationOrder=1;

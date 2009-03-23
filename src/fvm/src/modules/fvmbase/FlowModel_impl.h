@@ -311,12 +311,12 @@ public:
         shared_ptr<VectorT3Array> ibV(new VectorT3Array(ibFaces.getCount()));
 
         ibV->zero();
-        
-        const VectorT3Array& cV =
-          dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
 
-        mICV.multiplyAndAdd(*ibV,cV);
-        mIPV.multiplyAndAdd(*ibV,pV);
+        const VectorT3Array& cV =
+	 dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
+
+	mICV.multiplyAndAdd(*ibV,cV);
+	mIPV.multiplyAndAdd(*ibV,pV);
 
         _flowFields.velocity.addArray(ibFaces,ibV);
     }

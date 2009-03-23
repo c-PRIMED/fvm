@@ -30,6 +30,7 @@ public:
 
   void computeIBInterpolationMatrices(const StorageSite& particles);
 
+  void computeGridInterpolationMatrices(const StorageSite& grids);
 
   DEFINE_TYPENAME("MeshMetricsCalculator<"+NumTypeTraits<T>::getTypeName()+">");
 
@@ -57,6 +58,8 @@ private:
 
   void computeIBInterpolationMatrices(const Mesh& mesh,
                                       const StorageSite& particles);
+  void computeGridInterpolationMatrices(const Mesh& mesh,
+                                      const StorageSite& grids);
 
 };
 

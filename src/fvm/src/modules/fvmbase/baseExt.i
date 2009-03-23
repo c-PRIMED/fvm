@@ -46,9 +46,10 @@ using namespace std;
 %include "CellMark.i"
 %include "MPM_Particles.i"
 %include "Octree.i"
-
+%include "Grid.i"
 %include "Field.i"
 %include "CRConnectivity.i"
+
 
 
 %inline %{

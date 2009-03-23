@@ -4,6 +4,7 @@
 #include "MeshMetricsCalculator_impl.h"
 
 template class MeshMetricsCalculator<ATYPE>;
+template class matrix<ATYPE>;
 
 #include "ThermalModel.h"
 #include "ThermalModel_impl.h"

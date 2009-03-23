@@ -23,44 +23,65 @@ void MPM::setandwriteParticles(const char *file)
     VecD3 center;
     center[0]=0.5;
     center[1]=0.5;
-    center[2]=0.0;
+    center[2]=0.;
 
     int count=0;   
+    double radius = 0.20;
    
-#if 1
+#if 0
     //set up particle cartesian coordinate
-    int nX=100, nY=20, nZ=1;
-    double gapX=0.5/nX, gapY=0.2/nY, gapZ=1.0/nZ;
+    VecD3 temp;
+    
+    int nX=100, nY=100, nZ=1;
+    double gapX=0.6/nX, gapY=0.6/nY, gapZ=0.6/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
+    int type[nX*nY*nZ];
+
 
     for(int i=0; i<nX; i++){
       for(int j=0; j<nY; j++){
-	for(int k=0; k<nZ; k++){	  
-	  solidPoint[count][0]=i*gapX+0.25;
-	  solidPoint[count][1]=j*gapY+0.4;
-	  solidPoint[count][2]=k*gapZ;
-	  count+=1;
+	for(int k=0; k<nZ; k++){
+	  temp[0]=i*gapX+0.201;
+	  temp[1]=j*gapY+0.201;
+	  temp[2]=k*gapZ;
+	  //VecD3 dr = temp-center;
+	  //if(mag2(dr)<=radius*radius){
+	    solidPoint[count][0]=temp[0];
+	    solidPoint[count][1]=temp[1];
+	    solidPoint[count][2]=temp[2];
+	    type[count] = 0;  //internal particles
+	    if(i==0||i==nX-1||j==0||j==nY-1){
+	      type[count] = 1;       //surface particles	   
+	    }
+	    count+=1;
+	    //}
 	}
       }
     }
 
 #endif
 
-#if 0
-    int nX=20, nY=200, nZ=1;
-    double radius1=0., radius2=0.2;
+#if 1
+    int nX=40, nY=800, nZ=1;
+    double radius1=0., radius2=0.20;
     double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
+    int type[nX*nY*nZ];
 
     //polar coordinate 
-     for(int i=1; i<nX; i++){
+     for(int i=1; i<=nX; i++){
       for(int j=0; j<nY; j++){
 	for(int k=0; k<nZ; k++){	 
 	  solidPoint[count][0]=(radius1+i*gapR)*(cos(j*gapAngle))+center[0];
 	  solidPoint[count][1]=(radius1+i*gapR)*(sin(j*gapAngle))+center[1];
 	  solidPoint[count][2]=k*gapZ+center[2];
+	  
+	  if(i!=nX) type[count] = 0;  //internal particles
+	  if(i==nX){
+	    type[count] = 1;       //surface particles	   
+	  }
 	  count+=1;
 	}
       }
@@ -69,12 +90,32 @@ void MPM::setandwriteParticles(const char *file)
 #endif
 
     //set up particle velocity
+#if 1
     for(int p=0; p<count; p++){
       solidVelocity[p][0]=0.0;
       solidVelocity[p][1]=0.0;
       solidVelocity[p][2]=0.0;
     }
-    //write out coordinate and velocity into file
+#endif 
+
+#if 0
+    //set up linear polar velicty
+    // Vx = Vmag*r*cos(angle)  Vy = Vmag*r*sin(angle)
+    const double Vmag = 1.0;
+    for (int p=0; p<count; p++){
+      double r = mag(solidPoint[p]-center);
+      double angle = atan2(solidPoint[p][1]-center[1],solidPoint[p][0]-center[0]);
+      // solidVelocity[p][0]=Vmag*r*cos(angle);
+      //solidVelocity[p][1]=Vmag*r*sin(angle);
+      //solidVelocity[p][2]=0.0;
+      solidVelocity[p][0]=solidPoint[p][0];
+      solidVelocity[p][1]=0.0;
+      solidVelocity[p][2]=0.0;
+    }
+#endif
+
+    cout<<"count of particles is "<<count<<endl;
+    //write out coordinate and velocity and particle type into file
     fp=fopen(file,"w");
     fprintf(fp,"%i\n",count);
     for(int p=0; p<count; p++){
@@ -82,7 +123,10 @@ void MPM::setandwriteParticles(const char *file)
     } 
     for(int p=0; p<count; p++){
       fprintf(fp, "%lf\t%lf\t%lf\n", solidVelocity[p][0],solidVelocity[p][1],solidVelocity[p][2]);
-    }     
+    }    
+    for(int p=0; p<count; p++){
+      fprintf(fp, "%i\n", type[p]);
+    } 
     fclose(fp);
 }
 
@@ -93,7 +137,7 @@ const shared_ptr<Array<VecD3> > MPM::readCoordinates(const char *file)
     FILE *fp;
     int nMPM;
     double x=0, y=0, z=0;
-  
+   
     fp=fopen(file,"r");
     fscanf(fp,"%i\n",&nMPM);
     
@@ -135,8 +179,40 @@ const shared_ptr<Array<VecD3> > MPM::readVelocities(const char *file)
     return (MPM_Points);
 }
 
+
+const shared_ptr<Array<int> > MPM::readTypes(const char *file)
+
+{
+    FILE *fp;
+    int nMPM;
+    double vx=0, vy=0, vz=0;
+    double x=0, y=0, z=0;
+    int t=0;
+    fp=fopen(file,"r");
+    fscanf(fp,"%i\n",&nMPM);
+    
+    shared_ptr<Array<int> > MPM_Points ( new Array<int> (nMPM));
+    //read in cooridnate and skip
+    for(int i=0; i<nMPM; i++){
+      fscanf(fp,"%lf\t%lf\t%lf\n", &x, &y, &z);      
+    }
+    //read in velocity and skip
+    for(int i=0; i<nMPM; i++){
+      fscanf(fp,"%lf\t%lf\t%lf\n", &x, &y, &z);      
+    }
+    //read in type
+    for(int i=0; i<nMPM; i++){
+      fscanf(fp,"%i\n", & t);
+      (*MPM_Points)[i]=t;
+    }
+    fclose(fp);   
+    return (MPM_Points);
+}
+
+
 void MPM::Init(const shared_ptr<Array<VecD3> > coordinates,
-	       const shared_ptr<Array<VecD3> > velocities )
+	       const shared_ptr<Array<VecD3> > velocities,
+	       const shared_ptr<Array<int> > types)
 {
 
   const int n = (*coordinates).getLength();  //number of particles
@@ -144,6 +220,7 @@ void MPM::Init(const shared_ptr<Array<VecD3> > coordinates,
   
   MPM::setCoordinates(coordinates);
   MPM::setVelocities(velocities);
+  MPM::setTypes(types);
 
 }
 
