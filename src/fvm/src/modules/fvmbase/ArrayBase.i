@@ -17,6 +17,8 @@ class ArrayBase
 {
 public:
   int getDimension();
+  shared_ptr<ArrayBase> newSizedClone(const int size);
+  
   %extend
   {
     PyObject* asNumPyArray()
