@@ -115,7 +115,7 @@ void reportCellMark (const Mesh& mesh, const int nCells,
 		     const string fileBase)
 {
     
-    string fileName=fileBase+"Debug2/CellMark.dat";
+    string fileName=fileBase+"CellMark.dat";
     char* file;
     file=&fileName[0];
     FILE *fp=fopen(file,"w");
@@ -126,9 +126,9 @@ void reportCellMark (const Mesh& mesh, const int nCells,
     } 
     fclose(fp);  
 
-    string fileName1 = fileBase+"Debug2/FluidCell.dat";
-    string fileName2 = fileBase+"Debug2/IBMCell.dat";
-    string fileName3 = fileBase+"Debug2/SolidCell.dat";
+    string fileName1 = fileBase+"FluidCell.dat";
+    string fileName2 = fileBase+"IBMCell.dat";
+    string fileName3 = fileBase+"SolidCell.dat";
     char* file1;
     char* file2;
     char* file3;
@@ -257,9 +257,7 @@ const shared_ptr<CRConnectivity> setibFaceParticles
 	  count++;
 	  }
       }
-      if(count < 2){
-	cout<<"Warning!!! Not enough surface particles to interpolate!"<<count<<endl;
-      }
+
       //cout<<"face-cell-particle# "<<faceIndex<<" "<<C0<<" "<<count<<endl;
       
       (*ibFaceParticles).addCount(p, count);      
@@ -275,10 +273,8 @@ const shared_ptr<CRConnectivity> setibFaceParticles
 	  count++;
 	}
       }
-      if(count < 2){
-	cout<<"Warning!!! Not enough surface particles to interpolate!"<<count<<endl;
-      }
-      cout<<"face-cell-particle# "<<faceIndex<<" "<<C0<<" "<<count<<endl;
+    
+      // cout<<"face-cell-particle# "<<faceIndex<<" "<<C0<<" "<<count<<endl;
       
       (*ibFaceParticles).addCount(p, count);           
     }
@@ -340,7 +336,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
 
   //specify a radius for search
   //const int nCells = cells.getCount();
-  const double radius = 0.013;
+  const double radius = 0.1;
 
   //specify the number of nonzeros for each row
  

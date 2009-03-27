@@ -361,7 +361,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   Array<T>& cellToIBCoeff = cellToIB->getCoeff();
   Array<T>& particlesToIBCoeff = particlesToIB->getCoeff();
 
-#if 1
+#if 0
   /******distance weighted interpolation******/
 
   for(int n=0; n<nIBFaces; n++)
@@ -404,7 +404,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   }
 #endif
 
-#if 0
+#if 1
 
   /**********linear least square interpolation*********/
   // X=x-xf  Y=y-yf  Z=Z-zf

@@ -28,12 +28,12 @@ void MPM::setandwriteParticles(const char *file)
     int count=0;   
     double radius = 0.20;
    
-#if 0
+#if 1
     //set up particle cartesian coordinate
     VecD3 temp;
     
-    int nX=100, nY=100, nZ=1;
-    double gapX=0.6/nX, gapY=0.6/nY, gapZ=0.6/nZ;
+    int nX=10, nY=10, nZ=10;
+    double gapX=0.5/nX, gapY=0.5/nY, gapZ=0.5/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
     int type[nX*nY*nZ];
@@ -42,16 +42,16 @@ void MPM::setandwriteParticles(const char *file)
     for(int i=0; i<nX; i++){
       for(int j=0; j<nY; j++){
 	for(int k=0; k<nZ; k++){
-	  temp[0]=i*gapX+0.201;
-	  temp[1]=j*gapY+0.201;
-	  temp[2]=k*gapZ;
+	  temp[0]=i*gapX+0.001;
+	  temp[1]=j*gapY+0.001;
+	  temp[2]=k*gapZ+0.001;
 	  //VecD3 dr = temp-center;
 	  //if(mag2(dr)<=radius*radius){
 	    solidPoint[count][0]=temp[0];
 	    solidPoint[count][1]=temp[1];
 	    solidPoint[count][2]=temp[2];
 	    type[count] = 0;  //internal particles
-	    if(i==0||i==nX-1||j==0||j==nY-1){
+	    if(i==0||i==nX-1||j==0||j==nY-1||k==0||k==nZ-1){
 	      type[count] = 1;       //surface particles	   
 	    }
 	    count+=1;
@@ -62,24 +62,24 @@ void MPM::setandwriteParticles(const char *file)
 
 #endif
 
-#if 1
-    int nX=40, nY=800, nZ=1;
-    double radius1=0., radius2=0.20;
+#if 0
+    int nX=100, nY=1000, nZ=1;
+    double radius1=0., radius2=0.201;
     double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
     int type[nX*nY*nZ];
 
     //polar coordinate 
-     for(int i=1; i<=nX; i++){
+     for(int i=0; i<nX; i++){
       for(int j=0; j<nY; j++){
 	for(int k=0; k<nZ; k++){	 
 	  solidPoint[count][0]=(radius1+i*gapR)*(cos(j*gapAngle))+center[0];
 	  solidPoint[count][1]=(radius1+i*gapR)*(sin(j*gapAngle))+center[1];
 	  solidPoint[count][2]=k*gapZ+center[2];
 	  
-	  if(i!=nX) type[count] = 0;  //internal particles
-	  if(i==nX){
+	  if(i!=(nX-1)) type[count] = 0;  //internal particles
+	  if(i==(nX-1)){
 	    type[count] = 1;       //surface particles	   
 	  }
 	  count+=1;
@@ -98,20 +98,18 @@ void MPM::setandwriteParticles(const char *file)
     }
 #endif 
 
+
 #if 0
-    //set up linear polar velicty
-    // Vx = Vmag*r*cos(angle)  Vy = Vmag*r*sin(angle)
-    const double Vmag = 1.0;
+    //set up rotating cylinder velocity
+    const double angV = 10;
     for (int p=0; p<count; p++){
       double r = mag(solidPoint[p]-center);
       double angle = atan2(solidPoint[p][1]-center[1],solidPoint[p][0]-center[0]);
-      // solidVelocity[p][0]=Vmag*r*cos(angle);
-      //solidVelocity[p][1]=Vmag*r*sin(angle);
-      //solidVelocity[p][2]=0.0;
-      solidVelocity[p][0]=solidPoint[p][0];
-      solidVelocity[p][1]=0.0;
-      solidVelocity[p][2]=0.0;
+      solidVelocity[p][0] = angV*r*sin(angle);
+      solidVelocity[p][1] = -angV*r*cos(angle);
+      solidVelocity[p][2] = 0.0;
     }
+
 #endif
 
     cout<<"count of particles is "<<count<<endl;

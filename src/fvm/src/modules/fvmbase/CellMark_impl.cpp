@@ -77,7 +77,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
    
     /**************************************************************************************/
     //---set up MPM particles---//
-    string fileName2=fileBase+"Debug/MPMs.dat";
+    string fileName2=fileBase+"MPMs.dat";
     char* file2;
     file2=&fileName2[0];
     
@@ -105,6 +105,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     //cout<<"nMPM is "<<nMPM<<endl;
 
     const shared_ptr<VecD3Array>& MPM_Points = solid.getCoordinates();
+    const shared_ptr<VecD3Array>& MPM_Vels = solid.getVelocities();
     const shared_ptr<Array<int> >& particleTypes = solid.getTypes();
     
     
@@ -224,7 +225,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     
 
     FILE *fp;
-    string fileName14=fileBase+"Debug/particletocells.dat";
+    string fileName14=fileBase+"particletocells.dat";
     char* file14;
     file14=&fileName14[0];
     
@@ -252,7 +253,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     const CRConnectivity& cellParticles = mesh.getConnectivity(cells, particles);
    
-    string fileName13=fileBase+"Debug/celltoparticles.dat";
+    string fileName13=fileBase+"celltoparticles.dat";
     char* file13;
     file13=&fileName13[0];
     
@@ -266,7 +267,8 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	//if (cellParticles(c,p) < 0)
 	
 	int pID = cellParticles(c,p);
-	fprintf(fp,"%i\t%lf\t%lf\t%lf\t%i\n", c, (*MPM_Points)[pID][0], (*MPM_Points)[pID][1],(*MPM_Points)[pID][2], (*particleTypes)[pID]);
+	if ((*particleTypes)[pID] == 1)
+	fprintf(fp,"%i\t%lf\t%lf\t%lf\t%i\n", c, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
       }
     } 
     fclose(fp);
@@ -308,7 +310,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
    
     const Array<int>& ibFaceList = mesh.getIBFaceList();
 
-    string fileName15=fileBase+"Debug/ibfaces.dat";
+    string fileName15=fileBase+"ibfaces.dat";
     char* file15;
     file15=&fileName15[0];
     
@@ -343,8 +345,8 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
      const CRConnectivity& ibFaceCells = mesh.getConnectivity(ibFaces, cells);
 
-     /*
-     string fileName11=fileBase+"Debug2/ibfacetoparticle.dat";
+     
+     string fileName11=fileBase+"ibfacetoparticle.dat";
      char* file11;
      file11=&fileName11[0];
    
@@ -360,25 +362,13 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	int pID = ibFaceParticles(f,c);
 	//cout<<"face "<<faceIndex<<"  has  "<<ibFaceParticles(f, c)<<endl;
 	//cout<<(*MPM_Points)[ibFaceParticles(f,c)]<<endl;
-	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
+	//	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
+	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Vels)[pID][0],(*MPM_Vels)[pID][1],(*MPM_Vels)[pID][2],(*particleTypes)[pID]);
       }
      } 
     
 
-     //test col and row
-     const Array<int>& ibFPRow = ibFaceParticles.getRow();
-     const Array<int>& ibFPCol = ibFaceParticles.getCol();
-     for(int f=0; f<ibFaces.getCount(); f++){
-       for (int np=ibFPRow[f]; np<ibFPRow[f+1]; np++){
-	 const int p = ibFPCol[np];
-	 cout<<f<<" particles "<<p<<" "<<(*MPM_Points)[p]<<endl;
-       }
-     }
-
-     fclose(fp);
-
-      */
-     string fileName12=fileBase+"Debug/ibfacetocell.dat";
+     string fileName12=fileBase+"ibfacetocell.dat";
      char* file12;
      file12=&fileName12[0];
     
