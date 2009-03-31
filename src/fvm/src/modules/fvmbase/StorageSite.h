@@ -33,8 +33,8 @@ public:
     _selfCount = selfCount;
   }
 
-  const MappersMap& getMappers() const {return _mappers;}
-  MappersMap& getMappers() {return _mappers;}
+  const MappersMap& getMappers() const {throw;}
+  MappersMap& getMappers() {throw;}
 
   const ScatterMap&  getScatterMap() const  { return _scatterMap;}
   const  GatherMap&   getGatherMap() const  { return  _gatherMap;}
@@ -45,7 +45,7 @@ public:
   const StorageSite* const getParent() const {return _parent;}
   int getOffset() const {return _offset;}
 
-  void  scatterGatherMaps( );
+  //void  scatterGatherMaps( );
 
 
 
@@ -58,7 +58,7 @@ private:
   int _selfCount;
   const int _offset;
   const StorageSite* const _parent;
-  MappersMap _mappers;
+  //MappersMap _mappers;
   ScatterMap         _scatterMap;
   GatherMap          _gatherMap;
 
