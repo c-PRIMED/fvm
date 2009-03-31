@@ -30,7 +30,7 @@
 PartMesh::PartMesh( const MeshList &mesh_list, vector<int> nPart,  vector<int> eType ):
 _meshList(mesh_list), _nPart(nPart), _eType(eType), _options(0)
 {
-  // if ( !MPI::Is_initialized() )  MPI::Init();
+   if ( !MPI::Is_initialized() )  MPI::Init();
    init();
 }
 
@@ -1795,7 +1795,7 @@ PartMesh::create_window( int id )
                                          MPI_INFO_NULL, MPI::COMM_WORLD);
            _winGlobal = MPI::Win::Create(_ghostCellsGlobal.at(id)->getData(), window_size*sizeofAint, int_size,
                                          MPI_INFO_NULL, MPI::COMM_WORLD);
-               
+
 }
 
 void
@@ -1830,7 +1830,6 @@ PartMesh::mesh_debug()
 void 
 PartMesh::mesh_file()
 {
-
      stringstream ss;
      ss << "mesh_proc" << _procID << "_info.dat";
      ofstream  mesh_file( (ss.str()).c_str() );
@@ -1853,7 +1852,6 @@ PartMesh::mesh_file()
                }
                it_ghost++;
           }
-
 
       }
 
