@@ -717,7 +717,7 @@ PartMesh::init()
    _windowSize.resize( _nmesh );
    _fromIndices.resize( _nmesh );
    _toIndices.resize( _nmesh );
-     
+
     for ( int id = 0; id < _nmesh; id++){
         StorageSite& site = _meshList[id]->getCells();
        _totElems.at(id)   = site.getSelfCount();
@@ -1568,18 +1568,18 @@ PartMesh::order_faceCells_faceNodes()
 // 
 //        cout << " proc id = " << _procID << "  sum ======= " << sum << endl;
 //        assert ( !sum );  //sum should be zero 
-//         if ( _procID == 0 ){ 
-//          multimap<int,int>::iterator it_test;
-//           pair<multimap<int,int>::iterator, multimap<int,int>::iterator> ret;
-//           for ( int key = 0; key < 38; key++){
-//                cout << key+1 << " ==>";
-//                ret = _globalToLocalMappers.at(id).equal_range(key);
-//                for ( it_test = ret.first; it_test != ret.second; it_test++)
-//                    cout << " " << it_test->second+1;
-//               cout << endl;
-//           }
-//        }
-
+//          if ( _procID == 0 ){ 
+//            multimap<int,int>::iterator it_test;
+//            pair<multimap<int,int>::iterator, multimap<int,int>::iterator> ret;
+//            for ( int key = 0; key < 38; key++){
+//                 cout << key+1 << " ==>";
+//                 ret = _globalToLocalMappers.at(id).equal_range(key);
+//                 for ( it_test = ret.first; it_test != ret.second; it_test++)
+//                     cout << " " << it_test->second+1;
+//                cout << endl;
+//            }
+//         }
+// 
 
      }
 
@@ -1616,14 +1616,17 @@ PartMesh::exchange_interface_meshes()
     for ( int id = 0; id < _nmesh; id++){
         recv_counts = new int[ _nPart.at(id) ];
         displ       = new int[ _nPart.at(id) ];
+
         int total_interface_mesh = int( _interfaceSet.at(id).size() );
         int total_faces = int( _interfaceMap.at(id).size() );
+
         MPI::COMM_WORLD.Allgather(&total_interface_mesh, 1, MPI::INT, _interfaceMeshCounts.at(id)->getData(), 1, MPI::INT);
         MPI::COMM_WORLD.Allgather(&total_faces, 1, MPI::INT, _procTotalInterfaces.at(id)->getData(), 1, MPI::INT);
 
         //now find offsets for ghostCells 
         int total_interface_local = _interfaceSet.at(id).size();
         int total_interface_global = -1;
+
         MPI::COMM_WORLD.Allreduce( &total_interface_local, &total_interface_global, 1, MPI::INT, MPI::SUM );
         MPI::COMM_WORLD.Allgather( &total_interface_local, 1, MPI::INT, recv_counts, 1, MPI::INT );
         MPI::COMM_WORLD.Allreduce( &total_faces, &_windowSize.at(id), 1, MPI::INT, MPI::MAX);
@@ -1682,7 +1685,8 @@ PartMesh::exchange_interface_meshes()
 void
 PartMesh::mappers()
 {
-  
+
+
     for ( int id = 0; id < _nmesh; id++){
  
         create_window( id );
@@ -1712,31 +1716,42 @@ PartMesh::mappers()
        free_window();
 
        interfaceIndx = 0;
-       for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++){
+       for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++ ){
 
            int neighMeshID = *it_set;
            int size = int(_interfaceMap.at(id).count(neighMeshID) );
-           int range_indx = 0;
+           map<int, int>  mapKeyCount;        //map between key and count of that key
            for ( int n = 0; n < size; n++){
 
                int  key     = (*_toIndices.at(id).at(interfaceIndx))[n];
                int  count   = _globalToLocalMappers.at(id).count( key ); 
 
+               if ( mapKeyCount.count( key ) > 0 ) { //it has elements
+                  mapKeyCount[key] = mapKeyCount[key] + 1; //increase one
+               } else {  //if it is empty  
+                  mapKeyCount.insert(pair<int,int>(key,0));
+               }
+
                multimap<int,int>::const_iterator it;
-               pair< multimap<int,int>::iterator, multimap<int,int>::iterator>  it_ranger;
-               it_ranger = _globalToLocalMappers.at(id).equal_range( key );
-               it = it_ranger.first;
-               //shift  multimap iterator if holding more than one values
-               if ( range_indx > 0 )
+               it = _globalToLocalMappers.at(id).lower_bound( key );
+               for ( int n_iter = 0; n_iter < mapKeyCount[key]; n_iter++)
                    it++;
 
                int elem_id =  it->second;
                (*_toIndices.at(id).at(interfaceIndx))[n] =  elem_id;
-               if (  count > 1 ) 
-                  range_indx++;
-              //reset range_indx  for next keys
-               if ( range_indx == count )
-                  range_indx=0;
+
+//                if ( _procID == 0 ) {
+//                   cout << " neighMeshID = " << neighMeshID << endl;
+//                   cout << " size        = " << size        << endl;
+//                   cout << " key         = " << key         << endl;
+//                   cout << " count       = " << count       << endl;
+//                   cout << " elem_id     = " << elem_id     << endl;
+//                   cout << " mapKeyCount[" << key << "] = " << mapKeyCount[key] << endl;
+//                   cout << " _fromIndices= " << (*_fromIndices.at(id).at(interfaceIndx))[n] << endl;
+//                   cout << " _toIncides  = " << (*_toIndices.at(id).at(interfaceIndx))[n]   << endl;
+//                   cout << endl;
+//                }
+
 
            }
           shared_ptr<OneToOneIndexMap>  oneToOneMapPtr( new OneToOneIndexMap( _fromIndices.at(id).at(interfaceIndx), 
@@ -1774,8 +1789,6 @@ PartMesh::create_window( int id )
            int int_size = MPI::INT.Get_size();
            MPI::Aint lb, sizeofAint;
            MPI::INT.Get_extent(lb,sizeofAint);
-          //int window_size =  *max_element( _windowSize.begin(), _windowSize.end() );
-
 
            int window_size = _windowSize.at(id);  //already MPI::MAX  has taken  maximum size
            _winLocal  = MPI::Win::Create(_ghostCellsLocal.at(id)->getData(), window_size*sizeofAint, int_size,
