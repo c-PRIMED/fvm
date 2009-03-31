@@ -191,6 +191,16 @@ public:
         }
         _flowFields.massFlux.addArray(faces,mfPtr);
 
+        // store momentum flux at interfaces
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+            shared_ptr<VectorT3Array> momFlux(new VectorT3Array(faces.getCount()));
+            momFlux->zero();
+            _flowFields.momentumFlux.addArray(faces,momFlux);
+        }
+        
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
@@ -382,6 +392,23 @@ public:
             shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
             ls.getMatrix().addMatrix(fIndex,fIndex,mff);
         }
+        
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+
+            MultiField::ArrayIndex fIndex(&_flowFields.momentumFlux,&faces);
+            ls.getX().addArray(fIndex,_flowFields.momentumFlux.getArrayPtr(faces));
+
+            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,VectorT3>(faceCells));
+            ls.getMatrix().addMatrix(fIndex,vIndex,mft);
+
+            shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
+            ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+        }
     }
   }
 
@@ -486,8 +513,8 @@ public:
             {
                 gbc.applyDirichletBC(bVelocity);
             }
-            else if ((bc.bcType == "VelocityBoundary") ||
-                     (bc.bcType == "PressureBoundary"))
+            else if (bc.bcType == "VelocityBoundary")
+                     //(bc.bcType == "PressureBoundary"))
             {
                 for(int f=0; f<nFaces; f++)
                 {
@@ -501,6 +528,9 @@ public:
                     }
                 }
             }
+            else if (bc.bcType == "PressureBoundary")
+            {
+            }
             else if ((bc.bcType == "Symmetry"))
             {
                 VectorT3 zeroFlux(NumTypeTraits<VectorT3>::getZero());
@@ -509,6 +539,20 @@ public:
             else
               throw CException(bc.bcType + " not implemented for FlowModel");
         }
+
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+            GenericBCS<VectorT3,DiagTensorT3,T> gbc(faces,mesh,
+                                                    _geomFields,
+                                                    _flowFields.velocity,
+                                                    _flowFields.momentumFlux,
+                                                    ls.getMatrix(), ls.getX(), ls.getB());
+
+            gbc.applyInterfaceBC();
+        }
+
     }
   }
 
@@ -534,7 +578,7 @@ public:
 
     if (!_initialMomentumNorm) _initialMomentumNorm = rNorm;
         
-    _options.momentumLinearSolver->cleanup();
+    _options.getMomentumLinearSolver().cleanup();
     
     ls.postSolve();
     ls.updateSolution();
@@ -553,601 +597,41 @@ public:
         const VVDiagArray& momAp = vvMatrix.getDiag();
         _momApField->addArray(cells,dynamic_pointer_cast<ArrayBase>(momAp.newCopy()));
     }
-    
+    _momApField->syncLocal();
     return rNorm;
   }
 
 
-  T discretizeMassFluxInterior(const Mesh& mesh,
-                                  const StorageSite& faces,
-                                  MultiFieldMatrix& mfmatrix,
-                                  const MultiField& xField, MultiField& rField)
+
+  void interfaceContinuityBC(const Mesh& mesh,
+                             const StorageSite& faces,
+                             MultiFieldMatrix& matrix,
+                             MultiField& rField)
   {
     const StorageSite& cells = mesh.getCells();
     MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
-    MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-
-    const VectorT3Array& faceArea =
-      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-    
-    const TArray& cellVolume =
-      dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-    
-    const TArray& faceAreaMag =
-      dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
-    
-    const VectorT3Array& cellCentroid =
-      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
-
     const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-    PPMatrix& ppMatrix =
-      dynamic_cast<PPMatrix&>(mfmatrix.getMatrix(pIndex,pIndex));
-
-    const VVDiagArray& momAp = dynamic_cast<const VVDiagArray&>((*_momApField)[cells]);
-    
-    const VectorT3Array& V = dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
-    const VectorT3Array& Vprev = dynamic_cast<const VectorT3Array&>((*_previousVelocity)[cells]);
-
-    const TArray& p = dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
-    const PGradArray& pGrad = dynamic_cast<const PGradArray&>(_flowFields.pressureGradient[cells]);
-
-    const TArray& rho = dynamic_cast<TArray&>(_flowFields.density[cells]);
-
-    PPAssembler& ppAssembler = ppMatrix.getPairWiseAssembler(faceCells);
-    PPDiagArray& ppDiag = ppMatrix.getDiag();
-
     TArray& rCell = dynamic_cast<TArray&>(rField[pIndex]);
-    TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
-
-    const T momURF(_options["momentumURF"]);
-    const T OneMinusmomURF(T(1.0)-momURF);
-    
-    const Array<int>& ibType = mesh.getIBType();
-
-    const StorageSite& ibFaces = mesh.getIBFaces();
-    
-    const VectorT3Array* ibVelocity = (ibFaces.getCount() > 0) ?
-      &(dynamic_cast<const VectorT3Array&>(_flowFields.velocity[mesh.getIBFaces()])) : 0;
-
-    // the net flux from ib faces
-    T boundaryFlux=0;
-      
-    // used to keep track of the current ib face index
-    int ibFace =0;
-    
-    const int nFaces = faces.getCount();
-    for(int f=0; f<nFaces; f++)
-    {
-        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-        const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
-        const VectorT3& Af = faceArea[f];
-        
-        const T diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(Af,ds);
-
-        const T momApBar0 = (momAp[c0][0]+momAp[c0][1]+momAp[c0][2])/3.0;
-        const T momApBar1 = (momAp[c1][0]+momAp[c1][1]+momAp[c1][2])/3.0;
-        const T momApBarFace = momApBar0 + momApBar1;
-
-        const T VdotA0 = dot(V[c0],Af) - OneMinusmomURF*dot(Vprev[c0],Af);
-        const T VdotA1 = dot(V[c1],Af) - OneMinusmomURF*dot(Vprev[c1],Af);
-
-        
-        const T dpf = cellVolume[c0]*(pGrad[c0]*ds) + cellVolume[c1]*(pGrad[c1]*ds);
-        // const T dpf = (cellVolume[c0]*(pGrad[c0]*ds) + cellVolume[c1]*(pGrad[c1]*ds))/
-        //(cellVolume[c0]+cellVolume[c1]) - p[c1] + p[c0];
-
-        const T Vn = (VdotA0*momApBar0 + VdotA1*momApBar1 -dpf*diffMetric) / momApBarFace;
-        //const T Vn = (VdotA0*momApBar0 + VdotA1*momApBar1 -
-        //      (cellVolume[c0]+cellVolume[c1])*dpf*diffMetric) / momApBarFace;
-
-        const T rhoF = 0.5*(rho[c0]+rho[c1]);
-        const T aByMomAp = Af[0]*Af[0] / (momAp[c0][0] + momAp[c1][0]) +
-          Af[1]*Af[1] / (momAp[c0][1] + momAp[c1][1]) +
-          Af[2]*Af[2] / (momAp[c0][2] + momAp[c1][2]);
-
-
-        const T pCoeff = rhoF*aByMomAp*(cellVolume[c0]+cellVolume[c1])/(dot(Af,ds));
-
-        if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
-            (ibType[c1] == Mesh::IBTYPE_FLUID))
-        {
-            massFlux[f] = rhoF*Vn - pCoeff*(p[c0]-p[c1]) + (1-momURF)*massFlux[f];
-            //massFlux[f] = rhoF*Vn  + OneMinusmomURF*massFlux[f];
-            
-            rCell[c0] -= massFlux[f];
-            rCell[c1] += massFlux[f];
-            
-            ppAssembler.getCoeff01(f) -=pCoeff;
-            ppAssembler.getCoeff10(f) -=pCoeff;
-            
-            ppDiag[c0] += pCoeff;
-            ppDiag[c1] += pCoeff;
-        }
-        else if (((ibType[c0] == Mesh::IBTYPE_FLUID)
-                  && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
-                 ((ibType[c1] == Mesh::IBTYPE_FLUID)
-                  && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
-        {
-            const VectorT3& faceVelocity = (*ibVelocity)[ibFace];
-
-            // this is an iBFace, determine which cell is interior and
-            // which boundary. Treat as a fixed flux boundary. 
-            if (ibType[c0] == Mesh::IBTYPE_FLUID)
-            {
-                massFlux[f]= rho[c0]*dot(Af,faceVelocity);
-                rCell[c0] -= massFlux[f];
-                rCell[c1] = 0;
-                ppMatrix.setDirichlet(c1);
-                boundaryFlux += massFlux[f];
-            }
-            else
-            {
-                massFlux[f]= rho[c1]*dot(Af,faceVelocity);
-                rCell[c1] += massFlux[f];
-                rCell[c0] = 0;
-                ppMatrix.setDirichlet(c0);
-                boundaryFlux -= massFlux[f];
-            }
-                
-            
-            // increment count of ib faces
-            ibFace++;
-        }
-        else 
-        {
-            if ((ibType[c0] == Mesh::IBTYPE_FLUID) ||
-                (ibType[c1] == Mesh::IBTYPE_FLUID))
-              throw CException("invalid face to skip");
-            
-            // setup to get zero corrections
-            massFlux[f]=0;
-            ppDiag[c0] = -1;
-            ppDiag[c1] = -1;
-            ppMatrix.setDirichlet(c0);
-            ppMatrix.setDirichlet(c1);
-        }
-    }
-
-#if 1
-    if (mfmatrix.hasMatrix(pIndex,vIndex))
-    {
-        PVMatrix& pvMatrix =
-          dynamic_cast<PVMatrix&>(mfmatrix.getMatrix(pIndex,vIndex));
-        
-        PVAssembler& pvAssembler = pvMatrix.getPairWiseAssembler(faceCells);
-        PVDiagArray& pvDiag = pvMatrix.getDiag();
-
-        for(int f=0; f<nFaces; f++)
-        {
-            const int c0 = faceCells(f,0);
-            const int c1 = faceCells(f,1);
-            const VectorT3& Af = faceArea[f];
-            
-            const T momApBar0 = (momAp[c0][0]+momAp[c0][1]+momAp[c0][2])/3.0;
-            const T momApBar1 = (momAp[c1][0]+momAp[c1][1]+momAp[c1][2])/3.0;
-            const T momApBarFace = momApBar0 + momApBar1;
-            const T rhoF = 0.5*(rho[c0]+rho[c1]);
-
-            VectorT3T coeff0(rhoF*momApBar0/momApBarFace*Af);
-            VectorT3T coeff1(rhoF*momApBar1/momApBarFace*Af);
-            
-        
-            pvAssembler.getCoeff01(f) -=coeff1;
-            pvAssembler.getCoeff10(f) +=coeff0;
-            
-            pvDiag[c0] -= coeff0;
-            pvDiag[c1] += coeff1;
-        }
-    }
-#endif
-    cout << "net IB Flux = " << boundaryFlux << endl;
-    return boundaryFlux;
-  }
-
-  T fixedFluxContinuityBC(const StorageSite& faces,
-                          const Mesh& mesh,
-                          MultiFieldMatrix& matrix,
-                          MultiField& xField,
-                          MultiField& rField,
-                          const FlowBC<T>& bc)
-  {
-    const StorageSite& cells = mesh.getCells();
-
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-
-    MultiField::ArrayIndex mfIndex(&_flowFields.massFlux,&faces);
-    MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-    MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
-
-    PPMatrix& ppMatrix =
-      dynamic_cast<PPMatrix&>(matrix.getMatrix(pIndex,pIndex));
-
-    FMatrix& dFluxdP = dynamic_cast<FMatrix&>(matrix.getMatrix(mfIndex,pIndex));
-
-    PPAssembler& ppAssembler = ppMatrix.getPairWiseAssembler(faceCells);
-    PPDiagArray& ppDiag = ppMatrix.getDiag();
-
-    const VectorT3Array& faceArea =
-      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-
-    TArray& rCell = dynamic_cast<TArray&>(rField[pIndex]);
-    TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
-    const TArray& density = dynamic_cast<const TArray&>(_flowFields.density[cells]);
-
-    VectorT3 bVelocity;
-    bVelocity[0] = bc["specifiedXVelocity"];
-    bVelocity[1] = bc["specifiedYVelocity"];
-    bVelocity[2] = bc["specifiedZVelocity"];
-
-    const int nFaces = faces.getCount();
-
-    T netFlux(0.);
-    
-    for(int f=0; f<nFaces; f++)
-    {
-        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-
-        massFlux[f] = density[c0]*dot(bVelocity,faceArea[f]);
-
-        rCell[c0] -= massFlux[f];
-
-        netFlux += massFlux[f];
-        ppAssembler.getCoeff01(f) =0;
-        ppAssembler.getCoeff10(f) =1;
-        ppDiag[c1] = -1;
-        rCell[c1] = 0.;
-        ppMatrix.setBoundary(c1);
-
-        dFluxdP.setCoeffL(f,T(0.));
-        dFluxdP.setCoeffR(f,T(0.));
-        
-    }
-#if 1
-    if (matrix.hasMatrix(vIndex,pIndex))
-    {
-        VPMatrix& vpMatrix =
-          dynamic_cast<VPMatrix&>(matrix.getMatrix(vIndex,pIndex));
-        
-        VPAssembler& vpAssembler = vpMatrix.getPairWiseAssembler(faceCells);
-        VPDiagArray& vpDiag = vpMatrix.getDiag();
-
-        for(int f=0; f<nFaces; f++)
-        {
-            const int c0 = faceCells(f,0);
-            vpDiag[c0] += vpAssembler.getCoeff01(f);
-            vpAssembler.getCoeff01(f) = 0;
-        }
-    }
-#endif
-    return netFlux;
-  }
-
-  T fixedPressureContinuityBC(const StorageSite& faces,
-                              const Mesh& mesh,
-                              MultiFieldMatrix& matrix,
-                              const MultiField& xField, MultiField& rField)
-  {
-    const StorageSite& cells = mesh.getCells();
-    MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
-    MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-    MultiField::ArrayIndex mfIndex(&_flowFields.massFlux,&faces);
-
-    const VectorT3Array& faceArea =
-      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-    
-    const TArray& cellVolume =
-      dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-    
-    const VectorT3Array& cellCentroid =
-      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
-
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-
-    PPMatrix& ppMatrix =
-      dynamic_cast<PPMatrix&>(matrix.getMatrix(pIndex,pIndex));
-
-    const VVDiagArray& momAp = dynamic_cast<const VVDiagArray&>((*_momApField)[cells]);
-    
-    const VectorT3Array& V = dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
-    const VectorT3Array& Vprev = dynamic_cast<const VectorT3Array&>((*_previousVelocity)[cells]);
-
-    const TArray& p = dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
-    const PGradArray& pGrad = dynamic_cast<const PGradArray&>(_flowFields.pressureGradient[cells]);
-
-    const TArray& rho = dynamic_cast<TArray&>(_flowFields.density[cells]);
-
-    PPAssembler& ppAssembler = ppMatrix.getPairWiseAssembler(faceCells);
-    PPDiagArray& ppDiag = ppMatrix.getDiag();
-
-    TArray& rCell = dynamic_cast<TArray&>(rField[pIndex]);
-    TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
-
-    FMatrix& dFluxdP = dynamic_cast<FMatrix&>(matrix.getMatrix(mfIndex,pIndex));
-
-    const T momURF(_options["momentumURF"]);
-    const T OneMinusmomURF(T(1.0)-momURF);
     
     const int nFaces = faces.getCount();
 
-    T netFlux(0.);
-    
     for(int f=0; f<nFaces; f++)
     {
-        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-        const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
-        const VectorT3& Af = faceArea[f];
-        
-        const T dpf = pGrad[c0]*ds - p[c1] + p[c0] ;
-        const T rhoF = rho[c0];
-
-        // Q < 0
-        const T Q = rhoF*(Af[0]*Af[0] / momAp[c0][0]  +
-                                 Af[1]*Af[1] / momAp[c0][1]  +
-                                 Af[2]*Af[2] / momAp[c0][2])*cellVolume[c0]/(dot(Af,ds));
-        
-        const T massFluxI = rhoF*(dot(V[c0],Af) - OneMinusmomURF*dot(Vprev[c0],Af)) - Q*dpf +
-          OneMinusmomURF*massFlux[f];
-
-        const VectorT3& Vb = V[c1];
-        const T massFluxB = rhoF*dot(Vb,Af);
-        
-
-        T Vb_dpdVb(0);
-        if (massFluxB < 0)
-          Vb_dpdVb = mag2(Vb)*rhoF;
-
-        netFlux += massFluxI;
-        
-        massFlux[f] = massFluxI;
-
-        dFluxdP.setCoeffL(f,Q);
-        dFluxdP.setCoeffR(f,-Q);
-
-        // contribution to cell equation
-        rCell[c0] -= massFlux[f];
-        ppDiag[c0] += Q;
-        ppAssembler.getCoeff01(f) = 0.;
-
-        if (massFluxB - Vb_dpdVb*Q != 0.0)
+        int c0 = faceCells(f,0);
+        int c1 = faceCells(f,1);
+        // either c0 or c1 could be the exterior cell
+        if (c1 >= cells.getSelfCount())
         {
-            // equation for boundary 
-            ppAssembler.getCoeff10(f) = -Vb_dpdVb * Q / (massFluxB - Vb_dpdVb*Q);
-            rCell[c1] = Vb_dpdVb*(massFluxI-massFluxB) / (massFluxB - Vb_dpdVb*Q);
-            rCell[c1] =0;
-            ppDiag[c1] = -1;
-            
-            // eliminate boundary dependence from cell equation
-            ppAssembler.getCoeff01(f) = 0;
-            if (ppAssembler.getCoeff10(f) > 0)
-              ppDiag[c0] += ppAssembler.getCoeff10(f)*Q;
-            rCell[c0] += rCell[c1]*Q;
-
-        }
-        else
-        {
-            // treat as fixed pressure
-            dFluxdP.setCoeffR(f,T(0.));
-            ppDiag[c1] = -1;
             rCell[c1] = 0;
-            ppAssembler.getCoeff10(f) = 0.;
-            ppAssembler.getCoeff01(f) = 0.;
-        }
-        ppMatrix.setBoundary(c1);
-    }
-    return netFlux;
-  }
-
-  void pressureBoundaryPostContinuitySolve(const StorageSite& faces,
-                                           const Mesh& mesh,
-                                           const T bp)
-  {
-    const StorageSite& cells = mesh.getCells();
-
-    const VectorT3Array& faceArea =
-      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-    
-    const TArray& faceAreaMag =
-      dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
-    
-
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-    VectorT3Array& V = dynamic_cast<VectorT3Array&>(_flowFields.velocity[cells]);
-    TArray& p = dynamic_cast<TArray&>(_flowFields.pressure[cells]);
-    const TArray& rho = dynamic_cast<TArray&>(_flowFields.density[cells]);
-    TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
-
-    const int nFaces = faces.getCount();
-    for(int f=0; f<nFaces; f++)
-    {
-        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-        const T rhoF = rho[c0];
-
-        const T Vn = massFlux[f]/(rhoF*faceAreaMag[f]);
-
-        if (massFlux[f] > 0)
-        {
-            p[c1]=bp;
         }
         else
         {
-            V[c1] = -Vn*faceArea[f]/faceAreaMag[f];
-            p[c1] = bp - 0.5*rhoF*mag2(V[c1]);
+            rCell[c0] = 0;
         }
     }
   }
 
-  void correctVelocityInterior(const Mesh& mesh,
-                               const StorageSite& faces,
-                               const MultiField& ppField)                               
-  {
-    const StorageSite& cells = mesh.getCells();
-
-    const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-    const VectorT3Array& cellCentroid =  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-
-    MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
-    MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-    const VVDiagArray& momAp = dynamic_cast<const VVDiagArray&>((*_momApField)[cells]);
-    
-    VectorT3Array& V = dynamic_cast<VectorT3Array&>(_flowFields.velocity[cells]);
-    const TArray& pp = dynamic_cast<const TArray&>(ppField[pIndex]);
-    const TArray& rho = dynamic_cast<const TArray&>(_flowFields.density[cells]);
-    const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-
-    const Array<int>& ibType = mesh.getIBType();
-    const int nFaces = faces.getCount();
-    for(int f=0; f<nFaces; f++)
-    {
-        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-
-        if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
-            (ibType[c1] == Mesh::IBTYPE_FLUID))
-        {
-            const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
-            const VectorT3& Af = faceArea[f];
-            
-            const T aByMomAp0 = Af[0]*Af[0] / momAp[c0][0] +
-              Af[1]*Af[1] / momAp[c0][1] +
-              Af[2]*Af[2] / momAp[c0][2];
-            
-            const T aByMomAp1 = Af[0]*Af[0] / momAp[c1][0] +
-              Af[1]*Af[1] / momAp[c1][1] +
-              Af[2]*Af[2] / momAp[c1][2];
-            
-            const T Adotes = dot(Af,ds)/mag(ds);
-            const T coeff0  = cellVolume[c0]*rho[c0]*aByMomAp0/Adotes;
-            const T coeff1  = cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
-            
-            const T ppFace = (coeff0*pp[c0]+coeff1*pp[c1])/(coeff0+coeff1);
-            const VectorT3 ppA = ppFace*faceArea[f];
-            
-            V[c0] += ppA/momAp[c0];
-            V[c1] -= ppA/momAp[c1];
-        }
-        else if (((ibType[c0] == Mesh::IBTYPE_FLUID)
-                  && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
-                 ((ibType[c1] == Mesh::IBTYPE_FLUID)
-                  && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
-        {
-            // this is an iBFace, determine which cell is interior and
-            // which boundary. Correct the interior cell's velocity
-            // using the cell pressure correction as the face pressure
-            // correction
-            if (ibType[c0] == Mesh::IBTYPE_FLUID)
-            {
-                const T ppFace = pp[c0];
-                const VectorT3 ppA = ppFace*faceArea[f];
-                
-                V[c0] += ppA/momAp[c0];
-            }
-            else
-            {
-                const T ppFace = pp[c1];
-                const VectorT3 ppA = ppFace*faceArea[f];
-                
-                V[c1] -= ppA/momAp[c1];
-            }
-        }
-        // nothing needs to be done for the solid/solid or solid/ib faces
-    }
-  }
-
-  void updateFacePressureInterior(const Mesh& mesh,
-                                  const StorageSite& faces)
-  {
-    const StorageSite& cells = mesh.getCells();
-
-    const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-    const VectorT3Array& cellCentroid =  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-
-    MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-    const VVDiagArray& momAp = dynamic_cast<const VVDiagArray&>((*_momApField)[cells]);
-    
-    const TArray& pCell = dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
-    TArray& pFace = dynamic_cast<TArray&>(_flowFields.pressure[faces]);
-    const TArray& rho = dynamic_cast<const TArray&>(_flowFields.density[cells]);
-    const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-
-    const int nFaces = faces.getCount();
-    const Array<int>& ibType = mesh.getIBType();
-    for(int f=0; f<nFaces; f++)
-    {
-        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-
-        if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
-            (ibType[c1] == Mesh::IBTYPE_FLUID))
-        {
-            const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
-            const VectorT3& Af = faceArea[f];
-            
-            const T aByMomAp0 = Af[0]*Af[0] / momAp[c0][0] +
-              Af[1]*Af[1] / momAp[c0][1] +
-              Af[2]*Af[2] / momAp[c0][2];
-            
-            const T aByMomAp1 = Af[0]*Af[0] / momAp[c1][0] +
-              Af[1]*Af[1] / momAp[c1][1] +
-              Af[2]*Af[2] / momAp[c1][2];
-            
-            const T Adotes = dot(Af,ds)/mag(ds);
-            const T coeff0  = cellVolume[c0]*rho[c0]*aByMomAp0/Adotes;
-            const T coeff1  = cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
-            
-            pFace[f] = (coeff0*pCell[c0]+coeff1*pCell[c1])/(coeff0+coeff1);
-        }
-        else if (((ibType[c0] == Mesh::IBTYPE_FLUID)
-                  && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
-                 ((ibType[c1] == Mesh::IBTYPE_FLUID)
-                  && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
-        {
-            // this is an iBFace, determine which cell is interior and
-            // which boundary. copy pressure from the fluid cell
-            if (ibType[c0] == Mesh::IBTYPE_FLUID)
-            {
-                pFace[f] = pCell[c0];
-            }
-            else
-            {
-                pFace[f] = pCell[c1];
-            }
-        }
-        else
-          // for solid/solid and solid/ib faces pressure is never used
-          pFace[f]=0;
-    }
-  }
-
-  // the real face pressure is calculated by bc's and stored in p[c1]
-  // for boundary faces but if we are also storing the pressure at all
-  // faces we need to copy it here
-  
-  void updateFacePressureBoundary(const Mesh& mesh,
-                                  const StorageSite& faces)
-  {
-    const StorageSite& cells = mesh.getCells();
-
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-
-    const TArray& pCell = dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
-    TArray& pFace = dynamic_cast<TArray&>(_flowFields.pressure[faces]);
-
-    const int nFaces = faces.getCount();
-    for(int f=0; f<nFaces; f++)
-    {
-        //        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-        
-        pFace[f] = pCell[c1];
-    }
-  }
 
   void correctVelocityBoundary(const Mesh& mesh,
                                const StorageSite& faces,
@@ -1179,57 +663,6 @@ public:
     }
   }
 
-  void correctMassFluxInterior(const Mesh& mesh,
-                               const StorageSite& faces,
-                               MultiFieldMatrix& mfmatrix,
-                               const MultiField& xField)
-  {
-    const StorageSite& cells = mesh.getCells();
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-
-    MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
-    const TArray& pp = dynamic_cast<const TArray&>(xField[pIndex]);
-
-    PPMatrix& ppMatrix =
-      dynamic_cast<PPMatrix&>(mfmatrix.getMatrix(pIndex,pIndex));
-    
-    PPAssembler& ppAssembler = ppMatrix.getPairWiseAssembler(faceCells);
-
-    TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
-    
-    const int nFaces = faces.getCount();
-    for(int f=0; f<nFaces; f++)
-    {
-        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-
-        // should work for ib and ib/solid etc faces as well since the
-        // coefficients at such faces are all zero
-        massFlux[f] -= ppAssembler.getCoeff01(f)*pp[c1] -
-          ppAssembler.getCoeff10(f)*pp[c0];
-    }
-
-#if 1
-    MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-    if (mfmatrix.hasMatrix(pIndex,vIndex))
-    {
-        PVMatrix& pvMatrix =
-          dynamic_cast<PVMatrix&>(mfmatrix.getMatrix(pIndex,vIndex));
-        
-        PVAssembler& pvAssembler = pvMatrix.getPairWiseAssembler(faceCells);
-        const VectorT3Array& Vp = dynamic_cast<const VectorT3Array&>(xField[vIndex]);
-
-        for(int f=0; f<nFaces; f++)
-        {
-            const int c0 = faceCells(f,0);
-            const int c1 = faceCells(f,1);
-            
-            massFlux[f] += pvAssembler.getCoeff01(f)*Vp[c1] +
-              pvAssembler.getCoeff10(f)*Vp[c0];
-        }
-    }
-#endif
-  }
 
   void correctMassFluxBoundary(const StorageSite& faces,
                                const MultiField& ppField)
@@ -1357,14 +790,9 @@ public:
 
     T netFlux(0.);
     
-#if 0
-    for (int n=0; n<numMeshes; n++)
-    {
-        const Mesh& mesh = *_meshes[n];
-        const StorageSite& cells = mesh.getCells();
-        _flowFields.pressureGradient.syncGather(cells);
-    }
-#endif
+
+    _flowFields.pressureGradient.syncLocal();
+
     
     for (int n=0; n<numMeshes; n++)
     {
@@ -1377,6 +805,17 @@ public:
         // interior
         
         netFlux += discretizeMassFluxInterior(mesh,iFaces,matrix,x,b);
+        
+        // interfaces
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+            netFlux += discretizeMassFluxInterior(mesh,faces,matrix,x,b);
+
+            // this just sets the residual for the ghost cell to zero
+            interfaceContinuityBC(mesh,faces,matrix,b);
+        }
         
         // boundaries
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
@@ -1531,10 +970,25 @@ public:
         
         if (coupled)
           correctVelocityExplicit(mesh,ppField);
-        else
-          correctVelocityInterior(mesh,iFaces,ppField);
+         else
+         correctVelocityInterior(mesh,iFaces,ppField);
         
         updateFacePressureInterior(mesh,iFaces);
+
+        // interfaces
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+            correctMassFluxInterior(mesh,faces,matrix,ppField);
+            
+            if (coupled)
+              correctVelocityExplicit(mesh,ppField);
+            else
+              correctVelocityInterior(mesh,faces,ppField);
+            
+            updateFacePressureInterior(mesh,faces);
+        }
         
         // boundary
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
@@ -1559,18 +1013,9 @@ public:
 
     }
 
-#if 0
-    for(int n=0; n<numMeshes; n++)
-    {
-        const Mesh& mesh = *_meshes[n];
-        
-        const StorageSite& cells = mesh.getCells();
-        //        MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-        // const bool coupled =  matrix.hasMatrix(pIndex,vIndex);
-        //if (!coupled)
-        _flowFields.velocity.syncGather(cells);
-    }
-#endif
+    _flowFields.velocity.syncLocal();
+    _flowFields.pressure.syncLocal();
+
     computeContinuityResidual();
     
   }
@@ -1594,6 +1039,22 @@ public:
         ls.getMatrix().addMatrix(pIndex,pIndex,m);
 
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+
+            MultiField::ArrayIndex fIndex(&_flowFields.massFlux,&faces);
+            ls.getX().addArray(fIndex,_flowFields.massFlux.getArrayPtr(faces));
+
+            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,T>(faceCells));
+            ls.getMatrix().addMatrix(fIndex,pIndex,mft);
+
+            shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
+            ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+        }
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
@@ -1965,8 +1426,9 @@ public:
     }
   }
   
-  //  LinearSolver& getMomentumSolver() {return _momSolver;}
-  // LinearSolver& getContinuitySolver() {return _continuitySolver;}
+#include "FlowModelPressureBC.h"
+#include "FlowModelVelocityBC.h"
+#include "FlowModelInterior.h"
   
 private:
   const MeshList _meshes;
