@@ -17,4 +17,5 @@ public :
 
     MeshList    getMeshList();
 
+  void createMappers(MeshList& globalMeshList);
 };

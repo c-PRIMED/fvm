@@ -45,6 +45,8 @@ public :
     static void  destroyMeshList( MeshList meshList );
     ~NcDataReader();
 
+  void  createMappers( const MeshList& );
+
 private :
 
     void  init();
@@ -67,7 +69,6 @@ private :
     void  coords        ( int id, const MeshList&  meshList );
     void  face_cells    ( int id, const MeshList&  meshList );
     void  face_nodes    ( int id, const MeshList&  meshList );
-    void  mappers( const MeshList& );
 
     string _fname;
 

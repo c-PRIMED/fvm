@@ -401,9 +401,6 @@ NcDataReader::meshList()
 
      }
      
-    if ( _nInterface > 0 )
-       mappers( meshList);
-
 
 
      return meshList;
@@ -538,30 +535,47 @@ NcDataReader::face_nodes( int id, const MeshList&  meshList )
 
 
 void 
-NcDataReader::mappers( const MeshList&  meshList )
+NcDataReader::createMappers( const MeshList&  globalMeshList )
 {
+    if ( _nInterface ==0 )
+      return;
+
 
     int indx = 0;
-    for ( int id = 0; id < _nmesh; id++){
-        StorageSite::MappersMap&   cellMappers = meshList.at(id)->getCells().getMappers();
+    for ( int id = 0; id < _nmesh; id++)
+    {
+        // the id of our mesh in the global list
+        const int thisMeshID = _meshIDVals[id];
+        Mesh& thisMesh = *globalMeshList.at(thisMeshID);
+        
+        StorageSite::GatherMap& thisGatherMap = thisMesh.getCells().getGatherMap();
        //loop over mesh interfaces
         int offset = accumulate( _interfaceGroupVals, _interfaceGroupVals+id,0);
-        for ( int n = 0; n  < _interfaceGroupVals[id]; n++){
+        for ( int n = 0; n  < _interfaceGroupVals[id]; n++)
+        {
            int neighMeshID =  _interfaceIDVals[ offset + n ];
+
+           Mesh& neighMesh = *globalMeshList.at(neighMeshID);
+        
+           StorageSite::ScatterMap& neighScatterMap = neighMesh.getCells().getScatterMap();
            int size = _interfaceSizeVals[ offset + n ];
            ArrayIntPtr  fromIndices( new Array<int>( size ) );
            ArrayIntPtr  toIndices  ( new Array<int>( size ) );
 
           //get portion values
-          for ( int i = 0; i < size; i++){
+           for ( int i = 0; i < size; i++)
+           {
               (*fromIndices)[i] = _fromIndicesVals[indx];
               (*toIndices)[i]   = _toIndicesVals[indx];
               indx++;
            }
-           shared_ptr< OneToOneIndexMap >  oneToOneMapPtr( new OneToOneIndexMap(fromIndices, toIndices)  );
-           cellMappers[ meshList.at(id)->getGhostCellSite( neighMeshID ) ] =  oneToOneMapPtr;
+
+           // the site we will gather from to is the neighbour mesh's ghost cell site for thisMesh
+           const StorageSite& ghostSite = *neighMesh.getGhostCellSite(thisMeshID);
+
+           thisGatherMap[&ghostSite] = toIndices;
+           neighScatterMap[&ghostSite] = fromIndices;
        }
-        meshList.at(id)->getCells().scatterGatherMaps( );
 //
 //         const StorageSite& cells  = meshList.at(id)->getCells();
 //         const StorageSite::ScatterMap& scatterMap = cells.getScatterMap();
@@ -579,9 +593,9 @@ NcDataReader::mappers( const MeshList&  meshList )
 // 
 //        }
 
-
+        
     }
-
+    
 
 }
 
