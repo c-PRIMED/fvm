@@ -166,74 +166,61 @@ Field::copyFrom(const IContainer& oc)
   operator=(other);
 }
 
-#if 0
+
+void
+Field::syncScatter(const StorageSite& site)
+{
+  const ArrayBase& thisArray = operator[](site);
+      
+  const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+  
+  foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      
+      const Array<int>& fromIndices = *(mpos.second);
+      if (_ghostArrays.find(&oSite) == _ghostArrays.end())
+        _ghostArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
+
+      ArrayBase& ghostArray = *_ghostArrays[&oSite];
+      thisArray.scatter(ghostArray,fromIndices);
+  }
+}
+
 void
 Field::syncGather(const StorageSite& site)
 {
-  ArrayBase& a = *_arrays[&site];
-
-  const StorageSite::MappersMap& mappers = site.getMappers();
-
-  map<const StorageSite*, bool> isUptodate;
-
-  for(StorageSite::MappersMap::const_iterator pos = mappers.begin();
-      pos != mappers.end();
-      ++pos)
-  {
-      const StorageSite& oSite = *pos->first;
-      isUptodate[&oSite]=false;
-  }
+  ArrayBase& thisArray = operator[](site);
+      
+  const StorageSite::GatherMap& gatherMap = site.getGatherMap();
   
-  bool allUpdated = false;
-
-  do
+  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
   {
-      allUpdated = true;
-      for(StorageSite::MappersMap::const_iterator pos = mappers.begin();
-          pos != mappers.end();
-          ++pos)
+      const StorageSite& oSite = *mpos.first;
+      
+      const Array<int>& toIndices = *(mpos.second);
+      
+      if (_ghostArrays.find(&oSite) == _ghostArrays.end())
       {
-          const StorageSite& oSite = *pos->first;
-
-          if (!isUptodate[&oSite])
-          {
-              if (_arrayStatus.find(&oSite) == _arrayStatus.end())
-              {
-                  // ostringstream e;
-                  // e << "Field::operator[] No array found and no creator defined for "
-                  //  << oSite.getInt("ID");
-                  // throw CException(e.str());
-                  continue;
-              }
-
-              const int otherArrayStatus = _arrayStatus[&oSite];
-              ArrayBase *otherArray =0;
-              
-              if (otherArrayStatus == ARRAY_COMPUTED)
-                otherArray = _arrays[&oSite];
-              else if (otherArrayStatus == ARRAY_NOT_CREATED)
-                otherArray = &_create(oSite);
-              else
-              {
-                  allUpdated = false;
-                  logInfo("waiting for array in Field::syncGather ");
-                  if (otherArrayStatus == getThisThreadNum())
-                  {
-                      throw CException("Error in syncGather ");
-                  }
-              }
-
-              if (otherArray)
-              {
-                  const Array<int>& fromIndices = pos->second->fromIndices;
-                  const Array<int>& toIndices = pos->second->toIndices;
-                  a.setSubsetFromSubset(*otherArray,fromIndices,toIndices);
-                  isUptodate[&oSite] = true;
-              }
-          }
+          ostringstream e;
+          e << "Field::syncScatter: ghost array not found for"
+            << &oSite << endl;
+          throw CException(e.str());
       }
+      const ArrayBase& ghostArray = *_ghostArrays[&oSite];
+      thisArray.gather(ghostArray,toIndices);
   }
-  while (!allUpdated);
 }
 
-#endif
+void
+Field::syncLocal()
+{
+  // scatter first
+  foreach(ArrayMap::value_type& pos, _arrays)
+    syncScatter(*pos.first);
+
+  // gather 
+  foreach(ArrayMap::value_type& pos, _arrays)
+    syncGather(*pos.first);
+}
+

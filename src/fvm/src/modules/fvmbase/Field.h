@@ -37,15 +37,21 @@ public:
 
   bool hasArray(const StorageSite& s) const;
   
-  //  void syncGather(const StorageSite& s);
-  //void syncScatter(const StorageSite& s);
+  void syncLocal();
 
   const string& getName() const {return _name;}
-  
+  void syncScatter(const StorageSite& site);
+  void syncGather(const StorageSite& site);
+
 private:
   Field(const Field&);
+
+  ArrayBase& getGhostArray(const StorageSite&);
+  
   const string _name;
   ArrayMap _arrays;
+  ArrayMap _ghostArrays;
+  
   ChildSitesMap _childSitesMap;
 
   ArrayBase& _create(const StorageSite& site);
