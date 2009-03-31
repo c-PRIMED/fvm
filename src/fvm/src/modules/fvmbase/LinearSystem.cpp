@@ -93,7 +93,7 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
    */
               
   _matrix.createCoarsening(_coarseIndex,groupSize,weightRatioThreshold);
-  _coarseIndex.syncLocal();
+  _coarseIndex.sync();
   _matrix.syncGhostCoarsening(_coarseIndex);
   
   // we can now create the coarse sites for each fine site
@@ -116,18 +116,30 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
   {
       if (_matrix._coarseSites.find(k) != _matrix._coarseSites.end())
       {
+          const StorageSite& fineSite = *k.second;
+
           StorageSite& coarseSite = *_matrix._coarseSites[k];
-          StorageSite::MappersMap& mappers = coarseSite.getMappers();
-          foreach(MultiField::ArrayIndex ko,arrayIndices)
+
+          const StorageSite::ScatterMap& fineScatterMap = fineSite.getScatterMap();
+          StorageSite::ScatterMap& coarseScatterMap = coarseSite.getScatterMap();
+
+          foreach(const StorageSite::ScatterMap::value_type& pos, fineScatterMap)
           {
-              MultiFieldMatrix::EntryIndex fineEntryIndex(k,ko);
-              if (_matrix._coarseSites.find(ko) != _matrix._coarseSites.end())
-              {
-                  const StorageSite& coarseSiteO = *_matrix._coarseSites[ko];
-                  if (_matrix._coarseMappers.find(fineEntryIndex)
-                      != _matrix._coarseMappers.end())
-                    mappers[&coarseSiteO]=_matrix._coarseMappers[fineEntryIndex];
-              }
+              const StorageSite& fineGhostSite = *pos.first;
+              const StorageSite& coarseGhostSite = *_matrix._coarseGhostSites[&fineGhostSite];
+
+              coarseScatterMap[&coarseGhostSite] = _matrix._coarseScatterMaps[&coarseGhostSite];
+          }
+          
+          const StorageSite::GatherMap& fineGatherMap = fineSite.getGatherMap();
+          StorageSite::GatherMap& coarseGatherMap = coarseSite.getGatherMap();
+
+          foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMap)
+          {
+              const StorageSite& fineGhostSite = *pos.first;
+              const StorageSite& coarseGhostSite = *_matrix._coarseGhostSites[&fineGhostSite];
+
+              coarseGatherMap[&coarseGhostSite] = _matrix._coarseGatherMaps[&coarseGhostSite];
           }
       }
   }

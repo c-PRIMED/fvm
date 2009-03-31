@@ -10,7 +10,6 @@ MultiFieldMatrix::MultiFieldMatrix() :
   _matrices(),
   _coarseSizes(),
   _coarseGhostSizes(),
-  _coarseMappers(),
   _coarseSites(),
   _coarseToFineMappings(),
   _coarseConnectivities(),
@@ -141,8 +140,9 @@ MultiFieldMatrix::forwardGS(IContainer& xB, const IContainer& bB, IContainer& te
           }
           
           const Matrix& mII = getMatrix(rowIndex,rowIndex);
-          x.syncLocal(rowIndex);
+          x.syncGather(rowIndex);
           mII.forwardGS(x[rowIndex],r,r);
+          x.syncScatter(rowIndex);
       }
   }
 }
@@ -214,8 +214,9 @@ MultiFieldMatrix::reverseGS(IContainer& xB, const IContainer& bB, IContainer& te
           }
           
           const Matrix& mII = getMatrix(rowIndex,rowIndex);
-          x.syncLocal(rowIndex);
+          x.syncGather(rowIndex);
           mII.reverseGS(x[rowIndex],r,r);
+          x.syncScatter(rowIndex);
       }
   }
 }
@@ -306,14 +307,12 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
       
       const StorageSite& site = *rowIndex.second;
 
-      const StorageSite::MappersMap& mappers = site.getMappers();
+      const StorageSite::GatherMap& gatherMap = site.getGatherMap();
       
-      for(StorageSite::MappersMap::const_iterator pos = mappers.begin();
-          pos != mappers.end();
-          ++pos)
+      foreach(const StorageSite::GatherMap::value_type pos, gatherMap)
         {
-          const StorageSite& oSite = *pos->first;
-          const Array<int>& toIndices = pos->second->getToIndices();
+          const StorageSite& oSite = *pos.first;
+          const Array<int>& toIndices = *pos.second;
 
           map<int,int> otherToMyMapping;
 
@@ -338,6 +337,10 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
           }
 
           const int coarseMappersSize = otherToMyMapping.size();
+
+          shared_ptr<StorageSite> ghostSite(new StorageSite(coarseMappersSize));
+          _coarseGhostSites[&oSite] = ghostSite;
+          
           shared_ptr<Array<int> > coarseToIndices(new Array<int>(coarseMappersSize));
           shared_ptr<Array<int> > coarseFromIndices(new Array<int>(coarseMappersSize));
           
@@ -350,12 +353,8 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
               ncm++;
           }
 
-          Index colIndex(rowIndex.first,&oSite);
-          EntryIndex e(rowIndex,colIndex);
-
-          shared_ptr<OneToOneIndexMap> coarseMap(new OneToOneIndexMap(coarseFromIndices,
-                                                                      coarseToIndices));
-          _coarseMappers[e]=coarseMap;
+          _coarseScatterMaps[ghostSite.get()] = coarseFromIndices;
+          _coarseGatherMaps[ghostSite.get()] = coarseToIndices;
         }
       _coarseGhostSizes[rowIndex]=coarseGhostSize;
   }

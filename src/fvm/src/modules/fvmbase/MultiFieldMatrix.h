@@ -21,8 +21,10 @@ public:
   typedef pair<Index,Index> EntryIndex;
   typedef map<EntryIndex,shared_ptr<Matrix> > MatrixMap;
   typedef map<Index,int> MatrixSizeMap;
-  typedef map<EntryIndex,shared_ptr<OneToOneIndexMap> > MatrixMappersMap;
+  typedef map<const StorageSite*,shared_ptr<Array<int> > > MatrixMappersMap;
   typedef map<Index,shared_ptr<StorageSite> > StorageSiteMap;
+  typedef map<const StorageSite*,shared_ptr<StorageSite> > GhostStorageSiteMap;
+  
   typedef map<Index,shared_ptr<CRConnectivity> > CoarseToFineMappingMap;
   typedef map<EntryIndex,shared_ptr<CRConnectivity> > CoarseConnectivitiesMap;
   
@@ -88,8 +90,11 @@ private:
   MatrixMap _matrices;
   MatrixSizeMap _coarseSizes;
   MatrixSizeMap _coarseGhostSizes;
-  MatrixMappersMap _coarseMappers;
+  MatrixMappersMap _coarseScatterMaps;
+  MatrixMappersMap _coarseGatherMaps;
+  
   StorageSiteMap _coarseSites;
+  GhostStorageSiteMap _coarseGhostSites;
   CoarseToFineMappingMap _coarseToFineMappings;
   CoarseConnectivitiesMap _coarseConnectivities;
   MatrixMap _coarseMatrices;
