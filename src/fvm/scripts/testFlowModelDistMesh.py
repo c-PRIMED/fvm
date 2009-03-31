@@ -5,7 +5,6 @@ sys.setdlopenflags(0x100|0x2)
 
 import fvmbaseExt
 import importers
-import NcReader
 import time
 
 atype = 'double'
@@ -25,7 +24,7 @@ from FluentCase import FluentCase
 
 fileBase = None
 numIterations = 10
-fileBase = "/home/yildirim/memosa/src/fvm/test/cav_44_tri"
+#fileBase = "/home/yildirim/memosa/src/fvm/test/cav_44_tri"
 #fileBase = "/home/sm/a/data/wj"
 
 def usage():
@@ -42,30 +41,26 @@ def advance(fmodel,niter):
             break
 
 # change as needed
+#import debug
 
-outfile = None
-if __name__ == '__main__' and fileBase is None:
-    if len(sys.argv) < 2:
-        usage()
-    fileBase = sys.argv[1]
-    if len(sys.argv) == 3:
-        outfile = sys.argv[2]
 
-if outfile == None:
-    outfile = fileBase+"-prism.dat"
-    
-reader = FluentCase(fileBase+".cas")
-
-#import ddd
-reader.read();
-
-nmesh = 4;
+nmesh = 4
 meshes = fvmbaseExt.MeshList()
+readers = []
 for n in range(0,nmesh):
    ss = "test_" + str(n) + ".cdf"
    print ss
-   nc_reader = NcReader.NcDataReader( ss );
-   meshes.push_back( nc_reader.getMeshList()[0] )
+   nc_reader = importers.NcDataReader( ss )
+   thisMeshList = nc_reader.getMeshList()
+   for m in  thisMeshList:
+       meshes.push_back( m )
+
+   readers.append(nc_reader)
+
+## now create the mappers
+for n in range(0,nmesh):
+    readers[n].createMappers(meshes)
+    
 
 import time
 t0 = time.time()
@@ -82,10 +77,22 @@ print "before flowFields "
 flowFields =  models.FlowFields('flow')
 
 fmodel = models.FlowModelA(geomFields,flowFields,meshes)
+
+## set bc for top to be a wall with x velocity
+bc3 = fmodel.getBCMap()[3]
+bc3.bcType = 'NoSlipWall'
+bc3.setVar('specifiedXVelocity',1)
+
+## set viscosity and density, this is done per mesh since each mesh has its own VC object
+vcMap = fmodel.getVCMap()
+for vc in vcMap.values():
+    vc.setVar('density',1.0)
+    vc.setVar('viscosity',1.0)
+
+
 print "before BCreader " 
-"""
-reader.importFlowBCs(fmodel)
-#fmodel.printBCs()
+
+
 print "before Momentum solvers " 
 momSolver = fvmbaseExt.AMG()
 momSolver.relativeTolerance = 1e-1
@@ -114,39 +121,30 @@ foptions.setVar("momentumURF",0.7)
 foptions.setVar("pressureURF",0.3)
 foptions.printNormalizedResiduals=False
 
-"""
-"""
-if atype=='tangent':
-    vcMap = fmodel.getVCMap()
-    for i,vc in vcMap.iteritems():
-        print vc.getVar('viscosity')
-        vc.setVar('viscosity',(1.7894e-5,1))
-"""
 
-"""
 fmodel.init()
-#fmodel.advance(numIterations)
-advance(fmodel,numIterations)
+#advance(fmodel,numIterations)
 
-t1 = time.time()
-if outfile != '/dev/stdout':
-    print '\nsolution time = %f' % (t1-t0)
+c0 = meshes[0].getCells()
+c1 = meshes[1].getCells()
+c2 = meshes[2].getCells()
+c3 = meshes[3].getCells()
 
-writer = exporters.FluentDataExporterA(reader,fileBase+"-prism.dat",False,0)
+f0 = meshes[0].getFaces()
+f1 = meshes[1].getFaces()
+f2 = meshes[2].getFaces()
+f3 = meshes[3].getFaces()
 
-writer.init()
-writer.writeScalarField(flowFields.pressure,1)
-writer.writeVectorField(flowFields.velocity,111)
-writer.writeScalarField(flowFields.massFlux,18)
-writer.finish()
+fc0 = meshes[0].getConnectivity(f0,c0)
+fc1 = meshes[1].getConnectivity(f1,c1)
+fc2 = meshes[2].getConnectivity(f2,c2)
+fc3 = meshes[3].getConnectivity(f3,c3)
 
-if (atype=='tangent'):
-    writer = exporters.FluentDataExporterA(reader,fileBase+"-prism-tangent.dat",False,1)
-    writer.init()
-    writer.writeScalarField(flowFields.pressure,1)
-    writer.writeVectorField(flowFields.velocity,111)
-    writer.writeScalarField(flowFields.massFlux,18)
-    writer.finish()
 
-    
-"""
+vol0 = geomFields.volume[c0].asNumPyArray()
+vol1 = geomFields.volume[c1].asNumPyArray()
+vol2 = geomFields.volume[c2].asNumPyArray()
+vol3 = geomFields.volume[c3].asNumPyArray()
+
+#import debug
+fmodel.advance(100)
