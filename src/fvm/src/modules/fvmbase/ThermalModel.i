@@ -18,6 +18,10 @@ struct ThermalBC : public FloatVarDict<T>
 template <class T>
 struct ThermalModelOptions : public FloatVarDict<T>
 {
+  double relativeTolerance;
+  double absoluteTolerance;
+
+  LinearSolver *linearSolver;
 }; 
 
 

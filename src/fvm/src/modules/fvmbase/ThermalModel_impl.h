@@ -80,7 +80,22 @@ public:
       
         _thermalFields.temperature.addArray(cells,tCell);
       
+        shared_ptr<TArray> condCell(new TArray(cells.getCount()));
+        *condCell = 1.0;
+        _thermalFields.conductivity.addArray(cells,condCell);
+
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+          
+            shared_ptr<TArray> fluxFace(new TArray(faces.getCount()));
+
+            fluxFace->zero();
+            _thermalFields.heatFlux.addArray(faces,fluxFace);
+          
+        }
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
@@ -137,6 +152,24 @@ public:
             shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
             ls.getMatrix().addMatrix(fIndex,fIndex,mff);
         }
+
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+
+            MultiField::ArrayIndex fIndex(&_thermalFields.heatFlux,&faces);
+            ls.getX().addArray(fIndex,_thermalFields.heatFlux.getArrayPtr(faces));
+
+            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,T>(faceCells));
+            ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+            shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
+            ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+        }
+
     }
   }
 
@@ -188,6 +221,19 @@ public:
             else
               throw CException(bc.bcType + " not implemented for ThermalModel");
         }
+
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+            GenericBCS<T,T,T> gbc(faces,mesh,
+                                  _geomFields,
+                                  _thermalFields.temperature,
+                                  _thermalFields.heatFlux,
+                                  ls.getMatrix(), ls.getX(), ls.getB());
+
+            gbc.applyInterfaceBC();
+        }
     }
   }
   
@@ -205,7 +251,7 @@ public:
 
         ls.initSolve();
 
-        MFRPtr rNorm(ls.getResidual().getOneNorm());
+        MFRPtr rNorm(_options.getLinearSolver().solve(ls));
 
         if (!_initialNorm) _initialNorm = rNorm;
         
@@ -213,10 +259,8 @@ public:
 
         cout << _niters << ": " << *rNorm << endl;
 
-
-        AMG solver;
-        solver.solve(ls);
-        //        solver.cleanUp();
+        
+        _options.getLinearSolver().cleanup();
 
         ls.postSolve();
         ls.updateSolution();
