@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
 
   //actions
    part_mesh.partition();
-   //part_mesh.dumpTecplot();	//there is bug for quadrilateral elements in this method find it after turkey
 
    part_mesh.mesh();
    part_mesh.mesh_debug();
@@ -70,11 +69,13 @@ int main(int argc, char *argv[])
 // 
      stringstream ss_test;
      ss_test << "test_test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
-     cout <<  ss_test.str() << endl;
+     //cout <<  ss_test.str() << endl;
        MeshList meshes = nc_reader.getMeshList();
        NcDataWriter  nc_writer_test( meshes, ss_test.str() );
        nc_writer_test.record();
        NcDataReader::destroyMeshList( meshes );
+
+   //cout << " procID(FVM) = " << MPI::COMM_WORLD.Get_rank() << endl;
 
    MPI::Finalize();
    return 0;
