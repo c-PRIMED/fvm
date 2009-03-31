@@ -16,3 +16,8 @@ template class ThermalModel<ATYPE>;
 
 template class FlowModel<ATYPE>;
 
+#include "IdealGasDensityModel.h"
+#include "IdealGasDensityModel_impl.h"
+
+template class IdealGasDensityModel<ATYPE>;
+
