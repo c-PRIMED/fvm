@@ -17,6 +17,7 @@ public:
   typedef pair<const Field*,  const StorageSite*> ArrayIndex;
   typedef map<ArrayIndex,int> ArrayMap;
   typedef vector<shared_ptr<ArrayBase> > ArrayList;
+  typedef map<ArrayIndex,shared_ptr<ArrayBase> > GhostArrayMap;
   typedef vector<ArrayIndex> ArrayIndexList;
   
   MultiField();
@@ -54,9 +55,6 @@ public:
   MultiField& saxpy(const MultiFieldReduction& alphaMF, const MultiField& xMF);
   MultiField& msaxpy(const MultiFieldReduction& alphaMF, const MultiField& xMF);
 
-  void syncLocal();
-  void syncLocal(const ArrayIndex& i);
-
   shared_ptr<MultiFieldReduction> reduceSum() const;
   shared_ptr<MultiFieldReduction> getOneNorm() const;
 
@@ -66,13 +64,17 @@ public:
 
   shared_ptr<MultiField> extract(const ArrayIndexList& indices);
   void merge(const MultiField& other);
+
+  void syncScatter(const ArrayIndex& i);
+  void syncGather(const ArrayIndex& i);
+  void sync();
   
 private:
   int _length;
   ArrayList _arrays;
   ArrayIndexList _arrayIndices;
   ArrayMap _arrayMap;
-  
+  GhostArrayMap _ghostArrays;
 };
 
 #endif

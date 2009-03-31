@@ -274,56 +274,6 @@ MultiField::removeArray(const ArrayIndex& aIndex)
 }
 
 
-void
-MultiField::syncLocal()
-{
-  for(int i=0; i<_length; i++)
-  {
-      ArrayBase& a = *_arrays[i];
-      const StorageSite& site = *_arrayIndices[i].second;
-      const StorageSite::MappersMap& mappers = site.getMappers();
-      
-      for(StorageSite::MappersMap::const_iterator pos = mappers.begin();
-          pos != mappers.end();
-          ++pos)
-      {
-          const StorageSite& oSite = *pos->first;
-          ArrayIndex oIndex(_arrayIndices[i].first,&oSite);
-          if (_arrayMap.find(oIndex) != _arrayMap.end())
-          {
-              const Array<int>& fromIndices = pos->second->getFromIndices();
-              const Array<int>& toIndices = pos->second->getToIndices();
-              const ArrayBase& otherArray = *_arrays[_arrayMap[oIndex]];
-              a.setSubsetFromSubset(otherArray,fromIndices,toIndices);
-          }
-      }
-  }
-}
-
-void
-MultiField::syncLocal(const ArrayIndex& i)
-{
-  ArrayBase& a = *_arrays[_arrayMap[i]];
-  const StorageSite& site = *i.second;
-
-  const StorageSite::MappersMap& mappers = site.getMappers();
-      
-  for(StorageSite::MappersMap::const_iterator pos = mappers.begin();
-      pos != mappers.end();
-      ++pos)
-  {
-      const StorageSite& oSite = *pos->first;
-      ArrayIndex oIndex(i.first,&oSite);
-      if (_arrayMap.find(oIndex) != _arrayMap.end())
-      {
-          const Array<int>& fromIndices = pos->second->getFromIndices();
-          const Array<int>& toIndices = pos->second->getToIndices();
-          const ArrayBase& otherArray = *_arrays[_arrayMap[oIndex]];
-          a.setSubsetFromSubset(otherArray,fromIndices,toIndices);
-      }
-  }
-}
-
 
 shared_ptr<MultiField>
 MultiField::extract(const ArrayIndexList& indices)
@@ -344,4 +294,60 @@ MultiField::merge(const MultiField& other)
   {
       addArray(pos.first, other._arrays[pos.second]);
   }
+}
+
+void
+MultiField::syncScatter(const ArrayIndex& i)
+{
+  const  ArrayBase& thisArray = *_arrays[_arrayMap[i]];
+  const StorageSite& thisSite = *i.second;
+
+  const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMap();
+  
+  foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      ArrayIndex oIndex(i.first,&oSite);
+      
+      const Array<int>& fromIndices = *(mpos.second);
+      if (_ghostArrays.find(oIndex) == _ghostArrays.end())
+        _ghostArrays[oIndex] = thisArray.newSizedClone(oSite.getCount());
+
+      ArrayBase& ghostArray = *_ghostArrays[oIndex];
+      thisArray.scatter(ghostArray,fromIndices);
+  }
+
+}
+
+void
+MultiField::syncGather(const ArrayIndex& i)
+{
+  ArrayBase& thisArray = *_arrays[_arrayMap[i]];
+  const StorageSite& thisSite = *i.second;
+
+  const StorageSite::GatherMap& gatherMap = thisSite.getGatherMap();
+  
+  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      ArrayIndex oIndex(i.first,&oSite);
+      
+      const Array<int>& toIndices = *(mpos.second);
+      if (_ghostArrays.find(oIndex) != _ghostArrays.end())
+      {
+          ArrayBase& ghostArray = *_ghostArrays[oIndex];
+          thisArray.gather(ghostArray,toIndices);
+      }
+  }
+}
+
+void
+MultiField::sync()
+{
+  foreach(ArrayIndex i, _arrayIndices)
+    syncScatter(i);
+
+  foreach(ArrayIndex i, _arrayIndices)
+    syncGather(i);
+  
 }
