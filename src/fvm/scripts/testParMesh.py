@@ -9,8 +9,6 @@ import NcWriter
 import fvmparallel
 from mpi4py import MPI
 
-MPI.Init()
-
 from FluentCase import FluentCase
 
 
@@ -46,6 +44,8 @@ fluent_meshes = reader.getMeshList()
 import time
 t0 = time.time()
 nmesh = MPI.COMM_WORLD.Get_size()
+
+
 #npart = fvmparallel.IntVector(1,nmesh)  #total of distributed meshes
 #etype = fvmparallel.IntVector(1,1) #triangle
 
@@ -59,21 +59,12 @@ part_mesh.setNumFlag(0);
 #actions
 part_mesh.partition()
 part_mesh.mesh()
+part_mesh.mesh_debug()
 meshes = part_mesh.meshList()
-
-
-print " proce id = ", MPI.COMM_WORLD.Get_rank()
-print " size     = ", MPI.COMM_WORLD.Get_size()
-
-ss = "test_" + str (MPI.COMM_WORLD.Get_rank()) + ".cdf"
-nc_writer = NcWriter.NcDataWriter( meshes, ss );
-nc_writer.record();
 
 
 
 
 t1 = time.time()
-if outfile != '/dev/stdout':
-    print '\nsolution time = %f' % (t1-t0)
-
-MPI.Finalize()
+#if outfile != '/dev/stdout':
+#    print '\nsolution time = %f' % (t1-t0)
