@@ -306,14 +306,8 @@ public:
         }
 
     }
-#if 0
-    for (int n=0; n<numMeshes; n++)
-    {
-        const Mesh& mesh = *_meshes[n];
-        const StorageSite& cells = mesh.getCells();
-        _gradientField.syncGather(cells);
-    }
-#endif
+
+    _gradientField.syncLocal();
   }
 
 private:

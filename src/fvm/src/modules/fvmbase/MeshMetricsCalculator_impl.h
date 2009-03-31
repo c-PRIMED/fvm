@@ -558,6 +558,9 @@ MeshMetricsCalculator<T>::init()
       calculateCellCentroids(mesh);
       calculateCellVolumes(mesh);
   }
+
+  _volumeField.syncLocal();
+  _coordField.syncLocal();
 }
 //***********************************************************************//
 
@@ -582,7 +585,7 @@ MeshMetricsCalculator<T>::computeGridInterpolationMatrices
   const Array<int>& FGRow = faceToGrids.getRow();
   const Array<int>& FGCol = faceToGrids.getCol();
   
-  const int nGrids = grids.getCount();
+  //  const int nGrids = grids.getCount();
 
   const int nFaces = faces.getCount();
   
@@ -638,7 +641,7 @@ MeshMetricsCalculator<T>::computeGridInterpolationMatrices
 	  Q[i][j]=Qinv[i][j]=0;
 	}
       }
-      int size = FGRow[n+1]-FGRow[n];
+      //      int size = FGRow[n+1]-FGRow[n];
      
       // if(size == 3){
       for(int nc=FGRow[n]; nc<FGRow[n+1]; nc++)
