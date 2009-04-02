@@ -36,6 +36,8 @@ class BuildPkg:
         BuildPkg.packages = [
             Python("pkgs/python", 0),
             Numpy("pkgs/numpy", 1),
+            Nose("pkgs/python-nose", 1),
+            Mpi4py("pkgs/mpi4py", 1),
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
@@ -196,6 +198,14 @@ class Gmsh(BuildPkg):
         return self.sys_log("make clean")
 
 class Numpy(BuildPkg):
+    def _install(self):
+        return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
+
+class Nose(BuildPkg):
+    def _install(self):
+        return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
+
+class Mpi4py(BuildPkg):
     def _install(self):
         return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
 
