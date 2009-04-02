@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <numeric>
 
+
 #include "NcDataReader.h"
 #include "netcdfcpp.h"
 #include "OneToOneIndexMap.h"
@@ -64,9 +65,8 @@ NcDataReader::~NcDataReader()
     if ( _faceNodesColVals ) delete [] _faceNodesColVals;
 
 
-    if ( _fromIndicesVals  ) delete [] _fromIndicesVals;
-    if ( _toIndicesVals    ) delete [] _toIndicesVals;
-   
+    if ( _gatherIndicesVals  ) delete [] _gatherIndicesVals;
+    if ( _scatterIndicesVals    ) delete [] _scatterIndicesVals;
 
     if ( _ncFile        ) delete _ncFile;   
 
@@ -132,8 +132,8 @@ NcDataReader::init()
     _faceCellsColVals = NULL;
     _faceNodesColVals = NULL;
 
-    _fromIndicesVals = NULL;
-    _toIndicesVals   = NULL;
+    _gatherIndicesVals = NULL;
+    _scatterIndicesVals   = NULL;
 }		   
 
 //Setting NcFile
@@ -174,6 +174,7 @@ NcDataReader::getDims()
    } else {
       _nInterface = 0;
    }
+
 
 
 }
@@ -223,8 +224,8 @@ NcDataReader::getVars()
     _faceNodesCol = _ncFile->get_var("face_nodes_col");
 
     if ( _nInterface > 0 ) { 
-       _fromIndices = _ncFile->get_var("from_indices");
-       _toIndices   = _ncFile->get_var("to_indices");
+       _gatherIndices = _ncFile->get_var("gather_indices");
+       _scatterIndices   = _ncFile->get_var("scatter_indices");
     }
 
 
@@ -295,8 +296,8 @@ NcDataReader::allocate_vars()
    _faceNodesRowVals = new int [ _nfaceRow ];
    _faceNodesColVals = new int [ _nfaceNodesCol ];
    
-   _fromIndicesVals  = new int [ _nInterface ];
-   _toIndicesVals    = new int [ _nInterface ];
+   _gatherIndicesVals  = new int [ _nInterface ];
+   _scatterIndicesVals    = new int [ _nInterface ];
 
 }
 
@@ -366,8 +367,8 @@ void
 NcDataReader::get_mapper_vals()
 {
     if ( _nInterface > 0 ){
-       _fromIndices->get( _fromIndicesVals, _nInterface );
-       _toIndices->get( _toIndicesVals  , _nInterface );
+       _gatherIndices->get( _gatherIndicesVals, _nInterface );
+       _scatterIndices->get( _scatterIndicesVals  , _nInterface );
     }
 
 }
@@ -547,7 +548,7 @@ NcDataReader::createMappers( const MeshList&  globalMeshList )
         // the id of our mesh in the global list
         const int thisMeshID = _meshIDVals[id];
         Mesh& thisMesh = *globalMeshList.at(thisMeshID);
-        
+
         StorageSite::GatherMap& thisGatherMap = thisMesh.getCells().getGatherMap();
        //loop over mesh interfaces
         int offset = accumulate( _interfaceGroupVals, _interfaceGroupVals+id,0);
@@ -556,25 +557,25 @@ NcDataReader::createMappers( const MeshList&  globalMeshList )
            int neighMeshID =  _interfaceIDVals[ offset + n ];
 
            Mesh& neighMesh = *globalMeshList.at(neighMeshID);
-        
+
            StorageSite::ScatterMap& neighScatterMap = neighMesh.getCells().getScatterMap();
            int size = _interfaceSizeVals[ offset + n ];
-           ArrayIntPtr  fromIndices( new Array<int>( size ) );
-           ArrayIntPtr  toIndices  ( new Array<int>( size ) );
+           ArrayIntPtr  gatherIndices( new Array<int>( size ) );
+           ArrayIntPtr  scatterIndices  ( new Array<int>( size ) );
 
           //get portion values
            for ( int i = 0; i < size; i++)
            {
-              (*fromIndices)[i] = _fromIndicesVals[indx];
-              (*toIndices)[i]   = _toIndicesVals[indx];
+              (*gatherIndices)[i] = _gatherIndicesVals[indx];
+              (*scatterIndices)[i]   = _scatterIndicesVals[indx];
               indx++;
            }
 
            // the site we will gather from to is the neighbour mesh's ghost cell site for thisMesh
            const StorageSite& ghostSite = *neighMesh.getGhostCellSite(thisMeshID);
 
-           thisGatherMap[&ghostSite] = toIndices;
-           neighScatterMap[&ghostSite] = fromIndices;
+           thisGatherMap[&ghostSite]   = scatterIndices;
+           neighScatterMap[&ghostSite] = gatherIndices;
        }
 //
 //         const StorageSite& cells  = meshList.at(id)->getCells();

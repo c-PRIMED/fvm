@@ -115,8 +115,8 @@ private :
      NcVar* _faceNodesRow;
      NcVar* _faceNodesCol;
 
-     NcVar* _fromIndices;
-     NcVar* _toIndices;
+     NcVar* _gatherIndices;
+     NcVar* _scatterIndices;
 
 
      NcVar* _bounBoolVar;
@@ -155,8 +155,8 @@ private :
      vector< int > _faceNodesRowCountVals;
      vector< int > _faceNodesColCountVals;
 
-     int* _fromIndicesVals;
-     int* _toIndicesVals;
+     int* _gatherIndicesVals;
+     int* _scatterIndicesVals;
 
      const int MAX_CHAR;
      bool BOUN_TYPE_DIM;

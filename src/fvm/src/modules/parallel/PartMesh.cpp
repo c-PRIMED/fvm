@@ -1691,7 +1691,10 @@ PartMesh::mappers()
  
         create_window( id );
         fence_window();      
-        StorageSite::MappersMap & cellMappers = _meshListLocal.at(id)->getCells().getMappers();
+
+        StorageSite::ScatterMap & cellScatterMap = _meshListLocal.at(id)->getCells().getScatterMap();
+        StorageSite::GatherMap  & cellGatherMap  = _meshListLocal.at(id)->getCells().getGatherMap();
+
        //getting data
         set<int>::const_iterator it_set;
         int interfaceIndx = 0;
@@ -1754,9 +1757,12 @@ PartMesh::mappers()
 
 
            }
-          shared_ptr<OneToOneIndexMap>  oneToOneMapPtr( new OneToOneIndexMap( _fromIndices.at(id).at(interfaceIndx), 
-                                                                                _toIndices.at(id).at(interfaceIndx) )  );
-          cellMappers[ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] =  oneToOneMapPtr;
+          //shared_ptr<OneToOneIndexMap>  oneToOneMapPtr( new OneToOneIndexMap( _fromIndices.at(id).at(interfaceIndx), 
+          //                                                                      _toIndices.at(id).at(interfaceIndx) )  );
+
+          //cellSMappers[ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] =  oneToOneMapPtr;
+          cellScatterMap[ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] = _toIndices.at(id).at(interfaceIndx);
+          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] = _fromIndices.at(id).at(interfaceIndx);
           interfaceIndx++;
 
         }
@@ -1835,20 +1841,22 @@ PartMesh::mesh_file()
      ofstream  mesh_file( (ss.str()).c_str() );
      for ( int id = 0; id < _nmesh; id++ ){
 
-          const StorageSite::MappersMap& cellMappers = _meshListLocal.at(id)->getCells().getMappers();
+          const StorageSite::ScatterMap& cellScatterMap  = _meshListLocal.at(id)->getCells().getScatterMap();
+          const StorageSite::GatherMap& cellGatherMap   = _meshListLocal.at(id)->getCells().getGatherMap();
           const Mesh::GhostCellSiteMap& ghostCellSiteMap = _meshListLocal.at(id)->getGhostCellSiteMap();
 
            Mesh       ::GhostCellSiteMap::const_iterator it_ghost;
-           StorageSite::MappersMap::const_iterator it_mapper;
+           StorageSite::ScatterMap::const_iterator it_mapper;
            it_ghost = ghostCellSiteMap.begin();
             //loop over interfaces
-           for ( it_mapper = cellMappers.begin(); it_mapper != cellMappers.end(); it_mapper++){
+           for ( it_mapper = cellScatterMap.begin(); it_mapper != cellScatterMap.end(); it_mapper++){
                const StorageSite *site = it_mapper->first;
-               const OneToOneIndexMap&  indexMap = *(it_mapper->second);
+               const Array<int>&  scatterArray = *(it_mapper->second);
+               const Array<int>&  gatherArray  = *(cellGatherMap.find(site)->second);
                for ( int i = 0; i < site->getCount(); i++){
                      mesh_file <<   "  neightMeshID = " <<  it_ghost->first  << "        "
-                               << indexMap.getFromIndices()[i] + 1 << "    ===>    " 
-                               << indexMap.getToIndices()[i] +1  << endl;
+                               << gatherArray[i]  + 1  << "    ===>    " 
+                               << scatterArray[i] + 1  << endl;
                }
                it_ghost++;
           }

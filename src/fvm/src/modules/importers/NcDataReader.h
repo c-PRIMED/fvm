@@ -123,8 +123,8 @@ private :
     NcVar* _faceNodesRow;
     NcVar* _faceNodesCol;
 
-    NcVar* _fromIndices;
-    NcVar* _toIndices;
+    NcVar* _gatherIndices;
+    NcVar* _scatterIndices;
 
     int*  _dimensionVals;
     int*  _meshIDVals;
@@ -162,8 +162,8 @@ private :
     int  *_faceNodesRowVals;
     int  *_faceNodesColVals;
     
-    int  *_fromIndicesVals;
-    int  *_toIndicesVals;
+    int  *_gatherIndicesVals;
+    int  *_scatterIndicesVals;
 
 
 

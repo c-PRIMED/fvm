@@ -24,7 +24,7 @@ int NcDataWriter::_writeAction = 0;
 
 NcDataWriter::NcDataWriter( const MeshList& meshes, const string& fname )
 : _meshList( meshes ), _fname( fname ), _ncFile(NULL), _xVals(NULL), _yVals(NULL), _zVals(NULL),
-_fromIndicesVals(NULL), _toIndicesVals(NULL), MAX_CHAR(40), BOUN_TYPE_DIM(false), NEIGH_MESH( false ), INTERFACE( false )
+_gatherIndicesVals(NULL), _scatterIndicesVals(NULL), MAX_CHAR(40), BOUN_TYPE_DIM(false), NEIGH_MESH( false ), INTERFACE( false )
 {
 
    init();
@@ -37,8 +37,8 @@ NcDataWriter::~NcDataWriter()
    if ( _yVals ) delete [] _yVals;
    if ( _zVals ) delete [] _zVals;
 
-   if ( _fromIndicesVals  ) delete []  _fromIndicesVals;
-   if ( _toIndicesVals    ) delete []  _toIndicesVals;
+   if ( _gatherIndicesVals  ) delete []  _gatherIndicesVals;
+   if ( _scatterIndicesVals    ) delete []  _scatterIndicesVals;
 
    if ( _ncFile ) delete _ncFile;
 
@@ -103,11 +103,11 @@ NcDataWriter::setDims()
          nfaceCells_col  += _meshList.at(id)->getAllFaceCells().getCol().getLength();
          nfaceNodes_col  += _meshList.at(id)->getAllFaceNodes().getCol().getLength();
 
-         const StorageSite::MappersMap&   mappers = _meshList.at(id)->getCells().getMappers();
+         const StorageSite::ScatterMap&   scatterMap = _meshList.at(id)->getCells().getScatterMap();
          //loop over neighbour mesh to count interfaces
-         StorageSite::MappersMap::const_iterator it;
-         for ( it = mappers.begin(); it != mappers.end(); it++ )
-             ninterface += it->second->getFromIndices().getLength();  //or it->secon->toIndices.getLength()
+         StorageSite::ScatterMap::const_iterator it;
+         for ( it = scatterMap.begin(); it != scatterMap.end(); it++ )
+             ninterface += it->second->getLength();  
 
      }
 
@@ -196,8 +196,8 @@ NcDataWriter::setVars()
     _faceNodesCol = _ncFile->add_var("face_nodes_col", ncInt, _nfaceNodesCol );
      
      if ( INTERFACE ){
-        _fromIndices  = _ncFile->add_var("from_indices", ncInt, _nInterface);
-        _toIndices    = _ncFile->add_var("to_indices"  , ncInt, _nInterface);
+        _gatherIndices  = _ncFile->add_var("gather_indices", ncInt, _nInterface);
+        _scatterIndices    = _ncFile->add_var("scatter_indices"  , ncInt, _nInterface);
      }
 
     _bounBoolVar      = _ncFile->add_var("is_bounTypeDim_Valid", ncInt);
@@ -235,16 +235,16 @@ NcDataWriter::get_var_values()
      assert( !_xVals );
      assert( !_yVals );
      assert( !_zVals );
-     assert( !_fromIndicesVals );
-     assert( !_toIndicesVals   );
+     assert( !_gatherIndicesVals );
+     assert( !_scatterIndicesVals   );
 
     _xVals = new double [ _nnodes->size() ];
     _yVals = new double [ _nnodes->size() ];
     _zVals = new double [ _nnodes->size() ];
 
      if ( INTERFACE ){
-       _fromIndicesVals  = new int [ _nInterface->size() ];
-       _toIndicesVals    = new int [ _nInterface->size() ];
+       _gatherIndicesVals  = new int [ _nInterface->size() ];
+       _scatterIndicesVals    = new int [ _nInterface->size() ];
      }
 
     for ( long id = 0; id < _nmesh->size(); id++ ){
@@ -383,23 +383,26 @@ NcDataWriter::connectivities( int id )
 void
 NcDataWriter::mappers( int id )
 {
-     const StorageSite::MappersMap&   mappers = _meshList.at(id)->getCells().getMappers();
-     const Mesh::GhostCellSiteMap&    ghostCellSiteMap = _meshList.at(id)->getGhostCellSiteMap();
-     //loop over neighbour mesh to count interfaces
-     StorageSite::MappersMap::const_iterator it_mapper;
+     const StorageSite::ScatterMap& cellScatterMap  = _meshList.at(id)->getCells().getScatterMap();
+     const StorageSite::GatherMap&  cellGatherMap   = _meshList.at(id)->getCells().getGatherMap();
+     const Mesh::GhostCellSiteMap&  ghostCellSiteMap = _meshList.at(id)->getGhostCellSiteMap();
+
+     StorageSite::ScatterMap::const_iterator it_scatterMap;
+     StorageSite::GatherMap ::const_iterator it_gatherMap;
      Mesh::GhostCellSiteMap::const_iterator  it;
- 
+
      int  indx = mappers_index( id );
-     
+
      for ( it = ghostCellSiteMap.begin(); it != ghostCellSiteMap.end(); it++ ){
          const StorageSite* site = it->second.get();
-         it_mapper = mappers.find( site );
-         int nend = it_mapper->second->getFromIndices().getLength();
-         //int nend = it->second->getFromIndices().getLength();
-   
+         it_scatterMap = cellScatterMap.find( site );
+         it_gatherMap  = cellGatherMap.find( site );
+         int nend = it_scatterMap->second->getLength();
+         // or int nend = it_gatherMap->second->getLength();
+
          for ( int n = 0; n < nend; n++ ){
-           _fromIndicesVals[indx] = it_mapper->second->getFromIndices()[n];  //or it->secon->toIndices.getLength() 
-           _toIndicesVals[indx]   = it_mapper->second->getToIndices()[n];
+           _gatherIndicesVals[indx]  = (*it_gatherMap->second)[n]; 
+           _scatterIndicesVals[indx] = (*it_scatterMap->second)[n];
             indx++;
          }
      }
@@ -411,17 +414,17 @@ NcDataWriter::mappers( int id )
 int
 NcDataWriter::mappers_index( int mesh_end )
 {
-  int ninterface  = 0;
+   int ninterface  = 0;
    for ( int id = 0; id < mesh_end; id++ ){
-         const StorageSite::MappersMap&   mappers = _meshList.at(id)->getCells().getMappers();
+         const StorageSite::ScatterMap&   scatterMap = _meshList.at(id)->getCells().getScatterMap();
          //loop over neighbour mesh to count interfaces
-         StorageSite::MappersMap::const_iterator it;
-         for ( it = mappers.begin(); it != mappers.end(); it++ )
-             ninterface += it->second->getFromIndices().getLength();  //or it->secon->toIndices.getLength()
+         StorageSite::ScatterMap::const_iterator it;
+         for ( it = scatterMap.begin(); it != scatterMap.end(); it++ )
+             ninterface += it->second->getLength(); 
 
-     }
+   }
 
-    return ninterface;
+   return ninterface;
 }
 
 //attributes
@@ -468,8 +471,8 @@ NcDataWriter::add_attributes()
      assert( _faceCellsCol->add_att("face_cells_col", "col values of faceCells CRconnctivities") );
      assert( _faceNodesCol->add_att("face_nodes_col", "col values of faceNodes CRconnctivities") );
      if ( INTERFACE ){     
-        assert( _fromIndices->add_att("from_indices", "trom indices from other neightbour mesh " ) );
-        assert( _toIndices->add_att("to_indices",     "to  indices in current mesh") );
+        assert( _gatherIndices->add_att("from_indices", "trom indices from other neightbour mesh " ) );
+        assert( _scatterIndices->add_att("to_indices",     "to  indices in current mesh") );
      }
 
 }
@@ -510,8 +513,8 @@ NcDataWriter::write_values()
      _faceNodesColCount->put( &_faceNodesColCountVals[0], _nmesh->size() );
 
     if ( INTERFACE ){
-       _fromIndices->put( _fromIndicesVals, _nInterface->size() );
-       _toIndices->put( _toIndicesVals, _nInterface->size() );
+       _gatherIndices->put( _gatherIndicesVals, _nInterface->size() );
+       _scatterIndices->put( _scatterIndicesVals, _nInterface->size() );
     }
 
      int boun_bool = int( BOUN_TYPE_DIM );
