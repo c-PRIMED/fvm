@@ -10,6 +10,14 @@ python:
 numpy:
 	Build=True
 
+# needed for testing
+nose:
+	Build=True
+
+# MPI for Python 
+mpi4py:
+	Build=True
+
 # needed for FVM
 rlog:
 	Build=True
