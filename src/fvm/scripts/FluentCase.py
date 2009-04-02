@@ -302,7 +302,10 @@ class FluentCase(importers.FluentReader):
             fluentZone = self.cellZones[i]
             material = self.materials[fluentZone.getVar('material')]
             vc = vcMap[i]
-            vc.setVar('density',material.getConstantProp('density'))
+            if material.getPropMethod('density') == 'constant':
+                vc.setVar('density',material.getConstantProp('density'))
+            else:
+                print 'Density method is not constant. Remember to setup ideal gas density model'
             vc.setVar('viscosity',material.getConstantProp('viscosity'))
                       
                 
