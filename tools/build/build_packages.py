@@ -49,7 +49,7 @@ class BuildPkg:
             NetCDF4("pkgs/netCDF4", 1),
             ParMetis("pkgs/ParMetis", 1),
             Lammps("src/lammps", 1),
-            MPM("src/MPM", 1),
+            MPM("src/MPM", 2),
             Fvm("src/fvm", 0),
             ]
         
@@ -369,6 +369,17 @@ class Fvm(BuildPkg):
             return 'ntx86'
         else:
             return sys.platform
+    def getCompiler(self, comp):
+        vers = '4.2.1'
+        if comp == 'intelc':
+            comp = 'icc'
+            vers = '10.1'
+        try:
+            line = os.popen("/bin/bash -c '%s --version 2>&1'" % comp).readline()
+            vers = comp + '-' + re.compile(r'[^(]*[^)]*\) ([^\n ]*)').findall(line)[0]
+        except:
+            pass
+        return vers
     def _configure(self):            
         pdir = os.path.join(self.sdir, "packages")
         self.sys_log("/bin/mkdir -p %s" % pdir)
@@ -382,17 +393,12 @@ class Fvm(BuildPkg):
         return self.sys_log("%s/etc/buildsystem/build -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s" \
                                 % (self.sdir, self.sdir, par, ver, comp))
     def _install(self):
-        try:
-            line = os.popen("/bin/bash -c 'gcc --version 2>&1'").readline()
-            vers = "gcc-" + re.compile(r'[^(]*[^)]*\) ([^\n ]*)').findall(line)[0]
-        except:
-            vers = '4.2.1'
+        vers = self.getCompiler(config(self.name, 'compiler'))
         rel = config(self.name, 'version')
         pdir = os.path.join(self.sdir, "build", self.getArch(), vers, rel, "bin")
         os.chdir(pdir)
         self.sys_log("install testLinearSolver %s" % self.bindir)
-        self.sys_log("install *.py *.so %s" % self.libdir)
-        
+        self.sys_log("install *.py *.so %s" % self.libdir)        
         # install scripts
         pdir = os.path.join(self.sdir, "scripts")
         os.chdir(pdir)   

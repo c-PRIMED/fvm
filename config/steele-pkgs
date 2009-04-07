@@ -16,6 +16,7 @@ nose:
 
 # MPI for Python 
 mpi4py:
+	modules=mpich2-intel
 	Build=True
 
 # needed for FVM
