@@ -26,6 +26,11 @@ private:
   FaceGroup();
 };
 
+typedef std::vector<FaceGroup*> FaceGroupVector;
+
+
+%template(FaceGroupVector) std::vector<FaceGroup*>;
+
 %template(VecD3) Vector<double,3>;
 
 class Mesh
@@ -69,6 +74,15 @@ public:
         cout << "mesh ext" << endl;
         return self->getNodeCoordinates();
     }
+
+    std::vector<FaceGroup*> getBoundaryGroups()
+    {
+      std::vector<FaceGroup*> v;
+      const FaceGroupList& fgs = self->getBoundaryFaceGroups();
+      foreach(FaceGroupPtr fg, fgs)
+        v.push_back(fg.get());
+      return v;
+    }
   }
   //  const FaceGroup&  getFaceGroup(const int i) const;
   
@@ -76,7 +90,7 @@ private:
   Mesh(const int i);
 };
 
-typedef vector<Mesh*> MeshList;
+typedef std::vector<Mesh*> MeshList;
 
 
-%template(MeshList) vector<Mesh*>;
+%template(MeshList) std::vector<Mesh*>;
