@@ -34,10 +34,11 @@
     TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
     const TArray& density = dynamic_cast<const TArray&>(_flowFields.density[cells]);
 
-    VectorT3 bVelocity;
-    bVelocity[0] = bc["specifiedXVelocity"];
-    bVelocity[1] = bc["specifiedYVelocity"];
-    bVelocity[2] = bc["specifiedZVelocity"];
+    FloatValEvaluator<VectorT3>
+      bVelocity(bc.getVal("specifiedXVelocity"),
+                bc.getVal("specifiedYVelocity"),
+                bc.getVal("specifiedZVelocity"),
+                faces);
 
     const int nFaces = faces.getCount();
 
@@ -48,7 +49,7 @@
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
 
-        massFlux[f] = density[c0]*dot(bVelocity,faceArea[f]);
+        massFlux[f] = density[c0]*dot(bVelocity[f],faceArea[f]);
 
         rCell[c0] -= massFlux[f];
 
