@@ -210,15 +210,28 @@ void markIBFaces(Mesh& mesh, const int nCells,
     StorageSite&  ibFaces = mesh.getIBFaces();
     ibFaces.setCount(ibFaceCount);
 
-    /* test ibFaceList
-    const Array<int>& ibFaceList = mesh.getIBFaceList();
-
-    for(int i=0; i<ibFaceList.getLength();i++){
-      cout<<i<<"   "<<ibFaceList[i]<<endl;
-    }
-    */
-
 }
+
+
+void checkIBFaces(const Array<int> & ibFaceList,
+		  const VectorT3Array& faceArea)
+{
+
+ // check if ibFaces form a closed curve //
+   
+  VectorT3 areaSum;
+  areaSum[0] = 0.0;
+  areaSum[1] = 0.0;
+  areaSum[2] = 0.0;
+  for(int i=0; i<ibFaceList.getLength();i++){
+    const int fID = ibFaceList[i];
+    areaSum += faceArea[fID];
+  }
+  cout<<"sum of ibFace area is  "<<areaSum<<endl;
+}
+
+
+   
 
 const shared_ptr<CRConnectivity> setibFaceParticles 
                           (const Mesh& mesh,
@@ -323,7 +336,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
 			   const StorageSite& ibFaces, 
 			   const StorageSite& cells,
 			   const CRConnectivity& faceCells,
-			   Octree& O,
+			   const CRConnectivity& cellFaces,
 			   const VecD3Array& faceCentroid)
 {
 
@@ -334,25 +347,43 @@ const shared_ptr<CRConnectivity> setibFaceCells
   
   const int rowSize = ibFaces.getCount();
 
-  //specify a radius for search
-  //const int nCells = cells.getCount();
-  const double radius = 0.1;
+ 
+  //search level = 1, search only one fluid cell adjacent to IBface
+  //search level = 2, search two levels of fluid cell neighborhood of the ibface
+  const int searchLevel = 1;
 
   //specify the number of nonzeros for each row
  
 
   for(int p=0; p<rowSize; p++){
-    const int faceIndex = ibFaceList [p];
-    const VecD3 center = faceCentroid[faceIndex];
+    const int IBfaceIndex = ibFaceList [p];
     int count=0;
-    //find the neighbors of center point within a radius
-    vector<int> cellIndexList;
-    O.getNodes(center, radius, cellIndexList);
-    for(int c=0; c< (int)cellIndexList.size(); c++){
-      const int cellCandidate = cellIndexList[c];
-      if (mesh.getIBTypeForCell(cellCandidate) == Mesh::IBTYPE_FLUID)    
-	count++;
+    //find the fluid cells next to ibface
+   
+    int C0 = faceCells(IBfaceIndex, 0);      
+    const int cellType = mesh.getIBTypeForCell(C0);
+    if (cellType != Mesh::IBTYPE_FLUID){
+      C0 = faceCells(IBfaceIndex,1);
     }
+    count ++;
+    if(searchLevel == 2){   
+	
+      const int nf = cellFaces.getCount(C0);
+      for(int f=0; f<nf; f++){
+	const int faceID = cellFaces(C0, f);
+	if (faceID != IBfaceIndex){
+	  const int CC0 = faceCells(faceID,0);
+	  const int CC1 = faceCells(faceID,1);
+	  if(CC0 != C0 && mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_FLUID){
+	    count++;
+	  }
+	  if(CC1 != C0 && mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_FLUID){
+	    count++;
+	  }
+	}
+      }
+    }
+       
     (*ibFaceCells).addCount(p, count);   
     if (count>=maxcount)
       maxcount=count;
@@ -366,17 +397,32 @@ const shared_ptr<CRConnectivity> setibFaceCells
 
   //add in the entries for each row
   for(int p=0; p<rowSize; p++){
-    const int faceIndex = ibFaceList [p];
-    const VecD3 center = faceCentroid[faceIndex];
+    const int IBfaceIndex = ibFaceList [p];
     vector<int> cellIndexList;
-    O.getNodes(center, radius, cellIndexList);
-    for(int c=0; c< (int) cellIndexList.size(); c++){
-      const int cellCandidate = cellIndexList[c];
-      if (mesh.getIBTypeForCell(cellCandidate) == Mesh::IBTYPE_FLUID)  
-	(*ibFaceCells).add(p, cellCandidate);
+    int C0 = faceCells(IBfaceIndex, 0);      
+    const int cellType = mesh.getIBTypeForCell(C0);
+    if (cellType != Mesh::IBTYPE_FLUID){
+      C0 = faceCells(IBfaceIndex,1);
+    }
+    (*ibFaceCells).add(p, C0);
+
+    if(searchLevel == 2){   
+      const int nf = cellFaces.getCount(C0);
+      for(int f=0; f<nf; f++){
+	const int faceID = cellFaces(C0, f);
+	if (faceID != IBfaceIndex){
+	  const int CC0 = faceCells(faceID,0);
+	  const int CC1 = faceCells(faceID,1);
+	  if(CC0 != C0 && mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_FLUID){
+	    (*ibFaceCells).add(p, CC0);
+	  }
+	  if(CC1 != C0 && mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_FLUID){
+	    (*ibFaceCells).add(p, CC0);;
+	  }
+	}
+      }
     }
   }
-   
   (*ibFaceCells).finishAdd();
   
   return (ibFaceCells);

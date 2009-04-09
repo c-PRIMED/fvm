@@ -322,6 +322,10 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     }
     fclose(fp);
 
+    /*********check ibFaces***********************/
+    checkIBFaces(ibFaceList, faceArea);
+
+
     /************create ibFace to Particle connectivity****************/
 
     shared_ptr<CRConnectivity> ibFaceParticlesCR = 
@@ -337,7 +341,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     /************************create ibFace to Cells connectivity**********/
 
      shared_ptr<CRConnectivity> ibFaceCellsCR = 
-       setibFaceCells (mesh, ibFaceList, ibFaces,  cells, faceCells, O, faceCentroid);
+       setibFaceCells (mesh, ibFaceList, ibFaces,  cells, faceCells, cellFaces, faceCentroid);
   
   //store the CRconnectivity to mesh class
 

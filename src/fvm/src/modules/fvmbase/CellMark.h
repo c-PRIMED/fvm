@@ -44,7 +44,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
 			   const StorageSite& ibFaces, 
 			   const StorageSite& cells,
 			   const CRConnectivity& faceCells,
-			   Octree& O,
+			   const CRConnectivity& cellFaces,
 			   const VecD3Array& faceCentroid );
 
 const shared_ptr<CRConnectivity> setibFaceParticles 
@@ -61,5 +61,7 @@ void markIBFaces(Mesh& mesh, const int nCells,
 		 const CRConnectivity& cellFaces,
 		 const CRConnectivity& faceCells);
 
+void checkIBFaces(const Array<int> & ibFaceList,
+		  const VecD3Array& faceArea);
 
 #endif

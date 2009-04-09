@@ -329,31 +329,34 @@ public:
 	mIPV.multiplyAndAdd(*ibV,pV);
 
 	
-
+#if 1
 	// debug use
 	const Array<int>& ibFaceList = mesh.getIBFaceList();
 	const StorageSite& faces = mesh.getFaces();
 	const VectorT3Array& faceCentroid = 
           dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
-	const double angV = 10.;
+	const double angV = 1.0;
 	VectorT3 center;
-	center[0]=0.5;
-	center[1]=0.5;
+	center[0]=0.;
+	center[1]=0.;
 	center[2]=0.;	
 
 	for(int f=0; f<ibFaces.getCount();f++){
 	  int fID = ibFaceList[f];
 	  double r = mag(faceCentroid[fID]-center);
 	  double angle = atan2(faceCentroid[fID][1]-center[1],faceCentroid[fID][0]-center[0]);
-	  (*ibV)[f][0]=angV*r*sin(angle);
-	  (*ibV)[f][1]=-angV*r*cos(angle);
+	  (*ibV)[f][0]=-angV*r*sin(angle);
+	  (*ibV)[f][1]=angV*r*cos(angle);
 	  (*ibV)[f][2]=0.0;
+	  //(*ibV)[f][0]=0.0;
+	  //(*ibV)[f][1]=1.0;
+	  //(*ibV)[f][2]=0.0;
 	}
 	  
 	//for(int f=0; f<ibFaces.getCount();f++){
 	//cout<<f<<" "<<(*ibV)[f]<<endl;
 	//}
-
+#endif
         _flowFields.velocity.addArray(ibFaces,ibV);
     }
   }

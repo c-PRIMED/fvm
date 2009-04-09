@@ -21,19 +21,19 @@ void MPM::setandwriteParticles(const char *file)
     FILE *fp;
            
     VecD3 center;
-    center[0]=0.5;
-    center[1]=0.5;
+    center[0]=0.;
+    center[1]=0.;
     center[2]=0.;
 
     int count=0;   
     double radius = 0.20;
    
-#if 1
+#if 0
     //set up particle cartesian coordinate
     VecD3 temp;
     
-    int nX=10, nY=10, nZ=10;
-    double gapX=0.5/nX, gapY=0.5/nY, gapZ=0.5/nZ;
+    int nX=200, nY=100, nZ=1;
+    double gapX=0.4/nX, gapY=0.2/nY, gapZ=0.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
     int type[nX*nY*nZ];
@@ -42,9 +42,9 @@ void MPM::setandwriteParticles(const char *file)
     for(int i=0; i<nX; i++){
       for(int j=0; j<nY; j++){
 	for(int k=0; k<nZ; k++){
-	  temp[0]=i*gapX+0.001;
-	  temp[1]=j*gapY+0.001;
-	  temp[2]=k*gapZ+0.001;
+	  temp[0]=i*gapX+0.3;
+	  temp[1]=j*gapY+0.4;
+	  temp[2]=k*gapZ+center[2];
 	  //VecD3 dr = temp-center;
 	  //if(mag2(dr)<=radius*radius){
 	    solidPoint[count][0]=temp[0];
@@ -62,9 +62,9 @@ void MPM::setandwriteParticles(const char *file)
 
 #endif
 
-#if 0
-    int nX=100, nY=1000, nZ=1;
-    double radius1=0., radius2=0.201;
+#if 1
+    int nX=50, nY=200, nZ=1;
+    double radius1=0., radius2=0.3;
     double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
@@ -86,27 +86,47 @@ void MPM::setandwriteParticles(const char *file)
 	}
       }
     }
+     /*
+    radius1=0.9, radius2=1.5;
+    gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
 
+      //polar coordinate 
+     for(int i=0; i<nX; i++){
+      for(int j=0; j<nY; j++){
+	for(int k=0; k<nZ; k++){	 
+	  solidPoint[count][0]=(radius1+i*gapR)*(cos(j*gapAngle))+center[0];
+	  solidPoint[count][1]=(radius1+i*gapR)*(sin(j*gapAngle))+center[1];
+	  solidPoint[count][2]=k*gapZ+center[2];
+	  
+	  if(i!=(nX-1)) type[count] = 0;  //internal particles
+	  if(i==(nX-1)){
+	    type[count] = 1;       //surface particles	   
+	  }
+	  count+=1;
+	}
+      }
+    }
+     */
 #endif
 
     //set up particle velocity
-#if 1
+#if 0
     for(int p=0; p<count; p++){
       solidVelocity[p][0]=0.0;
-      solidVelocity[p][1]=0.0;
+      solidVelocity[p][1]=1.0;
       solidVelocity[p][2]=0.0;
     }
 #endif 
 
 
-#if 0
-    //set up rotating cylinder velocity
-    const double angV = 10;
+#if 1
+    //set up rotating cylinder velcity
+    const double angV = 1;
     for (int p=0; p<count; p++){
       double r = mag(solidPoint[p]-center);
       double angle = atan2(solidPoint[p][1]-center[1],solidPoint[p][0]-center[0]);
-      solidVelocity[p][0] = angV*r*sin(angle);
-      solidVelocity[p][1] = -angV*r*cos(angle);
+      solidVelocity[p][0] = -angV*r*sin(angle);
+      solidVelocity[p][1] = angV*r*cos(angle);
       solidVelocity[p][2] = 0.0;
     }
 
