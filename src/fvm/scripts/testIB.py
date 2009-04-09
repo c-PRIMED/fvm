@@ -20,8 +20,9 @@ elif atype == 'tangent':
 
 from FluentCase import FluentCase
 
+pdb.set_trace()
 
-fileBase = "/home/sm/prism-meshes/"
+fileBase = "/home/lin/work/app-memosa/src/fvm/test/"
 
 def advance(fmodel,particles,niter):
     for i in range(0,niter):
