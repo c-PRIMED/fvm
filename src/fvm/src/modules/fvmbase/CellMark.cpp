@@ -158,54 +158,45 @@ void reportCellMark (const Mesh& mesh, const int nCells,
 }
 
 
-void markIBFaces(Mesh& mesh, const int nCells, 
-		 const CRConnectivity& cellCells,
-		 const CRConnectivity& cellFaces,
+void markIBFaces(Mesh& mesh, const int nFaces, 		
 		 const CRConnectivity& faceCells)
 {
   //definition of ibFaces: the faces between IB cells and Fluid cells
   //first, count the number of ibFaces
     int ibFaceCount=0;
-    for(int c=0; c<nCells; c++){
-      int ibType = mesh.getIBTypeForCell(c);
-      if(ibType==Mesh::IBTYPE_BOUNDARY){
-	const int ncNumber=cellCells.getCount(c);
-	for(int nc=0; nc<ncNumber; nc++){
-	  const int cellIndex=cellCells(c,nc);
-	  if(mesh.getIBTypeForCell(cellIndex)==Mesh::IBTYPE_FLUID){ 
-	    ibFaceCount++;   
-	  }
-	}	
-      }
+    for(int f=0; f<nFaces; f++){
+      const int c0 = faceCells(f, 0);
+      const int c1 = faceCells(f, 1);
+      const int type0 = mesh.getIBTypeForCell(c0);
+      const int type1 = mesh.getIBTypeForCell(c1);
+      if(type0 == Mesh::IBTYPE_FLUID && type1 ==  Mesh::IBTYPE_BOUNDARY)
+	ibFaceCount++;
+      if(type1 == Mesh::IBTYPE_FLUID && type0 ==  Mesh::IBTYPE_BOUNDARY)
+	ibFaceCount++;
     }
     cout<<"ibFaceCount is "<<ibFaceCount<<endl;
-
       
     //then, allocate an array for ibFace
     mesh.createIBFaceList(ibFaceCount);
 
     //insert the entries to ibface array
     ibFaceCount=0;
-    for(int c=0; c<nCells; c++){
-      int ibType = mesh.getIBTypeForCell(c);
-      if(ibType==Mesh::IBTYPE_BOUNDARY){
-	const int faceNumber=cellFaces.getCount(c);
-	for(int f=0; f<faceNumber; f++){
-	  const int faceIndex=cellFaces(c,f);
-	  const int c0 = faceCells(faceIndex,0);
-	  const int c1 = faceCells(faceIndex,1);
-	  if((c0 == c)&&(mesh.getIBTypeForCell(c1)==Mesh::IBTYPE_FLUID)){
-	    mesh.addIBFace(ibFaceCount, faceIndex);
-	    ibFaceCount++;
-	  }
-	  if((c1 == c)&&(mesh.getIBTypeForCell(c0)==Mesh::IBTYPE_FLUID)){
-	    mesh.addIBFace(ibFaceCount, faceIndex);
-	    ibFaceCount++;
-	  }
-	}
+    for(int f=0; f<nFaces; f++){
+      const int c0 = faceCells(f, 0);
+      const int c1 = faceCells(f, 1);
+      const int type0 = mesh.getIBTypeForCell(c0);
+      const int type1 = mesh.getIBTypeForCell(c1);
+      if(type0 == Mesh::IBTYPE_FLUID && type1 ==  Mesh::IBTYPE_BOUNDARY){
+	mesh.addIBFace(ibFaceCount, f);
+	ibFaceCount++;
+      }
+      if(type1 == Mesh::IBTYPE_FLUID && type0 ==  Mesh::IBTYPE_BOUNDARY){
+	mesh.addIBFace(ibFaceCount, f);
+	ibFaceCount++;
       }
     }
-   
+
+
     //initialize storagesite ibFaces
     StorageSite&  ibFaces = mesh.getIBFaces();
     ibFaces.setCount(ibFaceCount);
@@ -214,7 +205,9 @@ void markIBFaces(Mesh& mesh, const int nCells,
 
 
 void checkIBFaces(const Array<int> & ibFaceList,
-		  const VectorT3Array& faceArea)
+		  const VectorT3Array& faceArea,
+		  const CRConnectivity& faceCells,
+		  const Mesh& mesh)
 {
 
  // check if ibFaces form a closed curve //
@@ -225,7 +218,15 @@ void checkIBFaces(const Array<int> & ibFaceList,
   areaSum[2] = 0.0;
   for(int i=0; i<ibFaceList.getLength();i++){
     const int fID = ibFaceList[i];
-    areaSum += faceArea[fID];
+    const int C0 = faceCells(fID, 0);
+    const int C1 = faceCells(fID, 1);
+    if(mesh.getIBTypeForCell(C0)==Mesh::IBTYPE_FLUID
+       && mesh.getIBTypeForCell(C1)==Mesh::IBTYPE_SOLID){
+      areaSum += faceArea[fID];
+    }
+    else {
+      areaSum += faceArea[fID];
+    }
   }
   cout<<"sum of ibFace area is  "<<areaSum<<endl;
 }
@@ -374,10 +375,10 @@ const shared_ptr<CRConnectivity> setibFaceCells
 	if (faceID != IBfaceIndex){
 	  const int CC0 = faceCells(faceID,0);
 	  const int CC1 = faceCells(faceID,1);
-	  if(CC0 != C0 && mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_FLUID){
+	  if(CC0 != C0 && mesh.getIBTypeForCell(CC0) == Mesh::IBTYPE_FLUID){
 	    count++;
 	  }
-	  if(CC1 != C0 && mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_FLUID){
+	  if(CC1 != C0 && mesh.getIBTypeForCell(CC1) == Mesh::IBTYPE_FLUID){
 	    count++;
 	  }
 	}
@@ -413,11 +414,11 @@ const shared_ptr<CRConnectivity> setibFaceCells
 	if (faceID != IBfaceIndex){
 	  const int CC0 = faceCells(faceID,0);
 	  const int CC1 = faceCells(faceID,1);
-	  if(CC0 != C0 && mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_FLUID){
+	  if(CC0 != C0 && mesh.getIBTypeForCell(CC0) == Mesh::IBTYPE_FLUID){
 	    (*ibFaceCells).add(p, CC0);
 	  }
-	  if(CC1 != C0 && mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_FLUID){
-	    (*ibFaceCells).add(p, CC0);;
+	  if(CC1 != C0 && mesh.getIBTypeForCell(CC1) == Mesh::IBTYPE_FLUID){
+	    (*ibFaceCells).add(p, CC1);;
 	  }
 	}
       }

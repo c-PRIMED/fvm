@@ -19,6 +19,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     const int nCells = cells.getCount();          //need to include BC cells?
     const VecD3Array& cellCentroid = dynamic_cast<const VecD3Array& > (geomFields.coordinate[cells]);
     const StorageSite& faces = mesh.getFaces();
+    const int nFaces = faces.getCount();
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
     const CRConnectivity& cellFaces = mesh.getCellFaces();
     const CRConnectivity& cellCells = mesh.getCellCells();
@@ -287,25 +288,8 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     /***************************mark IBFaces********************/
 
-    markIBFaces (mesh, nCells, cellCells, cellFaces, faceCells);
-    const int nFaces = faces.getSelfCount();
-   
-    /*
- //double check ibFace count;
-    int ibfaceCount=0;
-    for(int f=0; f<nFaces; f++){
-      int c0 = faceCells(f, 0);
-      int c1 = faceCells(f, 1);
-      int type0 = mesh.getIBTypeForCell(c0);
-      int type1 = mesh.getIBTypeForCell(c1);
-      if(type0 == Mesh::IBTYPE_FLUID && type1 ==  Mesh::IBTYPE_BOUNDARY)
-	ibfaceCount++;
-      if(type1 == Mesh::IBTYPE_FLUID && type0 ==  Mesh::IBTYPE_BOUNDARY)
-	ibfaceCount++;
-    }
-    cout<<"new ibfacecount is"<<ibfaceCount<<endl;
-    */
-
+    markIBFaces (mesh, nFaces, faceCells);
+      
     const StorageSite&  ibFaces = mesh.getIBFaces();
    
     const Array<int>& ibFaceList = mesh.getIBFaceList();
@@ -323,7 +307,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     fclose(fp);
 
     /*********check ibFaces***********************/
-    checkIBFaces(ibFaceList, faceArea);
+    checkIBFaces(ibFaceList, faceArea, faceCells, mesh);
 
 
     /************create ibFace to Particle connectivity****************/
@@ -366,8 +350,8 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	int pID = ibFaceParticles(f,c);
 	//cout<<"face "<<faceIndex<<"  has  "<<ibFaceParticles(f, c)<<endl;
 	//cout<<(*MPM_Points)[ibFaceParticles(f,c)]<<endl;
-	//	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
-	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Vels)[pID][0],(*MPM_Vels)[pID][1],(*MPM_Vels)[pID][2],(*particleTypes)[pID]);
+	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
+	//fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Vels)[pID][0],(*MPM_Vels)[pID][1],(*MPM_Vels)[pID][2],(*particleTypes)[pID]);
       }
      } 
     
@@ -388,7 +372,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	//cout<<"face "<<faceIndex<<"  has  "<<ibFaceCells(f, c)<<endl;
 	//cout<<(cellCentroid)[ibFaceCells(f,c)]<<endl;
 	int cID = ibFaceCells(f,c);
-	fprintf(fp, "%i\t%lf\t%lf\t%lf\n",faceIndex, (cellCentroid)[cID][0],(cellCentroid)[cID][1],(cellCentroid)[cID][2]);
+	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\n",faceIndex,cID, (cellCentroid)[cID][0],(cellCentroid)[cID][1],(cellCentroid)[cID][2]);
       }
      }
      fclose(fp);

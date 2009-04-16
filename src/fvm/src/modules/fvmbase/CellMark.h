@@ -57,11 +57,11 @@ const shared_ptr<CRConnectivity> setibFaceParticles
 			   const Array<int>& particleTyp);
 
 void markIBFaces(Mesh& mesh, const int nCells, 
-		 const CRConnectivity& cellCells,
-		 const CRConnectivity& cellFaces,
 		 const CRConnectivity& faceCells);
 
 void checkIBFaces(const Array<int> & ibFaceList,
-		  const VecD3Array& faceArea);
+		  const VecD3Array& faceArea,
+		  const CRConnectivity& faceCells,
+		  const Mesh& mesh);
 
 #endif

@@ -32,7 +32,7 @@ void MPM::setandwriteParticles(const char *file)
     //set up particle cartesian coordinate
     VecD3 temp;
     
-    int nX=200, nY=100, nZ=1;
+    int nX=200, nY=200, nZ=1;
     double gapX=0.4/nX, gapY=0.2/nY, gapZ=0.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
@@ -64,11 +64,11 @@ void MPM::setandwriteParticles(const char *file)
 
 #if 1
     int nX=50, nY=200, nZ=1;
-    double radius1=0., radius2=0.3;
+    double radius1=0., radius2=0.2;
     double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
-    VecD3 solidPoint[nX*nY*nZ];
-    VecD3 solidVelocity[nX*nY*nZ];
-    int type[nX*nY*nZ];
+    VecD3 solidPoint[nX*nY*nZ*2];
+    VecD3 solidVelocity[nX*nY*nZ*2];
+    int type[nX*nY*nZ*2];
 
     //polar coordinate 
      for(int i=0; i<nX; i++){
@@ -86,8 +86,8 @@ void MPM::setandwriteParticles(const char *file)
 	}
       }
     }
-     /*
-    radius1=0.9, radius2=1.5;
+     
+    radius1=0.45, radius2=0.8;
     gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
 
       //polar coordinate 
@@ -98,15 +98,15 @@ void MPM::setandwriteParticles(const char *file)
 	  solidPoint[count][1]=(radius1+i*gapR)*(sin(j*gapAngle))+center[1];
 	  solidPoint[count][2]=k*gapZ+center[2];
 	  
-	  if(i!=(nX-1)) type[count] = 0;  //internal particles
-	  if(i==(nX-1)){
+	  if(i!=0) type[count] = 0;  //internal particles
+	  if(i==0){
 	    type[count] = 1;       //surface particles	   
 	  }
 	  count+=1;
 	}
       }
     }
-     */
+     
 #endif
 
     //set up particle velocity
@@ -121,7 +121,7 @@ void MPM::setandwriteParticles(const char *file)
 
 #if 1
     //set up rotating cylinder velcity
-    const double angV = 1;
+    const double angV = 0.1;
     for (int p=0; p<count; p++){
       double r = mag(solidPoint[p]-center);
       double angle = atan2(solidPoint[p][1]-center[1],solidPoint[p][0]-center[0]);
