@@ -1,6 +1,6 @@
-This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-tutorial.info,
-produced by makeinfo version 4.11 from
-/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
+This is /data/hunt/memosa/pkgs/netcdf/man/netcdf-tutorial.info,
+produced by makeinfo version 4.12 from
+/data/hunt/memosa/pkgs/netcdf/man//defines.texi.
 
 Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
@@ -51,7 +51,7 @@ quick reference to the important functions in each API, with
 hyper-links to the full documentation of each function.
 
    This document applies to netCDF version 4.0; it was last updated on
-28 August 2008.
+15 April 2009.
 
 * Menu:
 
@@ -5511,78 +5511,78 @@ Index
 
 
 Tag Table:
-Node: Top1430
-Node: Intro5483
-Node: Data Model6859
-Node: Errors9802
-Node: Unlimited Dimensions11605
-Node: Fill Values12954
-Node: Tools14323
-Node: APIs16544
-Node: Documentation18586
-Node: Versions20223
-Node: Future21990
-Node: Examples23183
-Node: simple_xy24507
-Node: simple_xy in C26548
-Node: simple_xy_wr.c27011
-Node: simple_xy_rd.c30988
-Node: simple_xy in F7733350
-Node: simple_xy_wr.f33822
-Node: simple_xy_rd.f38298
-Node: simple_xy in F9041121
-Node: simple_xy_wr.f9041611
-Node: simple_xy_rd.f9045542
-Node: simple_xy in C++48018
-Node: simple_xy_wr.cpp48483
-Node: simple_xy_rd.cpp51685
-Node: sfc_pres_temp54046
-Node: sfc_pres_temp in C56774
-Node: sfc_pres_temp_wr.c57289
-Node: sfc_pres_temp_rd.c64022
-Node: sfc_pres_temp in F7770367
-Node: sfc_pres_temp_wr.f70891
-Node: sfc_pres_temp_rd.f78632
-Node: sfc_pres_temp in F9086902
-Node: sfc_pres_temp_wr.f9087444
-Node: sfc_pres_temp_rd.f9093562
-Node: sfc_pres_temp in C++100338
-Node: sfc_pres_temp_wr.cpp100851
-Node: sfc_pres_temp_rd.cpp106644
-Node: pres_temp_4D112773
-Node: pres_temp_4D in C117377
-Node: pres_temp_4D_wr.c117879
-Node: pres_temp_4D_rd.c125959
-Node: pres_temp_4D in F77131395
-Node: pres_temp_4D_wr.f131906
-Node: pres_temp_4D_rd.f141393
-Node: pres_temp_4D in F90150852
-Node: pres_temp_4D_wr.f90151381
-Node: pres_temp_4D_rd.f90159028
-Node: pres_temp_4D in C++164994
-Node: pres_temp_4D_wr.cpp165495
-Node: pres_temp_4D_rd.cpp171348
-Node: Useful Functions176256
-Node: Creation177232
-Node: Creation in C178055
-Node: Creation in F77179526
-Node: Creation in F90181348
-Node: Creation in C++183116
-Node: Reading184255
-Node: Reading in C186479
-Node: Reading in F77187355
-Node: Reading in F90188030
-Node: Reading in C++188745
-Node: Inquiry Functions189543
-Node: Inquiry in C190344
-Node: Inquiry in F77194688
-Node: Inquiry in F90196447
-Node: Inquiry in C++198312
-Node: Subsets199382
-Node: Subsetting in C201041
-Node: Subsetting in F77203603
-Node: Subsetting in F90206211
-Node: Subsetting in C++208951
-Node: Combined Index209718
+Node: Top1418
+Node: Intro5470
+Node: Data Model6846
+Node: Errors9789
+Node: Unlimited Dimensions11592
+Node: Fill Values12941
+Node: Tools14310
+Node: APIs16531
+Node: Documentation18573
+Node: Versions20210
+Node: Future21977
+Node: Examples23170
+Node: simple_xy24494
+Node: simple_xy in C26535
+Node: simple_xy_wr.c26998
+Node: simple_xy_rd.c30975
+Node: simple_xy in F7733337
+Node: simple_xy_wr.f33809
+Node: simple_xy_rd.f38285
+Node: simple_xy in F9041108
+Node: simple_xy_wr.f9041598
+Node: simple_xy_rd.f9045529
+Node: simple_xy in C++48005
+Node: simple_xy_wr.cpp48470
+Node: simple_xy_rd.cpp51672
+Node: sfc_pres_temp54033
+Node: sfc_pres_temp in C56761
+Node: sfc_pres_temp_wr.c57276
+Node: sfc_pres_temp_rd.c64009
+Node: sfc_pres_temp in F7770354
+Node: sfc_pres_temp_wr.f70878
+Node: sfc_pres_temp_rd.f78619
+Node: sfc_pres_temp in F9086889
+Node: sfc_pres_temp_wr.f9087431
+Node: sfc_pres_temp_rd.f9093549
+Node: sfc_pres_temp in C++100325
+Node: sfc_pres_temp_wr.cpp100838
+Node: sfc_pres_temp_rd.cpp106631
+Node: pres_temp_4D112760
+Node: pres_temp_4D in C117364
+Node: pres_temp_4D_wr.c117866
+Node: pres_temp_4D_rd.c125946
+Node: pres_temp_4D in F77131382
+Node: pres_temp_4D_wr.f131893
+Node: pres_temp_4D_rd.f141380
+Node: pres_temp_4D in F90150839
+Node: pres_temp_4D_wr.f90151368
+Node: pres_temp_4D_rd.f90159015
+Node: pres_temp_4D in C++164981
+Node: pres_temp_4D_wr.cpp165482
+Node: pres_temp_4D_rd.cpp171335
+Node: Useful Functions176243
+Node: Creation177219
+Node: Creation in C178042
+Node: Creation in F77179513
+Node: Creation in F90181335
+Node: Creation in C++183103
+Node: Reading184242
+Node: Reading in C186466
+Node: Reading in F77187342
+Node: Reading in F90188017
+Node: Reading in C++188732
+Node: Inquiry Functions189530
+Node: Inquiry in C190331
+Node: Inquiry in F77194675
+Node: Inquiry in F90196434
+Node: Inquiry in C++198299
+Node: Subsets199369
+Node: Subsetting in C201028
+Node: Subsetting in F77203590
+Node: Subsetting in F90206198
+Node: Subsetting in C++208938
+Node: Combined Index209705
 
 End Tag Table

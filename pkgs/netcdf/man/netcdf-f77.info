@@ -1,6 +1,6 @@
-This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-f77.info,
-produced by makeinfo version 4.11 from
-/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
+This is /data/hunt/memosa/pkgs/netcdf/man/netcdf-f77.info, produced by
+makeinfo version 4.12 from
+/data/hunt/memosa/pkgs/netcdf/man//defines.texi.
 
 Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
@@ -38,7 +38,7 @@ The NetCDF Fortran 77 Interface Guide
 
 This document describes the FORTRAN-77 interface to the netCDF library.
 This document applies to netCDF version 4.0. This document was last
-updated on 28 August 2008.
+updated on 15 April 2009.
 
    For a complete description of the netCDF format and utilities see
 *note The NetCDF Users Guide: (netcdf)Top.
@@ -5611,75 +5611,75 @@ Index
 
 
 Tag Table:
-Node: Top1440
-Node: Use of the NetCDF Library4385
-Node: Creating6166
-Node: Reading Known9110
-Node: Reading Unknown11089
-Node: Adding14309
-Node: Errors17361
-Node: Compiling18448
-Node: Datasets21362
-Node: Datasets Introduction21888
-Node: NetCDF Library Interface Descriptions23890
-Node: NF_STRERROR24925
-Node: NF_INQ_LIBVERS26303
-Node: NF_CREATE26979
-Node: NF__CREATE30187
-Node: NF_OPEN34621
-Node: NF__OPEN36482
-Node: NF_REDEF39368
-Node: NF_ENDDEF40600
-Node: NF__ENDDEF42329
-Node: NF_CLOSE46650
-Node: NF_INQ Family48117
-Node: NF_SYNC50952
-Node: NF_ABORT55074
-Node: NF_SET_FILL56844
-Node: NF_SET_DEFAULT_FORMAT61199
-Node: Dimensions63575
-Node: Dimensions Introduction63837
-Node: NF_DEF_DIM65690
-Node: NF_INQ_DIMID68159
-Node: NF_INQ_DIM Family69805
-Node: NF_RENAME_DIM72687
-Node: Variables74640
-Node: Variables Introduction75312
-Node: Variable Types77586
-Node: NF_DEF_VAR78962
-Node: NF_INQ_VARID82872
-Node: NF_INQ_VAR family84240
-Node: NF_PUT_VAR1_ type88391
-Node: NF_PUT_VAR_ type92588
-Node: NF_PUT_VARA_ type97063
-Node: NF_PUT_VARS_ type102874
-Node: NF_PUT_VARM_ type108548
-Node: NF_GET_VAR1_ type117667
-Node: NF_GET_VAR_ type121537
-Node: NF_GET_VARA_ type125142
-Node: NF_GET_VARS_ type130613
-Node: NF_GET_VARM_ type136118
-Node: Reading and Writing Character String Values145305
-Node: Fill Values150726
-Node: NF_RENAME_VAR153142
-Node: Attributes154975
-Node: Attributes Introduction155367
-Node: Attribute Conventions157355
-Node: NF_PUT_ATT_ type166661
-Node: NF_INQ_ATT Family172090
-Node: NF_GET_ATT_ type176502
-Node: NF_COPY_ATT181185
-Node: NF_RENAME_ATT184547
-Node: NF_DEL_ATT186727
-Node: Summary of FORTRAN 77 Interface188569
-Node: C interface changes from NetCDF 2 to NetCDF 3202179
-Node: The New C Interface204781
-Node: Function Naming Conventions206314
-Node: Type Conversion208003
-Node: Error handling211150
-Node: NF_LONG and NF_INT212432
-Node: Whats Missing213108
-Node: Other Changes214636
-Node: Combined Index220054
+Node: Top1428
+Node: Use of the NetCDF Library4372
+Node: Creating6153
+Node: Reading Known9097
+Node: Reading Unknown11076
+Node: Adding14296
+Node: Errors17348
+Node: Compiling18435
+Node: Datasets21349
+Node: Datasets Introduction21875
+Node: NetCDF Library Interface Descriptions23877
+Node: NF_STRERROR24912
+Node: NF_INQ_LIBVERS26290
+Node: NF_CREATE26966
+Node: NF__CREATE30174
+Node: NF_OPEN34608
+Node: NF__OPEN36469
+Node: NF_REDEF39355
+Node: NF_ENDDEF40587
+Node: NF__ENDDEF42316
+Node: NF_CLOSE46637
+Node: NF_INQ Family48104
+Node: NF_SYNC50939
+Node: NF_ABORT55061
+Node: NF_SET_FILL56831
+Node: NF_SET_DEFAULT_FORMAT61186
+Node: Dimensions63562
+Node: Dimensions Introduction63824
+Node: NF_DEF_DIM65677
+Node: NF_INQ_DIMID68146
+Node: NF_INQ_DIM Family69792
+Node: NF_RENAME_DIM72674
+Node: Variables74627
+Node: Variables Introduction75299
+Node: Variable Types77573
+Node: NF_DEF_VAR78949
+Node: NF_INQ_VARID82859
+Node: NF_INQ_VAR family84227
+Node: NF_PUT_VAR1_ type88378
+Node: NF_PUT_VAR_ type92575
+Node: NF_PUT_VARA_ type97050
+Node: NF_PUT_VARS_ type102861
+Node: NF_PUT_VARM_ type108535
+Node: NF_GET_VAR1_ type117654
+Node: NF_GET_VAR_ type121524
+Node: NF_GET_VARA_ type125129
+Node: NF_GET_VARS_ type130600
+Node: NF_GET_VARM_ type136105
+Node: Reading and Writing Character String Values145292
+Node: Fill Values150713
+Node: NF_RENAME_VAR153129
+Node: Attributes154962
+Node: Attributes Introduction155354
+Node: Attribute Conventions157342
+Node: NF_PUT_ATT_ type166648
+Node: NF_INQ_ATT Family172077
+Node: NF_GET_ATT_ type176489
+Node: NF_COPY_ATT181172
+Node: NF_RENAME_ATT184534
+Node: NF_DEL_ATT186714
+Node: Summary of FORTRAN 77 Interface188556
+Node: C interface changes from NetCDF 2 to NetCDF 3202166
+Node: The New C Interface204768
+Node: Function Naming Conventions206301
+Node: Type Conversion207990
+Node: Error handling211137
+Node: NF_LONG and NF_INT212419
+Node: Whats Missing213095
+Node: Other Changes214623
+Node: Combined Index220041
 
 End Tag Table

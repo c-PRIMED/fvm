@@ -1,6 +1,6 @@
-This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-cxx.info,
-produced by makeinfo version 4.11 from
-/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
+This is /data/hunt/memosa/pkgs/netcdf/man/netcdf-cxx.info, produced by
+makeinfo version 4.12 from
+/data/hunt/memosa/pkgs/netcdf/man//defines.texi.
 
 Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
@@ -37,7 +37,7 @@ The NetCDF C++ Interface Guide
 ******************************
 
 This document describes the netCDF C++ API. It applies to netCDF
-version 4.0. This document was last updated on 28 August 2008.
+version 4.0. This document was last updated on 15 April 2009.
 
    The netCDF library provides an application- and machine-independent
 interface to self-describing, array-oriented data.  It supports an
@@ -1236,19 +1236,19 @@ Index
 
 
 Tag Table:
-Node: Top1433
-Node: Introduction2848
-Node: Class Hierarchy4485
-Node: Auxiliary Types and Constants5918
-Node: NetCDF Classes7079
-Node: Class NcFile7469
-Node: Class NcDim14487
-Node: Class NcTypedComponent15573
-Node: Class NcVar18072
-Node: Class NcAtt30056
-Node: Auxiliary Classes32610
-Node: Class NcValues32942
-Node: Class NcError34715
-Node: Combined Index37468
+Node: Top1421
+Node: Introduction2835
+Node: Class Hierarchy4472
+Node: Auxiliary Types and Constants5905
+Node: NetCDF Classes7066
+Node: Class NcFile7456
+Node: Class NcDim14474
+Node: Class NcTypedComponent15560
+Node: Class NcVar18059
+Node: Class NcAtt30043
+Node: Auxiliary Classes32597
+Node: Class NcValues32929
+Node: Class NcError34702
+Node: Combined Index37455
 
 End Tag Table

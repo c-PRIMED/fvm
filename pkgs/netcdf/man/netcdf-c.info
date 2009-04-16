@@ -1,6 +1,6 @@
-This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-c.info, produced
-by makeinfo version 4.11 from
-/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
+This is /data/hunt/memosa/pkgs/netcdf/man/netcdf-c.info, produced by
+makeinfo version 4.12 from
+/data/hunt/memosa/pkgs/netcdf/man//defines.texi.
 
 Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
@@ -37,7 +37,7 @@ The NetCDF C Interface Guide
 ****************************
 
    This document describes the C interface to the netCDF library; it
-applies to netCDF version 4.0 and was last updated on 28 August 2008.
+applies to netCDF version 4.0 and was last updated on 15 April 2009.
 
    For a complete description of the netCDF format and utilities see
 *note The NetCDF Users Guide: (netcdf)Top.
@@ -5790,67 +5790,67 @@ Index
 
 
 Tag Table:
-Node: Top1425
-Node: Use of the NetCDF Library5278
-Node: Creating7028
-Node: Reading Known10013
-Node: Reading Unknown12020
-Node: Adding15284
-Node: Errors18376
-Node: Compiling19592
-Node: Datasets21242
-Node: Interface Descriptions24166
-Node: nc_strerror25104
-Node: nc_inq_libvers26538
-Node: nc_create27218
-Node: nc__create35109
-Node: nc_open39821
-Node: nc__open41769
-Node: nc_redef44815
-Node: nc_enddef46120
-Node: nc__enddef47929
-Node: nc_close52220
-Node: nc_inq Family53770
-Node: nc_sync56643
-Node: nc_abort60889
-Node: nc_set_fill62730
-Node: nc_set_default_format67186
-Node: Dimensions70348
-Node: Dimensions Introduction70750
-Node: nc_def_dim72979
-Node: nc_inq_dimid75472
-Node: nc_inq_dim Family77158
-Node: nc_rename_dim80070
-Node: Variables82002
-Node: Variable Introduction83234
-Node: Variable Types85481
-Node: nc_def_var86851
-Node: nc_inq_varid90848
-Node: nc_inq_var92171
-Node: nc_put_var1_ type96260
-Node: nc_put_var_ type100303
-Node: nc_put_vara_ type104437
-Node: nc_put_vars_ type110311
-Node: nc_put_varm_ type116454
-Node: nc_get_var1_ type126512
-Node: nc_get_var_ type130515
-Node: nc_get_vara_ type133888
-Node: nc_get_vars_ type139168
-Node: nc_get_varm_ type144978
-Node: Strings154803
-Node: Fill Values159541
-Node: nc_rename_var161848
-Node: Attributes163708
-Node: Attributes Introduction164221
-Node: nc_put_att_ type166180
-Node: nc_inq_att Family171556
-Node: nc_get_att_ type176639
-Node: nc_copy_att181110
-Node: nc_rename_att184483
-Node: nc_del_att186640
-Node: Summary of C Interface188482
-Node: NetCDF 2 C Transition Guide205029
-Node: Error Codes221614
-Node: Combined Index224279
+Node: Top1413
+Node: Use of the NetCDF Library5265
+Node: Creating7015
+Node: Reading Known10000
+Node: Reading Unknown12007
+Node: Adding15271
+Node: Errors18363
+Node: Compiling19579
+Node: Datasets21229
+Node: Interface Descriptions24153
+Node: nc_strerror25091
+Node: nc_inq_libvers26525
+Node: nc_create27205
+Node: nc__create35096
+Node: nc_open39808
+Node: nc__open41756
+Node: nc_redef44802
+Node: nc_enddef46107
+Node: nc__enddef47916
+Node: nc_close52207
+Node: nc_inq Family53757
+Node: nc_sync56630
+Node: nc_abort60876
+Node: nc_set_fill62717
+Node: nc_set_default_format67173
+Node: Dimensions70335
+Node: Dimensions Introduction70737
+Node: nc_def_dim72966
+Node: nc_inq_dimid75459
+Node: nc_inq_dim Family77145
+Node: nc_rename_dim80057
+Node: Variables81989
+Node: Variable Introduction83221
+Node: Variable Types85468
+Node: nc_def_var86838
+Node: nc_inq_varid90835
+Node: nc_inq_var92158
+Node: nc_put_var1_ type96247
+Node: nc_put_var_ type100290
+Node: nc_put_vara_ type104424
+Node: nc_put_vars_ type110298
+Node: nc_put_varm_ type116441
+Node: nc_get_var1_ type126499
+Node: nc_get_var_ type130502
+Node: nc_get_vara_ type133875
+Node: nc_get_vars_ type139155
+Node: nc_get_varm_ type144965
+Node: Strings154790
+Node: Fill Values159528
+Node: nc_rename_var161835
+Node: Attributes163695
+Node: Attributes Introduction164208
+Node: nc_put_att_ type166167
+Node: nc_inq_att Family171543
+Node: nc_get_att_ type176626
+Node: nc_copy_att181097
+Node: nc_rename_att184470
+Node: nc_del_att186627
+Node: Summary of C Interface188469
+Node: NetCDF 2 C Transition Guide205016
+Node: Error Codes221601
+Node: Combined Index224266
 
 End Tag Table

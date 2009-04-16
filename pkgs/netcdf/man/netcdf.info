@@ -1,6 +1,6 @@
-This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf.info, produced
-by makeinfo version 4.11 from
-/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
+This is /data/hunt/memosa/pkgs/netcdf/man/netcdf.info, produced by
+makeinfo version 4.12 from
+/data/hunt/memosa/pkgs/netcdf/man//defines.texi.
 
 Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
@@ -37,7 +37,7 @@ NetCDF Users Guide
 ******************
 
 This guide describes the netCDF object model. This document applies to
-netCDF version 4.0, and was last updated on 28 August 2008.
+netCDF version 4.0, and was last updated on 15 April 2009.
 
    Interface guides are available for C (*note The NetCDF C Interface
 Guide: (netcdf-c)Top.), C++ (*note The NetCDF C++ Interface Guide:
@@ -4005,59 +4005,59 @@ Index
 
 
 Tag Table:
-Node: Top1413
-Node: Foreword4464
-Node: Summary9545
-Node: Introduction12031
-Node: Interface12745
-Node: Not DBMS15302
-Node: Format16884
-Node: Which Format18664
-Node: Performance21340
-Node: Archival22722
-Node: Conventions23398
-Node: Background24741
-Node: Whats New34757
-Node: Limitations35056
-Node: Future39403
-Node: References40448
-Node: Components of a NetCDF Dataset43168
-Node: The NetCDF Data Model43652
-Node: Dimensions49016
-Node: Variables51713
-Node: Attributes55886
-Node: Differences between Attributes and Variables59618
-Node: Data61301
-Node: netCDF external data types61907
-Node: Data Access65557
-Node: A C Example of Array Section Access69542
-Node: A Fortran Example of Array Section Access74883
-Node: Type Conversion79778
-Node: Data Structures83251
-Node: File Structure and Performance85428
-Node: Parts of a NetCDF Classic File87105
-Node: The Extended XDR Layer91857
-Node: Large File Support92986
-Node: NetCDF 64 bit Offset Format Limitations95609
-Node: NetCDF Classic Format Limitations97283
-Node: The NetCDF-3 IO Layer99872
-Node: UNICOS Optimization102160
-Node: NetCDF Utilities104654
-Node: CDL Syntax106343
-Node: CDL Data Types111278
-Node: CDL Notation for Data Constants114024
-Node: ncgen117533
-Node: ncdump121269
-Node: Units129445
-Node: Attribute Conventions133782
-Node: File Format143489
-Node: NetCDF-4 Format148186
-Node: NetCDF-4 Classic Model Format149888
-Node: NetCDF Classic Format151315
-Node: Classic Format Spec152938
-Node: Computing Offsets165665
-Node: Examples168342
-Node: 64-bit Offset Format171909
-Node: Combined Index172675
+Node: Top1401
+Node: Foreword4451
+Node: Summary9532
+Node: Introduction12018
+Node: Interface12732
+Node: Not DBMS15289
+Node: Format16871
+Node: Which Format18651
+Node: Performance21327
+Node: Archival22709
+Node: Conventions23385
+Node: Background24728
+Node: Whats New34744
+Node: Limitations35043
+Node: Future39390
+Node: References40435
+Node: Components of a NetCDF Dataset43155
+Node: The NetCDF Data Model43639
+Node: Dimensions49003
+Node: Variables51700
+Node: Attributes55873
+Node: Differences between Attributes and Variables59605
+Node: Data61288
+Node: netCDF external data types61894
+Node: Data Access65544
+Node: A C Example of Array Section Access69529
+Node: A Fortran Example of Array Section Access74870
+Node: Type Conversion79765
+Node: Data Structures83238
+Node: File Structure and Performance85415
+Node: Parts of a NetCDF Classic File87092
+Node: The Extended XDR Layer91844
+Node: Large File Support92973
+Node: NetCDF 64 bit Offset Format Limitations95596
+Node: NetCDF Classic Format Limitations97270
+Node: The NetCDF-3 IO Layer99859
+Node: UNICOS Optimization102147
+Node: NetCDF Utilities104641
+Node: CDL Syntax106330
+Node: CDL Data Types111265
+Node: CDL Notation for Data Constants114011
+Node: ncgen117520
+Node: ncdump121256
+Node: Units129432
+Node: Attribute Conventions133769
+Node: File Format143476
+Node: NetCDF-4 Format148173
+Node: NetCDF-4 Classic Model Format149875
+Node: NetCDF Classic Format151302
+Node: Classic Format Spec152925
+Node: Computing Offsets165652
+Node: Examples168329
+Node: 64-bit Offset Format171896
+Node: Combined Index172662
 
 End Tag Table

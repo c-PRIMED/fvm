@@ -1,6 +1,6 @@
-This is /data/hunt/memosa/trunk/pkgs/netcdf/man/netcdf-install.info,
-produced by makeinfo version 4.11 from
-/data/hunt/memosa/trunk/pkgs/netcdf/man//defines.texi.
+This is /data/hunt/memosa/pkgs/netcdf/man/netcdf-install.info, produced
+by makeinfo version 4.12 from
+/data/hunt/memosa/pkgs/netcdf/man//defines.texi.
 
 Copyright (C) 2005-2006 University Corporation for Atmospheric Research
 
@@ -38,7 +38,7 @@ NetCDF Installation and Porting Guide
 
 This document describes how to build and install the netCDF library,
 version 4.0 on Unix and Windows systems. This document was last updated
-on 28 August 2008.
+on 15 April 2009.
 
    Instructions for installing earlier versions of netCDF can be found
 at `http://www.unidata.ucar.edu/software/netcdf/old_docs'.
@@ -1812,31 +1812,31 @@ Index
 
 
 Tag Table:
-Node: Top1450
-Node: installing-binaries3702
-Node: Quick Instructions for Installing NetCDF on Unix5173
-Node: Building and Installing NetCDF on Unix Systems6568
-Node: Requirements7493
-Node: Specifying the Environment for Building8718
-Node: Building on 64 Bit Platforms15499
-Node: Running the configure Script16337
-Node: Running make25391
-Node: Testing the Build26003
-Node: Installing NetCDF28145
-Node: Platform Specific Notes30292
-Node: Additional Porting Notes41696
-Node: NetCDF Source44201
-Node: Windows47051
-Node: Getting Prebuilt DLL48596
-Node: Installing the DLL49071
-Node: Using the DLL with Visual Cplusplus 652418
-Node: Building the DLL with Visual Cplusplus NET53491
-Node: Using the DLL with Visual Cplusplus NET54747
-Node: If Something Goes Wrong56087
-Node: The Usual Build Problems56499
-Node: Troubleshooting61086
-Node: Finding Help63991
-Node: Reporting Problems65662
-Node: Combined Index66574
+Node: Top1438
+Node: installing-binaries3689
+Node: Quick Instructions for Installing NetCDF on Unix5160
+Node: Building and Installing NetCDF on Unix Systems6555
+Node: Requirements7480
+Node: Specifying the Environment for Building8705
+Node: Building on 64 Bit Platforms15486
+Node: Running the configure Script16324
+Node: Running make25378
+Node: Testing the Build25990
+Node: Installing NetCDF28132
+Node: Platform Specific Notes30279
+Node: Additional Porting Notes41683
+Node: NetCDF Source44188
+Node: Windows47038
+Node: Getting Prebuilt DLL48583
+Node: Installing the DLL49058
+Node: Using the DLL with Visual Cplusplus 652405
+Node: Building the DLL with Visual Cplusplus NET53478
+Node: Using the DLL with Visual Cplusplus NET54734
+Node: If Something Goes Wrong56074
+Node: The Usual Build Problems56486
+Node: Troubleshooting61073
+Node: Finding Help63978
+Node: Reporting Problems65649
+Node: Combined Index66561
 
 End Tag Table
