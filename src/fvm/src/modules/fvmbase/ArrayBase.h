@@ -68,6 +68,7 @@ public:
   virtual int getDimension() const =0;
   virtual void getShape(int *shape) const = 0;
   virtual void *getData() const = 0;
+  virtual int getDataSize() const  =0;
   virtual PrimType getPrimType() const = 0;
   
 };
