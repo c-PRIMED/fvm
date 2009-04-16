@@ -37,6 +37,7 @@ class BuildPkg:
             Python("pkgs/python", 0),
             Numpy("pkgs/numpy", 1),
             Nose("pkgs/python-nose", 1),
+            Ipython("pkgs/ipython.tgz",-1),
             Mpi4py("pkgs/mpi4py", 1),
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
@@ -84,6 +85,7 @@ class BuildPkg:
         os.system("/bin/rm -rf %s" % self.bdir)            
         # get new sources
         copytree(self.sdir, self.bdir, self.copy_sources)
+        self.sdir = self.sdir.split('.')[0]
         os.chdir(self.bdir)
         run_commands(self.name, 'before')
         self.pstatus(self._configure())
@@ -166,6 +168,17 @@ class BuildPkg:
 # them this way to allow maximum flexibility.
 #########################################################
 
+# actually a collection of required packages for ipython
+class Ipython(BuildPkg):
+    def _configure(self):
+        cfgname = os.path.join(self.bdir,'pkginstall.cfg')
+        cf = open(cfgname, 'w')
+        cf.write('PREFIX=%s\n' % self.blddir)
+        cf.close()
+        return 0
+    def _build(self):
+        return self.sys_log("make");
+        
 class Lammps(BuildPkg):
     def _build(self):
         os.chdir('src')

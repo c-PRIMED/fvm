@@ -207,12 +207,23 @@ def run_commands(pkg, section):
             sys.exit(-1)
 
 def copytree(src, dst, ctype):
-    names = os.listdir(src)
     os.makedirs(dst)
     if ctype == 0:
         return
+    if ctype == -1:
+        # We have a tar file. Handle according to suffix
+        suffix = src.split('.')[-1]
+        if suffix == 'tgz' or suffix == 'gz':
+            return os.system('tar -C %s -zxf %s' % (dst, src)) 
+        elif suffix == 'bz2':
+            return os.system('tar -C %s -jxf %s' % (dst, src)) 
+        elif suffix == 'tar':
+            return os.system('tar -C %s -xf %s' % (dst, src)) 
+        else:
+            print '\nERROR: Unknown archive %s\n' % src
+            return 1
     errors = []
-    for name in names:
+    for name in os.listdir(src):
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         try:
