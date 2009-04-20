@@ -943,8 +943,7 @@ PartMesh::count_elems_part()
 void
 PartMesh::exchange_part_elems()
 {
- 
- 
+  
    for ( int id = 0; id < _nmesh; id++){
 
        int *countsRow  =  new int[_nPart.at(id)];
@@ -952,7 +951,7 @@ PartMesh::exchange_part_elems()
        int *offsetsRow =  new int[_nPart.at(id)];
        int *offsetsCol =  new int[_nPart.at(id)];
 
-        
+
        for ( int partID = 0; partID < _nPart.at(id); partID++){
           int nelems_local = _mapPartAndElms.at(id).count(partID);
           int *row_local  = new int[nelems_local];
@@ -1075,7 +1074,10 @@ PartMesh::mesh_setup()
            int size = int(_interfaceMap.at(id).count( interfaceID ) );
            int offset = _interfaceOffsets.at(id)[ interfaceID ];
            _meshListLocal.at(id)->createInterfaceGroup( size, offset, interfaceID );
-           _meshListLocal.at(id)->createGhostCellSite( interfaceID, shared_ptr<StorageSite>( new StorageSite(size) ) );
+            shared_ptr<StorageSite> site( new StorageSite(size) );
+            site->setScatterProcID( _procID );
+            site->setGatherProcID ( interfaceID );
+           _meshListLocal.at(id)->createGhostCellSite( interfaceID,  site );
          }
 
 
@@ -1757,12 +1759,16 @@ PartMesh::mappers()
 
 
            }
-          //shared_ptr<OneToOneIndexMap>  oneToOneMapPtr( new OneToOneIndexMap( _fromIndices.at(id).at(interfaceIndx), 
-          //                                                                      _toIndices.at(id).at(interfaceIndx) )  );
+          //from indices seems useless for now but we need to find scatterCells = cellCells(toIndices) and
+          //use fromindices as storage Array
+          for ( int i = 0; i < _fromIndices.at(id).at(interfaceIndx)->getLength(); i++){
+               int elem_id = (*_toIndices.at(id).at(interfaceIndx))[i];
+                (*_fromIndices.at(id).at(interfaceIndx))[i] = _meshListLocal.at(id)->getCellCells()(elem_id,0);
+          }
 
-          //cellSMappers[ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] =  oneToOneMapPtr;
-          cellScatterMap[ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] = _toIndices.at(id).at(interfaceIndx);
-          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] = _fromIndices.at(id).at(interfaceIndx);
+          cellScatterMap[ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] = _fromIndices.at(id).at(interfaceIndx);
+          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] = _toIndices.at(id).at(interfaceIndx);
+ 
           interfaceIndx++;
 
         }

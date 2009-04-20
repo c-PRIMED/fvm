@@ -6,6 +6,7 @@
 #include "misc.h"
 #include "RLogInterface.h"
 #include "Array.h"
+#include <cassert>
 
 class OneToOneIndexMap;
 
@@ -32,6 +33,9 @@ public:
     _count = selfCount+nGhost;
     _selfCount = selfCount;
   }
+  
+  void setScatterProcID( int proc_id ) { _scatterProcID = proc_id; }
+  void setGatherProcID(  int proc_id ) { _gatherProcID  = proc_id; }
 
   const MappersMap& getMappers() const {throw;}
   MappersMap& getMappers() {throw;}
@@ -42,16 +46,15 @@ public:
   GatherMap &  getGatherMap ()  { return _gatherMap; }
 
 
+  int getScatterProcID() const { assert( _scatterProcID != -1 ); return _scatterProcID;}
+  int getGatherProcID()  const { assert( _gatherProcID  != -1 ); return _gatherProcID; }
+
+
   const StorageSite* const getParent() const {return _parent;}
   int getOffset() const {return _offset;}
 
   //void  scatterGatherMaps( );
 
-
-
-
-
-  
 private:
   StorageSite(const StorageSite&);
   int _count;
@@ -61,6 +64,9 @@ private:
   //MappersMap _mappers;
   ScatterMap         _scatterMap;
   GatherMap          _gatherMap;
+
+  int   _scatterProcID;
+  int   _gatherProcID;
 
 };
 

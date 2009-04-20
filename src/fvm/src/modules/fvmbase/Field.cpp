@@ -3,6 +3,12 @@
 #include "StorageSite.h"
 #include "Array.h"
 #include "OneToOneIndexMap.h"
+#include <iostream>
+#include <mpi.h>
+#include <vector>
+#include "Vector.h"
+
+using namespace std;
 
 Field::Field(const string& name):
   IContainer(),
@@ -177,13 +183,17 @@ Field::syncScatter(const StorageSite& site)
   foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
   {
       const StorageSite& oSite = *mpos.first;
-      
-      const Array<int>& fromIndices = *(mpos.second);
-      if (_ghostArrays.find(&oSite) == _ghostArrays.end())
-        _ghostArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
 
-      ArrayBase& ghostArray = *_ghostArrays[&oSite];
-      thisArray.scatter(ghostArray,fromIndices);
+      const Array<int>& fromIndices = *(mpos.second);
+      if (_ghostScatterArrays.find(&oSite) == _ghostScatterArrays.end()){
+        _ghostGatherArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
+        _ghostScatterArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
+      }
+
+      ArrayBase& ghostScatterArray = *_ghostScatterArrays[&oSite];
+      thisArray.scatter(ghostScatterArray,fromIndices);
+
+
   }
 }
 
@@ -197,27 +207,59 @@ Field::syncGather(const StorageSite& site)
   foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
   {
       const StorageSite& oSite = *mpos.first;
-      
+
       const Array<int>& toIndices = *(mpos.second);
-      
-      if (_ghostArrays.find(&oSite) == _ghostArrays.end())
+
+      if (_ghostGatherArrays.find(&oSite) == _ghostGatherArrays.end())
       {
-          ostringstream e;
-          e << "Field::syncScatter: ghost array not found for"
-            << &oSite << endl;
-          throw CException(e.str());
+          _ghostGatherArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
+//          ostringstream e;
+//          e << "Field::syncScatter: ghost array not found for"
+//            << &oSite << endl;
+//          throw CException(e.str());
       }
-      const ArrayBase& ghostArray = *_ghostArrays[&oSite];
-      thisArray.gather(ghostArray,toIndices);
+      
+      const ArrayBase& ghostGatherArray = *_ghostGatherArrays[&oSite];
+      thisArray.gather(ghostGatherArray,toIndices);
   }
 }
 
 void
 Field::syncLocal()
 {
-  // scatter first
-  foreach(ArrayMap::value_type& pos, _arrays)
+   // scatter first (prepare ship packages)
+   foreach(ArrayMap::value_type& pos, _arrays)
     syncScatter(*pos.first);
+
+   //SENDING
+   MPI::Request   request_send[ _ghostScatterArrays.size() ];
+   int indx = 0;
+   foreach( const ArrayMap::value_type& mpos, _ghostScatterArrays){
+       const StorageSite&  site = *mpos.first;
+       ArrayBase& sendArray = *mpos.second;
+       int to_where  = site.getGatherProcID();
+       int send_tag  = 2009;
+       request_send[indx++] =  
+             MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, send_tag);
+
+   }
+
+   //RECIEVING
+   MPI::Request   request_recv[ _ghostGatherArrays.size() ];
+   //getting values from other meshes to fill g
+   indx = 0;
+   foreach( const ArrayMap::value_type& mpos, _ghostGatherArrays){
+       const StorageSite&  site = *mpos.first;
+       ArrayBase& recvArray = *mpos.second;
+       int from_where  = site.getGatherProcID();
+       int recv_tag  = 2009;
+       request_recv[indx++] = 
+             MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, recv_tag );
+
+   }
+
+   int count_recv = _ghostGatherArrays.size();
+   MPI::Request::Waitall( count_recv, request_recv);
 
   // gather 
   foreach(ArrayMap::value_type& pos, _arrays)

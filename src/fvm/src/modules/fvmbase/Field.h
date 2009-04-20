@@ -50,7 +50,8 @@ private:
   
   const string _name;
   ArrayMap _arrays;
-  ArrayMap _ghostArrays;
+  ArrayMap _ghostScatterArrays;
+  ArrayMap _ghostGatherArrays;
   
   ChildSitesMap _childSitesMap;
 
