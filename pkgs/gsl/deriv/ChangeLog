@@ -1,9 +1,0 @@
-2007-08-22  Brian Gough  <bjg@network-theory.co.uk>
-
-	* deriv.c (central_deriv): corrected dy term for error in h
-	(forward_deriv): corrected dy term for error in h
-
-2004-03-06  Brian Gough  <bjg@network-theory.co.uk>
-
-	* reworking API of gsl_diff
-
