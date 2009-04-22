@@ -3,6 +3,7 @@ Do subversion update and write out xml file.
 """
 
 import cgi, time, datetime, os, socket
+from build_utils import debug
 
 Dirname=None
 
