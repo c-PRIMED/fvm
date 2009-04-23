@@ -4,7 +4,12 @@
 #include "Array.h"
 #include "OneToOneIndexMap.h"
 #include <iostream>
+
+#ifdef FVM_PARALLEL
 #include <mpi.h>
+#endif
+
+
 #include <vector>
 #include "Vector.h"
 
@@ -13,7 +18,8 @@ using namespace std;
 Field::Field(const string& name):
   IContainer(),
   _name(name),
-  _arrays()
+  _arrays(),
+  MPI_FIELD_TAG(2009)
 {
   logCtor();
 }  
@@ -229,8 +235,9 @@ Field::syncLocal()
 {
    // scatter first (prepare ship packages)
    foreach(ArrayMap::value_type& pos, _arrays)
-    syncScatter(*pos.first);
+      syncScatter(*pos.first);
 
+#ifdef FVM_PARALLEL
    //SENDING
    MPI::Request   request_send[ _ghostScatterArrays.size() ];
    int indx = 0;
@@ -238,9 +245,8 @@ Field::syncLocal()
        const StorageSite&  site = *mpos.first;
        ArrayBase& sendArray = *mpos.second;
        int to_where  = site.getGatherProcID();
-       int send_tag  = 2009;
        request_send[indx++] =  
-             MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, send_tag);
+             MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_FIELD_TAG);
 
    }
 
@@ -252,17 +258,18 @@ Field::syncLocal()
        const StorageSite&  site = *mpos.first;
        ArrayBase& recvArray = *mpos.second;
        int from_where  = site.getGatherProcID();
-       int recv_tag  = 2009;
        request_recv[indx++] = 
-             MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, recv_tag );
+             MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, MPI_FIELD_TAG );
 
    }
 
    int count_recv = _ghostGatherArrays.size();
    MPI::Request::Waitall( count_recv, request_recv);
 
+#endif
+
+
   // gather 
   foreach(ArrayMap::value_type& pos, _arrays)
     syncGather(*pos.first);
 }
-

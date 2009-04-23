@@ -2,12 +2,20 @@
 #include "OneToOneIndexMap.h"
 #include "MultiFieldReduction.h"
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#define FVM_PARALLEL
+
+
+#include <iostream>
+
 MultiField::MultiField():
   IContainer(),
   _length(0),
   _arrays(),
   _arrayIndices(),
-  _arrayMap()
+  _arrayMap(),
+  MPI_MULTIFIELD_TAG(3009)
 {
   logCtor();
 }
@@ -238,6 +246,10 @@ MultiField::reduceSum() const
       else
         sum->addArray(fIndex,dynamic_pointer_cast<ArrayBase>(myArray.newCopy()));
   }
+
+#ifdef FVM_PARALLEL 
+  sum->sync(); //global reduction operation for residual check;
+#endif
   return sum;
 }
 
@@ -299,22 +311,24 @@ MultiField::merge(const MultiField& other)
 void
 MultiField::syncScatter(const ArrayIndex& i)
 {
-  const  ArrayBase& thisArray = *_arrays[_arrayMap[i]];
-  const StorageSite& thisSite = *i.second;
+  const  ArrayBase& thisArray  = *_arrays[_arrayMap[i]];
+  const  StorageSite& thisSite = *i.second;
 
   const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMap();
-  
+
   foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
   {
       const StorageSite& oSite = *mpos.first;
       ArrayIndex oIndex(i.first,&oSite);
-      
-      const Array<int>& fromIndices = *(mpos.second);
-      if (_ghostArrays.find(oIndex) == _ghostArrays.end())
-        _ghostArrays[oIndex] = thisArray.newSizedClone(oSite.getCount());
 
-      ArrayBase& ghostArray = *_ghostArrays[oIndex];
-      thisArray.scatter(ghostArray,fromIndices);
+      const Array<int>& fromIndices = *(mpos.second);
+      if (_ghostScatterArrays.find(oIndex) == _ghostScatterArrays.end()){
+        _ghostScatterArrays[oIndex] = thisArray.newSizedClone(oSite.getCount());
+        _ghostGatherArrays[oIndex]  = thisArray.newSizedClone(oSite.getCount());
+      }
+
+      ArrayBase& ghostScatterArray = *_ghostScatterArrays[oIndex];
+      thisArray.scatter(ghostScatterArray,fromIndices);
   }
 
 }
@@ -326,28 +340,60 @@ MultiField::syncGather(const ArrayIndex& i)
   const StorageSite& thisSite = *i.second;
 
   const StorageSite::GatherMap& gatherMap = thisSite.getGatherMap();
-  
+ 
   foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
   {
       const StorageSite& oSite = *mpos.first;
       ArrayIndex oIndex(i.first,&oSite);
-      
+
       const Array<int>& toIndices = *(mpos.second);
-      if (_ghostArrays.find(oIndex) != _ghostArrays.end())
-      {
-          ArrayBase& ghostArray = *_ghostArrays[oIndex];
-          thisArray.gather(ghostArray,toIndices);
-      }
+      if (_ghostGatherArrays.find(oIndex) == _ghostGatherArrays.end())
+         _ghostGatherArrays[oIndex]  = thisArray.newSizedClone(oSite.getCount());
+       ArrayBase& ghostGatherArray = *_ghostGatherArrays[oIndex];
+       thisArray.gather(ghostGatherArray,toIndices);
   }
 }
 
 void
 MultiField::sync()
 {
+
   foreach(ArrayIndex i, _arrayIndices)
     syncScatter(i);
 
+
+#ifdef FVM_PARALLEL
+  //SENDING
+   MPI::Request   request_send[ _ghostScatterArrays.size() ];
+   int indx = 0;
+   foreach( const GhostArrayMap::value_type& mpos, _ghostScatterArrays ){
+       const ArrayIndex& arrayIndex = mpos.first;
+       const StorageSite&  site =  *arrayIndex.second;
+       ArrayBase& sendArray = *mpos.second;
+       int to_where  = site.getGatherProcID();
+       request_send[indx++] =  
+             MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_MULTIFIELD_TAG );
+   }
+
+
+   //RECIEVING
+   MPI::Request   request_recv[ _ghostGatherArrays.size() ];
+   //getting values from other meshes to fill g
+   indx = 0;
+   foreach( const GhostArrayMap::value_type& mpos, _ghostGatherArrays){
+       const ArrayIndex& arrayIndex = mpos.first;
+       const StorageSite&  site = *arrayIndex.second;
+       ArrayBase& recvArray = *mpos.second;
+       int from_where  = site.getGatherProcID();
+       request_recv[indx++] = 
+             MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, MPI_MULTIFIELD_TAG );
+   }
+   int count_recv = _ghostGatherArrays.size();
+   MPI::Request::Waitall( count_recv, request_recv );
+
+#endif
+
   foreach(ArrayIndex i, _arrayIndices)
     syncGather(i);
-  
+
 }

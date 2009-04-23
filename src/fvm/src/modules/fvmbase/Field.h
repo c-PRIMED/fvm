@@ -56,6 +56,7 @@ private:
   ChildSitesMap _childSitesMap;
 
   ArrayBase& _create(const StorageSite& site);
+  int  MPI_FIELD_TAG;
 };
 
 #endif

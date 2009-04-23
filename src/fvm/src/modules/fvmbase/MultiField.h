@@ -74,7 +74,9 @@ private:
   ArrayList _arrays;
   ArrayIndexList _arrayIndices;
   ArrayMap _arrayMap;
-  GhostArrayMap _ghostArrays;
+  GhostArrayMap _ghostScatterArrays;
+  GhostArrayMap _ghostGatherArrays;
+  int MPI_MULTIFIELD_TAG;
 };
 
 #endif

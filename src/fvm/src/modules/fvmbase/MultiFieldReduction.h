@@ -30,6 +30,7 @@ public:
   void setMax(const MultiFieldReduction& o);
 
   void print(ostream &os) const;
+  void sync();
 
 private:
   ArrayMap _arrays;

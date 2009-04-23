@@ -2,6 +2,12 @@
 #include "Array.h"
 #include "OneToOneIndexMap.h"
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
+#include <iostream>
+
 MultiFieldReduction::MultiFieldReduction():
   _arrays()
 {
@@ -148,4 +154,19 @@ MultiFieldReduction::print(ostream &os) const
   }
 
   os << "]";
+}
+
+void
+MultiFieldReduction::sync()
+{
+#ifdef FVM_PARALLEL
+   ArrayMap::const_iterator it;
+   for ( it = _arrays.begin(); it != _arrays.end(); it++ ){
+        const Field& field = *(it->first);
+         ArrayBase&  myArray = *(it->second);
+         int count = myArray.getDataSize() / sizeof(double); 
+         MPI::COMM_WORLD.Allreduce( myArray.getData(), myArray.getData(), count, MPI::DOUBLE, MPI::SUM);
+   }
+#ifdef FVM_PARALLEL
+
 }
