@@ -4,7 +4,7 @@
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
-#define FVM_PARALLEL
+#endif
 
 
 #include <iostream>
