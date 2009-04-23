@@ -7,7 +7,7 @@
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
-#define FVM_PARALLEL
+#endif
 
 MultiFieldMatrix::MultiFieldMatrix() :
   _matrices(),
