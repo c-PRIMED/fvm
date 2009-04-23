@@ -34,6 +34,7 @@ def generate(env):
     
     if env['PARALLEL']:
         env['CXX'] = 'mpicxx'
+        env.Append(CXXFLAGS=['-DFVM_PARALLEL'])
 
     env['CCFLAGS'] = env['CXXFLAGS']
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')
