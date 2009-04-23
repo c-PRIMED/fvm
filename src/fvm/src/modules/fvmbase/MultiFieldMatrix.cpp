@@ -126,7 +126,6 @@ MultiFieldMatrix::forwardGS(IContainer& xB, const IContainer& bB, IContainer& te
    MultiField& temp = dynamic_cast<MultiField&>(tempB);
 
   const int xLen = x.getLength();
-   if ( MPI::COMM_WORLD.Get_rank() == 0 ) cout << " forwardGS " << endl;
   //#pragma omp parallel for
   for(int i=0; i<xLen; i++)
   {
