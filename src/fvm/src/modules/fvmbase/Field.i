@@ -14,6 +14,9 @@ class Field
 public:
   Field(const string& name);
 
+
+  void syncLocal();
+  
   %extend
   {
     boost::shared_ptr<ArrayBase> __getitem__(const StorageSite* s)

@@ -5,6 +5,9 @@
 #include "StorageSite.h"
 #include "OneToOneIndexMap.h"
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#define FVM_PARALLEL
 
 MultiFieldMatrix::MultiFieldMatrix() :
   _matrices(),
@@ -79,7 +82,9 @@ MultiFieldMatrix::multiply(IContainer& yB, const IContainer& xB) const
           }
       }
   }
-
+#ifdef FVM_PARALLEL
+  y.sync();
+#endif
 }
 
 void
@@ -106,6 +111,11 @@ MultiFieldMatrix::multiplyAndAdd(IContainer& yB, const IContainer& xB) const
           }
       }
   }
+
+#ifdef FVM_PARALLEL
+  y.sync();
+#endif
+
 }
 
 void 
@@ -116,8 +126,7 @@ MultiFieldMatrix::forwardGS(IContainer& xB, const IContainer& bB, IContainer& te
    MultiField& temp = dynamic_cast<MultiField&>(tempB);
 
   const int xLen = x.getLength();
-
-
+   if ( MPI::COMM_WORLD.Get_rank() == 0 ) cout << " forwardGS " << endl;
   //#pragma omp parallel for
   for(int i=0; i<xLen; i++)
   {
@@ -140,11 +149,18 @@ MultiFieldMatrix::forwardGS(IContainer& xB, const IContainer& bB, IContainer& te
           }
           
           const Matrix& mII = getMatrix(rowIndex,rowIndex);
+#ifndef FVM_PARALLEL
           x.syncGather(rowIndex);
+#endif
           mII.forwardGS(x[rowIndex],r,r);
+#ifndef FVM_PARALLEL
           x.syncScatter(rowIndex);
+#endif
       }
   }
+#ifdef FVM_PARALLEL
+      x.sync();
+#endif
 }
 
 void 
@@ -175,7 +191,7 @@ MultiFieldMatrix::solveBoundary(IContainer& xB, const IContainer& bB, IContainer
                   mIJ.multiplyAndAdd(r,x[colIndex]);
               }
           }
-          
+
           const Matrix& mII = getMatrix(rowIndex,rowIndex);
           mII.solveBoundary(x[rowIndex],r,r);
       }
@@ -212,13 +228,21 @@ MultiFieldMatrix::reverseGS(IContainer& xB, const IContainer& bB, IContainer& te
                   mIJ.multiplyAndAdd(r,x[colIndex]);
               }
           }
-          
+
           const Matrix& mII = getMatrix(rowIndex,rowIndex);
+#ifndef FVM_PARALLEL
           x.syncGather(rowIndex);
+#endif
           mII.reverseGS(x[rowIndex],r,r);
-          x.syncScatter(rowIndex);
+#ifndef FVM_PARALLEL
+         x.syncScatter(rowIndex);
+#endif
       }
   }
+#ifdef FVM_PARALLEL
+   x.sync();
+#endif
+
 }
 
 void

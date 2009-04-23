@@ -5,14 +5,24 @@
 %include "Vector.i"
 
 %include "std_vector.i"
+%include "std_map.i"
+%include "ArrayBase.i"
 
 using namespace std;
 
+
 class StorageSite
 {
+  typedef map< const StorageSite*, shared_ptr< Array<int> > > ScatterMap;
+  typedef map< const StorageSite*, shared_ptr< Array<int> > > GatherMap;
+
 public:
   int getCount() const;
   int getSelfCount() const;
+  const ScatterMap&  getScatterMap() const;
+  const GatherMap&   getGatherMap()  const;
+  
+  
 private:
   StorageSite();
 };
@@ -37,6 +47,7 @@ class Mesh
 {
 public:
   typedef Vector<double,3> VecD3;
+  typedef map<int, shared_ptr<StorageSite> > GhostCellSiteMap;
 
   enum
     {
@@ -65,6 +76,22 @@ public:
 
   const CRConnectivity& getConnectivity(const StorageSite& from,
                                         const StorageSite& to) const;
+					
+  const CRConnectivity& getAllFaceNodes() const;
+  const CRConnectivity& getAllFaceCells() const;
+  const CRConnectivity& getCellNodes() const;
+  
+  const CRConnectivity& getFaceCells(const StorageSite& site) const;
+  const CRConnectivity& getFaceNodes(const StorageSite& site) const;
+  const CRConnectivity& getCellFaces() const;
+  const CRConnectivity& getCellCells() const;
+					
+  
+  const GhostCellSiteMap& getGhostCellSiteMap() const;
+  const StorageSite* getGhostCellSite( int id );
+
+  const Array<VecD3>& getNodeCoordinates() const;
+  
   
   %extend
   {
