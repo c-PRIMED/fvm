@@ -167,6 +167,6 @@ MultiFieldReduction::sync()
          int count = myArray.getDataSize() / sizeof(double); 
          MPI::COMM_WORLD.Allreduce( myArray.getData(), myArray.getData(), count, MPI::DOUBLE, MPI::SUM);
    }
-#ifdef FVM_PARALLEL
+#endif
 
 }
