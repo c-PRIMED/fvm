@@ -16,9 +16,12 @@ _config = {
         'build': 'openmpi',
         },
     'fvm': {
-        'parallel': False,
+        'parallel': 'False',
         'version': 'debug',
         'compiler': 'gcc',
+        },
+    'MEMOSA': {
+        'Build' : 'True',
         },
 }
 

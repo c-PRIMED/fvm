@@ -106,27 +106,6 @@ def run_all_tests(bp):
         ok += tok
         errs += terrs
 
-    # test integration
-    tdir = os.path.join(bp.topdir,'tests')
-    pmess("TEST",'MEMOSA', tdir)
-    os.chdir(tdir)
-    logfile = os.path.join(bp.logdir, "MEMOSA-test.xml")
-    remove_file(logfile)
-    tok, terrs = do_tests('MEMOSA', tdir, logfile)
-    if terrs:
-        cprint('YELLOW', "%s OK, %s FAIL" % (tok, terrs))
-    else:
-        cprint('GREEN', "%s OK" % tok)
-    os.chdir(bp.topdir)
-    errs += terrs
-    ok += tok
-    print '-'*40
-    if errs:
-        cprint('YELLOW', "%s OK, %s FAIL" % (ok, errs))
-    else:
-        cprint('GREEN', "%s OK" % ok)
-
-
     # restore paths
     if oldpypath:
         os.environ['PYTHONPATH'] = oldpypath 

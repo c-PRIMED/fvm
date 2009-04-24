@@ -52,6 +52,7 @@ class BuildPkg:
             Lammps("src/lammps", 1),
             MPM("src/MPM", 2),
             Fvm("src/fvm", 0),
+            MEMOSA("src/MEMOSA", 0),
             ]
         
     setup = staticmethod(setup)
@@ -418,5 +419,12 @@ class Fvm(BuildPkg):
         self.sys_log("install *.py %s" % self.bindir)     
         return 0
 
+class MEMOSA(BuildPkg):
+    name = "MEMOSA"
+    def _install(self):
+        os.chdir(self.sdir)
+        self.sys_log("install bin/* %s" % self.bindir)
+        self.sys_log("install lib/* %s" % self.libdir)        
+        return 0
 
 
