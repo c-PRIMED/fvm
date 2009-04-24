@@ -44,6 +44,7 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->continuityTolerance=1e-4;
     this->printNormalizedResiduals = true;
     this->transient = false;
+    this->correctVelocity = true;
     this->timeDiscretizationOrder=1;
     this->momentumLinearSolver = 0;
     this->pressureLinearSolver = 0;
@@ -54,6 +55,7 @@ struct FlowModelOptions : public FloatVarDict<T>
   double momentumTolerance;
   double continuityTolerance;
   bool transient;
+  bool correctVelocity;
   int timeDiscretizationOrder;
   LinearSolver *momentumLinearSolver;
   LinearSolver *pressureLinearSolver;
