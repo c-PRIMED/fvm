@@ -1,6 +1,5 @@
 %include <std_map.i>
 
-%include "Field.i"
 
 template<class T>
 struct FloatVal

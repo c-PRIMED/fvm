@@ -10,10 +10,6 @@
 
 using namespace std;
 
-%include "ArrayBase.i"
-%include "Vector.i" 
-
-
 class Grid
 {
  public: 

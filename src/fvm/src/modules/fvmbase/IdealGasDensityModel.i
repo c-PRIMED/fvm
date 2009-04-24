@@ -3,15 +3,10 @@
 #include "AMG.h"
 %}
 
-%include "atype.i"
-%include "FloatVarDict.i"
-%include "FlowFields.h"
-%include "Vector.i"
-
 using namespace std;
 using namespace boost;
 
-%include "Model.i"
+%include "FloatVarDict.i"
 
 %include "IdealGasDensityModel.h"
 

@@ -1,5 +1,3 @@
-%include "LinearSolver.i"
-
 class AMG : public LinearSolver
 {
 public:

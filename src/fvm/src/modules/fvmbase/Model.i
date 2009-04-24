@@ -4,7 +4,6 @@
 
 %include "std_vector.i"
 
-%include "Mesh.i"
 
 using namespace std;
 

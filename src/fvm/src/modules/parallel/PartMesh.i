@@ -6,7 +6,7 @@
 
 %include "std_vector.i"
 
-%include "Mesh.i"
+%import "Mesh.i"
 using namespace std;
 %template(IntVector) vector<int>;
 

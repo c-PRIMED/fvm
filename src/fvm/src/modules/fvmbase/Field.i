@@ -7,8 +7,6 @@
 #include "Mesh.h"
   %}
 
-%include "ArrayBase.i"
-
 class Field
 {
 public:

@@ -1,5 +1,3 @@
-%include "LinearSolver.i"
-
 class BCGStab : public LinearSolver
 {
 public:

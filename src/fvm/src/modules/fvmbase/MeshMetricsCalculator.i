@@ -4,9 +4,6 @@
 %}
 
 using namespace std;
-%include "Model.i"
-%include "GeomFields.h"
-%include "atype.i"
 
 
 template<class T>

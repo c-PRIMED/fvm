@@ -6,7 +6,6 @@
 %include "std_string.i"
 %include "std_vector.i"
 
-%include "Mesh.i"
 
 using namespace std;
 class NcDataReader {

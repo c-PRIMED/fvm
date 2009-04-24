@@ -9,8 +9,8 @@
 
 using namespace std;
 
-%include "ArrayBase.i"
-%include "Vector.i" 
+
+
 class MPM
 {
  public: 

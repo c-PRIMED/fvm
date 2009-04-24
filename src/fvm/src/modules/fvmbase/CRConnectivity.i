@@ -3,9 +3,6 @@
 
 %}
 
-%include "ArrayBase.i"
-%include "Vector.i"
-
 class CRConnectivity
 {
 public:

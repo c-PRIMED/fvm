@@ -7,7 +7,18 @@
 
 using namespace std;
 
-%include "Field.i"
+%import "ArrayBase.i"
+%import "Field.i"
+%import "Mesh.i"
+%import "LinearSolver.i"
+%import "Vector.i"
+
+%include "GeomFields.h"
+%include "FlowFields.h"
+%include "ThermalFields.h"
+
+%include "atype.i"
+%include "Model.i"
 
 %include "MeshMetricsCalculator.i"
 

@@ -7,8 +7,8 @@
 %include "std_map.i"
 %include "std_vector.i"
 
-%include "Mesh.i"
-%include "Field.i"
+%import "Mesh.i"
+%import "Field.i"
 
 using namespace std;
 

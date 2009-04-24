@@ -3,15 +3,11 @@
 #include "AMG.h"
 %}
 
-%include "atype.i"
-%include "FloatVarDict.i"
-%include "GeomFields.h"
-%include "FlowFields.h"
-%include "LinearSolver.i"
-%include "Vector.i"
 
 using namespace std;
 using namespace boost;
+
+%include "FloatVarDict.i"
 
 template <class T>
 struct FlowBC : public FloatVarDict<T>
@@ -29,6 +25,7 @@ struct FlowModelOptions : public FloatVarDict<T>
 {
   bool printNormalizedResiduals;
   bool transient;
+  bool correctVelocity;
   double momentumTolerance;
   double continuityTolerance;
   int timeDiscretizationOrder;
@@ -50,7 +47,6 @@ struct FlowModelOptions : public FloatVarDict<T>
 %template(FlowModelOptionsA) FlowModelOptions<ATYPE_STR>;
 
 
-%include "Model.i"
 
 %include "FlowModel.h"
 

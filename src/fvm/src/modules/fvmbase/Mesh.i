@@ -6,15 +6,16 @@
 
 %include "std_vector.i"
 %include "std_map.i"
-%include "ArrayBase.i"
+
+
 
 using namespace std;
 
 
 class StorageSite
 {
-  typedef map< const StorageSite*, shared_ptr< Array<int> > > ScatterMap;
-  typedef map< const StorageSite*, shared_ptr< Array<int> > > GatherMap;
+  typedef map< const StorageSite*, boost::shared_ptr< Array<int> > > ScatterMap;
+  typedef map< const StorageSite*, boost::shared_ptr< Array<int> > > GatherMap;
 
 public:
   int getCount() const;
@@ -47,7 +48,7 @@ class Mesh
 {
 public:
   typedef Vector<double,3> VecD3;
-  typedef map<int, shared_ptr<StorageSite> > GhostCellSiteMap;
+  typedef map<int, boost::shared_ptr<StorageSite> > GhostCellSiteMap;
 
   enum
     {
@@ -90,17 +91,9 @@ public:
   const GhostCellSiteMap& getGhostCellSiteMap() const;
   const StorageSite* getGhostCellSite( int id );
 
-  const Array<VecD3>& getNodeCoordinates() const;
-  
-  
   %extend
   {
     int getNumberOfCells() {return self->getCells().getCount();}
-    ArrayBase* getCoordinates()
-    {
-        cout << "mesh ext" << endl;
-        return self->getNodeCoordinates();
-    }
 
     std::vector<FaceGroup*> getBoundaryGroups()
     {

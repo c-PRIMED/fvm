@@ -12,10 +12,6 @@
 #include "MPM_Particles.h"
 
   %}
-%include "Vector.i"
-%include "Mesh.i"
-%include "Octree.i"
-%include "MPM_Particles.i"
 
 using namespace std;
 

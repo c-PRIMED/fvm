@@ -6,6 +6,7 @@
 %include "std_string.i"
 
 %include "atype.i"
+%import "Mesh.i"
 
 using namespace std;
 

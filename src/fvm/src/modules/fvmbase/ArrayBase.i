@@ -13,11 +13,12 @@
 
 %include "boost_shared_ptr.i"
 SWIG_SHARED_PTR(ArrayPtr,ArrayBase)
+
 class ArrayBase
 {
 public:
   int getDimension();
-  shared_ptr<ArrayBase> newSizedClone(const int size);
+  boost::shared_ptr<ArrayBase> newSizedClone(const int size);
   
   %extend
   {
@@ -48,7 +49,6 @@ public:
           pyArrayType = NPY_DOUBLE;
           break;
         }
-        cerr << "numpy array creation" << endl;
         return PyArray_SimpleNewFromData(dim,pyshape,pyArrayType,self->getData());
     }
   }

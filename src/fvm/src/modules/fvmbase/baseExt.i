@@ -39,7 +39,10 @@ namespace std{
 
 using namespace std;
 %include "ArrayBase.i"
+%include "Field.i"
+%include "CRConnectivity.i"
 %include "Mesh.i"
+%include "LinearSolver.i"
 %include "AMG.i"
 %include "BCGStab.i"
 
@@ -47,8 +50,6 @@ using namespace std;
 %include "MPM_Particles.i"
 %include "Octree.i"
 %include "Grid.i"
-%include "Field.i"
-%include "CRConnectivity.i"
 
 
 

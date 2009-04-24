@@ -2,12 +2,9 @@
 #include "ThermalModel.h"
 %}
 
-%include "atype.i"
-%include "FloatVarDict.i"
-%include "GeomFields.h"
-%include "ThermalFields.h"
-
 using namespace std;
+
+%include "FloatVarDict.i"
 
 template <class T>
 struct ThermalBC : public FloatVarDict<T>
@@ -32,7 +29,7 @@ struct ThermalModelOptions : public FloatVarDict<T>
 %template(ThermalModelOptionsA) ThermalModelOptions<ATYPE_STR>;
 
 
-%include "Model.i"
+%import "Model.i"
 
 %include "ThermalModel.h"
 
