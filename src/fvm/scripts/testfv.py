@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-
+import pdb
 import sys
 sys.setdlopenflags(0x100|0x2)
 
 import fvmbaseExt
 import importers
-
+#pdb.set_trace()
 atype = 'double'
 #atype = 'tangent'
 
@@ -23,7 +23,7 @@ from FluentCase import FluentCase
 
 fileBase = None
 numIterations = 200
-fileBase = "/home/sm/app-memosa/src/fvm/test/"
+fileBase = "/home/lin/work/app-memosa/src/fvm/verification/flowoversphere/"
 
 
 
@@ -47,15 +47,19 @@ def initVelocity(geomFields,velocityField,meshes):
         vc = velocityField[cells].asNumPyArray()
         rx = xc[:,0] - 0.0
         ry = xc[:,1] - 0.0
-        vx = -ry
-        vy = rx
+        rz = xc[:,2] - 0.0
+        vx = 0.0
+        vy = 0.0
+        vz = 0.0
             
         vc[:,0] = vx[:]
         vc[:,1] = vy[:]
+        vc[:,2] = vz[:]
             
 def createBVFields(geomFields,meshes):
     fx = fvmbaseExt.Field('bvx')
     fy = fvmbaseExt.Field('bvy')
+    fz = fvmbaseExt.Field('bvz')
 
     mesh = meshes[0]
     vol = geomFields.volume[mesh.getCells()]
@@ -68,27 +72,33 @@ def createBVFields(geomFields,meshes):
 
             rx = xf[:,0] - 0.0
             ry = xf[:,1] - 0.0
+            rz = xf[:,2] - 0.0
             vx = -ry
             vy = rx
+            vz = 
             
             xvel = vol.newSizedClone(nFaces)
             yvel = vol.newSizedClone(nFaces)
+            zvel = vol.newSizedClone(nFaces)
 
             xvela = xvel.asNumPyArray()
             yvela = yvel.asNumPyArray()
+            zvela = zvel.asNumPyArray()
 
-            xvela[:] = 0#vx[:]
-            yvela[:] = 0#vy[:]
-
+            xvela[:] = vx[:]
+            yvela[:] = vy[:]
+            zvela[:] = vz[:]
+            
             fx[fg.site] = xvel
             fy[fg.site] = yvel
-
-    return fx,fy
+            fz[fg.site] = zvel
+            
+    return fx,fy,fz
             
             
 outfile = fileBase+"-prism.dat"
     
-reader = FluentCase(fileBase+"cav32-new.cas")
+reader = FluentCase(fileBase+"cube-15k.cas")
 
 #import debug
 reader.read();
@@ -103,7 +113,7 @@ metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
 
 metricsCalculator.init()
 
-if atype == 'tangent':
+ if atype == 'tangent':
     metricsCalculator.setTangentCoords(0,7,1)
 
 flowFields =  models.FlowFields('flow')
@@ -155,7 +165,7 @@ solid = fvmbaseExt.MPM()
 
 octree = fvmbaseExt.Octree() 
 
-option = 2
+option = 1
 mesh0 = meshes[0]
 fvmbaseExt.CellMark_Impl(mesh0, geomFields, fileBase, octree, solid, option)
 
@@ -175,13 +185,14 @@ metricsCalculator.computeIBInterpolationMatrices(particles)
 
 
 
-fx,fy = createBVFields(geomFields,meshes)
+fx,fy,fz = createBVFields(geomFields,meshes)
 
 
 bcMap = fmodel.getBCMap()
 for bc in bcMap.values():
     bc['specifiedXVelocity']=fx
     bc['specifiedYVelocity']=fy
+    bc['specifiedZVelocity']=fz
     bc.bcType = 'VelocityBoundary'
 
 fmodel.init()
@@ -194,7 +205,7 @@ t1 = time.time()
 if outfile != '/dev/stdout':
     print '\nsolution time = %f' % (t1-t0)
 
-writer = exporters.FluentDataExporterA(reader,fileBase+"-prism.dat",False,0)
+writer = exporters.FluentDataExporterA(reader,fileBase+"test.dat",False,0)
 
 writer.init()
 writer.writeScalarField(flowFields.pressure,1)
