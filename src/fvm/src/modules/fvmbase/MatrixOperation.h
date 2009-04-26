@@ -97,6 +97,7 @@ if (irow != icol) {
 indxr[i] = irow;
 indxc[i] = icol;
 if (a[icol][icol] == 0.0) {
+  throw CException("4x4 singular matrix!" );
     return;
 }
 pivinv = 1.0f / a[icol][icol];

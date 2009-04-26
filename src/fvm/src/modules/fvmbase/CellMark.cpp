@@ -241,6 +241,7 @@ const shared_ptr<CRConnectivity> setibFaceParticles
 			   const StorageSite& particles,
 			   const CRConnectivity& faceCells, 
 			   const CRConnectivity& cellParticles,
+			   const CRConnectivity& cellCells,
 			   const Array<int>& particleType)
 {
 
@@ -250,6 +251,7 @@ const shared_ptr<CRConnectivity> setibFaceParticles
 					       
   shared_ptr<CRConnectivity> ibFaceParticles (new CRConnectivity (ibFaces, particles));
   int maxcount = 0;
+  int mincount = 1000;
   //initCount: new Array for row
   (*ibFaceParticles).initCount();
   const int rowSize = ibFaces.getCount();
@@ -258,44 +260,49 @@ const shared_ptr<CRConnectivity> setibFaceParticles
   
   for(int p=0; p<rowSize; p++){
     const int faceIndex = ibFaceList [p];
-    const int C0 = faceCells(faceIndex, 0);
-    const int C1 = faceCells(faceIndex, 1);
-    if (mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_BOUNDARY){  
-      const int nP = cellParticles.getCount(C0);
-      if(nP>=maxcount) 
-	maxcount=nP;    
-      int count=0;
-      for(int n=0; n<nP; n++){
-	int pID = cellParticles(C0, n);
-	if(particleType[pID] == 1){
-	  count++;
-	  }
-      }
+    int C0 = faceCells(faceIndex, 0);
+    int C1 = faceCells(faceIndex, 1);
 
-      //cout<<"face-cell-particle# "<<faceIndex<<" "<<C0<<" "<<count<<endl;
-      
-      (*ibFaceParticles).addCount(p, count);      
-    }
-    else if(mesh.getIBTypeForCell(C1) == Mesh::IBTYPE_BOUNDARY){  
-      const int nP = cellParticles.getCount(C1);
-      if(nP>=maxcount) 
-	maxcount=nP;    
-      int count=0;
-      for(int n=0; n<nP; n++){
-	int pID = cellParticles(C1, n);
-	if(particleType[pID] == 1){
-	  count++;
-	}
+    if (mesh.getIBTypeForCell(C1) == Mesh::IBTYPE_BOUNDARY)     
+      {  C0 = C1; }
+    //C0 is IBtype, C1 is fluid
+   
+    int nP = cellParticles.getCount(C0);
+    int count=0;
+    for(int n=0; n<nP; n++){
+      int pID = cellParticles(C0, n);
+      if(particleType[pID] == 1){
+	count++;
       }
-    
-      // cout<<"face-cell-particle# "<<faceIndex<<" "<<C0<<" "<<count<<endl;
-      
-      (*ibFaceParticles).addCount(p, count);           
     }
-    else cout<<"ibface to particle error!"<<endl;
+#if 1
+    //assuming only one fluid cell is used in interpolation, then at least three particles are needed to 
+    //apply the linear least square method. If the current IB cell has less than three particles, then search 
+    //neighbors for more particles
+    if(count < 3){
+      const int nbSize = cellCells.getCount(C0);
+      for(int c=0; c < nbSize; c++){
+	int cnb = cellCells(C0, c);
+	nP = cellParticles.getCount(cnb);
+	for (int n=0; n<nP; n++){
+	  int pID = cellParticles(cnb, n);
+	  if(particleType[pID] == 1){
+	    count++;
+	  }
+	} 
+      }
+    }
+#endif
+
+    if(count>=maxcount) 	maxcount=count;   
+    if(count<=mincount)	        mincount=count;
+ 
+    (*ibFaceParticles).addCount(p, count);      
+     
   }
 
   cout<<"max count of particles in IB Cells is "<<maxcount<<endl;
+  cout<<"min count of particles in IB Cells is "<<mincount<<endl;
   //finishCount: allocate col array and reset row array
   //ready to get the entries for nonzeros
   (*ibFaceParticles).finishCount();
@@ -303,29 +310,39 @@ const shared_ptr<CRConnectivity> setibFaceParticles
   //add in the entries for each row
   for(int p=0; p<rowSize; p++){
     const int faceIndex = ibFaceList [p];
-    const int C0 = faceCells(faceIndex, 0);
-    const int C1 = faceCells(faceIndex, 1);
-    if (mesh.getIBTypeForCell(C0) == Mesh::IBTYPE_BOUNDARY){   //ib cells
-      const int nP = cellParticles.getCount(C0);
-      for(int n=0; n<nP; n++){
-	int pID=cellParticles(C0,n);
-	if(particleType[pID] == 1){
-	  (*ibFaceParticles).add(p, pID);
+    int C0 = faceCells(faceIndex, 0);
+    int C1 = faceCells(faceIndex, 1);
+
+    if (mesh.getIBTypeForCell(C1) == Mesh::IBTYPE_BOUNDARY)     
+      {  C0 = C1; }
+    //C0 is IBtype, C1 is fluid
+    int count=0;
+    int nP = cellParticles.getCount(C0);
+    for(int n=0; n<nP; n++){
+      int pID=cellParticles(C0,n);
+      if(particleType[pID] == 1){
+	count++;
+	(*ibFaceParticles).add(p, pID);
+      }
+    }
+#if 1  
+    if(count < 3){
+      const int nbSize = cellCells.getCount(C0);
+      for(int c=0; c < nbSize; c++){
+	int cnb = cellCells(C0, c);
+	nP = cellParticles.getCount(cnb);
+	for (int n=0; n<nP; n++){
+	  int pID = cellParticles(cnb, n);
+	  if(particleType[pID] == 1){
+	    (*ibFaceParticles).add(p, pID);
+	  }
 	}
       }
     }
-    else if(mesh.getIBTypeForCell(C1) == Mesh::IBTYPE_BOUNDARY){ //ib cells
-      const int nP = cellParticles.getCount(C1);
-      for(int n=0; n<nP; n++){
-	int pID=cellParticles(C1,n);
-	if(particleType[pID] == 1){
-	  (*ibFaceParticles).add(p, pID);
-	}
-      }     
-    }
-     else cout<<"ibface to particle error!"<<endl;
+#endif
+
   }
-  
+
   (*ibFaceParticles).finishAdd();
   
   return(ibFaceParticles);

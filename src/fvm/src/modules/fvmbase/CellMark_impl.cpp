@@ -313,7 +313,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     /************create ibFace to Particle connectivity****************/
 
     shared_ptr<CRConnectivity> ibFaceParticlesCR = 
-      setibFaceParticles (mesh, ibFaces, ibFaceList, particles,faceCells, cellParticles, *particleTypes);
+      setibFaceParticles (mesh, ibFaces, ibFaceList, particles,faceCells, cellParticles, cellCells,  *particleTypes);
 
     //store the connectivity to mesh
 

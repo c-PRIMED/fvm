@@ -183,13 +183,13 @@ void Grid::setGridMesh(Mesh& mesh)
 
   //test this connectivity
   const CRConnectivity& gridCellToGrids = mesh.getConnectivity(_gridCells, _grids);
-  /*
+  
   cout<<"cellToGrids connectivity is"<<endl;
   for (int n=0; n<nGridCells; n++){
     for (int c=0; c<3; c++){
       cout<<"cell "<<n<<" has nodes  "<<gridCellToGrids(n,c)<<endl;
     }
-    }*/
+  }
 
 }
 
@@ -265,7 +265,7 @@ vector<int> Grid::findNeighborsByCells(const VecD3& point,
   //find the cloest cell to this point
   //use that cell to interpolate
  
-  
+#if 1
  if (find==0) {
     double distMin = 1.0e10;
     int cloestCell = 0; 
@@ -292,7 +292,7 @@ vector<int> Grid::findNeighborsByCells(const VecD3& point,
     }
     return(neighborList);
   }
-      
+#endif  
 }
     
 
@@ -433,7 +433,7 @@ void Grid::Impl(Mesh& mesh, GeomFields& geomFields,
      dynamic_cast<const VecD3Array& > (geomFields.coordinate[faces]);
 
   //set up grid data//  
-  grid.setandwriteGrids(fileBase);
+  //grid.setandwriteGrids(fileBase);
 
   //read grid coordinates
   string fileName1=fileBase+"Grid_Coord.dat";
@@ -501,7 +501,7 @@ void Grid::Impl(Mesh& mesh, GeomFields& geomFields,
 
   const CRConnectivity& faceGrids = mesh.getConnectivity(faces, grids);
 
-  #if 1
+  #if 0
     string fileName=fileBase+"Face_Coord.dat";
     char *file;
     file=&fileName[0];

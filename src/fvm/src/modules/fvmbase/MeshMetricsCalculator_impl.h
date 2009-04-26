@@ -478,8 +478,8 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 	  nnb++;
       }
       
-      if (nnb == 0)
-	throw CException("no cell or particle neighbors for ib face");
+      if (nnb < 4)
+	throw CException("not enough cell or particle neighbors for ib face to interpolate!");
 
       //symetric matrix
       for(int i=0; i<4; i++){

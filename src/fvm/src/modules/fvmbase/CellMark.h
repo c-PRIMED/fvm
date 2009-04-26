@@ -54,6 +54,7 @@ const shared_ptr<CRConnectivity> setibFaceParticles
 			   const StorageSite& particles,
 			   const CRConnectivity& faceCells, 
 			   const CRConnectivity& cellParticles,
+			   const CRConnectivity& cellCells,
 			   const Array<int>& particleTyp);
 
 void markIBFaces(Mesh& mesh, const int nCells, 
