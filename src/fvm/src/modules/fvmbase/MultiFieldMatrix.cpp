@@ -304,6 +304,8 @@ MultiFieldMatrix::createCoarsening(MultiField& coarseIndex,
       if (hasMatrix(rowIndex,rowIndex))
       {
           Matrix& mII = getMatrix(rowIndex,rowIndex);
+         // cout << " proc_id = " << MPI::COMM_WORLD.Get_rank() << " coarse size = " << 
+         //            mII.createCoarsening(coarseIndex[rowIndex], groupSize,weightRatioThreshold) <<endl;
           _coarseSizes[rowIndex] =
             mII.createCoarsening(coarseIndex[rowIndex],
                                  groupSize,weightRatioThreshold);
@@ -327,11 +329,11 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
 
       int coarseGhostSize=0;
       const int coarseSize = _coarseSizes.find(rowIndex)->second;
-      
+
       const StorageSite& site = *rowIndex.second;
 
       const StorageSite::GatherMap& gatherMap = site.getGatherMap();
-      
+
       foreach(const StorageSite::GatherMap::value_type pos, gatherMap)
         {
           const StorageSite& oSite = *pos.first;
@@ -362,11 +364,16 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
           const int coarseMappersSize = otherToMyMapping.size();
 
           shared_ptr<StorageSite> ghostSite(new StorageSite(coarseMappersSize));
+#ifdef FVM_PARALLEL
+          ghostSite->setScatterProcID( oSite.getScatterProcID() );
+          ghostSite->setGatherProcID ( oSite.getGatherProcID() );
+#endif FVM_PARALLEL
           _coarseGhostSites[&oSite] = ghostSite;
-          
+
+
           shared_ptr<Array<int> > coarseToIndices(new Array<int>(coarseMappersSize));
           shared_ptr<Array<int> > coarseFromIndices(new Array<int>(coarseMappersSize));
-          
+
           int ncm=0;
           for(map<int,int>::const_iterator pos =otherToMyMapping.begin();
               pos!=otherToMyMapping.end(); ++pos)
@@ -553,5 +560,14 @@ MultiFieldMatrix::getSize() const
           size += k.first.second->getCount();
       }
   }
+
+#ifdef FVM_PARALLEL
+         int count = 1;
+         MPI::COMM_WORLD.Allreduce( &size, &size, count, MPI::INT, MPI::MIN);
+#endif
+
+
   return size;
+
+
 }
