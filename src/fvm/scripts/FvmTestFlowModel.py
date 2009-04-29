@@ -12,7 +12,7 @@ Test FVM Flow Model
 Usage: FvmTestFlowModel [options] filebase [outfilename]
 
 Where 'filebase' is a Fluent case file and
-'outfilename' defaults to 'filebase'-prism.dat.
+'outfilename' defaults to 'filebase'.dat.
 
 Options:
   --iterations n   Set number of iterations to 'n' [default 10]
@@ -52,7 +52,7 @@ fileBase = sys.argv[1]
 if len(sys.argv) == 3:
     outfile = sys.argv[2]
 else:
-    outfile = fileBase+"-prism.dat"
+    outfile = fileBase+".dat"
 
 (options, args) = parser.parse_args()
 
