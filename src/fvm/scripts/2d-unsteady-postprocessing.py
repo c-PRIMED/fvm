@@ -4,7 +4,7 @@ from numpy import *
 
 #***********************************************************************#
 #operating pressure
-pressure = 83593
+pressure   = 83593
 # beam mode frequency 
 frequency = 114415
 omega = 2*pi*frequency
@@ -47,9 +47,12 @@ forceIntegralOutput = True
 #read pressure integral data from top.dat and bot.dat
 #which give the force on both surfaces as a function of time
 
-fileBase = "/home/lin/work/app-memosa/src/fvm/verification/cantilever/"
+fileBase = "/home/sm/prism-meshes/case1/unsteady-p=1330.554-prism-pIntegral-"
+fileBase = "/home/sm/prism-meshes/case1/fluent-results/P=11146-"
 
-fileName = fileBase + "bot.dat"
+fileSuffix = ".out"
+
+fileName = fileBase + "bot" + fileSuffix
 
 fileBot = open(fileName,"r")
 
@@ -73,7 +76,7 @@ for line in lines:
 fileBot.close()
 
 
-fileName = fileBase + "top.dat"
+fileName = fileBase + "top" + fileSuffix
 
 fileTop = open(fileName,"r")
 
@@ -125,24 +128,25 @@ for i in range(1, nLines):
         checkPoint[checkCount] = i
         checkCount = checkCount+1
 
-startPoint = checkPoint[1]
-endPoint = checkPoint[9]
+print 'check count = %s' % checkCount
+startPoint = checkPoint[3]
+endPoint = checkPoint[5]
 
 lengthPerCycle = endPoint-startPoint
 
-totalLength = lengthPerCycle*nCycles+startPoint
+totalLength = lengthPerCycle*nCycles
 
 timeExt = zeros(totalLength, float)
 forceExt = zeros(totalLength, float)
 
-for i in range(0,startPoint):
-    timeExt[i]=time[i]
-    forceExt[i]=force[i]
+#for i in range(0,startPoint):
+#    timeExt[i]=time[i]
+#    forceExt[i]=force[i]
 
 for j in range(0,nCycles):
     for i in range(0, lengthPerCycle):
-        timeExt[(j*lengthPerCycle+i+startPoint)] = time[startPoint+i]+j*deltaT*lengthPerCycle
-        forceExt[(j*lengthPerCycle+i+startPoint)] = force [startPoint+i]
+        timeExt[(j*lengthPerCycle+i)] = time[startPoint+i]+j*deltaT*lengthPerCycle
+        forceExt[(j*lengthPerCycle+i)] = force [startPoint+i]
 
 if (forceExtOutput):
     fileName = fileBase + "netForceExt.dat"
