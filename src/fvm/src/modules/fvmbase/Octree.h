@@ -6,10 +6,13 @@
 
 #include "Array.h"
 #include "Vector.h"
-
+#include "Mesh.h"
+#include "StorageSite.h"
+#include "GeomFields.h"
 #include <iostream>
 #include <string>
 #include <math.h>
+
 
 
 class   Octree
@@ -21,21 +24,21 @@ class   Octree
   typedef Array<VectorT3> VectorT3Array;
 
   //this defines a point, which contains cellcentroid coordinate, cellIndex and code
-  typedef struct   
+  struct  Point  
   {
         VectorT3      coordinate;    
         int           cellIndex;
         int           code;           // Used during octree generation
-  } Point;
+  };
 // -----------------------------------------------------------------------------
 // This defines a cubic bounding volume (center, radius)
 // -----------------------------------------------------------------------------
 
-  typedef struct
+  struct Bounds
   {
         VectorT3        center;         // Center of a cubic bounding volume
         double          radius;         // Radius of a cubic bounding volume
-  } Bounds;
+  };
 
 
 
@@ -53,6 +56,8 @@ class   Octree
   // Implementation
 
   //build octree
+
+  shared_ptr<ArrayBase> getArrayPtr(const VectorT3Array&);
 
   virtual const   bool            build(Point *points,
 				      const unsigned int count,
@@ -78,14 +83,16 @@ class   Octree
   const double            borderDistance(const VectorT3 coordinate);
 
   void                    getNodes(const  VectorT3 coordinate,  const double radius, vector<int>& cellList);
-
+  void                    getNodes(const double x, const double y, const double z,
+				   const double radius, vector<int>& cellList);
   const int               Naive_getNode(const VectorT3 coordinate, const int count, const Point * points);
 
   const vector<int>       Naive_getNodes(const VectorT3 coordinate, const int count, const Point * points, const double radius);
 
- 
+  void Impl(const Mesh& mesh,const GeomFields& geomFields);
 
 
+  //void Impl(const int nCells, shared_ptr<VectorT3Array> cellCentroid); 
 //virtual const   bool            traverse(callback proc, void *data) const;
 
  protected:

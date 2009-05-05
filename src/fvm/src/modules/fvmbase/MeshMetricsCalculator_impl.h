@@ -568,12 +568,12 @@ template<class T>
 void
 MeshMetricsCalculator<T>::computeGridInterpolationMatrices
 (const Mesh& mesh,
- const StorageSite& grids)
+ const StorageSite& grids, 
+ const StorageSite& faces)
 {
+
   typedef CRMatrixTranspose<T,T,T> IMatrix;
   
-  const StorageSite& faces = mesh.getFaces();
- 
   const CRConnectivity& faceToGrids = mesh.getConnectivity(faces, grids );
 
   const VectorT3Array& xFaces =
@@ -731,13 +731,13 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p)
 }
 template<class T>
 void
-MeshMetricsCalculator<T>::computeGridInterpolationMatrices(const StorageSite& g)
+MeshMetricsCalculator<T>::computeGridInterpolationMatrices(const StorageSite& g,const StorageSite& f )
 {
   const int numMeshes = _meshes.size();
   for (int n=0; n<numMeshes; n++)
   {
       const Mesh& mesh = *_meshes[n];
-      computeGridInterpolationMatrices(mesh,g);
+      computeGridInterpolationMatrices(mesh,g, f);
   }
 }
 

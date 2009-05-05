@@ -111,9 +111,9 @@ void MPM::setandwriteParticles(const char *file)
      */
 #endif
 #if 1
-  int nX=30, nY=80, nZ=80;
+  int nX=80, nY=80, nZ=80;
   const double pi = atan(1.0)*4.0;
-    double radius1=0., radius2=10.0;
+    double radius1=0., radius2=5.0;
     double gapR=(radius2-radius1)/nX, gapAlfa=pi/nY, gapBeta=2*pi/nZ;
     const int nMPM = nX*nY*nZ;
     Array<VecD3> solidPoint(nMPM);
@@ -128,8 +128,8 @@ void MPM::setandwriteParticles(const char *file)
 	  solidPoint[count][1]=(radius1+i*gapR)*sin(j*gapAlfa)*(sin(k*gapBeta))+center[1];
 	  solidPoint[count][2]=(radius1+i*gapR)*cos(j*gapAlfa)+center[2];
 	  
-	  if(i!=(nX)) type[count] = 0;  //internal particles
-	  if(i==(nX)){
+	  type[count] = 1;  //internal particles
+	  if(i==nX || i==nX-1){
 	    type[count] = 1;       //surface particles	   
 	  }
 	  count+=1;

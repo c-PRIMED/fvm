@@ -20,14 +20,17 @@ class Grid
    void Impl(Mesh& mesh, GeomFields& geomFields, FlowFields& flowFields, 
 Grid& grid, const string fileBase);	
 
+ void setConnFaceToGrid(Mesh& mesh,  const GeomFields& geomFields, 
+			     Grid& grid,  const StorageSite& faces );
 	
   const StorageSite& getGrids();
 
- void computeInterpolatedVelocity(const StorageSite& grids, 
+shared_ptr<VecD3Array> computeInterpolatedVelocity(const StorageSite& grids, 
 				   Grid& grid,
 				   const Mesh& mesh,
 				  const GeomFields& geomFields,
-	                           const string fileBase);
+	                           const string fileBase, 
+				   const StorageSite& faces);
 
 };
 

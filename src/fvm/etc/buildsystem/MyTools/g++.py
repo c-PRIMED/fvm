@@ -37,6 +37,9 @@ def generate(env):
         env.Append(CXXFLAGS=['-DFVM_PARALLEL'])
 
     env['CCFLAGS'] = env['CXXFLAGS']
+
+    env['CXX'] = 'g++'
+
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')
 
 def exists(env):

@@ -2,7 +2,7 @@
 #include "Mesh.h"
   %}
 
-%include "Vector.i"
+//%include "Vector.i"
 
 %include "std_vector.i"
 %include "std_map.i"
@@ -41,12 +41,11 @@ typedef std::vector<FaceGroup*> FaceGroupVector;
 
 %template(FaceGroupVector) std::vector<FaceGroup*>;
 
-%template(VecD3) Vector<double,3>;
 
 class Mesh
 {
 public:
-  typedef Vector<double,3> VecD3;
+
   typedef map<int, boost::shared_ptr<StorageSite> > GhostCellSiteMap;
 
   enum

@@ -54,6 +54,8 @@ class Grid
   void Impl(Mesh& mesh, GeomFields& geomFields, 
 	    FlowFields& flowFields, Grid& grid, const string fileBase);
 
+  void setConnFaceToGrid(Mesh& mesh, const GeomFields& geomFields,  Grid& grid, const StorageSite& faces);
+
   vector<int> findNeighbors(const VecD3& point, 
 			    const Array<VecD3>& grids,
 			    const int nGrid);
@@ -67,16 +69,19 @@ class Grid
 			      const int nGridCells, 
 			      const CRConnectivity& cellToGrids );
 
- void computeInterpolatedVelocity(const StorageSite& grids, 
+ shared_ptr<VecD3Array> computeInterpolatedVelocity(const StorageSite& grids, 
 				   Grid& grid,
 				   const Mesh& mesh,
 				  const GeomFields& geomFields,
-				  const string fileBase);
+				  const string fileBase,
+				  const StorageSite& faces);
 
  vector<int> findNeighborsByCells(const VecD3& point,
 		    const Array<VecD3>& grids,
 		    const int nCells, 
 		    const CRConnectivity& cellToGrids);
+
+
  protected:
   StorageSite _grids;
   StorageSite _gridCells;

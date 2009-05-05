@@ -183,13 +183,14 @@ void Grid::setGridMesh(Mesh& mesh)
 
   //test this connectivity
   const CRConnectivity& gridCellToGrids = mesh.getConnectivity(_gridCells, _grids);
-  
+  /*
   cout<<"cellToGrids connectivity is"<<endl;
   for (int n=0; n<nGridCells; n++){
     for (int c=0; c<3; c++){
       cout<<"cell "<<n<<" has nodes  "<<gridCellToGrids(n,c)<<endl;
     }
   }
+  */
 
 }
 
@@ -246,6 +247,7 @@ vector<int> Grid::findNeighborsByCells(const VecD3& point,
     int flag[nsize];
     for(int n=0; n<nsize; n++){
       VecD3 dr = point - faceCentroid[n];
+      dr[2] = 0.0;  //difference in z direction is neglected. just check x-y plane
       double product = dot(faceNorm[n],dr);
       if(product > 0.0) flag[n] = 1;
       else flag[n] = -1;
@@ -418,19 +420,6 @@ void Grid::Impl(Mesh& mesh, GeomFields& geomFields,
 		FlowFields& flowFields, Grid& grid, 
 		const string fileBase)
 {
-   const StorageSite& cells = mesh.getCells();
-
-   const int nCells = cells.getSelfCount();         
-
-   const VecD3Array& cellCentroid = 
-     dynamic_cast<const VecD3Array& > (geomFields.coordinate[cells]);   
-
-   const StorageSite& faces = mesh.getFaces();
-
-   const int nFaces = faces.getSelfCount();        
-
-   const VecD3Array& faceCentroid = 
-     dynamic_cast<const VecD3Array& > (geomFields.coordinate[faces]);
 
   //set up grid data//  
   //grid.setandwriteGrids(fileBase);
@@ -485,11 +474,30 @@ void Grid::Impl(Mesh& mesh, GeomFields& geomFields,
     cout<<"point is in cell "<<nb[n]<<endl;
   }
   #endif
-#if 1
+}
 
- //set up connectivity FaceToGrid
-  const StorageSite& gridCells = grid.getCells();
+
+void Grid::setConnFaceToGrid(Mesh& mesh,
+			     const GeomFields& geomFields, 
+			     Grid& grid, 
+			     const StorageSite& faces)
+			
+
+{
+  const int nFaces = faces.getCount();     
+  const VecD3Array& faceCentroid = 
+    dynamic_cast<const VecD3Array& > (geomFields.coordinate[faces]);
   
+  const StorageSite& grids = grid.getGrids();
+  
+  const int nGrid = grids.getCount();
+	  
+  const shared_ptr<VecD3Array> Grid_Coordinates = grid.getCoordinates();
+	  
+  // const shared_ptr<VecD3Array> Grid_Velocities = grid.getVelocities();
+	  
+  const StorageSite& gridCells = grid.getCells();
+	  
   const int nGridCells = gridCells.getCount();
 
   const CRConnectivity& cellToGrids = mesh.getConnectivity(gridCells, grids);
@@ -498,36 +506,18 @@ void Grid::Impl(Mesh& mesh, GeomFields& geomFields,
     grid.setConnectivity(faces, grids, faceCentroid, *Grid_Coordinates, grid, nGridCells, cellToGrids);
  
   mesh.setConnectivity(faces, grids, faceGridsCR);
-
+	  
   const CRConnectivity& faceGrids = mesh.getConnectivity(faces, grids);
-
-  #if 0
-    string fileName=fileBase+"Face_Coord.dat";
-    char *file;
-    file=&fileName[0];
-    FILE *fp;
-    fp=fopen(file, "w");
-    for(int n=0; n<nFaces; n++){
-      if(faceGrids.getCount(n)!=0){
-	fprintf(fp,"%i\t%f\t%f\t%f\n", n, faceCentroid[n][0],faceCentroid[n][1],
-		faceCentroid[n][2]);
-      }
-    }
-    fclose(fp);
-    #endif
- 
-
-#endif
- 
-
+  
 }
 
   
-void Grid::computeInterpolatedVelocity(const StorageSite& grids, 
+shared_ptr<VecD3Array> Grid::computeInterpolatedVelocity(const StorageSite& grids, 
 				   Grid& grid,
 				   const Mesh& mesh,
 				       const GeomFields& geomFields,
-				       const string fileBase)
+				       const string fileBase, 
+				       const StorageSite& faces)
   {
     typedef CRMatrixTranspose<double,double,double> IMatrix;
     typedef CRMatrixTranspose<double,VecD3,VecD3> IMatrixV3;
@@ -536,40 +526,27 @@ void Grid::computeInterpolatedVelocity(const StorageSite& grids,
     //dynamic_cast<const VectorT3Array&>(_flowFields.velocity[grids]);
     const shared_ptr<Array<VecD3> >& gridV = grid.getVelocities();
 
-    const StorageSite& faces = mesh.getFaces();
-
     const int nFaces = faces.getCount();
-
+    
     const VecD3Array& faceCentroid = 
-     dynamic_cast<const VecD3Array& > (geomFields.coordinate[faces]);
-
+      dynamic_cast<const VecD3Array& > (geomFields.coordinate[faces]);
+    
     GeomFields::SSPair key(&faces,&grids);
     const IMatrix& mIC =
       dynamic_cast<const IMatrix&> (*(geomFields._interpolationMatrices[key]));
 
     IMatrixV3 mICV(mIC);
-
+	  
     shared_ptr<VecD3Array> faceV(new VecD3Array(nFaces));
-
+	  
     faceV->zero();
 
     mICV.multiplyAndAdd(*faceV,*gridV);
 
-    #if 1
-    string fileName=fileBase+"Face_vel.dat";
-    char *file;
-    file=&fileName[0];
-    FILE *fp;
-    fp=fopen(file, "w");
-    for(int n=0; n<nFaces; n++){
-      fprintf(fp,"%i\t%f\t%f\t%f\t%f\t%f\t%f\n", n, faceCentroid[n][0],faceCentroid[n][1],
-	      faceCentroid[n][2],(*faceV)[n][0],(*faceV)[n][1],(*faceV)[n][2]);
-    }
-    fclose(fp);
-    #endif
+    return (faceV);
+      
   }
-       
 
 
 
-
+ 

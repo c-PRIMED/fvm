@@ -7,7 +7,7 @@ import fvmbaseExt
 import importers
 import math
 
-atype = 'double'
+atype = 'doble'
 #atype = 'tangent'
 
 if atype == 'double':

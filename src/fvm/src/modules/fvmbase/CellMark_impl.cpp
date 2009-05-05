@@ -141,8 +141,9 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	  flag = 1;
 	  MPM_PointstoCells[p]=nearestCell;
 	}
-
-	while (flag == 0){
+	int levelCount = 0;
+	while (flag == 0 && levelCount <= 2){
+	  levelCount ++;
 	  const int nc = cellCells.getCount(nearestCell);
 	  for (int c = 0; c < nc; c ++){
 	    int cellCandidate = cellCells(nearestCell, c);
@@ -152,9 +153,9 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	      flag = 1;
 	      MPM_PointstoCells[p]=cellCandidate;
 	    }
-	    if (inCellorNot == 0){
-	      flag = 1;
-	    }
+	    // if (inCellorNot == 0){
+	    //flag = 1;
+	    //}
 	  }	
 	}
       }
@@ -163,7 +164,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
 
     if (option == 2){
-      const double radius = 0.05;
+      const double radius = 1.0;
       for(int p=0; p<nMPM; p++){
 	const VecD3 MPM_point = (*MPM_Points)[p];
 	vector<int> cellIndexList;

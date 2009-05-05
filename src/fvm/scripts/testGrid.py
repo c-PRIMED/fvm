@@ -41,7 +41,7 @@ if __name__ == '__main__' and fileBase is None:
 if outfile == None:
     outfile = fileBase+"-cellmark.dat"
     
-reader = FluentCase(fileBase+"beam-box.cas")
+reader = FluentCase(fileBase+"new-beam-114k.cas")
 
 #import ddd
 reader.read();
@@ -71,13 +71,38 @@ t0 = time.time()
 
 grid = fvmbaseExt.Grid()
 
-grid.Impl(mesh0, geomFields, flowFields, grid, fileBase)
-
 grids = grid.getGrids();
 
-metricsCalculator.computeGridInterpolationMatrices(grids)
+grid.Impl(mesh0, geomFields, flowFields, grid, fileBase)
 
-grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase)
+
+for mesh in meshes:
+    fgs = mesh.getBoundaryGroups()
+    for fg in fgs:
+        if fg.id == 9:   #beam top
+            faces = fg.site
+            grid.setConnFaceToGrid(mesh0, geomFields, grid, faces)
+            metricsCalculator.computeGridInterpolationMatrices(grids,faces)
+            faceVel = grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase, faces)
+    
+        if fg.id == 12:   #beam bot
+            faces = fg.site
+            grid.setConnFaceToGrid(mesh0, geomFields, grid, faces)
+            metricsCalculator.computeGridInterpolationMatrices(grids,faces)
+            faceVel = grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase, faces)
+            
+        if fg.id == 11:   #beam tip
+            faces = fg.site
+            grid.setConnFaceToGrid(mesh0, geomFields, grid, faces)
+            metricsCalculator.computeGridInterpolationMatrices(grids,faces)
+            faceVel = grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase, faces)
+            
+        if fg.id == 10:   #beam side
+            faces = fg.site
+            grid.setConnFaceToGrid(mesh0, geomFields, grid, faces)
+            metricsCalculator.computeGridInterpolationMatrices(grids,faces)
+            faceVel = grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase, faces)
+  
 
 t1 = time.time()
 if outfile != '/dev/stdout':

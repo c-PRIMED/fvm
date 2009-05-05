@@ -471,7 +471,7 @@ void  Octree::getNodes(const VectorT3 coordinate,  const double radius, vector<i
     for (unsigned int i=0;  i<_pointCount; i++){
       dR=_points[i].coordinate-coordinate;
       distance=mag2(dR);
-      if(distance < radius*radius){
+      if(distance <= radius*radius){
 	cellList.push_back(_points[i].cellIndex);
       }
     }  
@@ -487,7 +487,7 @@ void  Octree::getNodes(const VectorT3 coordinate,  const double radius, vector<i
       if(!_child[i]) continue;
       else{
 	double childDistance=_child[i]->borderDistance(coordinate);
-	if (childDistance < radius*radius){
+	if (childDistance <= radius*radius){
 	  _child[i]->getNodes(coordinate, radius, cellList);	 
 	}
       }
@@ -495,6 +495,16 @@ void  Octree::getNodes(const VectorT3 coordinate,  const double radius, vector<i
   }
 }
 
+void Octree::getNodes(const double x, const double y, const double z,
+		      const double radius, vector<int>& cellList)
+{
+  VectorT3 coordinate;
+  coordinate[0] = x;
+  coordinate[1] = y;
+  coordinate[2] = z;
+  Octree::getNodes(coordinate, radius, cellList);
+}
+  
 /**********************************************************************/
 /// <summary> Get all objects closest to a x/y/z within a radius. 
 /// by simply looping over all the points
@@ -539,3 +549,37 @@ const vector<int> Octree::Naive_getNodes(const VectorT3 coordinate, const int co
 }
 
 
+void Octree::Impl(const Mesh& mesh, const GeomFields& geomFields)
+//void Octree::Impl(const int nCells, shared_ptr<VectorT3Array> cellCentroid) 
+{
+//---build up Octree for cell centroid---//
+    const StorageSite& cells = mesh.getCells();
+    const int nCells = cells.getCount();          //need to include BC cells?
+    const VectorT3Array& cellCentroid = dynamic_cast<const VectorT3Array& > (geomFields.coordinate[cells]);
+    Point *points = new Point [nCells];
+
+    for(int i=0; i<nCells; i++){
+      points[i].coordinate=(cellCentroid)[i];
+      points[i].cellIndex=i;
+      points[i].code=0;
+    }   
+    
+    //Octree build up parameters
+
+    const int threshold=1;
+    const int maxDepth=20;
+    const int count=nCells;
+    int currentDepth=0;
+   
+    //define a new Octree object
+
+    //  Octree O; 
+
+    //calculate entire domain bounds
+
+    Bounds bounds=Octree::calcCubicBounds(points, count);
+
+    //build Octree
+    Octree::build(points, count, threshold, maxDepth, bounds, currentDepth);
+
+}

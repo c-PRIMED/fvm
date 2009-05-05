@@ -22,6 +22,7 @@ rlog::StdioNode *stdLog;
 
 namespace std{
 %template(vectorStr) vector<string>;
+%template(vectorInt) vector<int>;
  }
 
 
@@ -39,6 +40,11 @@ namespace std{
 
 using namespace std;
 %include "ArrayBase.i"
+%include "Vector.i"
+
+typedef Vector<double,3> VecD3;
+%template(VecD3) Vector<double,3>;
+
 %include "Field.i"
 %include "CRConnectivity.i"
 %include "Mesh.i"
