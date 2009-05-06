@@ -19,7 +19,8 @@ Field::Field(const string& name):
   IContainer(),
   _name(name),
   _arrays(),
-  MPI_FIELD_TAG(2009)
+  MPI_FIELD_TAG(2009),
+  _syncGatherArrays(false)
 {
   logCtor();
 }  
@@ -180,6 +181,25 @@ Field::copyFrom(const IContainer& oc)
 
 
 void
+Field::createSyncGatherArrays(const StorageSite& site)
+{
+  _syncGatherArrays = true;
+  ArrayBase& thisArray = operator[](site);
+
+  const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+
+  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+
+      if (_ghostGatherArrays.find(&oSite) == _ghostGatherArrays.end())
+      {
+          _ghostGatherArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
+      }
+  }
+}
+
+void
 Field::syncScatter(const StorageSite& site)
 {
   const ArrayBase& thisArray = operator[](site);
@@ -192,7 +212,6 @@ Field::syncScatter(const StorageSite& site)
 
       const Array<int>& fromIndices = *(mpos.second);
       if (_ghostScatterArrays.find(&oSite) == _ghostScatterArrays.end()){
-        _ghostGatherArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
         _ghostScatterArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
       }
 
@@ -236,6 +255,11 @@ Field::syncLocal()
    // scatter first (prepare ship packages)
    foreach(ArrayMap::value_type& pos, _arrays)
       syncScatter(*pos.first);
+
+  //gather arrays  are allocated (once)
+   if ( !_syncGatherArrays )
+      foreach(ArrayMap::value_type& pos, _arrays)
+         createSyncGatherArrays(*pos.first);
 
 #ifdef FVM_PARALLEL
    //SENDING

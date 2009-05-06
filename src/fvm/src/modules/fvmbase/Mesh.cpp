@@ -1,9 +1,7 @@
 
 #include "Mesh.h"
-//#include "Field.h"
 #include "StorageSite.h"
 #include "CRConnectivity.h"
-
 
 Mesh::Mesh(const int dimension, const int id):
   _dimension(dimension),
@@ -128,9 +126,14 @@ const CRConnectivity&
 Mesh::getCellNodes() const
 {
   SSPair key(&_cells,&_nodes);
+ 
+
+
   ConnectivityMap::const_iterator pos = _connectivityMap.find(key);
+
   if (pos != _connectivityMap.end())
     return *pos->second;
+
 
   const CRConnectivity& faceCells = getAllFaceCells();
   const CRConnectivity& faceNodes = getAllFaceNodes();
@@ -142,7 +145,7 @@ Mesh::getCellNodes() const
   _connectivityMap[keycf] = cellFaces;
   _connectivityMap[key] = cellNodes;
 
-  return *cellNodes;
+   return *cellNodes;
 }
 
 const CRConnectivity&
@@ -249,7 +252,17 @@ Mesh::addIBFace(const int i, const int c)
 }
 
 void 
-Mesh::createGhostCellSite( int id, shared_ptr<StorageSite> site )
+Mesh::createGhostCellSiteScatter( int id, shared_ptr<StorageSite> site )
 {
-  _ghostCellSiteMap.insert( pair<int, shared_ptr<StorageSite> >( id, site ) );
+  _ghostCellSiteScatterMap.insert( pair<int, shared_ptr<StorageSite> >( id, site ) );
+
 }
+
+void 
+Mesh::createGhostCellSiteGather( int id, shared_ptr<StorageSite> site )
+{
+  _ghostCellSiteGatherMap.insert( pair<int, shared_ptr<StorageSite> >( id, site ) );
+
+}
+
+

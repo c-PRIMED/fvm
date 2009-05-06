@@ -65,7 +65,8 @@ public:
   shared_ptr<MultiField> extract(const ArrayIndexList& indices);
   void merge(const MultiField& other);
 
-  void syncScatter(const ArrayIndex& i);
+  void  syncScatter(const ArrayIndex& i);
+  void  createSyncGatherArrays(const ArrayIndex& i);
   void syncGather(const ArrayIndex& i);
   void sync();
   
@@ -77,6 +78,7 @@ private:
   GhostArrayMap _ghostScatterArrays;
   GhostArrayMap _ghostGatherArrays;
   int MPI_MULTIFIELD_TAG;
+  bool _syncGatherArrays;
 };
 
 #endif

@@ -3,6 +3,32 @@
 
 #include "Matrix.h"
 #include "MultiField.h"
+#include <set>
+
+//UnorderedSet doesn't duplicate and  sort elements
+class UnorderedSet
+{
+   public : 
+       UnorderedSet() {};
+      ~UnorderedSet() {};
+
+       void insert( int x ) {
+
+	  if ( _dataSet.count(x) == 0 ){
+	     _data.push_back(x);	  
+             _dataSet.insert(x);
+          }	
+       };
+
+       const vector<int>& getData() const { return _data;};
+       int size()  const { return  _data.size(); };
+
+   private :
+      vector<int> _data;
+      set<int>    _dataSet;
+
+
+};
 
 class Connectivity;
 class IContainer;

@@ -327,26 +327,26 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
 
       Array<int>&  coarseIndex = dynamic_cast<Array<int>& >(coarseIndexField[rowIndex]);
 
+
       int coarseGhostSize=0;
       const int coarseSize = _coarseSizes.find(rowIndex)->second;
 
       const StorageSite& site = *rowIndex.second;
 
-      const StorageSite::GatherMap& gatherMap = site.getGatherMap();
-
+      const StorageSite::GatherMap&  gatherMap  = site.getGatherMap();
       foreach(const StorageSite::GatherMap::value_type pos, gatherMap)
         {
           const StorageSite& oSite = *pos.first;
           const Array<int>& toIndices = *pos.second;
 
           map<int,int> otherToMyMapping;
+          UnorderedSet  gatherSet;
 
           const int nGhostRows = toIndices.getLength();
           for(int ng=0; ng<nGhostRows; ng++)
           {
               const int fineIndex = toIndices[ng];
               const int coarseOtherIndex = coarseIndex[fineIndex];
-
               if (otherToMyMapping.find(coarseOtherIndex) !=
                   otherToMyMapping.end())
               {
@@ -356,8 +356,10 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
               {
                   coarseIndex[fineIndex] = coarseGhostSize+coarseSize;
                   otherToMyMapping[coarseOtherIndex] = coarseIndex[fineIndex];
+                  gatherSet.insert( coarseIndex[fineIndex] );
                   coarseGhostSize++;
               }
+
 
           }
 
@@ -365,27 +367,57 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
 
           shared_ptr<StorageSite> ghostSite(new StorageSite(coarseMappersSize));
 #ifdef FVM_PARALLEL
-          ghostSite->setScatterProcID( oSite.getScatterProcID() );
           ghostSite->setGatherProcID ( oSite.getGatherProcID() );
-#endif FVM_PARALLEL
+          ghostSite->setScatterProcID( oSite.getScatterProcID() );
+#endif 
           _coarseGhostSites[&oSite] = ghostSite;
 
-
           shared_ptr<Array<int> > coarseToIndices(new Array<int>(coarseMappersSize));
-          shared_ptr<Array<int> > coarseFromIndices(new Array<int>(coarseMappersSize));
 
-          int ncm=0;
-          for(map<int,int>::const_iterator pos =otherToMyMapping.begin();
-              pos!=otherToMyMapping.end(); ++pos)
+          for(int n = 0; n < gatherSet.size(); n++)
           {
-              (*coarseToIndices)[ncm] = pos->second;
-              (*coarseFromIndices)[ncm] = pos->first;
-              ncm++;
+              (*coarseToIndices)[n]   = gatherSet.getData().at(n);
           }
 
-          _coarseScatterMaps[ghostSite.get()] = coarseFromIndices;
-          _coarseGatherMaps[ghostSite.get()] = coarseToIndices;
+          _coarseGatherMaps [ghostSite.get()] = coarseToIndices;
+
         }
+
+      const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+      foreach(const StorageSite::ScatterMap::value_type pos, scatterMap)
+        {
+          const StorageSite& oSite = *pos.first;
+          const Array<int>& fromIndices = *pos.second;
+
+          UnorderedSet  scatterSet;
+
+          const int nGhostRows = fromIndices.getLength();
+          for(int ng=0; ng<nGhostRows; ng++)
+          {
+              const int fineIndex = fromIndices[ng];
+              const int coarseOtherIndex	 = coarseIndex[fineIndex];
+              scatterSet.insert( coarseIndex[fineIndex] );
+          }
+
+          const int coarseMappersSize = scatterSet.size();
+
+          shared_ptr<StorageSite> ghostSite(new StorageSite(coarseMappersSize));
+#ifdef FVM_PARALLEL
+          ghostSite->setScatterProcID( oSite.getScatterProcID() );
+          ghostSite->setGatherProcID ( oSite.getGatherProcID() );
+#endif 
+          _coarseGhostSites[&oSite] = ghostSite;
+
+          shared_ptr<Array<int> > coarseFromIndices(new Array<int>(coarseMappersSize));
+
+          for(int n = 0; n < scatterSet.size(); n++ ) {
+              (*coarseFromIndices)[n] = scatterSet.getData().at(n);
+          }
+          _coarseScatterMaps[ghostSite.get()] = coarseFromIndices;
+
+        }
+
+
       _coarseGhostSizes[rowIndex]=coarseGhostSize;
   }
 }

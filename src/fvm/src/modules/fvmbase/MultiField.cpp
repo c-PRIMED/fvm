@@ -15,7 +15,8 @@ MultiField::MultiField():
   _arrays(),
   _arrayIndices(),
   _arrayMap(),
-  MPI_MULTIFIELD_TAG(3009)
+  MPI_MULTIFIELD_TAG(3009),
+  _syncGatherArrays( false )
 {
   logCtor();
 }
@@ -311,6 +312,7 @@ MultiField::merge(const MultiField& other)
 void
 MultiField::syncScatter(const ArrayIndex& i)
 {
+
   const  ArrayBase& thisArray  = *_arrays[_arrayMap[i]];
   const  StorageSite& thisSite = *i.second;
 
@@ -324,14 +326,36 @@ MultiField::syncScatter(const ArrayIndex& i)
       const Array<int>& fromIndices = *(mpos.second);
       if (_ghostScatterArrays.find(oIndex) == _ghostScatterArrays.end()){
         _ghostScatterArrays[oIndex] = thisArray.newSizedClone(oSite.getCount());
-        _ghostGatherArrays[oIndex]  = thisArray.newSizedClone(oSite.getCount());
       }
 
       ArrayBase& ghostScatterArray = *_ghostScatterArrays[oIndex];
+/*      cout << " proc_id = " << MPI::COMM_WORLD.Get_rank() << " ghostScatterArray.getDataSize() = " <<
+            ghostScatterArray.getDataSize() << " fromIndices.getDataSize() =  " << fromIndices.getDataSize() << 
+            " thisArray.getDatasize() = " << thisArray.getDataSize() << endl;*/
       thisArray.scatter(ghostScatterArray,fromIndices);
   }
 
 }
+
+void
+MultiField::createSyncGatherArrays(const ArrayIndex& i)
+{
+  ArrayBase& thisArray = *_arrays[_arrayMap[i]];
+  const StorageSite& thisSite = *i.second;
+
+  const StorageSite::GatherMap& gatherMap = thisSite.getGatherMap();
+ 
+  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      ArrayIndex oIndex(i.first,&oSite);
+
+      if (_ghostGatherArrays.find(oIndex) == _ghostGatherArrays.end())
+         _ghostGatherArrays[oIndex]  = thisArray.newSizedClone(oSite.getCount());
+  }
+
+}
+
 
 void
 MultiField::syncGather(const ArrayIndex& i)
@@ -352,6 +376,8 @@ MultiField::syncGather(const ArrayIndex& i)
        ArrayBase& ghostGatherArray = *_ghostGatherArrays[oIndex];
        thisArray.gather(ghostGatherArray,toIndices);
   }
+
+
 }
 
 void
@@ -360,6 +386,10 @@ MultiField::sync()
 
   foreach(ArrayIndex i, _arrayIndices)
     syncScatter(i);
+
+  if ( !_syncGatherArrays ) 
+     foreach(ArrayIndex i, _arrayIndices)
+        createSyncGatherArrays(i);
 
 
 #ifdef FVM_PARALLEL

@@ -262,8 +262,9 @@ NcDataWriter::get_var_values()
        _nodesCountVals.push_back( _meshList.at(id)->getNodes().getSelfCount() );
 
       //neighbour counts
-       const Mesh::GhostCellSiteMap&  ghostCellSiteMap = _meshList.at(id)->getGhostCellSiteMap();
-       _mapCountVals.push_back(  ghostCellSiteMap.size() );
+       const Mesh::GhostCellSiteMap&  ghostCellSiteScatterMap = _meshList.at(id)->getGhostCellSiteScatterMap();
+
+       _mapCountVals.push_back(  ghostCellSiteScatterMap.size() );
 
         //interior face counts
        _interiorFaceGroupVals.push_back( _meshList.at(id)->getInteriorFaceGroup().site.getCount() );
@@ -384,25 +385,37 @@ void
 NcDataWriter::mappers( int id )
 {
      const StorageSite::ScatterMap& cellScatterMap  = _meshList.at(id)->getCells().getScatterMap();
-     const StorageSite::GatherMap&  cellGatherMap   = _meshList.at(id)->getCells().getGatherMap();
-     const Mesh::GhostCellSiteMap&  ghostCellSiteMap = _meshList.at(id)->getGhostCellSiteMap();
+     const Mesh::GhostCellSiteMap &  ghostCellSiteScatterMap = _meshList.at(id)->getGhostCellSiteScatterMap();
+
 
      StorageSite::ScatterMap::const_iterator it_scatterMap;
-     StorageSite::GatherMap ::const_iterator it_gatherMap;
-     Mesh::GhostCellSiteMap::const_iterator  it;
+     Mesh::GhostCellSiteMap::const_iterator  it_siteScatter;
 
      int  indx = mappers_index( id );
 
-     for ( it = ghostCellSiteMap.begin(); it != ghostCellSiteMap.end(); it++ ){
-         const StorageSite* site = it->second.get();
+     for ( it_siteScatter = ghostCellSiteScatterMap.begin(); it_siteScatter != ghostCellSiteScatterMap.end(); it_siteScatter++ ){
+         const StorageSite* site = it_siteScatter->second.get();
          it_scatterMap = cellScatterMap.find( site );
-         it_gatherMap  = cellGatherMap.find( site );
          int nend = it_scatterMap->second->getLength();
-         // or int nend = it_gatherMap->second->getLength();
+
+         for ( int n = 0; n < nend; n++ ){
+           _scatterIndicesVals[indx] = (*it_scatterMap->second)[n];
+            indx++;
+         }
+     }
+
+     const StorageSite::GatherMap&  cellGatherMap   = _meshList.at(id)->getCells().getGatherMap();
+     const Mesh::GhostCellSiteMap &   ghostCellSiteGatherMap  = _meshList.at(id)->getGhostCellSiteGatherMap();
+     StorageSite::GatherMap ::const_iterator it_gatherMap;
+     Mesh::GhostCellSiteMap::const_iterator  it_siteGather;
+     indx = mappers_index( id );
+     for ( it_siteGather = ghostCellSiteGatherMap.begin(); it_siteGather != ghostCellSiteGatherMap.end(); it_siteGather++ ){
+         const StorageSite* site = it_siteGather->second.get();
+         it_gatherMap  = cellGatherMap.find( site );
+         int nend = it_gatherMap->second->getLength();
 
          for ( int n = 0; n < nend; n++ ){
            _gatherIndicesVals[indx]  = (*it_gatherMap->second)[n]; 
-           _scatterIndicesVals[indx] = (*it_scatterMap->second)[n];
             indx++;
          }
      }

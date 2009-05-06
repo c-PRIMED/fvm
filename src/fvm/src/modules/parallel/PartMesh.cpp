@@ -56,7 +56,6 @@ PartMesh::~PartMesh()
     for ( it_int = _eElm.begin(); it_int != _eElm.end(); it_int++)
        delete [] *it_int;
 
-
     for ( it_int = _elmWght.begin(); it_int != _elmWght.end(); it_int++)
        delete [] *it_int;
 
@@ -75,18 +74,19 @@ PartMesh::~PartMesh()
 
     for ( it_int = _col.begin(); it_int != _col.end(); it_int++)
        delete [] *it_int;
-   
+
    for ( it_int  = _elem.begin(); it_int != _elem.end(); it_int++)
        delete [] *it_int;
 
    for ( it_int  = _elemWithGhosts.begin(); it_int != _elemWithGhosts.end(); it_int++)
        delete [] *it_int;
 
+ 
+
    vector< Mesh* >::iterator it_mesh;
    for ( it_mesh = _meshListLocal.begin(); it_mesh != _meshListLocal.end(); it_mesh++)
         delete *it_mesh;
-   
-   //if ( !MPI::Is_finalized() )  MPI::Finalize();
+  
 }
 
 
@@ -103,6 +103,7 @@ PartMesh::mesh()
     non_interior_cells();
     order_faceCells_faceNodes();
     coordinates();
+
     exchange_interface_meshes();
     mesh_setup();
     mappers();
@@ -115,14 +116,13 @@ PartMesh::mesh()
 void
 PartMesh::partition()
 {
- 
-   compute_elem_dist();
+
+    compute_elem_dist();
     elem_connectivity();
     parmetis_mesh();
     map_part_elms();
     count_elems_part();
     exchange_part_elems();
-  
 
 }
 
@@ -823,7 +823,6 @@ PartMesh::elem_connectivity()
        //allocate local eInd for ParMETIS
       _eInd.push_back( new int[local_nodes(id)] );
 
- 
 //       //setting ePtr and eInd for ParMETIS
        set_eptr_eind(id);
 
@@ -1074,10 +1073,16 @@ PartMesh::mesh_setup()
            int size = int(_interfaceMap.at(id).count( interfaceID ) );
            int offset = _interfaceOffsets.at(id)[ interfaceID ];
            _meshListLocal.at(id)->createInterfaceGroup( size, offset, interfaceID );
-            shared_ptr<StorageSite> site( new StorageSite(size) );
-            site->setScatterProcID( _procID );
-            site->setGatherProcID ( interfaceID );
-           _meshListLocal.at(id)->createGhostCellSite( interfaceID,  site );
+            shared_ptr<StorageSite> siteGather ( new StorageSite(size) );
+            shared_ptr<StorageSite> siteScatter( new StorageSite(size) );
+            siteGather->setScatterProcID( _procID );
+            siteGather->setGatherProcID ( interfaceID );
+            siteScatter->setScatterProcID( _procID );
+            siteScatter->setGatherProcID ( interfaceID );
+
+           _meshListLocal.at(id)->createGhostCellSiteScatter( interfaceID,  siteScatter );
+           _meshListLocal.at(id)->createGhostCellSiteGather( interfaceID,  siteGather  );
+
          }
 
 
@@ -1417,12 +1422,12 @@ PartMesh::order_faceCells_faceNodes()
 
          //start with interior faces
           int array_length = _faceCells.at(id)->getGlobalToLocalMap().getLength();
-         _globalToLocalMap.push_back(  ArrayIntPtr( new Array<int>(array_length) ) );
-         array_length = _faceCells.at(id)->getLocalToGlobalMap().getLength();
-         _localToGlobalMap.push_back(  ArrayIntPtr( new Array<int>(array_length) ) );
+         _globalToLocalMap.push_back(  ArrayIntPtr( new Array<int> (array_length) ) );
+         (*_globalToLocalMap.at(id)) = -1; 
+          array_length = tot_cells; 
+         _localToGlobalMap.push_back(  ArrayIntPtr( new Array<int> (array_length) ) );
+         (*_localToGlobalMap.at(id)) = -1; 
 
-         *_globalToLocalMap.at(id) = -1; 
-         *_localToGlobalMap.at(id) = -1; 
 
          int cellID = 0;
          int face_track = 0;
@@ -1495,7 +1500,7 @@ PartMesh::order_faceCells_faceNodes()
                (*_localToGlobalMap.at(id))[cellID] = it_cell->second;
                _globalToLocalMappers.at(id).insert( pair<int,int>(it_cell->second,cellID ) );
                _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, it_cell->second) );
-
+                assert( cellID >=0 && cellID < array_length );
                _cellToOrderedCell[id][elem_0] = cellID;
 
               _faceCellsOrdered.at(id)->add(face_track, inner_elem);
@@ -1535,6 +1540,7 @@ PartMesh::order_faceCells_faceNodes()
              //update maps
              int global_id = _faceCells.at(id)->getLocalToGlobalMap()[outer_elem_id];
              (*_globalToLocalMap.at(id))[global_id] = cellID;
+             assert( cellID >=0 && cellID < array_length );
              (*_localToGlobalMap.at(id))[cellID] = global_id;
              _globalToLocalMappers.at(id).insert( pair<int,int>(global_id, cellID) );
              _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
@@ -1720,6 +1726,7 @@ PartMesh::mappers()
        fence_window();
        free_window();
 
+
        interfaceIndx = 0;
        for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++ ){
 
@@ -1729,7 +1736,7 @@ PartMesh::mappers()
            for ( int n = 0; n < size; n++){
 
                int  key     = (*_toIndices.at(id).at(interfaceIndx))[n];
-               int  count   = _globalToLocalMappers.at(id).count( key ); 
+//               int  count   = _globalToLocalMappers.at(id).count( key ); 
 
                if ( mapKeyCount.count( key ) > 0 ) { //it has elements
                   mapKeyCount[key] = mapKeyCount[key] + 1; //increase one
@@ -1766,8 +1773,8 @@ PartMesh::mappers()
                 (*_fromIndices.at(id).at(interfaceIndx))[i] = _meshListLocal.at(id)->getCellCells()(elem_id,0);
           }
 
-          cellScatterMap[ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] = _fromIndices.at(id).at(interfaceIndx);
-          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSite( neighMeshID ) ] = _toIndices.at(id).at(interfaceIndx);
+          cellScatterMap[ _meshListLocal.at(id)->getGhostCellSiteScatter( neighMeshID ) ] = _fromIndices.at(id).at(interfaceIndx);
+          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSiteGather( neighMeshID ) ] = _toIndices.at(id).at(interfaceIndx);
  
           interfaceIndx++;
 
@@ -1849,22 +1856,31 @@ PartMesh::mesh_file()
 
           const StorageSite::ScatterMap& cellScatterMap  = _meshListLocal.at(id)->getCells().getScatterMap();
           const StorageSite::GatherMap& cellGatherMap   = _meshListLocal.at(id)->getCells().getGatherMap();
-          const Mesh::GhostCellSiteMap& ghostCellSiteMap = _meshListLocal.at(id)->getGhostCellSiteMap();
+          const Mesh::GhostCellSiteMap& ghostCellSiteScatterMap = _meshListLocal.at(id)->getGhostCellSiteScatterMap();
+          const Mesh::GhostCellSiteMap& ghostCellSiteGatherMap  = _meshListLocal.at(id)->getGhostCellSiteGatherMap();
 
-           Mesh       ::GhostCellSiteMap::const_iterator it_ghost;
-           StorageSite::ScatterMap::const_iterator it_mapper;
-           it_ghost = ghostCellSiteMap.begin();
+           Mesh::GhostCellSiteMap::const_iterator it_ghostScatter;
+           Mesh::GhostCellSiteMap::const_iterator  it_ghostGather;
+           StorageSite::ScatterMap::const_iterator it_mapperScatter;
+           StorageSite::GatherMap::const_iterator  it_mapperGather;
+           it_ghostScatter = ghostCellSiteScatterMap.begin();
+           it_ghostGather  = ghostCellSiteGatherMap.end();
+           it_mapperGather = cellGatherMap.begin();
             //loop over interfaces
-           for ( it_mapper = cellScatterMap.begin(); it_mapper != cellScatterMap.end(); it_mapper++){
-               const StorageSite *site = it_mapper->first;
-               const Array<int>&  scatterArray = *(it_mapper->second);
-               const Array<int>&  gatherArray  = *(cellGatherMap.find(site)->second);
-               for ( int i = 0; i < site->getCount(); i++){
-                     mesh_file <<   "  neightMeshID = " <<  it_ghost->first  << "        "
+           for ( it_mapperScatter = cellScatterMap.begin(); it_mapperScatter != cellScatterMap.end(); it_mapperScatter++){
+               const StorageSite *siteScatter = it_mapperScatter->first;
+//               const StorageSite *siteGather  = it_mapperGather->first;
+               const Array<int>&  scatterArray = *(it_mapperScatter->second);
+               const Array<int>&  gatherArray  = *(it_mapperGather->second);
+               for ( int i = 0; i < siteScatter->getCount(); i++){
+                     mesh_file <<   "  neightMeshID = " <<  it_ghostScatter->first  << "        "
                                << gatherArray[i]  + 1  << "    ===>    " 
                                << scatterArray[i] + 1  << endl;
                }
-               it_ghost++;
+               it_ghostScatter++;
+               it_ghostGather++;
+               it_mapperGather++;
+
           }
 
       }

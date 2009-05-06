@@ -40,8 +40,9 @@ public:
   void syncLocal();
 
   const string& getName() const {return _name;}
-  void syncScatter(const StorageSite& site);
-  void syncGather(const StorageSite& site);
+  void  createSyncGatherArrays(const StorageSite& site);
+  void  syncScatter(const StorageSite& site);
+  void  syncGather(const StorageSite& site);
 
 private:
   Field(const Field&);
@@ -57,6 +58,7 @@ private:
 
   ArrayBase& _create(const StorageSite& site);
   int  MPI_FIELD_TAG;
+  bool  _syncGatherArrays;
 };
 
 #endif

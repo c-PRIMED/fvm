@@ -73,16 +73,23 @@ public:
   int getDimension() const {return _dimension;}
   int getID() const {return _id;}
   
-  const StorageSite& getFaces() const {return _faces;}
-  const StorageSite& getCells() const {return _cells;}
-  const StorageSite& getNodes() const {return _nodes;}
+  const StorageSite& getFaces()   const {return _faces;}
+  const StorageSite& getCells()   const {return _cells;}
+  const StorageSite& getNodes()   const {return _nodes;}
   const StorageSite& getIBFaces() const {return _ibFaces;}
 
-  const StorageSite* getGhostCellSite( int id )
-  { return _ghostCellSiteMap[id].get(); }
+  const StorageSite* getGhostCellSiteScatter( int id )
+  { return _ghostCellSiteScatterMap[id].get(); }
 
-  const GhostCellSiteMap& getGhostCellSiteMap() const
-  { return _ghostCellSiteMap; }
+  const GhostCellSiteMap& getGhostCellSiteScatterMap() const
+  { return _ghostCellSiteScatterMap; }
+
+  const StorageSite* getGhostCellSiteGather( int id )
+  { return _ghostCellSiteGatherMap[id].get(); }
+
+  const GhostCellSiteMap& getGhostCellSiteGatherMap() const
+  { return _ghostCellSiteGatherMap; }
+
 
   StorageSite& getFaces() {return _faces;}
   StorageSite& getCells() {return _cells;}
@@ -164,12 +171,12 @@ public:
 
   void setIBFaces(shared_ptr<Array<int> > faceList) {_ibFaceList = faceList;}
 
-  void createGhostCellSite( int id, shared_ptr<StorageSite> site ); 
-
+  void createGhostCellSiteScatter( int id, shared_ptr<StorageSite> site ); 
+  void createGhostCellSiteGather ( int id, shared_ptr<StorageSite> site ); 
 protected:
   const int _dimension;
   const int _id;
-  
+
   StorageSite _cells;
   StorageSite _faces;
   StorageSite _nodes;
@@ -190,8 +197,9 @@ protected:
   Array<int>& getOrCreateIBType() const;
 
 
-  GhostCellSiteMap   _ghostCellSiteMap;
- 
+  GhostCellSiteMap   _ghostCellSiteScatterMap;
+  GhostCellSiteMap   _ghostCellSiteGatherMap;
+
  
   //mutable Array<int> *_cellTypes;
   //mutable Array<int> *_cellTypeCount;

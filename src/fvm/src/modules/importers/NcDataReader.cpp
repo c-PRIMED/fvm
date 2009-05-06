@@ -450,7 +450,8 @@ NcDataReader::interfaces( int id, const MeshList&  meshList )
          int size        = _interfaceSizeVals[indx]; 
          int offset      = _interfaceOffsetVals[indx];
          meshList.at(id)->createInterfaceGroup( size, offset, interfaceID );
-         meshList.at(id)->createGhostCellSite( interfaceID, shared_ptr<StorageSite>( new StorageSite(size) ) );
+         meshList.at(id)->createGhostCellSiteScatter( interfaceID, shared_ptr<StorageSite>( new StorageSite(size) ) );
+         meshList.at(id)->createGhostCellSiteGather( interfaceID, shared_ptr<StorageSite>( new StorageSite(size) ) );
          indx++;
      }
 
@@ -572,10 +573,11 @@ NcDataReader::createMappers( const MeshList&  globalMeshList )
            }
 
            // the site we will gather from to is the neighbour mesh's ghost cell site for thisMesh
-           const StorageSite& ghostSite = *neighMesh.getGhostCellSite(thisMeshID);
+           const StorageSite& ghostSiteScatter = *neighMesh.getGhostCellSiteScatter(thisMeshID);
+           const StorageSite& ghostSiteGather  = *neighMesh.getGhostCellSiteGather (thisMeshID);
 
-           thisGatherMap[&ghostSite]   = scatterIndices;
-           neighScatterMap[&ghostSite] = gatherIndices;
+           thisGatherMap[&ghostSiteGather]   = scatterIndices;
+           neighScatterMap[&ghostSiteScatter] = gatherIndices;
        }
 //
 //         const StorageSite& cells  = meshList.at(id)->getCells();
