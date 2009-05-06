@@ -368,7 +368,7 @@ const shared_ptr<CRConnectivity> setibFaceCells
  
   //search level = 1, search only one fluid cell adjacent to IBface
   //search level = 2, search two levels of fluid cell neighborhood of the ibface
-  const int searchLevel = 2;
+  const int searchLevel = 1;
 
   //specify the number of nonzeros for each row
  

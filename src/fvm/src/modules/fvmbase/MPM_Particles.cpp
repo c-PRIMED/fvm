@@ -6,6 +6,7 @@
 
 
 typedef MPM::VecD3 VecD3;
+typedef MPM::VecD3Array VecD3Array;
 
 MPM::MPM():
   _particles(0),
@@ -22,8 +23,8 @@ void MPM::setandwriteParticles(const char *file)
     FILE *fp;
            
     VecD3 center;
-    center[0]=0.0;
-    center[1]=0.0;
+    center[0]=0.;
+    center[1]=0.;
     center[2]=0.0;
 
     int count=0;   
@@ -33,7 +34,7 @@ void MPM::setandwriteParticles(const char *file)
     //set up particle cartesian coordinate
     VecD3 temp;
     
-    int nX=200, nY=200, nZ=1;
+    int nX=21, nY=21, nZ=1;
     double gapX=0.4/nX, gapY=0.2/nY, gapZ=0.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
@@ -45,7 +46,7 @@ void MPM::setandwriteParticles(const char *file)
 	for(int k=0; k<nZ; k++){
 	  temp[0]=i*gapX+0.3;
 	  temp[1]=j*gapY+0.4;
-	  temp[2]=k*gapZ+center[2];
+	  temp[2]=k*gapZ;
 	  //VecD3 dr = temp-center;
 	  //if(mag2(dr)<=radius*radius){
 	    solidPoint[count][0]=temp[0];
@@ -64,8 +65,8 @@ void MPM::setandwriteParticles(const char *file)
 #endif
 
 #if 0
-    int nX=50, nY=1000, nZ=1;
-    double radius1=0., radius2=0.5;
+    int nX=20, nY=100, nZ=1;
+    double radius1=0., radius2=0.3;
     double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
     VecD3 solidVelocity[nX*nY*nZ];
@@ -111,9 +112,9 @@ void MPM::setandwriteParticles(const char *file)
      */
 #endif
 #if 1
-  int nX=80, nY=80, nZ=80;
+     int nX=10,  nY=50, nZ=50;
   const double pi = atan(1.0)*4.0;
-    double radius1=0., radius2=5.0;
+    double radius1=0., radius2=10.0;
     double gapR=(radius2-radius1)/nX, gapAlfa=pi/nY, gapBeta=2*pi/nZ;
     const int nMPM = nX*nY*nZ;
     Array<VecD3> solidPoint(nMPM);
@@ -271,6 +272,22 @@ void MPM::Init(const shared_ptr<Array<VecD3> > coordinates,
 
 }
 
+void MPM::Impl(string fileName)
+{
+  char* file;
+  file = &fileName[0];
+  //get coordinate
+  const shared_ptr<VecD3Array> MPM_Coordinates = MPM::readCoordinates(file);
+
+  //get velocity
+  const shared_ptr<VecD3Array> MPM_Velocities = MPM::readVelocities(file);
+  
+  //get type
+  const shared_ptr<Array<int> > MPM_Types = MPM::readTypes(file);
+
+  //store all the information in MPM class
+  MPM::Init(MPM_Coordinates, MPM_Velocities, MPM_Types);
+}  
 
 
 

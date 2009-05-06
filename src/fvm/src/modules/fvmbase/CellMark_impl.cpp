@@ -30,10 +30,10 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
    
    
 
-  
     /***************************************************************************************/
     //---build up Octree for cell centroid---//
-
+    
+    /*
     Point *points = new Point [nCells];
 
     for(int i=0; i<nCells; i++){
@@ -71,12 +71,13 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     fclose(fp);
 #endif
     
-
+    */
     //---so far, we have the Octree ready for search---//
 
 
    
     /**************************************************************************************/
+    /*
     //---set up MPM particles---//
     string fileName2=fileBase+"MPMs.dat";
     char* file2;
@@ -98,13 +99,16 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     //store all the information in MPM class
     solid.Init(MPM_Coordinates, MPM_Velocities, MPM_Types);
-    
+    */
+
+
+
     const StorageSite& particles = solid.getParticles();
     
     const int nMPM = particles.getCount();
 
     //cout<<"nMPM is "<<nMPM<<endl;
-
+   
     const shared_ptr<VecD3Array>& MPM_Points = solid.getCoordinates();
     const shared_ptr<VecD3Array>& MPM_Vels = solid.getVelocities();
     const shared_ptr<Array<int> >& particleTypes = solid.getTypes();
@@ -180,7 +184,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	}
       }
     }
-
+    /*
     if (option == 3){
        double radius = 0.03;
        for(int p=0; p<nMPM; p++){
@@ -197,7 +201,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	 }
        }
     }
-
+    */
     if (option == 4){
        for(int p=0; p<nMPM; p++){
 	 VecD3 MPM_point = (*MPM_Points)[p];

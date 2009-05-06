@@ -1,0 +1,5 @@
+CellMark002 mtest.py ../../scripts/testCellMark-beam.py --output ./IBMCell.dat --golden ./beam/IBMCell.dat 
+
+CellMark002 mtest.py ../../scripts/testCellMark-cylinder.py --output ./IBMCell.dat --golden ./cylinder/IBMCell.dat
+
+CellMark001 mtest.py ../../scripts/testCellMark-sphere.py --output ./IBMCell.dat --golden ./sphere/IBMCell.dat

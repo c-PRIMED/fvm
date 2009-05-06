@@ -16,6 +16,7 @@ class MPM
   ~MPM();
 
   typedef Vector<double,3> VecD3;
+  typedef Array<VecD3> VecD3Array;
 
   const StorageSite& getParticles() const {return _particles;}
   
@@ -43,7 +44,7 @@ class MPM
   void Init (const shared_ptr<Array<VecD3> > coordinates,
 	     const shared_ptr<Array<VecD3> > velocities,
 	     const shared_ptr<Array<int> > types);
-
+  void Impl(string fileName);
  
  protected:
   StorageSite _particles;

@@ -1,0 +1,6212 @@
+(0 "fluent6.4.1")
+
+(0 "Machine Config:")
+                       (4 (60 0 0 1 2 4 4 4 8 8 4))
+       
+(0 "Dimensions:")
+(2 2)
+
+(0 "Variables:")
+(37 (
+(sizing-function/max-resolution 60)
+(sizing-function/resolution 3)
+(dynamesh/collapse/skew-max 0.6)
+(smooth-mesh/min-skew 0.4)
+(adapt/coarsen/marker/visible? #f)
+(adapt/coarsen/cell/visible? #t)
+(adapt/coarsen/cell/filled? #t)
+(adapt/refine/marker/visible? #f)
+(adapt/refine/cell/visible? #t)
+(adapt/refine/cell/filled? #t)
+(histogram/scaling-method "")
+(histogram/use-scaling? #f)
+(fluent-case-version 64)
+(transient-post/monitors ())
+(postdomain/index 1)
+(postdomain? #f)
+(user-wet-steam? #f)
+(udws/libname "")
+(wetsteam/b_max 0.1)
+(wsr/patch 0)
+(wsb/patch 0)
+(wsn/patch 0)
+(wsf/default 0)
+(wsr/default 0)
+(wsb/default 0)
+(wsn/default 0)
+(wetsteam/amg-stabilization 0)
+(wetsteam/scheme 0)
+(wetsteam/amg-method 0)
+(wetsteam/cycle-type 0)
+(wetsteam/amg-beta 0.7)
+(wetsteam/amg-alpha 0.1)
+(wetsteam/relax 0.1)
+(wetsteam/solve? #t)
+(mixing-plane/reduce-backflow? #f)
+(mixing-plane/ave-method 0)
+(mixing-plane/verbos-t-enthalpy? #f)
+(mixing-plane/conserve-t-enthalpy? #f)
+(mixing-plane/verbos-swirl? #f)
+(mixing-plane/conserve-swirl? #f)
+(mixing-plane/fix-pressure-level? #f)
+(mixing-plane/omega 1)
+(mixing-planes ())
+(mfinlet/allow-reverse-flow? #t)
+(pinlet/use-extrapolated-pressure? #f)
+(pinlet/enhanced-backflow? #f)
+(non-reflecting/verbosity 1)
+(non-reflecting/recon? #t)
+(non-reflecting/omega 0.75)
+(non-reflecting-bcs? #f)
+(target-mfr-mach 0.98)
+(target-mfr-pmin 1)
+(target-mfr-pmax 5000000)
+(target-mfr-urf 0.05)
+(target-mfr-method 1)
+(target-mfr-verbos? #f)
+(target-mfr? #t)
+(poutlet/p-split-back? #t)
+(poutlet/p-split-ausm? #t)
+(poutlet/ignore-back-swirl? #t)
+(ignition/octane-exp-gen 1)
+(ignition/equiv-exp-gen 1)
+(ignition/rpm-exp-gen 1)
+(ignition/temp-exp-gen 1)
+(ignition/press-exp-gen 1)
+(ignition/activate-gen 20080)
+(ignition/octane-gen 90)
+(ignition/pre-exp-gen 0.0405)
+(ignition/press-exp-de -1.7)
+(ignition/activate-de 3800)
+(ignition/octane-exp-de 3.402)
+(ignition/octane-de 90)
+(ignition/pre-exp-de 0.01768)
+(ignition/press-exp-hh 0.63)
+(ignition/activate-hh 618840)
+(ignition/cetane-hh 25)
+(ignition/pre-exp-hh 0.36)
+(ignition/dt-multiplier 3)
+(ignition/knock-act-temp -1507.8)
+(ignition/knock-pre-exp 8.6e+11)
+(ignition/ignite-sp-cut 0.5)
+(ignition/prod-fuel-cut 0.99)
+(ignition/burning-cutoff 1)
+(ignition/ignite-sp-max 5)
+(ignition/stoich-a-f-ratio 14.7)
+(ignition/fuel-species "")
+(ignition/amg-stabilization 0)
+(ignition/default 0)
+(ignition/patch 0)
+(ignition/amg-method 0)
+(ignition/cycle-type 0)
+(ignition/amg-beta 0.7)
+(ignition/amg-alpha 0.1)
+(ignition/scheme 0)
+(ignition/relax 0.7)
+(ignition/general? #f)
+(ignition/douaud? #f)
+(ignition/hardenburg? #f)
+(ignition/delay? #f)
+(ignition/knock? #f)
+(ignition/solve? #t)
+(ignition/off? #t)
+(spark/burn-init-fuel? #f)
+(spark/diffusion-time 1e-05)
+(spark/max-temp 2500)
+(spark/energy 0.1)
+(spark/duration 0.001)
+(spark/start-ca 0)
+(spark/start-time 0)
+(spark/time-exponent 0.333333)
+(spark/time-dep-geom? #f)
+(spark/fixed-geom? #f)
+(spark/fixed-box? #t)
+(spark/fixed-cylinder? #f)
+(spark/fixed-sphere? #f)
+(spark/shape "hexahedron")
+(spark/z-height 0.002)
+(spark/y-height 0.002)
+(spark/x-height 0.002)
+(spark/radius-final 0.005)
+(spark/radius 0.002)
+(spark/z-loc 0)
+(spark/y-loc 0)
+(spark/x-loc 0)
+(spark/off? #t)
+(crevice/threads ())
+(crevice/unit-roundoff 1e-06)
+(crevice/relax 0.8)
+(crevice/exit-pressure 101325)
+(crevice/mid-gap-cd 0.7)
+(crevice/pressures (101325 101325 101325 101325 101325))
+(crevice/bot-ring-gap (1e-05 1e-05 1e-05))
+(crevice/mid-ring-gap (4e-06 4e-06 4e-06))
+(crevice/top-ring-gap (1e-05 1e-05 1e-05))
+(crevice/land-length (0.00391 0.00391 0.00391))
+(crevice/ring-spacing (0.00391 0.00391 0.00391))
+(crevice/ring-mass (0.00375 0.00375 0.00375))
+(crevice/ring-thickness (0.002 0.002 0.002))
+(crevice/ring-width (0.00375 0.00375 0.00375))
+(crevice/piston-bore-clearance 5.08e-05)
+(crevice/sector-angle 360)
+(crevice/piston-temperature 400)
+(crevice/output-file "crev.out")
+(crevice/bore 0.1016)
+(crevice/n-rings 3)
+(crevice/ring-dynamics? #f)
+(crevice/write? #f)
+(crevice/solve? #f)
+(crevice/enabled? #f)
+(acoustics/cylindrical-export? #f)
+(acoustics/auto-prune? #t)
+(acoustics/interior-list ())
+(acoustics/write-only? #f)
+(acoustics/write? #f)
+(acoustics/source-files ())
+(acoustics/thread-types ())
+(acoustics/required-filenames ())
+(acoustics/writable-threads ())
+(acoustics/required-threads ())
+(acoustics/receivers ())
+(acoustics/file-lines 500)
+(acoustics/read-and-compute? #f)
+(acoustics/on-the-fly? #f)
+(acoustics/index-filename "")
+(acoustics/source-filename "")
+(acoustics/base-filename "")
+(acoustics/frequency 1)
+(models/timer-cutoff 0.1)
+(charge-density/enabled? #f)
+(magnetic-permeability/enabled? #f)
+(electric-conductivity/only-const-enabled? #f)
+(electric-conductivity/enabled? #f)
+(em/model-enabled? #f)
+(save-cell-residuals? #f)
+(domains (((1 geom-domain mixture) (children) (material . air))))
+(md/verbosity 1)
+(target/sv-list ())
+(target/domain-list ())
+(target/thread-list ())
+(hide-cell/auto-hide? #f)
+(hide-cell/max-skewness 0.98)
+(hide-cell/thread-pairs ())
+(virtual-cells ())
+(turbo-vector? #f)
+(turbo-projection/method (0))
+(turbo-search/method (1))
+(turbo-grid/method (0))
+(turbo/current-topology -1)
+(turbo/topology-count 0)
+(turbo/machine-type 0)
+(turbo/zones/blade ())
+(turbo/zones/outlet ())
+(turbo/zones/inlet ())
+(turbo/zones/theta-periodic ())
+(turbo/zones/theta-max ())
+(turbo/zones/theta-min ())
+(turbo/zones/shroud ())
+(turbo/zones/hub ())
+(turbo/topology-list ())
+(turbo? #f)
+(network/history-file "")
+(save-network-history? #f)
+(oned/library-case "")
+(oned/library-name "none")
+(glass-model? #f)
+(shell/ignore-partition-check? #f)
+(in-plane/zero-dir (0 1 0))
+(heatxc/inlet-temp/urf 0.8)
+(heatxc/cross-flow? #t)
+(heatxc/groups ())
+(heatxc/geom ())
+(heatxc/ntu-approach? #t)
+(heatxc/sv-ratio 1)
+(heatxc/verbosity 0)
+(heatxc/models (("default-model" (0.8 0.3 0.08 6 0.2 8 -0.5) ((1 1 0.67)))))
+(heatxc/on? #f)
+(case-file-units "si")
+(airpak-specific? #f)
+(temperature/split-source-by-ratio? #f)
+(atm-ht-v5? #f)
+(planar-conduction? #f)
+(init-fans? #f)
+(icepak? #f)
+(face-only? #f)
+(monitor/commands ())
+(monitor/volume ())
+(monitor/surfaces/windows ())
+(monitor/surfaces ())
+(statistics/window -1)
+(statistics/plot? #f)
+(statistics/print? #f)
+(statistics/monitors #f)
+(fmon/cm/rvz 0)
+(fmon/cm/rvy 0)
+(fmon/cm/rvx 0)
+(fmon/cm/about-axis "Z-Axis")
+(fmon/cm/window -1)
+(fmon/cm/per-zone? #f)
+(fmon/cm/plot? #f)
+(fmon/cm/file-name "cm-history")
+(fmon/cm/write? #f)
+(fmon/cm/print? #f)
+(fmon/cm/data? #f)
+(fmon/cm/thread-list ())
+(fmon/cl/fvz 0)
+(fmon/cl/fvy 1)
+(fmon/cl/fvx 0)
+(fmon/cl/window -1)
+(fmon/cl/per-zone? #f)
+(fmon/cl/plot? #f)
+(fmon/cl/file-name "cl-history")
+(fmon/cl/write? #f)
+(fmon/cl/print? #f)
+(fmon/cl/data? #f)
+(fmon/cl/thread-list ())
+(fmon/cd/window -1)
+(fmon/cd/fvz 0)
+(fmon/cd/fvy 0)
+(fmon/cd/fvx 1)
+(fmon/cd/per-zone? #f)
+(fmon/cd/plot? #f)
+(fmon/cd/file-name "cd-history")
+(fmon/cd/write? #f)
+(fmon/cd/print? #f)
+(fmon/cd/data? #f)
+(fmon/cd/thread-list ())
+(file-write/particle-vars ())
+(file-write/frequency 1)
+(autosave/file-decimal-digits 6)
+(autosave/file-suffix-type "time-step")
+(autosave/overwrite? #f)
+(autosave/filename "")
+(autosave/numfiles 0)
+(autosave/frequency/data 0)
+(autosave/frequency/case 0)
+(soot/oh-pe (212.9 -0.57 4595))
+(soot/o-fe (397000 -0.5 31090))
+(soot/o-pe (36.64 0.5 27123))
+(soot/prec-to-fuel-frac 1)
+(soot/oh-mode 0)
+(soot/o-mode 0)
+(soot/lee-t2 19778)
+(soot/lee-c2 8903.51)
+(soot/lee-c1 105.81)
+(soot/lee-coxid 1)
+(soot/lee-coleff 0.13)
+(soot/fjo-coxid 0.015)
+(soot/fjo-coleff 0.04)
+(soot/fjo-comega 105.8125)
+(soot/mbh-nuc-t2 6390)
+(soot/mbh-nuc-t1 4378)
+(soot/mbh-nuc-c2 (178 9.5))
+(soot/mbh-nuc-c1 (127 8.88))
+(soot/mbh-cgamma 9000.6)
+(soot/mbo-tgamma 12100)
+(soot/mbo-talpha 21100)
+(soot/mbo-cgamma 11700)
+(soot/mbo-cbeta 1)
+(soot/mbo-calpha 54)
+(soot/fuel-spec-list ())
+(soot/prec-soot ())
+(soot/two-magnus 4)
+(soot/two-beta 8e-14)
+(soot/two-alpha 100000)
+(soot/two-activ-energ 90000)
+(soot/two-exp 2.32e+17)
+(soot/two-linear 1e-15)
+(soot/two-branch 100)
+(soot/two-limit 1e-10)
+(soot/one-magnus 4)
+(soot/one-activ-energ 20000)
+(soot/one-equi-max 3)
+(soot/one-equi-min 1.67)
+(soot/one-equi-exp 3)
+(soot/one-cf 1.5)
+(soot/oxid-soot "")
+(soot/fuel-soot "")
+(soot/fuel-stoich 3.6363)
+(soot/soot-stoich 2.6667)
+(soot/soot-mean-dens 2000)
+(soot/soot-incp-mass 144)
+(soot/soot-mean-diam 2.2e-08)
+(soot/radio-soot-general? #f)
+(soot/radio-soot-none? #t)
+(soot/oxidation-lee? #f)
+(soot/oxidation-fjo? #t)
+(soot/moss-brookes-hall? #f)
+(soot/moss-brookes? #f)
+(soot/two-step? #f)
+(soot/one-step? #f)
+(soot/turbulent-nint 10)
+(soot/turbulent-spe1 "")
+(soot/turbulent-mode 0)
+(soot/turbulent? #f)
+(soot/inlet-diffusion? #t)
+(soot/max-prec-spec 5)
+(sox/h-oh-f (2.2e+10 -2 0))
+(sox/so-o-r (1.90546e+14 0 124404))
+(sox/so-o-f (8.70965e+09 -1.8 0))
+(sox/sh-h-r (8.66961e+14 0 91247))
+(sox/sh-h-f (1096.48 0 0))
+(sox/so-o2-r (1663410 0 18189))
+(sox/so-o2-f (446683 0 6458))
+(sox/h2s-o-r (9.88553e+08 0 14420))
+(sox/h2s-o-f (4365.16 0 3298))
+(sox/sh-o-r (2.98539e+09 0 40484))
+(sox/sh-o-f (3.54814e+08 0 642))
+(sox/so-oh-r (7.6913e+09 0 28358))
+(sox/so-oh-f (1.62181e+08 0 613))
+(sox/h2s-oh-r (31045600 0 29111))
+(sox/h2s-oh-f (138.039 0 894))
+(sox/h2s-h-r (9375620 0 14940))
+(sox/h2s-h-f (18197000 0 1788))
+(sox/so3-o-r (100 0 9500))
+(sox/so3-o-f (1200000 0 9500))
+(sox/so2-o-r (7.41e+14 -1 82689))
+(sox/so2-o-f (363 0 -1000))
+(sox/h2-h-ratio 1)
+(sox/h-o-ratio 0.5)
+(sox/product-intermed? #f)
+(sox/product-so3? #f)
+(sox/fuel-chars-h2s-frac 0)
+(sox/fuel-chars-so2-frac 1)
+(sox/fuel-chars-convfrac 1)
+(sox/fuel-volts-h2s-frac 1)
+(sox/fuel-volts-so2-frac 0)
+(sox/fuel-volts-convfrac 1)
+(sox/fuel-fuels-h2s-frac 1)
+(sox/fuel-fuels-so2-frac 0)
+(sox/fuel-fuels-convfrac 1)
+(sox/fuel-char-s-to 0)
+(sox/fuel-s-intermediate 0)
+(sox/fuel-ys-char 0)
+(sox/fuel-ys-volatile 0)
+(sox/fuel-ys-fuel 0)
+(sox/fuel-species "")
+(sox/fuel-type 1)
+(sox/oh-mode 1)
+(sox/o-mode 0)
+(sox/turbulent-pdf-hot #f)
+(sox/turbulent-nint 10)
+(sox/turbulent-spe1 "")
+(sox/turbulent-mode 0)
+(sox/turbulent? #f)
+(sox/inlet-diffusion? #t)
+(sox/user-replace? #f)
+(sox/user-sox? #f)
+(nox/sncr-urea-n2o-m-f (6.9e+17 -2.5 64760))
+(nox/sncr-urea-n2o-oh-f (2000000 0 10000))
+(nox/sncr-urea-nco-oh-f (10000000 0 0))
+(nox/sncr-urea-nco-no-f (10000000 0 -390))
+(nox/sncr-urea-hnco-m-f (2.4e+08 0.85 68000))
+(nox/sncr-urea-decomp-2 (61300 0 20980))
+(nox/sncr-urea-decomp-1 (12700 0 15540))
+(nox/sncr-nh3-no-f2 (0.35 7.65 125300))
+(nox/sncr-nh3-n2-f2 (424 5.3 83600))
+(nox/sncr-nh3-no-f (2.21e+14 0 38160))
+(nox/sncr-nh3-n2-f (2.45e+14 0 29400))
+(nox/reburn-oh-h2-r (452000 1.6 80815))
+(nox/reburn-oh-h2-f (102000 1.6 13802))
+(nox/reburn-ch1-peq-ch0 (580000 -2.64 -77077))
+(nox/reburn-ch1-peq-ch1 (63000000 -3.33 15090))
+(nox/reburn-ch1-peq-ch2 (0 0 0))
+(nox/reburn-ch2-peq-ch0 (1.3e+08 -2.64 -77077))
+(nox/reburn-ch2-peq-ch1 (1.4e+10 -3.33 15090))
+(nox/reburn-ch2-peq-ch2 (2300000 -1.54 27977))
+(nox/reburn-ch3-peq-ch0 (2.1e+10 -2.64 -77077))
+(nox/reburn-ch3-peq-ch1 (2.3e+12 -3.33 15090))
+(nox/reburn-ch3-peq-ch2 (3.7e+08 -1.54 27977))
+(nox/reburn-ch4-peq-ch0 (3.06e+11 -2.64 -77077))
+(nox/reburn-ch4-peq-ch1 (3.31e+13 -3.33 15090))
+(nox/reburn-ch4-peq-ch2 (5.3e+09 -1.54 27977))
+(nox/reburn-ch3-no (200000 0 0))
+(nox/reburn-ch2-no (1400000 0 550))
+(nox/reburn-ch1-no (1e+08 0 0))
+(nox/n2opath-n2o-no1-r (1.45e-29 9.259 11651))
+(nox/n2opath-n2o-no1-f (29000000 0 11651))
+(nox/n2opath-n2-n2o-r (4e+08 0 28234))
+(nox/n2opath-n2-n2o-f (4.44e+32 -8.358 28234))
+(nox/fuel-char-no (230 0 34100))
+(nox/fuel-nh3-no-r (1.8e+08 0 27000))
+(nox/fuel-nh3-no-f (4000000 0 32000))
+(nox/fuel-hcn-no-r (3e+12 0 60000))
+(nox/fuel-hcn-no-f (1e+10 0 67000))
+(nox/prompt-no (6400000 0 72500))
+(nox/thermal-oh-pe (212.9 -0.57 4595))
+(nox/thermal-o-fe (397000 -0.5 31090))
+(nox/thermal-o-pe (36.64 0.5 27123))
+(nox/thermal-z3-r (1.7e+08 0 24560))
+(nox/thermal-z3-f (71000000 0 450))
+(nox/thermal-z2-r (3810 1 20820))
+(nox/thermal-z2-f (18000 1 4680))
+(nox/thermal-z1-r (38000000 0 425))
+(nox/thermal-z1-f (1.8e+08 0 38370))
+(nox/urea-to-hnco-frac 0.45)
+(nox/urea-to-nh3-frac 0.55)
+(nox/urea-decomp-model 0)
+(nox/sncr-co-shift-const (17.5 68))
+(nox/sncr-co-shift? #f)
+(nox/sncr-o2vf-limit 0)
+(nox/sncr-temp-max 1373)
+(nox/sncr-temp-min 1073)
+(nox/sncr-chem-model 1)
+(nox/sncr-species "")
+(nox/sncr-injection-type 0)
+(nox/reburn-modhcn-rate 0.0004)
+(nox/reburn-modno-rate 0.0004)
+(nox/reburn-fuel-species-list ())
+(nox/reburn-fuel-species "")
+(nox/reburn-fuel-type 0)
+(nox/reburn-model 0)
+(nox/n2opath-oh-mode 0)
+(nox/n2opath-o-mode 0)
+(nox/n2opath-n2o-model 0)
+(nox/fuel-nh3-switch 1)
+(nox/fuel-charn-nh3-frac 0)
+(nox/fuel-charn-hcn-frac 0)
+(nox/fuel-charn-nox-frac 1)
+(nox/fuel-charn-convfrac 1)
+(nox/fuel-char-n-to 3)
+(nox/fuel-bet-area 25000)
+(nox/fuel-yn-char 0)
+(nox/fuel-yn-volatile 0)
+(nox/fuel-yn-fuel 0)
+(nox/fuel-voltn-nh3-frac 0)
+(nox/fuel-voltn-hcn-frac 1)
+(nox/fuel-voltn-nox-frac 0)
+(nox/fuel-voltn-convfrac 1)
+(nox/fuel-fueln-nh3-frac 0)
+(nox/fuel-fueln-hcn-frac 1)
+(nox/fuel-fueln-nox-frac 0)
+(nox/fuel-fueln-convfrac 1)
+(nox/fuel-n-intermediate 2)
+(nox/fuel-fuel-species "")
+(nox/fuel-type 0)
+(nox/prompt-equivalence-ratio 1)
+(nox/prompt-carbon-number 1)
+(nox/prompt-fuel-species-list ())
+(nox/prompt-fuel-species "")
+(nox/thermal-limit-switch 0)
+(nox/thermal-oh-mode 0)
+(nox/thermal-o-mode 0)
+(nox/turbulent-pdf-hot #f)
+(nox/turbulent-nint 10)
+(nox/turbulent-spe1 "")
+(nox/turbulent-mode 0)
+(nox/turbulent? #f)
+(nox/inlet-diffusion? #t)
+(nox/n2opath-udf-replace? #f)
+(nox/fuel-udf-replace? #f)
+(nox/prompt-udf-replace? #f)
+(nox/thermal-udf-replace? #f)
+(nox/user-nox? #f)
+(nox/sncr-nox? #f)
+(nox/reburn-nox? #f)
+(nox/n2opath-nox? #f)
+(nox/fuel-nox? #f)
+(nox/prompt-nox? #f)
+(nox/thermal-nox? #f)
+(nox/max-rbfuel-spec 5)
+(nox/max-fuel-spec 10)
+(pollut_soot/eq_start 12)
+(pollut_sox/eq_start 7)
+(pollut_nuclei/patch 0)
+(pollut_soot/patch 0)
+(pollut_so/patch 0)
+(pollut_sh/patch 0)
+(pollut_so3/patch 0)
+(pollut_h2s/patch 0)
+(pollut_so2/patch 0)
+(pollut_nco/patch 0)
+(pollut_hnco/patch 0)
+(pollut_urea/patch 0)
+(pollut_n2o/patch 0)
+(pollut_nh3/patch 0)
+(pollut_hcn/patch 0)
+(pollut_no/patch 0)
+(pollutant/patch (0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+(pollutant/default (0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+(pollutant/amg-stabilization (0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+(pollutant/amg-method (0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+(pollutant/cycle-type (0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+(pollutant/amg-beta (0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7))
+(pollutant/amg-alpha (0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1))
+(pollutant/scheme (0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+(pollutant/relax (0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9))
+(pollutant/solve? (#f #f #f #f #f #f #f #f #f #f #f #f #f #f))
+(pollutant/active? (#f #f #f #f #f #f #f #f #f #f #f #f #f #f))
+(dpm/latent-heat-at-boiling? #t)
+(dpm/absolute-pressure? #t)
+(dpm/raoult? #f)
+(dpm/multicomponent-boiling? #t)
+(dpm/cp-correction? #t)
+(dpm/rkmulticomponent? #t)
+(dpm/gauss-random 0.5)
+(dpm/random-gauss? #t)
+(dpm/uniform-random 0.5)
+(dpm/random-uniform? #t)
+(dpm/tracking-order-randomizations 0)
+(dpm/rkvaporization? #f)
+(dpm/minimum-vapor-fraction 0.01)
+(dpm/virtual-mass-factor 0.5)
+(dpm/pressure-force-explicit? #f)
+(dpm/flush-sources-at-timestep? #t)
+(dpm/fluid-flow-time-stepping? #t)
+(dpm/create-particles-with-particle-time-step? #f)
+(dpm/last-time-step 0)
+(dpm/n-time-steps 1)
+(dpm/time-step 0)
+(dpm/physical-time-step 0.001)
+(dpm/flow-time 0)
+(dpm/short-wave-airblast? #f)
+(dpm/stagger-factor 1)
+(dpm/stagger_radius_standard_inj 0)
+(dpm/stagger-temporally? #f)
+(dpm/stagger_atomizer_inj? #t)
+(dpm/stagger_standard_inj? #f)
+(dpm/wall-film-expert? #f)
+(dpm/film-splash-angle-slope 0.266)
+(dpm/film-splash-angle 65.4)
+(dpm/film-min-dsplash-param 0.02)
+(dpm/film-max-face-dist 1e-05)
+(dpm/film-m-imp-interaction 0)
+(dpm/film-p-imp-interaction 0)
+(dpm/film-mean-interaction 0)
+(dpm/film-gas-interaction #t)
+(dpm/film-visc-interaction #t)
+(dpm/film-separation-height 1e-05)
+(dpm/film-separation-angle 90)
+(dpm/pathlines-single-id -1)
+(dpm/pathlines-low-order? #f)
+(dpm/pathlines-relative? #t)
+(dpm/pathline-face-intersection-algorithm 0)
+(dpm/particle-repartition-algorithm 1)
+(dpm/face-intersection-algorithm 5)
+(dpm/display-steps 1)
+(dpm/lowest-mass 5.236e-25)
+(dpm/lowest-diameter 1e-08)
+(dpm/number-of-cells-to-cross 1)
+(dpm/acceleration-to-faces-for-rk? #t)
+(dpm/auto-max-step-size-refinements 20)
+(dpm/auto-max-error 1e-05)
+(dpm/auto-tracking-scheme-selection? #t)
+(dpm/limit-min-time-step? #t)
+(dpm/tracking-scheme-high 1)
+(dpm/tracking-scheme-low 0)
+(dpm/auto-step-size-control? #t)
+(dpm/tracking-scheme 0)
+(dpm/max-find-cell-depth 2000)
+(dpm/debug-output-level 0)
+(dpm/variable-interpolation? #t)
+(dpm/search-before-iteration? #f)
+(dpm/closest-face-search? #t)
+(dpm/pre-write-particle-check? #f)
+(dpm/use-face-v-with-b-injection? #t)
+(dpm/disallow-aborted-particles? #t)
+(dpm/closest-cell-search? #t)
+(dpm/full-pointwise-search? #f)
+(dpm/nd-point-search? #t)
+(dpm/collect-sample? #f)
+(dpm/sources-max-part-ap 0.1)
+(dpm/sources-as-in-v61? #f)
+(dpm/sources-delta-implicit? #t)
+(dpm/sources-implicit? #t)
+(dpm/sources-every-flow-iteration? #f)
+(dpm/implicit-momentum-coupling? #t)
+(dpm/steady-spray-cfl 5)
+(dpm/levich-breakup-constant 14.9)
+(dpm/levich-breakup-type 0)
+(dpm/spray-suite-consts (8 5 0.5 0.33333333 3.3333333 1 0.188 1.73 0.61 0 14.9 0.5 0.1))
+(dpm/wave-mass-cutoff 0.05)
+(dpm/atomizer-spread-param 3.5)
+(dpm/tab-spread-parameter 3.5)
+(dpm/lower-tab-diameter-ratio 0)
+(dpm/number-tab-diameters 2)
+(dpm/random-tab-diam? #t)
+(dpm/spray-suite-khrt? #f)
+(dpm/spray-suite-wave-rayleigh-growth? #t)
+(dpm/spray-suite-wave-collide? #t)
+(dpm/spray-suite-wave? #f)
+(dpm/spray-suite-tab? #f)
+(dpm/spray-suite-break-up? #f)
+(dpm/spray-suite-coalescence? #f)
+(dpm/spray-suite-collide? #f)
+(dpm/pdf-tran-unsteady-rho-limit 0.1)
+(dpm/pdf-tran-inc-time-avg 0)
+(dpm/pdf-tran-num-time-avg 50)
+(dpm/pdf-tran-num-fv-steps 1)
+(dpm/pdf-tran-num-pdf-steps 1)
+(dpm/pdf-tran-time-step 1)
+(dpm/pdf-tran-freq-num 0.5)
+(dpm/pdf-tran-fourier-num 0.5)
+(dpm/pdf-tran-cfl-num 0.5)
+(dpm/pdf-tran-local-time-step? #t)
+(dpm/pdf-tran-ppc-d 0.1)
+(dpm/pdf-tran-ppc-c 0.1)
+(dpm/pdf-tran-ppc-b 0.1)
+(dpm/pdf-tran-ppc-a 0.1)
+(dpm/pdf-tran-position-correct? #f)
+(dpm/pdf-tran-number-control? #t)
+(dpm/pdf-tran-cphi 2)
+(dpm/pdf-tran-mixing-model 2)
+(dpm/pdf-tran-ta-counter 0)
+(dpm/pdf-tran-num-part-per-cell 20)
+(pdf-transport-expert? #f)
+(pdf-transport/solve? #t)
+(dpm/surface-injection-delta 1e-05)
+(dpm/higher-order? #t)
+(dpm/coupled-update? #f)
+(dpm/report-sig-fig 5)
+(dpm/track-in-absolute-frame? #f)
+(dpm/write-particle-history? #f)
+(dpm/summary ())
+(dpm/turb-coupling? #f)
+(dpm/saffman-lift? #f)
+(dpm/cunningham-correction 1)
+(dpm/brownian-motion? #f)
+(dpm/drag-law "spherical")
+(dpm/shape-factor 1)
+(dpm/minimum-parcel-number 0.001)
+(dpm/minimum-parcel-mass 1e-15)
+(dpm/wall-jet-interact? #f)
+(dpm/particle-temperature-limiter? #f)
+(dpm/accumulate-rates? #f)
+(dpm/erosion-accretion? #f)
+(dpm/sort-file-append? #f)
+(dpm/reallocate-unsteady-coupled? #t)
+(dpm/unsteady-stop 0)
+(dpm/unsteady-start 0)
+(dpm/unsteady-in-domain? #f)
+(dpm/unsteady-tracking? #f)
+(dpm/thermophoretic? #f)
+(dpm/radiation-p #f)
+(dpm/ensemble-average? #t)
+(dpm/correlation-func 1)
+(dpm/max-steps 500)
+(dpm/length-scale 0.01)
+(dpm/step-length-factor 5)
+(dpm/use-length-scale? #f)
+(dpm/injections-list ())
+(dpm/relax 0.5)
+(dpm/niter 10)
+(dpm/is-dpm-on #f)
+(dpm/particle-cache-size 0)
+(dpm/source-cache-size 0)
+(dpm/random-pool-size 0)
+(dpm/cache-size 1)
+(dpm/write-particle-data-method 1)
+(dpm/parallel/crossover-tolerance 0.02)
+(dpm/parallel/max-level-report 5)
+(dpm/parallel/print-verbosity 0)
+(dpm/parallel/lb-chunk-size 0)
+(dpm/parallel/max-recursion-depth 100)
+(dpm/parallel/homogeneous-net? #f)
+(dpm/distributed-memory-parallel? #t)
+(periodic/bulk-temperature 300)
+(periodic/niter 2)
+(periodic/relax 0.5)
+(periodic/flow-dir-z 0)
+(periodic/flow-dir-y 0)
+(periodic/flow-dir-x 1)
+(periodic/pressure-derivative 0)
+(periodic/mass-flow 0)
+(periodic/specify-mass-flow? #f)
+(dbns-expl-const-time-interval? #f)
+(coupled-explicit/user-specified-time-interval 0)
+(variable-time-step/verbosity 0)
+(variable-time-step/undo-time-step? #f)
+(convergence-criteria/available? #t)
+(solution/converged? #f)
+(predict-next-time? #f)
+(variable-time-step? #f)
+(numb-fix-timesteps 1)
+(dt-max 10)
+(dt-min 1e-05)
+(dt-factor-max 5)
+(dt-factor-min 0.5)
+(time-end 1000)
+(time-err-toler 0.01)
+(mg/coarsen-interval 1)
+(mg/max-cluster-print 16)
+(mg/verbosity 1)
+(mg/print-level 0)
+(mg/sequence-level 0)
+(mg/grid-levels 0)
+(mg/smooth 0.5)
+(mg/relax 0.6)
+(mg/cfl-factor 0.9)
+(mg/iter/interp 0)
+(mg/iter/fine 1)
+(fmg-init/reorder? #t)
+(fmg-init/cfl 0.75)
+(fmg-init/conv-limit-on-level (0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001))
+(fmg-init/max-fas-iterations-on-level (1 10 50 100 500 500 500 500 500 500 500 500))
+(fmg-init/enable? #f)
+(fmg-init/verbose? #f)
+(fas-c/amg-stabilization 1)
+(fas-c/amg-method 1)
+(fas-c/cycle-type 1)
+(fas-c/amg-beta 0.7)
+(fas-c/amg-alpha 0.1)
+(amg-c/cfl-reduction-factor 0.1)
+(amg-c/amg-stabilization 0)
+(amg-c/amg-method 0)
+(amg-c/cycle-type 3)
+(amg-c/amg-beta 0.7)
+(amg-c/amg-alpha 0.1)
+(amg-c/scheme 1)
+(coupled-flux-method 0)
+(amg-coupled/max-global-cycles 20)
+(amg-coupled/group-size-3d 8)
+(amg-coupled/group-size-2d 4)
+(amg-coupled/max-coarse-levels 20)
+(amg-coupled/max-cycles 30)
+(amg-coupled/post-relaxations 3)
+(amg-coupled/pre-relaxations 0)
+(amg-coupled/relaxation-method "ilu")
+(solver/precondition/max-cycles 1)
+(solver/precondition/verbosity 0)
+(solver/precondition/scale-corrections? #f)
+(solver/precondition/alpha 0.3)
+(solver/precondition? #t)
+(amg/max-global-cycles 20)
+(amg/check-global-solution 100)
+(amg/memory-chunk-size 10485760)
+(amg/memory-chunk-use 1)
+(amg/malloc-oversize-percent 0)
+(amg/ilu-method-relax 1)
+(amg/ilu-cpld-relax 0.9)
+(amg/ilu-seg-relax 1)
+(amg/stabilization 0)
+(amg/method 0)
+(amg/mpi_messenger -1)
+(amg/v5? #f)
+(amg/reuse-fine-level? #t)
+(amg/save-temps? #t)
+(amg/ignore-slow-communication? #f)
+(amg/ignore-slow-communication-interval 1)
+(amg/force-slow-communication-optimization? #f)
+(amg/global-solve-type 1)
+(amg/global-solve? #t)
+(amg/sweep-exchange -1)
+(amg/schwarz? #f)
+(amg/tolerance 5e-06)
+(amg/divergence-epsilon 1000)
+(amg/neighbor-optimization-level 1)
+(amg/scale-list ())
+(amg/ignore-scale-filter? #t)
+(amg/scale-filter? #t)
+(amg/scale-corrections? #t)
+(amg/parallel/merge-level -1)
+(amg/parallel/sync-interval 1)
+(amg/parallel/method 0)
+(amg/group-within-cluster? #t)
+(amg/relax-sweeps 2)
+(amg/clustering-direction 0)
+(amg/coordinate-clustering? #f)
+(amg/freeze-coarse-levels? #f)
+(amg/fixed-cycles -1)
+(amg/max-cycles 30)
+(amg/max-coarse-relaxations 50)
+(amg/max-fine-relaxations 30)
+(amg/group-method 0)
+(amg/group-size 2)
+(amg/max-coarse-levels 20)
+(amg/post-relaxations 1)
+(amg/pre-relaxations 0)
+(amg/verbosity 0)
+(relaxation-method "gauss-seidel")
+(use-operating-density? #f)
+(operating-density 1.225)
+(operating-temperature 288.16)
+(body-force/relax 1)
+(implicit-bf? #f)
+(z-pull-velocity/patch 0)
+(y-pull-velocity/patch 0)
+(x-pull-velocity/patch 0)
+(pull/niter 1)
+(pull/max-iter 5)
+(pull/explicit-relax 1)
+(pull/residual-tolerance 0.0001)
+(pull/iter-tolerance 0.05)
+(pull/amg-stabilization 0)
+(pull/amg-method 0)
+(pull/cycle-type 1)
+(pull/amg-beta 0.7)
+(pull/amg-alpha 0.0001)
+(pull/scheme 10)
+(pull/solve? #f)
+(melt/u-us-term? #f)
+(melt/mushy-zone-constant 100000)
+(delh/patch 0)
+(delh/n-sweeps 5)
+(delh/default 0)
+(delh/relax 0.9)
+(premixc/explicit-relax 1)
+(premixc/residual-tolerance 0.0001)
+(premixc/iter-tolerance 0.05)
+(premixc/max-iter 5)
+(premixc/default 1)
+(premixc/patch 0)
+(premixc/amg-stabilization 0)
+(premixc/amg-method 0)
+(premixc/cycle-type 0)
+(premixc/amg-beta 0.7)
+(premixc/amg-alpha 0.1)
+(premixc/scheme 0)
+(premixc/relax 0.9)
+(premixed/solve? #t)
+(ufla-y/default 0)
+(ufla-y/patch 0)
+(ufla-y/amg-stabilization 0)
+(ufla-y/amg-method 0)
+(ufla-y/cycle-type 0)
+(ufla-y/amg-beta 0.7)
+(ufla-y/amg-alpha 0.1)
+(ufla-y/scheme 0)
+(ufla-y/relax 1)
+(ufla-y/solve? #t)
+(vd-fvar/default 0)
+(vd-fvar/patch 0)
+(vd-fvar/amg-stabilization 0)
+(vd-fvar/amg-method 0)
+(vd-fvar/cycle-type 0)
+(vd-fvar/amg-beta 0.7)
+(vd-fvar/amg-alpha 0.1)
+(vd-fvar/scheme 0)
+(vd-fvar/relax 0.9)
+(vc-fvar/default 0)
+(vc-fvar/patch 0)
+(vc-fvar/amg-stabilization 0)
+(vc-fvar/amg-method 0)
+(vc-fvar/cycle-type 0)
+(vc-fvar/amg-beta 0.7)
+(vc-fvar/amg-alpha 0.1)
+(vc-fvar/scheme 0)
+(vc-fvar/relax 0.9)
+(ic-fvar/default 0)
+(ic-fvar/patch 0)
+(ic-fvar/amg-stabilization 0)
+(ic-fvar/amg-method 0)
+(ic-fvar/cycle-type 0)
+(ic-fvar/amg-beta 0.7)
+(ic-fvar/amg-alpha 0.1)
+(ic-fvar/scheme 0)
+(ic-fvar/relax 0.9)
+(micro-mix/real-consts (2 1.86 0.058 0.303 17050))
+(species/micro-mixing? #f)
+(fvar2/explicit-relax 1)
+(fvar2/residual-tolerance 0.0001)
+(fvar2/iter-tolerance 0.05)
+(fvar2/max-iter 5)
+(fvar2/default 0)
+(fvar2/patch 0)
+(fvar2/amg-stabilization 0)
+(fvar2/amg-method 0)
+(fvar2/cycle-type 0)
+(fvar2/amg-beta 0.7)
+(fvar2/amg-alpha 0.1)
+(fvar2/scheme 0)
+(fvar2/relax 0.9)
+(fvar/explicit-relax 1)
+(fvar/residual-tolerance 0.0001)
+(fvar/iter-tolerance 0.05)
+(fvar/max-iter 5)
+(fvar/default 0)
+(fvar/patch 0)
+(fvar/amg-stabilization 0)
+(fvar/amg-method 0)
+(fvar/cycle-type 0)
+(fvar/amg-beta 0.7)
+(fvar/amg-alpha 0.1)
+(fvar/scheme 0)
+(fvar/relax 0.9)
+(fmean2/explicit-relax 1)
+(fmean2/residual-tolerance 0.0001)
+(fmean2/iter-tolerance 0.05)
+(fmean2/max-iter 5)
+(fmean2/default 0)
+(fmean2/patch 0)
+(fmean2/amg-stabilization 0)
+(fmean2/amg-method 0)
+(fmean2/cycle-type 0)
+(fmean2/amg-beta 0.7)
+(fmean2/amg-alpha 0.1)
+(fmean2/scheme 0)
+(fmean2/relax 1)
+(fmean/explicit-relax 1)
+(fmean/residual-tolerance 0.0001)
+(fmean/iter-tolerance 0.05)
+(fmean/max-iter 5)
+(fmean/default 0)
+(fmean/patch 0)
+(fmean/amg-stabilization 0)
+(fmean/amg-method 0)
+(fmean/cycle-type 0)
+(fmean/amg-beta 0.7)
+(fmean/amg-alpha 0.1)
+(fmean/scheme 0)
+(fmean/relax 1)
+(prepdf/nfb2 21)
+(pdf/multi-tabulation? #f)
+(prepdf/compress-op-pres 101325)
+(chemkin-import-name-editable? #t)
+(prepdf/empirical-secondary-mw 0)
+(prepdf/empirical-fuel-mw 0)
+(prepdf/liquid-fsto 0.5)
+(prepdf/ufla-cfl 1)
+(prepdf/ufla-max-scal-diss 30)
+(prepdf/ufla-f-init 0.1)
+(prepdf/ufla-h-relax 0.01)
+(prepdf/ufla-frac-heat-loss-pts 0.75)
+(prepdf/ufla-num-h-pts 10)
+(prepdf/ufla-y-slow "no")
+(prepdf/ufla-num-y-slow-pts 20)
+(prepdf/ufla-x0 10)
+(prepdf/ufla-res-time 1)
+(prepdf/ufla? #f)
+(prepdf/unsteady-flamelet? #f)
+(prepdf/default-thermo-db-fname "")
+(prepdf/mf-method 0)
+(prepdf/frozen-boundaries 1)
+(prepdf/max-species 20)
+(prepdf/nne 41)
+(prepdf/nfl 21)
+(prepdf/nfb 31)
+(prepdf/calculate? #f)
+(prepdf/function-type 1)
+(prepdf/type 3)
+(prepdf/stoich (1 2 -1 -2))
+(prepdf/include-equil-flamelet? #t)
+(prepdf/flamelet-generate? #f)
+(prepdf/flamelet-bool-params (#t #t))
+(prepdf/flamelet-real-params (0.01 5 1 2 1e-10 1e-14 1e-05 1000))
+(prepdf/flamelet-int-params (10 32))
+(prepdf/expert-real-params (1 0.667 0.25 0.99))
+(prepdf/equil-real-params (0.1 0.1 50000000 1000 50000000 1000 298))
+(prepdf/flags (#t #f #f #f))
+(prepdf/bc ((300 300 300) (#t) ((o2 0 0.233 0) (n2 0 0.767 0))))
+(prepdf/equil-exclude-species ("no" "no2" "n2o" "h2o<l>" "c<s>" "n" "nh" "nh2" "nh3" "nnh" "hcn" "hno" "cn" "h2cn" "hcnn" "hcno" "hocn" "hnco"))
+(prepdf/equil-include-species ())
+(prepdf/bc-species ("ch4" "h2" "jet-a<g>" "n2" "o2"))
+(pdf/bounded-interp #f)
+(pdf/dynamic-fvar? #t)
+(pdf/solve-les-variance-eqn? #f)
+(pdf/warnings #f)
+(pdf/flamexpert #f)
+(pdf/fvarlim 0.001)
+(pdf/flampar 1)
+(pdf/flammult 3)
+(pdf/flamtype 0)
+(pdf/sct 0.85)
+(pdf/compressible? #f)
+(pdf/function-type 1)
+(pdf/n-iter-flam 5)
+(pdf/n-iter 10)
+(flamelet/filename "")
+(pdf/filename "")
+(pdf/solve? #t)
+(cdvar 2)
+(cgvar 2.86)
+(rfg/limit-length-scale #f)
+(rfg/limit-wave-number #t)
+(rfg/number-of-fourier-modes 100)
+(sngr/number-of-realizations 200)
+(sngr/number-of-fourier-modes 50)
+(acoustics/sliding-mesh-time-ref -1)
+(acoustics/number-of-revolutions 2)
+(acoustics/time-steps-per-revolution 360)
+(acoustics-sample-duration 0)
+(acoustics-no-of-samples 0)
+(far-field-sound-speed 340)
+(far-field-pressure 0)
+(far-field-density 1.225)
+(reference-acoustic-intensity 1e-12)
+(reference-acoustic-power 1e-12)
+(reference-acoustic-pressure 2e-05)
+(acoustics/2d-nfaces 40)
+(acoustics/2d-correl-length 1)
+(source-location/z 0)
+(source-location/y 0)
+(source-location/x 0)
+(receiver-location/z 0)
+(receiver-location/y 1)
+(receiver-location/x 1)
+(acoustics/compute-sound? #t)
+(acoustics/export-fluid-zones 0)
+(acoustics/write-source? #f)
+(acoustics/on? #f)
+(wf/vwplus-max 0.6)
+(wf/vwplus-min -0.04)
+(wf/gamma-max 1)
+(wf/gamma-min 0.005)
+(wf/beta-max 0.01)
+(wf/beta-min -0.02)
+(wf/yp-prg 60)
+(wf/cmp-effects-excluded? #f)
+(wf/ht-effects-excluded? #f)
+(wf/heat-transfer-effects? #f)
+(wf/pressure-gradient-effects? #f)
+(uw-stress/patch 0)
+(vw-stress/patch 0)
+(uv-stress/patch 0)
+(ww-stress/patch 1)
+(vv-stress/patch 1)
+(uu-stress/patch 1)
+(drsm/coupling-alt-average? #f)
+(drsm/amg-stabilization 0)
+(drsm/amg-method 0)
+(drsm/cycle-type 0)
+(drsm/amg-beta 0.7)
+(drsm/amg-alpha 0.1)
+(drsm/max-iter 5)
+(drsm/residual-tolerance 0.0001)
+(drsm/iter-tolerance 0.05)
+(drsm/explicit-relax 1)
+(drsm/scheme 0)
+(drsm/relax 0.5)
+(drsm/solve? #t)
+(drsm/secondary-gradient? #f)
+(omega/default 1)
+(omega/patch 1)
+(omega/amg-stabilization 0)
+(omega/amg-method 0)
+(omega/cycle-type 0)
+(omega/amg-beta 0.7)
+(omega/amg-alpha 0.1)
+(omega/scheme 0)
+(omega/max-iter 5)
+(omega/residual-tolerance 0.0001)
+(omega/iter-tolerance 0.05)
+(omega/explicit-relax 1)
+(omega/relax 0.8)
+(omega/min-limit 1e-20)
+(kw/solve? #t)
+(lowre-ke-index 0)
+(ke-low-re? #f)
+(kl/default 1e-06)
+(kl/patch 1e-06)
+(kl/amg-stabilization 0)
+(kl/amg-method 0)
+(kl/cycle-type 0)
+(kl/amg-beta 0.7)
+(kl/amg-alpha 0.1)
+(kl/scheme 0)
+(kl/max-iter 5)
+(kl/residual-tolerance 0.0001)
+(kl/iter-tolerance 0.05)
+(kl/explicit-relax 1)
+(kl/relax 0.8)
+(kl/min-limit 1e-14)
+(f/default 1)
+(f/patch 1)
+(f/amg-stabilization 0)
+(f/amg-method 0)
+(f/cycle-type 0)
+(f/amg-beta 0.7)
+(f/amg-alpha 0.1)
+(f/scheme 0)
+(f/max-iter 5)
+(f/residual-tolerance 0.0001)
+(f/iter-tolerance 0.05)
+(f/explicit-relax 1)
+(f/relax 0.8)
+(v2/default 0.666667)
+(v2/patch 1)
+(v2/amg-stabilization 0)
+(v2/amg-method 0)
+(v2/cycle-type 0)
+(v2/amg-beta 0.7)
+(v2/amg-alpha 0.1)
+(v2/max-iter 5)
+(v2/residual-tolerance 0.0001)
+(v2/iter-tolerance 0.05)
+(v2/explicit-relax 1)
+(v2/scheme 0)
+(v2/relax 0.8)
+(v2f-f/min-limit 1e-07)
+(v2f-v2/min-limit 1e-07)
+(v2f-epsilon/min-limit 1e-07)
+(v2f-k/min-limit 1e-07)
+(epsilon/default 1)
+(epsilon/patch 1)
+(epsilon/amg-stabilization 0)
+(epsilon/amg-method 0)
+(epsilon/cycle-type 0)
+(epsilon/amg-beta 0.7)
+(epsilon/amg-alpha 0.1)
+(epsilon/scheme 0)
+(epsilon/max-iter 5)
+(epsilon/residual-tolerance 0.0001)
+(epsilon/iter-tolerance 0.05)
+(epsilon/explicit-relax 1)
+(epsilon/relax 0.8)
+(epsilon/min-limit 1e-20)
+(k/default 1)
+(k/patch 1)
+(k/amg-stabilization 0)
+(k/amg-method 0)
+(k/cycle-type 0)
+(k/amg-beta 0.7)
+(k/amg-alpha 0.1)
+(k/scheme 0)
+(k/max-iter 5)
+(k/residual-tolerance 0.0001)
+(k/iter-tolerance 0.05)
+(k/explicit-relax 1)
+(k/relax 0.8)
+(k/min-limit 1e-14)
+(ke/compr-effects-for-vof? #f)
+(ke/buoyancy-production? #f)
+(ke/solve? #t)
+(ke/secondary-gradient? #f)
+(nut/default 0.1)
+(nut/patch 0.1)
+(nut/amg-stabilization 0)
+(nut/amg-method 0)
+(nut/cycle-type 0)
+(nut/amg-beta 0.7)
+(nut/amg-alpha 0.1)
+(nut/scheme 0)
+(nut/max-iter 5)
+(nut/residual-tolerance 0.0001)
+(nut/iter-tolerance 0.05)
+(nut/explicit-relax 1)
+(nut/relax 0.8)
+(nut/wall-value? #t)
+(nut/damping? #t)
+(nut/solve? #t)
+(nut/secondary-gradient? #f)
+(sgske/default 0.01)
+(sgske/patch 0.01)
+(turb-viscosity/max-limit 100000)
+(turb-viscosity/relax 1)
+(turb/hyd-dia-factor 0.07)
+(w-swirl/amg-stabilization 0)
+(w-swirl/amg-method 0)
+(w-swirl/cycle-type 0)
+(w-swirl/amg-beta 0.7)
+(w-swirl/amg-alpha 0.1)
+(w-swirl/scheme 0)
+(w-swirl/max-iter 5)
+(w-swirl/residual-tolerance 0.0001)
+(w-swirl/iter-tolerance 0.05)
+(w-swirl/explicit-relax 1)
+(w-swirl/relax 0.9)
+(w-swirl/solve? #t)
+(pb-smm/kv 0.52359878)
+(pb-smm/default (0))
+(pb-smm/patch (0))
+(pb-smm/amg-stabilization (0))
+(pb-smm/cycle-type (0))
+(pb-smm/amg-method (0))
+(pb-smm/amg-beta (0.7))
+(pb-smm/amg-alpha (0.1))
+(pb-smm/scheme (0))
+(pb-smm/relax (1))
+(pb-smm/solve? (#t))
+(pb-smm/n-pb-smm 2)
+(pb-qmom/kv 0.52359878)
+(pb-qmom/ka 3.1415926)
+(pb-qmom/default (0))
+(pb-qmom/patch (0))
+(pb-qmom/amg-stabilization (0))
+(pb-qmom/cycle-type (0))
+(pb-qmom/amg-method (0))
+(pb-qmom/amg-beta (0.7))
+(pb-qmom/amg-alpha (0.1))
+(pb-qmom/scheme (0))
+(pb-qmom/relax (1))
+(pb-qmom/solve? (#t))
+(pb-qmom/n-pb-qmom 6)
+(pb-disc/kv 0.52359878)
+(pb-disc/ka 3.1415926)
+(pb-disc/bin-size-inp-type 0)
+(pb-disc/bin-sizes (0.01 0.01259921))
+(pb-disc/default (0))
+(pb-disc/patch (0))
+(pb-disc/amg-stabilization (0))
+(pb-disc/cycle-type (0))
+(pb-disc/amg-method (0))
+(pb-disc/amg-beta (0.7))
+(pb-disc/amg-alpha (0.1))
+(pb-disc/scheme (0))
+(pb-disc/relax (1))
+(pb-disc/solve? (#t))
+(pb-disc/n-pb-disc 2)
+(pb/sg-pb-smm? #f)
+(pb/sg-pb-qmom? #f)
+(pb/sg-pb-disc? #f)
+(pb/coalescence-rate 0)
+(pb/growth-rate 0)
+(pb/nucleation-rate 0)
+(pb/phenomenon (#f #f #f #f #f))
+(pb/domain-id 3)
+(mp/population-b? #f)
+(density/scheme 0)
+(density/relax 1)
+(mp/multi-domain? #t)
+(granular-temperature/secondary-gradient? #f)
+(granular-temperature/syam-algebraic? #t)
+(granular-temperature/amg-stabilization 0)
+(granular-temperature/amg-method 0)
+(granular-temperature/cycle-type 0)
+(granular-temperature/amg-beta 0.7)
+(granular-temperature/amg-alpha 0.1)
+(granular-temperature/scheme 0)
+(granular-temperature/relax 0.2)
+(granular-temperature/solve? #t)
+(granular/pde? #f)
+(granular-pressure/pp? #f)
+(mp-rsm-type 0)
+(mp-sig-v 0.75)
+(mp-kec3 1.3)
+(mp-ke-type 0)
+(drift/relax 0.1)
+(drift/solve? #t)
+(mp/cvt/n-bubbles 10000)
+(mp/cvt/vapor-p 2367.8)
+(mp/cvt/cav-p-coeff-v62 1)
+(mp/cvt/cav_p_coeff 1)
+(mp/cvt/surface-tension 0.0717)
+(mp/cvt/con-coeff-mspe 1)
+(mp/cvt/con-coeff 0.01)
+(mp/cvt/evap-coeff 0.02)
+(mp/cvt/ncg-molecular-weight 29)
+(mp/cvt/ncgs-mspe 1.5e-05)
+(mp/cvt/non-condensable-gas 1.5e-05)
+(mp/cvt/operating-temperature 300)
+(cvt/total-gas-vof? #t)
+(cvt/gui-new? #t)
+(cvt/model-new? #t)
+(cvt/rho-mixture? #f)
+(cvt/model-v5? #f)
+(cvt/relax-par 1)
+(cvt/relax 1)
+(mp/mt/udf/linearized? #f)
+(mp/rc-flux-solids-p? #t)
+(mp/htrxn/heat-transfer? #t)
+(mp/htrxn/mom-transfer? #t)
+(mp/mt/heat-transfer? #t)
+(mp/mt/mom-transfer? #t)
+(mp/mass-trans-type 0)
+(mp/terminal-velocity 0)
+(mp/cn-scheme-alpha 0.55)
+(mp/cn-scheme? #f)
+(mp/extrap-p? #f)
+(mp/amg-stabilization 0)
+(mp/amg-method 0)
+(mp/cycle-type 0)
+(mp/amg-beta 0.7)
+(mp/amg-alpha 0.1)
+(mp/scheme 0)
+(mp/max-iter 5)
+(mp/residual-tolerance 0.0001)
+(mp/iter-tolerance 0.05)
+(mp/explicit-relax 1)
+(mp/relax 0.2)
+(mp/courant-number 0.25)
+(mp/scheme-type 1)
+(mp/every-iter? #f)
+(mp/solve? #t)
+(mp/min-phase-number 2)
+(mp/n-materials 1)
+(mp/frozen-flux? #f)
+(sg-vflux? #f)
+(mxt-drift-dispersion? #f)
+(mp/coupled-drag 0)
+(mp-drift-source-ke? #f)
+(mp-drift-source-mom? #f)
+(mp/face-pressure? #t)
+(mp/ref 0)
+(mp/fpi 1)
+(oc-po-list ())
+(oc-mfi-list ())
+(oc-pi-list ())
+(vof/ntime-froud-update 1)
+(vof/niter-froud-update 50)
+(vof/open-channel? #f)
+(vof/node-alloc-oc? #f)
+(vof/smoothing-factor 1)
+(vof/smoothing-num 1)
+(vof/node-based-gradients? #t)
+(vof/node-based-deriv? #f)
+(piso/pboundary/update-flux? #f)
+(face-pressure/scheme 0)
+(piso/scheme 0)
+(pressure/node-based-pp-grad 1)
+(pressure/skew-relax 1)
+(piso/coupling? #t)
+(piso/neighbor-iter 1)
+(frstep/skew-iter 0)
+(simplec/skew-iter 0)
+(piso/skew-iter 1)
+(flow/scheme 20)
+(udm/n-udm 0)
+(udm/patch ())
+(uds/variables ())
+(uds/diffusion-long? #f)
+(uds/inlet-diffusion? #t)
+(uds/default (0))
+(uds/patch (0))
+(uds/amg-stabilization (0))
+(uds/amg-method (0))
+(uds/cycle-type (0))
+(uds/amg-beta (0.7))
+(uds/amg-alpha (0.1))
+(uds/scheme (0))
+(uds/relax (1))
+(uds/solve? (#t))
+(uds/n-uds 0)
+(dqmom-iem/explicit-relax 1)
+(dqmom-iem/residual-tolerance 0.0001)
+(dqmom-iem/iter-tolerance 0.05)
+(dqmom-iem/liquid-stream? #f)
+(dqmom-iem/corr-limit 1)
+(dqmom-iem/correct? #t)
+(dqmom-iem/nmodes 2)
+(dqmom-iem/relax 1)
+(dqmom-iem/scheme 0)
+(dqmom-modes/default (0))
+(dqmom-iem/solve? #t)
+(dqmom-iem/amg-stabilization 0)
+(dqmom-iem/amg-method 0)
+(dqmom-iem/cycle-type 0)
+(dqmom-iem/amg-beta 0.7)
+(dqmom-iem/amg-alpha 0.1)
+(dqmom-iem/max-iter 5)
+(pdf-transport/bc-species ("h2o" "o2" "n2"))
+(pdf-transport/bc ((300 300) (#t) ((o2 0 0.233) (n2 0 0.767))))
+(pdf-transport-euler? #f)
+(pdf-transport-lag? #t)
+(stiff-chem-seg-dt 0.1)
+(stiff-chem-seg? #f)
+(stiff-solver/temp-time-redux 0.25)
+(stiff-solver/chem-time-ratio 0.9)
+(stiff-solver? #f)
+(species/heat-of-reaction 0)
+(species/save-gradients? #f)
+(species/kinetics/trans-file? #f)
+(species/kinetics/cell-monitor-list ())
+(species/kinetics/arbit-value 0)
+(species/kinetics/arbit-string "")
+(species/kinetics/aux-file "")
+(species/kinetics/cons-noneg-mf 1)
+(species/kinetics/small-plus 1e-12)
+(species/kinetics/min-surf-mf -0.0001)
+(species/kinetics/max-surf-mf 1.1)
+(species/kinetics/min-gas-mf -1e-12)
+(species/kinetics/max-gas-mf 1.01)
+(species/kinetics/steady-max-attempts 1)
+(species/kinetics/init-time-step 0)
+(species/kinetics/min-time-step 1e-10)
+(species/kinetics/max-time-step 0.01)
+(species/kinetics/steady-time-step 0.0001)
+(species/kinetics/steady-time-marching 1)
+(species/kinetics/surf-rel-tol 0.0001)
+(species/kinetics/surf-abs-tol 1e-08)
+(species/kinetics/gas-rel-tol 0.0001)
+(species/kinetics/gas-abs-tol 1e-08)
+(species/kinetics/print-level 0)
+(species/carm 0)
+(species/chem-step-ensemble? #f)
+(species/kinetics? #f)
+(species/chemical-equilibrium? #f)
+(chemkin-names ("chemkin-import" "" "" "" ""))
+(species/isat-file "/home/sm/prism-meshes/Square_Uni")
+(species/isat-dtref 0.001)
+(species/isat-verbosity 0)
+(species/isat-stomby 100)
+(species/isat-errtol 0.001)
+(species/isat-ntree 1)
+(species/isat? #t)
+(species/ode-rtol 1e-09)
+(species/ode-atol 1e-08)
+(species/edc-apmax-fac 0)
+(species/edc-reactor-type 1)
+(species/edc-niter 1)
+(species/edc-c2 0.40825)
+(species/edc-c1 2.1377)
+(species/edc? #f)
+(species/thermal-diffusion? #f)
+(species/multicomponent-diffusion? #f)
+(species/inlet-diffusion? #t)
+(species/surface-heat-react? #t)
+(species/sct 0.7)
+(reactions/relax 1)
+(reactions/solve? #t)
+(species/reaction-model "finite-rate")
+(species/default (0))
+(species/patch (0))
+(species/amg-stabilization (0))
+(species/amg-method (0))
+(species/cycle-type (0))
+(species/amg-beta (0.7))
+(species/amg-alpha (0.1))
+(species/max-iter (5))
+(species/residual-tolerance (0.0001))
+(species/iter-tolerance (0.05))
+(species/explicit-relax (1))
+(species/scheme (0))
+(species/relax (1))
+(species/solve? (#t))
+(enthalpy/default 0)
+(enthalpy/patch 0)
+(enthalpy/amg-stabilization 0)
+(enthalpy/amg-method 0)
+(enthalpy/cycle-type 0)
+(enthalpy/amg-beta 0.7)
+(enthalpy/amg-alpha 0.1)
+(enthalpy/max-iter 5)
+(enthalpy/residual-tolerance 0.0001)
+(enthalpy/iter-tolerance 0.05)
+(enthalpy/explicit-relax 1)
+(enthalpy/scheme 0)
+(enthalpy/relax 1)
+(enthalpy/solve? #t)
+(solar/filename "")
+(solar/binary? #t)
+(solar/frequency-data 0)
+(sol/apply-do-bc? #f)
+(sol/load-on-fluid? #f)
+(sol/iterations 10)
+(sol/max_level 7)
+(sol/initial-time? #f)
+(sol/method-trans 0)
+(sol/nrel? #f)
+(sol/cx 0.2)
+(sol/sin_altitude 0.2)
+(sol/rho_g 0.2)
+(sol/sunshine_frac 1)
+(sol/scat_frac 1)
+(sol/diffuse-entry-angle? #f)
+(sol/diff_angle 1.0471974)
+(sol/method-diff_int ())
+(sol/method-intensity ())
+(sol/diff_int 200)
+(sol/intensity 1423)
+(sol/dir-from-calc #t)
+(sol/sun_z 1)
+(sol/sun_y 0)
+(sol/sun_x 0)
+(sol/split 0.5)
+(solpos/longitude -1.4770719)
+(solpos/latitude 0.23823741)
+(solpos/timezone -5)
+(solpos/minute 0)
+(solpos/hour 13)
+(solpos/month 6)
+(solpos/day 21)
+(sol/east_z 0)
+(sol/east_y 0)
+(sol/east_x 1)
+(sol/north_z 0)
+(sol/north_y 1)
+(sol/north_x 0)
+(solar/solve? #f)
+(disco/normal-collimated-beam? #f)
+(disco/solar? #f)
+(disco/coupled-verbosity 0)
+(hybrid/do-rosseland? #f)
+(disco/amg-tolerance 1e-06)
+(disco/bands ())
+(disco/inner-iterations 2)
+(disco/reduced-storage? #f)
+(disco/pixel/nphi 1)
+(disco/pixel/ntheta 1)
+(disco/interior-pixels? #f)
+(disco/nphi 2)
+(disco/ntheta 2)
+(disco/type "finite-volume")
+(disco/participating-medium? #t)
+(disco/blending-factor 1)
+(disco/scheme 0)
+(disco/amg-min-cycles 2)
+(disco/amg-stabilization 0)
+(disco/amg-method 0)
+(disco/cycle-type 0)
+(disco/amg-beta 0.7)
+(disco/amg-alpha 0.1)
+(disco/relax 1)
+(disco/solve-method 0)
+(disco/partially-specular? #t)
+(disco/partial-solve? #f)
+(disco/full-solve? #t)
+(disco/coupled-fine-iter 5)
+(disco/coupled? #f)
+(disco/solve? #t)
+(g/default 0)
+(g/patch 0)
+(p1/amg-stabilization 0)
+(p1/amg-method 0)
+(p1/cycle-type 0)
+(p1/amg-beta 0.7)
+(p1/amg-alpha 0.1)
+(p1/relax 0.8)
+(p1/solve? #t)
+(mpcci-update-interval 1)
+(s2s/partial-enclosure-emissivity 1)
+(s2s/partial-enclosure-t 300)
+(s2s/dual? #t)
+(s2s/fast-parallel? #t)
+(s2s/new-algo? #t)
+(s2s/viewfactor-crf? #t)
+(s2s/viewfactor-compression? #t)
+(s2s/partial-enclosure? #f)
+(s2s/vf-loadbalance -1)
+(s2s/vf-use-bsp 0)
+(s2s/vf-sampling-method 0)
+(s2s/vf-partial-asink 1)
+(s2s/vf-partial-enclosure 0)
+(s2s/vf-simple-enclosure 0)
+(s2s/vf-hemi-separation 5)
+(s2s/vf-hemi-subdivide 10)
+(s2s/vf-hemi-resolution 10)
+(s2s/vf-smoothing-tol 1e-06)
+(s2s/vf-smoothing-iter 100)
+(s2s/vf-smoothing 0)
+(s2s/vf-method 1)
+(s2s/vf-type 1)
+(s2s/glob-file "")
+(s2s/split-angle 20)
+(s2s/glob-expert? #f)
+(s2s/flow-face-glob-size 1)
+(s2s/glob-size 1)
+(s2s/tol 0.001)
+(s2s/n-sweeps 5)
+(s2s/n-iter 10)
+(vfr/partial-enclosure-emissivity 1)
+(vfr/partial-enclosure-t 300)
+(vfr/partial-enclosure? #f)
+(dtrm/solve? #f)
+(dtrm/rays-file "")
+(dtrm/face-glob-size 1)
+(dtrm/glob-size 1)
+(dtrm/tol 0.001)
+(dtrm/n-sweeps 1)
+(dtrm/n-iter 10)
+(enable-beta-rad-features? #f)
+(temperature/explicit-relax? #f)
+(temperature/shell-secondary-gradient? #t)
+(temperature/secondary-gradient? #t)
+(temperature/skew-grid? #f)
+(temperature/max-limit 5000)
+(temperature/min-limit 1)
+(temperature/default 300)
+(temperature/patch 0)
+(temperature/amg-stabilization 0)
+(temperature/amg-method 0)
+(temperature/cycle-type 0)
+(temperature/amg-beta 0.7)
+(temperature/amg-alpha 0.1)
+(temperature/max-iter 5)
+(temperature/residual-tolerance 0.0001)
+(temperature/iter-tolerance 0.05)
+(temperature/explicit-relax 1)
+(temperature/scheme 0)
+(temperature/relax 1)
+(temperature/solve? #t)
+(energy/inlet-diffusion? #t)
+(energy/user-definable-cp? #f)
+(energy/kinetic? #f)
+(energy/pressure-work? #f)
+(energy/conservative-form? #t)
+(energy/species-diffusion? #t)
+(low-pressure-slip? #f)
+(viscous-energy-dissipation? #f)
+(continuity/surf-spe-source? #f)
+(time_factor_site 1)
+(porous/physical-velocity-form? #f)
+(sigma-sbc 5.669e-08)
+(pressure/conv-relax? #f)
+(pressure/unsteady-rc 1)
+(pressure/mp-dissipation? #t)
+(pressure/rc-dissipation-new? #t)
+(pressure/dissipation? #f)
+(pressure/enthalpy-correct? #f)
+(pressure/frozen-flux? #f)
+(pressure/unsteady? #t)
+(pressure/isotrop-rc? #f)
+(pressure/ho-rc-disable? #f)
+(pressure/ho-rc 2)
+(pressure/presto-low-order? #f)
+(pressure/extrapolate-inlet? #t)
+(pressure/extrapolate-all? #f)
+(pressure/mp-4th-order-dissipation 1)
+(pressure/ap-weighted-face-pressure 0)
+(pressure/cpl-omega-vofvof 1)
+(pressure/cpl-omega-vofv 1)
+(pressure/cpl-omega-vofp 1)
+(pressure/cpl-omega-vvof 1)
+(pressure/cpl-omega-pvof 1)
+(pressure/cpl-omega-flux 1)
+(pressure/cpl-courant-number 200)
+(pressure/cpl-omega-vv 1)
+(pressure/cpl-omega-pp 1)
+(pressure/cpl-omega-pv 1)
+(pressure/cpl-omega-vp 1)
+(pressure/omega-p-conv-mp 1)
+(pressure/cpl-expl-omega-p 1)
+(pressure/cpl-expl-omega-v 1)
+(pressure/coupled-vof-delta-form? #f)
+(pressure-coupled-mp/update-pgrad? #t)
+(pressure-coupled/implicit-dissipation-bndr? #t)
+(pressure-coupled/implicit-dissipation? #t)
+(pressure-coupled/update-pgrad? #t)
+(pressure-coupled/update-deriv? #t)
+(pressure-coupled/pressure/explicit-relax 0.75)
+(pressure-coupled/mom/explicit-relax 0.75)
+(pressure-coupled/courant-number 200)
+(pressure-coupled/restart? #f)
+(pressure-coupled/omega 1)
+(pressure-coupled/amg-stabilization 0)
+(pressure-coupled/amg-method 0)
+(pressure-coupled/cycle-type 3)
+(pressure-coupled/amg-beta 0.7)
+(pressure-coupled/amg-alpha 0.1)
+(pressure/coupled-nonlinear? #f)
+(pressure/coupled-pressure-delta-form? #t)
+(pressure/coupled-velocity-delta-form? #t)
+(pressure/coupled-dissipation 0)
+(pressure/coupled-available? #f)
+(pressure/max-iter 10)
+(pressure/residual-tolerance 0.0001)
+(pressure/iter-tolerance 0.25)
+(pressure/max-limit 5e+10)
+(pressure/min-limit 1)
+(pressure/default 0)
+(pressure/patch 0)
+(pressure/amg-stabilization 0)
+(pressure/amg-method 0)
+(pressure/cycle-type 1)
+(pressure/amg-beta 0.7)
+(pressure/amg-alpha 0.1)
+(cavitation/pressure-bc? #t)
+(cavitation/enhancement? #t)
+(compress-p/relax? #f)
+(pressure-correction/relax-enhance 0.1)
+(pressure-correction/relax-drdp 1)
+(pressure-correction/relax 0.7)
+(pressure/explicit-relax 1)
+(pressure/relax 0.3)
+(pressure/scheme 10)
+(2nd-order-time/blend-factor 1.5)
+(2nd-order-time/bounded? #t)
+(z-velocity/default 0)
+(y-velocity/default 0)
+(x-velocity/default 0)
+(z-velocity/patch 0)
+(y-velocity/patch 0)
+(x-velocity/patch 0)
+(z-mom/amg-stabilization 0)
+(z-mom/amg-method 0)
+(z-mom/cycle-type 0)
+(z-mom/amg-beta 0.7)
+(z-mom/amg-alpha 0.1)
+(y-mom/amg-stabilization 0)
+(y-mom/amg-method 0)
+(y-mom/cycle-type 0)
+(y-mom/amg-beta 0.7)
+(y-mom/amg-alpha 0.1)
+(x-mom/amg-stabilization 0)
+(x-mom/amg-method 0)
+(x-mom/cycle-type 0)
+(x-mom/amg-beta 0.7)
+(x-mom/amg-alpha 0.1)
+(mom/extrapolate-outflow? #f)
+(mom/rot-cyclic-explicit? #t)
+(mom/from-flux? #t)
+(mom/nita/update-derivatives? #t)
+(mom/nita-flux-update? #t)
+(mom/update-flux-subiter? #f)
+(mom/max-iter 5)
+(mom/residual-tolerance 0.0001)
+(mom/iter-tolerance 0.05)
+(mom/scheme 0)
+(mom/explicit-relax 1)
+(mom/relax 0.7)
+(explicit-relaxation? #f)
+(implicit-relaxation? #t)
+(noniterative-max-iter 1)
+(noniterative-time-advance? #f)
+(old-unsteady-flux? #t)
+(roe-dissipation? #f)
+(solve-absolute-velocities? #t)
+(correct-velocity? #t)
+(flow/solve? #t)
+(residuals/convergence-criterion-type 0)
+(residuals/scale? #t)
+(residuals/normalize? #f)
+(residuals/debug? #f)
+(residuals/n-display 1000)
+(residuals/n-save 1000)
+(residuals/window 0)
+(residuals/plot? #f)
+(residuals/print? #t)
+(residuals/n-maximize-norms 5)
+(residuals/settings #f)
+(vof/remove-small-bubbles? #f)
+(vof/redistribute-lost-volume? #t)
+(vof/use-polyhedra? #t)
+(vof/improved-wall-treatment? #t)
+(vof/courant-calculation-method 1)
+(vof/courant-based-time-step? #f)
+(vof/global-courant-number 2)
+(vof/update-method 4)
+(patch/m1-m2? #t)
+(patch/vof? #f)
+(patch-relative? #t)
+(init-relative? #t)
+(profile/morphing? #f)
+(profile/update-interval 1)
+(udrg/libname "")
+(real-gas/mixturefilename "")
+(real-gas/datafiles-list ())
+(real-gas/datanames-list ())
+(real-gas/dataname "")
+(real-gas/datadir "")
+(real-gas/libdir "")
+(user-real-gas-multi-component? #f)
+(user-real-gas? #f)
+(real-gas-multi-component? #f)
+(real-gas? #f)
+(udf/pb-coalescence-rate-name "Luo Model")
+(udf/pb-break-up-rate-name "Luo Model")
+(udf/pb-growth-rate-name "constant")
+(udf/pb-nucleation-rate-name "constant")
+(udf/deltat-fcn "none")
+(udf/solar-trans "none")
+(udf/dom/specular-reflectivity "none")
+(udf/dom/diffuse-reflectivity "none")
+(udf/dom/bc-adjust "none")
+(udf/dom/source-fcn "none")
+(udf/viscous/wall-law-fcn "none")
+(udf/viscous/prt-t-wall-fcn "none")
+(udf/viscous/prt-t-fcn "none")
+(udf/viscous/prt-o-fcn "none")
+(udf/viscous/prt-d-fcn "none")
+(udf/viscous/prt-k-fcn "none")
+(udf/viscous/mu-t-fcn "none")
+(udf/cphi-fcn "none")
+(udf/chem-step-fcn "none")
+(udf/cav-rate-fcn "none")
+(udf/sox-rate-fcn "none")
+(udf/nox-rate-fcn "none")
+(udf/execute-at-exit-fcns ())
+(udf/write-data-fcns ())
+(udf/read-data-fcns ())
+(udf/write-case-fcns ())
+(udf/read-case-fcns ())
+(udf/drift-diam-fcn "constant")
+(udf/dpm/n-reals 0)
+(udf/dpm/timestep-fcn "none")
+(udf/dpm/spray-collide-fcn "none")
+(udf/dpm/scalar-fcn "none")
+(udf/dpm/erosion-fcn "none")
+(udf/dpm/output-fcn "none")
+(udf/dpm/source-fcn "none")
+(udf/dpm/body-force-fcn "none")
+(udf/dpm/drag-fcn "none")
+(udf/heat-flux-fcn "none")
+(udf/trb-prmx-src-fcn "none")
+(udf/pr-rate-fcn "none")
+(udf/sr-rate-fcn "none")
+(udf/vr-rate-fcn "none")
+(udf/net-reaction-rate-fcn "none")
+(udf/execute-at-end-fcns ())
+(udf/adjust-fcns ())
+(udf/init-fcns ())
+(udf/libname ())
+(udf/listing? #f)
+(udf/stack-size 10000)
+(udf/cpp-command "cpp")
+(udf/use-contrib-cpp? #f)
+(udf/filename "")
+(user-fan/program-name "fan-model")
+(user-fan/update-interval 10)
+(user-fan/profile-points 20)
+(user-fan/fan-zones ())
+(title "")
+(mesh/use-tweaked-centroids? #f)
+(polyhedra/verbosity 0)
+(polyhedra/skewness/max-cell-skew 0.9)
+(polyhedra/fast-io-migration/threshold 500000)
+(polyhedra/fast-io-migration/tmp-file-location "")
+(polyhedra/fast-io-migration? #t)
+(polyhedra/smoothing/squish-threshold 0.8)
+(polyhedra/smoothing/relax-bad 0.05)
+(polyhedra/smoothing/no-iter-bad 200)
+(polyhedra/smoothing/relax-all 0.1)
+(polyhedra/smoothing/no-iter-all 4)
+(polyhedra/dual/detect-gaps? #t)
+(polyhedra/dual/skew-threshold -1)
+(polyhedra/modified-dual-on-faces? #f)
+(polyhedra/modified-dual-alpha 1)
+(polyhedra/modified-dual-threshold -1)
+(polyhedra/preserve-boundary-faces? #f)
+(polyhedra/conversion-feature-angle -1)
+(dynamesh/ic3m/import? #f)
+(dynamesh/ic3m/length-scaling 0.001)
+(dynamesh/ic3m/last-event 0)
+(dynamesh/ic3m/max-number-of-nodes 0)
+(dynamesh/timing/output 0)
+(dynamesh/timing? #f)
+(dynamesh/motion-history/basename "cav32")
+(dynamesh/motion-history? #f)
+(dynamesh/in-cyn/delta-angle 0.5)
+(dynamesh/in-cyn/event-list ())
+(dynamesh/in-cyn/piston-data (0 0))
+(dynamesh/in-cyn/minimum-stroke 0)
+(dynamesh/in-cyn/minimum-lift 0)
+(dynamesh/in-cyn/crank-period 1e+10)
+(dynamesh/in-cyn/crank-start-angle 0)
+(dynamesh/in-cyn/crank-rpm 0.16666667)
+(dynamesh/in-cyn/crank-angle 0)
+(dynamesh/models/ic3m? #f)
+(dynamesh/models/sdof? #f)
+(dynamesh/models/pump2.5d? #f)
+(dynamesh/models/in-cylinder? #f)
+(dynamesh/method/remesh? #f)
+(dynamesh/method/layering? #f)
+(dynamesh/method/spring? #t)
+(dynamesh/motion/mark-adjacent-zones #t)
+(dynamesh/improved-interpolation? #f)
+(dynamesh/local-conserve-bits 0)
+(dynamesh/global-conserve-bits 65535)
+(dynamesh/correct-dvolume-dt? #f)
+(dynamesh/dynamic-zones ())
+(dynamesh/steady/optional-remesh-after-moving? #f)
+(dynamesh/steady/n-iter 0)
+(dynamesh/steady/pseudo-time-step 1)
+(dynamesh/adapt/readapt-after-remeshing? #t)
+(dynamesh/adapt/move-adapted-cells? #t)
+(dynamesh/remesh/repartition-interface-threshold 10)
+(dynamesh/remesh/repartition-load-threshold 20)
+(dynamesh/remesh/repartition-interval 20)
+(dynamesh/remesh/repartition-auto? #t)
+(dynamesh/remesh/verbosity 0)
+(dynamesh/remesh/remesh-size-interval 10)
+(dynamesh/remesh/sizing-function? #f)
+(dynamesh/remesh/surfer-improve-method 0)
+(dynamesh/remesh/init-add-nodes? #t)
+(dynamesh/remesh/circumsphere-tolerance 1e-07)
+(dynamesh/remesh/sliver-size 1e-18)
+(dynamesh/remesh/remesh-sweep 5)
+(dynamesh/remesh/remesh-scheme 4)
+(dynamesh/remesh/agglomeration-scheme 1)
+(dynamesh/remesh/perturb-cavity-nodes? #f)
+(dynamesh/remesh/face-loop-correction? #t)
+(dynamesh/remesh/face-v6.1? #f)
+(dynamesh/remesh/face-on-demand? #f)
+(dynamesh/remesh/swap-iteration 4)
+(dynamesh/remesh/swap-angle 100)
+(dynamesh/remesh/height-relax-factor 0.4)
+(dynamesh/remesh/must-improve-skewness? #t)
+(dynamesh/remesh/max-thread-skew 0.98)
+(dynamesh/remesh/max-face-skew 0.7)
+(dynamesh/remesh/max-length-scale 1000)
+(dynamesh/remesh/min-length-scale 0)
+(dynamesh/refine/vol-max -1000)
+(dynamesh/collapse/vol-min -1000)
+(dynamesh/boundary/project-deforming-nodes-twice? #f)
+(dynamesh/boundary/project-deforming-nodes? #t)
+(dynamesh/boundary/node-relax 1)
+(dynamesh/spring/face-node-skewness 0.6)
+(dynamesh/spring/all-element-type? #f)
+(dynamesh/spring/boundary-stiffness 1)
+(dynamesh/grid/epsilon 0.001)
+(dynamesh/grid/itermax 20)
+(dynamesh/grid/relax 1)
+(dynamesh/layering/constant-height #t)
+(dynamesh/layering/omega-col 0.04)
+(dynamesh/layering/omega 0.4)
+(dynamesh/omega 0)
+(dynamesh/node-grids ())
+(sizing-function/post-processing-thread -1)
+(sizing-function/zonal-edge-size-limits ())
+(sizing-function/boundary-threshold 0.1)
+(sizing-function/variation-rate -2)
+(sizing-function/smoothing? #t)
+(centrifugal/density-ratio 0)
+(centrifugal/exit-radius 0)
+(centrifugal-init? #f)
+(max-iterations-per-step 20)
+(gen-nrbc/sig2 5)
+(gen-nrbc/sig 0.15)
+(gen-nrbc/on? #f)
+(bc/convection-z-velocity 0)
+(bc/convection-y-velocity 0)
+(bc/convection-x-velocity 1)
+(bc/convective-outflow? #f)
+(nonconformal/interface-zone-types ())
+(nonconformal/coupled-fluid-zones ())
+(nonconformal/auto-detect-interface-type? #f)
+(nonconformal/new-proximity-algo? #f)
+(nonconformal/smallest-polygon-size 1e-10)
+(nonconformal/fast-intersection-lookup? #f)
+(nonconformal/ignore-proximity-test? #f)
+(nonconformal/verbosity 0)
+(nonconformal/correct-virtpoly-face-handedness? #f)
+(nonconformal/virtual-polygons? #t)
+(nonconformal/mixed-faces 0)
+(nonconformal/sm-node-match-tol 0.05)
+(nonconformal/sm-bound-match-tol 0.05)
+(nonconformal/sm-match-tol 0.05)
+(nonconformal/allow-interface-at-periodic-boundary 1)
+(nonconformal/force-bound-tol 0.4)
+(nonconformal/force-shared-nodes-to-boundary 1)
+(nonconformal/check-bound-match 1)
+(nonconformal/common-edges 0)
+(nonconformal/cell-faces 0)
+(nonconformal/feature-angle 100)
+(nonconformal/proj-move-node-tol 0.1)
+(nonconformal/boundary-move-node-tol 0.1)
+(nonconformal/move-node-tol 0.1)
+(nonconformal/max-surface-distance-tol 0.3)
+(sliding-interfaces ())
+(user-defined-db-name "")
+(user-defined-database? #f)
+(materials ((air fluid (chemical-formula . #f) (density (constant . 1)) (specific-heat (constant . 1006.43) (polynomial piecewise-polynomial (100 1000 1161.4821 -2.3688189 0.014855111 -5.0349093e-05 9.9285696e-08 -1.1110966e-10 6.540196e-14 -1.5735877e-17) (1000 3000 -7069.8141 33.706051 -0.058127595 5.4216153e-05 -2.9366789e-08 9.2375332e-12 -1.5655534e-15 1.1123349e-19))) (thermal-conductivity (constant . 0.0242)) (viscosity (constant . 1) (sutherland 1.716e-05 273.11 110.56) (power-law 1.716e-05 273.11 0.666)) (molecular-weight (constant . 28.966)) (lennard-jones-length (constant . 3.711)) (lennard-jones-energy (constant . 78.6)) (thermal-accom-coefficient (constant . 0.9137)) (velocity-accom-coefficient (constant . 0.9137)) (therm-exp-coeff (constant . 0)) (degrees-of-freedom (constant . 0)) (speed-of-sound (none . #f))) (aluminum solid (chemical-formula . al) (density (constant . 2719)) (specific-heat (constant . 871)) (thermal-conductivity (constant . 202.4)) (formation-entropy (constant . 164448.08)) (electric-conductivity (constant . 35410000)) (magnetic-permeability (constant . 1.257e-06)))))
+(proximity/threads ())
+(proximity/faces-per-twig 50)
+(partition/multi-constraint-partition 0)
+(partition/particle-weight 0)
+(partition/minimum-elements-for-parallel-sort 0)
+(partition/auto/force? #f)
+(partition/auto/load-vector ())
+(partition/auto/across-zones? #t)
+(partition/auto/pre-test? #f)
+(partition/counter-last-partition 0)
+(partition/total-interface-percentage 0)
+(partition/auto/use-default? #t)
+(partition/auto/method "Principal Axes")
+(partition/zonal-methods ())
+(partition/stored/method "Principal Axes")
+(partition/active/method "Principal Axes")
+(partition/reorder? #f)
+(partition/metis-agglomerate? #t)
+(partition/encapsulate-node-pairs? #t)
+(partition/load-vector ())
+(partition/across-zones? #t)
+(partition/interface-owner -1)
+(partition/encapsulate-si? #f)
+(partition/encapsulate-owner -1)
+(partition/encapsulate-shell-level -1)
+(partition/encapsulate-si-level -1)
+(partition/recompute-si-flux? #f)
+(partition/require-encapsulation? #f)
+(partition/restrict-children? #t)
+(partition/verbosity 1)
+(partition/origin/z 0)
+(partition/origin/y 0)
+(partition/origin/x 0)
+(partition/pre-test? #f)
+(partition/smooth-iter 3)
+(partition/smooth? #t)
+(partition/merge-iter 3)
+(partition/merge? #f)
+(partition/expert? #f)
+(partition/cell-function "")
+(parallel/comm-type 1)
+(parallel/dump-face-send-buffer-size 8)
+(parallel/encapsulate-shell? #f)
+(parallel/new-err-handle #t)
+(parallel/remote-shell-cmd "default")
+(parallel/remote-shell 0)
+(parallel/remote-arch "auto")
+(parallel/migrate-si-after-adaption? #t)
+(parallel/claim-host-not-filled? #f)
+(parallel/mpi-io? #f)
+(parallel/data-read-write-in-chunks? #t)
+(parallel/fast-read-section? #t)
+(parallel/fast-read-case? #t)
+(parallel/fast-io? #f)
+(parallel/lam-shutdown-before-exit? #f)
+(parallel/init-io-buffers-before-read? #t)
+(parallel/case-read-use-pack? #t)
+(parallel/debug-case? #f)
+(parallel/auto-spawn? #t)
+(parallel/rc-failed? #f)
+(parallel/balance-adaption? #t)
+(parallel/niter-balance-auto 25)
+(parallel/niter-balance 0)
+(parallel/balance-on-kill #t)
+(parallel/enable-balance #f)
+(parallel/trace-level 0)
+(parallel/read-mesh? #f)
+(parallel/gprof? #f)
+(parallel/max-spawn 8)
+(parallel/time-out 50)
+(parallel/nprocs_string "")
+(parallel/ruser "")
+(parallel/rhost "")
+(parallel/path "")
+(parallel/function "")
+(parallel/sync-interval 10)
+(parallel/print-verbosity 1)
+(parallel/max-messages 16)
+(parallel/mask ())
+(parallel/hostsfile "")
+(parallel/machines ())
+(case/save-id? #f)
+(checkpoint/time-step? #f)
+(checkpoint/exit? #f)
+(checkpoint/write-case? #t)
+(checkpoint/restart-filename "")
+(checkpoint/filename "")
+(case-config ((rp-seg? . #t) (rp-acoustics? . #f) (rp-atm? . #f) (rp-axi? . #f) (rp-des? . #f) (rp-dpm-cache? . #f) (rp-unsteady? . #f) (rp-dual-time? . #f) (rp-amg? . #f) (rf-energy? . #f) (rp-hvac? . #f) (rp-inviscid? . #f) (rp-ke? . #f) (rp-kklw? . #f) (rp-kw? . #f) (rp-lam? . #t) (rp-les? . #f) (rp-lsf? . #f) (rp-net? . #f) (rp-react? . #f) (rp-sa? . #f) (rp-sge? . #f) (rp-spe? . #f) (rp-spe-part? . #f) (rp-spe-site? . #f) (rp-spe-surf? . #f) (rp-trb-scl? . #f) (rp-turb? . #f) (rp-absorbing-media? . #f) (rp-visc? . #t) (rp-v2f? . #f) (sg-cylindrical? . #f) (sg-disco? . #f) (sg-bee-gees? . #f) (sg-crev? . #f) (sg-dpm? . #f) (sg-dqmom-iem? . #f) (sg-dtrm? . #f) (sg-dynmesh? . #f) (sg-ignite? . #f) (sg-network? . #f) (sg-noniterative? . #f) (sg-nox? . #f) (sg-melt? . #f) (sg-micro-mix? . #f) (sg-mphase? . #f) (sg-p1? . #f) (sg-par-premix? . #f) (sg-pb? . #f) (sg-pdf? . #f) (sg-pdf-transport? . #f) (sg-premixed? . #f) (sg-pull? . #f) (sg-rosseland? . #f) (sg-rsm? . #f) (sg-s2s? . #f) (sg-soot? . #f) (sg-sox? . #f) (sg-spark? . #f) (sg-swirl? . #f) (sg-udm? . #f) (sg-uds? . #f) (sg-vfr? . #f) (sg-solar? . #f) (sg-wetsteam? . #f) (sg-moistair? . #f) (rp-3d? . #f) (rp-double? . #t) (rp-graphics? . #t) (rp-host? . #f) (rp-thread? . #f) (dpm-cache? . #t)))
+(sampling-chunk 1)
+(iteration-chunk 1)
+(reference-thread -1)
+(reference-gamma 1.4)
+(reference-viscosity 1.7894e-05)
+(reference-velocity 1)
+(reference-temperature 288.16)
+(reference-pressure 0)
+(reference-length 1)
+(reference-enthalpy 0)
+(reference-density 1.225)
+(reference-depth 1)
+(reference-area 1)
+(reorder/across-zone? #f)
+(reorder/boundary-thread-ids ())
+(reorder-expert? #f)
+(reorder/method "reverse-cuthill-mckee")
+(reorder/reordered 0)
+(pressure-reference/z 0)
+(pressure-reference/y 0)
+(pressure-reference/x 0)
+(gravity/z 0)
+(gravity/y 0)
+(gravity/x 0)
+(gravity? #f)
+(operating-pressure 101325)
+(initial-operating-pressure 101325)
+(floating-operating-pressure? #f)
+(positivity-limit 0.2)
+(boundary-values? #t)
+(separate-thread-id-list ())
+(deativated-original-state ())
+(deactivated-dynamic-zones ())
+(append-rp-list ())
+(scanned-thread-list ())
+(geom-thread-id/name ())
+(reading-surface-mesh? #f)
+(grid-appending? #f)
+(grid/partitions? #f)
+(grid/level 0)
+(streamf/nit 8)
+(allow-expert-dis-schemes? #f)
+(flowf-expert? #f)
+(node/level 0)
+(adapt/reconstruct-geometry? #f)
+(adapt/yp/min 50)
+(adapt/yp/max 500)
+(adapt/yp/type 0)
+(refine/maxv 1)
+(adapt/max-passes 10)
+(adapt/region/shape "hexahedron")
+(adapt/region/inside? #t)
+(adapt/region/radius 0)
+(adapt/region/zmax 0)
+(adapt/region/zmin 0)
+(adapt/region/ymax 0)
+(adapt/region/ymin 0)
+(adapt/region/xmax 0)
+(adapt/region/xmin 0)
+(adapt/boundary/volume-decay 1)
+(adapt/boundary/volume-target 1)
+(adapt/boundary/distance-threshold 0)
+(adapt/boundary/number-of-cells 1)
+(adapt/coarsen/volume-threshold 0)
+(adapt/coarsen/all-cells-marked? #t)
+(adapt/coarsen/nodes/refn/remove-periodic? #t)
+(adapt/coarsen/nodes/refn/remove-boundary? #t)
+(adapt/coarsen/nodes/refn/remove-internal? #t)
+(adapt/coarsen/nodes/orig/remove-periodic? #f)
+(adapt/coarsen/nodes/orig/remove-boundary? #f)
+(adapt/coarsen/nodes/orig/remove-internal? #f)
+(adapt/coarsen/marker/color "cyan")
+(adapt/coarsen/marker/size 0.1)
+(adapt/coarsen/marker/symbol "@")
+(adapt/coarsen/bit 1)
+(adapt/coarsen? #f)
+(adapt/refine/marker/color "red")
+(adapt/refine/marker/size 0.1)
+(adapt/refine/marker/symbol "@")
+(adapt/refine/bit 0)
+(adapt/refine? #t)
+(adapt/hanging-node? #t)
+(adapt/dynamic/print-memory-usage? #f)
+(adapt/dynamic/security-layer-thickness 1)
+(adapt/dynamic/interval 20)
+(adapt/dynamic/list-functions ("Pressure..." "Static Pressure"))
+(adapt/dynamic/function "pressure")
+(adapt/dynamic? #f)
+(adapt/gradient/volume-weight 1)
+(adapt/gradient/normalize-per-zone? #f)
+(adapt/gradient/normalization 0)
+(adapt/gradient/method "curvature")
+(adapt/max-refine-level 2)
+(adapt/maxc 0)
+(adapt/minc 0)
+(adapt/minv 0)
+(adapt/threshold/volume-change 2.5)
+(adapt/threshold/coarsen 0)
+(adapt/threshold/refine 1e+10)
+(adapt/propogate-edge-split? #t)
+(adapt/threads ())
+(interp-method 0)
+(distance/crit 1.5)
+(prmx-adiabatic? #t)
+(prmxmu 0.26)
+(prmxa 0.52)
+(prmxcd 0.37)
+(hvac-species/sct 1)
+(hvac-keprt 0.9)
+(hvac-const 0.039)
+(drsm-kw-zeta-star 0.5)
+(drsm-kw-r-w 6.2)
+(drsm-kw-r-k 12)
+(drsm-kw-r-beta 12)
+(drsm-kw-alpha-0 0.105)
+(drsm-c2-omega 0.52)
+(drsm-c1-omega 1.8)
+(drsm-c5-ssg 0.4)
+(drsm-c4-ssg 1.25)
+(drsm-c3s-ssg 1.3)
+(drsm-c3-ssg 0.8)
+(drsm-c2-ssg 4.2)
+(drsm-c1s-ssg 1.8)
+(drsm-c1-ssg 3.4)
+(drsm-c2-wall 0.3)
+(drsm-c1-wall 0.5)
+(drsm-c2 0.6)
+(drsm-c1 1.8)
+(drsm-omega-wilcox? #t)
+(drsm-omega-based? #f)
+(drsm-ssg-ps? #f)
+(drsm-linear-ps? #t)
+(drsm-wall-factor-clip? #t)
+(drsm-ps-wall? #t)
+(drsm-lowre-epsilon? #f)
+(drsm-tke-solve? #t)
+(sst-pk-factor 10)
+(sst-v61? #f)
+(sst-kappa 0.41)
+(sst-beta-i2 0.0828)
+(sst-beta-i1 0.075)
+(sst-a1 0.31)
+(sst-sig-w2 1.168)
+(sst-sig-w1 2)
+(sst-sig-k2 1)
+(sst-sig-k1 1.176)
+(kw-sig-w 2)
+(kw-sig-k 2)
+(kw-beta-i 0.072)
+(kw-mt0 0.25)
+(kw-zeta-star 1.5)
+(kw-r-w 2.95)
+(kw-r-k 6)
+(kw-r-beta 8)
+(kw-beta-star-inf 0.09)
+(kw-alpha-0 0.11111)
+(kw-alpha-inf 0.52)
+(kw-alpha-star-inf 1)
+(kw-vorticity-pk? #f)
+(kw-set-wall-w? #f)
+(kw-shear-mod? #t)
+(kw-compress-mod? #t)
+(kw-low-re-mod? #f)
+(kw-sst-strain? #f)
+(kw-sst-on? #f)
+(kw-std-on? #t)
+(des-omega/min-limit 1e-12)
+(des-epsilon/min-limit 1e-07)
+(des-k/min-limit 1e-07)
+(des-limiter-option 3)
+(des-sst-on? #f)
+(des-rke-on? #f)
+(des-sa-on? #t)
+(p-func-jaya-on? #t)
+(trans-kw-ctaul 4360)
+(trans-kw-calpha-teta 0.035)
+(trans-kw-cw3 0.3)
+(trans-kw-cw1 0.44)
+(trans-kw-cint 0.75)
+(trans-kw-anu 6.75)
+(trans-kw-sig-w 1.17)
+(trans-kw-sig-k 1)
+(trans-kw-crnat 0.04)
+(trans-kw-ctscrit 1000)
+(trans-kw-cnatcrit 440)
+(trans-kw-ats 200)
+(trans-kw-anat 60)
+(trans-kw-c12 1e-09)
+(trans-kw-c11 3.4e-06)
+(trans-kw-cr 0.08)
+(trans-kw-cbpcrit 12)
+(trans-kw-abp 3)
+(trans-kw-clam 2.495)
+(v2f-alpha 0.6)
+(v2f-cl 0.23)
+(v2f-ceta 70)
+(v2f-c2 0.3)
+(v2f-c1 1.4)
+(v2f-enn 6)
+(v2f-kec2 1.9)
+(v2f-kec1 1.4)
+(v2f-kecmu 0.22)
+(turb-pk-compress? #f)
+(turb-non-newton-lb? #f)
+(turb-non-newton? #f)
+(wall-distance/verbosity 0)
+(wall-distance/quad-correction-aspect-ratio 500)
+(wall-distance/quad-correction? #f)
+(wall-distance-alternative? #f)
+(ke-yplus-udf 11.224708)
+(ke-elog-udf 9.793)
+(ke-rotation-model? #f)
+(ke-time-scale-clip-const? 0.6)
+(ke-time-scale-clip? #f)
+(kato-launder-on? #f)
+(rng-swirl-const 0.07)
+(rng-swirl-on? #f)
+(rng-kec2 1.68)
+(rng-kec1 1.42)
+(rng-kecmu 0.0845)
+(rng-visc-mod-on? #f)
+(rng-ke-on? #f)
+(ke-time-marching? #t)
+(ke-uncoupled? #t)
+(ke-prod-mod #f)
+(ke-source-mod #t)
+(realizable-epsilon? #f)
+(ke-realizability-on? #f)
+(ke-compress-const 1)
+(rsm-ssg-kec2 1.83)
+(rke-cmu-rotation? #f)
+(rke-kesige 1.2)
+(rke-kec2 1.9)
+(wallprt 0.85)
+(keprt 0.85)
+(kesige 1.3)
+(kesigk 1)
+(kec2 1.92)
+(kec1 1.44)
+(kecmu 0.09)
+(ke-two-layer-c-l-mu 0.33)
+(ke-two-layer-a-mu-norris 50.5)
+(ke-two-layer-a-mu 70)
+(ke-two-layer-option 1)
+(ke-two-layer-delta 40)
+(ke-two-layer-rey-c 200)
+(ke-udf-wall? #f)
+(ke-enh-wall? #f)
+(ke-non-eqm #f)
+(ke-std-wall? #t)
+(sa-des-inlet-turb-i 0)
+(sa-des-all-lengths-modified? #t)
+(sa-des-maxedge? #t)
+(rke-des-cdes 0.61)
+(sst-des-cdes 0.61)
+(sa-des-cdes 0.65)
+(nut-imp-diff? #t)
+(nut-prod-const 2)
+(nut-prod-modify? #f)
+(nut-kappa 0.41)
+(nut-cw3 2)
+(nut-cw2 0.3)
+(nut-prt 0.667)
+(nut-cv1 7.1)
+(nut-cb2 0.622)
+(nut-cb1 0.1355)
+(vm-grid-scale 1.5)
+(vm-ls-constant? #f)
+(vm-n-travel 50)
+(delta-time-sampled-wall 0)
+(delta-time-sampled-heat-flux 0)
+(delta-time-sampled-shear 0)
+(delta-time-sampled 0)
+(number-of-samples 0)
+(save-time-statistics-species ())
+(save-time-statistics-wall? #t)
+(save-time-statistics-heat-flux? #t)
+(save-time-statistics-shear? #t)
+(save-time-statistics? #f)
+(les-inlet-random? #f)
+(les-utau-newton-iter? #t)
+(les-enh-wall-fn? #t)
+(les-ww-wall? #f)
+(les-mixed-sgs-on? #f)
+(les-dynamic-const-max 0.23)
+(les-dynamic-const-clip? #t)
+(les-dynamic-species-on? #f)
+(les-dynamic-energy-on? #f)
+(les-dynamic-smag-on? #f)
+(les-dynamic-sgske-on? #f)
+(les-sgske-on? #f)
+(les-wale-sgs-on? #f)
+(les-rng-sgs-on? #f)
+(les-fvar-const 0.5)
+(les-sgske-ceps 1)
+(les-sgske-prt 1)
+(les-sgske-visc-const 0.05)
+(les-wale-const 0.325)
+(les-rng-const 0.157)
+(les-smag-const 0.1)
+(les-2d? #f)
+(les-cpld-diss-coeff 0.2)
+(test-low-diffusion-inviscid-flux? #f)
+(omega/nk 1)
+(omega/nj 0)
+(omega/ni 0)
+(omega 0)
+(residual-smoothing/iterations 0)
+(residual-smoothing/factor 0.5)
+(precon/n-update-uref2 10)
+(mg/relax-spe 1)
+(solid/relax 1)
+(recon/bc-minmax-id 1)
+(first-to-second-order-steering 0)
+(first-to-second-order-blending 1)
+(cpld/consistent-viscous-linearization? #t)
+(cpld/rdq 0.75)
+(enable-beta-dbns-features? #f)
+(cpld/aratio-cutoff 20)
+(cpld/enable-newtimestep? #f)
+(cpld/inlet-diffusion? #t)
+(recon/lim/sigp 0.05)
+(recon/lim/allneighbors? #f)
+(recon/lim/method 6)
+(recon/lim/newimpl? #f)
+(cpld-lsq-ncycles 5)
+(recon/cycle-vel-limit? #f)
+(recon/lim/list-sort? #t)
+(recon/lim/type 0)
+(recon/enthalpy? #t)
+(recon/density? #t)
+(recon/cpld-use-lsq-deriv? #t)
+(recon/node-grad-diffusion? #f)
+(recon/node-boundary-lsq? #t)
+(recon/node-scale-id 2)
+(recon/node-cell-weight? #t)
+(recon/node-weight-clip? #t)
+(recon/node-all-lsq? #f)
+(recon/node-gradient-lsq? #f)
+(recon/density-node-lsq? #t)
+(recon/pressure-node-based? #f)
+(recon/pressure-node-lsq? #f)
+(recon/cell-lsq/wf 2)
+(recon/cell-lsq/cortype 1)
+(recon/cell-lsq? #f)
+(recon/node-lsq? #f)
+(recon/length-based? #f)
+(recon/limit/epsilon 0.01)
+(recon/limit? #t)
+(recon/k-exact? #f)
+(recon/freeze? #f)
+(recon/off? #f)
+(export/icecore-hdf5/chunk-size 16328)
+(export/icecore-hdf5/chunked-data? #t)
+(export/icecore-hdf5/ziplevel -1)
+(export/fieldview/filetype 3)
+(export/abaqus/structural? #t)
+(export/write-thermal-load? #f)
+(export/vki-verbose? #f)
+(export/write-structural-load? #t)
+(export/ensight/functions ())
+(export/ensight/filename "")
+(export/ensight/phase 1)
+(export/ensight/gold_binary? #t)
+(export/ensight/transient/separate-file? #f)
+(export/ensight/last-iter-no 0)
+(export/ensight/transient? #f)
+(export/ensight/fl-start-num 1)
+(export/ensight/frequency 1)
+(export/ensight/particle-time-values ())
+(export/ensight/time-values ())
+(export/functions ())
+(export/filetype "CGNS")
+(export/fem-map? #f)
+(export/write-surfaces-only? #t)
+(import/process-node-sets? #f)
+(import/cfx-merge-tolerance 1e-08)
+(visual-kinematics? #t)
+(export/time-average-htc? #f)
+(export/marked-cells? #f)
+(fem-map/thread-id-list ())
+(ms-levels/viscous-ta (#t #t #t #t))
+(ms-levels/dissipation-ta (#t #t #t #t))
+(ms-coefficients-ta (0.25 0.333333 0.5 1))
+(ms-levels/viscous (#t #t #t #t #t))
+(ms-levels/dissipation (#t #t #t #t #t))
+(ms-coefficients (0.2075 0.5915 1))
+(inviscid-flux-new? #f)
+(dual-time/use-transient-scaling? #t)
+(dual-time/use-prec? #t)
+(residual-verbosity 0)
+(flow-warnings? #t)
+(limiter-warnings? #t)
+(precondition? #t)
+(time-step 0)
+(physical-time-step 1)
+(courant-number/implicit 5)
+(courant-number/explicit 1)
+(matching-tolerance 0.05)
+(max-flow-time -1)
+(flow-time 0)
+(smooth-mesh/boundary-nodes? #f)
+(smooth-mesh/method "skewness")
+(smooth-mesh/only-marked-cells? #f)
+(smooth-mesh/skew-max 0.9)
+(smooth-mesh/relax 0.1)
+(smooth-mesh/niter 4)
+(draw/domain/list ())))
+
+(0 "Cortex variables:")
+(38 ((
+(surfaces/groups ((w4 (4)) (w3 (3)) (w2 (2)) (w1 (1)) (default-interior (0))))
+(cx-virtual-id-list (4196 4197 4198 4199 4200))
+(cx-surface-id-map ((4 4200) (3 4199) (2 4198) (1 4197) (0 4196)))
+(cx-surface-type ((0 0) (1 0) (2 0) (3 0) (4 0)))
+(cx-surface-def-list ((4200 () (zone-surface 4200 3) #f) (4199 () (zone-surface 4199 4) #f) (4198 () (zone-surface 4198 5) #f) (4197 () (zone-surface 4197 6) #f) (4196 () (zone-surface 4196 8) #f)))
+(cx-surface-list #((0 ((zid 8) (type zone-surf) (name default-interior) (status susp) (facet-info (0 0 0 0)))) (1 ((zid 6) (type zone-surf) (name w1) (status susp) (facet-info (0 0 0 0)))) (2 ((zid 5) (type zone-surf) (name w2) (status susp) (facet-info (0 0 0 0)))) (3 ((zid 4) (type zone-surf) (name w3) (status susp) (facet-info (0 0 0 0)))) (4 ((zid 3) (type zone-surf) (name w4) (status susp) (facet-info (0 0 0 0)))) #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f))
+(view-list ((front ((0.5 0.5 2.625) (0.5 0.5 0) (0 1 0) 1.05 1.05 "perspective") #(1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1)) (back ((0.5 0.5 -2.625) (0.5 0.5 0) (0 1 0) 1.05 1.05 "perspective") #(1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1))))
+(render/grid/surfaces (0 1 2 3 4))
+(cx-case-version (3 8 1)))))
+
+(0 "Domain Variables:")
+(64 ())
+
+(0 "Grid:")
+
+(12 (0 1 400 0))
+(13 (0 1 840 0))
+(10 (0 1 441 0 2))
+
+(12 (2 1 400 1 3))
+
+(13 (3 1 20 3 2)
+(
+1 2 3e1 0
+3 1 3c1 0
+4 3 3a1 0
+5 4 381 0
+6 5 361 0
+7 6 341 0
+8 7 321 0
+9 8 301 0
+a 9 2e1 0
+b a 2c1 0
+c b 2a1 0
+d c 281 0
+e d 261 0
+f e 241 0
+10 f 221 0
+11 10 201 0
+12 11 1e1 0
+13 12 1c1 0
+14 13 1a1 0
+15 14 181 0
+16 15 161 0
+17 16 141 0
+18 17 121 0
+19 18 101 0
+1a 19 e1 0
+1b 1a c1 0
+1c 1b a1 0
+1d 1c 81 0
+1e 1d 61 0
+1f 1e 41 0
+20 1f 21 0
+21 20 1 0))
+
+(13 (4 21 40 3 2)
+(
+22 23 20 0
+23 24 1f 0
+24 25 1e 0
+25 26 1d 0
+26 27 1c 0
+27 28 1b 0
+28 29 1a 0
+29 2a 19 0
+2a 2b 18 0
+2b 2c 17 0
+2c 2d 16 0
+2d 2e 15 0
+2e 2f 14 0
+2f 30 13 0
+30 31 12 0
+31 32 11 0
+32 33 10 0
+33 34 f 0
+34 35 e 0
+35 36 d 0
+36 37 c 0
+37 38 b 0
+38 39 a 0
+39 3a 9 0
+3a 3b 8 0
+3b 3c 7 0
+3c 3d 6 0
+3d 3e 5 0
+3e 3f 4 0
+3f 40 3 0
+40 41 2 0
+41 21 1 0))
+
+(13 (5 41 60 3 2)
+(
+42 43 400 0
+43 44 3e0 0
+44 45 3c0 0
+45 46 3a0 0
+46 47 380 0
+47 48 360 0
+48 49 340 0
+49 4a 320 0
+4a 4b 300 0
+4b 4c 2e0 0
+4c 4d 2c0 0
+4d 4e 2a0 0
+4e 4f 280 0
+4f 50 260 0
+50 51 240 0
+51 52 220 0
+52 53 200 0
+53 54 1e0 0
+54 55 1c0 0
+55 56 1a0 0
+56 57 180 0
+57 58 160 0
+58 59 140 0
+59 5a 120 0
+5a 5b 100 0
+5b 5c e0 0
+5c 5d c0 0
+5d 5e a0 0
+5e 5f 80 0
+5f 60 60 0
+60 61 40 0
+61 22 20 0))
+
+(13 (6 61 80 3 2)
+(
+62 42 400 0
+63 62 3ff 0
+64 63 3fe 0
+65 64 3fd 0
+66 65 3fc 0
+67 66 3fb 0
+68 67 3fa 0
+69 68 3f9 0
+6a 69 3f8 0
+6b 6a 3f7 0
+6c 6b 3f6 0
+6d 6c 3f5 0
+6e 6d 3f4 0
+6f 6e 3f3 0
+70 6f 3f2 0
+71 70 3f1 0
+72 71 3f0 0
+73 72 3ef 0
+74 73 3ee 0
+75 74 3ed 0
+76 75 3ec 0
+77 76 3eb 0
+78 77 3ea 0
+79 78 3e9 0
+7a 79 3e8 0
+7b 7a 3e7 0
+7c 7b 3e6 0
+7d 7c 3e5 0
+7e 7d 3e4 0
+7f 7e 3e3 0
+80 7f 3e2 0
+2 80 3e1 0))
+
+(13 (8 81 840 2 2)
+(
+81 41 1 2
+20 81 1 21
+82 40 2 3
+81 82 2 22
+83 3f 3 4
+82 83 3 23
+84 3e 4 5
+83 84 4 24
+85 3d 5 6
+84 85 5 25
+86 3c 6 7
+85 86 6 26
+87 3b 7 8
+86 87 7 27
+88 3a 8 9
+87 88 8 28
+89 39 9 a
+88 89 9 29
+8a 38 a b
+89 8a a 2a
+8b 37 b c
+8a 8b b 2b
+8c 36 c d
+8b 8c c 2c
+8d 35 d e
+8c 8d d 2d
+8e 34 e f
+8d 8e e 2e
+8f 33 f 10
+8e 8f f 2f
+90 32 10 11
+8f 90 10 30
+91 31 11 12
+90 91 11 31
+92 30 12 13
+91 92 12 32
+93 2f 13 14
+92 93 13 33
+94 2e 14 15
+93 94 14 34
+95 2d 15 16
+94 95 15 35
+96 2c 16 17
+95 96 16 36
+97 2b 17 18
+96 97 17 37
+98 2a 18 19
+97 98 18 38
+99 29 19 1a
+98 99 19 39
+9a 28 1a 1b
+99 9a 1a 3a
+9b 27 1b 1c
+9a 9b 1b 3b
+9c 26 1c 1d
+9b 9c 1c 3c
+9d 25 1d 1e
+9c 9d 1d 3d
+9e 24 1e 1f
+9d 9e 1e 3e
+9f 23 1f 20
+9e 9f 1f 3f
+9f 61 20 40
+a0 81 21 22
+1f a0 21 41
+a1 82 22 23
+a0 a1 22 42
+a2 83 23 24
+a1 a2 23 43
+a3 84 24 25
+a2 a3 24 44
+a4 85 25 26
+a3 a4 25 45
+a5 86 26 27
+a4 a5 26 46
+a6 87 27 28
+a5 a6 27 47
+a7 88 28 29
+a6 a7 28 48
+a8 89 29 2a
+a7 a8 29 49
+a9 8a 2a 2b
+a8 a9 2a 4a
+aa 8b 2b 2c
+a9 aa 2b 4b
+ab 8c 2c 2d
+aa ab 2c 4c
+ac 8d 2d 2e
+ab ac 2d 4d
+ad 8e 2e 2f
+ac ad 2e 4e
+ae 8f 2f 30
+ad ae 2f 4f
+af 90 30 31
+ae af 30 50
+b0 91 31 32
+af b0 31 51
+b1 92 32 33
+b0 b1 32 52
+b2 93 33 34
+b1 b2 33 53
+b3 94 34 35
+b2 b3 34 54
+b4 95 35 36
+b3 b4 35 55
+b5 96 36 37
+b4 b5 36 56
+b6 97 37 38
+b5 b6 37 57
+b7 98 38 39
+b6 b7 38 58
+b8 99 39 3a
+b7 b8 39 59
+b9 9a 3a 3b
+b8 b9 3a 5a
+ba 9b 3b 3c
+b9 ba 3b 5b
+bb 9c 3c 3d
+ba bb 3c 5c
+bc 9d 3d 3e
+bb bc 3d 5d
+bd 9e 3e 3f
+bc bd 3e 5e
+be 9f 3f 40
+bd be 3f 5f
+be 60 40 60
+bf a0 41 42
+1e bf 41 61
+c0 a1 42 43
+bf c0 42 62
+c1 a2 43 44
+c0 c1 43 63
+c2 a3 44 45
+c1 c2 44 64
+c3 a4 45 46
+c2 c3 45 65
+c4 a5 46 47
+c3 c4 46 66
+c5 a6 47 48
+c4 c5 47 67
+c6 a7 48 49
+c5 c6 48 68
+c7 a8 49 4a
+c6 c7 49 69
+c8 a9 4a 4b
+c7 c8 4a 6a
+c9 aa 4b 4c
+c8 c9 4b 6b
+ca ab 4c 4d
+c9 ca 4c 6c
+cb ac 4d 4e
+ca cb 4d 6d
+cc ad 4e 4f
+cb cc 4e 6e
+cd ae 4f 50
+cc cd 4f 6f
+ce af 50 51
+cd ce 50 70
+cf b0 51 52
+ce cf 51 71
+d0 b1 52 53
+cf d0 52 72
+d1 b2 53 54
+d0 d1 53 73
+d2 b3 54 55
+d1 d2 54 74
+d3 b4 55 56
+d2 d3 55 75
+d4 b5 56 57
+d3 d4 56 76
+d5 b6 57 58
+d4 d5 57 77
+d6 b7 58 59
+d5 d6 58 78
+d7 b8 59 5a
+d6 d7 59 79
+d8 b9 5a 5b
+d7 d8 5a 7a
+d9 ba 5b 5c
+d8 d9 5b 7b
+da bb 5c 5d
+d9 da 5c 7c
+db bc 5d 5e
+da db 5d 7d
+dc bd 5e 5f
+db dc 5e 7e
+dd be 5f 60
+dc dd 5f 7f
+dd 5f 60 80
+de bf 61 62
+1d de 61 81
+df c0 62 63
+de df 62 82
+e0 c1 63 64
+df e0 63 83
+e1 c2 64 65
+e0 e1 64 84
+e2 c3 65 66
+e1 e2 65 85
+e3 c4 66 67
+e2 e3 66 86
+e4 c5 67 68
+e3 e4 67 87
+e5 c6 68 69
+e4 e5 68 88
+e6 c7 69 6a
+e5 e6 69 89
+e7 c8 6a 6b
+e6 e7 6a 8a
+e8 c9 6b 6c
+e7 e8 6b 8b
+e9 ca 6c 6d
+e8 e9 6c 8c
+ea cb 6d 6e
+e9 ea 6d 8d
+eb cc 6e 6f
+ea eb 6e 8e
+ec cd 6f 70
+eb ec 6f 8f
+ed ce 70 71
+ec ed 70 90
+ee cf 71 72
+ed ee 71 91
+ef d0 72 73
+ee ef 72 92
+f0 d1 73 74
+ef f0 73 93
+f1 d2 74 75
+f0 f1 74 94
+f2 d3 75 76
+f1 f2 75 95
+f3 d4 76 77
+f2 f3 76 96
+f4 d5 77 78
+f3 f4 77 97
+f5 d6 78 79
+f4 f5 78 98
+f6 d7 79 7a
+f5 f6 79 99
+f7 d8 7a 7b
+f6 f7 7a 9a
+f8 d9 7b 7c
+f7 f8 7b 9b
+f9 da 7c 7d
+f8 f9 7c 9c
+fa db 7d 7e
+f9 fa 7d 9d
+fb dc 7e 7f
+fa fb 7e 9e
+fc dd 7f 80
+fb fc 7f 9f
+fc 5e 80 a0
+fd de 81 82
+1c fd 81 a1
+fe df 82 83
+fd fe 82 a2
+ff e0 83 84
+fe ff 83 a3
+100 e1 84 85
+ff 100 84 a4
+101 e2 85 86
+100 101 85 a5
+102 e3 86 87
+101 102 86 a6
+103 e4 87 88
+102 103 87 a7
+104 e5 88 89
+103 104 88 a8
+105 e6 89 8a
+104 105 89 a9
+106 e7 8a 8b
+105 106 8a aa
+107 e8 8b 8c
+106 107 8b ab
+108 e9 8c 8d
+107 108 8c ac
+109 ea 8d 8e
+108 109 8d ad
+10a eb 8e 8f
+109 10a 8e ae
+10b ec 8f 90
+10a 10b 8f af
+10c ed 90 91
+10b 10c 90 b0
+10d ee 91 92
+10c 10d 91 b1
+10e ef 92 93
+10d 10e 92 b2
+10f f0 93 94
+10e 10f 93 b3
+110 f1 94 95
+10f 110 94 b4
+111 f2 95 96
+110 111 95 b5
+112 f3 96 97
+111 112 96 b6
+113 f4 97 98
+112 113 97 b7
+114 f5 98 99
+113 114 98 b8
+115 f6 99 9a
+114 115 99 b9
+116 f7 9a 9b
+115 116 9a ba
+117 f8 9b 9c
+116 117 9b bb
+118 f9 9c 9d
+117 118 9c bc
+119 fa 9d 9e
+118 119 9d bd
+11a fb 9e 9f
+119 11a 9e be
+11b fc 9f a0
+11a 11b 9f bf
+11b 5d a0 c0
+11c fd a1 a2
+1b 11c a1 c1
+11d fe a2 a3
+11c 11d a2 c2
+11e ff a3 a4
+11d 11e a3 c3
+11f 100 a4 a5
+11e 11f a4 c4
+120 101 a5 a6
+11f 120 a5 c5
+121 102 a6 a7
+120 121 a6 c6
+122 103 a7 a8
+121 122 a7 c7
+123 104 a8 a9
+122 123 a8 c8
+124 105 a9 aa
+123 124 a9 c9
+125 106 aa ab
+124 125 aa ca
+126 107 ab ac
+125 126 ab cb
+127 108 ac ad
+126 127 ac cc
+128 109 ad ae
+127 128 ad cd
+129 10a ae af
+128 129 ae ce
+12a 10b af b0
+129 12a af cf
+12b 10c b0 b1
+12a 12b b0 d0
+12c 10d b1 b2
+12b 12c b1 d1
+12d 10e b2 b3
+12c 12d b2 d2
+12e 10f b3 b4
+12d 12e b3 d3
+12f 110 b4 b5
+12e 12f b4 d4
+130 111 b5 b6
+12f 130 b5 d5
+131 112 b6 b7
+130 131 b6 d6
+132 113 b7 b8
+131 132 b7 d7
+133 114 b8 b9
+132 133 b8 d8
+134 115 b9 ba
+133 134 b9 d9
+135 116 ba bb
+134 135 ba da
+136 117 bb bc
+135 136 bb db
+137 118 bc bd
+136 137 bc dc
+138 119 bd be
+137 138 bd dd
+139 11a be bf
+138 139 be de
+13a 11b bf c0
+139 13a bf df
+13a 5c c0 e0
+13b 11c c1 c2
+1a 13b c1 e1
+13c 11d c2 c3
+13b 13c c2 e2
+13d 11e c3 c4
+13c 13d c3 e3
+13e 11f c4 c5
+13d 13e c4 e4
+13f 120 c5 c6
+13e 13f c5 e5
+140 121 c6 c7
+13f 140 c6 e6
+141 122 c7 c8
+140 141 c7 e7
+142 123 c8 c9
+141 142 c8 e8
+143 124 c9 ca
+142 143 c9 e9
+144 125 ca cb
+143 144 ca ea
+145 126 cb cc
+144 145 cb eb
+146 127 cc cd
+145 146 cc ec
+147 128 cd ce
+146 147 cd ed
+148 129 ce cf
+147 148 ce ee
+149 12a cf d0
+148 149 cf ef
+14a 12b d0 d1
+149 14a d0 f0
+14b 12c d1 d2
+14a 14b d1 f1
+14c 12d d2 d3
+14b 14c d2 f2
+14d 12e d3 d4
+14c 14d d3 f3
+14e 12f d4 d5
+14d 14e d4 f4
+14f 130 d5 d6
+14e 14f d5 f5
+150 131 d6 d7
+14f 150 d6 f6
+151 132 d7 d8
+150 151 d7 f7
+152 133 d8 d9
+151 152 d8 f8
+153 134 d9 da
+152 153 d9 f9
+154 135 da db
+153 154 da fa
+155 136 db dc
+154 155 db fb
+156 137 dc dd
+155 156 dc fc
+157 138 dd de
+156 157 dd fd
+158 139 de df
+157 158 de fe
+159 13a df e0
+158 159 df ff
+159 5b e0 100
+15a 13b e1 e2
+19 15a e1 101
+15b 13c e2 e3
+15a 15b e2 102
+15c 13d e3 e4
+15b 15c e3 103
+15d 13e e4 e5
+15c 15d e4 104
+15e 13f e5 e6
+15d 15e e5 105
+15f 140 e6 e7
+15e 15f e6 106
+160 141 e7 e8
+15f 160 e7 107
+161 142 e8 e9
+160 161 e8 108
+162 143 e9 ea
+161 162 e9 109
+163 144 ea eb
+162 163 ea 10a
+164 145 eb ec
+163 164 eb 10b
+165 146 ec ed
+164 165 ec 10c
+166 147 ed ee
+165 166 ed 10d
+167 148 ee ef
+166 167 ee 10e
+168 149 ef f0
+167 168 ef 10f
+169 14a f0 f1
+168 169 f0 110
+16a 14b f1 f2
+169 16a f1 111
+16b 14c f2 f3
+16a 16b f2 112
+16c 14d f3 f4
+16b 16c f3 113
+16d 14e f4 f5
+16c 16d f4 114
+16e 14f f5 f6
+16d 16e f5 115
+16f 150 f6 f7
+16e 16f f6 116
+170 151 f7 f8
+16f 170 f7 117
+171 152 f8 f9
+170 171 f8 118
+172 153 f9 fa
+171 172 f9 119
+173 154 fa fb
+172 173 fa 11a
+174 155 fb fc
+173 174 fb 11b
+175 156 fc fd
+174 175 fc 11c
+176 157 fd fe
+175 176 fd 11d
+177 158 fe ff
+176 177 fe 11e
+178 159 ff 100
+177 178 ff 11f
+178 5a 100 120
+179 15a 101 102
+18 179 101 121
+17a 15b 102 103
+179 17a 102 122
+17b 15c 103 104
+17a 17b 103 123
+17c 15d 104 105
+17b 17c 104 124
+17d 15e 105 106
+17c 17d 105 125
+17e 15f 106 107
+17d 17e 106 126
+17f 160 107 108
+17e 17f 107 127
+180 161 108 109
+17f 180 108 128
+181 162 109 10a
+180 181 109 129
+182 163 10a 10b
+181 182 10a 12a
+183 164 10b 10c
+182 183 10b 12b
+184 165 10c 10d
+183 184 10c 12c
+185 166 10d 10e
+184 185 10d 12d
+186 167 10e 10f
+185 186 10e 12e
+187 168 10f 110
+186 187 10f 12f
+188 169 110 111
+187 188 110 130
+189 16a 111 112
+188 189 111 131
+18a 16b 112 113
+189 18a 112 132
+18b 16c 113 114
+18a 18b 113 133
+18c 16d 114 115
+18b 18c 114 134
+18d 16e 115 116
+18c 18d 115 135
+18e 16f 116 117
+18d 18e 116 136
+18f 170 117 118
+18e 18f 117 137
+190 171 118 119
+18f 190 118 138
+191 172 119 11a
+190 191 119 139
+192 173 11a 11b
+191 192 11a 13a
+193 174 11b 11c
+192 193 11b 13b
+194 175 11c 11d
+193 194 11c 13c
+195 176 11d 11e
+194 195 11d 13d
+196 177 11e 11f
+195 196 11e 13e
+197 178 11f 120
+196 197 11f 13f
+197 59 120 140
+198 179 121 122
+17 198 121 141
+199 17a 122 123
+198 199 122 142
+19a 17b 123 124
+199 19a 123 143
+19b 17c 124 125
+19a 19b 124 144
+19c 17d 125 126
+19b 19c 125 145
+19d 17e 126 127
+19c 19d 126 146
+19e 17f 127 128
+19d 19e 127 147
+19f 180 128 129
+19e 19f 128 148
+1a0 181 129 12a
+19f 1a0 129 149
+1a1 182 12a 12b
+1a0 1a1 12a 14a
+1a2 183 12b 12c
+1a1 1a2 12b 14b
+1a3 184 12c 12d
+1a2 1a3 12c 14c
+1a4 185 12d 12e
+1a3 1a4 12d 14d
+1a5 186 12e 12f
+1a4 1a5 12e 14e
+1a6 187 12f 130
+1a5 1a6 12f 14f
+1a7 188 130 131
+1a6 1a7 130 150
+1a8 189 131 132
+1a7 1a8 131 151
+1a9 18a 132 133
+1a8 1a9 132 152
+1aa 18b 133 134
+1a9 1aa 133 153
+1ab 18c 134 135
+1aa 1ab 134 154
+1ac 18d 135 136
+1ab 1ac 135 155
+1ad 18e 136 137
+1ac 1ad 136 156
+1ae 18f 137 138
+1ad 1ae 137 157
+1af 190 138 139
+1ae 1af 138 158
+1b0 191 139 13a
+1af 1b0 139 159
+1b1 192 13a 13b
+1b0 1b1 13a 15a
+1b2 193 13b 13c
+1b1 1b2 13b 15b
+1b3 194 13c 13d
+1b2 1b3 13c 15c
+1b4 195 13d 13e
+1b3 1b4 13d 15d
+1b5 196 13e 13f
+1b4 1b5 13e 15e
+1b6 197 13f 140
+1b5 1b6 13f 15f
+1b6 58 140 160
+1b7 198 141 142
+16 1b7 141 161
+1b8 199 142 143
+1b7 1b8 142 162
+1b9 19a 143 144
+1b8 1b9 143 163
+1ba 19b 144 145
+1b9 1ba 144 164
+1bb 19c 145 146
+1ba 1bb 145 165
+1bc 19d 146 147
+1bb 1bc 146 166
+1bd 19e 147 148
+1bc 1bd 147 167
+1be 19f 148 149
+1bd 1be 148 168
+1bf 1a0 149 14a
+1be 1bf 149 169
+1c0 1a1 14a 14b
+1bf 1c0 14a 16a
+1c1 1a2 14b 14c
+1c0 1c1 14b 16b
+1c2 1a3 14c 14d
+1c1 1c2 14c 16c
+1c3 1a4 14d 14e
+1c2 1c3 14d 16d
+1c4 1a5 14e 14f
+1c3 1c4 14e 16e
+1c5 1a6 14f 150
+1c4 1c5 14f 16f
+1c6 1a7 150 151
+1c5 1c6 150 170
+1c7 1a8 151 152
+1c6 1c7 151 171
+1c8 1a9 152 153
+1c7 1c8 152 172
+1c9 1aa 153 154
+1c8 1c9 153 173
+1ca 1ab 154 155
+1c9 1ca 154 174
+1cb 1ac 155 156
+1ca 1cb 155 175
+1cc 1ad 156 157
+1cb 1cc 156 176
+1cd 1ae 157 158
+1cc 1cd 157 177
+1ce 1af 158 159
+1cd 1ce 158 178
+1cf 1b0 159 15a
+1ce 1cf 159 179
+1d0 1b1 15a 15b
+1cf 1d0 15a 17a
+1d1 1b2 15b 15c
+1d0 1d1 15b 17b
+1d2 1b3 15c 15d
+1d1 1d2 15c 17c
+1d3 1b4 15d 15e
+1d2 1d3 15d 17d
+1d4 1b5 15e 15f
+1d3 1d4 15e 17e
+1d5 1b6 15f 160
+1d4 1d5 15f 17f
+1d5 57 160 180
+1d6 1b7 161 162
+15 1d6 161 181
+1d7 1b8 162 163
+1d6 1d7 162 182
+1d8 1b9 163 164
+1d7 1d8 163 183
+1d9 1ba 164 165
+1d8 1d9 164 184
+1da 1bb 165 166
+1d9 1da 165 185
+1db 1bc 166 167
+1da 1db 166 186
+1dc 1bd 167 168
+1db 1dc 167 187
+1dd 1be 168 169
+1dc 1dd 168 188
+1de 1bf 169 16a
+1dd 1de 169 189
+1df 1c0 16a 16b
+1de 1df 16a 18a
+1e0 1c1 16b 16c
+1df 1e0 16b 18b
+1e1 1c2 16c 16d
+1e0 1e1 16c 18c
+1e2 1c3 16d 16e
+1e1 1e2 16d 18d
+1e3 1c4 16e 16f
+1e2 1e3 16e 18e
+1e4 1c5 16f 170
+1e3 1e4 16f 18f
+1e5 1c6 170 171
+1e4 1e5 170 190
+1e6 1c7 171 172
+1e5 1e6 171 191
+1e7 1c8 172 173
+1e6 1e7 172 192
+1e8 1c9 173 174
+1e7 1e8 173 193
+1e9 1ca 174 175
+1e8 1e9 174 194
+1ea 1cb 175 176
+1e9 1ea 175 195
+1eb 1cc 176 177
+1ea 1eb 176 196
+1ec 1cd 177 178
+1eb 1ec 177 197
+1ed 1ce 178 179
+1ec 1ed 178 198
+1ee 1cf 179 17a
+1ed 1ee 179 199
+1ef 1d0 17a 17b
+1ee 1ef 17a 19a
+1f0 1d1 17b 17c
+1ef 1f0 17b 19b
+1f1 1d2 17c 17d
+1f0 1f1 17c 19c
+1f2 1d3 17d 17e
+1f1 1f2 17d 19d
+1f3 1d4 17e 17f
+1f2 1f3 17e 19e
+1f4 1d5 17f 180
+1f3 1f4 17f 19f
+1f4 56 180 1a0
+1f5 1d6 181 182
+14 1f5 181 1a1
+1f6 1d7 182 183
+1f5 1f6 182 1a2
+1f7 1d8 183 184
+1f6 1f7 183 1a3
+1f8 1d9 184 185
+1f7 1f8 184 1a4
+1f9 1da 185 186
+1f8 1f9 185 1a5
+1fa 1db 186 187
+1f9 1fa 186 1a6
+1fb 1dc 187 188
+1fa 1fb 187 1a7
+1fc 1dd 188 189
+1fb 1fc 188 1a8
+1fd 1de 189 18a
+1fc 1fd 189 1a9
+1fe 1df 18a 18b
+1fd 1fe 18a 1aa
+1ff 1e0 18b 18c
+1fe 1ff 18b 1ab
+200 1e1 18c 18d
+1ff 200 18c 1ac
+201 1e2 18d 18e
+200 201 18d 1ad
+202 1e3 18e 18f
+201 202 18e 1ae
+203 1e4 18f 190
+202 203 18f 1af
+204 1e5 190 191
+203 204 190 1b0
+205 1e6 191 192
+204 205 191 1b1
+206 1e7 192 193
+205 206 192 1b2
+207 1e8 193 194
+206 207 193 1b3
+208 1e9 194 195
+207 208 194 1b4
+209 1ea 195 196
+208 209 195 1b5
+20a 1eb 196 197
+209 20a 196 1b6
+20b 1ec 197 198
+20a 20b 197 1b7
+20c 1ed 198 199
+20b 20c 198 1b8
+20d 1ee 199 19a
+20c 20d 199 1b9
+20e 1ef 19a 19b
+20d 20e 19a 1ba
+20f 1f0 19b 19c
+20e 20f 19b 1bb
+210 1f1 19c 19d
+20f 210 19c 1bc
+211 1f2 19d 19e
+210 211 19d 1bd
+212 1f3 19e 19f
+211 212 19e 1be
+213 1f4 19f 1a0
+212 213 19f 1bf
+213 55 1a0 1c0
+214 1f5 1a1 1a2
+13 214 1a1 1c1
+215 1f6 1a2 1a3
+214 215 1a2 1c2
+216 1f7 1a3 1a4
+215 216 1a3 1c3
+217 1f8 1a4 1a5
+216 217 1a4 1c4
+218 1f9 1a5 1a6
+217 218 1a5 1c5
+219 1fa 1a6 1a7
+218 219 1a6 1c6
+21a 1fb 1a7 1a8
+219 21a 1a7 1c7
+21b 1fc 1a8 1a9
+21a 21b 1a8 1c8
+21c 1fd 1a9 1aa
+21b 21c 1a9 1c9
+21d 1fe 1aa 1ab
+21c 21d 1aa 1ca
+21e 1ff 1ab 1ac
+21d 21e 1ab 1cb
+21f 200 1ac 1ad
+21e 21f 1ac 1cc
+220 201 1ad 1ae
+21f 220 1ad 1cd
+221 202 1ae 1af
+220 221 1ae 1ce
+222 203 1af 1b0
+221 222 1af 1cf
+223 204 1b0 1b1
+222 223 1b0 1d0
+224 205 1b1 1b2
+223 224 1b1 1d1
+225 206 1b2 1b3
+224 225 1b2 1d2
+226 207 1b3 1b4
+225 226 1b3 1d3
+227 208 1b4 1b5
+226 227 1b4 1d4
+228 209 1b5 1b6
+227 228 1b5 1d5
+229 20a 1b6 1b7
+228 229 1b6 1d6
+22a 20b 1b7 1b8
+229 22a 1b7 1d7
+22b 20c 1b8 1b9
+22a 22b 1b8 1d8
+22c 20d 1b9 1ba
+22b 22c 1b9 1d9
+22d 20e 1ba 1bb
+22c 22d 1ba 1da
+22e 20f 1bb 1bc
+22d 22e 1bb 1db
+22f 210 1bc 1bd
+22e 22f 1bc 1dc
+230 211 1bd 1be
+22f 230 1bd 1dd
+231 212 1be 1bf
+230 231 1be 1de
+232 213 1bf 1c0
+231 232 1bf 1df
+232 54 1c0 1e0
+233 214 1c1 1c2
+12 233 1c1 1e1
+234 215 1c2 1c3
+233 234 1c2 1e2
+235 216 1c3 1c4
+234 235 1c3 1e3
+236 217 1c4 1c5
+235 236 1c4 1e4
+237 218 1c5 1c6
+236 237 1c5 1e5
+238 219 1c6 1c7
+237 238 1c6 1e6
+239 21a 1c7 1c8
+238 239 1c7 1e7
+23a 21b 1c8 1c9
+239 23a 1c8 1e8
+23b 21c 1c9 1ca
+23a 23b 1c9 1e9
+23c 21d 1ca 1cb
+23b 23c 1ca 1ea
+23d 21e 1cb 1cc
+23c 23d 1cb 1eb
+23e 21f 1cc 1cd
+23d 23e 1cc 1ec
+23f 220 1cd 1ce
+23e 23f 1cd 1ed
+240 221 1ce 1cf
+23f 240 1ce 1ee
+241 222 1cf 1d0
+240 241 1cf 1ef
+242 223 1d0 1d1
+241 242 1d0 1f0
+243 224 1d1 1d2
+242 243 1d1 1f1
+244 225 1d2 1d3
+243 244 1d2 1f2
+245 226 1d3 1d4
+244 245 1d3 1f3
+246 227 1d4 1d5
+245 246 1d4 1f4
+247 228 1d5 1d6
+246 247 1d5 1f5
+248 229 1d6 1d7
+247 248 1d6 1f6
+249 22a 1d7 1d8
+248 249 1d7 1f7
+24a 22b 1d8 1d9
+249 24a 1d8 1f8
+24b 22c 1d9 1da
+24a 24b 1d9 1f9
+24c 22d 1da 1db
+24b 24c 1da 1fa
+24d 22e 1db 1dc
+24c 24d 1db 1fb
+24e 22f 1dc 1dd
+24d 24e 1dc 1fc
+24f 230 1dd 1de
+24e 24f 1dd 1fd
+250 231 1de 1df
+24f 250 1de 1fe
+251 232 1df 1e0
+250 251 1df 1ff
+251 53 1e0 200
+252 233 1e1 1e2
+11 252 1e1 201
+253 234 1e2 1e3
+252 253 1e2 202
+254 235 1e3 1e4
+253 254 1e3 203
+255 236 1e4 1e5
+254 255 1e4 204
+256 237 1e5 1e6
+255 256 1e5 205
+257 238 1e6 1e7
+256 257 1e6 206
+258 239 1e7 1e8
+257 258 1e7 207
+259 23a 1e8 1e9
+258 259 1e8 208
+25a 23b 1e9 1ea
+259 25a 1e9 209
+25b 23c 1ea 1eb
+25a 25b 1ea 20a
+25c 23d 1eb 1ec
+25b 25c 1eb 20b
+25d 23e 1ec 1ed
+25c 25d 1ec 20c
+25e 23f 1ed 1ee
+25d 25e 1ed 20d
+25f 240 1ee 1ef
+25e 25f 1ee 20e
+260 241 1ef 1f0
+25f 260 1ef 20f
+261 242 1f0 1f1
+260 261 1f0 210
+262 243 1f1 1f2
+261 262 1f1 211
+263 244 1f2 1f3
+262 263 1f2 212
+264 245 1f3 1f4
+263 264 1f3 213
+265 246 1f4 1f5
+264 265 1f4 214
+266 247 1f5 1f6
+265 266 1f5 215
+267 248 1f6 1f7
+266 267 1f6 216
+268 249 1f7 1f8
+267 268 1f7 217
+269 24a 1f8 1f9
+268 269 1f8 218
+26a 24b 1f9 1fa
+269 26a 1f9 219
+26b 24c 1fa 1fb
+26a 26b 1fa 21a
+26c 24d 1fb 1fc
+26b 26c 1fb 21b
+26d 24e 1fc 1fd
+26c 26d 1fc 21c
+26e 24f 1fd 1fe
+26d 26e 1fd 21d
+26f 250 1fe 1ff
+26e 26f 1fe 21e
+270 251 1ff 200
+26f 270 1ff 21f
+270 52 200 220
+271 252 201 202
+10 271 201 221
+272 253 202 203
+271 272 202 222
+273 254 203 204
+272 273 203 223
+274 255 204 205
+273 274 204 224
+275 256 205 206
+274 275 205 225
+276 257 206 207
+275 276 206 226
+277 258 207 208
+276 277 207 227
+278 259 208 209
+277 278 208 228
+279 25a 209 20a
+278 279 209 229
+27a 25b 20a 20b
+279 27a 20a 22a
+27b 25c 20b 20c
+27a 27b 20b 22b
+27c 25d 20c 20d
+27b 27c 20c 22c
+27d 25e 20d 20e
+27c 27d 20d 22d
+27e 25f 20e 20f
+27d 27e 20e 22e
+27f 260 20f 210
+27e 27f 20f 22f
+280 261 210 211
+27f 280 210 230
+281 262 211 212
+280 281 211 231
+282 263 212 213
+281 282 212 232
+283 264 213 214
+282 283 213 233
+284 265 214 215
+283 284 214 234
+285 266 215 216
+284 285 215 235
+286 267 216 217
+285 286 216 236
+287 268 217 218
+286 287 217 237
+288 269 218 219
+287 288 218 238
+289 26a 219 21a
+288 289 219 239
+28a 26b 21a 21b
+289 28a 21a 23a
+28b 26c 21b 21c
+28a 28b 21b 23b
+28c 26d 21c 21d
+28b 28c 21c 23c
+28d 26e 21d 21e
+28c 28d 21d 23d
+28e 26f 21e 21f
+28d 28e 21e 23e
+28f 270 21f 220
+28e 28f 21f 23f
+28f 51 220 240
+290 271 221 222
+f 290 221 241
+291 272 222 223
+290 291 222 242
+292 273 223 224
+291 292 223 243
+293 274 224 225
+292 293 224 244
+294 275 225 226
+293 294 225 245
+295 276 226 227
+294 295 226 246
+296 277 227 228
+295 296 227 247
+297 278 228 229
+296 297 228 248
+298 279 229 22a
+297 298 229 249
+299 27a 22a 22b
+298 299 22a 24a
+29a 27b 22b 22c
+299 29a 22b 24b
+29b 27c 22c 22d
+29a 29b 22c 24c
+29c 27d 22d 22e
+29b 29c 22d 24d
+29d 27e 22e 22f
+29c 29d 22e 24e
+29e 27f 22f 230
+29d 29e 22f 24f
+29f 280 230 231
+29e 29f 230 250
+2a0 281 231 232
+29f 2a0 231 251
+2a1 282 232 233
+2a0 2a1 232 252
+2a2 283 233 234
+2a1 2a2 233 253
+2a3 284 234 235
+2a2 2a3 234 254
+2a4 285 235 236
+2a3 2a4 235 255
+2a5 286 236 237
+2a4 2a5 236 256
+2a6 287 237 238
+2a5 2a6 237 257
+2a7 288 238 239
+2a6 2a7 238 258
+2a8 289 239 23a
+2a7 2a8 239 259
+2a9 28a 23a 23b
+2a8 2a9 23a 25a
+2aa 28b 23b 23c
+2a9 2aa 23b 25b
+2ab 28c 23c 23d
+2aa 2ab 23c 25c
+2ac 28d 23d 23e
+2ab 2ac 23d 25d
+2ad 28e 23e 23f
+2ac 2ad 23e 25e
+2ae 28f 23f 240
+2ad 2ae 23f 25f
+2ae 50 240 260
+2af 290 241 242
+e 2af 241 261
+2b0 291 242 243
+2af 2b0 242 262
+2b1 292 243 244
+2b0 2b1 243 263
+2b2 293 244 245
+2b1 2b2 244 264
+2b3 294 245 246
+2b2 2b3 245 265
+2b4 295 246 247
+2b3 2b4 246 266
+2b5 296 247 248
+2b4 2b5 247 267
+2b6 297 248 249
+2b5 2b6 248 268
+2b7 298 249 24a
+2b6 2b7 249 269
+2b8 299 24a 24b
+2b7 2b8 24a 26a
+2b9 29a 24b 24c
+2b8 2b9 24b 26b
+2ba 29b 24c 24d
+2b9 2ba 24c 26c
+2bb 29c 24d 24e
+2ba 2bb 24d 26d
+2bc 29d 24e 24f
+2bb 2bc 24e 26e
+2bd 29e 24f 250
+2bc 2bd 24f 26f
+2be 29f 250 251
+2bd 2be 250 270
+2bf 2a0 251 252
+2be 2bf 251 271
+2c0 2a1 252 253
+2bf 2c0 252 272
+2c1 2a2 253 254
+2c0 2c1 253 273
+2c2 2a3 254 255
+2c1 2c2 254 274
+2c3 2a4 255 256
+2c2 2c3 255 275
+2c4 2a5 256 257
+2c3 2c4 256 276
+2c5 2a6 257 258
+2c4 2c5 257 277
+2c6 2a7 258 259
+2c5 2c6 258 278
+2c7 2a8 259 25a
+2c6 2c7 259 279
+2c8 2a9 25a 25b
+2c7 2c8 25a 27a
+2c9 2aa 25b 25c
+2c8 2c9 25b 27b
+2ca 2ab 25c 25d
+2c9 2ca 25c 27c
+2cb 2ac 25d 25e
+2ca 2cb 25d 27d
+2cc 2ad 25e 25f
+2cb 2cc 25e 27e
+2cd 2ae 25f 260
+2cc 2cd 25f 27f
+2cd 4f 260 280
+2ce 2af 261 262
+d 2ce 261 281
+2cf 2b0 262 263
+2ce 2cf 262 282
+2d0 2b1 263 264
+2cf 2d0 263 283
+2d1 2b2 264 265
+2d0 2d1 264 284
+2d2 2b3 265 266
+2d1 2d2 265 285
+2d3 2b4 266 267
+2d2 2d3 266 286
+2d4 2b5 267 268
+2d3 2d4 267 287
+2d5 2b6 268 269
+2d4 2d5 268 288
+2d6 2b7 269 26a
+2d5 2d6 269 289
+2d7 2b8 26a 26b
+2d6 2d7 26a 28a
+2d8 2b9 26b 26c
+2d7 2d8 26b 28b
+2d9 2ba 26c 26d
+2d8 2d9 26c 28c
+2da 2bb 26d 26e
+2d9 2da 26d 28d
+2db 2bc 26e 26f
+2da 2db 26e 28e
+2dc 2bd 26f 270
+2db 2dc 26f 28f
+2dd 2be 270 271
+2dc 2dd 270 290
+2de 2bf 271 272
+2dd 2de 271 291
+2df 2c0 272 273
+2de 2df 272 292
+2e0 2c1 273 274
+2df 2e0 273 293
+2e1 2c2 274 275
+2e0 2e1 274 294
+2e2 2c3 275 276
+2e1 2e2 275 295
+2e3 2c4 276 277
+2e2 2e3 276 296
+2e4 2c5 277 278
+2e3 2e4 277 297
+2e5 2c6 278 279
+2e4 2e5 278 298
+2e6 2c7 279 27a
+2e5 2e6 279 299
+2e7 2c8 27a 27b
+2e6 2e7 27a 29a
+2e8 2c9 27b 27c
+2e7 2e8 27b 29b
+2e9 2ca 27c 27d
+2e8 2e9 27c 29c
+2ea 2cb 27d 27e
+2e9 2ea 27d 29d
+2eb 2cc 27e 27f
+2ea 2eb 27e 29e
+2ec 2cd 27f 280
+2eb 2ec 27f 29f
+2ec 4e 280 2a0
+2ed 2ce 281 282
+c 2ed 281 2a1
+2ee 2cf 282 283
+2ed 2ee 282 2a2
+2ef 2d0 283 284
+2ee 2ef 283 2a3
+2f0 2d1 284 285
+2ef 2f0 284 2a4
+2f1 2d2 285 286
+2f0 2f1 285 2a5
+2f2 2d3 286 287
+2f1 2f2 286 2a6
+2f3 2d4 287 288
+2f2 2f3 287 2a7
+2f4 2d5 288 289
+2f3 2f4 288 2a8
+2f5 2d6 289 28a
+2f4 2f5 289 2a9
+2f6 2d7 28a 28b
+2f5 2f6 28a 2aa
+2f7 2d8 28b 28c
+2f6 2f7 28b 2ab
+2f8 2d9 28c 28d
+2f7 2f8 28c 2ac
+2f9 2da 28d 28e
+2f8 2f9 28d 2ad
+2fa 2db 28e 28f
+2f9 2fa 28e 2ae
+2fb 2dc 28f 290
+2fa 2fb 28f 2af
+2fc 2dd 290 291
+2fb 2fc 290 2b0
+2fd 2de 291 292
+2fc 2fd 291 2b1
+2fe 2df 292 293
+2fd 2fe 292 2b2
+2ff 2e0 293 294
+2fe 2ff 293 2b3
+300 2e1 294 295
+2ff 300 294 2b4
+301 2e2 295 296
+300 301 295 2b5
+302 2e3 296 297
+301 302 296 2b6
+303 2e4 297 298
+302 303 297 2b7
+304 2e5 298 299
+303 304 298 2b8
+305 2e6 299 29a
+304 305 299 2b9
+306 2e7 29a 29b
+305 306 29a 2ba
+307 2e8 29b 29c
+306 307 29b 2bb
+308 2e9 29c 29d
+307 308 29c 2bc
+309 2ea 29d 29e
+308 309 29d 2bd
+30a 2eb 29e 29f
+309 30a 29e 2be
+30b 2ec 29f 2a0
+30a 30b 29f 2bf
+30b 4d 2a0 2c0
+30c 2ed 2a1 2a2
+b 30c 2a1 2c1
+30d 2ee 2a2 2a3
+30c 30d 2a2 2c2
+30e 2ef 2a3 2a4
+30d 30e 2a3 2c3
+30f 2f0 2a4 2a5
+30e 30f 2a4 2c4
+310 2f1 2a5 2a6
+30f 310 2a5 2c5
+311 2f2 2a6 2a7
+310 311 2a6 2c6
+312 2f3 2a7 2a8
+311 312 2a7 2c7
+313 2f4 2a8 2a9
+312 313 2a8 2c8
+314 2f5 2a9 2aa
+313 314 2a9 2c9
+315 2f6 2aa 2ab
+314 315 2aa 2ca
+316 2f7 2ab 2ac
+315 316 2ab 2cb
+317 2f8 2ac 2ad
+316 317 2ac 2cc
+318 2f9 2ad 2ae
+317 318 2ad 2cd
+319 2fa 2ae 2af
+318 319 2ae 2ce
+31a 2fb 2af 2b0
+319 31a 2af 2cf
+31b 2fc 2b0 2b1
+31a 31b 2b0 2d0
+31c 2fd 2b1 2b2
+31b 31c 2b1 2d1
+31d 2fe 2b2 2b3
+31c 31d 2b2 2d2
+31e 2ff 2b3 2b4
+31d 31e 2b3 2d3
+31f 300 2b4 2b5
+31e 31f 2b4 2d4
+320 301 2b5 2b6
+31f 320 2b5 2d5
+321 302 2b6 2b7
+320 321 2b6 2d6
+322 303 2b7 2b8
+321 322 2b7 2d7
+323 304 2b8 2b9
+322 323 2b8 2d8
+324 305 2b9 2ba
+323 324 2b9 2d9
+325 306 2ba 2bb
+324 325 2ba 2da
+326 307 2bb 2bc
+325 326 2bb 2db
+327 308 2bc 2bd
+326 327 2bc 2dc
+328 309 2bd 2be
+327 328 2bd 2dd
+329 30a 2be 2bf
+328 329 2be 2de
+32a 30b 2bf 2c0
+329 32a 2bf 2df
+32a 4c 2c0 2e0
+32b 30c 2c1 2c2
+a 32b 2c1 2e1
+32c 30d 2c2 2c3
+32b 32c 2c2 2e2
+32d 30e 2c3 2c4
+32c 32d 2c3 2e3
+32e 30f 2c4 2c5
+32d 32e 2c4 2e4
+32f 310 2c5 2c6
+32e 32f 2c5 2e5
+330 311 2c6 2c7
+32f 330 2c6 2e6
+331 312 2c7 2c8
+330 331 2c7 2e7
+332 313 2c8 2c9
+331 332 2c8 2e8
+333 314 2c9 2ca
+332 333 2c9 2e9
+334 315 2ca 2cb
+333 334 2ca 2ea
+335 316 2cb 2cc
+334 335 2cb 2eb
+336 317 2cc 2cd
+335 336 2cc 2ec
+337 318 2cd 2ce
+336 337 2cd 2ed
+338 319 2ce 2cf
+337 338 2ce 2ee
+339 31a 2cf 2d0
+338 339 2cf 2ef
+33a 31b 2d0 2d1
+339 33a 2d0 2f0
+33b 31c 2d1 2d2
+33a 33b 2d1 2f1
+33c 31d 2d2 2d3
+33b 33c 2d2 2f2
+33d 31e 2d3 2d4
+33c 33d 2d3 2f3
+33e 31f 2d4 2d5
+33d 33e 2d4 2f4
+33f 320 2d5 2d6
+33e 33f 2d5 2f5
+340 321 2d6 2d7
+33f 340 2d6 2f6
+341 322 2d7 2d8
+340 341 2d7 2f7
+342 323 2d8 2d9
+341 342 2d8 2f8
+343 324 2d9 2da
+342 343 2d9 2f9
+344 325 2da 2db
+343 344 2da 2fa
+345 326 2db 2dc
+344 345 2db 2fb
+346 327 2dc 2dd
+345 346 2dc 2fc
+347 328 2dd 2de
+346 347 2dd 2fd
+348 329 2de 2df
+347 348 2de 2fe
+349 32a 2df 2e0
+348 349 2df 2ff
+349 4b 2e0 300
+34a 32b 2e1 2e2
+9 34a 2e1 301
+34b 32c 2e2 2e3
+34a 34b 2e2 302
+34c 32d 2e3 2e4
+34b 34c 2e3 303
+34d 32e 2e4 2e5
+34c 34d 2e4 304
+34e 32f 2e5 2e6
+34d 34e 2e5 305
+34f 330 2e6 2e7
+34e 34f 2e6 306
+350 331 2e7 2e8
+34f 350 2e7 307
+351 332 2e8 2e9
+350 351 2e8 308
+352 333 2e9 2ea
+351 352 2e9 309
+353 334 2ea 2eb
+352 353 2ea 30a
+354 335 2eb 2ec
+353 354 2eb 30b
+355 336 2ec 2ed
+354 355 2ec 30c
+356 337 2ed 2ee
+355 356 2ed 30d
+357 338 2ee 2ef
+356 357 2ee 30e
+358 339 2ef 2f0
+357 358 2ef 30f
+359 33a 2f0 2f1
+358 359 2f0 310
+35a 33b 2f1 2f2
+359 35a 2f1 311
+35b 33c 2f2 2f3
+35a 35b 2f2 312
+35c 33d 2f3 2f4
+35b 35c 2f3 313
+35d 33e 2f4 2f5
+35c 35d 2f4 314
+35e 33f 2f5 2f6
+35d 35e 2f5 315
+35f 340 2f6 2f7
+35e 35f 2f6 316
+360 341 2f7 2f8
+35f 360 2f7 317
+361 342 2f8 2f9
+360 361 2f8 318
+362 343 2f9 2fa
+361 362 2f9 319
+363 344 2fa 2fb
+362 363 2fa 31a
+364 345 2fb 2fc
+363 364 2fb 31b
+365 346 2fc 2fd
+364 365 2fc 31c
+366 347 2fd 2fe
+365 366 2fd 31d
+367 348 2fe 2ff
+366 367 2fe 31e
+368 349 2ff 300
+367 368 2ff 31f
+368 4a 300 320
+369 34a 301 302
+8 369 301 321
+36a 34b 302 303
+369 36a 302 322
+36b 34c 303 304
+36a 36b 303 323
+36c 34d 304 305
+36b 36c 304 324
+36d 34e 305 306
+36c 36d 305 325
+36e 34f 306 307
+36d 36e 306 326
+36f 350 307 308
+36e 36f 307 327
+370 351 308 309
+36f 370 308 328
+371 352 309 30a
+370 371 309 329
+372 353 30a 30b
+371 372 30a 32a
+373 354 30b 30c
+372 373 30b 32b
+374 355 30c 30d
+373 374 30c 32c
+375 356 30d 30e
+374 375 30d 32d
+376 357 30e 30f
+375 376 30e 32e
+377 358 30f 310
+376 377 30f 32f
+378 359 310 311
+377 378 310 330
+379 35a 311 312
+378 379 311 331
+37a 35b 312 313
+379 37a 312 332
+37b 35c 313 314
+37a 37b 313 333
+37c 35d 314 315
+37b 37c 314 334
+37d 35e 315 316
+37c 37d 315 335
+37e 35f 316 317
+37d 37e 316 336
+37f 360 317 318
+37e 37f 317 337
+380 361 318 319
+37f 380 318 338
+381 362 319 31a
+380 381 319 339
+382 363 31a 31b
+381 382 31a 33a
+383 364 31b 31c
+382 383 31b 33b
+384 365 31c 31d
+383 384 31c 33c
+385 366 31d 31e
+384 385 31d 33d
+386 367 31e 31f
+385 386 31e 33e
+387 368 31f 320
+386 387 31f 33f
+387 49 320 340
+388 369 321 322
+7 388 321 341
+389 36a 322 323
+388 389 322 342
+38a 36b 323 324
+389 38a 323 343
+38b 36c 324 325
+38a 38b 324 344
+38c 36d 325 326
+38b 38c 325 345
+38d 36e 326 327
+38c 38d 326 346
+38e 36f 327 328
+38d 38e 327 347
+38f 370 328 329
+38e 38f 328 348
+390 371 329 32a
+38f 390 329 349
+391 372 32a 32b
+390 391 32a 34a
+392 373 32b 32c
+391 392 32b 34b
+393 374 32c 32d
+392 393 32c 34c
+394 375 32d 32e
+393 394 32d 34d
+395 376 32e 32f
+394 395 32e 34e
+396 377 32f 330
+395 396 32f 34f
+397 378 330 331
+396 397 330 350
+398 379 331 332
+397 398 331 351
+399 37a 332 333
+398 399 332 352
+39a 37b 333 334
+399 39a 333 353
+39b 37c 334 335
+39a 39b 334 354
+39c 37d 335 336
+39b 39c 335 355
+39d 37e 336 337
+39c 39d 336 356
+39e 37f 337 338
+39d 39e 337 357
+39f 380 338 339
+39e 39f 338 358
+3a0 381 339 33a
+39f 3a0 339 359
+3a1 382 33a 33b
+3a0 3a1 33a 35a
+3a2 383 33b 33c
+3a1 3a2 33b 35b
+3a3 384 33c 33d
+3a2 3a3 33c 35c
+3a4 385 33d 33e
+3a3 3a4 33d 35d
+3a5 386 33e 33f
+3a4 3a5 33e 35e
+3a6 387 33f 340
+3a5 3a6 33f 35f
+3a6 48 340 360
+3a7 388 341 342
+6 3a7 341 361
+3a8 389 342 343
+3a7 3a8 342 362
+3a9 38a 343 344
+3a8 3a9 343 363
+3aa 38b 344 345
+3a9 3aa 344 364
+3ab 38c 345 346
+3aa 3ab 345 365
+3ac 38d 346 347
+3ab 3ac 346 366
+3ad 38e 347 348
+3ac 3ad 347 367
+3ae 38f 348 349
+3ad 3ae 348 368
+3af 390 349 34a
+3ae 3af 349 369
+3b0 391 34a 34b
+3af 3b0 34a 36a
+3b1 392 34b 34c
+3b0 3b1 34b 36b
+3b2 393 34c 34d
+3b1 3b2 34c 36c
+3b3 394 34d 34e
+3b2 3b3 34d 36d
+3b4 395 34e 34f
+3b3 3b4 34e 36e
+3b5 396 34f 350
+3b4 3b5 34f 36f
+3b6 397 350 351
+3b5 3b6 350 370
+3b7 398 351 352
+3b6 3b7 351 371
+3b8 399 352 353
+3b7 3b8 352 372
+3b9 39a 353 354
+3b8 3b9 353 373
+3ba 39b 354 355
+3b9 3ba 354 374
+3bb 39c 355 356
+3ba 3bb 355 375
+3bc 39d 356 357
+3bb 3bc 356 376
+3bd 39e 357 358
+3bc 3bd 357 377
+3be 39f 358 359
+3bd 3be 358 378
+3bf 3a0 359 35a
+3be 3bf 359 379
+3c0 3a1 35a 35b
+3bf 3c0 35a 37a
+3c1 3a2 35b 35c
+3c0 3c1 35b 37b
+3c2 3a3 35c 35d
+3c1 3c2 35c 37c
+3c3 3a4 35d 35e
+3c2 3c3 35d 37d
+3c4 3a5 35e 35f
+3c3 3c4 35e 37e
+3c5 3a6 35f 360
+3c4 3c5 35f 37f
+3c5 47 360 380
+3c6 3a7 361 362
+5 3c6 361 381
+3c7 3a8 362 363
+3c6 3c7 362 382
+3c8 3a9 363 364
+3c7 3c8 363 383
+3c9 3aa 364 365
+3c8 3c9 364 384
+3ca 3ab 365 366
+3c9 3ca 365 385
+3cb 3ac 366 367
+3ca 3cb 366 386
+3cc 3ad 367 368
+3cb 3cc 367 387
+3cd 3ae 368 369
+3cc 3cd 368 388
+3ce 3af 369 36a
+3cd 3ce 369 389
+3cf 3b0 36a 36b
+3ce 3cf 36a 38a
+3d0 3b1 36b 36c
+3cf 3d0 36b 38b
+3d1 3b2 36c 36d
+3d0 3d1 36c 38c
+3d2 3b3 36d 36e
+3d1 3d2 36d 38d
+3d3 3b4 36e 36f
+3d2 3d3 36e 38e
+3d4 3b5 36f 370
+3d3 3d4 36f 38f
+3d5 3b6 370 371
+3d4 3d5 370 390
+3d6 3b7 371 372
+3d5 3d6 371 391
+3d7 3b8 372 373
+3d6 3d7 372 392
+3d8 3b9 373 374
+3d7 3d8 373 393
+3d9 3ba 374 375
+3d8 3d9 374 394
+3da 3bb 375 376
+3d9 3da 375 395
+3db 3bc 376 377
+3da 3db 376 396
+3dc 3bd 377 378
+3db 3dc 377 397
+3dd 3be 378 379
+3dc 3dd 378 398
+3de 3bf 379 37a
+3dd 3de 379 399
+3df 3c0 37a 37b
+3de 3df 37a 39a
+3e0 3c1 37b 37c
+3df 3e0 37b 39b
+3e1 3c2 37c 37d
+3e0 3e1 37c 39c
+3e2 3c3 37d 37e
+3e1 3e2 37d 39d
+3e3 3c4 37e 37f
+3e2 3e3 37e 39e
+3e4 3c5 37f 380
+3e3 3e4 37f 39f
+3e4 46 380 3a0
+3e5 3c6 381 382
+4 3e5 381 3a1
+3e6 3c7 382 383
+3e5 3e6 382 3a2
+3e7 3c8 383 384
+3e6 3e7 383 3a3
+3e8 3c9 384 385
+3e7 3e8 384 3a4
+3e9 3ca 385 386
+3e8 3e9 385 3a5
+3ea 3cb 386 387
+3e9 3ea 386 3a6
+3eb 3cc 387 388
+3ea 3eb 387 3a7
+3ec 3cd 388 389
+3eb 3ec 388 3a8
+3ed 3ce 389 38a
+3ec 3ed 389 3a9
+3ee 3cf 38a 38b
+3ed 3ee 38a 3aa
+3ef 3d0 38b 38c
+3ee 3ef 38b 3ab
+3f0 3d1 38c 38d
+3ef 3f0 38c 3ac
+3f1 3d2 38d 38e
+3f0 3f1 38d 3ad
+3f2 3d3 38e 38f
+3f1 3f2 38e 3ae
+3f3 3d4 38f 390
+3f2 3f3 38f 3af
+3f4 3d5 390 391
+3f3 3f4 390 3b0
+3f5 3d6 391 392
+3f4 3f5 391 3b1
+3f6 3d7 392 393
+3f5 3f6 392 3b2
+3f7 3d8 393 394
+3f6 3f7 393 3b3
+3f8 3d9 394 395
+3f7 3f8 394 3b4
+3f9 3da 395 396
+3f8 3f9 395 3b5
+3fa 3db 396 397
+3f9 3fa 396 3b6
+3fb 3dc 397 398
+3fa 3fb 397 3b7
+3fc 3dd 398 399
+3fb 3fc 398 3b8
+3fd 3de 399 39a
+3fc 3fd 399 3b9
+3fe 3df 39a 39b
+3fd 3fe 39a 3ba
+3ff 3e0 39b 39c
+3fe 3ff 39b 3bb
+400 3e1 39c 39d
+3ff 400 39c 3bc
+401 3e2 39d 39e
+400 401 39d 3bd
+402 3e3 39e 39f
+401 402 39e 3be
+403 3e4 39f 3a0
+402 403 39f 3bf
+403 45 3a0 3c0
+404 3e5 3a1 3a2
+3 404 3a1 3c1
+405 3e6 3a2 3a3
+404 405 3a2 3c2
+406 3e7 3a3 3a4
+405 406 3a3 3c3
+407 3e8 3a4 3a5
+406 407 3a4 3c4
+408 3e9 3a5 3a6
+407 408 3a5 3c5
+409 3ea 3a6 3a7
+408 409 3a6 3c6
+40a 3eb 3a7 3a8
+409 40a 3a7 3c7
+40b 3ec 3a8 3a9
+40a 40b 3a8 3c8
+40c 3ed 3a9 3aa
+40b 40c 3a9 3c9
+40d 3ee 3aa 3ab
+40c 40d 3aa 3ca
+40e 3ef 3ab 3ac
+40d 40e 3ab 3cb
+40f 3f0 3ac 3ad
+40e 40f 3ac 3cc
+410 3f1 3ad 3ae
+40f 410 3ad 3cd
+411 3f2 3ae 3af
+410 411 3ae 3ce
+412 3f3 3af 3b0
+411 412 3af 3cf
+413 3f4 3b0 3b1
+412 413 3b0 3d0
+414 3f5 3b1 3b2
+413 414 3b1 3d1
+415 3f6 3b2 3b3
+414 415 3b2 3d2
+416 3f7 3b3 3b4
+415 416 3b3 3d3
+417 3f8 3b4 3b5
+416 417 3b4 3d4
+418 3f9 3b5 3b6
+417 418 3b5 3d5
+419 3fa 3b6 3b7
+418 419 3b6 3d6
+41a 3fb 3b7 3b8
+419 41a 3b7 3d7
+41b 3fc 3b8 3b9
+41a 41b 3b8 3d8
+41c 3fd 3b9 3ba
+41b 41c 3b9 3d9
+41d 3fe 3ba 3bb
+41c 41d 3ba 3da
+41e 3ff 3bb 3bc
+41d 41e 3bb 3db
+41f 400 3bc 3bd
+41e 41f 3bc 3dc
+420 401 3bd 3be
+41f 420 3bd 3dd
+421 402 3be 3bf
+420 421 3be 3de
+422 403 3bf 3c0
+421 422 3bf 3df
+422 44 3c0 3e0
+423 404 3c1 3c2
+1 423 3c1 3e1
+424 405 3c2 3c3
+423 424 3c2 3e2
+425 406 3c3 3c4
+424 425 3c3 3e3
+426 407 3c4 3c5
+425 426 3c4 3e4
+427 408 3c5 3c6
+426 427 3c5 3e5
+428 409 3c6 3c7
+427 428 3c6 3e6
+429 40a 3c7 3c8
+428 429 3c7 3e7
+42a 40b 3c8 3c9
+429 42a 3c8 3e8
+42b 40c 3c9 3ca
+42a 42b 3c9 3e9
+42c 40d 3ca 3cb
+42b 42c 3ca 3ea
+42d 40e 3cb 3cc
+42c 42d 3cb 3eb
+42e 40f 3cc 3cd
+42d 42e 3cc 3ec
+42f 410 3cd 3ce
+42e 42f 3cd 3ed
+430 411 3ce 3cf
+42f 430 3ce 3ee
+431 412 3cf 3d0
+430 431 3cf 3ef
+432 413 3d0 3d1
+431 432 3d0 3f0
+433 414 3d1 3d2
+432 433 3d1 3f1
+434 415 3d2 3d3
+433 434 3d2 3f2
+435 416 3d3 3d4
+434 435 3d3 3f3
+436 417 3d4 3d5
+435 436 3d4 3f4
+437 418 3d5 3d6
+436 437 3d5 3f5
+438 419 3d6 3d7
+437 438 3d6 3f6
+439 41a 3d7 3d8
+438 439 3d7 3f7
+43a 41b 3d8 3d9
+439 43a 3d8 3f8
+43b 41c 3d9 3da
+43a 43b 3d9 3f9
+43c 41d 3da 3db
+43b 43c 3da 3fa
+43d 41e 3db 3dc
+43c 43d 3db 3fb
+43e 41f 3dc 3dd
+43d 43e 3dc 3fc
+43f 420 3dd 3de
+43e 43f 3dd 3fd
+440 421 3de 3df
+43f 440 3de 3fe
+441 422 3df 3e0
+440 441 3df 3ff
+441 43 3e0 400
+80 423 3e1 3e2
+7f 424 3e2 3e3
+7e 425 3e3 3e4
+7d 426 3e4 3e5
+7c 427 3e5 3e6
+7b 428 3e6 3e7
+7a 429 3e7 3e8
+79 42a 3e8 3e9
+78 42b 3e9 3ea
+77 42c 3ea 3eb
+76 42d 3eb 3ec
+75 42e 3ec 3ed
+74 42f 3ed 3ee
+73 430 3ee 3ef
+72 431 3ef 3f0
+71 432 3f0 3f1
+70 433 3f1 3f2
+6f 434 3f2 3f3
+6e 435 3f3 3f4
+6d 436 3f4 3f5
+6c 437 3f5 3f6
+6b 438 3f6 3f7
+6a 439 3f7 3f8
+69 43a 3f8 3f9
+68 43b 3f9 3fa
+67 43c 3fa 3fb
+66 43d 3fb 3fc
+65 43e 3fc 3fd
+64 43f 3fd 3fe
+63 440 3fe 3ff
+62 441 3ff 400))
+
+(10 (1 1 441 1 2)
+(
+ 3.1250000000000000e-02  1.0000000000000000e+00
+ 0.0000000000000000e+00  1.0000000000000000e+00
+ 6.2500000000000000e-02  1.0000000000000000e+00
+ 9.3750000000000000e-02  1.0000000000000000e+00
+ 1.2500000000000000e-01  1.0000000000000000e+00
+ 1.5625000000000000e-01  1.0000000000000000e+00
+ 1.8750000000000000e-01  1.0000000000000000e+00
+ 2.1875000000000000e-01  1.0000000000000000e+00
+ 2.5000000000000000e-01  1.0000000000000000e+00
+ 2.8125000000000000e-01  1.0000000000000000e+00
+ 3.1250000000000000e-01  1.0000000000000000e+00
+ 3.4375000000000000e-01  1.0000000000000000e+00
+ 3.7500000000000000e-01  1.0000000000000000e+00
+ 4.0625000000000000e-01  1.0000000000000000e+00
+ 4.3750000000000000e-01  1.0000000000000000e+00
+ 4.6875000000000000e-01  1.0000000000000000e+00
+ 5.0000000000000000e-01  1.0000000000000000e+00
+ 5.3125000000000000e-01  1.0000000000000000e+00
+ 5.6250000000000000e-01  1.0000000000000000e+00
+ 5.9375000000000000e-01  1.0000000000000000e+00
+ 6.2500000000000000e-01  1.0000000000000000e+00
+ 6.5625000000000000e-01  1.0000000000000000e+00
+ 6.8750000000000000e-01  1.0000000000000000e+00
+ 7.1875000000000000e-01  1.0000000000000000e+00
+ 7.5000000000000000e-01  1.0000000000000000e+00
+ 7.8125000000000000e-01  1.0000000000000000e+00
+ 8.1250000000000000e-01  1.0000000000000000e+00
+ 8.4375000000000000e-01  1.0000000000000000e+00
+ 8.7500000000000000e-01  1.0000000000000000e+00
+ 9.0625000000000000e-01  1.0000000000000000e+00
+ 9.3750000000000000e-01  1.0000000000000000e+00
+ 9.6875000000000000e-01  1.0000000000000000e+00
+ 1.0000000000000000e+00  1.0000000000000000e+00
+ 1.0000000000000000e+00  0.0000000000000000e+00
+ 1.0000000000000000e+00  3.1250000000000000e-02
+ 1.0000000000000000e+00  6.2500000000000000e-02
+ 1.0000000000000000e+00  9.3750000000000000e-02
+ 1.0000000000000000e+00  1.2500000000000000e-01
+ 1.0000000000000000e+00  1.5625000000000000e-01
+ 1.0000000000000000e+00  1.8750000000000000e-01
+ 1.0000000000000000e+00  2.1875000000000000e-01
+ 1.0000000000000000e+00  2.5000000000000000e-01
+ 1.0000000000000000e+00  2.8125000000000000e-01
+ 1.0000000000000000e+00  3.1250000000000000e-01
+ 1.0000000000000000e+00  3.4375000000000000e-01
+ 1.0000000000000000e+00  3.7500000000000000e-01
+ 1.0000000000000000e+00  4.0625000000000000e-01
+ 1.0000000000000000e+00  4.3750000000000000e-01
+ 1.0000000000000000e+00  4.6875000000000000e-01
+ 1.0000000000000000e+00  5.0000000000000000e-01
+ 1.0000000000000000e+00  5.3125000000000000e-01
+ 1.0000000000000000e+00  5.6250000000000000e-01
+ 1.0000000000000000e+00  5.9375000000000000e-01
+ 1.0000000000000000e+00  6.2500000000000000e-01
+ 1.0000000000000000e+00  6.5625000000000000e-01
+ 1.0000000000000000e+00  6.8750000000000000e-01
+ 1.0000000000000000e+00  7.1875000000000000e-01
+ 1.0000000000000000e+00  7.5000000000000000e-01
+ 1.0000000000000000e+00  7.8125000000000000e-01
+ 1.0000000000000000e+00  8.1250000000000000e-01
+ 1.0000000000000000e+00  8.4375000000000000e-01
+ 1.0000000000000000e+00  8.7500000000000000e-01
+ 1.0000000000000000e+00  9.0625000000000000e-01
+ 1.0000000000000000e+00  9.3750000000000000e-01
+ 1.0000000000000000e+00  9.6875000000000000e-01
+ 0.0000000000000000e+00  0.0000000000000000e+00
+ 3.1250000000000000e-02  0.0000000000000000e+00
+ 6.2500000000000000e-02  0.0000000000000000e+00
+ 9.3750000000000000e-02  0.0000000000000000e+00
+ 1.2500000000000000e-01  0.0000000000000000e+00
+ 1.5625000000000000e-01  0.0000000000000000e+00
+ 1.8750000000000000e-01  0.0000000000000000e+00
+ 2.1875000000000000e-01  0.0000000000000000e+00
+ 2.5000000000000000e-01  0.0000000000000000e+00
+ 2.8125000000000000e-01  0.0000000000000000e+00
+ 3.1250000000000000e-01  0.0000000000000000e+00
+ 3.4375000000000000e-01  0.0000000000000000e+00
+ 3.7500000000000000e-01  0.0000000000000000e+00
+ 4.0625000000000000e-01  0.0000000000000000e+00
+ 4.3750000000000000e-01  0.0000000000000000e+00
+ 4.6875000000000000e-01  0.0000000000000000e+00
+ 5.0000000000000000e-01  0.0000000000000000e+00
+ 5.3125000000000000e-01  0.0000000000000000e+00
+ 5.6250000000000000e-01  0.0000000000000000e+00
+ 5.9375000000000000e-01  0.0000000000000000e+00
+ 6.2500000000000000e-01  0.0000000000000000e+00
+ 6.5625000000000000e-01  0.0000000000000000e+00
+ 6.8750000000000000e-01  0.0000000000000000e+00
+ 7.1875000000000000e-01  0.0000000000000000e+00
+ 7.5000000000000000e-01  0.0000000000000000e+00
+ 7.8125000000000000e-01  0.0000000000000000e+00
+ 8.1250000000000000e-01  0.0000000000000000e+00
+ 8.4375000000000000e-01  0.0000000000000000e+00
+ 8.7500000000000000e-01  0.0000000000000000e+00
+ 9.0625000000000000e-01  0.0000000000000000e+00
+ 9.3750000000000000e-01  0.0000000000000000e+00
+ 9.6875000000000000e-01  0.0000000000000000e+00
+ 0.0000000000000000e+00  3.1250000000000000e-02
+ 0.0000000000000000e+00  6.2500000000000000e-02
+ 0.0000000000000000e+00  9.3750000000000000e-02
+ 0.0000000000000000e+00  1.2500000000000000e-01
+ 0.0000000000000000e+00  1.5625000000000000e-01
+ 0.0000000000000000e+00  1.8750000000000000e-01
+ 0.0000000000000000e+00  2.1875000000000000e-01
+ 0.0000000000000000e+00  2.5000000000000000e-01
+ 0.0000000000000000e+00  2.8125000000000000e-01
+ 0.0000000000000000e+00  3.1250000000000000e-01
+ 0.0000000000000000e+00  3.4375000000000000e-01
+ 0.0000000000000000e+00  3.7500000000000000e-01
+ 0.0000000000000000e+00  4.0625000000000000e-01
+ 0.0000000000000000e+00  4.3750000000000000e-01
+ 0.0000000000000000e+00  4.6875000000000000e-01
+ 0.0000000000000000e+00  5.0000000000000000e-01
+ 0.0000000000000000e+00  5.3125000000000000e-01
+ 0.0000000000000000e+00  5.6250000000000000e-01
+ 0.0000000000000000e+00  5.9375000000000000e-01
+ 0.0000000000000000e+00  6.2500000000000000e-01
+ 0.0000000000000000e+00  6.5625000000000000e-01
+ 0.0000000000000000e+00  6.8750000000000000e-01
+ 0.0000000000000000e+00  7.1875000000000000e-01
+ 0.0000000000000000e+00  7.5000000000000000e-01
+ 0.0000000000000000e+00  7.8125000000000000e-01
+ 0.0000000000000000e+00  8.1250000000000000e-01
+ 0.0000000000000000e+00  8.4375000000000000e-01
+ 0.0000000000000000e+00  8.7500000000000000e-01
+ 0.0000000000000000e+00  9.0625000000000000e-01
+ 0.0000000000000000e+00  9.3750000000000000e-01
+ 0.0000000000000000e+00  9.6875000000000000e-01
+ 9.6875000000000000e-01  9.6875000000000000e-01
+ 9.6875000000000000e-01  9.3750000000000000e-01
+ 9.6875000000000000e-01  9.0625000000000000e-01
+ 9.6875000000000000e-01  8.7500000000000000e-01
+ 9.6875000000000000e-01  8.4375000000000000e-01
+ 9.6875000000000000e-01  8.1250000000000000e-01
+ 9.6875000000000000e-01  7.8125000000000000e-01
+ 9.6875000000000000e-01  7.5000000000000000e-01
+ 9.6875000000000000e-01  7.1875000000000000e-01
+ 9.6875000000000000e-01  6.8750000000000000e-01
+ 9.6875000000000000e-01  6.5625000000000000e-01
+ 9.6875000000000000e-01  6.2500000000000000e-01
+ 9.6875000000000000e-01  5.9375000000000000e-01
+ 9.6875000000000000e-01  5.6250000000000000e-01
+ 9.6875000000000000e-01  5.3125000000000000e-01
+ 9.6875000000000000e-01  5.0000000000000000e-01
+ 9.6875000000000000e-01  4.6875000000000000e-01
+ 9.6875000000000000e-01  4.3750000000000000e-01
+ 9.6875000000000000e-01  4.0625000000000000e-01
+ 9.6875000000000000e-01  3.7500000000000000e-01
+ 9.6875000000000000e-01  3.4375000000000000e-01
+ 9.6875000000000000e-01  3.1250000000000000e-01
+ 9.6875000000000000e-01  2.8125000000000000e-01
+ 9.6875000000000000e-01  2.5000000000000000e-01
+ 9.6875000000000000e-01  2.1875000000000000e-01
+ 9.6875000000000000e-01  1.8750000000000000e-01
+ 9.6875000000000000e-01  1.5625000000000000e-01
+ 9.6875000000000000e-01  1.2500000000000000e-01
+ 9.6875000000000000e-01  9.3750000000000000e-02
+ 9.6875000000000000e-01  6.2500000000000000e-02
+ 9.6875000000000000e-01  3.1250000000000000e-02
+ 9.3750000000000000e-01  9.6875000000000000e-01
+ 9.3750000000000000e-01  9.3750000000000000e-01
+ 9.3750000000000000e-01  9.0625000000000000e-01
+ 9.3750000000000000e-01  8.7500000000000000e-01
+ 9.3750000000000000e-01  8.4375000000000000e-01
+ 9.3750000000000000e-01  8.1250000000000000e-01
+ 9.3750000000000000e-01  7.8125000000000000e-01
+ 9.3750000000000000e-01  7.5000000000000000e-01
+ 9.3750000000000000e-01  7.1875000000000000e-01
+ 9.3750000000000000e-01  6.8750000000000000e-01
+ 9.3750000000000000e-01  6.5625000000000000e-01
+ 9.3750000000000000e-01  6.2500000000000000e-01
+ 9.3750000000000000e-01  5.9375000000000000e-01
+ 9.3750000000000000e-01  5.6250000000000000e-01
+ 9.3750000000000000e-01  5.3125000000000000e-01
+ 9.3750000000000000e-01  5.0000000000000000e-01
+ 9.3750000000000000e-01  4.6875000000000000e-01
+ 9.3750000000000000e-01  4.3750000000000000e-01
+ 9.3750000000000000e-01  4.0625000000000000e-01
+ 9.3750000000000000e-01  3.7500000000000000e-01
+ 9.3750000000000000e-01  3.4375000000000000e-01
+ 9.3750000000000000e-01  3.1250000000000000e-01
+ 9.3750000000000000e-01  2.8125000000000000e-01
+ 9.3750000000000000e-01  2.5000000000000000e-01
+ 9.3750000000000000e-01  2.1875000000000000e-01
+ 9.3750000000000000e-01  1.8750000000000000e-01
+ 9.3750000000000000e-01  1.5625000000000000e-01
+ 9.3750000000000000e-01  1.2500000000000000e-01
+ 9.3750000000000000e-01  9.3750000000000000e-02
+ 9.3750000000000000e-01  6.2500000000000000e-02
+ 9.3750000000000000e-01  3.1250000000000000e-02
+ 9.0625000000000000e-01  9.6875000000000000e-01
+ 9.0625000000000000e-01  9.3750000000000000e-01
+ 9.0625000000000000e-01  9.0625000000000000e-01
+ 9.0625000000000000e-01  8.7500000000000000e-01
+ 9.0625000000000000e-01  8.4375000000000000e-01
+ 9.0625000000000000e-01  8.1250000000000000e-01
+ 9.0625000000000000e-01  7.8125000000000000e-01
+ 9.0625000000000000e-01  7.5000000000000000e-01
+ 9.0625000000000000e-01  7.1875000000000000e-01
+ 9.0625000000000000e-01  6.8750000000000000e-01
+ 9.0625000000000000e-01  6.5625000000000000e-01
+ 9.0625000000000000e-01  6.2500000000000000e-01
+ 9.0625000000000000e-01  5.9375000000000000e-01
+ 9.0625000000000000e-01  5.6250000000000000e-01
+ 9.0625000000000000e-01  5.3125000000000000e-01
+ 9.0625000000000000e-01  5.0000000000000000e-01
+ 9.0625000000000000e-01  4.6875000000000000e-01
+ 9.0625000000000000e-01  4.3750000000000000e-01
+ 9.0625000000000000e-01  4.0625000000000000e-01
+ 9.0625000000000000e-01  3.7500000000000000e-01
+ 9.0625000000000000e-01  3.4375000000000000e-01
+ 9.0625000000000000e-01  3.1250000000000000e-01
+ 9.0625000000000000e-01  2.8125000000000000e-01
+ 9.0625000000000000e-01  2.5000000000000000e-01
+ 9.0625000000000000e-01  2.1875000000000000e-01
+ 9.0625000000000000e-01  1.8750000000000000e-01
+ 9.0625000000000000e-01  1.5625000000000000e-01
+ 9.0625000000000000e-01  1.2500000000000000e-01
+ 9.0625000000000000e-01  9.3750000000000000e-02
+ 9.0625000000000000e-01  6.2500000000000000e-02
+ 9.0625000000000000e-01  3.1250000000000000e-02
+ 8.7500000000000000e-01  9.6875000000000000e-01
+ 8.7500000000000000e-01  9.3750000000000000e-01
+ 8.7500000000000000e-01  9.0625000000000000e-01
+ 8.7500000000000000e-01  8.7500000000000000e-01
+ 8.7500000000000000e-01  8.4375000000000000e-01
+ 8.7500000000000000e-01  8.1250000000000000e-01
+ 8.7500000000000000e-01  7.8125000000000000e-01
+ 8.7500000000000000e-01  7.5000000000000000e-01
+ 8.7500000000000000e-01  7.1875000000000000e-01
+ 8.7500000000000000e-01  6.8750000000000000e-01
+ 8.7500000000000000e-01  6.5625000000000000e-01
+ 8.7500000000000000e-01  6.2500000000000000e-01
+ 8.7500000000000000e-01  5.9375000000000000e-01
+ 8.7500000000000000e-01  5.6250000000000000e-01
+ 8.7500000000000000e-01  5.3125000000000000e-01
+ 8.7500000000000000e-01  5.0000000000000000e-01
+ 8.7500000000000000e-01  4.6875000000000000e-01
+ 8.7500000000000000e-01  4.3750000000000000e-01
+ 8.7500000000000000e-01  4.0625000000000000e-01
+ 8.7500000000000000e-01  3.7500000000000000e-01
+ 8.7500000000000000e-01  3.4375000000000000e-01
+ 8.7500000000000000e-01  3.1250000000000000e-01
+ 8.7500000000000000e-01  2.8125000000000000e-01
+ 8.7500000000000000e-01  2.5000000000000000e-01
+ 8.7500000000000000e-01  2.1875000000000000e-01
+ 8.7500000000000000e-01  1.8750000000000000e-01
+ 8.7500000000000000e-01  1.5625000000000000e-01
+ 8.7500000000000000e-01  1.2500000000000000e-01
+ 8.7500000000000000e-01  9.3750000000000000e-02
+ 8.7500000000000000e-01  6.2500000000000000e-02
+ 8.7500000000000000e-01  3.1250000000000000e-02
+ 8.4375000000000000e-01  9.6875000000000000e-01
+ 8.4375000000000000e-01  9.3750000000000000e-01
+ 8.4375000000000000e-01  9.0625000000000000e-01
+ 8.4375000000000000e-01  8.7500000000000000e-01
+ 8.4375000000000000e-01  8.4375000000000000e-01
+ 8.4375000000000000e-01  8.1250000000000000e-01
+ 8.4375000000000000e-01  7.8125000000000000e-01
+ 8.4375000000000000e-01  7.5000000000000000e-01
+ 8.4375000000000000e-01  7.1875000000000000e-01
+ 8.4375000000000000e-01  6.8750000000000000e-01
+ 8.4375000000000000e-01  6.5625000000000000e-01
+ 8.4375000000000000e-01  6.2500000000000000e-01
+ 8.4375000000000000e-01  5.9375000000000000e-01
+ 8.4375000000000000e-01  5.6250000000000000e-01
+ 8.4375000000000000e-01  5.3125000000000000e-01
+ 8.4375000000000000e-01  5.0000000000000000e-01
+ 8.4375000000000000e-01  4.6875000000000000e-01
+ 8.4375000000000000e-01  4.3750000000000000e-01
+ 8.4375000000000000e-01  4.0625000000000000e-01
+ 8.4375000000000000e-01  3.7500000000000000e-01
+ 8.4375000000000000e-01  3.4375000000000000e-01
+ 8.4375000000000000e-01  3.1250000000000000e-01
+ 8.4375000000000000e-01  2.8125000000000000e-01
+ 8.4375000000000000e-01  2.5000000000000000e-01
+ 8.4375000000000000e-01  2.1875000000000000e-01
+ 8.4375000000000000e-01  1.8750000000000000e-01
+ 8.4375000000000000e-01  1.5625000000000000e-01
+ 8.4375000000000000e-01  1.2500000000000000e-01
+ 8.4375000000000000e-01  9.3750000000000000e-02
+ 8.4375000000000000e-01  6.2500000000000000e-02
+ 8.4375000000000000e-01  3.1250000000000000e-02
+ 8.1250000000000000e-01  9.6875000000000000e-01
+ 8.1250000000000000e-01  9.3750000000000000e-01
+ 8.1250000000000000e-01  9.0625000000000000e-01
+ 8.1250000000000000e-01  8.7500000000000000e-01
+ 8.1250000000000000e-01  8.4375000000000000e-01
+ 8.1250000000000000e-01  8.1250000000000000e-01
+ 8.1250000000000000e-01  7.8125000000000000e-01
+ 8.1250000000000000e-01  7.5000000000000000e-01
+ 8.1250000000000000e-01  7.1875000000000000e-01
+ 8.1250000000000000e-01  6.8750000000000000e-01
+ 8.1250000000000000e-01  6.5625000000000000e-01
+ 8.1250000000000000e-01  6.2500000000000000e-01
+ 8.1250000000000000e-01  5.9375000000000000e-01
+ 8.1250000000000000e-01  5.6250000000000000e-01
+ 8.1250000000000000e-01  5.3125000000000000e-01
+ 8.1250000000000000e-01  5.0000000000000000e-01
+ 8.1250000000000000e-01  4.6875000000000000e-01
+ 8.1250000000000000e-01  4.3750000000000000e-01
+ 8.1250000000000000e-01  4.0625000000000000e-01
+ 8.1250000000000000e-01  3.7500000000000000e-01
+ 8.1250000000000000e-01  3.4375000000000000e-01
+ 8.1250000000000000e-01  3.1250000000000000e-01
+ 8.1250000000000000e-01  2.8125000000000000e-01
+ 8.1250000000000000e-01  2.5000000000000000e-01
+ 8.1250000000000000e-01  2.1875000000000000e-01
+ 8.1250000000000000e-01  1.8750000000000000e-01
+ 8.1250000000000000e-01  1.5625000000000000e-01
+ 8.1250000000000000e-01  1.2500000000000000e-01
+ 8.1250000000000000e-01  9.3750000000000000e-02
+ 8.1250000000000000e-01  6.2500000000000000e-02
+ 8.1250000000000000e-01  3.1250000000000000e-02
+ 7.8125000000000000e-01  9.6875000000000000e-01
+ 7.8125000000000000e-01  9.3750000000000000e-01
+ 7.8125000000000000e-01  9.0625000000000000e-01
+ 7.8125000000000000e-01  8.7500000000000000e-01
+ 7.8125000000000000e-01  8.4375000000000000e-01
+ 7.8125000000000000e-01  8.1250000000000000e-01
+ 7.8125000000000000e-01  7.8125000000000000e-01
+ 7.8125000000000000e-01  7.5000000000000000e-01
+ 7.8125000000000000e-01  7.1875000000000000e-01
+ 7.8125000000000000e-01  6.8750000000000000e-01
+ 7.8125000000000000e-01  6.5625000000000000e-01
+ 7.8125000000000000e-01  6.2500000000000000e-01
+ 7.8125000000000000e-01  5.9375000000000000e-01
+ 7.8125000000000000e-01  5.6250000000000000e-01
+ 7.8125000000000000e-01  5.3125000000000000e-01
+ 7.8125000000000000e-01  5.0000000000000000e-01
+ 7.8125000000000000e-01  4.6875000000000000e-01
+ 7.8125000000000000e-01  4.3750000000000000e-01
+ 7.8125000000000000e-01  4.0625000000000000e-01
+ 7.8125000000000000e-01  3.7500000000000000e-01
+ 7.8125000000000000e-01  3.4375000000000000e-01
+ 7.8125000000000000e-01  3.1250000000000000e-01
+ 7.8125000000000000e-01  2.8125000000000000e-01
+ 7.8125000000000000e-01  2.5000000000000000e-01
+ 7.8125000000000000e-01  2.1875000000000000e-01
+ 7.8125000000000000e-01  1.8750000000000000e-01
+ 7.8125000000000000e-01  1.5625000000000000e-01
+ 7.8125000000000000e-01  1.2500000000000000e-01
+ 7.8125000000000000e-01  9.3750000000000000e-02
+ 7.8125000000000000e-01  6.2500000000000000e-02
+ 7.8125000000000000e-01  3.1250000000000000e-02
+ 7.5000000000000000e-01  9.6875000000000000e-01
+ 7.5000000000000000e-01  9.3750000000000000e-01
+ 7.5000000000000000e-01  9.0625000000000000e-01
+ 7.5000000000000000e-01  8.7500000000000000e-01
+ 7.5000000000000000e-01  8.4375000000000000e-01
+ 7.5000000000000000e-01  8.1250000000000000e-01
+ 7.5000000000000000e-01  7.8125000000000000e-01
+ 7.5000000000000000e-01  7.5000000000000000e-01
+ 7.5000000000000000e-01  7.1875000000000000e-01
+ 7.5000000000000000e-01  6.8750000000000000e-01
+ 7.5000000000000000e-01  6.5625000000000000e-01
+ 7.5000000000000000e-01  6.2500000000000000e-01
+ 7.5000000000000000e-01  5.9375000000000000e-01
+ 7.5000000000000000e-01  5.6250000000000000e-01
+ 7.5000000000000000e-01  5.3125000000000000e-01
+ 7.5000000000000000e-01  5.0000000000000000e-01
+ 7.5000000000000000e-01  4.6875000000000000e-01
+ 7.5000000000000000e-01  4.3750000000000000e-01
+ 7.5000000000000000e-01  4.0625000000000000e-01
+ 7.5000000000000000e-01  3.7500000000000000e-01
+ 7.5000000000000000e-01  3.4375000000000000e-01
+ 7.5000000000000000e-01  3.1250000000000000e-01
+ 7.5000000000000000e-01  2.8125000000000000e-01
+ 7.5000000000000000e-01  2.5000000000000000e-01
+ 7.5000000000000000e-01  2.1875000000000000e-01
+ 7.5000000000000000e-01  1.8750000000000000e-01
+ 7.5000000000000000e-01  1.5625000000000000e-01
+ 7.5000000000000000e-01  1.2500000000000000e-01
+ 7.5000000000000000e-01  9.3750000000000000e-02
+ 7.5000000000000000e-01  6.2500000000000000e-02
+ 7.5000000000000000e-01  3.1250000000000000e-02
+ 7.1875000000000000e-01  9.6875000000000000e-01
+ 7.1875000000000000e-01  9.3750000000000000e-01
+ 7.1875000000000000e-01  9.0625000000000000e-01
+ 7.1875000000000000e-01  8.7500000000000000e-01
+ 7.1875000000000000e-01  8.4375000000000000e-01
+ 7.1875000000000000e-01  8.1250000000000000e-01
+ 7.1875000000000000e-01  7.8125000000000000e-01
+ 7.1875000000000000e-01  7.5000000000000000e-01
+ 7.1875000000000000e-01  7.1875000000000000e-01
+ 7.1875000000000000e-01  6.8750000000000000e-01
+ 7.1875000000000000e-01  6.5625000000000000e-01
+ 7.1875000000000000e-01  6.2500000000000000e-01
+ 7.1875000000000000e-01  5.9375000000000000e-01
+ 7.1875000000000000e-01  5.6250000000000000e-01
+ 7.1875000000000000e-01  5.3125000000000000e-01
+ 7.1875000000000000e-01  5.0000000000000000e-01
+ 7.1875000000000000e-01  4.6875000000000000e-01
+ 7.1875000000000000e-01  4.3750000000000000e-01
+ 7.1875000000000000e-01  4.0625000000000000e-01
+ 7.1875000000000000e-01  3.7500000000000000e-01
+ 7.1875000000000000e-01  3.4375000000000000e-01
+ 7.1875000000000000e-01  3.1250000000000000e-01
+ 7.1875000000000000e-01  2.8125000000000000e-01
+ 7.1875000000000000e-01  2.5000000000000000e-01
+ 7.1875000000000000e-01  2.1875000000000000e-01
+ 7.1875000000000000e-01  1.8750000000000000e-01
+ 7.1875000000000000e-01  1.5625000000000000e-01
+ 7.1875000000000000e-01  1.2500000000000000e-01
+ 7.1875000000000000e-01  9.3750000000000000e-02
+ 7.1875000000000000e-01  6.2500000000000000e-02
+ 7.1875000000000000e-01  3.1250000000000000e-02
+ 6.8750000000000000e-01  9.6875000000000000e-01
+ 6.8750000000000000e-01  9.3750000000000000e-01
+ 6.8750000000000000e-01  9.0625000000000000e-01
+ 6.8750000000000000e-01  8.7500000000000000e-01
+ 6.8750000000000000e-01  8.4375000000000000e-01
+ 6.8750000000000000e-01  8.1250000000000000e-01
+ 6.8750000000000000e-01  7.8125000000000000e-01
+ 6.8750000000000000e-01  7.5000000000000000e-01
+ 6.8750000000000000e-01  7.1875000000000000e-01
+ 6.8750000000000000e-01  6.8750000000000000e-01
+ 6.8750000000000000e-01  6.5625000000000000e-01
+ 6.8750000000000000e-01  6.2500000000000000e-01
+ 6.8750000000000000e-01  5.9375000000000000e-01
+ 6.8750000000000000e-01  5.6250000000000000e-01
+ 6.8750000000000000e-01  5.3125000000000000e-01
+ 6.8750000000000000e-01  5.0000000000000000e-01
+ 6.8750000000000000e-01  4.6875000000000000e-01
+ 6.8750000000000000e-01  4.3750000000000000e-01
+ 6.8750000000000000e-01  4.0625000000000000e-01
+ 6.8750000000000000e-01  3.7500000000000000e-01
+ 6.8750000000000000e-01  3.4375000000000000e-01
+ 6.8750000000000000e-01  3.1250000000000000e-01
+ 6.8750000000000000e-01  2.8125000000000000e-01
+ 6.8750000000000000e-01  2.5000000000000000e-01
+ 6.8750000000000000e-01  2.1875000000000000e-01
+ 6.8750000000000000e-01  1.8750000000000000e-01
+ 6.8750000000000000e-01  1.5625000000000000e-01
+ 6.8750000000000000e-01  1.2500000000000000e-01
+ 6.8750000000000000e-01  9.3750000000000000e-02
+ 6.8750000000000000e-01  6.2500000000000000e-02
+ 6.8750000000000000e-01  3.1250000000000000e-02
+ 6.5625000000000000e-01  9.6875000000000000e-01
+ 6.5625000000000000e-01  9.3750000000000000e-01
+ 6.5625000000000000e-01  9.0625000000000000e-01
+ 6.5625000000000000e-01  8.7500000000000000e-01
+ 6.5625000000000000e-01  8.4375000000000000e-01
+ 6.5625000000000000e-01  8.1250000000000000e-01
+ 6.5625000000000000e-01  7.8125000000000000e-01
+ 6.5625000000000000e-01  7.5000000000000000e-01
+ 6.5625000000000000e-01  7.1875000000000000e-01
+ 6.5625000000000000e-01  6.8750000000000000e-01
+ 6.5625000000000000e-01  6.5625000000000000e-01
+ 6.5625000000000000e-01  6.2500000000000000e-01
+ 6.5625000000000000e-01  5.9375000000000000e-01
+ 6.5625000000000000e-01  5.6250000000000000e-01
+ 6.5625000000000000e-01  5.3125000000000000e-01
+ 6.5625000000000000e-01  5.0000000000000000e-01
+ 6.5625000000000000e-01  4.6875000000000000e-01
+ 6.5625000000000000e-01  4.3750000000000000e-01
+ 6.5625000000000000e-01  4.0625000000000000e-01
+ 6.5625000000000000e-01  3.7500000000000000e-01
+ 6.5625000000000000e-01  3.4375000000000000e-01
+ 6.5625000000000000e-01  3.1250000000000000e-01
+ 6.5625000000000000e-01  2.8125000000000000e-01
+ 6.5625000000000000e-01  2.5000000000000000e-01
+ 6.5625000000000000e-01  2.1875000000000000e-01
+ 6.5625000000000000e-01  1.8750000000000000e-01
+ 6.5625000000000000e-01  1.5625000000000000e-01
+ 6.5625000000000000e-01  1.2500000000000000e-01
+ 6.5625000000000000e-01  9.3750000000000000e-02
+ 6.5625000000000000e-01  6.2500000000000000e-02
+ 6.5625000000000000e-01  3.1250000000000000e-02
+ 6.2500000000000000e-01  9.6875000000000000e-01
+ 6.2500000000000000e-01  9.3750000000000000e-01
+ 6.2500000000000000e-01  9.0625000000000000e-01
+ 6.2500000000000000e-01  8.7500000000000000e-01
+ 6.2500000000000000e-01  8.4375000000000000e-01
+ 6.2500000000000000e-01  8.1250000000000000e-01
+ 6.2500000000000000e-01  7.8125000000000000e-01
+ 6.2500000000000000e-01  7.5000000000000000e-01
+ 6.2500000000000000e-01  7.1875000000000000e-01
+ 6.2500000000000000e-01  6.8750000000000000e-01
+ 6.2500000000000000e-01  6.5625000000000000e-01
+ 6.2500000000000000e-01  6.2500000000000000e-01
+ 6.2500000000000000e-01  5.9375000000000000e-01
+ 6.2500000000000000e-01  5.6250000000000000e-01
+ 6.2500000000000000e-01  5.3125000000000000e-01
+ 6.2500000000000000e-01  5.0000000000000000e-01
+ 6.2500000000000000e-01  4.6875000000000000e-01
+ 6.2500000000000000e-01  4.3750000000000000e-01
+ 6.2500000000000000e-01  4.0625000000000000e-01
+ 6.2500000000000000e-01  3.7500000000000000e-01
+ 6.2500000000000000e-01  3.4375000000000000e-01
+ 6.2500000000000000e-01  3.1250000000000000e-01
+ 6.2500000000000000e-01  2.8125000000000000e-01
+ 6.2500000000000000e-01  2.5000000000000000e-01
+ 6.2500000000000000e-01  2.1875000000000000e-01
+ 6.2500000000000000e-01  1.8750000000000000e-01
+ 6.2500000000000000e-01  1.5625000000000000e-01
+ 6.2500000000000000e-01  1.2500000000000000e-01
+ 6.2500000000000000e-01  9.3750000000000000e-02
+ 6.2500000000000000e-01  6.2500000000000000e-02
+ 6.2500000000000000e-01  3.1250000000000000e-02
+ 5.9375000000000000e-01  9.6875000000000000e-01
+ 5.9375000000000000e-01  9.3750000000000000e-01
+ 5.9375000000000000e-01  9.0625000000000000e-01
+ 5.9375000000000000e-01  8.7500000000000000e-01
+ 5.9375000000000000e-01  8.4375000000000000e-01
+ 5.9375000000000000e-01  8.1250000000000000e-01
+ 5.9375000000000000e-01  7.8125000000000000e-01
+ 5.9375000000000000e-01  7.5000000000000000e-01
+ 5.9375000000000000e-01  7.1875000000000000e-01
+ 5.9375000000000000e-01  6.8750000000000000e-01
+ 5.9375000000000000e-01  6.5625000000000000e-01
+ 5.9375000000000000e-01  6.2500000000000000e-01
+ 5.9375000000000000e-01  5.9375000000000000e-01
+ 5.9375000000000000e-01  5.6250000000000000e-01
+ 5.9375000000000000e-01  5.3125000000000000e-01
+ 5.9375000000000000e-01  5.0000000000000000e-01
+ 5.9375000000000000e-01  4.6875000000000000e-01
+ 5.9375000000000000e-01  4.3750000000000000e-01
+ 5.9375000000000000e-01  4.0625000000000000e-01
+ 5.9375000000000000e-01  3.7500000000000000e-01
+ 5.9375000000000000e-01  3.4375000000000000e-01
+ 5.9375000000000000e-01  3.1250000000000000e-01
+ 5.9375000000000000e-01  2.8125000000000000e-01
+ 5.9375000000000000e-01  2.5000000000000000e-01
+ 5.9375000000000000e-01  2.1875000000000000e-01
+ 5.9375000000000000e-01  1.8750000000000000e-01
+ 5.9375000000000000e-01  1.5625000000000000e-01
+ 5.9375000000000000e-01  1.2500000000000000e-01
+ 5.9375000000000000e-01  9.3750000000000000e-02
+ 5.9375000000000000e-01  6.2500000000000000e-02
+ 5.9375000000000000e-01  3.1250000000000000e-02
+ 5.6250000000000000e-01  9.6875000000000000e-01
+ 5.6250000000000000e-01  9.3750000000000000e-01
+ 5.6250000000000000e-01  9.0625000000000000e-01
+ 5.6250000000000000e-01  8.7500000000000000e-01
+ 5.6250000000000000e-01  8.4375000000000000e-01
+ 5.6250000000000000e-01  8.1250000000000000e-01
+ 5.6250000000000000e-01  7.8125000000000000e-01
+ 5.6250000000000000e-01  7.5000000000000000e-01
+ 5.6250000000000000e-01  7.1875000000000000e-01
+ 5.6250000000000000e-01  6.8750000000000000e-01
+ 5.6250000000000000e-01  6.5625000000000000e-01
+ 5.6250000000000000e-01  6.2500000000000000e-01
+ 5.6250000000000000e-01  5.9375000000000000e-01
+ 5.6250000000000000e-01  5.6250000000000000e-01
+ 5.6250000000000000e-01  5.3125000000000000e-01
+ 5.6250000000000000e-01  5.0000000000000000e-01
+ 5.6250000000000000e-01  4.6875000000000000e-01
+ 5.6250000000000000e-01  4.3750000000000000e-01
+ 5.6250000000000000e-01  4.0625000000000000e-01
+ 5.6250000000000000e-01  3.7500000000000000e-01
+ 5.6250000000000000e-01  3.4375000000000000e-01
+ 5.6250000000000000e-01  3.1250000000000000e-01
+ 5.6250000000000000e-01  2.8125000000000000e-01
+ 5.6250000000000000e-01  2.5000000000000000e-01
+ 5.6250000000000000e-01  2.1875000000000000e-01
+ 5.6250000000000000e-01  1.8750000000000000e-01
+ 5.6250000000000000e-01  1.5625000000000000e-01
+ 5.6250000000000000e-01  1.2500000000000000e-01
+ 5.6250000000000000e-01  9.3750000000000000e-02
+ 5.6250000000000000e-01  6.2500000000000000e-02
+ 5.6250000000000000e-01  3.1250000000000000e-02
+ 5.3125000000000000e-01  9.6875000000000000e-01
+ 5.3125000000000000e-01  9.3750000000000000e-01
+ 5.3125000000000000e-01  9.0625000000000000e-01
+ 5.3125000000000000e-01  8.7500000000000000e-01
+ 5.3125000000000000e-01  8.4375000000000000e-01
+ 5.3125000000000000e-01  8.1250000000000000e-01
+ 5.3125000000000000e-01  7.8125000000000000e-01
+ 5.3125000000000000e-01  7.5000000000000000e-01
+ 5.3125000000000000e-01  7.1875000000000000e-01
+ 5.3125000000000000e-01  6.8750000000000000e-01
+ 5.3125000000000000e-01  6.5625000000000000e-01
+ 5.3125000000000000e-01  6.2500000000000000e-01
+ 5.3125000000000000e-01  5.9375000000000000e-01
+ 5.3125000000000000e-01  5.6250000000000000e-01
+ 5.3125000000000000e-01  5.3125000000000000e-01
+ 5.3125000000000000e-01  5.0000000000000000e-01
+ 5.3125000000000000e-01  4.6875000000000000e-01
+ 5.3125000000000000e-01  4.3750000000000000e-01
+ 5.3125000000000000e-01  4.0625000000000000e-01
+ 5.3125000000000000e-01  3.7500000000000000e-01
+ 5.3125000000000000e-01  3.4375000000000000e-01
+ 5.3125000000000000e-01  3.1250000000000000e-01
+ 5.3125000000000000e-01  2.8125000000000000e-01
+ 5.3125000000000000e-01  2.5000000000000000e-01
+ 5.3125000000000000e-01  2.1875000000000000e-01
+ 5.3125000000000000e-01  1.8750000000000000e-01
+ 5.3125000000000000e-01  1.5625000000000000e-01
+ 5.3125000000000000e-01  1.2500000000000000e-01
+ 5.3125000000000000e-01  9.3750000000000000e-02
+ 5.3125000000000000e-01  6.2500000000000000e-02
+ 5.3125000000000000e-01  3.1250000000000000e-02
+ 5.0000000000000000e-01  9.6875000000000000e-01
+ 5.0000000000000000e-01  9.3750000000000000e-01
+ 5.0000000000000000e-01  9.0625000000000000e-01
+ 5.0000000000000000e-01  8.7500000000000000e-01
+ 5.0000000000000000e-01  8.4375000000000000e-01
+ 5.0000000000000000e-01  8.1250000000000000e-01
+ 5.0000000000000000e-01  7.8125000000000000e-01
+ 5.0000000000000000e-01  7.5000000000000000e-01
+ 5.0000000000000000e-01  7.1875000000000000e-01
+ 5.0000000000000000e-01  6.8750000000000000e-01
+ 5.0000000000000000e-01  6.5625000000000000e-01
+ 5.0000000000000000e-01  6.2500000000000000e-01
+ 5.0000000000000000e-01  5.9375000000000000e-01
+ 5.0000000000000000e-01  5.6250000000000000e-01
+ 5.0000000000000000e-01  5.3125000000000000e-01
+ 5.0000000000000000e-01  5.0000000000000000e-01
+ 5.0000000000000000e-01  4.6875000000000000e-01
+ 5.0000000000000000e-01  4.3750000000000000e-01
+ 5.0000000000000000e-01  4.0625000000000000e-01
+ 5.0000000000000000e-01  3.7500000000000000e-01
+ 5.0000000000000000e-01  3.4375000000000000e-01
+ 5.0000000000000000e-01  3.1250000000000000e-01
+ 5.0000000000000000e-01  2.8125000000000000e-01
+ 5.0000000000000000e-01  2.5000000000000000e-01
+ 5.0000000000000000e-01  2.1875000000000000e-01
+ 5.0000000000000000e-01  1.8750000000000000e-01
+ 5.0000000000000000e-01  1.5625000000000000e-01
+ 5.0000000000000000e-01  1.2500000000000000e-01
+ 5.0000000000000000e-01  9.3750000000000000e-02
+ 5.0000000000000000e-01  6.2500000000000000e-02
+ 5.0000000000000000e-01  3.1250000000000000e-02
+ 4.6875000000000000e-01  9.6875000000000000e-01
+ 4.6875000000000000e-01  9.3750000000000000e-01
+ 4.6875000000000000e-01  9.0625000000000000e-01
+ 4.6875000000000000e-01  8.7500000000000000e-01
+ 4.6875000000000000e-01  8.4375000000000000e-01
+ 4.6875000000000000e-01  8.1250000000000000e-01
+ 4.6875000000000000e-01  7.8125000000000000e-01
+ 4.6875000000000000e-01  7.5000000000000000e-01
+ 4.6875000000000000e-01  7.1875000000000000e-01
+ 4.6875000000000000e-01  6.8750000000000000e-01
+ 4.6875000000000000e-01  6.5625000000000000e-01
+ 4.6875000000000000e-01  6.2500000000000000e-01
+ 4.6875000000000000e-01  5.9375000000000000e-01
+ 4.6875000000000000e-01  5.6250000000000000e-01
+ 4.6875000000000000e-01  5.3125000000000000e-01
+ 4.6875000000000000e-01  5.0000000000000000e-01
+ 4.6875000000000000e-01  4.6875000000000000e-01
+ 4.6875000000000000e-01  4.3750000000000000e-01
+ 4.6875000000000000e-01  4.0625000000000000e-01
+ 4.6875000000000000e-01  3.7500000000000000e-01
+ 4.6875000000000000e-01  3.4375000000000000e-01
+ 4.6875000000000000e-01  3.1250000000000000e-01
+ 4.6875000000000000e-01  2.8125000000000000e-01
+ 4.6875000000000000e-01  2.5000000000000000e-01
+ 4.6875000000000000e-01  2.1875000000000000e-01
+ 4.6875000000000000e-01  1.8750000000000000e-01
+ 4.6875000000000000e-01  1.5625000000000000e-01
+ 4.6875000000000000e-01  1.2500000000000000e-01
+ 4.6875000000000000e-01  9.3750000000000000e-02
+ 4.6875000000000000e-01  6.2500000000000000e-02
+ 4.6875000000000000e-01  3.1250000000000000e-02
+ 4.3750000000000000e-01  9.6875000000000000e-01
+ 4.3750000000000000e-01  9.3750000000000000e-01
+ 4.3750000000000000e-01  9.0625000000000000e-01
+ 4.3750000000000000e-01  8.7500000000000000e-01
+ 4.3750000000000000e-01  8.4375000000000000e-01
+ 4.3750000000000000e-01  8.1250000000000000e-01
+ 4.3750000000000000e-01  7.8125000000000000e-01
+ 4.3750000000000000e-01  7.5000000000000000e-01
+ 4.3750000000000000e-01  7.1875000000000000e-01
+ 4.3750000000000000e-01  6.8750000000000000e-01
+ 4.3750000000000000e-01  6.5625000000000000e-01
+ 4.3750000000000000e-01  6.2500000000000000e-01
+ 4.3750000000000000e-01  5.9375000000000000e-01
+ 4.3750000000000000e-01  5.6250000000000000e-01
+ 4.3750000000000000e-01  5.3125000000000000e-01
+ 4.3750000000000000e-01  5.0000000000000000e-01
+ 4.3750000000000000e-01  4.6875000000000000e-01
+ 4.3750000000000000e-01  4.3750000000000000e-01
+ 4.3750000000000000e-01  4.0625000000000000e-01
+ 4.3750000000000000e-01  3.7500000000000000e-01
+ 4.3750000000000000e-01  3.4375000000000000e-01
+ 4.3750000000000000e-01  3.1250000000000000e-01
+ 4.3750000000000000e-01  2.8125000000000000e-01
+ 4.3750000000000000e-01  2.5000000000000000e-01
+ 4.3750000000000000e-01  2.1875000000000000e-01
+ 4.3750000000000000e-01  1.8750000000000000e-01
+ 4.3750000000000000e-01  1.5625000000000000e-01
+ 4.3750000000000000e-01  1.2500000000000000e-01
+ 4.3750000000000000e-01  9.3750000000000000e-02
+ 4.3750000000000000e-01  6.2500000000000000e-02
+ 4.3750000000000000e-01  3.1250000000000000e-02
+ 4.0625000000000000e-01  9.6875000000000000e-01
+ 4.0625000000000000e-01  9.3750000000000000e-01
+ 4.0625000000000000e-01  9.0625000000000000e-01
+ 4.0625000000000000e-01  8.7500000000000000e-01
+ 4.0625000000000000e-01  8.4375000000000000e-01
+ 4.0625000000000000e-01  8.1250000000000000e-01
+ 4.0625000000000000e-01  7.8125000000000000e-01
+ 4.0625000000000000e-01  7.5000000000000000e-01
+ 4.0625000000000000e-01  7.1875000000000000e-01
+ 4.0625000000000000e-01  6.8750000000000000e-01
+ 4.0625000000000000e-01  6.5625000000000000e-01
+ 4.0625000000000000e-01  6.2500000000000000e-01
+ 4.0625000000000000e-01  5.9375000000000000e-01
+ 4.0625000000000000e-01  5.6250000000000000e-01
+ 4.0625000000000000e-01  5.3125000000000000e-01
+ 4.0625000000000000e-01  5.0000000000000000e-01
+ 4.0625000000000000e-01  4.6875000000000000e-01
+ 4.0625000000000000e-01  4.3750000000000000e-01
+ 4.0625000000000000e-01  4.0625000000000000e-01
+ 4.0625000000000000e-01  3.7500000000000000e-01
+ 4.0625000000000000e-01  3.4375000000000000e-01
+ 4.0625000000000000e-01  3.1250000000000000e-01
+ 4.0625000000000000e-01  2.8125000000000000e-01
+ 4.0625000000000000e-01  2.5000000000000000e-01
+ 4.0625000000000000e-01  2.1875000000000000e-01
+ 4.0625000000000000e-01  1.8750000000000000e-01
+ 4.0625000000000000e-01  1.5625000000000000e-01
+ 4.0625000000000000e-01  1.2500000000000000e-01
+ 4.0625000000000000e-01  9.3750000000000000e-02
+ 4.0625000000000000e-01  6.2500000000000000e-02
+ 4.0625000000000000e-01  3.1250000000000000e-02
+ 3.7500000000000000e-01  9.6875000000000000e-01
+ 3.7500000000000000e-01  9.3750000000000000e-01
+ 3.7500000000000000e-01  9.0625000000000000e-01
+ 3.7500000000000000e-01  8.7500000000000000e-01
+ 3.7500000000000000e-01  8.4375000000000000e-01
+ 3.7500000000000000e-01  8.1250000000000000e-01
+ 3.7500000000000000e-01  7.8125000000000000e-01
+ 3.7500000000000000e-01  7.5000000000000000e-01
+ 3.7500000000000000e-01  7.1875000000000000e-01
+ 3.7500000000000000e-01  6.8750000000000000e-01
+ 3.7500000000000000e-01  6.5625000000000000e-01
+ 3.7500000000000000e-01  6.2500000000000000e-01
+ 3.7500000000000000e-01  5.9375000000000000e-01
+ 3.7500000000000000e-01  5.6250000000000000e-01
+ 3.7500000000000000e-01  5.3125000000000000e-01
+ 3.7500000000000000e-01  5.0000000000000000e-01
+ 3.7500000000000000e-01  4.6875000000000000e-01
+ 3.7500000000000000e-01  4.3750000000000000e-01
+ 3.7500000000000000e-01  4.0625000000000000e-01
+ 3.7500000000000000e-01  3.7500000000000000e-01
+ 3.7500000000000000e-01  3.4375000000000000e-01
+ 3.7500000000000000e-01  3.1250000000000000e-01
+ 3.7500000000000000e-01  2.8125000000000000e-01
+ 3.7500000000000000e-01  2.5000000000000000e-01
+ 3.7500000000000000e-01  2.1875000000000000e-01
+ 3.7500000000000000e-01  1.8750000000000000e-01
+ 3.7500000000000000e-01  1.5625000000000000e-01
+ 3.7500000000000000e-01  1.2500000000000000e-01
+ 3.7500000000000000e-01  9.3750000000000000e-02
+ 3.7500000000000000e-01  6.2500000000000000e-02
+ 3.7500000000000000e-01  3.1250000000000000e-02
+ 3.4375000000000000e-01  9.6875000000000000e-01
+ 3.4375000000000000e-01  9.3750000000000000e-01
+ 3.4375000000000000e-01  9.0625000000000000e-01
+ 3.4375000000000000e-01  8.7500000000000000e-01
+ 3.4375000000000000e-01  8.4375000000000000e-01
+ 3.4375000000000000e-01  8.1250000000000000e-01
+ 3.4375000000000000e-01  7.8125000000000000e-01
+ 3.4375000000000000e-01  7.5000000000000000e-01
+ 3.4375000000000000e-01  7.1875000000000000e-01
+ 3.4375000000000000e-01  6.8750000000000000e-01
+ 3.4375000000000000e-01  6.5625000000000000e-01
+ 3.4375000000000000e-01  6.2500000000000000e-01
+ 3.4375000000000000e-01  5.9375000000000000e-01
+ 3.4375000000000000e-01  5.6250000000000000e-01
+ 3.4375000000000000e-01  5.3125000000000000e-01
+ 3.4375000000000000e-01  5.0000000000000000e-01
+ 3.4375000000000000e-01  4.6875000000000000e-01
+ 3.4375000000000000e-01  4.3750000000000000e-01
+ 3.4375000000000000e-01  4.0625000000000000e-01
+ 3.4375000000000000e-01  3.7500000000000000e-01
+ 3.4375000000000000e-01  3.4375000000000000e-01
+ 3.4375000000000000e-01  3.1250000000000000e-01
+ 3.4375000000000000e-01  2.8125000000000000e-01
+ 3.4375000000000000e-01  2.5000000000000000e-01
+ 3.4375000000000000e-01  2.1875000000000000e-01
+ 3.4375000000000000e-01  1.8750000000000000e-01
+ 3.4375000000000000e-01  1.5625000000000000e-01
+ 3.4375000000000000e-01  1.2500000000000000e-01
+ 3.4375000000000000e-01  9.3750000000000000e-02
+ 3.4375000000000000e-01  6.2500000000000000e-02
+ 3.4375000000000000e-01  3.1250000000000000e-02
+ 3.1250000000000000e-01  9.6875000000000000e-01
+ 3.1250000000000000e-01  9.3750000000000000e-01
+ 3.1250000000000000e-01  9.0625000000000000e-01
+ 3.1250000000000000e-01  8.7500000000000000e-01
+ 3.1250000000000000e-01  8.4375000000000000e-01
+ 3.1250000000000000e-01  8.1250000000000000e-01
+ 3.1250000000000000e-01  7.8125000000000000e-01
+ 3.1250000000000000e-01  7.5000000000000000e-01
+ 3.1250000000000000e-01  7.1875000000000000e-01
+ 3.1250000000000000e-01  6.8750000000000000e-01
+ 3.1250000000000000e-01  6.5625000000000000e-01
+ 3.1250000000000000e-01  6.2500000000000000e-01
+ 3.1250000000000000e-01  5.9375000000000000e-01
+ 3.1250000000000000e-01  5.6250000000000000e-01
+ 3.1250000000000000e-01  5.3125000000000000e-01
+ 3.1250000000000000e-01  5.0000000000000000e-01
+ 3.1250000000000000e-01  4.6875000000000000e-01
+ 3.1250000000000000e-01  4.3750000000000000e-01
+ 3.1250000000000000e-01  4.0625000000000000e-01
+ 3.1250000000000000e-01  3.7500000000000000e-01
+ 3.1250000000000000e-01  3.4375000000000000e-01
+ 3.1250000000000000e-01  3.1250000000000000e-01
+ 3.1250000000000000e-01  2.8125000000000000e-01
+ 3.1250000000000000e-01  2.5000000000000000e-01
+ 3.1250000000000000e-01  2.1875000000000000e-01
+ 3.1250000000000000e-01  1.8750000000000000e-01
+ 3.1250000000000000e-01  1.5625000000000000e-01
+ 3.1250000000000000e-01  1.2500000000000000e-01
+ 3.1250000000000000e-01  9.3750000000000000e-02
+ 3.1250000000000000e-01  6.2500000000000000e-02
+ 3.1250000000000000e-01  3.1250000000000000e-02
+ 2.8125000000000000e-01  9.6875000000000000e-01
+ 2.8125000000000000e-01  9.3750000000000000e-01
+ 2.8125000000000000e-01  9.0625000000000000e-01
+ 2.8125000000000000e-01  8.7500000000000000e-01
+ 2.8125000000000000e-01  8.4375000000000000e-01
+ 2.8125000000000000e-01  8.1250000000000000e-01
+ 2.8125000000000000e-01  7.8125000000000000e-01
+ 2.8125000000000000e-01  7.5000000000000000e-01
+ 2.8125000000000000e-01  7.1875000000000000e-01
+ 2.8125000000000000e-01  6.8750000000000000e-01
+ 2.8125000000000000e-01  6.5625000000000000e-01
+ 2.8125000000000000e-01  6.2500000000000000e-01
+ 2.8125000000000000e-01  5.9375000000000000e-01
+ 2.8125000000000000e-01  5.6250000000000000e-01
+ 2.8125000000000000e-01  5.3125000000000000e-01
+ 2.8125000000000000e-01  5.0000000000000000e-01
+ 2.8125000000000000e-01  4.6875000000000000e-01
+ 2.8125000000000000e-01  4.3750000000000000e-01
+ 2.8125000000000000e-01  4.0625000000000000e-01
+ 2.8125000000000000e-01  3.7500000000000000e-01
+ 2.8125000000000000e-01  3.4375000000000000e-01
+ 2.8125000000000000e-01  3.1250000000000000e-01
+ 2.8125000000000000e-01  2.8125000000000000e-01
+ 2.8125000000000000e-01  2.5000000000000000e-01
+ 2.8125000000000000e-01  2.1875000000000000e-01
+ 2.8125000000000000e-01  1.8750000000000000e-01
+ 2.8125000000000000e-01  1.5625000000000000e-01
+ 2.8125000000000000e-01  1.2500000000000000e-01
+ 2.8125000000000000e-01  9.3750000000000000e-02
+ 2.8125000000000000e-01  6.2500000000000000e-02
+ 2.8125000000000000e-01  3.1250000000000000e-02
+ 2.5000000000000000e-01  9.6875000000000000e-01
+ 2.5000000000000000e-01  9.3750000000000000e-01
+ 2.5000000000000000e-01  9.0625000000000000e-01
+ 2.5000000000000000e-01  8.7500000000000000e-01
+ 2.5000000000000000e-01  8.4375000000000000e-01
+ 2.5000000000000000e-01  8.1250000000000000e-01
+ 2.5000000000000000e-01  7.8125000000000000e-01
+ 2.5000000000000000e-01  7.5000000000000000e-01
+ 2.5000000000000000e-01  7.1875000000000000e-01
+ 2.5000000000000000e-01  6.8750000000000000e-01
+ 2.5000000000000000e-01  6.5625000000000000e-01
+ 2.5000000000000000e-01  6.2500000000000000e-01
+ 2.5000000000000000e-01  5.9375000000000000e-01
+ 2.5000000000000000e-01  5.6250000000000000e-01
+ 2.5000000000000000e-01  5.3125000000000000e-01
+ 2.5000000000000000e-01  5.0000000000000000e-01
+ 2.5000000000000000e-01  4.6875000000000000e-01
+ 2.5000000000000000e-01  4.3750000000000000e-01
+ 2.5000000000000000e-01  4.0625000000000000e-01
+ 2.5000000000000000e-01  3.7500000000000000e-01
+ 2.5000000000000000e-01  3.4375000000000000e-01
+ 2.5000000000000000e-01  3.1250000000000000e-01
+ 2.5000000000000000e-01  2.8125000000000000e-01
+ 2.5000000000000000e-01  2.5000000000000000e-01
+ 2.5000000000000000e-01  2.1875000000000000e-01
+ 2.5000000000000000e-01  1.8750000000000000e-01
+ 2.5000000000000000e-01  1.5625000000000000e-01
+ 2.5000000000000000e-01  1.2500000000000000e-01
+ 2.5000000000000000e-01  9.3750000000000000e-02
+ 2.5000000000000000e-01  6.2500000000000000e-02
+ 2.5000000000000000e-01  3.1250000000000000e-02
+ 2.1875000000000000e-01  9.6875000000000000e-01
+ 2.1875000000000000e-01  9.3750000000000000e-01
+ 2.1875000000000000e-01  9.0625000000000000e-01
+ 2.1875000000000000e-01  8.7500000000000000e-01
+ 2.1875000000000000e-01  8.4375000000000000e-01
+ 2.1875000000000000e-01  8.1250000000000000e-01
+ 2.1875000000000000e-01  7.8125000000000000e-01
+ 2.1875000000000000e-01  7.5000000000000000e-01
+ 2.1875000000000000e-01  7.1875000000000000e-01
+ 2.1875000000000000e-01  6.8750000000000000e-01
+ 2.1875000000000000e-01  6.5625000000000000e-01
+ 2.1875000000000000e-01  6.2500000000000000e-01
+ 2.1875000000000000e-01  5.9375000000000000e-01
+ 2.1875000000000000e-01  5.6250000000000000e-01
+ 2.1875000000000000e-01  5.3125000000000000e-01
+ 2.1875000000000000e-01  5.0000000000000000e-01
+ 2.1875000000000000e-01  4.6875000000000000e-01
+ 2.1875000000000000e-01  4.3750000000000000e-01
+ 2.1875000000000000e-01  4.0625000000000000e-01
+ 2.1875000000000000e-01  3.7500000000000000e-01
+ 2.1875000000000000e-01  3.4375000000000000e-01
+ 2.1875000000000000e-01  3.1250000000000000e-01
+ 2.1875000000000000e-01  2.8125000000000000e-01
+ 2.1875000000000000e-01  2.5000000000000000e-01
+ 2.1875000000000000e-01  2.1875000000000000e-01
+ 2.1875000000000000e-01  1.8750000000000000e-01
+ 2.1875000000000000e-01  1.5625000000000000e-01
+ 2.1875000000000000e-01  1.2500000000000000e-01
+ 2.1875000000000000e-01  9.3750000000000000e-02
+ 2.1875000000000000e-01  6.2500000000000000e-02
+ 2.1875000000000000e-01  3.1250000000000000e-02
+ 1.8750000000000000e-01  9.6875000000000000e-01
+ 1.8750000000000000e-01  9.3750000000000000e-01
+ 1.8750000000000000e-01  9.0625000000000000e-01
+ 1.8750000000000000e-01  8.7500000000000000e-01
+ 1.8750000000000000e-01  8.4375000000000000e-01
+ 1.8750000000000000e-01  8.1250000000000000e-01
+ 1.8750000000000000e-01  7.8125000000000000e-01
+ 1.8750000000000000e-01  7.5000000000000000e-01
+ 1.8750000000000000e-01  7.1875000000000000e-01
+ 1.8750000000000000e-01  6.8750000000000000e-01
+ 1.8750000000000000e-01  6.5625000000000000e-01
+ 1.8750000000000000e-01  6.2500000000000000e-01
+ 1.8750000000000000e-01  5.9375000000000000e-01
+ 1.8750000000000000e-01  5.6250000000000000e-01
+ 1.8750000000000000e-01  5.3125000000000000e-01
+ 1.8750000000000000e-01  5.0000000000000000e-01
+ 1.8750000000000000e-01  4.6875000000000000e-01
+ 1.8750000000000000e-01  4.3750000000000000e-01
+ 1.8750000000000000e-01  4.0625000000000000e-01
+ 1.8750000000000000e-01  3.7500000000000000e-01
+ 1.8750000000000000e-01  3.4375000000000000e-01
+ 1.8750000000000000e-01  3.1250000000000000e-01
+ 1.8750000000000000e-01  2.8125000000000000e-01
+ 1.8750000000000000e-01  2.5000000000000000e-01
+ 1.8750000000000000e-01  2.1875000000000000e-01
+ 1.8750000000000000e-01  1.8750000000000000e-01
+ 1.8750000000000000e-01  1.5625000000000000e-01
+ 1.8750000000000000e-01  1.2500000000000000e-01
+ 1.8750000000000000e-01  9.3750000000000000e-02
+ 1.8750000000000000e-01  6.2500000000000000e-02
+ 1.8750000000000000e-01  3.1250000000000000e-02
+ 1.5625000000000000e-01  9.6875000000000000e-01
+ 1.5625000000000000e-01  9.3750000000000000e-01
+ 1.5625000000000000e-01  9.0625000000000000e-01
+ 1.5625000000000000e-01  8.7500000000000000e-01
+ 1.5625000000000000e-01  8.4375000000000000e-01
+ 1.5625000000000000e-01  8.1250000000000000e-01
+ 1.5625000000000000e-01  7.8125000000000000e-01
+ 1.5625000000000000e-01  7.5000000000000000e-01
+ 1.5625000000000000e-01  7.1875000000000000e-01
+ 1.5625000000000000e-01  6.8750000000000000e-01
+ 1.5625000000000000e-01  6.5625000000000000e-01
+ 1.5625000000000000e-01  6.2500000000000000e-01
+ 1.5625000000000000e-01  5.9375000000000000e-01
+ 1.5625000000000000e-01  5.6250000000000000e-01
+ 1.5625000000000000e-01  5.3125000000000000e-01
+ 1.5625000000000000e-01  5.0000000000000000e-01
+ 1.5625000000000000e-01  4.6875000000000000e-01
+ 1.5625000000000000e-01  4.3750000000000000e-01
+ 1.5625000000000000e-01  4.0625000000000000e-01
+ 1.5625000000000000e-01  3.7500000000000000e-01
+ 1.5625000000000000e-01  3.4375000000000000e-01
+ 1.5625000000000000e-01  3.1250000000000000e-01
+ 1.5625000000000000e-01  2.8125000000000000e-01
+ 1.5625000000000000e-01  2.5000000000000000e-01
+ 1.5625000000000000e-01  2.1875000000000000e-01
+ 1.5625000000000000e-01  1.8750000000000000e-01
+ 1.5625000000000000e-01  1.5625000000000000e-01
+ 1.5625000000000000e-01  1.2500000000000000e-01
+ 1.5625000000000000e-01  9.3750000000000000e-02
+ 1.5625000000000000e-01  6.2500000000000000e-02
+ 1.5625000000000000e-01  3.1250000000000000e-02
+ 1.2500000000000000e-01  9.6875000000000000e-01
+ 1.2500000000000000e-01  9.3750000000000000e-01
+ 1.2500000000000000e-01  9.0625000000000000e-01
+ 1.2500000000000000e-01  8.7500000000000000e-01
+ 1.2500000000000000e-01  8.4375000000000000e-01
+ 1.2500000000000000e-01  8.1250000000000000e-01
+ 1.2500000000000000e-01  7.8125000000000000e-01
+ 1.2500000000000000e-01  7.5000000000000000e-01
+ 1.2500000000000000e-01  7.1875000000000000e-01
+ 1.2500000000000000e-01  6.8750000000000000e-01
+ 1.2500000000000000e-01  6.5625000000000000e-01
+ 1.2500000000000000e-01  6.2500000000000000e-01
+ 1.2500000000000000e-01  5.9375000000000000e-01
+ 1.2500000000000000e-01  5.6250000000000000e-01
+ 1.2500000000000000e-01  5.3125000000000000e-01
+ 1.2500000000000000e-01  5.0000000000000000e-01
+ 1.2500000000000000e-01  4.6875000000000000e-01
+ 1.2500000000000000e-01  4.3750000000000000e-01
+ 1.2500000000000000e-01  4.0625000000000000e-01
+ 1.2500000000000000e-01  3.7500000000000000e-01
+ 1.2500000000000000e-01  3.4375000000000000e-01
+ 1.2500000000000000e-01  3.1250000000000000e-01
+ 1.2500000000000000e-01  2.8125000000000000e-01
+ 1.2500000000000000e-01  2.5000000000000000e-01
+ 1.2500000000000000e-01  2.1875000000000000e-01
+ 1.2500000000000000e-01  1.8750000000000000e-01
+ 1.2500000000000000e-01  1.5625000000000000e-01
+ 1.2500000000000000e-01  1.2500000000000000e-01
+ 1.2500000000000000e-01  9.3750000000000000e-02
+ 1.2500000000000000e-01  6.2500000000000000e-02
+ 1.2500000000000000e-01  3.1250000000000000e-02
+ 9.3750000000000000e-02  9.6875000000000000e-01
+ 9.3750000000000000e-02  9.3750000000000000e-01
+ 9.3750000000000000e-02  9.0625000000000000e-01
+ 9.3750000000000000e-02  8.7500000000000000e-01
+ 9.3750000000000000e-02  8.4375000000000000e-01
+ 9.3750000000000000e-02  8.1250000000000000e-01
+ 9.3750000000000000e-02  7.8125000000000000e-01
+ 9.3750000000000000e-02  7.5000000000000000e-01
+ 9.3750000000000000e-02  7.1875000000000000e-01
+ 9.3750000000000000e-02  6.8750000000000000e-01
+ 9.3750000000000000e-02  6.5625000000000000e-01
+ 9.3750000000000000e-02  6.2500000000000000e-01
+ 9.3750000000000000e-02  5.9375000000000000e-01
+ 9.3750000000000000e-02  5.6250000000000000e-01
+ 9.3750000000000000e-02  5.3125000000000000e-01
+ 9.3750000000000000e-02  5.0000000000000000e-01
+ 9.3750000000000000e-02  4.6875000000000000e-01
+ 9.3750000000000000e-02  4.3750000000000000e-01
+ 9.3750000000000000e-02  4.0625000000000000e-01
+ 9.3750000000000000e-02  3.7500000000000000e-01
+ 9.3750000000000000e-02  3.4375000000000000e-01
+ 9.3750000000000000e-02  3.1250000000000000e-01
+ 9.3750000000000000e-02  2.8125000000000000e-01
+ 9.3750000000000000e-02  2.5000000000000000e-01
+ 9.3750000000000000e-02  2.1875000000000000e-01
+ 9.3750000000000000e-02  1.8750000000000000e-01
+ 9.3750000000000000e-02  1.5625000000000000e-01
+ 9.3750000000000000e-02  1.2500000000000000e-01
+ 9.3750000000000000e-02  9.3750000000000000e-02
+ 9.3750000000000000e-02  6.2500000000000000e-02
+ 9.3750000000000000e-02  3.1250000000000000e-02
+ 6.2500000000000000e-02  9.6875000000000000e-01
+ 6.2500000000000000e-02  9.3750000000000000e-01
+ 6.2500000000000000e-02  9.0625000000000000e-01
+ 6.2500000000000000e-02  8.7500000000000000e-01
+ 6.2500000000000000e-02  8.4375000000000000e-01
+ 6.2500000000000000e-02  8.1250000000000000e-01
+ 6.2500000000000000e-02  7.8125000000000000e-01
+ 6.2500000000000000e-02  7.5000000000000000e-01
+ 6.2500000000000000e-02  7.1875000000000000e-01
+ 6.2500000000000000e-02  6.8750000000000000e-01
+ 6.2500000000000000e-02  6.5625000000000000e-01
+ 6.2500000000000000e-02  6.2500000000000000e-01
+ 6.2500000000000000e-02  5.9375000000000000e-01
+ 6.2500000000000000e-02  5.6250000000000000e-01
+ 6.2500000000000000e-02  5.3125000000000000e-01
+ 6.2500000000000000e-02  5.0000000000000000e-01
+ 6.2500000000000000e-02  4.6875000000000000e-01
+ 6.2500000000000000e-02  4.3750000000000000e-01
+ 6.2500000000000000e-02  4.0625000000000000e-01
+ 6.2500000000000000e-02  3.7500000000000000e-01
+ 6.2500000000000000e-02  3.4375000000000000e-01
+ 6.2500000000000000e-02  3.1250000000000000e-01
+ 6.2500000000000000e-02  2.8125000000000000e-01
+ 6.2500000000000000e-02  2.5000000000000000e-01
+ 6.2500000000000000e-02  2.1875000000000000e-01
+ 6.2500000000000000e-02  1.8750000000000000e-01
+ 6.2500000000000000e-02  1.5625000000000000e-01
+ 6.2500000000000000e-02  1.2500000000000000e-01
+ 6.2500000000000000e-02  9.3750000000000000e-02
+ 6.2500000000000000e-02  6.2500000000000000e-02
+ 6.2500000000000000e-02  3.1250000000000000e-02
+ 3.1250000000000000e-02  9.6875000000000000e-01
+ 3.1250000000000000e-02  9.3750000000000000e-01
+ 3.1250000000000000e-02  9.0625000000000000e-01
+ 3.1250000000000000e-02  8.7500000000000000e-01
+ 3.1250000000000000e-02  8.4375000000000000e-01
+ 3.1250000000000000e-02  8.1250000000000000e-01
+ 3.1250000000000000e-02  7.8125000000000000e-01
+ 3.1250000000000000e-02  7.5000000000000000e-01
+ 3.1250000000000000e-02  7.1875000000000000e-01
+ 3.1250000000000000e-02  6.8750000000000000e-01
+ 3.1250000000000000e-02  6.5625000000000000e-01
+ 3.1250000000000000e-02  6.2500000000000000e-01
+ 3.1250000000000000e-02  5.9375000000000000e-01
+ 3.1250000000000000e-02  5.6250000000000000e-01
+ 3.1250000000000000e-02  5.3125000000000000e-01
+ 3.1250000000000000e-02  5.0000000000000000e-01
+ 3.1250000000000000e-02  4.6875000000000000e-01
+ 3.1250000000000000e-02  4.3750000000000000e-01
+ 3.1250000000000000e-02  4.0625000000000000e-01
+ 3.1250000000000000e-02  3.7500000000000000e-01
+ 3.1250000000000000e-02  3.4375000000000000e-01
+ 3.1250000000000000e-02  3.1250000000000000e-01
+ 3.1250000000000000e-02  2.8125000000000000e-01
+ 3.1250000000000000e-02  2.5000000000000000e-01
+ 3.1250000000000000e-02  2.1875000000000000e-01
+ 3.1250000000000000e-02  1.8750000000000000e-01
+ 3.1250000000000000e-02  1.5625000000000000e-01
+ 3.1250000000000000e-02  1.2500000000000000e-01
+ 3.1250000000000000e-02  9.3750000000000000e-02
+ 3.1250000000000000e-02  6.2500000000000000e-02
+ 3.1250000000000000e-02  3.1250000000000000e-02))
+
+(0 "Node flags:")
+(41 (1 441)
+( 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
+ 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
+ 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
+ 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
+ 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
+ 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
+ 20 20 20 20 20 20 20 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+ 10 10 10 10 10 10 10 10))
+
+
+(0 "Thread variables:")
+(39 (2 fluid f1 1)(
+ (material . air)
+ (sources? . #f)
+ (source-terms)
+ (fixed? . #f)
+ (cylindrical-fixed-var? . #f)
+ (fixes)
+ (motion-spec . 0)
+ (grid-x-vel . 0)
+ (grid-y-vel . 0)
+ (grid-z-vel . 0)
+ (omega . 0)
+ (x-origin . 0)
+ (y-origin . 0)
+ (z-origin . 0)
+ (ai . 0)
+ (aj . 0)
+ (ak . 1)
+ (radiating? . #t)
+ (deactivated? . #f)
+ (laminar? . #f)
+ (laminar-mut-zero? . #t)
+ (glass? . #f)
+ (porous? . #f)
+ (conical? . #f)
+ (direction-1/x (constant . 1) (profile "" ""))
+ (direction-1/y (constant . 0) (profile "" ""))
+ (direction-1/z (constant . 0) (profile "" ""))
+ (direction-2/x (constant . 0) (profile "" ""))
+ (direction-2/y (constant . 1) (profile "" ""))
+ (direction-2/z (constant . 0) (profile "" ""))
+ (cone-axis/x . 1)
+ (cone-axis/y . 0)
+ (cone-axis/z . 0)
+ (cone-axis-pt/x . 1)
+ (cone-axis-pt/y . 0)
+ (cone-axis-pt/z . 0)
+ (cone-angle . 0)
+ (rel-vel-resistance? . #t)
+ (porous-r/1 (constant . 0) (profile "" ""))
+ (porous-r/2 (constant . 0) (profile "" ""))
+ (porous-r/3 (constant . 0) (profile "" ""))
+ (alt-inertial-form? . #f)
+ (porous-c/1 (constant . 0) (profile "" ""))
+ (porous-c/2 (constant . 0) (profile "" ""))
+ (porous-c/3 (constant . 0) (profile "" ""))
+ (c0 . 0)
+ (c1 . 0)
+ (porosity (constant . 1) (profile "" ""))
+ (solid-material . aluminum)
+ (reaction-mechs . 0)
+ (react? . #t)
+ (surface-volume-ratio . 0)
+))
+(39 (3 wall w4 1)(
+ (geom-disable? . #f)
+ (geom-dir-spec . #f)
+ (geom-dir-x . 0)
+ (geom-dir-y . 0)
+ (geom-dir-z . 0)
+ (geom-levels . 3)
+ (geom-bgthread . 0)
+ (d . 0)
+ (q-dot (constant . 0) (profile "" ""))
+ (material . aluminum)
+ (thermal-bc . 1)
+ (t (constant . 300) (profile "" ""))
+ (q (constant . 0) (profile "" ""))
+ (h (constant . 0) (profile "" ""))
+ (tinf (constant . 300) (profile "" ""))
+ (planar-conduction? . #f)
+ (motion-bc . 1)
+ (shear-bc . 0)
+ (moving? . #t)
+ (relative? . #t)
+ (rotating? . #f)
+ (vmag . 1)
+ (ni . 1)
+ (nj . 0)
+ (nk . 0)
+ (components? . #f)
+ (u (constant . 0) (profile "" ""))
+ (v (constant . 0) (profile "" ""))
+ (w (constant . 0) (profile "" ""))
+ (in-emiss (constant . 1) (profile "" ""))
+ (ex-emiss (constant . 1) (profile "" ""))
+ (trad (constant . 300) (profile "" ""))
+ (int-rad? . #f)
+ (trad-internal . 300)
+ (area-enhancement-factor (constant . 1) (profile "" ""))
+ (roughness-height (constant . 0) (profile "" ""))
+ (roughness-const (constant . 0.5) (profile "" ""))
+ (dpm/bc-type . 2)
+ (dpm/bc-norm-coeff (polynomial angle 1))
+ (dpm/bc-tang-coeff (polynomial angle 1))
+ (dpm/bc-udf . "none")
+ (dpm/film-splash-nsamp . 4)
+ (dpm/bc-erosion (polynomial angle 1))
+ (dpm/bc-erosion-c (polynomial 1.8e-09))
+ (dpm/bc-erosion-n (polynomial 0))
+ (band-in-emiss ((constant . 1) (profile "" "")))
+ (radiation-bc . 3)
+ (q-ni (constant . 1) (profile "" ""))
+ (q-nj (constant . 0) (profile "" ""))
+ (q-nk (constant . 0) (profile "" ""))
+ (coll-dtheta . 1.744e-08)
+ (coll-dphi . 1.744e-08)
+ (band-q-irrad ((constant . 0) (profile "" "")))
+ (band-diffuse-frac 1)
+ (radiating-s2s-surface? . #t)
+ (fpsc . 1)
+ (parallel-collimated-beam? . #t)
+ (solar-fluxes? . #t)
+ (solar-direction? . #f)
+ (solar-irradiation? . #f)
+ (v-transmissivity (constant . 0.8) (profile "" ""))
+ (ir-transmissivity (constant . 0.8) (profile "" ""))
+ (v-opq-absorbtivity (constant . 0.8) (profile "" ""))
+ (ir-opq-absorbtivity (constant . 0.8) (profile "" ""))
+ (v-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (ir-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (d-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (d-transmissivity (constant . 0.8) (profile "" ""))
+ (fsi-interface? . #f)
+ (react? . #f)
+ (species-spec 0)
+ (mf)
+ (uds-bc 0)
+ (uds . value)
+ (gtemp-bc . 0)
+ (g-temperature (constant . 1e-08) (profile "" ""))
+ (g-qflux (constant . 0) (profile "" ""))
+ (wall-restitution-coeff . 0.2)
+ (omega . 0)
+ (x-origin . 0)
+ (y-origin . 0)
+ (z-origin . 0)
+ (ai . 0)
+ (aj . 0)
+ (ak . 1)
+ (adhesion-angle)
+ (specified-shear? . #f)
+ (shear-x (constant . 0) (profile "" ""))
+ (shear-y (constant . 0) (profile "" ""))
+ (shear-z (constant . 0) (profile "" ""))
+ (surf-tens-grad . 0)
+ (contact-resistance (constant . 0) (profile "" ""))
+ (reaction-mechs . 0)
+ (specular-coeff . 0)
+))
+(39 (4 wall w3 1)(
+ (geom-disable? . #f)
+ (geom-dir-spec . #f)
+ (geom-dir-x . 0)
+ (geom-dir-y . 0)
+ (geom-dir-z . 0)
+ (geom-levels . 3)
+ (geom-bgthread . 0)
+ (d . 0)
+ (q-dot (constant . 0) (profile "" ""))
+ (material . aluminum)
+ (thermal-bc . 1)
+ (t (constant . 300) (profile "" ""))
+ (q (constant . 0) (profile "" ""))
+ (h (constant . 0) (profile "" ""))
+ (tinf (constant . 300) (profile "" ""))
+ (planar-conduction? . #f)
+ (motion-bc . 0)
+ (shear-bc . 0)
+ (moving? . #f)
+ (relative? . #t)
+ (rotating? . #f)
+ (vmag . 0)
+ (ni . 1)
+ (nj . 0)
+ (nk . 0)
+ (components? . #f)
+ (u (constant . 0) (profile "" ""))
+ (v (constant . 0) (profile "" ""))
+ (w (constant . 0) (profile "" ""))
+ (in-emiss (constant . 1) (profile "" ""))
+ (ex-emiss (constant . 1) (profile "" ""))
+ (trad (constant . 300) (profile "" ""))
+ (int-rad? . #f)
+ (trad-internal . 300)
+ (area-enhancement-factor (constant . 1) (profile "" ""))
+ (roughness-height (constant . 0) (profile "" ""))
+ (roughness-const (constant . 0.5) (profile "" ""))
+ (dpm/bc-type . 2)
+ (dpm/bc-norm-coeff (polynomial angle 1))
+ (dpm/bc-tang-coeff (polynomial angle 1))
+ (dpm/bc-udf . "none")
+ (dpm/film-splash-nsamp . 4)
+ (dpm/bc-erosion (polynomial angle 1))
+ (dpm/bc-erosion-c (polynomial 1.8e-09))
+ (dpm/bc-erosion-n (polynomial 0))
+ (band-in-emiss ((constant . 1) (profile "" "")))
+ (radiation-bc . 3)
+ (q-ni (constant . 1) (profile "" ""))
+ (q-nj (constant . 0) (profile "" ""))
+ (q-nk (constant . 0) (profile "" ""))
+ (coll-dtheta . 1.744e-08)
+ (coll-dphi . 1.744e-08)
+ (band-q-irrad ((constant . 0) (profile "" "")))
+ (band-diffuse-frac 1)
+ (radiating-s2s-surface? . #t)
+ (fpsc . 1)
+ (parallel-collimated-beam? . #t)
+ (solar-fluxes? . #t)
+ (solar-direction? . #f)
+ (solar-irradiation? . #f)
+ (v-transmissivity (constant . 0.8) (profile "" ""))
+ (ir-transmissivity (constant . 0.8) (profile "" ""))
+ (v-opq-absorbtivity (constant . 0.8) (profile "" ""))
+ (ir-opq-absorbtivity (constant . 0.8) (profile "" ""))
+ (v-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (ir-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (d-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (d-transmissivity (constant . 0.8) (profile "" ""))
+ (fsi-interface? . #f)
+ (react? . #f)
+ (species-spec 0)
+ (mf ((constant . 0) (profile "" "")))
+ (uds-bc 0)
+ (uds . value)
+ (gtemp-bc . 0)
+ (g-temperature (constant . 1e-08) (profile "" ""))
+ (g-qflux (constant . 0) (profile "" ""))
+ (wall-restitution-coeff . 0.2)
+ (omega . 0)
+ (x-origin . 0)
+ (y-origin . 0)
+ (z-origin . 0)
+ (ai . 0)
+ (aj . 0)
+ (ak . 1)
+ (adhesion-angle)
+ (specified-shear? . #f)
+ (shear-x (constant . 0) (profile "" ""))
+ (shear-y (constant . 0) (profile "" ""))
+ (shear-z (constant . 0) (profile "" ""))
+ (surf-tens-grad . 0)
+ (contact-resistance (constant . 0) (profile "" ""))
+ (reaction-mechs . 0)
+ (specular-coeff . 0)
+))
+(39 (5 wall w2 1)(
+ (geom-disable? . #f)
+ (geom-dir-spec . #f)
+ (geom-dir-x . 0)
+ (geom-dir-y . 0)
+ (geom-dir-z . 0)
+ (geom-levels . 3)
+ (geom-bgthread . 0)
+ (d . 0)
+ (q-dot (constant . 0) (profile "" ""))
+ (material . aluminum)
+ (thermal-bc . 1)
+ (t (constant . 300) (profile "" ""))
+ (q (constant . 0) (profile "" ""))
+ (h (constant . 0) (profile "" ""))
+ (tinf (constant . 300) (profile "" ""))
+ (planar-conduction? . #f)
+ (motion-bc . 0)
+ (shear-bc . 0)
+ (moving? . #f)
+ (relative? . #t)
+ (rotating? . #f)
+ (vmag . 0)
+ (ni . 1)
+ (nj . 0)
+ (nk . 0)
+ (components? . #f)
+ (u (constant . 0) (profile "" ""))
+ (v (constant . 0) (profile "" ""))
+ (w (constant . 0) (profile "" ""))
+ (in-emiss (constant . 1) (profile "" ""))
+ (ex-emiss (constant . 1) (profile "" ""))
+ (trad (constant . 300) (profile "" ""))
+ (int-rad? . #f)
+ (trad-internal . 300)
+ (area-enhancement-factor (constant . 1) (profile "" ""))
+ (roughness-height (constant . 0) (profile "" ""))
+ (roughness-const (constant . 0.5) (profile "" ""))
+ (dpm/bc-type . 2)
+ (dpm/bc-norm-coeff (polynomial angle 1))
+ (dpm/bc-tang-coeff (polynomial angle 1))
+ (dpm/bc-udf . "none")
+ (dpm/film-splash-nsamp . 4)
+ (dpm/bc-erosion (polynomial angle 1))
+ (dpm/bc-erosion-c (polynomial 1.8e-09))
+ (dpm/bc-erosion-n (polynomial 0))
+ (band-in-emiss ((constant . 1) (profile "" "")))
+ (radiation-bc . 3)
+ (q-ni (constant . 1) (profile "" ""))
+ (q-nj (constant . 0) (profile "" ""))
+ (q-nk (constant . 0) (profile "" ""))
+ (coll-dtheta . 1.744e-08)
+ (coll-dphi . 1.744e-08)
+ (band-q-irrad ((constant . 0) (profile "" "")))
+ (band-diffuse-frac 1)
+ (radiating-s2s-surface? . #t)
+ (fpsc . 1)
+ (parallel-collimated-beam? . #t)
+ (solar-fluxes? . #t)
+ (solar-direction? . #f)
+ (solar-irradiation? . #f)
+ (v-transmissivity (constant . 0.8) (profile "" ""))
+ (ir-transmissivity (constant . 0.8) (profile "" ""))
+ (v-opq-absorbtivity (constant . 0.8) (profile "" ""))
+ (ir-opq-absorbtivity (constant . 0.8) (profile "" ""))
+ (v-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (ir-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (d-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (d-transmissivity (constant . 0.8) (profile "" ""))
+ (fsi-interface? . #f)
+ (react? . #f)
+ (species-spec 0)
+ (mf ((constant . 0) (profile "" "")))
+ (uds-bc 0)
+ (uds . value)
+ (gtemp-bc . 0)
+ (g-temperature (constant . 1e-08) (profile "" ""))
+ (g-qflux (constant . 0) (profile "" ""))
+ (wall-restitution-coeff . 0.2)
+ (omega . 0)
+ (x-origin . 0)
+ (y-origin . 0)
+ (z-origin . 0)
+ (ai . 0)
+ (aj . 0)
+ (ak . 1)
+ (adhesion-angle)
+ (specified-shear? . #f)
+ (shear-x (constant . 0) (profile "" ""))
+ (shear-y (constant . 0) (profile "" ""))
+ (shear-z (constant . 0) (profile "" ""))
+ (surf-tens-grad . 0)
+ (contact-resistance (constant . 0) (profile "" ""))
+ (reaction-mechs . 0)
+ (specular-coeff . 0)
+))
+(39 (6 wall w1 1)(
+ (geom-disable? . #f)
+ (geom-dir-spec . #f)
+ (geom-dir-x . 0)
+ (geom-dir-y . 0)
+ (geom-dir-z . 0)
+ (geom-levels . 3)
+ (geom-bgthread . 0)
+ (d . 0)
+ (q-dot (constant . 0) (profile "" ""))
+ (material . aluminum)
+ (thermal-bc . 1)
+ (t (constant . 300) (profile "" ""))
+ (q (constant . 0) (profile "" ""))
+ (h (constant . 0) (profile "" ""))
+ (tinf (constant . 300) (profile "" ""))
+ (planar-conduction? . #f)
+ (motion-bc . 0)
+ (shear-bc . 0)
+ (moving? . #f)
+ (relative? . #t)
+ (rotating? . #f)
+ (vmag . 0)
+ (ni . 1)
+ (nj . 0)
+ (nk . 0)
+ (components? . #f)
+ (u (constant . 0) (profile "" ""))
+ (v (constant . 0) (profile "" ""))
+ (w (constant . 0) (profile "" ""))
+ (in-emiss (constant . 1) (profile "" ""))
+ (ex-emiss (constant . 1) (profile "" ""))
+ (trad (constant . 300) (profile "" ""))
+ (int-rad? . #f)
+ (trad-internal . 300)
+ (area-enhancement-factor (constant . 1) (profile "" ""))
+ (roughness-height (constant . 0) (profile "" ""))
+ (roughness-const (constant . 0.5) (profile "" ""))
+ (dpm/bc-type . 2)
+ (dpm/bc-norm-coeff (polynomial angle 1))
+ (dpm/bc-tang-coeff (polynomial angle 1))
+ (dpm/bc-udf . "none")
+ (dpm/film-splash-nsamp . 4)
+ (dpm/bc-erosion (polynomial angle 1))
+ (dpm/bc-erosion-c (polynomial 1.8e-09))
+ (dpm/bc-erosion-n (polynomial 0))
+ (band-in-emiss ((constant . 1) (profile "" "")))
+ (radiation-bc . 3)
+ (q-ni (constant . 1) (profile "" ""))
+ (q-nj (constant . 0) (profile "" ""))
+ (q-nk (constant . 0) (profile "" ""))
+ (coll-dtheta . 1.744e-08)
+ (coll-dphi . 1.744e-08)
+ (band-q-irrad ((constant . 0) (profile "" "")))
+ (band-diffuse-frac 1)
+ (radiating-s2s-surface? . #t)
+ (fpsc . 1)
+ (parallel-collimated-beam? . #t)
+ (solar-fluxes? . #t)
+ (solar-direction? . #f)
+ (solar-irradiation? . #f)
+ (v-transmissivity (constant . 0.8) (profile "" ""))
+ (ir-transmissivity (constant . 0.8) (profile "" ""))
+ (v-opq-absorbtivity (constant . 0.8) (profile "" ""))
+ (ir-opq-absorbtivity (constant . 0.8) (profile "" ""))
+ (v-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (ir-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (d-st-absorbtivity (constant . 0.1) (profile "" ""))
+ (d-transmissivity (constant . 0.8) (profile "" ""))
+ (fsi-interface? . #f)
+ (react? . #f)
+ (species-spec 0)
+ (mf ((constant . 0) (profile "" "")))
+ (uds-bc 0)
+ (uds . value)
+ (gtemp-bc . 0)
+ (g-temperature (constant . 1e-08) (profile "" ""))
+ (g-qflux (constant . 0) (profile "" ""))
+ (wall-restitution-coeff . 0.2)
+ (omega . 0)
+ (x-origin . 0)
+ (y-origin . 0)
+ (z-origin . 0)
+ (ai . 0)
+ (aj . 0)
+ (ak . 1)
+ (adhesion-angle)
+ (specified-shear? . #f)
+ (shear-x (constant . 0) (profile "" ""))
+ (shear-y (constant . 0) (profile "" ""))
+ (shear-z (constant . 0) (profile "" ""))
+ (surf-tens-grad . 0)
+ (contact-resistance (constant . 0) (profile "" ""))
+ (reaction-mechs . 0)
+ (specular-coeff . 0)
+))
+(39 (8 interior default-interior 1)(
+))
+
+(0 "Boundary profiles:")
+(0 "User defined section:")
