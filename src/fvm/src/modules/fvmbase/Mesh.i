@@ -86,8 +86,8 @@ public:
   const CRConnectivity& getCellCells() const;
 					
   
-  const GhostCellSiteMap& getGhostCellSiteMap() const;
-  const StorageSite* getGhostCellSite( int id );
+  // const GhostCellSiteMap& getGhostCellSiteMap() const;
+  // const StorageSite* getGhostCellSite( int id );
 
   %extend
   {
