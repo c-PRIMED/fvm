@@ -9,6 +9,7 @@
 #include "AMG.h"
 #include "BCGStab.h"
 #include "ArrayBase.h"
+#include "Array.h"
   
 rlog::StdioNode *stdLog;
 %}
@@ -65,7 +66,11 @@ typedef Vector<double,3> VecD3;
           stdLog->subscribeTo(rlog::GetGlobalChannel(channel.c_str()));
   }
 
-
+  boost::shared_ptr<ArrayBase> newIntArray(const int size)
+  {
+    return shared_ptr<ArrayBase>(new Array<int>(size));
+  }
+  
   %}
 
 %init %{
