@@ -1,1 +1,1 @@
-octree_test nosetests -v ../../scripts/testOctreeSearch.py
+octree_test nosetests -v testOctreeSearch.py
