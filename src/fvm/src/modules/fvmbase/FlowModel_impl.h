@@ -329,7 +329,7 @@ public:
 	mIPV.multiplyAndAdd(*ibV,pV);
 
 	
-#if 1
+#if 0
 	// debug use
 	const Array<int>& ibFaceList = mesh.getIBFaceList();
 	const StorageSite& faces = mesh.getFaces();
