@@ -1,0 +1,6360 @@
+ procID = 0
+ npart  = 8
+
+ elemDist[0] = 112
+ elemDist[1] = 112
+ elemDist[2] = 112
+ elemDist[3] = 112
+ elemDist[4] = 112
+ elemDist[5] = 112
+ elemDist[6] = 111
+ elemDist[7] = 111
+
+ n = 0 globalIndx[0] = 0
+ n = 1 globalIndx[1] = 112
+ n = 2 globalIndx[2] = 224
+ n = 3 globalIndx[3] = 336
+ n = 4 globalIndx[4] = 448
+ n = 5 globalIndx[5] = 560
+ n = 6 globalIndx[6] = 672
+ n = 7 globalIndx[7] = 783
+ n = 8 globalIndx[8] = 894
+
+ eptr[0] = 0
+ eptr[1] = 3
+ eptr[2] = 6
+ eptr[3] = 9
+ eptr[4] = 12
+ eptr[5] = 15
+ eptr[6] = 18
+ eptr[7] = 21
+ eptr[8] = 24
+ eptr[9] = 27
+ eptr[10] = 30
+ eptr[11] = 33
+ eptr[12] = 36
+ eptr[13] = 39
+ eptr[14] = 42
+ eptr[15] = 45
+ eptr[16] = 48
+ eptr[17] = 51
+ eptr[18] = 54
+ eptr[19] = 57
+ eptr[20] = 60
+ eptr[21] = 63
+ eptr[22] = 66
+ eptr[23] = 69
+ eptr[24] = 72
+ eptr[25] = 75
+ eptr[26] = 78
+ eptr[27] = 81
+ eptr[28] = 84
+ eptr[29] = 87
+ eptr[30] = 90
+ eptr[31] = 93
+ eptr[32] = 96
+ eptr[33] = 99
+ eptr[34] = 102
+ eptr[35] = 105
+ eptr[36] = 108
+ eptr[37] = 111
+ eptr[38] = 114
+ eptr[39] = 117
+ eptr[40] = 120
+ eptr[41] = 123
+ eptr[42] = 126
+ eptr[43] = 129
+ eptr[44] = 132
+ eptr[45] = 135
+ eptr[46] = 138
+ eptr[47] = 141
+ eptr[48] = 144
+ eptr[49] = 147
+ eptr[50] = 150
+ eptr[51] = 153
+ eptr[52] = 156
+ eptr[53] = 159
+ eptr[54] = 162
+ eptr[55] = 165
+ eptr[56] = 168
+ eptr[57] = 171
+ eptr[58] = 174
+ eptr[59] = 177
+ eptr[60] = 180
+ eptr[61] = 183
+ eptr[62] = 186
+ eptr[63] = 189
+ eptr[64] = 192
+ eptr[65] = 195
+ eptr[66] = 198
+ eptr[67] = 201
+ eptr[68] = 204
+ eptr[69] = 207
+ eptr[70] = 210
+ eptr[71] = 213
+ eptr[72] = 216
+ eptr[73] = 219
+ eptr[74] = 222
+ eptr[75] = 225
+ eptr[76] = 228
+ eptr[77] = 231
+ eptr[78] = 234
+ eptr[79] = 237
+ eptr[80] = 240
+ eptr[81] = 243
+ eptr[82] = 246
+ eptr[83] = 249
+ eptr[84] = 252
+ eptr[85] = 255
+ eptr[86] = 258
+ eptr[87] = 261
+ eptr[88] = 264
+ eptr[89] = 267
+ eptr[90] = 270
+ eptr[91] = 273
+ eptr[92] = 276
+ eptr[93] = 279
+ eptr[94] = 282
+ eptr[95] = 285
+ eptr[96] = 288
+ eptr[97] = 291
+ eptr[98] = 294
+ eptr[99] = 297
+ eptr[100] = 300
+ eptr[101] = 303
+ eptr[102] = 306
+ eptr[103] = 309
+ eptr[104] = 312
+ eptr[105] = 315
+ eptr[106] = 318
+ eptr[107] = 321
+ eptr[108] = 324
+ eptr[109] = 327
+ eptr[110] = 330
+ eptr[111] = 333
+ eptr[112] = 336
+
+ eelm[0] = 0
+ eelm[1] = 1
+ eelm[2] = 2
+ eelm[3] = 3
+ eelm[4] = 4
+ eelm[5] = 5
+ eelm[6] = 6
+ eelm[7] = 7
+ eelm[8] = 8
+ eelm[9] = 9
+ eelm[10] = 10
+ eelm[11] = 11
+ eelm[12] = 12
+ eelm[13] = 13
+ eelm[14] = 14
+ eelm[15] = 15
+ eelm[16] = 16
+ eelm[17] = 17
+ eelm[18] = 18
+ eelm[19] = 19
+ eelm[20] = 20
+ eelm[21] = 21
+ eelm[22] = 22
+ eelm[23] = 23
+ eelm[24] = 24
+ eelm[25] = 25
+ eelm[26] = 26
+ eelm[27] = 27
+ eelm[28] = 28
+ eelm[29] = 29
+ eelm[30] = 30
+ eelm[31] = 31
+ eelm[32] = 32
+ eelm[33] = 33
+ eelm[34] = 34
+ eelm[35] = 35
+ eelm[36] = 36
+ eelm[37] = 37
+ eelm[38] = 38
+ eelm[39] = 39
+ eelm[40] = 40
+ eelm[41] = 41
+ eelm[42] = 42
+ eelm[43] = 43
+ eelm[44] = 44
+ eelm[45] = 45
+ eelm[46] = 46
+ eelm[47] = 47
+ eelm[48] = 48
+ eelm[49] = 49
+ eelm[50] = 50
+ eelm[51] = 51
+ eelm[52] = 52
+ eelm[53] = 53
+ eelm[54] = 54
+ eelm[55] = 55
+ eelm[56] = 56
+ eelm[57] = 57
+ eelm[58] = 58
+ eelm[59] = 59
+ eelm[60] = 60
+ eelm[61] = 61
+ eelm[62] = 62
+ eelm[63] = 63
+ eelm[64] = 64
+ eelm[65] = 65
+ eelm[66] = 66
+ eelm[67] = 67
+ eelm[68] = 68
+ eelm[69] = 69
+ eelm[70] = 70
+ eelm[71] = 71
+ eelm[72] = 72
+ eelm[73] = 73
+ eelm[74] = 74
+ eelm[75] = 75
+ eelm[76] = 76
+ eelm[77] = 77
+ eelm[78] = 78
+ eelm[79] = 79
+ eelm[80] = 80
+ eelm[81] = 81
+ eelm[82] = 82
+ eelm[83] = 83
+ eelm[84] = 84
+ eelm[85] = 85
+ eelm[86] = 86
+ eelm[87] = 87
+ eelm[88] = 88
+ eelm[89] = 89
+ eelm[90] = 90
+ eelm[91] = 91
+ eelm[92] = 92
+ eelm[93] = 93
+ eelm[94] = 94
+ eelm[95] = 95
+ eelm[96] = 96
+ eelm[97] = 97
+ eelm[98] = 98
+ eelm[99] = 99
+ eelm[100] = 100
+ eelm[101] = 101
+ eelm[102] = 102
+ eelm[103] = 103
+ eelm[104] = 104
+ eelm[105] = 105
+ eelm[106] = 106
+ eelm[107] = 107
+ eelm[108] = 108
+ eelm[109] = 109
+ eelm[110] = 110
+ eelm[111] = 111
+
+ elemID  = 0,   eind[0]=1    eind[1]=2    eind[2]=0   
+ elemID  = 1,   eind[3]=1    eind[4]=2    eind[5]=3   
+ elemID  = 2,   eind[6]=5    eind[7]=6    eind[8]=4   
+ elemID  = 3,   eind[9]=5    eind[10]=6    eind[11]=7   
+ elemID  = 4,   eind[12]=9    eind[13]=10    eind[14]=8   
+ elemID  = 5,   eind[15]=9    eind[16]=10    eind[17]=11   
+ elemID  = 6,   eind[18]=13    eind[19]=14    eind[20]=12   
+ elemID  = 7,   eind[21]=13    eind[22]=14    eind[23]=15   
+ elemID  = 8,   eind[24]=7    eind[25]=6    eind[26]=16   
+ elemID  = 9,   eind[27]=7    eind[28]=16    eind[29]=17   
+ elemID  = 10,   eind[30]=14    eind[31]=12    eind[32]=18   
+ elemID  = 11,   eind[33]=18    eind[34]=12    eind[35]=19   
+ elemID  = 12,   eind[36]=2    eind[37]=0    eind[38]=20   
+ elemID  = 13,   eind[39]=20    eind[40]=0    eind[41]=21   
+ elemID  = 14,   eind[42]=3    eind[43]=2    eind[44]=22   
+ elemID  = 15,   eind[45]=3    eind[46]=22    eind[47]=23   
+ elemID  = 16,   eind[48]=10    eind[49]=8    eind[50]=24   
+ elemID  = 17,   eind[51]=24    eind[52]=8    eind[53]=25   
+ elemID  = 18,   eind[54]=11    eind[55]=10    eind[56]=26   
+ elemID  = 19,   eind[57]=11    eind[58]=26    eind[59]=27   
+ elemID  = 20,   eind[60]=6    eind[61]=4    eind[62]=28   
+ elemID  = 21,   eind[63]=28    eind[64]=4    eind[65]=29   
+ elemID  = 22,   eind[66]=15    eind[67]=14    eind[68]=30   
+ elemID  = 23,   eind[69]=15    eind[70]=30    eind[71]=31   
+ elemID  = 24,   eind[72]=17    eind[73]=16    eind[74]=32   
+ elemID  = 25,   eind[75]=17    eind[76]=32    eind[77]=33   
+ elemID  = 26,   eind[78]=18    eind[79]=19    eind[80]=34   
+ elemID  = 27,   eind[81]=34    eind[82]=19    eind[83]=35   
+ elemID  = 28,   eind[84]=20    eind[85]=21    eind[86]=36   
+ elemID  = 29,   eind[87]=36    eind[88]=21    eind[89]=37   
+ elemID  = 30,   eind[90]=23    eind[91]=22    eind[92]=38   
+ elemID  = 31,   eind[93]=23    eind[94]=38    eind[95]=39   
+ elemID  = 32,   eind[96]=24    eind[97]=25    eind[98]=40   
+ elemID  = 33,   eind[99]=40    eind[100]=25    eind[101]=41   
+ elemID  = 34,   eind[102]=27    eind[103]=26    eind[104]=42   
+ elemID  = 35,   eind[105]=27    eind[106]=42    eind[107]=43   
+ elemID  = 36,   eind[108]=28    eind[109]=29    eind[110]=44   
+ elemID  = 37,   eind[111]=44    eind[112]=29    eind[113]=45   
+ elemID  = 38,   eind[114]=31    eind[115]=30    eind[116]=46   
+ elemID  = 39,   eind[117]=31    eind[118]=46    eind[119]=47   
+ elemID  = 40,   eind[120]=40    eind[121]=41    eind[122]=48   
+ elemID  = 41,   eind[123]=48    eind[124]=41    eind[125]=49   
+ elemID  = 42,   eind[126]=43    eind[127]=42    eind[128]=50   
+ elemID  = 43,   eind[129]=43    eind[130]=50    eind[131]=51   
+ elemID  = 44,   eind[132]=44    eind[133]=45    eind[134]=52   
+ elemID  = 45,   eind[135]=52    eind[136]=45    eind[137]=53   
+ elemID  = 46,   eind[138]=47    eind[139]=46    eind[140]=54   
+ elemID  = 47,   eind[141]=47    eind[142]=54    eind[143]=55   
+ elemID  = 48,   eind[144]=33    eind[145]=32    eind[146]=56   
+ elemID  = 49,   eind[147]=33    eind[148]=56    eind[149]=57   
+ elemID  = 50,   eind[150]=34    eind[151]=35    eind[152]=58   
+ elemID  = 51,   eind[153]=58    eind[154]=35    eind[155]=59   
+ elemID  = 52,   eind[156]=39    eind[157]=38    eind[158]=60   
+ elemID  = 53,   eind[159]=39    eind[160]=60    eind[161]=61   
+ elemID  = 54,   eind[162]=36    eind[163]=37    eind[164]=62   
+ elemID  = 55,   eind[165]=62    eind[166]=37    eind[167]=63   
+ elemID  = 56,   eind[168]=57    eind[169]=56    eind[170]=64   
+ elemID  = 57,   eind[171]=57    eind[172]=64    eind[173]=65   
+ elemID  = 58,   eind[174]=58    eind[175]=59    eind[176]=66   
+ elemID  = 59,   eind[177]=66    eind[178]=59    eind[179]=67   
+ elemID  = 60,   eind[180]=62    eind[181]=63    eind[182]=68   
+ elemID  = 61,   eind[183]=68    eind[184]=63    eind[185]=69   
+ elemID  = 62,   eind[186]=61    eind[187]=60    eind[188]=70   
+ elemID  = 63,   eind[189]=61    eind[190]=70    eind[191]=71   
+ elemID  = 64,   eind[192]=48    eind[193]=49    eind[194]=72   
+ elemID  = 65,   eind[195]=72    eind[196]=49    eind[197]=73   
+ elemID  = 66,   eind[198]=51    eind[199]=50    eind[200]=74   
+ elemID  = 67,   eind[201]=51    eind[202]=74    eind[203]=75   
+ elemID  = 68,   eind[204]=52    eind[205]=53    eind[206]=76   
+ elemID  = 69,   eind[207]=76    eind[208]=53    eind[209]=77   
+ elemID  = 70,   eind[210]=55    eind[211]=54    eind[212]=78   
+ elemID  = 71,   eind[213]=55    eind[214]=78    eind[215]=79   
+ elemID  = 72,   eind[216]=71    eind[217]=70    eind[218]=80   
+ elemID  = 73,   eind[219]=71    eind[220]=80    eind[221]=81   
+ elemID  = 74,   eind[222]=68    eind[223]=69    eind[224]=82   
+ elemID  = 75,   eind[225]=82    eind[226]=69    eind[227]=83   
+ elemID  = 76,   eind[228]=65    eind[229]=64    eind[230]=84   
+ elemID  = 77,   eind[231]=65    eind[232]=84    eind[233]=85   
+ elemID  = 78,   eind[234]=66    eind[235]=67    eind[236]=86   
+ elemID  = 79,   eind[237]=86    eind[238]=67    eind[239]=87   
+ elemID  = 80,   eind[240]=76    eind[241]=77    eind[242]=88   
+ elemID  = 81,   eind[243]=88    eind[244]=77    eind[245]=89   
+ elemID  = 82,   eind[246]=79    eind[247]=78    eind[248]=90   
+ elemID  = 83,   eind[249]=79    eind[250]=90    eind[251]=91   
+ elemID  = 84,   eind[252]=75    eind[253]=74    eind[254]=92   
+ elemID  = 85,   eind[255]=75    eind[256]=92    eind[257]=93   
+ elemID  = 86,   eind[258]=72    eind[259]=73    eind[260]=94   
+ elemID  = 87,   eind[261]=94    eind[262]=73    eind[263]=95   
+ elemID  = 88,   eind[264]=81    eind[265]=80    eind[266]=96   
+ elemID  = 89,   eind[267]=81    eind[268]=96    eind[269]=97   
+ elemID  = 90,   eind[270]=82    eind[271]=83    eind[272]=98   
+ elemID  = 91,   eind[273]=98    eind[274]=83    eind[275]=99   
+ elemID  = 92,   eind[276]=85    eind[277]=84    eind[278]=100   
+ elemID  = 93,   eind[279]=85    eind[280]=100    eind[281]=101   
+ elemID  = 94,   eind[282]=86    eind[283]=87    eind[284]=102   
+ elemID  = 95,   eind[285]=102    eind[286]=87    eind[287]=103   
+ elemID  = 96,   eind[288]=88    eind[289]=89    eind[290]=104   
+ elemID  = 97,   eind[291]=104    eind[292]=89    eind[293]=105   
+ elemID  = 98,   eind[294]=91    eind[295]=90    eind[296]=106   
+ elemID  = 99,   eind[297]=91    eind[298]=106    eind[299]=107   
+ elemID  = 100,   eind[300]=94    eind[301]=95    eind[302]=108   
+ elemID  = 101,   eind[303]=108    eind[304]=95    eind[305]=109   
+ elemID  = 102,   eind[306]=93    eind[307]=92    eind[308]=110   
+ elemID  = 103,   eind[309]=93    eind[310]=110    eind[311]=111   
+ elemID  = 104,   eind[312]=97    eind[313]=96    eind[314]=112   
+ elemID  = 105,   eind[315]=97    eind[316]=112    eind[317]=113   
+ elemID  = 106,   eind[318]=98    eind[319]=99    eind[320]=114   
+ elemID  = 107,   eind[321]=114    eind[322]=99    eind[323]=115   
+ elemID  = 108,   eind[324]=101    eind[325]=100    eind[326]=116   
+ elemID  = 109,   eind[327]=101    eind[328]=116    eind[329]=117   
+ elemID  = 110,   eind[330]=102    eind[331]=103    eind[332]=118   
+ elemID  = 111,   eind[333]=118    eind[334]=103    eind[335]=119   
+
+ elmwgt[0]=1
+ elmwgt[1]=1
+ elmwgt[2]=1
+ elmwgt[3]=1
+ elmwgt[4]=1
+ elmwgt[5]=1
+ elmwgt[6]=1
+ elmwgt[7]=1
+ elmwgt[8]=1
+ elmwgt[9]=1
+ elmwgt[10]=1
+ elmwgt[11]=1
+ elmwgt[12]=1
+ elmwgt[13]=1
+ elmwgt[14]=1
+ elmwgt[15]=1
+ elmwgt[16]=1
+ elmwgt[17]=1
+ elmwgt[18]=1
+ elmwgt[19]=1
+ elmwgt[20]=1
+ elmwgt[21]=1
+ elmwgt[22]=1
+ elmwgt[23]=1
+ elmwgt[24]=1
+ elmwgt[25]=1
+ elmwgt[26]=1
+ elmwgt[27]=1
+ elmwgt[28]=1
+ elmwgt[29]=1
+ elmwgt[30]=1
+ elmwgt[31]=1
+ elmwgt[32]=1
+ elmwgt[33]=1
+ elmwgt[34]=1
+ elmwgt[35]=1
+ elmwgt[36]=1
+ elmwgt[37]=1
+ elmwgt[38]=1
+ elmwgt[39]=1
+ elmwgt[40]=1
+ elmwgt[41]=1
+ elmwgt[42]=1
+ elmwgt[43]=1
+ elmwgt[44]=1
+ elmwgt[45]=1
+ elmwgt[46]=1
+ elmwgt[47]=1
+ elmwgt[48]=1
+ elmwgt[49]=1
+ elmwgt[50]=1
+ elmwgt[51]=1
+ elmwgt[52]=1
+ elmwgt[53]=1
+ elmwgt[54]=1
+ elmwgt[55]=1
+ elmwgt[56]=1
+ elmwgt[57]=1
+ elmwgt[58]=1
+ elmwgt[59]=1
+ elmwgt[60]=1
+ elmwgt[61]=1
+ elmwgt[62]=1
+ elmwgt[63]=1
+ elmwgt[64]=1
+ elmwgt[65]=1
+ elmwgt[66]=1
+ elmwgt[67]=1
+ elmwgt[68]=1
+ elmwgt[69]=1
+ elmwgt[70]=1
+ elmwgt[71]=1
+ elmwgt[72]=1
+ elmwgt[73]=1
+ elmwgt[74]=1
+ elmwgt[75]=1
+ elmwgt[76]=1
+ elmwgt[77]=1
+ elmwgt[78]=1
+ elmwgt[79]=1
+ elmwgt[80]=1
+ elmwgt[81]=1
+ elmwgt[82]=1
+ elmwgt[83]=1
+ elmwgt[84]=1
+ elmwgt[85]=1
+ elmwgt[86]=1
+ elmwgt[87]=1
+ elmwgt[88]=1
+ elmwgt[89]=1
+ elmwgt[90]=1
+ elmwgt[91]=1
+ elmwgt[92]=1
+ elmwgt[93]=1
+ elmwgt[94]=1
+ elmwgt[95]=1
+ elmwgt[96]=1
+ elmwgt[97]=1
+ elmwgt[98]=1
+ elmwgt[99]=1
+ elmwgt[100]=1
+ elmwgt[101]=1
+ elmwgt[102]=1
+ elmwgt[103]=1
+ elmwgt[104]=1
+ elmwgt[105]=1
+ elmwgt[106]=1
+ elmwgt[107]=1
+ elmwgt[108]=1
+ elmwgt[109]=1
+ elmwgt[110]=1
+ elmwgt[111]=1
+
+ wgtflag = 0
+
+ numflag  = 0
+
+ ncon = 1
+
+ ncommonnodes = 2
+
+ nparts = 8
+
+tpwgts[0] = 0.125
+tpwgts[1] = 0.125
+tpwgts[2] = 0.125
+tpwgts[3] = 0.125
+tpwgts[4] = 0.125
+tpwgts[5] = 0.125
+tpwgts[6] = 0.125
+tpwgts[7] = 0.125
+
+ ubvec = 1.05
+
+ options = 0
+
+ edgecut = 94
+
+ elem = 0 partion = 1
+ elem = 1 partion = 1
+ elem = 2 partion = 2
+ elem = 3 partion = 2
+ elem = 4 partion = 7
+ elem = 5 partion = 7
+ elem = 6 partion = 5
+ elem = 7 partion = 5
+ elem = 8 partion = 2
+ elem = 9 partion = 2
+ elem = 10 partion = 5
+ elem = 11 partion = 5
+ elem = 12 partion = 1
+ elem = 13 partion = 1
+ elem = 14 partion = 1
+ elem = 15 partion = 1
+ elem = 16 partion = 7
+ elem = 17 partion = 7
+ elem = 18 partion = 7
+ elem = 19 partion = 7
+ elem = 20 partion = 2
+ elem = 21 partion = 2
+ elem = 22 partion = 5
+ elem = 23 partion = 5
+ elem = 24 partion = 2
+ elem = 25 partion = 2
+ elem = 26 partion = 5
+ elem = 27 partion = 5
+ elem = 28 partion = 1
+ elem = 29 partion = 1
+ elem = 30 partion = 1
+ elem = 31 partion = 1
+ elem = 32 partion = 7
+ elem = 33 partion = 7
+ elem = 34 partion = 7
+ elem = 35 partion = 7
+ elem = 36 partion = 2
+ elem = 37 partion = 2
+ elem = 38 partion = 5
+ elem = 39 partion = 5
+ elem = 40 partion = 7
+ elem = 41 partion = 7
+ elem = 42 partion = 7
+ elem = 43 partion = 7
+ elem = 44 partion = 2
+ elem = 45 partion = 2
+ elem = 46 partion = 5
+ elem = 47 partion = 4
+ elem = 48 partion = 2
+ elem = 49 partion = 2
+ elem = 50 partion = 5
+ elem = 51 partion = 5
+ elem = 52 partion = 1
+ elem = 53 partion = 1
+ elem = 54 partion = 1
+ elem = 55 partion = 1
+ elem = 56 partion = 2
+ elem = 57 partion = 3
+ elem = 58 partion = 5
+ elem = 59 partion = 5
+ elem = 60 partion = 1
+ elem = 61 partion = 1
+ elem = 62 partion = 1
+ elem = 63 partion = 1
+ elem = 64 partion = 7
+ elem = 65 partion = 7
+ elem = 66 partion = 7
+ elem = 67 partion = 6
+ elem = 68 partion = 2
+ elem = 69 partion = 2
+ elem = 70 partion = 4
+ elem = 71 partion = 4
+ elem = 72 partion = 1
+ elem = 73 partion = 0
+ elem = 74 partion = 1
+ elem = 75 partion = 1
+ elem = 76 partion = 3
+ elem = 77 partion = 3
+ elem = 78 partion = 5
+ elem = 79 partion = 5
+ elem = 80 partion = 2
+ elem = 81 partion = 2
+ elem = 82 partion = 4
+ elem = 83 partion = 4
+ elem = 84 partion = 6
+ elem = 85 partion = 6
+ elem = 86 partion = 7
+ elem = 87 partion = 7
+ elem = 88 partion = 0
+ elem = 89 partion = 0
+ elem = 90 partion = 1
+ elem = 91 partion = 1
+ elem = 92 partion = 3
+ elem = 93 partion = 3
+ elem = 94 partion = 5
+ elem = 95 partion = 5
+ elem = 96 partion = 2
+ elem = 97 partion = 2
+ elem = 98 partion = 4
+ elem = 99 partion = 4
+ elem = 100 partion = 7
+ elem = 101 partion = 7
+ elem = 102 partion = 6
+ elem = 103 partion = 6
+ elem = 104 partion = 0
+ elem = 105 partion = 0
+ elem = 106 partion = 4
+ elem = 107 partion = 4
+ elem = 108 partion = 3
+ elem = 109 partion = 3
+ elem = 110 partion = 5
+ elem = 111 partion = 5
+
+ partID = 0 elemID = 73
+ partID = 0 elemID = 88
+ partID = 0 elemID = 89
+ partID = 0 elemID = 104
+ partID = 0 elemID = 105
+ partID = 1 elemID = 0
+ partID = 1 elemID = 1
+ partID = 1 elemID = 12
+ partID = 1 elemID = 13
+ partID = 1 elemID = 14
+ partID = 1 elemID = 15
+ partID = 1 elemID = 28
+ partID = 1 elemID = 29
+ partID = 1 elemID = 30
+ partID = 1 elemID = 31
+ partID = 1 elemID = 52
+ partID = 1 elemID = 53
+ partID = 1 elemID = 54
+ partID = 1 elemID = 55
+ partID = 1 elemID = 60
+ partID = 1 elemID = 61
+ partID = 1 elemID = 62
+ partID = 1 elemID = 63
+ partID = 1 elemID = 72
+ partID = 1 elemID = 74
+ partID = 1 elemID = 75
+ partID = 1 elemID = 90
+ partID = 1 elemID = 91
+ partID = 2 elemID = 2
+ partID = 2 elemID = 3
+ partID = 2 elemID = 8
+ partID = 2 elemID = 9
+ partID = 2 elemID = 20
+ partID = 2 elemID = 21
+ partID = 2 elemID = 24
+ partID = 2 elemID = 25
+ partID = 2 elemID = 36
+ partID = 2 elemID = 37
+ partID = 2 elemID = 44
+ partID = 2 elemID = 45
+ partID = 2 elemID = 48
+ partID = 2 elemID = 49
+ partID = 2 elemID = 56
+ partID = 2 elemID = 68
+ partID = 2 elemID = 69
+ partID = 2 elemID = 80
+ partID = 2 elemID = 81
+ partID = 2 elemID = 96
+ partID = 2 elemID = 97
+ partID = 3 elemID = 57
+ partID = 3 elemID = 76
+ partID = 3 elemID = 77
+ partID = 3 elemID = 92
+ partID = 3 elemID = 93
+ partID = 3 elemID = 108
+ partID = 3 elemID = 109
+ partID = 4 elemID = 47
+ partID = 4 elemID = 70
+ partID = 4 elemID = 71
+ partID = 4 elemID = 82
+ partID = 4 elemID = 83
+ partID = 4 elemID = 98
+ partID = 4 elemID = 99
+ partID = 4 elemID = 106
+ partID = 4 elemID = 107
+ partID = 5 elemID = 6
+ partID = 5 elemID = 7
+ partID = 5 elemID = 10
+ partID = 5 elemID = 11
+ partID = 5 elemID = 22
+ partID = 5 elemID = 23
+ partID = 5 elemID = 26
+ partID = 5 elemID = 27
+ partID = 5 elemID = 38
+ partID = 5 elemID = 39
+ partID = 5 elemID = 46
+ partID = 5 elemID = 50
+ partID = 5 elemID = 51
+ partID = 5 elemID = 58
+ partID = 5 elemID = 59
+ partID = 5 elemID = 78
+ partID = 5 elemID = 79
+ partID = 5 elemID = 94
+ partID = 5 elemID = 95
+ partID = 5 elemID = 110
+ partID = 5 elemID = 111
+ partID = 6 elemID = 67
+ partID = 6 elemID = 84
+ partID = 6 elemID = 85
+ partID = 6 elemID = 102
+ partID = 6 elemID = 103
+ partID = 7 elemID = 4
+ partID = 7 elemID = 5
+ partID = 7 elemID = 16
+ partID = 7 elemID = 17
+ partID = 7 elemID = 18
+ partID = 7 elemID = 19
+ partID = 7 elemID = 32
+ partID = 7 elemID = 33
+ partID = 7 elemID = 34
+ partID = 7 elemID = 35
+ partID = 7 elemID = 40
+ partID = 7 elemID = 41
+ partID = 7 elemID = 42
+ partID = 7 elemID = 43
+ partID = 7 elemID = 64
+ partID = 7 elemID = 65
+ partID = 7 elemID = 66
+ partID = 7 elemID = 86
+ partID = 7 elemID = 87
+ partID = 7 elemID = 100
+ partID = 7 elemID = 101
+
+ total elements  = 112
+ total dim of col = 336
+
+ _row[0] = 0
+ _row[1] = 3
+ _row[2] = 6
+ _row[3] = 9
+ _row[4] = 12
+ _row[5] = 15
+ _row[6] = 18
+ _row[7] = 21
+ _row[8] = 24
+ _row[9] = 27
+ _row[10] = 30
+ _row[11] = 33
+ _row[12] = 36
+ _row[13] = 39
+ _row[14] = 42
+ _row[15] = 45
+ _row[16] = 48
+ _row[17] = 51
+ _row[18] = 54
+ _row[19] = 57
+ _row[20] = 60
+ _row[21] = 63
+ _row[22] = 66
+ _row[23] = 69
+ _row[24] = 72
+ _row[25] = 75
+ _row[26] = 78
+ _row[27] = 81
+ _row[28] = 84
+ _row[29] = 87
+ _row[30] = 90
+ _row[31] = 93
+ _row[32] = 96
+ _row[33] = 99
+ _row[34] = 102
+ _row[35] = 105
+ _row[36] = 108
+ _row[37] = 111
+ _row[38] = 114
+ _row[39] = 117
+ _row[40] = 120
+ _row[41] = 123
+ _row[42] = 126
+ _row[43] = 129
+ _row[44] = 132
+ _row[45] = 135
+ _row[46] = 138
+ _row[47] = 141
+ _row[48] = 144
+ _row[49] = 147
+ _row[50] = 150
+ _row[51] = 153
+ _row[52] = 156
+ _row[53] = 159
+ _row[54] = 162
+ _row[55] = 165
+ _row[56] = 168
+ _row[57] = 171
+ _row[58] = 174
+ _row[59] = 177
+ _row[60] = 180
+ _row[61] = 183
+ _row[62] = 186
+ _row[63] = 189
+ _row[64] = 192
+ _row[65] = 195
+ _row[66] = 198
+ _row[67] = 201
+ _row[68] = 204
+ _row[69] = 207
+ _row[70] = 210
+ _row[71] = 213
+ _row[72] = 216
+ _row[73] = 219
+ _row[74] = 222
+ _row[75] = 225
+ _row[76] = 228
+ _row[77] = 231
+ _row[78] = 234
+ _row[79] = 237
+ _row[80] = 240
+ _row[81] = 243
+ _row[82] = 246
+ _row[83] = 249
+ _row[84] = 252
+ _row[85] = 255
+ _row[86] = 258
+ _row[87] = 261
+ _row[88] = 264
+ _row[89] = 267
+ _row[90] = 270
+ _row[91] = 273
+ _row[92] = 276
+ _row[93] = 279
+ _row[94] = 282
+ _row[95] = 285
+ _row[96] = 288
+ _row[97] = 291
+ _row[98] = 294
+ _row[99] = 297
+ _row[100] = 300
+ _row[101] = 303
+ _row[102] = 306
+ _row[103] = 309
+ _row[104] = 312
+ _row[105] = 315
+ _row[106] = 318
+ _row[107] = 321
+ _row[108] = 324
+ _row[109] = 327
+ _row[110] = 330
+ _row[111] = 333
+ _row[112] = 336
+
+ _elem[0] = 73
+ _elem[1] = 88
+ _elem[2] = 89
+ _elem[3] = 104
+ _elem[4] = 105
+ _elem[5] = 121
+ _elem[6] = 130
+ _elem[7] = 131
+ _elem[8] = 138
+ _elem[9] = 139
+ _elem[10] = 144
+ _elem[11] = 145
+ _elem[12] = 152
+ _elem[13] = 176
+ _elem[14] = 177
+ _elem[15] = 248
+ _elem[16] = 250
+ _elem[17] = 251
+ _elem[18] = 252
+ _elem[19] = 253
+ _elem[20] = 254
+ _elem[21] = 255
+ _elem[22] = 288
+ _elem[23] = 289
+ _elem[24] = 349
+ _elem[25] = 351
+ _elem[26] = 352
+ _elem[27] = 353
+ _elem[28] = 354
+ _elem[29] = 391
+ _elem[30] = 392
+ _elem[31] = 441
+ _elem[32] = 442
+ _elem[33] = 449
+ _elem[34] = 450
+ _elem[35] = 468
+ _elem[36] = 469
+ _elem[37] = 470
+ _elem[38] = 496
+ _elem[39] = 515
+ _elem[40] = 516
+ _elem[41] = 519
+ _elem[42] = 520
+ _elem[43] = 521
+ _elem[44] = 583
+ _elem[45] = 585
+ _elem[46] = 586
+ _elem[47] = 612
+ _elem[48] = 613
+ _elem[49] = 614
+ _elem[50] = 615
+ _elem[51] = 616
+ _elem[52] = 617
+ _elem[53] = 647
+ _elem[54] = 649
+ _elem[55] = 650
+ _elem[56] = 687
+ _elem[57] = 707
+ _elem[58] = 709
+ _elem[59] = 710
+ _elem[60] = 711
+ _elem[61] = 712
+ _elem[62] = 713
+ _elem[63] = 716
+ _elem[64] = 752
+ _elem[65] = 753
+ _elem[66] = 754
+ _elem[67] = 755
+ _elem[68] = 756
+ _elem[69] = 759
+ _elem[70] = 760
+ _elem[71] = 789
+ _elem[72] = 790
+ _elem[73] = 791
+ _elem[74] = 792
+ _elem[75] = 793
+ _elem[76] = 794
+ _elem[77] = 795
+ _elem[78] = 797
+ _elem[79] = 800
+ _elem[80] = 825
+ _elem[81] = 826
+ _elem[82] = 827
+ _elem[83] = 828
+ _elem[84] = 829
+ _elem[85] = 830
+ _elem[86] = 831
+ _elem[87] = 832
+ _elem[88] = 836
+ _elem[89] = 837
+ _elem[90] = 838
+ _elem[91] = 839
+ _elem[92] = 840
+ _elem[93] = 854
+ _elem[94] = 855
+ _elem[95] = 856
+ _elem[96] = 857
+ _elem[97] = 858
+ _elem[98] = 859
+ _elem[99] = 865
+ _elem[100] = 868
+ _elem[101] = 870
+ _elem[102] = 871
+ _elem[103] = 874
+ _elem[104] = 875
+ _elem[105] = 876
+ _elem[106] = 877
+ _elem[107] = 884
+ _elem[108] = 888
+ _elem[109] = 889
+ _elem[110] = 890
+ _elem[111] = 893
+
+ _elemWithGhosts[0] = 73
+ _elemWithGhosts[1] = 88
+ _elemWithGhosts[2] = 89
+ _elemWithGhosts[3] = 104
+ _elemWithGhosts[4] = 105
+ _elemWithGhosts[5] = 121
+ _elemWithGhosts[6] = 130
+ _elemWithGhosts[7] = 131
+ _elemWithGhosts[8] = 138
+ _elemWithGhosts[9] = 139
+ _elemWithGhosts[10] = 144
+ _elemWithGhosts[11] = 145
+ _elemWithGhosts[12] = 152
+ _elemWithGhosts[13] = 176
+ _elemWithGhosts[14] = 177
+ _elemWithGhosts[15] = 248
+ _elemWithGhosts[16] = 250
+ _elemWithGhosts[17] = 251
+ _elemWithGhosts[18] = 252
+ _elemWithGhosts[19] = 253
+ _elemWithGhosts[20] = 254
+ _elemWithGhosts[21] = 255
+ _elemWithGhosts[22] = 288
+ _elemWithGhosts[23] = 289
+ _elemWithGhosts[24] = 349
+ _elemWithGhosts[25] = 351
+ _elemWithGhosts[26] = 352
+ _elemWithGhosts[27] = 353
+ _elemWithGhosts[28] = 354
+ _elemWithGhosts[29] = 391
+ _elemWithGhosts[30] = 392
+ _elemWithGhosts[31] = 441
+ _elemWithGhosts[32] = 442
+ _elemWithGhosts[33] = 449
+ _elemWithGhosts[34] = 450
+ _elemWithGhosts[35] = 468
+ _elemWithGhosts[36] = 469
+ _elemWithGhosts[37] = 470
+ _elemWithGhosts[38] = 496
+ _elemWithGhosts[39] = 515
+ _elemWithGhosts[40] = 516
+ _elemWithGhosts[41] = 519
+ _elemWithGhosts[42] = 520
+ _elemWithGhosts[43] = 521
+ _elemWithGhosts[44] = 583
+ _elemWithGhosts[45] = 585
+ _elemWithGhosts[46] = 586
+ _elemWithGhosts[47] = 612
+ _elemWithGhosts[48] = 613
+ _elemWithGhosts[49] = 614
+ _elemWithGhosts[50] = 615
+ _elemWithGhosts[51] = 616
+ _elemWithGhosts[52] = 617
+ _elemWithGhosts[53] = 647
+ _elemWithGhosts[54] = 649
+ _elemWithGhosts[55] = 650
+ _elemWithGhosts[56] = 687
+ _elemWithGhosts[57] = 707
+ _elemWithGhosts[58] = 709
+ _elemWithGhosts[59] = 710
+ _elemWithGhosts[60] = 711
+ _elemWithGhosts[61] = 712
+ _elemWithGhosts[62] = 713
+ _elemWithGhosts[63] = 716
+ _elemWithGhosts[64] = 752
+ _elemWithGhosts[65] = 753
+ _elemWithGhosts[66] = 754
+ _elemWithGhosts[67] = 755
+ _elemWithGhosts[68] = 756
+ _elemWithGhosts[69] = 759
+ _elemWithGhosts[70] = 760
+ _elemWithGhosts[71] = 789
+ _elemWithGhosts[72] = 790
+ _elemWithGhosts[73] = 791
+ _elemWithGhosts[74] = 792
+ _elemWithGhosts[75] = 793
+ _elemWithGhosts[76] = 794
+ _elemWithGhosts[77] = 795
+ _elemWithGhosts[78] = 797
+ _elemWithGhosts[79] = 800
+ _elemWithGhosts[80] = 825
+ _elemWithGhosts[81] = 826
+ _elemWithGhosts[82] = 827
+ _elemWithGhosts[83] = 828
+ _elemWithGhosts[84] = 829
+ _elemWithGhosts[85] = 830
+ _elemWithGhosts[86] = 831
+ _elemWithGhosts[87] = 832
+ _elemWithGhosts[88] = 836
+ _elemWithGhosts[89] = 837
+ _elemWithGhosts[90] = 838
+ _elemWithGhosts[91] = 839
+ _elemWithGhosts[92] = 840
+ _elemWithGhosts[93] = 854
+ _elemWithGhosts[94] = 855
+ _elemWithGhosts[95] = 856
+ _elemWithGhosts[96] = 857
+ _elemWithGhosts[97] = 858
+ _elemWithGhosts[98] = 859
+ _elemWithGhosts[99] = 865
+ _elemWithGhosts[100] = 868
+ _elemWithGhosts[101] = 870
+ _elemWithGhosts[102] = 871
+ _elemWithGhosts[103] = 874
+ _elemWithGhosts[104] = 875
+ _elemWithGhosts[105] = 876
+ _elemWithGhosts[106] = 877
+ _elemWithGhosts[107] = 884
+ _elemWithGhosts[108] = 888
+ _elemWithGhosts[109] = 889
+ _elemWithGhosts[110] = 890
+ _elemWithGhosts[111] = 893
+ _elemWithGhosts[112] = 919
+ _elemWithGhosts[113] = 920
+ _elemWithGhosts[114] = 921
+ _elemWithGhosts[115] = 925
+ _elemWithGhosts[116] = 922
+ _elemWithGhosts[117] = 923
+ _elemWithGhosts[118] = 924
+
+ _col[0] = 71
+ _col[1] = 80
+ _col[2] = 81
+ _col[3] = 81
+ _col[4] = 80
+ _col[5] = 96
+ _col[6] = 81
+ _col[7] = 96
+ _col[8] = 97
+ _col[9] = 97
+ _col[10] = 96
+ _col[11] = 112
+ _col[12] = 97
+ _col[13] = 112
+ _col[14] = 113
+ _col[15] = 128
+ _col[16] = 121
+ _col[17] = 129
+ _col[18] = 113
+ _col[19] = 112
+ _col[20] = 138
+ _col[21] = 113
+ _col[22] = 138
+ _col[23] = 139
+ _col[24] = 139
+ _col[25] = 138
+ _col[26] = 146
+ _col[27] = 139
+ _col[28] = 146
+ _col[29] = 147
+ _col[30] = 128
+ _col[31] = 129
+ _col[32] = 152
+ _col[33] = 152
+ _col[34] = 129
+ _col[35] = 147
+ _col[36] = 147
+ _col[37] = 146
+ _col[38] = 152
+ _col[39] = 128
+ _col[40] = 152
+ _col[41] = 164
+ _col[42] = 163
+ _col[43] = 128
+ _col[44] = 164
+ _col[45] = 96
+ _col[46] = 80
+ _col[47] = 200
+ _col[48] = 112
+ _col[49] = 96
+ _col[50] = 201
+ _col[51] = 96
+ _col[52] = 200
+ _col[53] = 201
+ _col[54] = 138
+ _col[55] = 112
+ _col[56] = 202
+ _col[57] = 112
+ _col[58] = 201
+ _col[59] = 202
+ _col[60] = 146
+ _col[61] = 138
+ _col[62] = 203
+ _col[63] = 138
+ _col[64] = 202
+ _col[65] = 203
+ _col[66] = 152
+ _col[67] = 146
+ _col[68] = 164
+ _col[69] = 146
+ _col[70] = 203
+ _col[71] = 164
+ _col[72] = 201
+ _col[73] = 200
+ _col[74] = 245
+ _col[75] = 202
+ _col[76] = 201
+ _col[77] = 246
+ _col[78] = 201
+ _col[79] = 245
+ _col[80] = 246
+ _col[81] = 203
+ _col[82] = 202
+ _col[83] = 247
+ _col[84] = 202
+ _col[85] = 246
+ _col[86] = 247
+ _col[87] = 163
+ _col[88] = 164
+ _col[89] = 266
+ _col[90] = 265
+ _col[91] = 163
+ _col[92] = 266
+ _col[93] = 246
+ _col[94] = 245
+ _col[95] = 291
+ _col[96] = 245
+ _col[97] = 287
+ _col[98] = 291
+ _col[99] = 247
+ _col[100] = 246
+ _col[101] = 295
+ _col[102] = 246
+ _col[103] = 291
+ _col[104] = 295
+ _col[105] = 164
+ _col[106] = 203
+ _col[107] = 304
+ _col[108] = 266
+ _col[109] = 164
+ _col[110] = 304
+ _col[111] = 203
+ _col[112] = 247
+ _col[113] = 304
+ _col[114] = 265
+ _col[115] = 266
+ _col[116] = 317
+ _col[117] = 304
+ _col[118] = 247
+ _col[119] = 324
+ _col[120] = 247
+ _col[121] = 295
+ _col[122] = 324
+ _col[123] = 266
+ _col[124] = 304
+ _col[125] = 326
+ _col[126] = 304
+ _col[127] = 324
+ _col[128] = 326
+ _col[129] = 317
+ _col[130] = 266
+ _col[131] = 326
+ _col[132] = 291
+ _col[133] = 287
+ _col[134] = 357
+ _col[135] = 295
+ _col[136] = 291
+ _col[137] = 358
+ _col[138] = 291
+ _col[139] = 357
+ _col[140] = 358
+ _col[141] = 324
+ _col[142] = 295
+ _col[143] = 368
+ _col[144] = 295
+ _col[145] = 358
+ _col[146] = 368
+ _col[147] = 326
+ _col[148] = 324
+ _col[149] = 369
+ _col[150] = 324
+ _col[151] = 368
+ _col[152] = 369
+ _col[153] = 317
+ _col[154] = 326
+ _col[155] = 370
+ _col[156] = 326
+ _col[157] = 369
+ _col[158] = 370
+ _col[159] = 357
+ _col[160] = 356
+ _col[161] = 385
+ _col[162] = 358
+ _col[163] = 357
+ _col[164] = 386
+ _col[165] = 357
+ _col[166] = 385
+ _col[167] = 386
+ _col[168] = 386
+ _col[169] = 385
+ _col[170] = 403
+ _col[171] = 370
+ _col[172] = 369
+ _col[173] = 413
+ _col[174] = 369
+ _col[175] = 368
+ _col[176] = 414
+ _col[177] = 413
+ _col[178] = 369
+ _col[179] = 414
+ _col[180] = 368
+ _col[181] = 358
+ _col[182] = 415
+ _col[183] = 414
+ _col[184] = 368
+ _col[185] = 415
+ _col[186] = 358
+ _col[187] = 386
+ _col[188] = 415
+ _col[189] = 394
+ _col[190] = 397
+ _col[191] = 403
+ _col[192] = 414
+ _col[193] = 415
+ _col[194] = 432
+ _col[195] = 431
+ _col[196] = 414
+ _col[197] = 432
+ _col[198] = 415
+ _col[199] = 386
+ _col[200] = 433
+ _col[201] = 432
+ _col[202] = 415
+ _col[203] = 433
+ _col[204] = 386
+ _col[205] = 403
+ _col[206] = 433
+ _col[207] = 418
+ _col[208] = 408
+ _col[209] = 435
+ _col[210] = 408
+ _col[211] = 429
+ _col[212] = 435
+ _col[213] = 403
+ _col[214] = 397
+ _col[215] = 448
+ _col[216] = 397
+ _col[217] = 418
+ _col[218] = 448
+ _col[219] = 433
+ _col[220] = 403
+ _col[221] = 448
+ _col[222] = 432
+ _col[223] = 433
+ _col[224] = 449
+ _col[225] = 433
+ _col[226] = 448
+ _col[227] = 449
+ _col[228] = 431
+ _col[229] = 432
+ _col[230] = 450
+ _col[231] = 432
+ _col[232] = 449
+ _col[233] = 450
+ _col[234] = 431
+ _col[235] = 450
+ _col[236] = 451
+ _col[237] = 435
+ _col[238] = 429
+ _col[239] = 436
+ _col[240] = 448
+ _col[241] = 418
+ _col[242] = 464
+ _col[243] = 418
+ _col[244] = 435
+ _col[245] = 464
+ _col[246] = 449
+ _col[247] = 448
+ _col[248] = 465
+ _col[249] = 448
+ _col[250] = 464
+ _col[251] = 465
+ _col[252] = 450
+ _col[253] = 449
+ _col[254] = 466
+ _col[255] = 449
+ _col[256] = 465
+ _col[257] = 466
+ _col[258] = 451
+ _col[259] = 450
+ _col[260] = 467
+ _col[261] = 450
+ _col[262] = 466
+ _col[263] = 467
+ _col[264] = 447
+ _col[265] = 451
+ _col[266] = 468
+ _col[267] = 461
+ _col[268] = 447
+ _col[269] = 468
+ _col[270] = 451
+ _col[271] = 467
+ _col[272] = 468
+ _col[273] = 464
+ _col[274] = 435
+ _col[275] = 469
+ _col[276] = 435
+ _col[277] = 436
+ _col[278] = 469
+ _col[279] = 465
+ _col[280] = 464
+ _col[281] = 476
+ _col[282] = 464
+ _col[283] = 469
+ _col[284] = 476
+ _col[285] = 466
+ _col[286] = 465
+ _col[287] = 477
+ _col[288] = 465
+ _col[289] = 476
+ _col[290] = 477
+ _col[291] = 467
+ _col[292] = 466
+ _col[293] = 478
+ _col[294] = 466
+ _col[295] = 477
+ _col[296] = 478
+ _col[297] = 476
+ _col[298] = 469
+ _col[299] = 480
+ _col[300] = 461
+ _col[301] = 468
+ _col[302] = 481
+ _col[303] = 468
+ _col[304] = 467
+ _col[305] = 481
+ _col[306] = 467
+ _col[307] = 478
+ _col[308] = 481
+ _col[309] = 477
+ _col[310] = 476
+ _col[311] = 483
+ _col[312] = 476
+ _col[313] = 480
+ _col[314] = 483
+ _col[315] = 478
+ _col[316] = 477
+ _col[317] = 484
+ _col[318] = 477
+ _col[319] = 483
+ _col[320] = 484
+ _col[321] = 483
+ _col[322] = 480
+ _col[323] = 486
+ _col[324] = 484
+ _col[325] = 483
+ _col[326] = 487
+ _col[327] = 483
+ _col[328] = 486
+ _col[329] = 487
+ _col[330] = 486
+ _col[331] = 482
+ _col[332] = 487
+ _col[333] = 484
+ _col[334] = 487
+ _col[335] = 482
+ _cellParts : 
+ _cellParts->getRowDim() = 974
+ _cellParts->getColDim() = 8
+ row[0] = 0    1    
+ row[1] = 1    1    
+ row[2] = 2    2    
+ row[3] = 3    2    
+ row[4] = 4    7    
+ row[5] = 5    7    
+ row[6] = 6    5    
+ row[7] = 7    5    
+ row[8] = 8    2    
+ row[9] = 9    2    
+ row[10] = 10    5    
+ row[11] = 11    5    
+ row[12] = 12    1    
+ row[13] = 13    1    
+ row[14] = 14    1    
+ row[15] = 15    1    
+ row[16] = 16    7    
+ row[17] = 17    7    
+ row[18] = 18    7    
+ row[19] = 19    7    
+ row[20] = 20    2    
+ row[21] = 21    2    
+ row[22] = 22    5    
+ row[23] = 23    5    
+ row[24] = 24    2    
+ row[25] = 25    2    
+ row[26] = 26    5    
+ row[27] = 27    5    
+ row[28] = 28    1    
+ row[29] = 29    1    
+ row[30] = 30    1    
+ row[31] = 31    1    
+ row[32] = 32    7    
+ row[33] = 33    7    
+ row[34] = 34    7    
+ row[35] = 35    7    
+ row[36] = 36    2    
+ row[37] = 37    2    
+ row[38] = 38    5    
+ row[39] = 39    5    
+ row[40] = 40    7    
+ row[41] = 41    7    
+ row[42] = 42    7    
+ row[43] = 43    7    
+ row[44] = 44    2    
+ row[45] = 45    2    
+ row[46] = 46    5    
+ row[47] = 47    4    
+ row[48] = 48    2    
+ row[49] = 49    2    
+ row[50] = 50    5    
+ row[51] = 51    5    
+ row[52] = 52    1    
+ row[53] = 53    1    
+ row[54] = 54    1    
+ row[55] = 55    1    
+ row[56] = 56    2    
+ row[57] = 57    3    
+ row[58] = 58    5    
+ row[59] = 59    5    
+ row[60] = 60    1    
+ row[61] = 61    1    
+ row[62] = 62    1    
+ row[63] = 63    1    
+ row[64] = 64    7    
+ row[65] = 65    7    
+ row[66] = 66    7    
+ row[67] = 67    6    
+ row[68] = 68    2    
+ row[69] = 69    2    
+ row[70] = 70    4    
+ row[71] = 71    4    
+ row[72] = 72    1    
+ row[73] = 73    0    
+ row[74] = 74    1    
+ row[75] = 75    1    
+ row[76] = 76    3    
+ row[77] = 77    3    
+ row[78] = 78    5    
+ row[79] = 79    5    
+ row[80] = 80    2    
+ row[81] = 81    2    
+ row[82] = 82    4    
+ row[83] = 83    4    
+ row[84] = 84    6    
+ row[85] = 85    6    
+ row[86] = 86    7    
+ row[87] = 87    7    
+ row[88] = 88    0    
+ row[89] = 89    0    
+ row[90] = 90    1    
+ row[91] = 91    1    
+ row[92] = 92    3    
+ row[93] = 93    3    
+ row[94] = 94    5    
+ row[95] = 95    5    
+ row[96] = 96    2    
+ row[97] = 97    2    
+ row[98] = 98    4    
+ row[99] = 99    4    
+ row[100] = 100    7    
+ row[101] = 101    7    
+ row[102] = 102    6    
+ row[103] = 103    6    
+ row[104] = 104    0    
+ row[105] = 105    0    
+ row[106] = 106    4    
+ row[107] = 107    4    
+ row[108] = 108    3    
+ row[109] = 109    3    
+ row[110] = 110    5    
+ row[111] = 111    5    
+ row[112] = 112    2    
+ row[113] = 113    2    
+ row[114] = 114    4    
+ row[115] = 115    4    
+ row[116] = 116    7    
+ row[117] = 117    7    
+ row[118] = 118    6    
+ row[119] = 119    6    
+ row[120] = 120    2    
+ row[121] = 121    0    
+ row[122] = 122    4    
+ row[123] = 123    4    
+ row[124] = 124    7    
+ row[125] = 125    7    
+ row[126] = 126    6    
+ row[127] = 127    6    
+ row[128] = 128    4    
+ row[129] = 129    4    
+ row[130] = 130    0    
+ row[131] = 131    0    
+ row[132] = 132    3    
+ row[133] = 133    3    
+ row[134] = 134    5    
+ row[135] = 135    6    
+ row[136] = 136    4    
+ row[137] = 137    4    
+ row[138] = 138    0    
+ row[139] = 139    0    
+ row[140] = 140    3    
+ row[141] = 141    7    
+ row[142] = 142    6    
+ row[143] = 143    6    
+ row[144] = 144    0    
+ row[145] = 145    0    
+ row[146] = 146    4    
+ row[147] = 147    4    
+ row[148] = 148    7    
+ row[149] = 149    7    
+ row[150] = 150    6    
+ row[151] = 151    6    
+ row[152] = 152    0    
+ row[153] = 153    4    
+ row[154] = 154    7    
+ row[155] = 155    6    
+ row[156] = 156    5    
+ row[157] = 157    7    
+ row[158] = 158    1    
+ row[159] = 159    2    
+ row[160] = 160    2    
+ row[161] = 161    2    
+ row[162] = 162    2    
+ row[163] = 163    2    
+ row[164] = 164    2    
+ row[165] = 165    2    
+ row[166] = 166    2    
+ row[167] = 167    2    
+ row[168] = 168    2    
+ row[169] = 169    2    
+ row[170] = 170    2    
+ row[171] = 171    2    
+ row[172] = 172    2    
+ row[173] = 173    2    
+ row[174] = 174    2    
+ row[175] = 175    2    
+ row[176] = 176    0    
+ row[177] = 177    0    
+ row[178] = 178    2    
+ row[179] = 179    2    
+ row[180] = 180    2    
+ row[181] = 181    2    
+ row[182] = 182    3    
+ row[183] = 183    2    
+ row[184] = 184    3    
+ row[185] = 185    3    
+ row[186] = 186    3    
+ row[187] = 187    3    
+ row[188] = 188    3    
+ row[189] = 189    3    
+ row[190] = 190    3    
+ row[191] = 191    3    
+ row[192] = 192    5    
+ row[193] = 193    5    
+ row[194] = 194    5    
+ row[195] = 195    5    
+ row[196] = 196    5    
+ row[197] = 197    5    
+ row[198] = 198    4    
+ row[199] = 199    5    
+ row[200] = 200    4    
+ row[201] = 201    4    
+ row[202] = 202    4    
+ row[203] = 203    4    
+ row[204] = 204    4    
+ row[205] = 205    4    
+ row[206] = 206    4    
+ row[207] = 207    4    
+ row[208] = 208    4    
+ row[209] = 209    4    
+ row[210] = 210    5    
+ row[211] = 211    5    
+ row[212] = 212    5    
+ row[213] = 213    5    
+ row[214] = 214    5    
+ row[215] = 215    5    
+ row[216] = 216    5    
+ row[217] = 217    5    
+ row[218] = 218    5    
+ row[219] = 219    5    
+ row[220] = 220    5    
+ row[221] = 221    5    
+ row[222] = 222    6    
+ row[223] = 223    5    
+ row[224] = 224    1    
+ row[225] = 225    1    
+ row[226] = 226    1    
+ row[227] = 227    1    
+ row[228] = 228    1    
+ row[229] = 229    1    
+ row[230] = 230    1    
+ row[231] = 231    1    
+ row[232] = 232    1    
+ row[233] = 233    1    
+ row[234] = 234    1    
+ row[235] = 235    1    
+ row[236] = 236    4    
+ row[237] = 237    1    
+ row[238] = 238    4    
+ row[239] = 239    4    
+ row[240] = 240    4    
+ row[241] = 241    4    
+ row[242] = 242    1    
+ row[243] = 243    1    
+ row[244] = 244    1    
+ row[245] = 245    1    
+ row[246] = 246    1    
+ row[247] = 247    1    
+ row[248] = 248    0    
+ row[249] = 249    1    
+ row[250] = 250    0    
+ row[251] = 251    0    
+ row[252] = 252    0    
+ row[253] = 253    0    
+ row[254] = 254    0    
+ row[255] = 255    0    
+ row[256] = 256    7    
+ row[257] = 257    7    
+ row[258] = 258    7    
+ row[259] = 259    7    
+ row[260] = 260    7    
+ row[261] = 261    7    
+ row[262] = 262    7    
+ row[263] = 263    7    
+ row[264] = 264    7    
+ row[265] = 265    7    
+ row[266] = 266    7    
+ row[267] = 267    7    
+ row[268] = 268    7    
+ row[269] = 269    7    
+ row[270] = 270    7    
+ row[271] = 271    7    
+ row[272] = 272    7    
+ row[273] = 273    7    
+ row[274] = 274    7    
+ row[275] = 275    7    
+ row[276] = 276    7    
+ row[277] = 277    7    
+ row[278] = 278    6    
+ row[279] = 279    7    
+ row[280] = 280    6    
+ row[281] = 281    6    
+ row[282] = 282    6    
+ row[283] = 283    6    
+ row[284] = 284    6    
+ row[285] = 285    6    
+ row[286] = 286    6    
+ row[287] = 287    6    
+ row[288] = 288    0    
+ row[289] = 289    0    
+ row[290] = 290    4    
+ row[291] = 291    4    
+ row[292] = 292    7    
+ row[293] = 293    3    
+ row[294] = 294    6    
+ row[295] = 295    6    
+ row[296] = 296    6    
+ row[297] = 297    2    
+ row[298] = 298    2    
+ row[299] = 299    2    
+ row[300] = 300    5    
+ row[301] = 301    5    
+ row[302] = 302    5    
+ row[303] = 303    1    
+ row[304] = 304    1    
+ row[305] = 305    1    
+ row[306] = 306    7    
+ row[307] = 307    7    
+ row[308] = 308    7    
+ row[309] = 309    7    
+ row[310] = 310    7    
+ row[311] = 311    7    
+ row[312] = 312    7    
+ row[313] = 313    6    
+ row[314] = 314    6    
+ row[315] = 315    6    
+ row[316] = 316    6    
+ row[317] = 317    6    
+ row[318] = 318    6    
+ row[319] = 319    2    
+ row[320] = 320    2    
+ row[321] = 321    2    
+ row[322] = 322    2    
+ row[323] = 323    3    
+ row[324] = 324    3    
+ row[325] = 325    3    
+ row[326] = 326    3    
+ row[327] = 327    3    
+ row[328] = 328    3    
+ row[329] = 329    3    
+ row[330] = 330    3    
+ row[331] = 331    5    
+ row[332] = 332    5    
+ row[333] = 333    5    
+ row[334] = 334    5    
+ row[335] = 335    5    
+ row[336] = 336    5    
+ row[337] = 337    5    
+ row[338] = 338    5    
+ row[339] = 339    5    
+ row[340] = 340    5    
+ row[341] = 341    5    
+ row[342] = 342    5    
+ row[343] = 343    1    
+ row[344] = 344    1    
+ row[345] = 345    1    
+ row[346] = 346    1    
+ row[347] = 347    1    
+ row[348] = 348    1    
+ row[349] = 349    0    
+ row[350] = 350    1    
+ row[351] = 351    0    
+ row[352] = 352    0    
+ row[353] = 353    0    
+ row[354] = 354    0    
+ row[355] = 355    6    
+ row[356] = 356    6    
+ row[357] = 357    7    
+ row[358] = 358    7    
+ row[359] = 359    7    
+ row[360] = 360    7    
+ row[361] = 361    7    
+ row[362] = 362    7    
+ row[363] = 363    7    
+ row[364] = 364    7    
+ row[365] = 365    7    
+ row[366] = 366    7    
+ row[367] = 367    7    
+ row[368] = 368    7    
+ row[369] = 369    5    
+ row[370] = 370    5    
+ row[371] = 371    4    
+ row[372] = 372    5    
+ row[373] = 373    4    
+ row[374] = 374    4    
+ row[375] = 375    4    
+ row[376] = 376    4    
+ row[377] = 377    4    
+ row[378] = 378    4    
+ row[379] = 379    4    
+ row[380] = 380    4    
+ row[381] = 381    2    
+ row[382] = 382    2    
+ row[383] = 383    2    
+ row[384] = 384    2    
+ row[385] = 385    2    
+ row[386] = 386    2    
+ row[387] = 387    2    
+ row[388] = 388    2    
+ row[389] = 389    2    
+ row[390] = 390    2    
+ row[391] = 391    0    
+ row[392] = 392    0    
+ row[393] = 393    1    
+ row[394] = 394    1    
+ row[395] = 395    1    
+ row[396] = 396    1    
+ row[397] = 397    1    
+ row[398] = 398    1    
+ row[399] = 399    1    
+ row[400] = 400    1    
+ row[401] = 401    4    
+ row[402] = 402    1    
+ row[403] = 403    4    
+ row[404] = 404    4    
+ row[405] = 405    1    
+ row[406] = 406    1    
+ row[407] = 407    5    
+ row[408] = 408    5    
+ row[409] = 409    2    
+ row[410] = 410    2    
+ row[411] = 411    7    
+ row[412] = 412    7    
+ row[413] = 413    6    
+ row[414] = 414    6    
+ row[415] = 415    6    
+ row[416] = 416    6    
+ row[417] = 417    1    
+ row[418] = 418    1    
+ row[419] = 419    7    
+ row[420] = 420    7    
+ row[421] = 421    5    
+ row[422] = 422    5    
+ row[423] = 423    2    
+ row[424] = 424    2    
+ row[425] = 425    6    
+ row[426] = 426    6    
+ row[427] = 427    1    
+ row[428] = 428    1    
+ row[429] = 429    3    
+ row[430] = 430    3    
+ row[431] = 431    5    
+ row[432] = 432    5    
+ row[433] = 433    1    
+ row[434] = 434    1    
+ row[435] = 435    3    
+ row[436] = 436    3    
+ row[437] = 437    5    
+ row[438] = 438    5    
+ row[439] = 439    6    
+ row[440] = 440    6    
+ row[441] = 441    0    
+ row[442] = 442    0    
+ row[443] = 443    3    
+ row[444] = 444    3    
+ row[445] = 445    5    
+ row[446] = 446    5    
+ row[447] = 447    6    
+ row[448] = 448    6    
+ row[449] = 449    0    
+ row[450] = 450    0    
+ row[451] = 451    3    
+ row[452] = 452    3    
+ row[453] = 453    5    
+ row[454] = 454    5    
+ row[455] = 455    6    
+ row[456] = 456    6    
+ row[457] = 457    4    
+ row[458] = 458    4    
+ row[459] = 459    4    
+ row[460] = 460    7    
+ row[461] = 461    7    
+ row[462] = 462    5    
+ row[463] = 463    5    
+ row[464] = 464    2    
+ row[465] = 465    2    
+ row[466] = 466    1    
+ row[467] = 467    1    
+ row[468] = 468    0    
+ row[469] = 469    0    
+ row[470] = 470    0    
+ row[471] = 471    3    
+ row[472] = 472    3    
+ row[473] = 473    3    
+ row[474] = 474    7    
+ row[475] = 475    7    
+ row[476] = 476    7    
+ row[477] = 477    7    
+ row[478] = 478    7    
+ row[479] = 479    7    
+ row[480] = 480    7    
+ row[481] = 481    7    
+ row[482] = 482    5    
+ row[483] = 483    5    
+ row[484] = 484    4    
+ row[485] = 485    5    
+ row[486] = 486    4    
+ row[487] = 487    4    
+ row[488] = 488    4    
+ row[489] = 489    4    
+ row[490] = 490    2    
+ row[491] = 491    2    
+ row[492] = 492    2    
+ row[493] = 493    2    
+ row[494] = 494    2    
+ row[495] = 495    2    
+ row[496] = 496    0    
+ row[497] = 497    2    
+ row[498] = 498    1    
+ row[499] = 499    1    
+ row[500] = 500    1    
+ row[501] = 501    1    
+ row[502] = 502    1    
+ row[503] = 503    1    
+ row[504] = 504    4    
+ row[505] = 505    1    
+ row[506] = 506    6    
+ row[507] = 507    1    
+ row[508] = 508    2    
+ row[509] = 509    5    
+ row[510] = 510    7    
+ row[511] = 511    6    
+ row[512] = 512    5    
+ row[513] = 513    6    
+ row[514] = 514    6    
+ row[515] = 515    0    
+ row[516] = 516    0    
+ row[517] = 517    3    
+ row[518] = 518    3    
+ row[519] = 519    0    
+ row[520] = 520    0    
+ row[521] = 521    0    
+ row[522] = 522    4    
+ row[523] = 523    4    
+ row[524] = 524    4    
+ row[525] = 525    4    
+ row[526] = 526    4    
+ row[527] = 527    3    
+ row[528] = 528    7    
+ row[529] = 529    5    
+ row[530] = 530    5    
+ row[531] = 531    5    
+ row[532] = 532    5    
+ row[533] = 533    5    
+ row[534] = 534    5    
+ row[535] = 535    5    
+ row[536] = 536    5    
+ row[537] = 537    5    
+ row[538] = 538    5    
+ row[539] = 539    5    
+ row[540] = 540    5    
+ row[541] = 541    4    
+ row[542] = 542    5    
+ row[543] = 543    4    
+ row[544] = 544    4    
+ row[545] = 545    2    
+ row[546] = 546    2    
+ row[547] = 547    2    
+ row[548] = 548    2    
+ row[549] = 549    3    
+ row[550] = 550    2    
+ row[551] = 551    3    
+ row[552] = 552    3    
+ row[553] = 553    3    
+ row[554] = 554    3    
+ row[555] = 555    2    
+ row[556] = 556    2    
+ row[557] = 557    2    
+ row[558] = 558    2    
+ row[559] = 559    2    
+ row[560] = 560    2    
+ row[561] = 561    7    
+ row[562] = 562    7    
+ row[563] = 563    6    
+ row[564] = 564    6    
+ row[565] = 565    6    
+ row[566] = 566    6    
+ row[567] = 567    6    
+ row[568] = 568    6    
+ row[569] = 569    6    
+ row[570] = 570    6    
+ row[571] = 571    7    
+ row[572] = 572    7    
+ row[573] = 573    7    
+ row[574] = 574    7    
+ row[575] = 575    7    
+ row[576] = 576    7    
+ row[577] = 577    1    
+ row[578] = 578    1    
+ row[579] = 579    1    
+ row[580] = 580    1    
+ row[581] = 581    1    
+ row[582] = 582    1    
+ row[583] = 583    0    
+ row[584] = 584    1    
+ row[585] = 585    0    
+ row[586] = 586    0    
+ row[587] = 587    1    
+ row[588] = 588    1    
+ row[589] = 589    1    
+ row[590] = 590    1    
+ row[591] = 591    1    
+ row[592] = 592    1    
+ row[593] = 593    3    
+ row[594] = 594    6    
+ row[595] = 595    5    
+ row[596] = 596    5    
+ row[597] = 597    6    
+ row[598] = 598    6    
+ row[599] = 599    6    
+ row[600] = 600    5    
+ row[601] = 601    5    
+ row[602] = 602    5    
+ row[603] = 603    2    
+ row[604] = 604    2    
+ row[605] = 605    2    
+ row[606] = 606    6    
+ row[607] = 607    7    
+ row[608] = 608    6    
+ row[609] = 609    1    
+ row[610] = 610    1    
+ row[611] = 611    1    
+ row[612] = 612    0    
+ row[613] = 613    0    
+ row[614] = 614    0    
+ row[615] = 615    0    
+ row[616] = 616    0    
+ row[617] = 617    0    
+ row[618] = 618    2    
+ row[619] = 619    3    
+ row[620] = 620    3    
+ row[621] = 621    4    
+ row[622] = 622    1    
+ row[623] = 623    4    
+ row[624] = 624    4    
+ row[625] = 625    4    
+ row[626] = 626    4    
+ row[627] = 627    2    
+ row[628] = 628    2    
+ row[629] = 629    2    
+ row[630] = 630    2    
+ row[631] = 631    5    
+ row[632] = 632    5    
+ row[633] = 633    4    
+ row[634] = 634    5    
+ row[635] = 635    7    
+ row[636] = 636    7    
+ row[637] = 637    7    
+ row[638] = 638    7    
+ row[639] = 639    1    
+ row[640] = 640    1    
+ row[641] = 641    1    
+ row[642] = 642    1    
+ row[643] = 643    7    
+ row[644] = 644    7    
+ row[645] = 645    6    
+ row[646] = 646    6    
+ row[647] = 647    0    
+ row[648] = 648    1    
+ row[649] = 649    0    
+ row[650] = 650    0    
+ row[651] = 651    5    
+ row[652] = 652    5    
+ row[653] = 653    5    
+ row[654] = 654    5    
+ row[655] = 655    3    
+ row[656] = 656    3    
+ row[657] = 657    3    
+ row[658] = 658    3    
+ row[659] = 659    6    
+ row[660] = 660    6    
+ row[661] = 661    4    
+ row[662] = 662    5    
+ row[663] = 663    5    
+ row[664] = 664    3    
+ row[665] = 665    2    
+ row[666] = 666    1    
+ row[667] = 667    1    
+ row[668] = 668    7    
+ row[669] = 669    6    
+ row[670] = 670    3    
+ row[671] = 671    3    
+ row[672] = 672    3    
+ row[673] = 673    1    
+ row[674] = 674    1    
+ row[675] = 675    4    
+ row[676] = 676    4    
+ row[677] = 677    2    
+ row[678] = 678    2    
+ row[679] = 679    7    
+ row[680] = 680    7    
+ row[681] = 681    6    
+ row[682] = 682    6    
+ row[683] = 683    6    
+ row[684] = 684    6    
+ row[685] = 685    6    
+ row[686] = 686    6    
+ row[687] = 687    0    
+ row[688] = 688    1    
+ row[689] = 689    5    
+ row[690] = 690    5    
+ row[691] = 691    3    
+ row[692] = 692    3    
+ row[693] = 693    5    
+ row[694] = 694    5    
+ row[695] = 695    6    
+ row[696] = 696    6    
+ row[697] = 697    1    
+ row[698] = 698    1    
+ row[699] = 699    4    
+ row[700] = 700    4    
+ row[701] = 701    4    
+ row[702] = 702    4    
+ row[703] = 703    7    
+ row[704] = 704    7    
+ row[705] = 705    2    
+ row[706] = 706    2    
+ row[707] = 707    0    
+ row[708] = 708    2    
+ row[709] = 709    0    
+ row[710] = 710    0    
+ row[711] = 711    0    
+ row[712] = 712    0    
+ row[713] = 713    0    
+ row[714] = 714    3    
+ row[715] = 715    3    
+ row[716] = 716    0    
+ row[717] = 717    5    
+ row[718] = 718    3    
+ row[719] = 719    6    
+ row[720] = 720    3    
+ row[721] = 721    3    
+ row[722] = 722    1    
+ row[723] = 723    1    
+ row[724] = 724    4    
+ row[725] = 725    4    
+ row[726] = 726    7    
+ row[727] = 727    7    
+ row[728] = 728    2    
+ row[729] = 729    2    
+ row[730] = 730    4    
+ row[731] = 731    4    
+ row[732] = 732    3    
+ row[733] = 733    3    
+ row[734] = 734    3    
+ row[735] = 735    2    
+ row[736] = 736    2    
+ row[737] = 737    6    
+ row[738] = 738    6    
+ row[739] = 739    6    
+ row[740] = 740    6    
+ row[741] = 741    6    
+ row[742] = 742    6    
+ row[743] = 743    6    
+ row[744] = 744    6    
+ row[745] = 745    4    
+ row[746] = 746    4    
+ row[747] = 747    4    
+ row[748] = 748    4    
+ row[749] = 749    6    
+ row[750] = 750    2    
+ row[751] = 751    2    
+ row[752] = 752    0    
+ row[753] = 753    0    
+ row[754] = 754    0    
+ row[755] = 755    0    
+ row[756] = 756    0    
+ row[757] = 757    3    
+ row[758] = 758    3    
+ row[759] = 759    0    
+ row[760] = 760    0    
+ row[761] = 761    4    
+ row[762] = 762    4    
+ row[763] = 763    6    
+ row[764] = 764    6    
+ row[765] = 765    3    
+ row[766] = 766    3    
+ row[767] = 767    6    
+ row[768] = 768    6    
+ row[769] = 769    6    
+ row[770] = 770    6    
+ row[771] = 771    6    
+ row[772] = 772    6    
+ row[773] = 773    6    
+ row[774] = 774    3    
+ row[775] = 775    3    
+ row[776] = 776    3    
+ row[777] = 777    3    
+ row[778] = 778    3    
+ row[779] = 779    3    
+ row[780] = 780    3    
+ row[781] = 781    4    
+ row[782] = 782    4    
+ row[783] = 783    4    
+ row[784] = 784    3    
+ row[785] = 785    3    
+ row[786] = 786    2    
+ row[787] = 787    3    
+ row[788] = 788    2    
+ row[789] = 789    0    
+ row[790] = 790    0    
+ row[791] = 791    0    
+ row[792] = 792    0    
+ row[793] = 793    0    
+ row[794] = 794    0    
+ row[795] = 795    0    
+ row[796] = 796    2    
+ row[797] = 797    0    
+ row[798] = 798    4    
+ row[799] = 799    4    
+ row[800] = 800    0    
+ row[801] = 801    2    
+ row[802] = 802    3    
+ row[803] = 803    4    
+ row[804] = 804    4    
+ row[805] = 805    6    
+ row[806] = 806    6    
+ row[807] = 807    3    
+ row[808] = 808    6    
+ row[809] = 809    4    
+ row[810] = 810    4    
+ row[811] = 811    4    
+ row[812] = 812    4    
+ row[813] = 813    6    
+ row[814] = 814    4    
+ row[815] = 815    6    
+ row[816] = 816    6    
+ row[817] = 817    3    
+ row[818] = 818    3    
+ row[819] = 819    3    
+ row[820] = 820    3    
+ row[821] = 821    3    
+ row[822] = 822    3    
+ row[823] = 823    3    
+ row[824] = 824    3    
+ row[825] = 825    0    
+ row[826] = 826    0    
+ row[827] = 827    0    
+ row[828] = 828    0    
+ row[829] = 829    0    
+ row[830] = 830    0    
+ row[831] = 831    0    
+ row[832] = 832    0    
+ row[833] = 833    6    
+ row[834] = 834    3    
+ row[835] = 835    3    
+ row[836] = 836    0    
+ row[837] = 837    0    
+ row[838] = 838    0    
+ row[839] = 839    0    
+ row[840] = 840    0    
+ row[841] = 841    4    
+ row[842] = 842    4    
+ row[843] = 843    4    
+ row[844] = 844    6    
+ row[845] = 845    6    
+ row[846] = 846    6    
+ row[847] = 847    6    
+ row[848] = 848    4    
+ row[849] = 849    4    
+ row[850] = 850    3    
+ row[851] = 851    3    
+ row[852] = 852    3    
+ row[853] = 853    3    
+ row[854] = 854    0    
+ row[855] = 855    0    
+ row[856] = 856    0    
+ row[857] = 857    0    
+ row[858] = 858    0    
+ row[859] = 859    0    
+ row[860] = 860    6    
+ row[861] = 861    3    
+ row[862] = 862    4    
+ row[863] = 863    3    
+ row[864] = 864    3    
+ row[865] = 865    0    
+ row[866] = 866    4    
+ row[867] = 867    4    
+ row[868] = 868    0    
+ row[869] = 869    3    
+ row[870] = 870    0    
+ row[871] = 871    0    
+ row[872] = 872    3    
+ row[873] = 873    3    
+ row[874] = 874    0    
+ row[875] = 875    0    
+ row[876] = 876    0    
+ row[877] = 877    0    
+ row[878] = 878    3    
+ row[879] = 879    3    
+ row[880] = 880    3    
+ row[881] = 881    3    
+ row[882] = 882    3    
+ row[883] = 883    4    
+ row[884] = 884    0    
+ row[885] = 885    4    
+ row[886] = 886    6    
+ row[887] = 887    3    
+ row[888] = 888    0    
+ row[889] = 889    0    
+ row[890] = 890    0    
+ row[891] = 891    3    
+ row[892] = 892    3    
+ row[893] = 893    0    
+ row[894] = 894    7    
+ row[895] = 895    7    
+ row[896] = 896    7    
+ row[897] = 897    7    
+ row[898] = 898    6    
+ row[899] = 899    6    
+ row[900] = 900    6    
+ row[901] = 901    6    
+ row[902] = 902    6    
+ row[903] = 903    6    
+ row[904] = 904    6    
+ row[905] = 905    6    
+ row[906] = 906    5    
+ row[907] = 907    5    
+ row[908] = 908    5    
+ row[909] = 909    5    
+ row[910] = 910    5    
+ row[911] = 911    5    
+ row[912] = 912    5    
+ row[913] = 913    5    
+ row[914] = 914    1    
+ row[915] = 915    1    
+ row[916] = 916    1    
+ row[917] = 917    1    
+ row[918] = 918    1    
+ row[919] = 919    0    
+ row[920] = 920    0    
+ row[921] = 921    0    
+ row[922] = 922    0    
+ row[923] = 923    0    
+ row[924] = 924    0    
+ row[925] = 925    0    
+ row[926] = 926    2    
+ row[927] = 927    2    
+ row[928] = 928    2    
+ row[929] = 929    2    
+ row[930] = 930    2    
+ row[931] = 931    2    
+ row[932] = 932    2    
+ row[933] = 933    2    
+ row[934] = 934    2    
+ row[935] = 935    2    
+ row[936] = 936    2    
+ row[937] = 937    2    
+ row[938] = 938    3    
+ row[939] = 939    3    
+ row[940] = 940    3    
+ row[941] = 941    3    
+ row[942] = 942    3    
+ row[943] = 943    7    
+ row[944] = 944    7    
+ row[945] = 945    7    
+ row[946] = 946    7    
+ row[947] = 947    7    
+ row[948] = 948    7    
+ row[949] = 949    7    
+ row[950] = 950    7    
+ row[951] = 951    7    
+ row[952] = 952    7    
+ row[953] = 953    7    
+ row[954] = 954    5    
+ row[955] = 955    5    
+ row[956] = 956    5    
+ row[957] = 957    4    
+ row[958] = 958    4    
+ row[959] = 959    4    
+ row[960] = 960    4    
+ row[961] = 961    4    
+ row[962] = 962    4    
+ row[963] = 963    4    
+ row[964] = 964    4    
+ row[965] = 965    4    
+ row[966] = 966    4    
+ row[967] = 967    1    
+ row[968] = 968    1    
+ row[969] = 969    1    
+ row[970] = 970    1    
+ row[971] = 971    1    
+ row[972] = 972    1    
+ row[973] = 973    1    
+
+Boundary multimap = 4    919
+Boundary multimap = 4    920
+Boundary multimap = 4    921
+Boundary multimap = 4    925
+Boundary multimap = 4    922
+Boundary multimap = 4    923
+Boundary multimap = 4    924
+Boundary multimap = 3    velocity-inlet
+Boundary multimap = 4    wall
+
+ _faceParts : 
+ _faceParts->getRowDim() = 1381
+ _faceParts->getColDim() = 8
+ row[0] = 0    1    
+ row[1] = 1    1    
+ row[2] = 2    1    
+ row[3] = 3    2    
+ row[4] = 4    2    
+ row[5] = 5    2    
+ row[6] = 6    7    
+ row[7] = 7    7    
+ row[8] = 8    7    
+ row[9] = 9    5    
+ row[10] = 10    5    
+ row[11] = 11    5    
+ row[12] = 12    2    
+ row[13] = 13    2    
+ row[14] = 14    2    
+ row[15] = 15    5    
+ row[16] = 16    5    
+ row[17] = 17    5    
+ row[18] = 18    1    
+ row[19] = 19    1    
+ row[20] = 20    1    
+ row[21] = 21    1    
+ row[22] = 22    1    
+ row[23] = 23    1    
+ row[24] = 24    7    
+ row[25] = 25    7    
+ row[26] = 26    7    
+ row[27] = 27    7    
+ row[28] = 28    7    
+ row[29] = 29    7    
+ row[30] = 30    2    
+ row[31] = 31    2    
+ row[32] = 32    2    
+ row[33] = 33    5    
+ row[34] = 34    5    
+ row[35] = 35    5    
+ row[36] = 36    2    
+ row[37] = 37    2    
+ row[38] = 38    2    
+ row[39] = 39    5    
+ row[40] = 40    5    
+ row[41] = 41    5    
+ row[42] = 42    1    
+ row[43] = 43    1    
+ row[44] = 44    1    
+ row[45] = 45    1    
+ row[46] = 46    1    
+ row[47] = 47    1    
+ row[48] = 48    7    
+ row[49] = 49    7    
+ row[50] = 50    7    
+ row[51] = 51    7    
+ row[52] = 52    7    
+ row[53] = 53    7    
+ row[54] = 54    2    
+ row[55] = 55    2    
+ row[56] = 56    2    
+ row[57] = 57    5    
+ row[58] = 58    5    
+ row[59] = 59    5    
+ row[60] = 60    7    
+ row[61] = 61    7    
+ row[62] = 62    7    
+ row[63] = 63    7    
+ row[64] = 64    7    
+ row[65] = 65    7    
+ row[66] = 66    2    
+ row[67] = 67    2    
+ row[68] = 68    2    
+ row[69] = 69    5    4    
+ row[70] = 71    5    
+ row[71] = 72    4    
+ row[72] = 73    2    
+ row[73] = 74    2    
+ row[74] = 75    2    
+ row[75] = 76    5    
+ row[76] = 77    5    
+ row[77] = 78    5    
+ row[78] = 79    1    
+ row[79] = 80    1    
+ row[80] = 81    1    
+ row[81] = 82    1    
+ row[82] = 83    1    
+ row[83] = 84    1    
+ row[84] = 85    2    3    
+ row[85] = 87    2    
+ row[86] = 88    3    
+ row[87] = 89    5    
+ row[88] = 90    5    
+ row[89] = 91    5    
+ row[90] = 92    1    
+ row[91] = 93    1    
+ row[92] = 94    1    
+ row[93] = 95    1    
+ row[94] = 96    1    
+ row[95] = 97    1    
+ row[96] = 98    7    
+ row[97] = 99    7    
+ row[98] = 100    7    
+ row[99] = 101    7    6    
+ row[100] = 103    7    
+ row[101] = 104    6    
+ row[102] = 105    2    
+ row[103] = 106    2    
+ row[104] = 107    2    
+ row[105] = 108    4    
+ row[106] = 109    4    
+ row[107] = 110    4    
+ row[108] = 111    1    0    
+ row[109] = 113    1    
+ row[110] = 114    0    
+ row[111] = 115    1    
+ row[112] = 116    1    
+ row[113] = 117    1    
+ row[114] = 118    3    
+ row[115] = 119    3    
+ row[116] = 120    3    
+ row[117] = 121    5    
+ row[118] = 122    5    
+ row[119] = 123    5    
+ row[120] = 124    2    
+ row[121] = 125    2    
+ row[122] = 126    2    
+ row[123] = 127    4    
+ row[124] = 128    4    
+ row[125] = 129    4    
+ row[126] = 130    6    
+ row[127] = 131    6    
+ row[128] = 132    6    
+ row[129] = 133    7    
+ row[130] = 134    7    
+ row[131] = 135    7    
+ row[132] = 136    0    
+ row[133] = 137    0    
+ row[134] = 138    0    
+ row[135] = 139    1    
+ row[136] = 140    1    
+ row[137] = 141    1    4    
+ row[138] = 143    3    
+ row[139] = 144    3    
+ row[140] = 145    3    
+ row[141] = 146    5    
+ row[142] = 147    5    
+ row[143] = 148    5    
+ row[144] = 149    2    
+ row[145] = 150    2    
+ row[146] = 151    2    
+ row[147] = 152    4    
+ row[148] = 153    4    
+ row[149] = 154    4    
+ row[150] = 155    7    
+ row[151] = 156    7    
+ row[152] = 157    7    
+ row[153] = 158    6    
+ row[154] = 159    6    
+ row[155] = 160    6    
+ row[156] = 161    0    
+ row[157] = 162    0    
+ row[158] = 163    0    
+ row[159] = 164    4    
+ row[160] = 165    4    
+ row[161] = 166    4    
+ row[162] = 167    3    
+ row[163] = 168    3    
+ row[164] = 169    3    
+ row[165] = 170    5    
+ row[166] = 171    5    
+ row[167] = 172    5    
+ row[168] = 173    2    
+ row[169] = 174    2    
+ row[170] = 175    2    
+ row[171] = 176    4    
+ row[172] = 177    4    
+ row[173] = 178    4    
+ row[174] = 179    7    
+ row[175] = 180    7    
+ row[176] = 181    7    
+ row[177] = 182    6    
+ row[178] = 183    6    
+ row[179] = 184    6    
+ row[180] = 185    2    
+ row[181] = 186    2    0    
+ row[182] = 188    0    
+ row[183] = 189    4    
+ row[184] = 190    4    
+ row[185] = 191    4    
+ row[186] = 192    7    
+ row[187] = 193    7    
+ row[188] = 194    7    
+ row[189] = 195    6    
+ row[190] = 196    6    
+ row[191] = 197    6    
+ row[192] = 198    4    
+ row[193] = 199    4    
+ row[194] = 200    4    
+ row[195] = 201    0    
+ row[196] = 202    0    
+ row[197] = 203    0    
+ row[198] = 204    3    
+ row[199] = 205    3    
+ row[200] = 206    3    
+ row[201] = 207    5    
+ row[202] = 208    5    6    
+ row[203] = 210    6    
+ row[204] = 211    4    
+ row[205] = 212    4    
+ row[206] = 213    4    
+ row[207] = 214    0    
+ row[208] = 215    0    
+ row[209] = 216    0    
+ row[210] = 217    3    7    
+ row[211] = 219    3    
+ row[212] = 220    7    
+ row[213] = 221    6    
+ row[214] = 222    6    
+ row[215] = 223    6    
+ row[216] = 224    0    
+ row[217] = 225    0    
+ row[218] = 226    0    
+ row[219] = 227    4    
+ row[220] = 228    4    
+ row[221] = 229    4    
+ row[222] = 230    7    
+ row[223] = 231    7    
+ row[224] = 232    7    
+ row[225] = 233    6    
+ row[226] = 234    6    
+ row[227] = 235    6    
+ row[228] = 236    0    
+ row[229] = 237    4    
+ row[230] = 238    7    
+ row[231] = 239    6    
+ row[232] = 240    5    
+ row[233] = 241    7    
+ row[234] = 242    1    
+ row[235] = 243    2    
+ row[236] = 244    2    
+ row[237] = 245    2    
+ row[238] = 246    2    
+ row[239] = 247    2    
+ row[240] = 248    2    
+ row[241] = 249    2    
+ row[242] = 250    2    
+ row[243] = 251    2    
+ row[244] = 252    2    
+ row[245] = 253    2    
+ row[246] = 254    2    
+ row[247] = 255    2    
+ row[248] = 256    2    
+ row[249] = 257    2    
+ row[250] = 258    2    
+ row[251] = 259    2    
+ row[252] = 260    2    
+ row[253] = 261    2    
+ row[254] = 262    2    
+ row[255] = 263    2    
+ row[256] = 264    2    
+ row[257] = 265    2    
+ row[258] = 266    2    0    
+ row[259] = 268    2    
+ row[260] = 269    0    
+ row[261] = 270    0    
+ row[262] = 271    0    
+ row[263] = 272    2    
+ row[264] = 273    2    
+ row[265] = 274    2    
+ row[266] = 275    2    
+ row[267] = 276    2    
+ row[268] = 277    2    
+ row[269] = 278    3    
+ row[270] = 279    3    2    
+ row[271] = 281    2    
+ row[272] = 282    3    
+ row[273] = 283    3    
+ row[274] = 284    3    
+ row[275] = 285    3    
+ row[276] = 286    3    
+ row[277] = 287    3    
+ row[278] = 288    3    
+ row[279] = 289    3    
+ row[280] = 290    3    
+ row[281] = 291    3    
+ row[282] = 292    3    
+ row[283] = 293    3    
+ row[284] = 294    5    
+ row[285] = 295    5    
+ row[286] = 296    5    
+ row[287] = 297    5    
+ row[288] = 298    5    
+ row[289] = 299    5    
+ row[290] = 300    5    
+ row[291] = 301    5    
+ row[292] = 302    5    
+ row[293] = 303    4    
+ row[294] = 304    4    5    
+ row[295] = 306    5    
+ row[296] = 307    4    
+ row[297] = 308    4    
+ row[298] = 309    4    
+ row[299] = 310    4    
+ row[300] = 311    4    
+ row[301] = 312    4    
+ row[302] = 313    4    
+ row[303] = 314    4    
+ row[304] = 315    4    
+ row[305] = 316    4    
+ row[306] = 317    4    
+ row[307] = 318    4    
+ row[308] = 319    4    
+ row[309] = 320    4    
+ row[310] = 321    4    
+ row[311] = 322    5    
+ row[312] = 323    5    
+ row[313] = 324    5    
+ row[314] = 325    5    
+ row[315] = 326    5    
+ row[316] = 327    5    
+ row[317] = 328    5    
+ row[318] = 329    5    
+ row[319] = 330    5    
+ row[320] = 331    5    
+ row[321] = 332    5    
+ row[322] = 333    5    
+ row[323] = 334    5    
+ row[324] = 335    5    
+ row[325] = 336    5    
+ row[326] = 337    5    
+ row[327] = 338    5    
+ row[328] = 339    5    
+ row[329] = 340    6    5    
+ row[330] = 342    6    
+ row[331] = 343    5    
+ row[332] = 344    1    
+ row[333] = 345    1    
+ row[334] = 346    1    
+ row[335] = 347    1    
+ row[336] = 348    1    
+ row[337] = 349    1    
+ row[338] = 350    1    
+ row[339] = 351    1    
+ row[340] = 352    1    
+ row[341] = 353    1    
+ row[342] = 354    1    
+ row[343] = 355    1    
+ row[344] = 356    1    
+ row[345] = 357    1    
+ row[346] = 358    1    
+ row[347] = 359    1    
+ row[348] = 360    1    
+ row[349] = 361    1    
+ row[350] = 362    4    1    
+ row[351] = 364    4    
+ row[352] = 365    1    
+ row[353] = 366    4    
+ row[354] = 367    4    
+ row[355] = 368    4    
+ row[356] = 369    4    
+ row[357] = 370    4    
+ row[358] = 371    4    
+ row[359] = 372    1    
+ row[360] = 373    1    
+ row[361] = 374    1    
+ row[362] = 375    1    
+ row[363] = 376    1    
+ row[364] = 377    1    
+ row[365] = 378    1    
+ row[366] = 379    1    
+ row[367] = 380    1    
+ row[368] = 381    0    
+ row[369] = 382    0    1    
+ row[370] = 384    1    
+ row[371] = 385    0    
+ row[372] = 386    0    
+ row[373] = 387    0    
+ row[374] = 388    0    
+ row[375] = 389    0    
+ row[376] = 390    0    
+ row[377] = 391    0    
+ row[378] = 392    0    
+ row[379] = 393    0    
+ row[380] = 394    7    
+ row[381] = 395    7    
+ row[382] = 396    7    
+ row[383] = 397    7    
+ row[384] = 398    7    
+ row[385] = 399    7    
+ row[386] = 400    7    
+ row[387] = 401    7    
+ row[388] = 402    7    
+ row[389] = 403    7    
+ row[390] = 404    7    
+ row[391] = 405    7    
+ row[392] = 406    7    
+ row[393] = 407    7    
+ row[394] = 408    7    
+ row[395] = 409    7    
+ row[396] = 410    7    
+ row[397] = 411    7    
+ row[398] = 412    7    
+ row[399] = 413    7    
+ row[400] = 414    7    
+ row[401] = 415    7    
+ row[402] = 416    7    
+ row[403] = 417    7    
+ row[404] = 418    7    
+ row[405] = 419    7    
+ row[406] = 420    7    
+ row[407] = 421    7    
+ row[408] = 422    7    
+ row[409] = 423    7    
+ row[410] = 424    7    
+ row[411] = 425    7    
+ row[412] = 426    7    
+ row[413] = 427    6    
+ row[414] = 428    6    7    
+ row[415] = 430    7    
+ row[416] = 431    6    
+ row[417] = 432    6    
+ row[418] = 433    6    
+ row[419] = 434    6    
+ row[420] = 435    6    
+ row[421] = 436    6    
+ row[422] = 437    6    
+ row[423] = 438    6    
+ row[424] = 439    6    
+ row[425] = 440    6    
+ row[426] = 441    6    
+ row[427] = 442    6    
+ row[428] = 443    0    
+ row[429] = 444    0    
+ row[430] = 445    4    
+ row[431] = 446    4    
+ row[432] = 447    7    3    
+ row[433] = 449    3    
+ row[434] = 450    6    
+ row[435] = 451    6    
+ row[436] = 452    6    
+ row[437] = 453    6    
+ row[438] = 454    2    
+ row[439] = 455    2    
+ row[440] = 456    2    
+ row[441] = 457    2    
+ row[442] = 458    5    
+ row[443] = 459    5    
+ row[444] = 460    5    
+ row[445] = 461    5    
+ row[446] = 462    1    
+ row[447] = 463    1    
+ row[448] = 464    1    
+ row[449] = 465    1    
+ row[450] = 466    7    
+ row[451] = 467    7    
+ row[452] = 468    7    
+ row[453] = 469    7    
+ row[454] = 470    7    
+ row[455] = 471    7    
+ row[456] = 472    7    
+ row[457] = 473    7    6    
+ row[458] = 475    7    
+ row[459] = 476    7    
+ row[460] = 477    6    
+ row[461] = 478    6    
+ row[462] = 479    6    
+ row[463] = 480    6    
+ row[464] = 481    6    
+ row[465] = 482    6    
+ row[466] = 483    6    
+ row[467] = 484    6    
+ row[468] = 485    6    
+ row[469] = 486    2    
+ row[470] = 487    2    
+ row[471] = 488    2    
+ row[472] = 489    2    3    
+ row[473] = 491    2    
+ row[474] = 492    2    
+ row[475] = 493    3    
+ row[476] = 494    3    
+ row[477] = 495    3    
+ row[478] = 496    3    
+ row[479] = 497    3    
+ row[480] = 498    3    
+ row[481] = 499    3    
+ row[482] = 500    3    
+ row[483] = 501    3    
+ row[484] = 502    3    
+ row[485] = 503    3    
+ row[486] = 504    3    
+ row[487] = 505    5    
+ row[488] = 506    5    
+ row[489] = 507    5    
+ row[490] = 508    5    
+ row[491] = 509    5    
+ row[492] = 510    5    
+ row[493] = 511    5    
+ row[494] = 512    5    
+ row[495] = 513    5    
+ row[496] = 514    5    
+ row[497] = 515    5    
+ row[498] = 516    5    
+ row[499] = 517    5    
+ row[500] = 518    5    
+ row[501] = 519    5    
+ row[502] = 520    5    
+ row[503] = 521    5    6    
+ row[504] = 523    5    
+ row[505] = 524    1    
+ row[506] = 525    1    
+ row[507] = 526    1    
+ row[508] = 527    1    
+ row[509] = 528    1    
+ row[510] = 529    1    
+ row[511] = 530    1    
+ row[512] = 531    1    
+ row[513] = 532    1    
+ row[514] = 533    0    
+ row[515] = 534    0    1    
+ row[516] = 536    1    
+ row[517] = 537    0    
+ row[518] = 538    0    
+ row[519] = 539    0    
+ row[520] = 540    0    
+ row[521] = 541    0    
+ row[522] = 542    0    
+ row[523] = 543    6    
+ row[524] = 544    6    
+ row[525] = 545    6    
+ row[526] = 546    7    
+ row[527] = 547    7    
+ row[528] = 548    7    
+ row[529] = 549    7    
+ row[530] = 550    7    
+ row[531] = 551    7    
+ row[532] = 552    7    
+ row[533] = 553    7    
+ row[534] = 554    7    
+ row[535] = 555    7    
+ row[536] = 556    7    
+ row[537] = 557    7    
+ row[538] = 558    7    
+ row[539] = 559    7    
+ row[540] = 560    7    
+ row[541] = 561    7    
+ row[542] = 562    7    3    
+ row[543] = 564    7    
+ row[544] = 565    5    
+ row[545] = 566    5    
+ row[546] = 567    5    
+ row[547] = 568    4    
+ row[548] = 569    4    5    
+ row[549] = 571    5    
+ row[550] = 572    4    
+ row[551] = 573    4    
+ row[552] = 574    4    5    
+ row[553] = 576    4    
+ row[554] = 577    4    
+ row[555] = 578    4    
+ row[556] = 579    4    
+ row[557] = 580    4    
+ row[558] = 581    4    
+ row[559] = 582    4    
+ row[560] = 583    4    
+ row[561] = 584    4    
+ row[562] = 585    2    
+ row[563] = 586    2    
+ row[564] = 587    2    
+ row[565] = 588    2    
+ row[566] = 589    2    
+ row[567] = 590    2    
+ row[568] = 591    2    
+ row[569] = 592    2    
+ row[570] = 593    2    
+ row[571] = 594    2    
+ row[572] = 595    2    
+ row[573] = 596    2    
+ row[574] = 597    2    
+ row[575] = 598    2    0    
+ row[576] = 600    2    
+ row[577] = 601    0    
+ row[578] = 602    0    
+ row[579] = 603    0    
+ row[580] = 604    1    
+ row[581] = 605    1    
+ row[582] = 606    1    
+ row[583] = 607    1    
+ row[584] = 608    1    
+ row[585] = 609    1    
+ row[586] = 610    1    
+ row[587] = 611    1    
+ row[588] = 612    1    
+ row[589] = 613    1    
+ row[590] = 614    1    
+ row[591] = 615    1    
+ row[592] = 616    4    1    
+ row[593] = 618    4    
+ row[594] = 619    1    
+ row[595] = 620    4    
+ row[596] = 621    4    
+ row[597] = 622    4    
+ row[598] = 623    1    
+ row[599] = 624    1    
+ row[600] = 625    1    
+ row[601] = 626    5    
+ row[602] = 627    5    
+ row[603] = 628    5    
+ row[604] = 629    2    
+ row[605] = 630    2    
+ row[606] = 631    2    
+ row[607] = 632    7    
+ row[608] = 633    7    
+ row[609] = 634    7    
+ row[610] = 635    6    
+ row[611] = 636    6    
+ row[612] = 637    6    
+ row[613] = 638    6    
+ row[614] = 639    6    
+ row[615] = 640    6    
+ row[616] = 641    1    
+ row[617] = 642    1    
+ row[618] = 643    1    
+ row[619] = 644    7    6    
+ row[620] = 646    7    
+ row[621] = 647    7    
+ row[622] = 648    5    
+ row[623] = 649    5    
+ row[624] = 650    5    
+ row[625] = 651    2    3    
+ row[626] = 653    2    
+ row[627] = 654    2    
+ row[628] = 655    6    
+ row[629] = 656    6    
+ row[630] = 657    6    
+ row[631] = 658    1    
+ row[632] = 659    1    
+ row[633] = 660    1    
+ row[634] = 661    3    
+ row[635] = 662    3    
+ row[636] = 663    3    2    
+ row[637] = 665    5    
+ row[638] = 666    5    
+ row[639] = 667    5    
+ row[640] = 668    1    0    
+ row[641] = 670    1    
+ row[642] = 671    1    
+ row[643] = 672    3    
+ row[644] = 673    3    
+ row[645] = 674    3    
+ row[646] = 675    5    
+ row[647] = 676    5    
+ row[648] = 677    5    
+ row[649] = 678    6    
+ row[650] = 679    6    
+ row[651] = 680    6    
+ row[652] = 681    0    
+ row[653] = 682    0    
+ row[654] = 683    0    
+ row[655] = 684    3    
+ row[656] = 685    3    
+ row[657] = 686    3    
+ row[658] = 687    5    
+ row[659] = 688    5    
+ row[660] = 689    5    
+ row[661] = 690    6    
+ row[662] = 691    6    
+ row[663] = 692    6    
+ row[664] = 693    0    
+ row[665] = 694    0    
+ row[666] = 695    0    
+ row[667] = 696    3    
+ row[668] = 697    3    
+ row[669] = 698    3    
+ row[670] = 699    5    
+ row[671] = 700    5    
+ row[672] = 701    5    
+ row[673] = 702    6    
+ row[674] = 703    6    
+ row[675] = 704    6    
+ row[676] = 705    4    
+ row[677] = 706    4    
+ row[678] = 707    4    
+ row[679] = 708    4    
+ row[680] = 709    7    
+ row[681] = 710    7    
+ row[682] = 711    7    
+ row[683] = 712    5    
+ row[684] = 713    5    
+ row[685] = 714    5    
+ row[686] = 715    2    
+ row[687] = 716    2    
+ row[688] = 717    2    
+ row[689] = 718    1    
+ row[690] = 719    1    
+ row[691] = 720    1    
+ row[692] = 721    0    
+ row[693] = 722    0    
+ row[694] = 723    0    
+ row[695] = 724    0    
+ row[696] = 725    3    
+ row[697] = 726    3    
+ row[698] = 727    3    
+ row[699] = 728    3    
+ row[700] = 729    7    
+ row[701] = 730    7    
+ row[702] = 731    7    
+ row[703] = 732    7    
+ row[704] = 733    7    
+ row[705] = 734    7    
+ row[706] = 735    7    
+ row[707] = 736    7    
+ row[708] = 737    7    
+ row[709] = 738    7    
+ row[710] = 739    7    
+ row[711] = 740    7    
+ row[712] = 741    5    
+ row[713] = 742    5    
+ row[714] = 743    5    
+ row[715] = 744    4    
+ row[716] = 745    4    5    
+ row[717] = 747    5    
+ row[718] = 748    4    
+ row[719] = 749    4    
+ row[720] = 750    4    
+ row[721] = 751    4    
+ row[722] = 752    4    
+ row[723] = 753    4    
+ row[724] = 754    2    
+ row[725] = 755    2    
+ row[726] = 756    2    
+ row[727] = 757    2    
+ row[728] = 758    2    
+ row[729] = 759    2    
+ row[730] = 760    2    
+ row[731] = 761    2    
+ row[732] = 762    2    
+ row[733] = 763    0    2    
+ row[734] = 765    0    
+ row[735] = 766    2    
+ row[736] = 767    1    
+ row[737] = 768    1    
+ row[738] = 769    1    
+ row[739] = 770    1    
+ row[740] = 771    1    
+ row[741] = 772    1    
+ row[742] = 773    1    
+ row[743] = 774    1    
+ row[744] = 775    1    
+ row[745] = 776    4    1    
+ row[746] = 778    4    
+ row[747] = 779    1    
+ row[748] = 780    6    
+ row[749] = 781    1    
+ row[750] = 782    2    
+ row[751] = 783    5    
+ row[752] = 784    7    
+ row[753] = 785    6    5    
+ row[754] = 787    6    
+ row[755] = 788    5    
+ row[756] = 789    6    
+ row[757] = 790    6    
+ row[758] = 791    6    
+ row[759] = 792    0    
+ row[760] = 793    0    
+ row[761] = 794    0    
+ row[762] = 795    3    
+ row[763] = 796    3    
+ row[764] = 797    3    
+ row[765] = 798    0    
+ row[766] = 799    0    
+ row[767] = 800    0    
+ row[768] = 801    0    
+ row[769] = 802    4    
+ row[770] = 803    4    
+ row[771] = 804    4    
+ row[772] = 805    4    
+ row[773] = 806    4    
+ row[774] = 807    4    
+ row[775] = 808    4    
+ row[776] = 809    3    7    
+ row[777] = 811    3    
+ row[778] = 812    7    
+ row[779] = 813    5    
+ row[780] = 814    5    
+ row[781] = 815    5    
+ row[782] = 816    5    
+ row[783] = 817    5    
+ row[784] = 818    5    
+ row[785] = 819    5    
+ row[786] = 820    5    
+ row[787] = 821    5    
+ row[788] = 822    5    
+ row[789] = 823    5    
+ row[790] = 824    5    
+ row[791] = 825    5    
+ row[792] = 826    5    
+ row[793] = 827    5    
+ row[794] = 828    5    
+ row[795] = 829    5    
+ row[796] = 830    5    
+ row[797] = 831    4    
+ row[798] = 832    4    5    
+ row[799] = 834    5    
+ row[800] = 835    4    
+ row[801] = 836    4    
+ row[802] = 837    4    
+ row[803] = 838    2    
+ row[804] = 839    2    
+ row[805] = 840    2    
+ row[806] = 841    2    
+ row[807] = 842    2    
+ row[808] = 843    2    
+ row[809] = 844    3    
+ row[810] = 845    3    2    
+ row[811] = 847    2    
+ row[812] = 848    3    
+ row[813] = 849    3    
+ row[814] = 850    3    
+ row[815] = 851    3    
+ row[816] = 852    3    
+ row[817] = 853    3    
+ row[818] = 854    2    
+ row[819] = 855    2    
+ row[820] = 856    2    
+ row[821] = 857    2    
+ row[822] = 858    2    
+ row[823] = 859    2    
+ row[824] = 860    2    
+ row[825] = 861    2    
+ row[826] = 862    2    
+ row[827] = 863    7    
+ row[828] = 864    7    
+ row[829] = 865    7    6    
+ row[830] = 867    6    
+ row[831] = 868    6    
+ row[832] = 869    6    
+ row[833] = 870    6    
+ row[834] = 871    6    
+ row[835] = 872    6    
+ row[836] = 873    6    
+ row[837] = 874    6    
+ row[838] = 875    6    
+ row[839] = 876    6    
+ row[840] = 877    6    
+ row[841] = 878    6    
+ row[842] = 879    7    
+ row[843] = 880    7    
+ row[844] = 881    7    
+ row[845] = 882    7    
+ row[846] = 883    7    
+ row[847] = 884    7    
+ row[848] = 885    7    
+ row[849] = 886    7    
+ row[850] = 887    7    
+ row[851] = 888    1    
+ row[852] = 889    1    
+ row[853] = 890    1    
+ row[854] = 891    1    
+ row[855] = 892    1    
+ row[856] = 893    1    
+ row[857] = 894    1    
+ row[858] = 895    1    
+ row[859] = 896    1    
+ row[860] = 897    0    
+ row[861] = 898    0    1    
+ row[862] = 900    1    0    
+ row[863] = 902    0    
+ row[864] = 903    0    
+ row[865] = 904    0    
+ row[866] = 905    1    
+ row[867] = 906    1    
+ row[868] = 907    1    
+ row[869] = 908    1    
+ row[870] = 909    1    
+ row[871] = 910    1    
+ row[872] = 911    1    
+ row[873] = 912    1    
+ row[874] = 913    1    
+ row[875] = 914    3    
+ row[876] = 915    6    
+ row[877] = 916    5    
+ row[878] = 917    5    
+ row[879] = 918    5    6    
+ row[880] = 920    6    
+ row[881] = 921    6    
+ row[882] = 922    6    
+ row[883] = 923    6    
+ row[884] = 924    5    
+ row[885] = 925    5    
+ row[886] = 926    5    
+ row[887] = 927    5    
+ row[888] = 928    2    
+ row[889] = 929    2    
+ row[890] = 930    2    
+ row[891] = 931    2    3    
+ row[892] = 933    6    
+ row[893] = 934    6    7    
+ row[894] = 936    7    
+ row[895] = 937    6    
+ row[896] = 938    1    
+ row[897] = 939    1    
+ row[898] = 940    1    
+ row[899] = 941    1    
+ row[900] = 942    0    
+ row[901] = 943    0    
+ row[902] = 944    0    
+ row[903] = 945    0    
+ row[904] = 946    0    
+ row[905] = 947    0    
+ row[906] = 948    0    2    
+ row[907] = 950    0    
+ row[908] = 951    0    
+ row[909] = 952    2    
+ row[910] = 953    3    
+ row[911] = 954    3    
+ row[912] = 955    3    
+ row[913] = 956    4    1    
+ row[914] = 958    4    
+ row[915] = 959    1    
+ row[916] = 960    4    
+ row[917] = 961    4    
+ row[918] = 962    4    
+ row[919] = 963    4    
+ row[920] = 964    4    
+ row[921] = 965    4    
+ row[922] = 966    2    
+ row[923] = 967    2    
+ row[924] = 968    2    
+ row[925] = 969    2    
+ row[926] = 970    2    
+ row[927] = 971    2    
+ row[928] = 972    5    
+ row[929] = 973    5    
+ row[930] = 974    5    
+ row[931] = 975    4    
+ row[932] = 976    4    5    
+ row[933] = 978    5    4    
+ row[934] = 980    7    
+ row[935] = 981    7    
+ row[936] = 982    7    
+ row[937] = 983    7    
+ row[938] = 984    7    
+ row[939] = 985    7    
+ row[940] = 986    1    
+ row[941] = 987    1    
+ row[942] = 988    1    
+ row[943] = 989    1    
+ row[944] = 990    1    
+ row[945] = 991    1    
+ row[946] = 992    7    
+ row[947] = 993    7    3    
+ row[948] = 995    7    
+ row[949] = 996    6    
+ row[950] = 997    6    
+ row[951] = 998    6    
+ row[952] = 999    0    
+ row[953] = 1000    0    1    
+ row[954] = 1002    1    
+ row[955] = 1003    0    
+ row[956] = 1004    0    
+ row[957] = 1005    0    
+ row[958] = 1006    5    
+ row[959] = 1007    5    
+ row[960] = 1008    5    
+ row[961] = 1009    5    
+ row[962] = 1010    5    
+ row[963] = 1011    5    
+ row[964] = 1012    3    
+ row[965] = 1013    3    
+ row[966] = 1014    3    
+ row[967] = 1015    3    
+ row[968] = 1016    3    
+ row[969] = 1017    3    
+ row[970] = 1018    6    
+ row[971] = 1019    6    
+ row[972] = 1020    6    
+ row[973] = 1021    4    
+ row[974] = 1022    5    
+ row[975] = 1023    5    
+ row[976] = 1024    5    4    
+ row[977] = 1026    3    
+ row[978] = 1027    3    2    
+ row[979] = 1029    2    
+ row[980] = 1030    1    
+ row[981] = 1031    1    
+ row[982] = 1032    1    
+ row[983] = 1033    7    6    
+ row[984] = 1035    7    
+ row[985] = 1036    6    
+ row[986] = 1037    3    
+ row[987] = 1038    3    
+ row[988] = 1039    3    
+ row[989] = 1040    3    
+ row[990] = 1041    1    
+ row[991] = 1042    1    
+ row[992] = 1043    1    0    
+ row[993] = 1045    4    
+ row[994] = 1046    4    
+ row[995] = 1047    4    5    
+ row[996] = 1049    2    
+ row[997] = 1050    2    
+ row[998] = 1051    2    3    
+ row[999] = 1053    7    
+ row[1000] = 1054    7    
+ row[1001] = 1055    7    6    
+ row[1002] = 1057    6    
+ row[1003] = 1058    6    
+ row[1004] = 1059    6    
+ row[1005] = 1060    6    
+ row[1006] = 1061    6    
+ row[1007] = 1062    6    
+ row[1008] = 1063    6    
+ row[1009] = 1064    6    
+ row[1010] = 1065    0    
+ row[1011] = 1066    0    1    
+ row[1012] = 1068    1    0    
+ row[1013] = 1070    5    
+ row[1014] = 1071    5    4    
+ row[1015] = 1073    5    
+ row[1016] = 1074    3    
+ row[1017] = 1075    3    
+ row[1018] = 1076    3    
+ row[1019] = 1077    5    6    
+ row[1020] = 1079    5    
+ row[1021] = 1080    5    6    
+ row[1022] = 1082    6    
+ row[1023] = 1083    6    
+ row[1024] = 1084    6    
+ row[1025] = 1085    1    
+ row[1026] = 1086    1    
+ row[1027] = 1087    1    4    
+ row[1028] = 1089    4    
+ row[1029] = 1090    4    
+ row[1030] = 1091    4    
+ row[1031] = 1092    4    
+ row[1032] = 1093    4    
+ row[1033] = 1094    4    
+ row[1034] = 1095    7    
+ row[1035] = 1096    7    3    
+ row[1036] = 1098    7    
+ row[1037] = 1099    2    
+ row[1038] = 1100    2    
+ row[1039] = 1101    2    
+ row[1040] = 1102    0    2    
+ row[1041] = 1104    0    
+ row[1042] = 1105    2    
+ row[1043] = 1106    0    
+ row[1044] = 1107    0    
+ row[1045] = 1108    0    2    
+ row[1046] = 1110    0    
+ row[1047] = 1111    0    
+ row[1048] = 1112    0    
+ row[1049] = 1113    0    
+ row[1050] = 1114    3    
+ row[1051] = 1115    3    
+ row[1052] = 1116    3    
+ row[1053] = 1117    0    
+ row[1054] = 1118    5    4    
+ row[1055] = 1120    3    
+ row[1056] = 1121    6    
+ row[1057] = 1122    3    
+ row[1058] = 1123    3    
+ row[1059] = 1124    3    
+ row[1060] = 1125    1    0    
+ row[1061] = 1127    1    
+ row[1062] = 1128    1    0    
+ row[1063] = 1130    4    
+ row[1064] = 1131    4    
+ row[1065] = 1132    4    
+ row[1066] = 1133    7    
+ row[1067] = 1134    7    3    
+ row[1068] = 1136    7    3    
+ row[1069] = 1138    2    
+ row[1070] = 1139    2    
+ row[1071] = 1140    2    
+ row[1072] = 1141    4    
+ row[1073] = 1142    4    
+ row[1074] = 1143    4    
+ row[1075] = 1144    3    
+ row[1076] = 1145    3    
+ row[1077] = 1146    3    
+ row[1078] = 1147    3    
+ row[1079] = 1148    2    
+ row[1080] = 1149    2    
+ row[1081] = 1150    2    
+ row[1082] = 1151    6    
+ row[1083] = 1152    6    
+ row[1084] = 1153    6    
+ row[1085] = 1154    6    
+ row[1086] = 1155    6    
+ row[1087] = 1156    6    
+ row[1088] = 1157    6    
+ row[1089] = 1158    6    
+ row[1090] = 1159    6    
+ row[1091] = 1160    6    
+ row[1092] = 1161    6    
+ row[1093] = 1162    6    
+ row[1094] = 1163    4    
+ row[1095] = 1164    4    
+ row[1096] = 1165    4    
+ row[1097] = 1166    4    0    
+ row[1098] = 1168    4    
+ row[1099] = 1169    4    6    
+ row[1100] = 1171    6    
+ row[1101] = 1172    2    
+ row[1102] = 1173    2    0    
+ row[1103] = 1175    2    
+ row[1104] = 1176    0    
+ row[1105] = 1177    0    
+ row[1106] = 1178    0    
+ row[1107] = 1179    0    
+ row[1108] = 1180    0    
+ row[1109] = 1181    0    
+ row[1110] = 1182    0    
+ row[1111] = 1183    3    
+ row[1112] = 1184    3    
+ row[1113] = 1185    3    
+ row[1114] = 1186    0    
+ row[1115] = 1187    0    
+ row[1116] = 1188    0    
+ row[1117] = 1189    4    
+ row[1118] = 1190    4    
+ row[1119] = 1191    4    0    
+ row[1120] = 1193    6    
+ row[1121] = 1194    6    
+ row[1122] = 1195    6    3    
+ row[1123] = 1197    3    
+ row[1124] = 1198    3    
+ row[1125] = 1199    3    
+ row[1126] = 1200    6    
+ row[1127] = 1201    6    
+ row[1128] = 1202    6    4    
+ row[1129] = 1204    6    
+ row[1130] = 1205    6    
+ row[1131] = 1206    6    
+ row[1132] = 1207    6    
+ row[1133] = 1208    6    
+ row[1134] = 1209    6    
+ row[1135] = 1210    6    
+ row[1136] = 1211    3    
+ row[1137] = 1212    3    
+ row[1138] = 1213    3    
+ row[1139] = 1214    3    
+ row[1140] = 1215    3    
+ row[1141] = 1216    3    
+ row[1142] = 1217    3    
+ row[1143] = 1218    3    
+ row[1144] = 1219    3    
+ row[1145] = 1220    3    
+ row[1146] = 1221    4    
+ row[1147] = 1222    4    
+ row[1148] = 1223    4    
+ row[1149] = 1224    4    
+ row[1150] = 1225    3    
+ row[1151] = 1226    3    
+ row[1152] = 1227    3    
+ row[1153] = 1228    2    3    
+ row[1154] = 1230    2    
+ row[1155] = 1231    3    
+ row[1156] = 1232    2    
+ row[1157] = 1233    0    
+ row[1158] = 1234    0    
+ row[1159] = 1235    0    
+ row[1160] = 1236    0    
+ row[1161] = 1237    0    
+ row[1162] = 1238    0    
+ row[1163] = 1239    0    
+ row[1164] = 1240    0    
+ row[1165] = 1241    0    
+ row[1166] = 1242    0    
+ row[1167] = 1243    2    
+ row[1168] = 1244    2    0    
+ row[1169] = 1246    0    
+ row[1170] = 1247    4    
+ row[1171] = 1248    4    
+ row[1172] = 1249    4    
+ row[1173] = 1250    0    
+ row[1174] = 1251    2    0    
+ row[1175] = 1253    3    
+ row[1176] = 1254    4    
+ row[1177] = 1255    4    
+ row[1178] = 1256    4    
+ row[1179] = 1257    6    
+ row[1180] = 1258    6    
+ row[1181] = 1259    6    
+ row[1182] = 1260    3    6    
+ row[1183] = 1262    3    
+ row[1184] = 1263    6    
+ row[1185] = 1264    4    
+ row[1186] = 1265    4    
+ row[1187] = 1266    4    
+ row[1188] = 1267    4    
+ row[1189] = 1268    4    
+ row[1190] = 1269    4    
+ row[1191] = 1270    6    4    
+ row[1192] = 1272    6    
+ row[1193] = 1273    4    
+ row[1194] = 1274    6    
+ row[1195] = 1275    6    
+ row[1196] = 1276    6    
+ row[1197] = 1277    3    
+ row[1198] = 1278    3    
+ row[1199] = 1279    3    
+ row[1200] = 1280    3    
+ row[1201] = 1281    3    0    
+ row[1202] = 1283    3    
+ row[1203] = 1284    3    
+ row[1204] = 1285    3    
+ row[1205] = 1286    3    
+ row[1206] = 1287    3    
+ row[1207] = 1288    3    
+ row[1208] = 1289    3    
+ row[1209] = 1290    0    
+ row[1210] = 1291    0    
+ row[1211] = 1292    0    
+ row[1212] = 1293    0    
+ row[1213] = 1294    0    
+ row[1214] = 1295    0    
+ row[1215] = 1296    0    
+ row[1216] = 1297    0    
+ row[1217] = 1298    0    
+ row[1218] = 1299    0    
+ row[1219] = 1300    0    
+ row[1220] = 1301    0    
+ row[1221] = 1302    6    
+ row[1222] = 1303    3    
+ row[1223] = 1304    3    
+ row[1224] = 1305    0    
+ row[1225] = 1306    0    
+ row[1226] = 1307    0    
+ row[1227] = 1308    0    
+ row[1228] = 1309    0    
+ row[1229] = 1310    0    
+ row[1230] = 1311    0    4    
+ row[1231] = 1313    4    
+ row[1232] = 1314    4    
+ row[1233] = 1315    4    
+ row[1234] = 1316    4    6    
+ row[1235] = 1318    6    
+ row[1236] = 1319    6    3    
+ row[1237] = 1321    6    
+ row[1238] = 1322    6    
+ row[1239] = 1323    6    
+ row[1240] = 1324    6    3    
+ row[1241] = 1326    4    
+ row[1242] = 1327    4    
+ row[1243] = 1328    4    
+ row[1244] = 1329    3    
+ row[1245] = 1330    3    
+ row[1246] = 1331    3    
+ row[1247] = 1332    3    
+ row[1248] = 1333    3    
+ row[1249] = 1334    3    
+ row[1250] = 1335    0    
+ row[1251] = 1336    0    
+ row[1252] = 1337    0    
+ row[1253] = 1338    0    
+ row[1254] = 1339    0    
+ row[1255] = 1340    0    
+ row[1256] = 1341    0    
+ row[1257] = 1342    0    
+ row[1258] = 1343    0    
+ row[1259] = 1344    6    
+ row[1260] = 1345    3    
+ row[1261] = 1346    4    
+ row[1262] = 1347    3    
+ row[1263] = 1348    3    
+ row[1264] = 1349    3    
+ row[1265] = 1350    0    
+ row[1266] = 1351    0    4    
+ row[1267] = 1353    4    
+ row[1268] = 1354    4    
+ row[1269] = 1355    0    3    
+ row[1270] = 1357    0    
+ row[1271] = 1358    3    
+ row[1272] = 1359    0    
+ row[1273] = 1360    0    3    
+ row[1274] = 1362    3    
+ row[1275] = 1363    3    
+ row[1276] = 1364    3    
+ row[1277] = 1365    0    
+ row[1278] = 1366    0    
+ row[1279] = 1367    0    
+ row[1280] = 1368    0    3    
+ row[1281] = 1370    0    
+ row[1282] = 1371    0    
+ row[1283] = 1372    3    
+ row[1284] = 1373    3    
+ row[1285] = 1374    3    
+ row[1286] = 1375    3    
+ row[1287] = 1376    3    
+ row[1288] = 1377    3    
+ row[1289] = 1378    4    0    
+ row[1290] = 1380    4    
+ row[1291] = 1381    0    
+ row[1292] = 1382    4    6    
+ row[1293] = 1384    6    3    
+ row[1294] = 1386    3    0    
+ row[1295] = 1388    0    
+ row[1296] = 1389    0    
+ row[1297] = 1390    0    
+ row[1298] = 1391    0    
+ row[1299] = 1392    3    
+ row[1300] = 1393    3    0    
+ row[1301] = 1395    7    
+ row[1302] = 1396    7    
+ row[1303] = 1397    7    
+ row[1304] = 1398    7    
+ row[1305] = 1399    6    
+ row[1306] = 1400    6    
+ row[1307] = 1401    6    
+ row[1308] = 1402    6    
+ row[1309] = 1403    6    
+ row[1310] = 1404    6    
+ row[1311] = 1405    6    
+ row[1312] = 1406    6    
+ row[1313] = 1407    5    
+ row[1314] = 1408    5    
+ row[1315] = 1409    5    
+ row[1316] = 1410    5    
+ row[1317] = 1411    5    
+ row[1318] = 1412    5    
+ row[1319] = 1413    5    
+ row[1320] = 1414    5    
+ row[1321] = 1415    1    
+ row[1322] = 1416    1    
+ row[1323] = 1417    1    
+ row[1324] = 1418    1    
+ row[1325] = 1419    1    
+ row[1326] = 1420    0    
+ row[1327] = 1421    0    
+ row[1328] = 1422    0    
+ row[1329] = 1423    0    
+ row[1330] = 1424    0    
+ row[1331] = 1425    0    
+ row[1332] = 1426    0    
+ row[1333] = 1427    2    
+ row[1334] = 1428    2    
+ row[1335] = 1429    2    
+ row[1336] = 1430    2    
+ row[1337] = 1431    2    
+ row[1338] = 1432    2    
+ row[1339] = 1433    2    
+ row[1340] = 1434    2    
+ row[1341] = 1435    2    
+ row[1342] = 1436    2    
+ row[1343] = 1437    2    
+ row[1344] = 1438    2    
+ row[1345] = 1439    3    
+ row[1346] = 1440    3    
+ row[1347] = 1441    3    
+ row[1348] = 1442    3    
+ row[1349] = 1443    3    
+ row[1350] = 1444    7    
+ row[1351] = 1445    7    
+ row[1352] = 1446    7    
+ row[1353] = 1447    7    
+ row[1354] = 1448    7    
+ row[1355] = 1449    7    
+ row[1356] = 1450    7    
+ row[1357] = 1451    7    
+ row[1358] = 1452    7    
+ row[1359] = 1453    7    
+ row[1360] = 1454    7    
+ row[1361] = 1455    5    
+ row[1362] = 1456    5    
+ row[1363] = 1457    5    
+ row[1364] = 1458    4    
+ row[1365] = 1459    4    
+ row[1366] = 1460    4    
+ row[1367] = 1461    4    
+ row[1368] = 1462    4    
+ row[1369] = 1463    4    
+ row[1370] = 1464    4    
+ row[1371] = 1465    4    
+ row[1372] = 1466    4    
+ row[1373] = 1467    4    
+ row[1374] = 1468    1    
+ row[1375] = 1469    1    
+ row[1376] = 1470    1    
+ row[1377] = 1471    1    
+ row[1378] = 1472    1    
+ row[1379] = 1473    1    
+ row[1380] = 1474    1    
+
+ _faceCells :  
+ _faceCells->getRowDim() = 188
+ _faceCells->getColDim() = 148
+ globalToLocalMap.length() = 974
+ globalToLocalMap[0] = -1
+ globalToLocalMap[1] = -1
+ globalToLocalMap[2] = -1
+ globalToLocalMap[3] = -1
+ globalToLocalMap[4] = -1
+ globalToLocalMap[5] = -1
+ globalToLocalMap[6] = -1
+ globalToLocalMap[7] = -1
+ globalToLocalMap[8] = -1
+ globalToLocalMap[9] = -1
+ globalToLocalMap[10] = -1
+ globalToLocalMap[11] = -1
+ globalToLocalMap[12] = -1
+ globalToLocalMap[13] = -1
+ globalToLocalMap[14] = -1
+ globalToLocalMap[15] = -1
+ globalToLocalMap[16] = -1
+ globalToLocalMap[17] = -1
+ globalToLocalMap[18] = -1
+ globalToLocalMap[19] = -1
+ globalToLocalMap[20] = -1
+ globalToLocalMap[21] = -1
+ globalToLocalMap[22] = -1
+ globalToLocalMap[23] = -1
+ globalToLocalMap[24] = -1
+ globalToLocalMap[25] = -1
+ globalToLocalMap[26] = -1
+ globalToLocalMap[27] = -1
+ globalToLocalMap[28] = -1
+ globalToLocalMap[29] = -1
+ globalToLocalMap[30] = -1
+ globalToLocalMap[31] = -1
+ globalToLocalMap[32] = -1
+ globalToLocalMap[33] = -1
+ globalToLocalMap[34] = -1
+ globalToLocalMap[35] = -1
+ globalToLocalMap[36] = -1
+ globalToLocalMap[37] = -1
+ globalToLocalMap[38] = -1
+ globalToLocalMap[39] = -1
+ globalToLocalMap[40] = -1
+ globalToLocalMap[41] = -1
+ globalToLocalMap[42] = -1
+ globalToLocalMap[43] = -1
+ globalToLocalMap[44] = -1
+ globalToLocalMap[45] = -1
+ globalToLocalMap[46] = -1
+ globalToLocalMap[47] = -1
+ globalToLocalMap[48] = -1
+ globalToLocalMap[49] = -1
+ globalToLocalMap[50] = -1
+ globalToLocalMap[51] = -1
+ globalToLocalMap[52] = -1
+ globalToLocalMap[53] = -1
+ globalToLocalMap[54] = -1
+ globalToLocalMap[55] = -1
+ globalToLocalMap[56] = -1
+ globalToLocalMap[57] = -1
+ globalToLocalMap[58] = -1
+ globalToLocalMap[59] = -1
+ globalToLocalMap[60] = -1
+ globalToLocalMap[61] = -1
+ globalToLocalMap[62] = -1
+ globalToLocalMap[63] = -1
+ globalToLocalMap[64] = -1
+ globalToLocalMap[65] = -1
+ globalToLocalMap[66] = -1
+ globalToLocalMap[67] = -1
+ globalToLocalMap[68] = -1
+ globalToLocalMap[69] = -1
+ globalToLocalMap[70] = -1
+ globalToLocalMap[71] = -1
+ globalToLocalMap[72] = 0
+ globalToLocalMap[73] = 1
+ globalToLocalMap[74] = -1
+ globalToLocalMap[75] = -1
+ globalToLocalMap[76] = -1
+ globalToLocalMap[77] = -1
+ globalToLocalMap[78] = -1
+ globalToLocalMap[79] = -1
+ globalToLocalMap[80] = -1
+ globalToLocalMap[81] = -1
+ globalToLocalMap[82] = -1
+ globalToLocalMap[83] = -1
+ globalToLocalMap[84] = -1
+ globalToLocalMap[85] = -1
+ globalToLocalMap[86] = -1
+ globalToLocalMap[87] = -1
+ globalToLocalMap[88] = 2
+ globalToLocalMap[89] = 3
+ globalToLocalMap[90] = -1
+ globalToLocalMap[91] = -1
+ globalToLocalMap[92] = -1
+ globalToLocalMap[93] = -1
+ globalToLocalMap[94] = -1
+ globalToLocalMap[95] = -1
+ globalToLocalMap[96] = -1
+ globalToLocalMap[97] = -1
+ globalToLocalMap[98] = -1
+ globalToLocalMap[99] = -1
+ globalToLocalMap[100] = -1
+ globalToLocalMap[101] = -1
+ globalToLocalMap[102] = -1
+ globalToLocalMap[103] = -1
+ globalToLocalMap[104] = 5
+ globalToLocalMap[105] = 6
+ globalToLocalMap[106] = -1
+ globalToLocalMap[107] = -1
+ globalToLocalMap[108] = -1
+ globalToLocalMap[109] = -1
+ globalToLocalMap[110] = -1
+ globalToLocalMap[111] = -1
+ globalToLocalMap[112] = -1
+ globalToLocalMap[113] = -1
+ globalToLocalMap[114] = -1
+ globalToLocalMap[115] = -1
+ globalToLocalMap[116] = -1
+ globalToLocalMap[117] = -1
+ globalToLocalMap[118] = -1
+ globalToLocalMap[119] = -1
+ globalToLocalMap[120] = 9
+ globalToLocalMap[121] = 10
+ globalToLocalMap[122] = -1
+ globalToLocalMap[123] = -1
+ globalToLocalMap[124] = -1
+ globalToLocalMap[125] = -1
+ globalToLocalMap[126] = -1
+ globalToLocalMap[127] = -1
+ globalToLocalMap[128] = -1
+ globalToLocalMap[129] = -1
+ globalToLocalMap[130] = 8
+ globalToLocalMap[131] = 12
+ globalToLocalMap[132] = -1
+ globalToLocalMap[133] = -1
+ globalToLocalMap[134] = -1
+ globalToLocalMap[135] = -1
+ globalToLocalMap[136] = -1
+ globalToLocalMap[137] = -1
+ globalToLocalMap[138] = 14
+ globalToLocalMap[139] = 15
+ globalToLocalMap[140] = -1
+ globalToLocalMap[141] = -1
+ globalToLocalMap[142] = -1
+ globalToLocalMap[143] = -1
+ globalToLocalMap[144] = 11
+ globalToLocalMap[145] = 19
+ globalToLocalMap[146] = -1
+ globalToLocalMap[147] = -1
+ globalToLocalMap[148] = -1
+ globalToLocalMap[149] = -1
+ globalToLocalMap[150] = -1
+ globalToLocalMap[151] = -1
+ globalToLocalMap[152] = 17
+ globalToLocalMap[153] = -1
+ globalToLocalMap[154] = -1
+ globalToLocalMap[155] = -1
+ globalToLocalMap[156] = -1
+ globalToLocalMap[157] = -1
+ globalToLocalMap[158] = -1
+ globalToLocalMap[159] = -1
+ globalToLocalMap[160] = -1
+ globalToLocalMap[161] = -1
+ globalToLocalMap[162] = -1
+ globalToLocalMap[163] = -1
+ globalToLocalMap[164] = -1
+ globalToLocalMap[165] = -1
+ globalToLocalMap[166] = -1
+ globalToLocalMap[167] = -1
+ globalToLocalMap[168] = -1
+ globalToLocalMap[169] = -1
+ globalToLocalMap[170] = -1
+ globalToLocalMap[171] = -1
+ globalToLocalMap[172] = -1
+ globalToLocalMap[173] = -1
+ globalToLocalMap[174] = 21
+ globalToLocalMap[175] = -1
+ globalToLocalMap[176] = 18
+ globalToLocalMap[177] = 22
+ globalToLocalMap[178] = -1
+ globalToLocalMap[179] = -1
+ globalToLocalMap[180] = -1
+ globalToLocalMap[181] = -1
+ globalToLocalMap[182] = -1
+ globalToLocalMap[183] = -1
+ globalToLocalMap[184] = -1
+ globalToLocalMap[185] = -1
+ globalToLocalMap[186] = -1
+ globalToLocalMap[187] = -1
+ globalToLocalMap[188] = -1
+ globalToLocalMap[189] = -1
+ globalToLocalMap[190] = -1
+ globalToLocalMap[191] = -1
+ globalToLocalMap[192] = -1
+ globalToLocalMap[193] = -1
+ globalToLocalMap[194] = -1
+ globalToLocalMap[195] = -1
+ globalToLocalMap[196] = -1
+ globalToLocalMap[197] = -1
+ globalToLocalMap[198] = -1
+ globalToLocalMap[199] = -1
+ globalToLocalMap[200] = -1
+ globalToLocalMap[201] = -1
+ globalToLocalMap[202] = -1
+ globalToLocalMap[203] = -1
+ globalToLocalMap[204] = -1
+ globalToLocalMap[205] = -1
+ globalToLocalMap[206] = -1
+ globalToLocalMap[207] = -1
+ globalToLocalMap[208] = -1
+ globalToLocalMap[209] = -1
+ globalToLocalMap[210] = -1
+ globalToLocalMap[211] = -1
+ globalToLocalMap[212] = -1
+ globalToLocalMap[213] = -1
+ globalToLocalMap[214] = -1
+ globalToLocalMap[215] = -1
+ globalToLocalMap[216] = -1
+ globalToLocalMap[217] = -1
+ globalToLocalMap[218] = -1
+ globalToLocalMap[219] = -1
+ globalToLocalMap[220] = -1
+ globalToLocalMap[221] = -1
+ globalToLocalMap[222] = -1
+ globalToLocalMap[223] = -1
+ globalToLocalMap[224] = -1
+ globalToLocalMap[225] = -1
+ globalToLocalMap[226] = -1
+ globalToLocalMap[227] = -1
+ globalToLocalMap[228] = -1
+ globalToLocalMap[229] = -1
+ globalToLocalMap[230] = -1
+ globalToLocalMap[231] = -1
+ globalToLocalMap[232] = -1
+ globalToLocalMap[233] = -1
+ globalToLocalMap[234] = -1
+ globalToLocalMap[235] = -1
+ globalToLocalMap[236] = -1
+ globalToLocalMap[237] = -1
+ globalToLocalMap[238] = -1
+ globalToLocalMap[239] = -1
+ globalToLocalMap[240] = -1
+ globalToLocalMap[241] = -1
+ globalToLocalMap[242] = -1
+ globalToLocalMap[243] = -1
+ globalToLocalMap[244] = -1
+ globalToLocalMap[245] = -1
+ globalToLocalMap[246] = -1
+ globalToLocalMap[247] = -1
+ globalToLocalMap[248] = 4
+ globalToLocalMap[249] = 25
+ globalToLocalMap[250] = 7
+ globalToLocalMap[251] = 24
+ globalToLocalMap[252] = 13
+ globalToLocalMap[253] = 26
+ globalToLocalMap[254] = 16
+ globalToLocalMap[255] = 28
+ globalToLocalMap[256] = -1
+ globalToLocalMap[257] = -1
+ globalToLocalMap[258] = -1
+ globalToLocalMap[259] = -1
+ globalToLocalMap[260] = -1
+ globalToLocalMap[261] = -1
+ globalToLocalMap[262] = -1
+ globalToLocalMap[263] = -1
+ globalToLocalMap[264] = -1
+ globalToLocalMap[265] = -1
+ globalToLocalMap[266] = -1
+ globalToLocalMap[267] = -1
+ globalToLocalMap[268] = -1
+ globalToLocalMap[269] = -1
+ globalToLocalMap[270] = -1
+ globalToLocalMap[271] = -1
+ globalToLocalMap[272] = -1
+ globalToLocalMap[273] = -1
+ globalToLocalMap[274] = -1
+ globalToLocalMap[275] = -1
+ globalToLocalMap[276] = -1
+ globalToLocalMap[277] = -1
+ globalToLocalMap[278] = -1
+ globalToLocalMap[279] = -1
+ globalToLocalMap[280] = -1
+ globalToLocalMap[281] = -1
+ globalToLocalMap[282] = -1
+ globalToLocalMap[283] = -1
+ globalToLocalMap[284] = -1
+ globalToLocalMap[285] = -1
+ globalToLocalMap[286] = -1
+ globalToLocalMap[287] = -1
+ globalToLocalMap[288] = 20
+ globalToLocalMap[289] = 30
+ globalToLocalMap[290] = -1
+ globalToLocalMap[291] = -1
+ globalToLocalMap[292] = -1
+ globalToLocalMap[293] = -1
+ globalToLocalMap[294] = -1
+ globalToLocalMap[295] = -1
+ globalToLocalMap[296] = -1
+ globalToLocalMap[297] = -1
+ globalToLocalMap[298] = -1
+ globalToLocalMap[299] = -1
+ globalToLocalMap[300] = -1
+ globalToLocalMap[301] = -1
+ globalToLocalMap[302] = -1
+ globalToLocalMap[303] = -1
+ globalToLocalMap[304] = -1
+ globalToLocalMap[305] = -1
+ globalToLocalMap[306] = -1
+ globalToLocalMap[307] = -1
+ globalToLocalMap[308] = -1
+ globalToLocalMap[309] = -1
+ globalToLocalMap[310] = -1
+ globalToLocalMap[311] = -1
+ globalToLocalMap[312] = -1
+ globalToLocalMap[313] = -1
+ globalToLocalMap[314] = -1
+ globalToLocalMap[315] = -1
+ globalToLocalMap[316] = -1
+ globalToLocalMap[317] = -1
+ globalToLocalMap[318] = -1
+ globalToLocalMap[319] = -1
+ globalToLocalMap[320] = -1
+ globalToLocalMap[321] = -1
+ globalToLocalMap[322] = -1
+ globalToLocalMap[323] = -1
+ globalToLocalMap[324] = -1
+ globalToLocalMap[325] = -1
+ globalToLocalMap[326] = -1
+ globalToLocalMap[327] = -1
+ globalToLocalMap[328] = -1
+ globalToLocalMap[329] = -1
+ globalToLocalMap[330] = -1
+ globalToLocalMap[331] = -1
+ globalToLocalMap[332] = -1
+ globalToLocalMap[333] = -1
+ globalToLocalMap[334] = -1
+ globalToLocalMap[335] = -1
+ globalToLocalMap[336] = -1
+ globalToLocalMap[337] = -1
+ globalToLocalMap[338] = -1
+ globalToLocalMap[339] = -1
+ globalToLocalMap[340] = -1
+ globalToLocalMap[341] = -1
+ globalToLocalMap[342] = -1
+ globalToLocalMap[343] = -1
+ globalToLocalMap[344] = -1
+ globalToLocalMap[345] = -1
+ globalToLocalMap[346] = -1
+ globalToLocalMap[347] = -1
+ globalToLocalMap[348] = -1
+ globalToLocalMap[349] = 27
+ globalToLocalMap[350] = 34
+ globalToLocalMap[351] = 29
+ globalToLocalMap[352] = 33
+ globalToLocalMap[353] = 31
+ globalToLocalMap[354] = 35
+ globalToLocalMap[355] = -1
+ globalToLocalMap[356] = -1
+ globalToLocalMap[357] = -1
+ globalToLocalMap[358] = -1
+ globalToLocalMap[359] = -1
+ globalToLocalMap[360] = -1
+ globalToLocalMap[361] = -1
+ globalToLocalMap[362] = -1
+ globalToLocalMap[363] = -1
+ globalToLocalMap[364] = -1
+ globalToLocalMap[365] = -1
+ globalToLocalMap[366] = -1
+ globalToLocalMap[367] = -1
+ globalToLocalMap[368] = -1
+ globalToLocalMap[369] = -1
+ globalToLocalMap[370] = -1
+ globalToLocalMap[371] = -1
+ globalToLocalMap[372] = -1
+ globalToLocalMap[373] = -1
+ globalToLocalMap[374] = -1
+ globalToLocalMap[375] = -1
+ globalToLocalMap[376] = -1
+ globalToLocalMap[377] = -1
+ globalToLocalMap[378] = -1
+ globalToLocalMap[379] = -1
+ globalToLocalMap[380] = -1
+ globalToLocalMap[381] = -1
+ globalToLocalMap[382] = -1
+ globalToLocalMap[383] = -1
+ globalToLocalMap[384] = -1
+ globalToLocalMap[385] = -1
+ globalToLocalMap[386] = -1
+ globalToLocalMap[387] = -1
+ globalToLocalMap[388] = -1
+ globalToLocalMap[389] = 39
+ globalToLocalMap[390] = -1
+ globalToLocalMap[391] = 23
+ globalToLocalMap[392] = 40
+ globalToLocalMap[393] = -1
+ globalToLocalMap[394] = -1
+ globalToLocalMap[395] = -1
+ globalToLocalMap[396] = -1
+ globalToLocalMap[397] = -1
+ globalToLocalMap[398] = -1
+ globalToLocalMap[399] = -1
+ globalToLocalMap[400] = -1
+ globalToLocalMap[401] = -1
+ globalToLocalMap[402] = -1
+ globalToLocalMap[403] = -1
+ globalToLocalMap[404] = -1
+ globalToLocalMap[405] = -1
+ globalToLocalMap[406] = -1
+ globalToLocalMap[407] = -1
+ globalToLocalMap[408] = -1
+ globalToLocalMap[409] = -1
+ globalToLocalMap[410] = -1
+ globalToLocalMap[411] = -1
+ globalToLocalMap[412] = -1
+ globalToLocalMap[413] = -1
+ globalToLocalMap[414] = -1
+ globalToLocalMap[415] = -1
+ globalToLocalMap[416] = -1
+ globalToLocalMap[417] = -1
+ globalToLocalMap[418] = -1
+ globalToLocalMap[419] = -1
+ globalToLocalMap[420] = -1
+ globalToLocalMap[421] = -1
+ globalToLocalMap[422] = -1
+ globalToLocalMap[423] = -1
+ globalToLocalMap[424] = -1
+ globalToLocalMap[425] = -1
+ globalToLocalMap[426] = -1
+ globalToLocalMap[427] = -1
+ globalToLocalMap[428] = -1
+ globalToLocalMap[429] = -1
+ globalToLocalMap[430] = -1
+ globalToLocalMap[431] = -1
+ globalToLocalMap[432] = -1
+ globalToLocalMap[433] = 43
+ globalToLocalMap[434] = -1
+ globalToLocalMap[435] = -1
+ globalToLocalMap[436] = -1
+ globalToLocalMap[437] = -1
+ globalToLocalMap[438] = -1
+ globalToLocalMap[439] = -1
+ globalToLocalMap[440] = -1
+ globalToLocalMap[441] = 36
+ globalToLocalMap[442] = 44
+ globalToLocalMap[443] = -1
+ globalToLocalMap[444] = -1
+ globalToLocalMap[445] = -1
+ globalToLocalMap[446] = -1
+ globalToLocalMap[447] = -1
+ globalToLocalMap[448] = -1
+ globalToLocalMap[449] = 38
+ globalToLocalMap[450] = 45
+ globalToLocalMap[451] = -1
+ globalToLocalMap[452] = -1
+ globalToLocalMap[453] = -1
+ globalToLocalMap[454] = -1
+ globalToLocalMap[455] = -1
+ globalToLocalMap[456] = -1
+ globalToLocalMap[457] = -1
+ globalToLocalMap[458] = -1
+ globalToLocalMap[459] = -1
+ globalToLocalMap[460] = -1
+ globalToLocalMap[461] = -1
+ globalToLocalMap[462] = -1
+ globalToLocalMap[463] = -1
+ globalToLocalMap[464] = -1
+ globalToLocalMap[465] = -1
+ globalToLocalMap[466] = -1
+ globalToLocalMap[467] = -1
+ globalToLocalMap[468] = 32
+ globalToLocalMap[469] = 41
+ globalToLocalMap[470] = 37
+ globalToLocalMap[471] = -1
+ globalToLocalMap[472] = -1
+ globalToLocalMap[473] = -1
+ globalToLocalMap[474] = -1
+ globalToLocalMap[475] = -1
+ globalToLocalMap[476] = -1
+ globalToLocalMap[477] = -1
+ globalToLocalMap[478] = -1
+ globalToLocalMap[479] = -1
+ globalToLocalMap[480] = -1
+ globalToLocalMap[481] = -1
+ globalToLocalMap[482] = -1
+ globalToLocalMap[483] = -1
+ globalToLocalMap[484] = -1
+ globalToLocalMap[485] = -1
+ globalToLocalMap[486] = -1
+ globalToLocalMap[487] = -1
+ globalToLocalMap[488] = -1
+ globalToLocalMap[489] = -1
+ globalToLocalMap[490] = -1
+ globalToLocalMap[491] = -1
+ globalToLocalMap[492] = -1
+ globalToLocalMap[493] = -1
+ globalToLocalMap[494] = -1
+ globalToLocalMap[495] = -1
+ globalToLocalMap[496] = 42
+ globalToLocalMap[497] = 51
+ globalToLocalMap[498] = -1
+ globalToLocalMap[499] = -1
+ globalToLocalMap[500] = -1
+ globalToLocalMap[501] = -1
+ globalToLocalMap[502] = -1
+ globalToLocalMap[503] = -1
+ globalToLocalMap[504] = -1
+ globalToLocalMap[505] = -1
+ globalToLocalMap[506] = -1
+ globalToLocalMap[507] = -1
+ globalToLocalMap[508] = -1
+ globalToLocalMap[509] = -1
+ globalToLocalMap[510] = -1
+ globalToLocalMap[511] = -1
+ globalToLocalMap[512] = -1
+ globalToLocalMap[513] = -1
+ globalToLocalMap[514] = -1
+ globalToLocalMap[515] = 50
+ globalToLocalMap[516] = 47
+ globalToLocalMap[517] = -1
+ globalToLocalMap[518] = -1
+ globalToLocalMap[519] = 49
+ globalToLocalMap[520] = 53
+ globalToLocalMap[521] = 52
+ globalToLocalMap[522] = -1
+ globalToLocalMap[523] = -1
+ globalToLocalMap[524] = -1
+ globalToLocalMap[525] = -1
+ globalToLocalMap[526] = -1
+ globalToLocalMap[527] = -1
+ globalToLocalMap[528] = -1
+ globalToLocalMap[529] = -1
+ globalToLocalMap[530] = -1
+ globalToLocalMap[531] = -1
+ globalToLocalMap[532] = -1
+ globalToLocalMap[533] = -1
+ globalToLocalMap[534] = -1
+ globalToLocalMap[535] = -1
+ globalToLocalMap[536] = -1
+ globalToLocalMap[537] = -1
+ globalToLocalMap[538] = -1
+ globalToLocalMap[539] = -1
+ globalToLocalMap[540] = -1
+ globalToLocalMap[541] = -1
+ globalToLocalMap[542] = -1
+ globalToLocalMap[543] = -1
+ globalToLocalMap[544] = -1
+ globalToLocalMap[545] = -1
+ globalToLocalMap[546] = -1
+ globalToLocalMap[547] = -1
+ globalToLocalMap[548] = -1
+ globalToLocalMap[549] = -1
+ globalToLocalMap[550] = -1
+ globalToLocalMap[551] = -1
+ globalToLocalMap[552] = -1
+ globalToLocalMap[553] = -1
+ globalToLocalMap[554] = -1
+ globalToLocalMap[555] = -1
+ globalToLocalMap[556] = -1
+ globalToLocalMap[557] = -1
+ globalToLocalMap[558] = -1
+ globalToLocalMap[559] = -1
+ globalToLocalMap[560] = -1
+ globalToLocalMap[561] = -1
+ globalToLocalMap[562] = -1
+ globalToLocalMap[563] = -1
+ globalToLocalMap[564] = -1
+ globalToLocalMap[565] = -1
+ globalToLocalMap[566] = -1
+ globalToLocalMap[567] = -1
+ globalToLocalMap[568] = -1
+ globalToLocalMap[569] = -1
+ globalToLocalMap[570] = -1
+ globalToLocalMap[571] = -1
+ globalToLocalMap[572] = -1
+ globalToLocalMap[573] = -1
+ globalToLocalMap[574] = -1
+ globalToLocalMap[575] = -1
+ globalToLocalMap[576] = -1
+ globalToLocalMap[577] = -1
+ globalToLocalMap[578] = -1
+ globalToLocalMap[579] = -1
+ globalToLocalMap[580] = -1
+ globalToLocalMap[581] = -1
+ globalToLocalMap[582] = -1
+ globalToLocalMap[583] = 46
+ globalToLocalMap[584] = 58
+ globalToLocalMap[585] = 48
+ globalToLocalMap[586] = 57
+ globalToLocalMap[587] = -1
+ globalToLocalMap[588] = -1
+ globalToLocalMap[589] = -1
+ globalToLocalMap[590] = -1
+ globalToLocalMap[591] = -1
+ globalToLocalMap[592] = -1
+ globalToLocalMap[593] = -1
+ globalToLocalMap[594] = -1
+ globalToLocalMap[595] = -1
+ globalToLocalMap[596] = -1
+ globalToLocalMap[597] = -1
+ globalToLocalMap[598] = -1
+ globalToLocalMap[599] = -1
+ globalToLocalMap[600] = -1
+ globalToLocalMap[601] = -1
+ globalToLocalMap[602] = -1
+ globalToLocalMap[603] = -1
+ globalToLocalMap[604] = -1
+ globalToLocalMap[605] = -1
+ globalToLocalMap[606] = -1
+ globalToLocalMap[607] = -1
+ globalToLocalMap[608] = -1
+ globalToLocalMap[609] = -1
+ globalToLocalMap[610] = -1
+ globalToLocalMap[611] = -1
+ globalToLocalMap[612] = 54
+ globalToLocalMap[613] = 60
+ globalToLocalMap[614] = 55
+ globalToLocalMap[615] = 62
+ globalToLocalMap[616] = 56
+ globalToLocalMap[617] = 64
+ globalToLocalMap[618] = 66
+ globalToLocalMap[619] = -1
+ globalToLocalMap[620] = -1
+ globalToLocalMap[621] = -1
+ globalToLocalMap[622] = -1
+ globalToLocalMap[623] = -1
+ globalToLocalMap[624] = -1
+ globalToLocalMap[625] = -1
+ globalToLocalMap[626] = -1
+ globalToLocalMap[627] = -1
+ globalToLocalMap[628] = -1
+ globalToLocalMap[629] = -1
+ globalToLocalMap[630] = -1
+ globalToLocalMap[631] = -1
+ globalToLocalMap[632] = -1
+ globalToLocalMap[633] = -1
+ globalToLocalMap[634] = -1
+ globalToLocalMap[635] = -1
+ globalToLocalMap[636] = -1
+ globalToLocalMap[637] = -1
+ globalToLocalMap[638] = -1
+ globalToLocalMap[639] = -1
+ globalToLocalMap[640] = -1
+ globalToLocalMap[641] = -1
+ globalToLocalMap[642] = -1
+ globalToLocalMap[643] = -1
+ globalToLocalMap[644] = -1
+ globalToLocalMap[645] = -1
+ globalToLocalMap[646] = -1
+ globalToLocalMap[647] = 59
+ globalToLocalMap[648] = 69
+ globalToLocalMap[649] = 61
+ globalToLocalMap[650] = 68
+ globalToLocalMap[651] = -1
+ globalToLocalMap[652] = -1
+ globalToLocalMap[653] = -1
+ globalToLocalMap[654] = -1
+ globalToLocalMap[655] = -1
+ globalToLocalMap[656] = -1
+ globalToLocalMap[657] = -1
+ globalToLocalMap[658] = -1
+ globalToLocalMap[659] = -1
+ globalToLocalMap[660] = -1
+ globalToLocalMap[661] = -1
+ globalToLocalMap[662] = -1
+ globalToLocalMap[663] = -1
+ globalToLocalMap[664] = -1
+ globalToLocalMap[665] = -1
+ globalToLocalMap[666] = -1
+ globalToLocalMap[667] = -1
+ globalToLocalMap[668] = -1
+ globalToLocalMap[669] = -1
+ globalToLocalMap[670] = -1
+ globalToLocalMap[671] = -1
+ globalToLocalMap[672] = -1
+ globalToLocalMap[673] = -1
+ globalToLocalMap[674] = 72
+ globalToLocalMap[675] = -1
+ globalToLocalMap[676] = -1
+ globalToLocalMap[677] = -1
+ globalToLocalMap[678] = -1
+ globalToLocalMap[679] = -1
+ globalToLocalMap[680] = -1
+ globalToLocalMap[681] = -1
+ globalToLocalMap[682] = -1
+ globalToLocalMap[683] = -1
+ globalToLocalMap[684] = -1
+ globalToLocalMap[685] = -1
+ globalToLocalMap[686] = -1
+ globalToLocalMap[687] = 71
+ globalToLocalMap[688] = 75
+ globalToLocalMap[689] = -1
+ globalToLocalMap[690] = -1
+ globalToLocalMap[691] = -1
+ globalToLocalMap[692] = -1
+ globalToLocalMap[693] = -1
+ globalToLocalMap[694] = -1
+ globalToLocalMap[695] = -1
+ globalToLocalMap[696] = -1
+ globalToLocalMap[697] = -1
+ globalToLocalMap[698] = -1
+ globalToLocalMap[699] = -1
+ globalToLocalMap[700] = -1
+ globalToLocalMap[701] = -1
+ globalToLocalMap[702] = -1
+ globalToLocalMap[703] = -1
+ globalToLocalMap[704] = -1
+ globalToLocalMap[705] = -1
+ globalToLocalMap[706] = -1
+ globalToLocalMap[707] = 67
+ globalToLocalMap[708] = 76
+ globalToLocalMap[709] = 65
+ globalToLocalMap[710] = 77
+ globalToLocalMap[711] = 63
+ globalToLocalMap[712] = 78
+ globalToLocalMap[713] = 70
+ globalToLocalMap[714] = -1
+ globalToLocalMap[715] = -1
+ globalToLocalMap[716] = 73
+ globalToLocalMap[717] = -1
+ globalToLocalMap[718] = -1
+ globalToLocalMap[719] = -1
+ globalToLocalMap[720] = -1
+ globalToLocalMap[721] = -1
+ globalToLocalMap[722] = 83
+ globalToLocalMap[723] = 85
+ globalToLocalMap[724] = -1
+ globalToLocalMap[725] = -1
+ globalToLocalMap[726] = -1
+ globalToLocalMap[727] = -1
+ globalToLocalMap[728] = -1
+ globalToLocalMap[729] = -1
+ globalToLocalMap[730] = -1
+ globalToLocalMap[731] = -1
+ globalToLocalMap[732] = -1
+ globalToLocalMap[733] = -1
+ globalToLocalMap[734] = -1
+ globalToLocalMap[735] = -1
+ globalToLocalMap[736] = -1
+ globalToLocalMap[737] = -1
+ globalToLocalMap[738] = -1
+ globalToLocalMap[739] = -1
+ globalToLocalMap[740] = -1
+ globalToLocalMap[741] = -1
+ globalToLocalMap[742] = -1
+ globalToLocalMap[743] = -1
+ globalToLocalMap[744] = -1
+ globalToLocalMap[745] = -1
+ globalToLocalMap[746] = -1
+ globalToLocalMap[747] = 87
+ globalToLocalMap[748] = -1
+ globalToLocalMap[749] = -1
+ globalToLocalMap[750] = 79
+ globalToLocalMap[751] = -1
+ globalToLocalMap[752] = 80
+ globalToLocalMap[753] = 89
+ globalToLocalMap[754] = 81
+ globalToLocalMap[755] = 90
+ globalToLocalMap[756] = 74
+ globalToLocalMap[757] = -1
+ globalToLocalMap[758] = -1
+ globalToLocalMap[759] = 86
+ globalToLocalMap[760] = 88
+ globalToLocalMap[761] = -1
+ globalToLocalMap[762] = 96
+ globalToLocalMap[763] = -1
+ globalToLocalMap[764] = -1
+ globalToLocalMap[765] = -1
+ globalToLocalMap[766] = -1
+ globalToLocalMap[767] = -1
+ globalToLocalMap[768] = -1
+ globalToLocalMap[769] = -1
+ globalToLocalMap[770] = -1
+ globalToLocalMap[771] = -1
+ globalToLocalMap[772] = -1
+ globalToLocalMap[773] = -1
+ globalToLocalMap[774] = -1
+ globalToLocalMap[775] = -1
+ globalToLocalMap[776] = -1
+ globalToLocalMap[777] = -1
+ globalToLocalMap[778] = -1
+ globalToLocalMap[779] = -1
+ globalToLocalMap[780] = -1
+ globalToLocalMap[781] = -1
+ globalToLocalMap[782] = -1
+ globalToLocalMap[783] = -1
+ globalToLocalMap[784] = -1
+ globalToLocalMap[785] = -1
+ globalToLocalMap[786] = -1
+ globalToLocalMap[787] = -1
+ globalToLocalMap[788] = -1
+ globalToLocalMap[789] = 82
+ globalToLocalMap[790] = 84
+ globalToLocalMap[791] = 93
+ globalToLocalMap[792] = 92
+ globalToLocalMap[793] = 98
+ globalToLocalMap[794] = 91
+ globalToLocalMap[795] = 99
+ globalToLocalMap[796] = 103
+ globalToLocalMap[797] = 101
+ globalToLocalMap[798] = -1
+ globalToLocalMap[799] = -1
+ globalToLocalMap[800] = 95
+ globalToLocalMap[801] = 106
+ globalToLocalMap[802] = -1
+ globalToLocalMap[803] = -1
+ globalToLocalMap[804] = -1
+ globalToLocalMap[805] = -1
+ globalToLocalMap[806] = -1
+ globalToLocalMap[807] = -1
+ globalToLocalMap[808] = -1
+ globalToLocalMap[809] = -1
+ globalToLocalMap[810] = -1
+ globalToLocalMap[811] = -1
+ globalToLocalMap[812] = -1
+ globalToLocalMap[813] = -1
+ globalToLocalMap[814] = -1
+ globalToLocalMap[815] = -1
+ globalToLocalMap[816] = -1
+ globalToLocalMap[817] = -1
+ globalToLocalMap[818] = -1
+ globalToLocalMap[819] = 108
+ globalToLocalMap[820] = -1
+ globalToLocalMap[821] = -1
+ globalToLocalMap[822] = -1
+ globalToLocalMap[823] = -1
+ globalToLocalMap[824] = -1
+ globalToLocalMap[825] = 97
+ globalToLocalMap[826] = 94
+ globalToLocalMap[827] = 100
+ globalToLocalMap[828] = 110
+ globalToLocalMap[829] = 102
+ globalToLocalMap[830] = 112
+ globalToLocalMap[831] = 104
+ globalToLocalMap[832] = 114
+ globalToLocalMap[833] = -1
+ globalToLocalMap[834] = -1
+ globalToLocalMap[835] = -1
+ globalToLocalMap[836] = 107
+ globalToLocalMap[837] = 109
+ globalToLocalMap[838] = 116
+ globalToLocalMap[839] = 111
+ globalToLocalMap[840] = 105
+ globalToLocalMap[841] = 121
+ globalToLocalMap[842] = -1
+ globalToLocalMap[843] = -1
+ globalToLocalMap[844] = -1
+ globalToLocalMap[845] = -1
+ globalToLocalMap[846] = -1
+ globalToLocalMap[847] = -1
+ globalToLocalMap[848] = -1
+ globalToLocalMap[849] = -1
+ globalToLocalMap[850] = -1
+ globalToLocalMap[851] = -1
+ globalToLocalMap[852] = -1
+ globalToLocalMap[853] = -1
+ globalToLocalMap[854] = 113
+ globalToLocalMap[855] = 120
+ globalToLocalMap[856] = 115
+ globalToLocalMap[857] = 122
+ globalToLocalMap[858] = 117
+ globalToLocalMap[859] = 124
+ globalToLocalMap[860] = -1
+ globalToLocalMap[861] = -1
+ globalToLocalMap[862] = -1
+ globalToLocalMap[863] = -1
+ globalToLocalMap[864] = -1
+ globalToLocalMap[865] = 123
+ globalToLocalMap[866] = 129
+ globalToLocalMap[867] = -1
+ globalToLocalMap[868] = 118
+ globalToLocalMap[869] = 130
+ globalToLocalMap[870] = 119
+ globalToLocalMap[871] = 126
+ globalToLocalMap[872] = -1
+ globalToLocalMap[873] = -1
+ globalToLocalMap[874] = 125
+ globalToLocalMap[875] = 128
+ globalToLocalMap[876] = 127
+ globalToLocalMap[877] = 132
+ globalToLocalMap[878] = -1
+ globalToLocalMap[879] = -1
+ globalToLocalMap[880] = -1
+ globalToLocalMap[881] = 131
+ globalToLocalMap[882] = -1
+ globalToLocalMap[883] = 135
+ globalToLocalMap[884] = 133
+ globalToLocalMap[885] = -1
+ globalToLocalMap[886] = -1
+ globalToLocalMap[887] = 137
+ globalToLocalMap[888] = 134
+ globalToLocalMap[889] = 136
+ globalToLocalMap[890] = 138
+ globalToLocalMap[891] = -1
+ globalToLocalMap[892] = 140
+ globalToLocalMap[893] = 139
+ globalToLocalMap[894] = -1
+ globalToLocalMap[895] = -1
+ globalToLocalMap[896] = -1
+ globalToLocalMap[897] = -1
+ globalToLocalMap[898] = -1
+ globalToLocalMap[899] = -1
+ globalToLocalMap[900] = -1
+ globalToLocalMap[901] = -1
+ globalToLocalMap[902] = -1
+ globalToLocalMap[903] = -1
+ globalToLocalMap[904] = -1
+ globalToLocalMap[905] = -1
+ globalToLocalMap[906] = -1
+ globalToLocalMap[907] = -1
+ globalToLocalMap[908] = -1
+ globalToLocalMap[909] = -1
+ globalToLocalMap[910] = -1
+ globalToLocalMap[911] = -1
+ globalToLocalMap[912] = -1
+ globalToLocalMap[913] = -1
+ globalToLocalMap[914] = -1
+ globalToLocalMap[915] = -1
+ globalToLocalMap[916] = -1
+ globalToLocalMap[917] = -1
+ globalToLocalMap[918] = -1
+ globalToLocalMap[919] = 141
+ globalToLocalMap[920] = 142
+ globalToLocalMap[921] = 143
+ globalToLocalMap[922] = 144
+ globalToLocalMap[923] = 145
+ globalToLocalMap[924] = 146
+ globalToLocalMap[925] = 147
+ globalToLocalMap[926] = -1
+ globalToLocalMap[927] = -1
+ globalToLocalMap[928] = -1
+ globalToLocalMap[929] = -1
+ globalToLocalMap[930] = -1
+ globalToLocalMap[931] = -1
+ globalToLocalMap[932] = -1
+ globalToLocalMap[933] = -1
+ globalToLocalMap[934] = -1
+ globalToLocalMap[935] = -1
+ globalToLocalMap[936] = -1
+ globalToLocalMap[937] = -1
+ globalToLocalMap[938] = -1
+ globalToLocalMap[939] = -1
+ globalToLocalMap[940] = -1
+ globalToLocalMap[941] = -1
+ globalToLocalMap[942] = -1
+ globalToLocalMap[943] = -1
+ globalToLocalMap[944] = -1
+ globalToLocalMap[945] = -1
+ globalToLocalMap[946] = -1
+ globalToLocalMap[947] = -1
+ globalToLocalMap[948] = -1
+ globalToLocalMap[949] = -1
+ globalToLocalMap[950] = -1
+ globalToLocalMap[951] = -1
+ globalToLocalMap[952] = -1
+ globalToLocalMap[953] = -1
+ globalToLocalMap[954] = -1
+ globalToLocalMap[955] = -1
+ globalToLocalMap[956] = -1
+ globalToLocalMap[957] = -1
+ globalToLocalMap[958] = -1
+ globalToLocalMap[959] = -1
+ globalToLocalMap[960] = -1
+ globalToLocalMap[961] = -1
+ globalToLocalMap[962] = -1
+ globalToLocalMap[963] = -1
+ globalToLocalMap[964] = -1
+ globalToLocalMap[965] = -1
+ globalToLocalMap[966] = -1
+ globalToLocalMap[967] = -1
+ globalToLocalMap[968] = -1
+ globalToLocalMap[969] = -1
+ globalToLocalMap[970] = -1
+ globalToLocalMap[971] = -1
+ globalToLocalMap[972] = -1
+ globalToLocalMap[973] = -1
+
+ localToGlobalMap.length() = 148
+ localToGlobalMap[0] = 72
+ localToGlobalMap[1] = 73
+ localToGlobalMap[2] = 88
+ localToGlobalMap[3] = 89
+ localToGlobalMap[4] = 248
+ localToGlobalMap[5] = 104
+ localToGlobalMap[6] = 105
+ localToGlobalMap[7] = 250
+ localToGlobalMap[8] = 130
+ localToGlobalMap[9] = 120
+ localToGlobalMap[10] = 121
+ localToGlobalMap[11] = 144
+ localToGlobalMap[12] = 131
+ localToGlobalMap[13] = 252
+ localToGlobalMap[14] = 138
+ localToGlobalMap[15] = 139
+ localToGlobalMap[16] = 254
+ localToGlobalMap[17] = 152
+ localToGlobalMap[18] = 176
+ localToGlobalMap[19] = 145
+ localToGlobalMap[20] = 288
+ localToGlobalMap[21] = 174
+ localToGlobalMap[22] = 177
+ localToGlobalMap[23] = 391
+ localToGlobalMap[24] = 251
+ localToGlobalMap[25] = 249
+ localToGlobalMap[26] = 253
+ localToGlobalMap[27] = 349
+ localToGlobalMap[28] = 255
+ localToGlobalMap[29] = 351
+ localToGlobalMap[30] = 289
+ localToGlobalMap[31] = 353
+ localToGlobalMap[32] = 468
+ localToGlobalMap[33] = 352
+ localToGlobalMap[34] = 350
+ localToGlobalMap[35] = 354
+ localToGlobalMap[36] = 441
+ localToGlobalMap[37] = 470
+ localToGlobalMap[38] = 449
+ localToGlobalMap[39] = 389
+ localToGlobalMap[40] = 392
+ localToGlobalMap[41] = 469
+ localToGlobalMap[42] = 496
+ localToGlobalMap[43] = 433
+ localToGlobalMap[44] = 442
+ localToGlobalMap[45] = 450
+ localToGlobalMap[46] = 583
+ localToGlobalMap[47] = 516
+ localToGlobalMap[48] = 585
+ localToGlobalMap[49] = 519
+ localToGlobalMap[50] = 515
+ localToGlobalMap[51] = 497
+ localToGlobalMap[52] = 521
+ localToGlobalMap[53] = 520
+ localToGlobalMap[54] = 612
+ localToGlobalMap[55] = 614
+ localToGlobalMap[56] = 616
+ localToGlobalMap[57] = 586
+ localToGlobalMap[58] = 584
+ localToGlobalMap[59] = 647
+ localToGlobalMap[60] = 613
+ localToGlobalMap[61] = 649
+ localToGlobalMap[62] = 615
+ localToGlobalMap[63] = 711
+ localToGlobalMap[64] = 617
+ localToGlobalMap[65] = 709
+ localToGlobalMap[66] = 618
+ localToGlobalMap[67] = 707
+ localToGlobalMap[68] = 650
+ localToGlobalMap[69] = 648
+ localToGlobalMap[70] = 713
+ localToGlobalMap[71] = 687
+ localToGlobalMap[72] = 674
+ localToGlobalMap[73] = 716
+ localToGlobalMap[74] = 756
+ localToGlobalMap[75] = 688
+ localToGlobalMap[76] = 708
+ localToGlobalMap[77] = 710
+ localToGlobalMap[78] = 712
+ localToGlobalMap[79] = 750
+ localToGlobalMap[80] = 752
+ localToGlobalMap[81] = 754
+ localToGlobalMap[82] = 789
+ localToGlobalMap[83] = 722
+ localToGlobalMap[84] = 790
+ localToGlobalMap[85] = 723
+ localToGlobalMap[86] = 759
+ localToGlobalMap[87] = 747
+ localToGlobalMap[88] = 760
+ localToGlobalMap[89] = 753
+ localToGlobalMap[90] = 755
+ localToGlobalMap[91] = 794
+ localToGlobalMap[92] = 792
+ localToGlobalMap[93] = 791
+ localToGlobalMap[94] = 826
+ localToGlobalMap[95] = 800
+ localToGlobalMap[96] = 762
+ localToGlobalMap[97] = 825
+ localToGlobalMap[98] = 793
+ localToGlobalMap[99] = 795
+ localToGlobalMap[100] = 827
+ localToGlobalMap[101] = 797
+ localToGlobalMap[102] = 829
+ localToGlobalMap[103] = 796
+ localToGlobalMap[104] = 831
+ localToGlobalMap[105] = 840
+ localToGlobalMap[106] = 801
+ localToGlobalMap[107] = 836
+ localToGlobalMap[108] = 819
+ localToGlobalMap[109] = 837
+ localToGlobalMap[110] = 828
+ localToGlobalMap[111] = 839
+ localToGlobalMap[112] = 830
+ localToGlobalMap[113] = 854
+ localToGlobalMap[114] = 832
+ localToGlobalMap[115] = 856
+ localToGlobalMap[116] = 838
+ localToGlobalMap[117] = 858
+ localToGlobalMap[118] = 868
+ localToGlobalMap[119] = 870
+ localToGlobalMap[120] = 855
+ localToGlobalMap[121] = 841
+ localToGlobalMap[122] = 857
+ localToGlobalMap[123] = 865
+ localToGlobalMap[124] = 859
+ localToGlobalMap[125] = 874
+ localToGlobalMap[126] = 871
+ localToGlobalMap[127] = 876
+ localToGlobalMap[128] = 875
+ localToGlobalMap[129] = 866
+ localToGlobalMap[130] = 869
+ localToGlobalMap[131] = 881
+ localToGlobalMap[132] = 877
+ localToGlobalMap[133] = 884
+ localToGlobalMap[134] = 888
+ localToGlobalMap[135] = 883
+ localToGlobalMap[136] = 889
+ localToGlobalMap[137] = 887
+ localToGlobalMap[138] = 890
+ localToGlobalMap[139] = 893
+ localToGlobalMap[140] = 892
+ localToGlobalMap[141] = 919
+ localToGlobalMap[142] = 920
+ localToGlobalMap[143] = 921
+ localToGlobalMap[144] = 922
+ localToGlobalMap[145] = 923
+ localToGlobalMap[146] = 924
+ localToGlobalMap[147] = 925
+ row[1] = 109    1    2    
+ row[2] = 111    2    3    
+ row[3] = 133    3    4    
+ row[4] = 134    3    5    
+ row[5] = 135    4    6    
+ row[6] = 157    6    7    
+ row[7] = 158    6    8    
+ row[8] = 159    7    9    
+ row[9] = 182    10    11    
+ row[10] = 183    11    12    
+ row[11] = 196    9    13    
+ row[12] = 197    9    14    
+ row[13] = 198    13    15    
+ row[14] = 208    15    16    
+ row[15] = 209    15    17    
+ row[16] = 210    16    18    
+ row[17] = 217    12    19    
+ row[18] = 218    12    20    
+ row[19] = 219    20    18    
+ row[20] = 229    18    21    
+ row[21] = 259    22    23    
+ row[22] = 261    19    23    
+ row[23] = 262    19    21    
+ row[24] = 263    23    24    
+ row[25] = 369    5    25    
+ row[26] = 370    5    26    
+ row[27] = 372    8    27    
+ row[28] = 373    8    25    
+ row[29] = 374    25    28    
+ row[30] = 375    14    29    
+ row[31] = 376    14    27    
+ row[32] = 377    27    30    
+ row[33] = 378    17    31    
+ row[34] = 379    17    29    
+ row[35] = 380    29    32    
+ row[36] = 429    21    31    
+ row[37] = 430    31    33    
+ row[38] = 515    28    34    
+ row[39] = 516    28    35    
+ row[40] = 518    30    36    
+ row[41] = 519    30    34    
+ row[42] = 520    34    37    
+ row[43] = 521    32    38    
+ row[44] = 522    32    36    
+ row[45] = 523    36    39    
+ row[46] = 576    40    41    
+ row[47] = 578    24    41    
+ row[48] = 579    24    42    
+ row[49] = 580    41    43    
+ row[50] = 641    44    45    
+ row[51] = 653    37    46    
+ row[52] = 654    37    45    
+ row[53] = 655    45    47    
+ row[54] = 665    39    48    
+ row[55] = 666    39    46    
+ row[56] = 667    46    49    
+ row[57] = 693    33    42    
+ row[58] = 694    33    38    
+ row[59] = 695    42    50    
+ row[60] = 696    38    51    
+ row[61] = 734    43    52    
+ row[62] = 735    43    53    
+ row[63] = 760    51    54    
+ row[64] = 761    51    48    
+ row[65] = 762    48    55    
+ row[66] = 766    50    53    
+ row[67] = 767    50    54    
+ row[68] = 768    54    56    
+ row[69] = 769    53    57    
+ row[70] = 861    47    58    
+ row[71] = 862    47    59    
+ row[72] = 863    59    60    
+ row[73] = 864    49    61    
+ row[74] = 865    49    58    
+ row[75] = 866    58    62    
+ row[76] = 901    55    63    
+ row[77] = 902    55    61    
+ row[78] = 903    61    64    
+ row[79] = 904    56    65    
+ row[80] = 905    56    63    
+ row[81] = 906    63    66    
+ row[82] = 907    57    67    
+ row[83] = 908    57    65    
+ row[84] = 909    65    68    
+ row[85] = 953    60    69    
+ row[86] = 954    60    70    
+ row[87] = 956    62    71    
+ row[88] = 957    62    69    
+ row[89] = 958    69    72    
+ row[90] = 993    73    74    
+ row[91] = 1011    72    75    
+ row[92] = 1012    72    76    
+ row[93] = 1013    76    74    
+ row[94] = 1041    68    77    
+ row[95] = 1042    68    78    
+ row[96] = 1044    66    78    
+ row[97] = 1045    66    79    
+ row[98] = 1046    78    80    
+ row[99] = 1047    64    79    
+ row[100] = 1048    64    71    
+ row[101] = 1049    79    81    
+ row[102] = 1050    71    82    
+ row[103] = 1054    74    83    
+ row[104] = 1061    84    85    
+ row[105] = 1063    86    87    
+ row[106] = 1098    88    89    
+ row[107] = 1103    80    90    
+ row[108] = 1105    81    90    
+ row[109] = 1106    81    91    
+ row[110] = 1107    90    92    
+ row[111] = 1108    82    91    
+ row[112] = 1109    82    75    
+ row[113] = 1110    91    93    
+ row[114] = 1111    75    94    
+ row[115] = 1115    87    95    
+ row[116] = 1116    87    89    
+ row[117] = 1117    89    96    
+ row[118] = 1120    97    96    
+ row[119] = 1158    83    94    
+ row[120] = 1159    83    85    
+ row[121] = 1160    85    98    
+ row[122] = 1161    94    99    
+ row[123] = 1162    93    100    
+ row[124] = 1163    93    99    
+ row[125] = 1164    99    101    
+ row[126] = 1165    92    102    
+ row[127] = 1166    92    100    
+ row[128] = 1167    100    103    
+ row[129] = 1169    104    102    
+ row[130] = 1170    102    105    
+ row[131] = 1174    96    106    
+ row[132] = 1175    107    108    
+ row[133] = 1202    109    110    
+ row[134] = 1210    98    111    
+ row[135] = 1211    98    95    
+ row[136] = 1212    95    112    
+ row[137] = 1213    101    113    
+ row[138] = 1214    101    111    
+ row[139] = 1215    111    114    
+ row[140] = 1216    103    115    
+ row[141] = 1217    103    113    
+ row[142] = 1218    113    116    
+ row[143] = 1219    105    117    
+ row[144] = 1220    105    115    
+ row[145] = 1221    115    118    
+ row[146] = 1225    108    110    
+ row[147] = 1226    108    117    
+ row[148] = 1227    110    119    
+ row[149] = 1228    117    120    
+ row[150] = 1229    112    121    
+ row[151] = 1230    112    106    
+ row[152] = 1231    106    122    
+ row[153] = 1251    114    123    
+ row[154] = 1252    114    121    
+ row[155] = 1253    121    124    
+ row[156] = 1254    116    125    
+ row[157] = 1255    116    123    
+ row[158] = 1256    123    126    
+ row[159] = 1257    118    127    
+ row[160] = 1258    118    125    
+ row[161] = 1259    125    128    
+ row[162] = 1266    124    129    
+ row[163] = 1267    124    130    
+ row[164] = 1270    119    131    
+ row[165] = 1271    119    120    
+ row[166] = 1273    120    127    
+ row[167] = 1274    127    132    
+ row[168] = 1278    126    133    
+ row[169] = 1279    126    129    
+ row[170] = 1280    129    134    
+ row[171] = 1281    128    132    
+ row[172] = 1282    128    133    
+ row[173] = 1283    133    135    
+ row[174] = 1290    136    134    
+ row[175] = 1292    134    137    
+ row[176] = 1295    138    139    
+ row[177] = 1296    135    140    
+ row[178] = 1297    135    137    
+ row[179] = 1298    137    139    
+ row[180] = 1299    139    140    
+ row[181] = 1301    141    140    
+ row[182] = 1327    2    142    
+ row[183] = 1328    4    143    
+ row[184] = 1329    7    144    
+ row[185] = 1330    13    145    
+ row[186] = 1331    16    146    
+ row[187] = 1332    20    147    
+ row[188] = 1333    11    148    
+
+ _faceNodes :  
+ _faceNodes->getRowDim() = 188
+ _faceNodes->getColDim() = 77
+ row[1] = 109    1    2    
+ row[2] = 111    3    2    
+ row[3] = 133    3    4    
+ row[4] = 134    4    2    
+ row[5] = 135    5    4    
+ row[6] = 157    5    6    
+ row[7] = 158    6    4    
+ row[8] = 159    7    6    
+ row[9] = 182    8    9    
+ row[10] = 183    8    10    
+ row[11] = 196    7    11    
+ row[12] = 197    11    6    
+ row[13] = 198    12    11    
+ row[14] = 208    12    13    
+ row[15] = 209    13    11    
+ row[16] = 210    14    13    
+ row[17] = 217    8    15    
+ row[18] = 218    15    10    
+ row[19] = 219    15    14    
+ row[20] = 229    15    13    
+ row[21] = 259    16    8    
+ row[22] = 261    8    17    
+ row[23] = 262    17    15    
+ row[24] = 263    16    17    
+ row[25] = 369    4    18    
+ row[26] = 370    18    2    
+ row[27] = 372    6    19    
+ row[28] = 373    19    4    
+ row[29] = 374    19    18    
+ row[30] = 375    11    20    
+ row[31] = 376    20    6    
+ row[32] = 377    20    19    
+ row[33] = 378    13    21    
+ row[34] = 379    21    11    
+ row[35] = 380    21    20    
+ row[36] = 429    17    13    
+ row[37] = 430    17    21    
+ row[38] = 515    19    22    
+ row[39] = 516    22    18    
+ row[40] = 518    20    23    
+ row[41] = 519    23    19    
+ row[42] = 520    23    22    
+ row[43] = 521    21    24    
+ row[44] = 522    24    20    
+ row[45] = 523    24    23    
+ row[46] = 576    25    16    
+ row[47] = 578    16    26    
+ row[48] = 579    26    17    
+ row[49] = 580    25    26    
+ row[50] = 641    22    27    
+ row[51] = 653    23    28    
+ row[52] = 654    28    22    
+ row[53] = 655    28    27    
+ row[54] = 665    24    29    
+ row[55] = 666    29    23    
+ row[56] = 667    29    28    
+ row[57] = 693    17    30    
+ row[58] = 694    30    21    
+ row[59] = 695    26    30    
+ row[60] = 696    30    24    
+ row[61] = 734    25    31    
+ row[62] = 735    31    26    
+ row[63] = 760    30    32    
+ row[64] = 761    32    24    
+ row[65] = 762    32    29    
+ row[66] = 766    26    33    
+ row[67] = 767    33    30    
+ row[68] = 768    33    32    
+ row[69] = 769    31    33    
+ row[70] = 861    28    34    
+ row[71] = 862    34    27    
+ row[72] = 863    34    35    
+ row[73] = 864    29    36    
+ row[74] = 865    36    28    
+ row[75] = 866    36    34    
+ row[76] = 901    32    37    
+ row[77] = 902    37    29    
+ row[78] = 903    37    36    
+ row[79] = 904    33    38    
+ row[80] = 905    38    32    
+ row[81] = 906    38    37    
+ row[82] = 907    31    39    
+ row[83] = 908    39    33    
+ row[84] = 909    39    38    
+ row[85] = 953    34    40    
+ row[86] = 954    40    35    
+ row[87] = 956    36    41    
+ row[88] = 957    41    34    
+ row[89] = 958    41    40    
+ row[90] = 993    42    43    
+ row[91] = 1011    41    44    
+ row[92] = 1012    44    40    
+ row[93] = 1013    44    42    
+ row[94] = 1041    39    45    
+ row[95] = 1042    45    38    
+ row[96] = 1044    38    46    
+ row[97] = 1045    46    37    
+ row[98] = 1046    45    46    
+ row[99] = 1047    37    47    
+ row[100] = 1048    47    36    
+ row[101] = 1049    46    47    
+ row[102] = 1050    47    41    
+ row[103] = 1054    44    43    
+ row[104] = 1061    43    48    
+ row[105] = 1063    48    49    
+ row[106] = 1098    49    50    
+ row[107] = 1103    51    46    
+ row[108] = 1105    46    52    
+ row[109] = 1106    52    47    
+ row[110] = 1107    51    52    
+ row[111] = 1108    47    53    
+ row[112] = 1109    53    41    
+ row[113] = 1110    52    53    
+ row[114] = 1111    53    44    
+ row[115] = 1115    48    54    
+ row[116] = 1116    54    49    
+ row[117] = 1117    54    50    
+ row[118] = 1120    50    55    
+ row[119] = 1158    44    56    
+ row[120] = 1159    56    43    
+ row[121] = 1160    56    48    
+ row[122] = 1161    53    56    
+ row[123] = 1162    52    57    
+ row[124] = 1163    57    53    
+ row[125] = 1164    57    56    
+ row[126] = 1165    51    58    
+ row[127] = 1166    58    52    
+ row[128] = 1167    58    57    
+ row[129] = 1169    59    51    
+ row[130] = 1170    59    58    
+ row[131] = 1174    54    55    
+ row[132] = 1175    60    59    
+ row[133] = 1202    61    60    
+ row[134] = 1210    56    62    
+ row[135] = 1211    62    48    
+ row[136] = 1212    62    54    
+ row[137] = 1213    57    63    
+ row[138] = 1214    63    56    
+ row[139] = 1215    63    62    
+ row[140] = 1216    58    64    
+ row[141] = 1217    64    57    
+ row[142] = 1218    64    63    
+ row[143] = 1219    59    65    
+ row[144] = 1220    65    58    
+ row[145] = 1221    65    64    
+ row[146] = 1225    60    66    
+ row[147] = 1226    66    59    
+ row[148] = 1227    61    66    
+ row[149] = 1228    66    65    
+ row[150] = 1229    62    67    
+ row[151] = 1230    67    54    
+ row[152] = 1231    67    55    
+ row[153] = 1251    63    68    
+ row[154] = 1252    68    62    
+ row[155] = 1253    68    67    
+ row[156] = 1254    64    69    
+ row[157] = 1255    69    63    
+ row[158] = 1256    69    68    
+ row[159] = 1257    65    70    
+ row[160] = 1258    70    64    
+ row[161] = 1259    70    69    
+ row[162] = 1266    68    71    
+ row[163] = 1267    71    67    
+ row[164] = 1270    61    72    
+ row[165] = 1271    72    66    
+ row[166] = 1273    72    65    
+ row[167] = 1274    72    70    
+ row[168] = 1278    69    73    
+ row[169] = 1279    73    68    
+ row[170] = 1280    73    71    
+ row[171] = 1281    70    74    
+ row[172] = 1282    74    69    
+ row[173] = 1283    74    73    
+ row[174] = 1290    71    75    
+ row[175] = 1292    73    75    
+ row[176] = 1295    75    76    
+ row[177] = 1296    74    77    
+ row[178] = 1297    77    73    
+ row[179] = 1298    77    75    
+ row[180] = 1299    77    76    
+ row[181] = 1301    76    74    
+ row[182] = 1327    1    3    
+ row[183] = 1328    3    5    
+ row[184] = 1329    5    7    
+ row[185] = 1330    7    12    
+ row[186] = 1331    12    14    
+ row[187] = 1332    14    10    
+ row[188] = 1333    10    9    
+
+ _cellNodes(Local Numbering) :  
+ _cellNodes->getRowDim() = 148
+ _cellNodes->getColDim() = 77
+ row[1]  = 1    2    
+ row[2]  = 1    2    3    
+ row[3]  = 3    2    4    
+ row[4]  = 3    4    5    
+ row[5]  = 4    2    18    
+ row[6]  = 5    4    6    
+ row[7]  = 5    6    7    
+ row[8]  = 6    4    19    
+ row[9]  = 7    6    11    
+ row[10]  = 8    9    
+ row[11]  = 8    9    10    
+ row[12]  = 8    10    15    
+ row[13]  = 7    11    12    
+ row[14]  = 11    6    20    
+ row[15]  = 12    11    13    
+ row[16]  = 12    13    14    
+ row[17]  = 13    11    21    
+ row[18]  = 14    13    15    
+ row[19]  = 8    15    17    
+ row[20]  = 15    10    14    
+ row[21]  = 15    13    17    
+ row[22]  = 16    8    
+ row[23]  = 16    8    17    
+ row[24]  = 16    17    26    
+ row[25]  = 4    18    19    
+ row[26]  = 18    2    
+ row[27]  = 6    19    20    
+ row[28]  = 19    18    22    
+ row[29]  = 11    20    21    
+ row[30]  = 20    19    23    
+ row[31]  = 13    21    17    
+ row[32]  = 21    20    24    
+ row[33]  = 17    21    30    
+ row[34]  = 19    22    23    
+ row[35]  = 22    18    
+ row[36]  = 20    23    24    
+ row[37]  = 23    22    28    
+ row[38]  = 21    24    30    
+ row[39]  = 24    23    29    
+ row[40]  = 25    16    
+ row[41]  = 25    16    26    
+ row[42]  = 26    17    30    
+ row[43]  = 25    26    31    
+ row[44]  = 22    27    
+ row[45]  = 22    27    28    
+ row[46]  = 23    28    29    
+ row[47]  = 28    27    34    
+ row[48]  = 24    29    32    
+ row[49]  = 29    28    36    
+ row[50]  = 26    30    33    
+ row[51]  = 30    24    32    
+ row[52]  = 25    31    
+ row[53]  = 31    26    33    
+ row[54]  = 30    32    33    
+ row[55]  = 32    29    37    
+ row[56]  = 33    32    38    
+ row[57]  = 31    33    39    
+ row[58]  = 28    34    36    
+ row[59]  = 34    27    35    
+ row[60]  = 34    35    40    
+ row[61]  = 29    36    37    
+ row[62]  = 36    34    41    
+ row[63]  = 32    37    38    
+ row[64]  = 37    36    47    
+ row[65]  = 33    38    39    
+ row[66]  = 38    37    46    
+ row[67]  = 31    39    
+ row[68]  = 39    38    45    
+ row[69]  = 34    40    41    
+ row[70]  = 40    35    
+ row[71]  = 36    41    47    
+ row[72]  = 41    40    44    
+ row[73]  = 42    43    
+ row[74]  = 42    43    44    
+ row[75]  = 41    44    53    
+ row[76]  = 44    40    42    
+ row[77]  = 39    45    
+ row[78]  = 45    38    46    
+ row[79]  = 46    37    47    
+ row[80]  = 45    46    51    
+ row[81]  = 46    47    52    
+ row[82]  = 47    41    53    
+ row[83]  = 44    43    56    
+ row[84]  = 43    48    
+ row[85]  = 43    48    56    
+ row[86]  = 48    49    
+ row[87]  = 48    49    54    
+ row[88]  = 49    50    
+ row[89]  = 49    50    54    
+ row[90]  = 51    46    52    
+ row[91]  = 52    47    53    
+ row[92]  = 51    52    58    
+ row[93]  = 52    53    57    
+ row[94]  = 53    44    56    
+ row[95]  = 48    54    62    
+ row[96]  = 54    50    55    
+ row[97]  = 50    55    
+ row[98]  = 56    48    62    
+ row[99]  = 53    56    57    
+ row[100]  = 52    57    58    
+ row[101]  = 57    56    63    
+ row[102]  = 51    58    59    
+ row[103]  = 58    57    64    
+ row[104]  = 59    51    
+ row[105]  = 59    58    65    
+ row[106]  = 54    55    67    
+ row[107]  = 60    59    
+ row[108]  = 60    59    66    
+ row[109]  = 61    60    
+ row[110]  = 61    60    66    
+ row[111]  = 56    62    63    
+ row[112]  = 62    54    67    
+ row[113]  = 57    63    64    
+ row[114]  = 63    62    68    
+ row[115]  = 58    64    65    
+ row[116]  = 64    63    69    
+ row[117]  = 59    65    66    
+ row[118]  = 65    64    70    
+ row[119]  = 61    66    72    
+ row[120]  = 66    65    72    
+ row[121]  = 62    67    68    
+ row[122]  = 67    55    
+ row[123]  = 63    68    69    
+ row[124]  = 68    67    71    
+ row[125]  = 64    69    70    
+ row[126]  = 69    68    73    
+ row[127]  = 65    70    72    
+ row[128]  = 70    69    74    
+ row[129]  = 68    71    73    
+ row[130]  = 71    67    
+ row[131]  = 61    72    
+ row[132]  = 72    70    74    
+ row[133]  = 69    73    74    
+ row[134]  = 73    71    75    
+ row[135]  = 74    73    77    
+ row[136]  = 71    75    
+ row[137]  = 73    75    77    
+ row[138]  = 75    76    
+ row[139]  = 75    76    77    
+ row[140]  = 74    77    76    
+ row[141]  = 76    74    
+ row[142]  = 1    3    
+ row[143]  = 3    5    
+ row[144]  = 5    7    
+ row[145]  = 7    12    
+ row[146]  = 12    14    
+ row[147]  = 14    10    
+ row[148]  = 10    9    
+
+ _cellCells :  
+ _cellCells->getRowDim() = 148
+ _cellCells->getColDim() = 148
+ row[1] =     2    
+ row[2] =     1    3    142    
+ row[3] =     2    4    5    
+ row[4] =     3    6    143    
+ row[5] =     3    25    26    
+ row[6] =     4    7    8    
+ row[7] =     6    9    144    
+ row[8] =     6    27    25    
+ row[9] =     7    13    14    
+ row[10] =     11    
+ row[11] =     10    12    148    
+ row[12] =     11    19    20    
+ row[13] =     9    15    145    
+ row[14] =     9    29    27    
+ row[15] =     13    16    17    
+ row[16] =     15    18    146    
+ row[17] =     15    31    29    
+ row[18] =     16    20    21    
+ row[19] =     12    23    21    
+ row[20] =     12    18    147    
+ row[21] =     18    19    31    
+ row[22] =     23    
+ row[23] =     22    19    24    
+ row[24] =     23    41    42    
+ row[25] =     5    8    28    
+ row[26] =     5    
+ row[27] =     8    14    30    
+ row[28] =     25    34    35    
+ row[29] =     14    17    32    
+ row[30] =     27    36    34    
+ row[31] =     17    21    33    
+ row[32] =     29    38    36    
+ row[33] =     31    42    38    
+ row[34] =     28    30    37    
+ row[35] =     28    
+ row[36] =     30    32    39    
+ row[37] =     34    46    45    
+ row[38] =     32    33    51    
+ row[39] =     36    48    46    
+ row[40] =     41    
+ row[41] =     40    24    43    
+ row[42] =     24    33    50    
+ row[43] =     41    52    53    
+ row[44] =     45    
+ row[45] =     44    37    47    
+ row[46] =     37    39    49    
+ row[47] =     45    58    59    
+ row[48] =     39    51    55    
+ row[49] =     46    61    58    
+ row[50] =     42    53    54    
+ row[51] =     38    54    48    
+ row[52] =     43    
+ row[53] =     43    50    57    
+ row[54] =     51    50    56    
+ row[55] =     48    63    61    
+ row[56] =     54    65    63    
+ row[57] =     53    67    65    
+ row[58] =     47    49    62    
+ row[59] =     47    60    
+ row[60] =     59    69    70    
+ row[61] =     49    55    64    
+ row[62] =     58    71    69    
+ row[63] =     55    56    66    
+ row[64] =     61    79    71    
+ row[65] =     56    57    68    
+ row[66] =     63    78    79    
+ row[67] =     57    
+ row[68] =     65    77    78    
+ row[69] =     60    62    72    
+ row[70] =     60    
+ row[71] =     62    64    82    
+ row[72] =     69    75    76    
+ row[73] =     74    
+ row[74] =     73    76    83    
+ row[75] =     72    82    94    
+ row[76] =     72    74    
+ row[77] =     68    
+ row[78] =     68    66    80    
+ row[79] =     66    64    81    
+ row[80] =     78    90    
+ row[81] =     79    90    91    
+ row[82] =     71    91    75    
+ row[83] =     74    94    85    
+ row[84] =     85    
+ row[85] =     84    83    98    
+ row[86] =     87    
+ row[87] =     86    95    89    
+ row[88] =     89    
+ row[89] =     88    87    96    
+ row[90] =     80    81    92    
+ row[91] =     81    82    93    
+ row[92] =     90    102    100    
+ row[93] =     91    100    99    
+ row[94] =     75    83    99    
+ row[95] =     87    98    112    
+ row[96] =     89    97    106    
+ row[97] =     96    
+ row[98] =     85    111    95    
+ row[99] =     94    93    101    
+ row[100] =     93    92    103    
+ row[101] =     99    113    111    
+ row[102] =     92    104    105    
+ row[103] =     100    115    113    
+ row[104] =     102    
+ row[105] =     102    117    115    
+ row[106] =     96    112    122    
+ row[107] =     108    
+ row[108] =     107    110    117    
+ row[109] =     110    
+ row[110] =     109    108    119    
+ row[111] =     98    101    114    
+ row[112] =     95    121    106    
+ row[113] =     101    103    116    
+ row[114] =     111    123    121    
+ row[115] =     103    105    118    
+ row[116] =     113    125    123    
+ row[117] =     105    108    120    
+ row[118] =     115    127    125    
+ row[119] =     110    131    120    
+ row[120] =     117    119    127    
+ row[121] =     112    114    124    
+ row[122] =     106    
+ row[123] =     114    116    126    
+ row[124] =     121    129    130    
+ row[125] =     116    118    128    
+ row[126] =     123    133    129    
+ row[127] =     118    120    132    
+ row[128] =     125    132    133    
+ row[129] =     124    126    134    
+ row[130] =     124    
+ row[131] =     119    
+ row[132] =     127    128    
+ row[133] =     126    128    135    
+ row[134] =     129    136    137    
+ row[135] =     133    140    137    
+ row[136] =     134    
+ row[137] =     134    135    139    
+ row[138] =     139    
+ row[139] =     138    137    140    
+ row[140] =     135    139    141    
+ row[141] =     140    
+ row[142] =     2    
+ row[143] =     4    
+ row[144] =     7    
+ row[145] =     13    
+ row[146] =     16    
+ row[147] =     20    
+ row[148] =     11    
+
+ node ID =          1,  x = 0.2500000,  y = 0.0000000,  z = 0.0000000
+ node ID =          2,  x = 0.2791842,  y = 0.0442764,  z = 0.0000000
+ node ID =          3,  x = 0.3000000,  y = 0.0000000,  z = 0.0000000
+ node ID =          4,  x = 0.3298715,  y = 0.0440014,  z = 0.0000000
+ node ID =          5,  x = 0.3500000,  y = 0.0000000,  z = 0.0000000
+ node ID =          6,  x = 0.3807726,  y = 0.0435963,  z = 0.0000000
+ node ID =          7,  x = 0.4000000,  y = 0.0000000,  z = 0.0000000
+ node ID =          8,  x = 0.5676166,  y = 0.0404866,  z = 0.0000000
+ node ID =          9,  x = 0.6000000,  y = 0.0000000,  z = 0.0000000
+ node ID =         10,  x = 0.5500000,  y = 0.0000000,  z = 0.0000000
+ node ID =         11,  x = 0.4319438,  y = 0.0427501,  z = 0.0000000
+ node ID =         12,  x = 0.4500000,  y = 0.0000000,  z = 0.0000000
+ node ID =         13,  x = 0.4825787,  y = 0.0405628,  z = 0.0000000
+ node ID =         14,  x = 0.5000000,  y = 0.0000000,  z = 0.0000000
+ node ID =         15,  x = 0.5250767,  y = 0.0327385,  z = 0.0000000
+ node ID =         16,  x = 0.5841133,  y = 0.0838674,  z = 0.0000000
+ node ID =         17,  x = 0.5252249,  y = 0.0776127,  z = 0.0000000
+ node ID =         18,  x = 0.3088828,  y = 0.0880890,  z = 0.0000000
+ node ID =         19,  x = 0.3603052,  y = 0.0874998,  z = 0.0000000
+ node ID =         20,  x = 0.4124548,  y = 0.0864651,  z = 0.0000000
+ node ID =         21,  x = 0.4663676,  y = 0.0841155,  z = 0.0000000
+ node ID =         22,  x = 0.3387736,  y = 0.1315513,  z = 0.0000000
+ node ID =         23,  x = 0.3906594,  y = 0.1307209,  z = 0.0000000
+ node ID =         24,  x = 0.4435761,  y = 0.1290888,  z = 0.0000000
+ node ID =         25,  x = 0.6073466,  y = 0.1284987,  z = 0.0000000
+ node ID =         26,  x = 0.5528535,  y = 0.1261037,  z = 0.0000000
+ node ID =         27,  x = 0.3169265,  y = 0.1754965,  z = 0.0000000
+ node ID =         28,  x = 0.3681265,  y = 0.1751274,  z = 0.0000000
+ node ID =         29,  x = 0.4200259,  y = 0.1741863,  z = 0.0000000
+ node ID =         30,  x = 0.4980531,  y = 0.1263333,  z = 0.0000000
+ node ID =         31,  x = 0.5787740,  y = 0.1716702,  z = 0.0000000
+ node ID =         32,  x = 0.4727039,  y = 0.1724831,  z = 0.0000000
+ node ID =         33,  x = 0.5257338,  y = 0.1712178,  z = 0.0000000
+ node ID =         34,  x = 0.3452900,  y = 0.2192834,  z = 0.0000000
+ node ID =         35,  x = 0.2951014,  y = 0.2191280,  z = 0.0000000
+ node ID =         36,  x = 0.3963574,  y = 0.2193436,  z = 0.0000000
+ node ID =         37,  x = 0.4481147,  y = 0.2181799,  z = 0.0000000
+ node ID =         38,  x = 0.5002061,  y = 0.2165238,  z = 0.0000000
+ node ID =         39,  x = 0.5520897,  y = 0.2155352,  z = 0.0000000
+ node ID =         40,  x = 0.3214492,  y = 0.2620261,  z = 0.0000000
+ node ID =         41,  x = 0.3722445,  y = 0.2644909,  z = 0.0000000
+ node ID =         42,  x = 0.3020734,  y = 0.2990344,  z = 0.0000000
+ node ID =         43,  x = 0.3121239,  y = 0.3439668,  z = 0.0000000
+ node ID =         44,  x = 0.3470621,  y = 0.3087727,  z = 0.0000000
+ node ID =         45,  x = 0.5273030,  y = 0.2601219,  z = 0.0000000
+ node ID =         46,  x = 0.4757065,  y = 0.2620680,  z = 0.0000000
+ node ID =         47,  x = 0.4236494,  y = 0.2642659,  z = 0.0000000
+ node ID =         48,  x = 0.3164986,  y = 0.3955809,  z = 0.0000000
+ node ID =         49,  x = 0.2684923,  y = 0.4220576,  z = 0.0000000
+ node ID =         50,  x = 0.2669770,  y = 0.4751379,  z = 0.0000000
+ node ID =         51,  x = 0.5041188,  y = 0.3048937,  z = 0.0000000
+ node ID =         52,  x = 0.4516453,  y = 0.3082556,  z = 0.0000000
+ node ID =         53,  x = 0.3982109,  y = 0.3118982,  z = 0.0000000
+ node ID =         54,  x = 0.3143336,  y = 0.4499113,  z = 0.0000000
+ node ID =         55,  x = 0.3116635,  y = 0.5034326,  z = 0.0000000
+ node ID =         56,  x = 0.3683146,  y = 0.3641919,  z = 0.0000000
+ node ID =         57,  x = 0.4280530,  y = 0.3559073,  z = 0.0000000
+ node ID =         58,  x = 0.4819061,  y = 0.3498707,  z = 0.0000000
+ node ID =         59,  x = 0.5340345,  y = 0.3461927,  z = 0.0000000
+ node ID =         60,  x = 0.5911167,  y = 0.3471203,  z = 0.0000000
+ node ID =         61,  x = 0.5958516,  y = 0.4058947,  z = 0.0000000
+ node ID =         62,  x = 0.3626588,  y = 0.4247711,  z = 0.0000000
+ node ID =         63,  x = 0.4124573,  y = 0.4061919,  z = 0.0000000
+ node ID =         64,  x = 0.4630026,  y = 0.3950189,  z = 0.0000000
+ node ID =         65,  x = 0.5126393,  y = 0.3902586,  z = 0.0000000
+ node ID =         66,  x = 0.5564153,  y = 0.3853835,  z = 0.0000000
+ node ID =         67,  x = 0.3587848,  y = 0.4797882,  z = 0.0000000
+ node ID =         68,  x = 0.4057670,  y = 0.4587713,  z = 0.0000000
+ node ID =         69,  x = 0.4533701,  y = 0.4428336,  z = 0.0000000
+ node ID =         70,  x = 0.4953409,  y = 0.4289272,  z = 0.0000000
+ node ID =         71,  x = 0.4030521,  y = 0.5110770,  z = 0.0000000
+ node ID =         72,  x = 0.5447000,  y = 0.4359297,  z = 0.0000000
+ node ID =         73,  x = 0.4474414,  y = 0.4901646,  z = 0.0000000
+ node ID =         74,  x = 0.4990265,  y = 0.4764498,  z = 0.0000000
+ node ID =         75,  x = 0.4510646,  y = 0.5431305,  z = 0.0000000
+ node ID =         76,  x = 0.5105804,  y = 0.5350755,  z = 0.0000000
+ node ID =         77,  x = 0.4776945,  y = 0.5116107,  z = 0.0000000
+
+ _interfaceMap.size() = 33
+ interface ID =  0  =>  
+ interface ID =  1  =>  109  370  516  641  862  863  954  993  1012  1013  1061  1063  
+ interface ID =  2  =>  182  259  576  734  907  1041  1046  1103  1169  1175  
+ interface ID =  3  =>  1202  1270  1274  1281  1295  1301  
+ interface ID =  4  =>  1098  1120  1231  1267  1290  
+ interface ID =  5  =>  
+ interface ID =  6  =>  
+ interface ID =  7  =>  
+
+ interior face counts = 148
+
+ total interior cells = 112
+      1
+      2
+      3
+      4
+      5
+      6
+      7
+      8
+      10
+      11
+      12
+      13
+      14
+      15
+      16
+      17
+      18
+      19
+      20
+      22
+      23
+      24
+      26
+      27
+      28
+      29
+      30
+      31
+      32
+      33
+      35
+      36
+      37
+      38
+      40
+      41
+      42
+      44
+      45
+      46
+      47
+      48
+      49
+      50
+      52
+      53
+      54
+      55
+      56
+      57
+      59
+      60
+      61
+      62
+      63
+      64
+      65
+      67
+      68
+      70
+      71
+      73
+      74
+      77
+      78
+      80
+      81
+      82
+      84
+      86
+      88
+      89
+      90
+      91
+      92
+      93
+      94
+      95
+      97
+      98
+      99
+      100
+      101
+      102
+      104
+      105
+      107
+      109
+      110
+      111
+      112
+      113
+      114
+      115
+      116
+      117
+      118
+      119
+      120
+      122
+      123
+      124
+      125
+      126
+      127
+      128
+      132
+      133
+      134
+      136
+      138
+      139
+
+ total non-interior cells = 36
+      0
+      9
+      21
+      25
+      34
+      39
+      43
+      51
+      58
+      66
+      69
+      72
+      75
+      76
+      79
+      83
+      85
+      87
+      96
+      103
+      106
+      108
+      121
+      129
+      130
+      131
+      135
+      137
+      140
+      141
+      142
+      143
+      144
+      145
+      146
+      147
+
+   bndry group ID = 4 offsets = 148
+
+   interface ID = 1 offsets = 155
+   interface ID = 2 offsets = 167
+   interface ID = 3 offsets = 177
+   interface ID = 4 offsets = 183
+
+ _faceCellsOrdered :  
+ _faceCellsOrdered->getRowDim() = 188
+ _faceCellsOrdered->getColDim() = 152
+ row[0] = 1    2    
+ row[1] = 2    3    
+ row[2] = 2    4    
+ row[3] = 3    5    
+ row[4] = 5    6    
+ row[5] = 5    7    
+ row[6] = 6    8    
+ row[7] = 9    10    
+ row[8] = 8    11    
+ row[9] = 8    12    
+ row[10] = 11    13    
+ row[11] = 13    14    
+ row[12] = 13    15    
+ row[13] = 14    16    
+ row[14] = 10    17    
+ row[15] = 10    18    
+ row[16] = 18    16    
+ row[17] = 16    19    
+ row[18] = 17    20    
+ row[19] = 17    19    
+ row[20] = 20    21    
+ row[21] = 4    22    
+ row[22] = 7    23    
+ row[23] = 7    22    
+ row[24] = 22    24    
+ row[25] = 12    25    
+ row[26] = 12    23    
+ row[27] = 23    26    
+ row[28] = 15    27    
+ row[29] = 15    25    
+ row[30] = 25    28    
+ row[31] = 19    27    
+ row[32] = 27    29    
+ row[33] = 24    30    
+ row[34] = 26    31    
+ row[35] = 26    30    
+ row[36] = 30    32    
+ row[37] = 28    33    
+ row[38] = 28    31    
+ row[39] = 31    34    
+ row[40] = 21    35    
+ row[41] = 21    36    
+ row[42] = 35    37    
+ row[43] = 32    38    
+ row[44] = 32    39    
+ row[45] = 39    40    
+ row[46] = 34    41    
+ row[47] = 34    38    
+ row[48] = 38    42    
+ row[49] = 29    36    
+ row[50] = 29    33    
+ row[51] = 36    43    
+ row[52] = 33    44    
+ row[53] = 37    45    
+ row[54] = 44    46    
+ row[55] = 44    41    
+ row[56] = 41    47    
+ row[57] = 43    45    
+ row[58] = 43    46    
+ row[59] = 46    48    
+ row[60] = 45    49    
+ row[61] = 40    50    
+ row[62] = 42    51    
+ row[63] = 42    50    
+ row[64] = 50    52    
+ row[65] = 47    53    
+ row[66] = 47    51    
+ row[67] = 51    54    
+ row[68] = 48    55    
+ row[69] = 48    53    
+ row[70] = 53    56    
+ row[71] = 49    55    
+ row[72] = 55    57    
+ row[73] = 58    59    
+ row[74] = 52    60    
+ row[75] = 52    59    
+ row[76] = 59    61    
+ row[77] = 61    62    
+ row[78] = 57    63    
+ row[79] = 56    63    
+ row[80] = 56    64    
+ row[81] = 54    64    
+ row[82] = 54    60    
+ row[83] = 64    65    
+ row[84] = 60    66    
+ row[85] = 67    68    
+ row[86] = 65    69    
+ row[87] = 65    70    
+ row[88] = 69    71    
+ row[89] = 66    70    
+ row[90] = 66    62    
+ row[91] = 70    72    
+ row[92] = 62    73    
+ row[93] = 74    75    
+ row[94] = 74    76    
+ row[95] = 76    77    
+ row[96] = 68    73    
+ row[97] = 68    78    
+ row[98] = 78    79    
+ row[99] = 73    80    
+ row[100] = 72    81    
+ row[101] = 72    80    
+ row[102] = 80    82    
+ row[103] = 71    83    
+ row[104] = 71    81    
+ row[105] = 81    84    
+ row[106] = 83    85    
+ row[107] = 77    86    
+ row[108] = 79    87    
+ row[109] = 79    75    
+ row[110] = 75    88    
+ row[111] = 82    89    
+ row[112] = 82    87    
+ row[113] = 87    90    
+ row[114] = 84    91    
+ row[115] = 84    89    
+ row[116] = 89    92    
+ row[117] = 85    93    
+ row[118] = 85    91    
+ row[119] = 91    94    
+ row[120] = 95    96    
+ row[121] = 95    93    
+ row[122] = 96    97    
+ row[123] = 93    98    
+ row[124] = 88    99    
+ row[125] = 88    86    
+ row[126] = 90    100    
+ row[127] = 90    99    
+ row[128] = 99    101    
+ row[129] = 92    102    
+ row[130] = 92    100    
+ row[131] = 100    103    
+ row[132] = 94    104    
+ row[133] = 94    102    
+ row[134] = 102    105    
+ row[135] = 101    106    
+ row[136] = 97    98    
+ row[137] = 98    104    
+ row[138] = 103    107    
+ row[139] = 103    106    
+ row[140] = 106    108    
+ row[141] = 105    107    
+ row[142] = 107    109    
+ row[143] = 108    110    
+ row[144] = 109    111    
+ row[145] = 109    110    
+ row[146] = 110    112    
+ row[147] = 112    111    
+ row[148] = 1    113    
+ row[149] = 3    114    
+ row[150] = 6    115    
+ row[151] = 9    116    
+ row[152] = 11    117    
+ row[153] = 14    118    
+ row[154] = 18    119    
+ row[155] = 1    120    
+ row[156] = 4    121    
+ row[157] = 24    122    
+ row[158] = 39    123    
+ row[159] = 40    124    
+ row[160] = 58    125    
+ row[161] = 58    126    
+ row[162] = 67    127    
+ row[163] = 61    128    
+ row[164] = 67    129    
+ row[165] = 78    130    
+ row[166] = 74    131    
+ row[167] = 9    132    
+ row[168] = 20    133    
+ row[169] = 35    134    
+ row[170] = 37    135    
+ row[171] = 49    136    
+ row[172] = 57    137    
+ row[173] = 63    138    
+ row[174] = 69    139    
+ row[175] = 83    140    
+ row[176] = 95    141    
+ row[177] = 96    142    
+ row[178] = 97    143    
+ row[179] = 104    144    
+ row[180] = 105    145    
+ row[181] = 112    146    
+ row[182] = 111    147    
+ row[183] = 76    148    
+ row[184] = 77    149    
+ row[185] = 86    150    
+ row[186] = 101    151    
+ row[187] = 108    152    
+
+ _faceNodesOrdered :  
+ _faceNodesOrdered->getRowDim() = 188
+ _faceNodesOrdered->getColDim() = 77
+ row[0] = 2        3    2    
+ row[1] = 2        3    4    
+ row[2] = 2        4    2    
+ row[3] = 2        5    4    
+ row[4] = 2        5    6    
+ row[5] = 2        6    4    
+ row[6] = 2        7    6    
+ row[7] = 2        8    10    
+ row[8] = 2        7    11    
+ row[9] = 2        11    6    
+ row[10] = 2        12    11    
+ row[11] = 2        12    13    
+ row[12] = 2        13    11    
+ row[13] = 2        14    13    
+ row[14] = 2        8    15    
+ row[15] = 2        15    10    
+ row[16] = 2        15    14    
+ row[17] = 2        15    13    
+ row[18] = 2        8    17    
+ row[19] = 2        17    15    
+ row[20] = 2        16    17    
+ row[21] = 2        4    18    
+ row[22] = 2        6    19    
+ row[23] = 2        19    4    
+ row[24] = 2        19    18    
+ row[25] = 2        11    20    
+ row[26] = 2        20    6    
+ row[27] = 2        20    19    
+ row[28] = 2        13    21    
+ row[29] = 2        21    11    
+ row[30] = 2        21    20    
+ row[31] = 2        17    13    
+ row[32] = 2        17    21    
+ row[33] = 2        19    22    
+ row[34] = 2        20    23    
+ row[35] = 2        23    19    
+ row[36] = 2        23    22    
+ row[37] = 2        21    24    
+ row[38] = 2        24    20    
+ row[39] = 2        24    23    
+ row[40] = 2        16    26    
+ row[41] = 2        26    17    
+ row[42] = 2        25    26    
+ row[43] = 2        23    28    
+ row[44] = 2        28    22    
+ row[45] = 2        28    27    
+ row[46] = 2        24    29    
+ row[47] = 2        29    23    
+ row[48] = 2        29    28    
+ row[49] = 2        17    30    
+ row[50] = 2        30    21    
+ row[51] = 2        26    30    
+ row[52] = 2        30    24    
+ row[53] = 2        31    26    
+ row[54] = 2        30    32    
+ row[55] = 2        32    24    
+ row[56] = 2        32    29    
+ row[57] = 2        26    33    
+ row[58] = 2        33    30    
+ row[59] = 2        33    32    
+ row[60] = 2        31    33    
+ row[61] = 2        28    34    
+ row[62] = 2        29    36    
+ row[63] = 2        36    28    
+ row[64] = 2        36    34    
+ row[65] = 2        32    37    
+ row[66] = 2        37    29    
+ row[67] = 2        37    36    
+ row[68] = 2        33    38    
+ row[69] = 2        38    32    
+ row[70] = 2        38    37    
+ row[71] = 2        39    33    
+ row[72] = 2        39    38    
+ row[73] = 2        34    40    
+ row[74] = 2        36    41    
+ row[75] = 2        41    34    
+ row[76] = 2        41    40    
+ row[77] = 2        41    44    
+ row[78] = 2        45    38    
+ row[79] = 2        38    46    
+ row[80] = 2        46    37    
+ row[81] = 2        37    47    
+ row[82] = 2        47    36    
+ row[83] = 2        46    47    
+ row[84] = 2        47    41    
+ row[85] = 2        44    43    
+ row[86] = 2        46    52    
+ row[87] = 2        52    47    
+ row[88] = 2        51    52    
+ row[89] = 2        47    53    
+ row[90] = 2        53    41    
+ row[91] = 2        52    53    
+ row[92] = 2        53    44    
+ row[93] = 2        48    54    
+ row[94] = 2        54    49    
+ row[95] = 2        54    50    
+ row[96] = 2        44    56    
+ row[97] = 2        56    43    
+ row[98] = 2        56    48    
+ row[99] = 2        53    56    
+ row[100] = 2        52    57    
+ row[101] = 2        57    53    
+ row[102] = 2        57    56    
+ row[103] = 2        51    58    
+ row[104] = 2        58    52    
+ row[105] = 2        58    57    
+ row[106] = 2        59    58    
+ row[107] = 2        54    55    
+ row[108] = 2        56    62    
+ row[109] = 2        62    48    
+ row[110] = 2        62    54    
+ row[111] = 2        57    63    
+ row[112] = 2        63    56    
+ row[113] = 2        63    62    
+ row[114] = 2        58    64    
+ row[115] = 2        64    57    
+ row[116] = 2        64    63    
+ row[117] = 2        59    65    
+ row[118] = 2        65    58    
+ row[119] = 2        65    64    
+ row[120] = 2        60    66    
+ row[121] = 2        66    59    
+ row[122] = 2        61    66    
+ row[123] = 2        66    65    
+ row[124] = 2        62    67    
+ row[125] = 2        67    54    
+ row[126] = 2        63    68    
+ row[127] = 2        68    62    
+ row[128] = 2        68    67    
+ row[129] = 2        64    69    
+ row[130] = 2        69    63    
+ row[131] = 2        69    68    
+ row[132] = 2        65    70    
+ row[133] = 2        70    64    
+ row[134] = 2        70    69    
+ row[135] = 2        68    71    
+ row[136] = 2        72    66    
+ row[137] = 2        72    65    
+ row[138] = 2        69    73    
+ row[139] = 2        73    68    
+ row[140] = 2        73    71    
+ row[141] = 2        74    69    
+ row[142] = 2        74    73    
+ row[143] = 2        73    75    
+ row[144] = 2        74    77    
+ row[145] = 2        77    73    
+ row[146] = 2        77    75    
+ row[147] = 2        77    76    
+ row[148] = 2        1    3    
+ row[149] = 2        3    5    
+ row[150] = 2        5    7    
+ row[151] = 2        10    9    
+ row[152] = 2        7    12    
+ row[153] = 2        12    14    
+ row[154] = 2        14    10    
+ row[155] = 2        2    1    
+ row[156] = 2        18    2    
+ row[157] = 2        22    18    
+ row[158] = 2        27    22    
+ row[159] = 2        34    27    
+ row[160] = 2        35    34    
+ row[161] = 2        40    35    
+ row[162] = 2        43    42    
+ row[163] = 2        44    40    
+ row[164] = 2        42    44    
+ row[165] = 2        48    43    
+ row[166] = 2        49    48    
+ row[167] = 2        9    8    
+ row[168] = 2        8    16    
+ row[169] = 2        16    25    
+ row[170] = 2        25    31    
+ row[171] = 2        31    39    
+ row[172] = 2        39    45    
+ row[173] = 2        45    46    
+ row[174] = 2        46    51    
+ row[175] = 2        51    59    
+ row[176] = 2        59    60    
+ row[177] = 2        60    61    
+ row[178] = 2        61    72    
+ row[179] = 2        72    70    
+ row[180] = 2        70    74    
+ row[181] = 2        76    75    
+ row[182] = 2        74    76    
+ row[183] = 2        50    49    
+ row[184] = 2        55    50    
+ row[185] = 2        67    55    
+ row[186] = 2        71    67    
+ row[187] = 2        75    71    
+
+ total mesh surrounding = 4
+ total mesh surrounding = 2
+ total mesh surrounding = 2
+ total mesh surrounding = 4
+ total mesh surrounding = 4
+ total mesh surrounding = 2
+ total mesh surrounding = 4
+ total mesh surrounding = 2
+
+ offset for ghost Cells from adjacent meshes to read data from _ghostCellsGlobal : 
+    n  =  0 offsetInterfaceCells = 155
+    n  =  1 offsetInterfaceCells = 167
+    n  =  2 offsetInterfaceCells = 177
+    n  =  3 offsetInterfaceCells = 183
+    n  =  4 offsetInterfaceCells = 165
+    n  =  5 offsetInterfaceCells = 177
+    n  =  6 offsetInterfaceCells = 164
+    n  =  7 offsetInterfaceCells = 174
+    n  =  8 offsetInterfaceCells = 156
+    n  =  9 offsetInterfaceCells = 162
+    n  =  10 offsetInterfaceCells = 172
+    n  =  11 offsetInterfaceCells = 177
+    n  =  12 offsetInterfaceCells = 159
+    n  =  13 offsetInterfaceCells = 164
+    n  =  14 offsetInterfaceCells = 170
+    n  =  15 offsetInterfaceCells = 182
+    n  =  16 offsetInterfaceCells = 164
+    n  =  17 offsetInterfaceCells = 176
+    n  =  18 offsetInterfaceCells = 158
+    n  =  19 offsetInterfaceCells = 163
+    n  =  20 offsetInterfaceCells = 168
+    n  =  21 offsetInterfaceCells = 175
+    n  =  22 offsetInterfaceCells = 166
+    n  =  23 offsetInterfaceCells = 174
+
+ neightboorhood cell IDs : 
+    n  =  0  interfaced Mesh ID = 1
+    n  =  1  interfaced Mesh ID = 2
+    n  =  2  interfaced Mesh ID = 3
+    n  =  3  interfaced Mesh ID = 4
+    n  =  4  interfaced Mesh ID = 0
+    n  =  5  interfaced Mesh ID = 4
+    n  =  6  interfaced Mesh ID = 0
+    n  =  7  interfaced Mesh ID = 3
+    n  =  8  interfaced Mesh ID = 0
+    n  =  9  interfaced Mesh ID = 2
+    n  =  10  interfaced Mesh ID = 6
+    n  =  11  interfaced Mesh ID = 7
+    n  =  12  interfaced Mesh ID = 0
+    n  =  13  interfaced Mesh ID = 1
+    n  =  14  interfaced Mesh ID = 5
+    n  =  15  interfaced Mesh ID = 6
+    n  =  16  interfaced Mesh ID = 4
+    n  =  17  interfaced Mesh ID = 6
+    n  =  18  interfaced Mesh ID = 3
+    n  =  19  interfaced Mesh ID = 4
+    n  =  20  interfaced Mesh ID = 5
+    n  =  21  interfaced Mesh ID = 7
+    n  =  22  interfaced Mesh ID = 3
+    n  =  23  interfaced Mesh ID = 6
+
+interface cells looking interior domain (global numbering)  : 
+    n  =  0  cell ID = 73
+    n  =  1  cell ID = 248
+    n  =  2  cell ID = 349
+    n  =  3  cell ID = 442
+    n  =  4  cell ID = 583
+    n  =  5  cell ID = 647
+    n  =  6  cell ID = 647
+    n  =  7  cell ID = 716
+    n  =  8  cell ID = 687
+    n  =  9  cell ID = 716
+    n  =  10  cell ID = 790
+    n  =  11  cell ID = 759
+    n  =  12  cell ID = 121
+    n  =  13  cell ID = 177
+    n  =  14  cell ID = 392
+    n  =  15  cell ID = 496
+    n  =  16  cell ID = 616
+    n  =  17  cell ID = 707
+    n  =  18  cell ID = 710
+    n  =  19  cell ID = 753
+    n  =  20  cell ID = 797
+    n  =  21  cell ID = 836
+    n  =  22  cell ID = 837
+    n  =  23  cell ID = 868
+    n  =  24  cell ID = 871
+    n  =  25  cell ID = 876
+    n  =  26  cell ID = 890
+    n  =  27  cell ID = 893
+    n  =  28  cell ID = 760
+    n  =  29  cell ID = 800
+    n  =  30  cell ID = 840
+    n  =  31  cell ID = 865
+    n  =  32  cell ID = 884
+interface cells looking interior domain (local numbering)  : 
+    n  =  0  interfaced Mesh ID = 0
+    n  =  1  interfaced Mesh ID = 3
+    n  =  2  interfaced Mesh ID = 23
+    n  =  3  interfaced Mesh ID = 38
+    n  =  4  interfaced Mesh ID = 39
+    n  =  5  interfaced Mesh ID = 57
+    n  =  6  interfaced Mesh ID = 57
+    n  =  7  interfaced Mesh ID = 66
+    n  =  8  interfaced Mesh ID = 60
+    n  =  9  interfaced Mesh ID = 66
+    n  =  10  interfaced Mesh ID = 77
+    n  =  11  interfaced Mesh ID = 73
+    n  =  12  interfaced Mesh ID = 8
+    n  =  13  interfaced Mesh ID = 19
+    n  =  14  interfaced Mesh ID = 34
+    n  =  15  interfaced Mesh ID = 36
+    n  =  16  interfaced Mesh ID = 48
+    n  =  17  interfaced Mesh ID = 56
+    n  =  18  interfaced Mesh ID = 62
+    n  =  19  interfaced Mesh ID = 68
+    n  =  20  interfaced Mesh ID = 82
+    n  =  21  interfaced Mesh ID = 94
+    n  =  22  interfaced Mesh ID = 95
+    n  =  23  interfaced Mesh ID = 96
+    n  =  24  interfaced Mesh ID = 103
+    n  =  25  interfaced Mesh ID = 104
+    n  =  26  interfaced Mesh ID = 111
+    n  =  27  interfaced Mesh ID = 110
+    n  =  28  interfaced Mesh ID = 75
+    n  =  29  interfaced Mesh ID = 76
+    n  =  30  interfaced Mesh ID = 85
+    n  =  31  interfaced Mesh ID = 100
+    n  =  32  interfaced Mesh ID = 107
