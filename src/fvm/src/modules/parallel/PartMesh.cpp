@@ -108,8 +108,6 @@ PartMesh::mesh()
     mesh_setup();
     mappers();
 
-    debug_print();
-
 }
 
 
@@ -1500,7 +1498,7 @@ PartMesh::order_faceCells_faceNodes()
                (*_localToGlobalMap.at(id))[cellID] = it_cell->second;
                _globalToLocalMappers.at(id).insert( pair<int,int>(it_cell->second,cellID ) );
                _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, it_cell->second) );
-                assert( cellID >=0 && cellID < array_length );
+//                assert( cellID >=0 && cellID < array_length );
                _cellToOrderedCell[id][elem_0] = cellID;
 
               _faceCellsOrdered.at(id)->add(face_track, inner_elem);
@@ -1540,7 +1538,7 @@ PartMesh::order_faceCells_faceNodes()
              //update maps
              int global_id = _faceCells.at(id)->getLocalToGlobalMap()[outer_elem_id];
              (*_globalToLocalMap.at(id))[global_id] = cellID;
-             assert( cellID >=0 && cellID < array_length );
+//             assert( cellID >=0 && cellID < array_length );
              (*_localToGlobalMap.at(id))[cellID] = global_id;
              _globalToLocalMappers.at(id).insert( pair<int,int>(global_id, cellID) );
              _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
