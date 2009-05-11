@@ -20,6 +20,10 @@ class MPM
 
   const StorageSite& getParticles() const {return _particles;}
   
+  const StorageSite& getParticles(int num_particles)  {
+       _particles.setCount( num_particles);
+     return _particles;}
+    
   const shared_ptr<Array<VecD3> >& getCoordinates() {return  _coordinates;}
    
   const shared_ptr<Array<VecD3> >& getVelocities() {return  _velocities;}
@@ -27,11 +31,14 @@ class MPM
   const shared_ptr<Array<int> >& getTypes() {return  _types;}
   
   
-  void setCoordinates(const shared_ptr<Array<VecD3> > x) {_coordinates = x;}
+  void setCoordinates(const shared_ptr<ArrayBase> x) 
+  {_coordinates = dynamic_pointer_cast< Array<VecD3> > ( x );}
  
-  void setVelocities(const shared_ptr<Array<VecD3> > x) {_velocities = x;}
+  void setVelocities(const shared_ptr<ArrayBase > v ) 
+  {_velocities = dynamic_pointer_cast< Array<VecD3> > (v);}
 
-  void setTypes(const shared_ptr<Array<int> > x) {_types = x;}
+  void setTypes(const shared_ptr<ArrayBase > type) 
+  {_types =  dynamic_pointer_cast< Array<int> > (type);}
  
   void setandwriteParticles(const char *file);
 
