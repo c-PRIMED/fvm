@@ -36,6 +36,7 @@ def compare_nums(a,b,maxerr):
 
 def check_file(file, maxerr, gdir):
     try:
+        file = os.path.abspath(file)
         f = open(file, 'r')
     except:
         print "Cannot open '%s'" % file
@@ -48,10 +49,11 @@ def check_file(file, maxerr, gdir):
         print "Cannot open '%s'" % gfile
         return 1
 
-    err = 0
+    lineno = 0
     while True:
         line = f.readline()
         gline = g.readline()
+        lineno += 1
         if not line:
             if gline:
                 print gline
@@ -61,12 +63,11 @@ def check_file(file, maxerr, gdir):
             continue
         for a,b in zip(line.split(),gline.split()):
             res = compare_nums(a,b,maxerr)
-            if res and not err:
-                # print a message only on the first fail
-                print "Comparison of %s and %s failed" % (file, gfile)
+            if res:
+                print "Comparison of %s and %s failed on line %s" % (file, gfile, lineno)
                 print line, gline
-                err = 1
-    return err
+                return 1
+    return 0
 
 def main():
     tcm = 'testCellMark.py'
