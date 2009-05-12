@@ -38,8 +38,6 @@ def generate(env):
 
     env['CCFLAGS'] = env['CXXFLAGS']
 
-    env['CXX'] = 'g++'
-
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')
 
 def exists(env):
