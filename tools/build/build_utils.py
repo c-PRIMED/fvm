@@ -253,6 +253,7 @@ def set_python_path(dir):
         os.environ['PYTHONPATH'] = libpath
     else:
         os.environ['PYTHONPATH'] = libpath + ':' + pypath
+    os.environ['PYTHONPATH'] += ':' +  os.path.join(dir, 'bin')
     return pypath1
 
 if __name__ == '__main__':
