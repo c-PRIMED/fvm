@@ -1,5 +1,4 @@
-CellMark002 mtest.py ../../scripts/testCellMark-beam.py --output ./IBMCell.dat --golden ./beam/IBMCell.dat 
+CellMarkBeam     ./testCellMark --datadir TESTDIR --golden beam cav32.cas beam/MPMs_Beam.dat
+CellMarkCylinder ./testCellMark --datadir TESTDIR --golden cylinder cav32.cas cylinder/MPMs_Cylinder.dat
+CellMarkSphere   ./testCellMark --datadir TESTDIR --golden sphere cav32.cas sphere/MPMs_Sphere.dat
 
-CellMark002 mtest.py ../../scripts/testCellMark-cylinder.py --output ./IBMCell.dat --golden ./cylinder/IBMCell.dat
-
-CellMark001 mtest.py ../../scripts/testCellMark-sphere.py --output ./IBMCell.dat --golden ./sphere/IBMCell.dat
