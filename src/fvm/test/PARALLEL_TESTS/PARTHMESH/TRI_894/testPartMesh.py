@@ -5,7 +5,6 @@ sys.setdlopenflags(0x100|0x2)
 
 import fvmbaseExt
 import importers
-import NcWriter
 import fvmparallel
 from mpi4py import MPI
 
