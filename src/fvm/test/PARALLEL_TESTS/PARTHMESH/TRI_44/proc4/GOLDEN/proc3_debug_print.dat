@@ -1,0 +1,651 @@
+ procID = 3
+ npart  = 4
+
+ elemDist[0] = 11
+ elemDist[1] = 11
+ elemDist[2] = 11
+ elemDist[3] = 11
+
+ n = 0 globalIndx[0] = 0
+ n = 1 globalIndx[1] = 11
+ n = 2 globalIndx[2] = 22
+ n = 3 globalIndx[3] = 33
+ n = 4 globalIndx[4] = 44
+
+ eptr[0] = 0
+ eptr[1] = 3
+ eptr[2] = 6
+ eptr[3] = 9
+ eptr[4] = 12
+ eptr[5] = 15
+ eptr[6] = 18
+ eptr[7] = 21
+ eptr[8] = 24
+ eptr[9] = 27
+ eptr[10] = 30
+ eptr[11] = 33
+
+ eelm[0] = 33
+ eelm[1] = 34
+ eelm[2] = 35
+ eelm[3] = 36
+ eelm[4] = 37
+ eelm[5] = 38
+ eelm[6] = 39
+ eelm[7] = 40
+ eelm[8] = 41
+ eelm[9] = 42
+ eelm[10] = 43
+
+ elemID  = 0,   eind[0]=27    eind[1]=2    eind[2]=30   
+ elemID  = 1,   eind[3]=2    eind[4]=25    eind[5]=30   
+ elemID  = 2,   eind[6]=16    eind[7]=26    eind[8]=29   
+ elemID  = 3,   eind[9]=22    eind[10]=20    eind[11]=28   
+ elemID  = 4,   eind[12]=25    eind[13]=23    eind[14]=30   
+ elemID  = 5,   eind[15]=23    eind[16]=28    eind[17]=30   
+ elemID  = 6,   eind[18]=18    eind[19]=27    eind[20]=30   
+ elemID  = 7,   eind[21]=29    eind[22]=18    eind[23]=30   
+ elemID  = 8,   eind[24]=20    eind[25]=16    eind[26]=29   
+ elemID  = 9,   eind[27]=29    eind[28]=30    eind[29]=20   
+ elemID  = 10,   eind[30]=28    eind[31]=20    eind[32]=30   
+
+ elmwgt[0]=1
+ elmwgt[1]=1
+ elmwgt[2]=1
+ elmwgt[3]=1
+ elmwgt[4]=1
+ elmwgt[5]=1
+ elmwgt[6]=1
+ elmwgt[7]=1
+ elmwgt[8]=1
+ elmwgt[9]=1
+ elmwgt[10]=1
+
+ wgtflag = 0
+
+ numflag  = 0
+
+ ncon = 1
+
+ ncommonnodes = 2
+
+ nparts = 4
+
+tpwgts[0] = 0.25
+tpwgts[1] = 0.25
+tpwgts[2] = 0.25
+tpwgts[3] = 0.25
+
+ ubvec = 1.05
+
+ options = 0
+
+ edgecut = 9
+
+ elem = 33 partion = 3
+ elem = 34 partion = 3
+ elem = 35 partion = 1
+ elem = 36 partion = 2
+ elem = 37 partion = 3
+ elem = 38 partion = 2
+ elem = 39 partion = 0
+ elem = 40 partion = 0
+ elem = 41 partion = 1
+ elem = 42 partion = 1
+ elem = 43 partion = 2
+
+ partID = 0 elemID = 6
+ partID = 0 elemID = 7
+ partID = 1 elemID = 2
+ partID = 1 elemID = 8
+ partID = 1 elemID = 9
+ partID = 2 elemID = 3
+ partID = 2 elemID = 5
+ partID = 2 elemID = 10
+ partID = 3 elemID = 0
+ partID = 3 elemID = 1
+ partID = 3 elemID = 4
+
+ total elements  = 11
+ total dim of col = 33
+
+ _row[0] = 0
+ _row[1] = 3
+ _row[2] = 6
+ _row[3] = 9
+ _row[4] = 12
+ _row[5] = 15
+ _row[6] = 18
+ _row[7] = 21
+ _row[8] = 24
+ _row[9] = 27
+ _row[10] = 30
+ _row[11] = 33
+
+ _elem[0] = 0
+ _elem[1] = 1
+ _elem[2] = 17
+ _elem[3] = 18
+ _elem[4] = 19
+ _elem[5] = 22
+ _elem[6] = 23
+ _elem[7] = 25
+ _elem[8] = 33
+ _elem[9] = 34
+ _elem[10] = 37
+
+ _elemWithGhosts[0] = 0
+ _elemWithGhosts[1] = 1
+ _elemWithGhosts[2] = 17
+ _elemWithGhosts[3] = 18
+ _elemWithGhosts[4] = 19
+ _elemWithGhosts[5] = 22
+ _elemWithGhosts[6] = 23
+ _elemWithGhosts[7] = 25
+ _elemWithGhosts[8] = 33
+ _elemWithGhosts[9] = 34
+ _elemWithGhosts[10] = 37
+ _elemWithGhosts[11] = 59
+ _elemWithGhosts[12] = 48
+ _elemWithGhosts[13] = 57
+ _elemWithGhosts[14] = 58
+ _elemWithGhosts[15] = 49
+
+ _col[0] = 1
+ _col[1] = 2
+ _col[2] = 0
+ _col[3] = 1
+ _col[4] = 2
+ _col[5] = 3
+ _col[6] = 15
+ _col[7] = 23
+ _col[8] = 24
+ _col[9] = 2
+ _col[10] = 0
+ _col[11] = 25
+ _col[12] = 25
+ _col[13] = 0
+ _col[14] = 24
+ _col[15] = 3
+ _col[16] = 2
+ _col[17] = 27
+ _col[18] = 3
+ _col[19] = 27
+ _col[20] = 19
+ _col[21] = 24
+ _col[22] = 23
+ _col[23] = 25
+ _col[24] = 27
+ _col[25] = 2
+ _col[26] = 30
+ _col[27] = 2
+ _col[28] = 25
+ _col[29] = 30
+ _col[30] = 25
+ _col[31] = 23
+ _col[32] = 30
+ _cellParts : 
+ _cellParts->getRowDim() = 60
+ _cellParts->getColDim() = 4
+ row[0] = 0    3    
+ row[1] = 1    3    
+ row[2] = 2    1    
+ row[3] = 3    1    
+ row[4] = 4    0    
+ row[5] = 5    0    
+ row[6] = 6    2    
+ row[7] = 7    2    
+ row[8] = 8    1    
+ row[9] = 9    1    
+ row[10] = 10    0    
+ row[11] = 11    0    
+ row[12] = 12    1    
+ row[13] = 13    1    
+ row[14] = 14    2    
+ row[15] = 15    2    
+ row[16] = 16    2    
+ row[17] = 17    3    
+ row[18] = 18    3    
+ row[19] = 19    3    
+ row[20] = 20    0    
+ row[21] = 21    0    
+ row[22] = 22    3    
+ row[23] = 23    3    
+ row[24] = 24    2    
+ row[25] = 25    3    
+ row[26] = 26    1    
+ row[27] = 27    0    
+ row[28] = 28    1    
+ row[29] = 29    2    
+ row[30] = 30    2    
+ row[31] = 31    0    
+ row[32] = 32    0    
+ row[33] = 33    3    
+ row[34] = 34    3    
+ row[35] = 35    1    
+ row[36] = 36    2    
+ row[37] = 37    3    
+ row[38] = 38    2    
+ row[39] = 39    0    
+ row[40] = 40    0    
+ row[41] = 41    1    
+ row[42] = 42    1    
+ row[43] = 43    2    
+ row[44] = 44    1    
+ row[45] = 45    1    
+ row[46] = 46    2    
+ row[47] = 47    2    
+ row[48] = 48    3    
+ row[49] = 49    3    
+ row[50] = 50    0    
+ row[51] = 51    0    
+ row[52] = 52    0    
+ row[53] = 53    0    
+ row[54] = 54    1    
+ row[55] = 55    1    
+ row[56] = 56    2    
+ row[57] = 57    3    
+ row[58] = 58    3    
+ row[59] = 59    3    
+
+Boundary multimap = 4    59
+Boundary multimap = 4    48
+Boundary multimap = 4    57
+Boundary multimap = 4    58
+Boundary multimap = 4    49
+Boundary multimap = 3    velocity-inlet
+Boundary multimap = 4    wall
+
+ _faceParts : 
+ _faceParts->getRowDim() = 74
+ _faceParts->getColDim() = 4
+ row[0] = 0    3    
+ row[1] = 1    3    
+ row[2] = 2    3    
+ row[3] = 3    1    
+ row[4] = 4    1    
+ row[5] = 5    1    
+ row[6] = 6    0    
+ row[7] = 7    0    
+ row[8] = 8    0    
+ row[9] = 9    2    
+ row[10] = 10    2    
+ row[11] = 11    2    
+ row[12] = 12    1    
+ row[13] = 13    1    
+ row[14] = 14    1    
+ row[15] = 15    0    
+ row[16] = 16    0    
+ row[17] = 17    0    
+ row[18] = 18    1    
+ row[19] = 19    1    
+ row[20] = 20    1    2    
+ row[21] = 22    2    
+ row[22] = 23    2    
+ row[23] = 24    2    
+ row[24] = 25    2    3    
+ row[25] = 27    2    
+ row[26] = 28    3    
+ row[27] = 29    3    
+ row[28] = 30    3    
+ row[29] = 31    3    
+ row[30] = 32    0    
+ row[31] = 33    0    
+ row[32] = 34    0    1    
+ row[33] = 36    3    
+ row[34] = 37    3    
+ row[35] = 38    3    0    
+ row[36] = 40    2    
+ row[37] = 41    3    
+ row[38] = 42    1    
+ row[39] = 43    0    
+ row[40] = 44    1    
+ row[41] = 45    2    
+ row[42] = 46    2    
+ row[43] = 47    2    
+ row[44] = 48    0    1    
+ row[45] = 50    0    
+ row[46] = 51    0    
+ row[47] = 52    3    0    
+ row[48] = 54    3    
+ row[49] = 55    3    
+ row[50] = 56    1    
+ row[51] = 57    2    
+ row[52] = 58    3    2    
+ row[53] = 60    2    
+ row[54] = 61    0    
+ row[55] = 62    0    1    
+ row[56] = 64    1    
+ row[57] = 65    1    2    
+ row[58] = 67    1    
+ row[59] = 68    1    
+ row[60] = 69    2    
+ row[61] = 70    2    
+ row[62] = 71    3    
+ row[63] = 72    3    
+ row[64] = 73    0    
+ row[65] = 74    0    
+ row[66] = 75    0    
+ row[67] = 76    0    
+ row[68] = 77    1    
+ row[69] = 78    1    
+ row[70] = 79    2    
+ row[71] = 80    3    
+ row[72] = 81    3    
+ row[73] = 82    3    
+
+ _faceCells :  
+ _faceCells->getRowDim() = 21
+ _faceCells->getColDim() = 20
+ globalToLocalMap.length() = 60
+ globalToLocalMap[0] = 0
+ globalToLocalMap[1] = 1
+ globalToLocalMap[2] = -1
+ globalToLocalMap[3] = -1
+ globalToLocalMap[4] = -1
+ globalToLocalMap[5] = -1
+ globalToLocalMap[6] = -1
+ globalToLocalMap[7] = -1
+ globalToLocalMap[8] = -1
+ globalToLocalMap[9] = -1
+ globalToLocalMap[10] = -1
+ globalToLocalMap[11] = -1
+ globalToLocalMap[12] = -1
+ globalToLocalMap[13] = -1
+ globalToLocalMap[14] = -1
+ globalToLocalMap[15] = -1
+ globalToLocalMap[16] = 4
+ globalToLocalMap[17] = 5
+ globalToLocalMap[18] = 2
+ globalToLocalMap[19] = 8
+ globalToLocalMap[20] = -1
+ globalToLocalMap[21] = -1
+ globalToLocalMap[22] = 3
+ globalToLocalMap[23] = 9
+ globalToLocalMap[24] = -1
+ globalToLocalMap[25] = 6
+ globalToLocalMap[26] = -1
+ globalToLocalMap[27] = 11
+ globalToLocalMap[28] = -1
+ globalToLocalMap[29] = -1
+ globalToLocalMap[30] = -1
+ globalToLocalMap[31] = -1
+ globalToLocalMap[32] = -1
+ globalToLocalMap[33] = 10
+ globalToLocalMap[34] = 7
+ globalToLocalMap[35] = -1
+ globalToLocalMap[36] = -1
+ globalToLocalMap[37] = 12
+ globalToLocalMap[38] = 14
+ globalToLocalMap[39] = 13
+ globalToLocalMap[40] = -1
+ globalToLocalMap[41] = -1
+ globalToLocalMap[42] = -1
+ globalToLocalMap[43] = -1
+ globalToLocalMap[44] = -1
+ globalToLocalMap[45] = -1
+ globalToLocalMap[46] = -1
+ globalToLocalMap[47] = -1
+ globalToLocalMap[48] = 15
+ globalToLocalMap[49] = 16
+ globalToLocalMap[50] = -1
+ globalToLocalMap[51] = -1
+ globalToLocalMap[52] = -1
+ globalToLocalMap[53] = -1
+ globalToLocalMap[54] = -1
+ globalToLocalMap[55] = -1
+ globalToLocalMap[56] = -1
+ globalToLocalMap[57] = 17
+ globalToLocalMap[58] = 18
+ globalToLocalMap[59] = 19
+
+ localToGlobalMap.length() = 20
+ localToGlobalMap[0] = 0
+ localToGlobalMap[1] = 1
+ localToGlobalMap[2] = 18
+ localToGlobalMap[3] = 22
+ localToGlobalMap[4] = 16
+ localToGlobalMap[5] = 17
+ localToGlobalMap[6] = 25
+ localToGlobalMap[7] = 34
+ localToGlobalMap[8] = 19
+ localToGlobalMap[9] = 23
+ localToGlobalMap[10] = 33
+ localToGlobalMap[11] = 27
+ localToGlobalMap[12] = 37
+ localToGlobalMap[13] = 39
+ localToGlobalMap[14] = 38
+ localToGlobalMap[15] = 48
+ localToGlobalMap[16] = 49
+ localToGlobalMap[17] = 57
+ localToGlobalMap[18] = 58
+ localToGlobalMap[19] = 59
+ row[1] = 1    1    2    
+ row[2] = 2    1    3    
+ row[3] = 3    2    4    
+ row[4] = 25    5    6    
+ row[5] = 27    6    7    
+ row[6] = 28    3    8    
+ row[7] = 29    3    9    
+ row[8] = 30    9    7    
+ row[9] = 34    4    10    
+ row[10] = 35    4    11    
+ row[11] = 36    10    12    
+ row[12] = 38    7    13    
+ row[13] = 48    11    14    
+ row[14] = 49    11    8    
+ row[15] = 50    8    13    
+ row[16] = 53    13    15    
+ row[17] = 63    2    16    
+ row[18] = 64    10    17    
+ row[19] = 72    6    18    
+ row[20] = 73    9    19    
+ row[21] = 74    1    20    
+
+ _faceNodes :  
+ _faceNodes->getRowDim() = 21
+ _faceNodes->getColDim() = 11
+ row[1] = 1    1    2    
+ row[2] = 2    2    3    
+ row[3] = 3    4    2    
+ row[4] = 25    5    6    
+ row[5] = 27    7    6    
+ row[6] = 28    2    8    
+ row[7] = 29    8    3    
+ row[8] = 30    8    7    
+ row[9] = 34    4    9    
+ row[10] = 35    9    2    
+ row[11] = 36    10    9    
+ row[12] = 38    8    6    
+ row[13] = 48    9    11    
+ row[14] = 49    11    2    
+ row[15] = 50    11    8    
+ row[16] = 53    11    6    
+ row[17] = 63    1    4    
+ row[18] = 64    4    10    
+ row[19] = 72    5    7    
+ row[20] = 73    7    3    
+ row[21] = 74    3    1    
+
+ _cellNodes(Local Numbering) :  
+ _cellNodes->getRowDim() = 20
+ _cellNodes->getColDim() = 11
+ row[1]  = 1    2    3    
+ row[2]  = 1    2    4    
+ row[3]  = 2    3    8    
+ row[4]  = 4    2    9    
+ row[5]  = 5    6    
+ row[6]  = 5    6    7    
+ row[7]  = 7    6    8    
+ row[8]  = 2    8    11    
+ row[9]  = 8    3    7    
+ row[10]  = 4    9    10    
+ row[11]  = 9    2    11    
+ row[12]  = 10    9    
+ row[13]  = 8    6    11    
+ row[14]  = 9    11    
+ row[15]  = 11    6    
+ row[16]  = 1    4    
+ row[17]  = 4    10    
+ row[18]  = 5    7    
+ row[19]  = 7    3    
+ row[20]  = 3    1    
+
+ _cellCells :  
+ _cellCells->getRowDim() = 20
+ _cellCells->getColDim() = 20
+ row[1] =     2    3    20    
+ row[2] =     1    4    16    
+ row[3] =     1    8    9    
+ row[4] =     2    10    11    
+ row[5] =     6    
+ row[6] =     5    7    18    
+ row[7] =     6    9    13    
+ row[8] =     3    11    13    
+ row[9] =     3    7    19    
+ row[10] =     4    12    17    
+ row[11] =     4    14    8    
+ row[12] =     10    
+ row[13] =     7    8    15    
+ row[14] =     11    
+ row[15] =     13    
+ row[16] =     2    
+ row[17] =     10    
+ row[18] =     6    
+ row[19] =     9    
+ row[20] =     1    
+
+ node ID =          1,  x = 0.0000000,  y = 0.0000000,  z = 0.0000000
+ node ID =          2,  x = 0.2006144,  y = 0.2088080,  z = 0.0000000
+ node ID =          3,  x = 0.0000000,  y = 0.2500000,  z = 0.0000000
+ node ID =          4,  x = 0.2500000,  y = 0.0000000,  z = 0.0000000
+ node ID =          5,  x = 0.0000000,  y = 0.7500000,  z = 0.0000000
+ node ID =          6,  x = 0.1871802,  y = 0.5929479,  z = 0.0000000
+ node ID =          7,  x = 0.0000000,  y = 0.5000000,  z = 0.0000000
+ node ID =          8,  x = 0.1642394,  y = 0.3960724,  z = 0.0000000
+ node ID =          9,  x = 0.3879293,  y = 0.1781462,  z = 0.0000000
+ node ID =         10,  x = 0.5000000,  y = 0.0000000,  z = 0.0000000
+ node ID =         11,  x = 0.4006520,  y = 0.4320705,  z = 0.0000000
+
+ _interfaceMap.size() = 4
+ interface ID =  0  =>  36  48  
+ interface ID =  1  =>  
+ interface ID =  2  =>  25  53  
+ interface ID =  3  =>  
+
+ interior face counts = 12
+
+ total interior cells = 11
+      0
+      1
+      2
+      3
+      5
+      6
+      7
+      8
+      9
+      10
+      12
+
+ total non-interior cells = 9
+      4
+      11
+      13
+      14
+      15
+      16
+      17
+      18
+      19
+
+   bndry group ID = 4 offsets = 12
+
+   interface ID = 0 offsets = 17
+   interface ID = 2 offsets = 19
+
+ _faceCellsOrdered :  
+ _faceCellsOrdered->getRowDim() = 21
+ _faceCellsOrdered->getColDim() = 20
+ row[0] = 1    2    
+ row[1] = 1    3    
+ row[2] = 2    4    
+ row[3] = 5    6    
+ row[4] = 3    7    
+ row[5] = 3    8    
+ row[6] = 8    6    
+ row[7] = 4    9    
+ row[8] = 4    10    
+ row[9] = 6    11    
+ row[10] = 10    7    
+ row[11] = 7    11    
+ row[12] = 1    12    
+ row[13] = 2    13    
+ row[14] = 5    14    
+ row[15] = 8    15    
+ row[16] = 9    16    
+ row[17] = 9    17    
+ row[18] = 10    18    
+ row[19] = 5    19    
+ row[20] = 11    20    
+
+ _faceNodesOrdered :  
+ _faceNodesOrdered->getRowDim() = 21
+ _faceNodesOrdered->getColDim() = 11
+ row[0] = 2        1    2    
+ row[1] = 2        2    3    
+ row[2] = 2        4    2    
+ row[3] = 2        7    6    
+ row[4] = 2        2    8    
+ row[5] = 2        8    3    
+ row[6] = 2        8    7    
+ row[7] = 2        4    9    
+ row[8] = 2        9    2    
+ row[9] = 2        8    6    
+ row[10] = 2        11    2    
+ row[11] = 2        11    8    
+ row[12] = 2        3    1    
+ row[13] = 2        1    4    
+ row[14] = 2        5    7    
+ row[15] = 2        7    3    
+ row[16] = 2        4    10    
+ row[17] = 2        10    9    
+ row[18] = 2        9    11    
+ row[19] = 2        6    5    
+ row[20] = 2        11    6    
+
+ total mesh surrounding = 2
+ total mesh surrounding = 2
+ total mesh surrounding = 2
+ total mesh surrounding = 2
+
+ offset for ghost Cells from adjacent meshes to read data from _ghostCellsGlobal : 
+    n  =  0 offsetInterfaceCells = 16
+    n  =  1 offsetInterfaceCells = 19
+    n  =  2 offsetInterfaceCells = 16
+    n  =  3 offsetInterfaceCells = 19
+    n  =  4 offsetInterfaceCells = 16
+    n  =  5 offsetInterfaceCells = 18
+    n  =  6 offsetInterfaceCells = 17
+    n  =  7 offsetInterfaceCells = 19
+
+ neightboorhood cell IDs : 
+    n  =  0  interfaced Mesh ID = 1
+    n  =  1  interfaced Mesh ID = 3
+    n  =  2  interfaced Mesh ID = 0
+    n  =  3  interfaced Mesh ID = 2
+    n  =  4  interfaced Mesh ID = 1
+    n  =  5  interfaced Mesh ID = 3
+    n  =  6  interfaced Mesh ID = 0
+    n  =  7  interfaced Mesh ID = 2
+
+interface cells looking interior domain (global numbering)  : 
+    n  =  0  cell ID = 23
+    n  =  1  cell ID = 33
+    n  =  2  cell ID = 17
+    n  =  3  cell ID = 37
+interface cells looking interior domain (local numbering)  : 
+    n  =  0  interfaced Mesh ID = 8
+    n  =  1  interfaced Mesh ID = 9
+    n  =  2  interfaced Mesh ID = 4
+    n  =  3  interfaced Mesh ID = 10
