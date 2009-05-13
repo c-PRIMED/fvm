@@ -6,11 +6,17 @@ from numpy import *
 #operating pressure
 pressure   = 83593
 # beam mode frequency 
-frequency = 114415
+#frequency = 114415
+frequency =759734
 omega = 2*pi*frequency
 
 # beam density
 rho = 2330
+
+# length (change to 1 for 2d)
+
+length = 1e-4
+#length = 1
 
 # beam width
 b = 35e-6
@@ -21,8 +27,12 @@ h = 1e-6
 #beam is given a velocity as U = A*cos(omega*t)
 A = 0.1
 
+## symmetry factor (Set to 1 when doing whole beam, 2 when doing half)
+symmetryFactor = 2
+
 #time step
-deltaT=5.0E-08;
+#deltaT=5.0E-08;
+deltaT = 1.0/(frequency*100.)
 
 # how many cycles in force data are used to calculate damping factor
 # the more cycles, the accurate the result is, but it takes longer to run
@@ -46,11 +56,13 @@ forceIntegralOutput = True
 
 #read pressure integral data from top.dat and bot.dat
 #which give the force on both surfaces as a function of time
+#
+#fileBase = "/home/sm/prism-meshes/case1/unsteady-p=11145-prism-pIntegral-"
+#fileBase = "/home/sm/prism-meshes/case1/fluent-results/P=83593-"
+fileBase = "/home/sm/prism-meshes/3dbeam/mode2EV/new-beam-114k-p=45862-prism-pIntegral-"
 
-fileBase = "/home/sm/prism-meshes/case1/unsteady-p=1330.554-prism-pIntegral-"
-fileBase = "/home/sm/prism-meshes/case1/fluent-results/P=11146-"
-
-fileSuffix = ".out"
+fileSuffix = ".xy"
+#fileSuffix = ".out"
 
 fileName = fileBase + "bot" + fileSuffix
 
@@ -105,7 +117,7 @@ print ("read in pressure integral done!")
 force = zeros(nLines,float)
 
 for i in range(0, nLines):
-    force[i] = forceTop[i]-forceBot[i]
+    force[i] = forceTop[i]+forceBot[i]
    
 if (forceOutput):
     fileName = fileBase + "netForce.dat"
@@ -129,8 +141,8 @@ for i in range(1, nLines):
         checkCount = checkCount+1
 
 print 'check count = %s' % checkCount
-startPoint = checkPoint[3]
-endPoint = checkPoint[5]
+startPoint = checkPoint[2]
+endPoint = checkPoint[4]
 
 lengthPerCycle = endPoint-startPoint
 
@@ -160,13 +172,26 @@ print ("calculate force extension done!")
 #*************************************************************************#
 #calculate the time integral of force#
 
+## we are essentially computing the Fourier coefficients, ie. assuming
+## p(t) = A cos(omega*t) + B sin(omega*t)
+##
+## A and B can be found as
+## A = 2*integral (p(t)*cos(omega*t))
+## B = 2*integral (p(t)*sin(omega*t))
+##
+## with the integrals being over a large enough number of cycles
+
+
 sumForce = zeros(totalLength, float)
+sumForceI = zeros(totalLength, float)
 
 for t in range(0, totalLength):
     for i in range(0, t):
         sumForce[t] = sumForce[t] + forceExt[i]*cos(omega*timeExt[i])*deltaT;
+        sumForceI[t] = sumForceI[t] + forceExt[i]*sin(omega*timeExt[i])*deltaT;
     if(t > 0):
-        sumForce[t] = sumForce[t]*2/(t*deltaT);
+        sumForce[t] = sumForce[t]*2*symmetryFactor/(t*deltaT);
+        sumForceI[t] = sumForceI[t]*2*symmetryFactor/(t*deltaT);
 
 if (forceIntegralOutput):
     fileName = fileBase + "forceIntegral.dat"
@@ -195,18 +220,49 @@ for i in range (totalLength-gap, totalLength):
 
 average = average/gap
 
+## repeat for the imaginary part of pressure
+
+averageI = 0.0
+maxI = -1.0e10
+minI = 1.0e10
+
+for i in range (totalLength-gap, totalLength):
+    averageI = averageI + sumForceI[i];
+    if(sumForceI[i] >= maxI):
+        maxI = sumForceI[i]
+    if(sumForce[i] <= minI):
+        minI = sumForceI[i]
+
+averageI = averageI/gap
+
 
 print ("calculate damping factor done!") 
 #*************************************************************************#
 # calculate damping factor
 
-factor = omega*rho*b*h*A
 
-zetaAvg = average/factor
+## computed from the code using the same method that computes A*p integral
 
-zetaMax = max/factor
+## this is the value for mode 1
+#AAdxdy = 2.283285e-15*2.
 
-zetaMin = min/factor
+
+## this is the value for mode 2
+
+AAdxdy = 1.693977e-13*2
+#factor = 2*omega*rho*b*h*A*length
+factor = 2*omega*rho*AAdxdy*h
+
+factor -= averageI
+
+print 'average %s' % average
+print 'factor %s' % factor
+
+zetaAvg = -average/factor
+
+zetaMax = -max/factor
+
+zetaMin = -min/factor
 
 print zetaAvg, zetaMin, zetaMax
 
