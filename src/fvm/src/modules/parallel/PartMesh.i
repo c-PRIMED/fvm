@@ -5,10 +5,10 @@
 %}
 
 %include "std_vector.i"
-
 %import "Mesh.i"
 using namespace std;
 %template(IntVector) vector<int>;
+
 
 class PartMesh{
 
@@ -27,6 +27,7 @@ public:
     const MeshList&  meshList();
     void dumpTecplot();
     void mesh_debug();
+    void debug_print();
 
 
     // set property methods

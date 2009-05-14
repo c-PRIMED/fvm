@@ -53,7 +53,7 @@ public:
     const MeshList&  meshList() const { return _meshListLocal;};
 
 
-
+    void debug_print();
     void dumpTecplot();
     void mesh_debug();
 
@@ -72,7 +72,6 @@ private:
    void parmetis_mesh();
    int  local_nodes(int id);
    void set_eptr_eind(int id);
-   void debug_print();
    void map_part_elms();
    void count_elems_part();
    void exchange_part_elems();
