@@ -57,6 +57,7 @@ typedef Vector<double,3> VecD3;
 %include "MPM_Particles.i"
 %include "Octree.i"
 %include "Grid.i"
+%include "FVMParticles.i"
 
 
 
