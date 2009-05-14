@@ -21,14 +21,18 @@ public:
   
   static int getDimension() {return NumTypeTraits<T>::getDimension()+1;}
   
-  static void getShape(int *shp) { *shp = 3;}
+  static void getShape(int *shp)
+  {
+    *shp = 3;
+    NumTypeTraits<T>::getShape(shp+1);
+  }
 
   static int getDataSize()
   {
     return 3*NumTypeTraits<T>::getDataSize();
   }
 
-  //  T& operator[](int n) {return _data[n];}
+  T& operator[](int n) {return _data[n];}
   const T& operator[](int n) const {return _data[n];}
 
 
