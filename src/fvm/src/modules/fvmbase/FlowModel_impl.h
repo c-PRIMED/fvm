@@ -52,7 +52,11 @@ public:
   typedef typename VPMatrix::PairWiseAssembler VPAssembler;
 
 
-  typedef Array<Gradient<T> > PGradArray;
+  typedef Gradient<VectorT3> VGradType;
+  typedef Array<Gradient<VectorT3> > VGradArray;
+
+  typedef Gradient<T> PGradType;
+  typedef Array<PGradType> PGradArray;
 
   typedef FluxJacobianMatrix<T,T> FMatrix;
   
@@ -295,7 +299,7 @@ public:
 
     const VectorT3Array& pV =
       dynamic_cast<const VectorT3Array&>(_flowFields.velocity[particles]);
-    
+
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
@@ -303,7 +307,7 @@ public:
 
         const StorageSite& cells = mesh.getCells();
         const StorageSite& ibFaces = mesh.getIBFaces();
-	
+        
         GeomFields::SSPair key1(&ibFaces,&cells);
         const IMatrix& mIC =
           dynamic_cast<const IMatrix&>
@@ -319,11 +323,12 @@ public:
         IMatrixV3 mIPV(mIP);
 
         shared_ptr<VectorT3Array> ibV(new VectorT3Array(ibFaces.getCount()));
+        
+        const VectorT3Array& cV =
+          dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
+    
 
         ibV->zero();
-
-        const VectorT3Array& cV =
-	 dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
 
 	mICV.multiplyAndAdd(*ibV,cV);
 	mIPV.multiplyAndAdd(*ibV,pV);
@@ -340,25 +345,10 @@ public:
 	center[0]=0.;
 	center[1]=0.;
 	center[2]=0.;	
-
-	for(int f=0; f<ibFaces.getCount();f++){
-	  int fID = ibFaceList[f];
-	  double r = mag(faceCentroid[fID]-center);
-	  double angle = atan2(faceCentroid[fID][1]-center[1],faceCentroid[fID][0]-center[0]);
-	  //(*ibV)[f][0]=-angV*r*sin(angle);
-	  //(*ibV)[f][1]=angV*r*cos(angle);
-	  //(*ibV)[f][2]=0.0;
-	  (*ibV)[f][0]=0.0;
-	  (*ibV)[f][1]=0.0;
-	  (*ibV)[f][2]=0.0;
-	}
-	  
-	//for(int f=0; f<ibFaces.getCount();f++){
-	//cout<<f<<" "<<(*ibV)[f]<<endl;
-	//}
 #endif
         _flowFields.velocity.addArray(ibFaces,ibV);
     }
+
   }
   
   void initMomentumLinearization(LinearSystem& ls)
@@ -851,6 +841,8 @@ public:
         }
     }
 
+    //    cout << "net boundary flux = " << netFlux << endl;
+    
     if (this->_useReferencePressure)
     {
         // we have all fixed mass flux boundary problem. In case the
@@ -973,8 +965,8 @@ public:
         
         if (coupled)
           correctVelocityExplicit(mesh,ppField);
-         else
-         correctVelocityInterior(mesh,iFaces,ppField);
+        else if (_options.correctVelocity)
+          correctVelocityInterior(mesh,iFaces,ppField);
         
         updateFacePressureInterior(mesh,iFaces);
 
@@ -987,7 +979,7 @@ public:
             
             if (coupled)
               correctVelocityExplicit(mesh,ppField);
-            else
+            else if (_options.correctVelocity)
               correctVelocityInterior(mesh,faces,ppField);
             
             updateFacePressureInterior(mesh,faces);
@@ -1002,7 +994,7 @@ public:
               
             correctMassFluxBoundary(faces,ppField);
             
-            if (!coupled)
+            if (!coupled && _options.correctVelocity)
               correctVelocityBoundary(mesh,faces,ppField);
 
             if (bc.bcType == "PressureBoundary")
@@ -1333,6 +1325,34 @@ public:
     return r;
   }
   
+  VectorT3 getPVIntegral(const Field& velCoeffField,
+                         const Mesh& mesh, const int faceGroupId)
+  {
+    VectorT3 r(VectorT3::getZero());
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+        {
+            const StorageSite& faces = fg.site;
+            const VectorT3Array& faceArea =
+              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+            const VectorT3Array& velCoeff =
+              dynamic_cast<const VectorT3Array&>(velCoeffField[faces]);
+            const int nFaces = faces.getCount();
+            const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += velCoeff[f]*(faceArea[f]*facePressure[f]);
+
+            found=true;
+        }
+    }
+  if (!found)
+    throw CException("getPVIntegral: invalid faceGroupID");
+    return r;
+  }
+  
   VectorT3 getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupId)
   {
     VectorT3 r(VectorT3::getZero());
@@ -1356,7 +1376,47 @@ public:
       throw CException("getMomentumFluxIntegral: invalid faceGroupID");
     return r;
   }
-  
+
+  boost::shared_ptr<ArrayBase> getStressTensor(const Mesh& mesh, const ArrayBase& gcellIds)
+  {
+    const StorageSite& cells = mesh.getCells();
+    
+    const Array<int>& cellIds = dynamic_cast<const Array<int> &>(gcellIds);
+    const int nCells = cellIds.getLength();
+
+    _velocityGradientModel.compute();
+    _pressureGradientModel.compute();
+    
+    const VGradArray& vGrad =
+      dynamic_cast<const VGradArray&>(_flowFields.velocityGradient[cells]);
+
+    const PGradArray& pGrad =
+      dynamic_cast<const PGradArray&>(_flowFields.pressureGradient[cells]);
+
+    const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
+
+    boost::shared_ptr<VGradArray> stressTensorPtr( new VGradArray(nCells));
+    VGradArray& stressTensor = *stressTensorPtr;
+
+    for(int n=0; n<nCells; n++)
+    {
+        const int c = cellIds[n];
+        const VGradType& vg = vGrad[c];
+        VGradType vgPlusTranspose = vGrad[c];
+
+        for(int i=0;i<3;i++)
+          for(int j=0;j<3;j++)
+            vgPlusTranspose[i][j] += vg[j][i];
+        
+        stressTensor[n] = vgPlusTranspose*mu[c];
+
+        for(int i=0;i<3;i++)
+          stressTensor[n][i][i] = pGrad[c][i];
+    }
+
+    return stressTensorPtr;
+  }
+
   void printPressureIntegrals()
   {
     const int numMeshes = _meshes.size();
@@ -1570,6 +1630,13 @@ FlowModel<T>::getPressureIntegral(const Mesh& mesh, const int faceGroupId)
 
 template<class T>
 Vector<T,3>
+FlowModel<T>::getPVIntegral(const Field& velCoeff,const Mesh& mesh, const int faceGroupId)
+{
+  return  _impl->getPVIntegral(velCoeff,mesh,faceGroupId);
+}
+
+template<class T>
+Vector<T,3>
 FlowModel<T>::getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupId)
 {
  return  _impl->getMomentumFluxIntegral(mesh,faceGroupId);
@@ -1580,6 +1647,13 @@ void
 FlowModel<T>::computeIBFaceVelocity(const StorageSite& particles)
 {
   return _impl->computeIBFaceVelocity(particles);
+}
+
+template<class T>
+boost::shared_ptr<ArrayBase>
+FlowModel<T>::getStressTensor(const Mesh& mesh, const ArrayBase& cellIds)
+{
+  return _impl->getStressTensor(mesh, cellIds);
 }
 
 #ifndef USING_ATYPE_TANGENT

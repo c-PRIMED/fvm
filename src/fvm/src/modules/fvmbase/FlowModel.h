@@ -43,7 +43,10 @@ public:
   void updateTime();
 
   Vector<T,3> getPressureIntegral(const Mesh& mesh, const int faceGroupID);
+  Vector<T,3> getPVIntegral(const Field& velCoeff, const Mesh& mesh, const int faceGroupID);
   Vector<T,3> getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupID);
+
+  boost::shared_ptr<ArrayBase> getStressTensor(const Mesh& mesh, const ArrayBase& cellIds);
   
   void printPressureIntegrals();
   void printMomentumFluxIntegrals();
