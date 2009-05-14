@@ -22,7 +22,8 @@ from FluentCase import FluentCase
 
 
 fileBase = "/home/lin/work/app-memosa/src/fvm/test/Grid/"
-
+coordFile = fileBase + "Grid_Coord.dat"
+velocityFile = fileBase + "Grid_Velocity.dat"
 
 def usage():
     print "Usage: %s filebase [outfilename]" % sys.argv[0]
@@ -41,7 +42,7 @@ if __name__ == '__main__' and fileBase is None:
 if outfile == None:
     outfile = fileBase+"-cellmark.dat"
     
-reader = FluentCase(fileBase+"new-beam-114k.cas")
+reader = FluentCase(fileBase+"3D-cantilever.cas")
 
 #import ddd
 reader.read();
@@ -69,41 +70,41 @@ import time
 t0 = time.time()
 #pdg.set_trace()
 
-grid = fvmbaseExt.Grid()
-
-grids = grid.getGrids();
-
-grid.Impl(mesh0, geomFields, flowFields, grid, fileBase)
+grid = fvmbaseExt.Grid(geomFields, flowFields, coordFile, velocityFile)
+gridNodes = grid.getNodes()
 
 
+sideID = 10
+topID = 9
+botID = 12
+tipID = 11
+
+faceVelFile = open(fileBase + "InterpolatedFaceVelocity.dat", "w")
+#import ddd
 for mesh in meshes:
     fgs = mesh.getBoundaryGroups()
     for fg in fgs:
-        if fg.id == 9:   #beam top
+        if fg.id in [sideID, topID, botID, tipID]:
             faces = fg.site
-            grid.setConnFaceToGrid(mesh0, geomFields, grid, faces)
-            metricsCalculator.computeGridInterpolationMatrices(grids,faces)
-            faceVel = grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase, faces)
-    
-        if fg.id == 12:   #beam bot
-            faces = fg.site
-            grid.setConnFaceToGrid(mesh0, geomFields, grid, faces)
-            metricsCalculator.computeGridInterpolationMatrices(grids,faces)
-            faceVel = grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase, faces)
-            
-        if fg.id == 11:   #beam tip
-            faces = fg.site
-            grid.setConnFaceToGrid(mesh0, geomFields, grid, faces)
-            metricsCalculator.computeGridInterpolationMatrices(grids,faces)
-            faceVel = grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase, faces)
-            
-        if fg.id == 10:   #beam side
-            faces = fg.site
-            grid.setConnFaceToGrid(mesh0, geomFields, grid, faces)
-            metricsCalculator.computeGridInterpolationMatrices(grids,faces)
-            faceVel = grid.computeInterpolatedVelocity(grids, grid, mesh0, geomFields, fileBase, faces)
-  
+            grid.setConnFaceToGrid(mesh0, faces)
+            metricsCalculator.computeGridInterpolationMatrices(gridNodes,faces)
+            fv = grid.computeInterpolatedVelocity(faces)
+            faceVel = fv.asNumPyArray()
+            faceX = geomFields.coordinate[faces].asNumPyArray()
 
+            nFaces = faces.getCount()
+
+            for f in range (0, nFaces):
+                faceVelFile.write ("%e\t%e\t%e\t%e\t%e\t%e\n" %
+                                   (faceX[f][0],faceX[f][1],faceX[f][2],
+                                    faceVel[f][0],faceVel[f][1],faceVel[f][2]))
+
+
+faceVelFile.close()
+                                   
+            
+    
+       
 t1 = time.time()
 if outfile != '/dev/stdout':
     print '\nsolution time = %f' % (t1-t0)
