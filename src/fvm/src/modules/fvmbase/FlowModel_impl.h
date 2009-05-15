@@ -354,8 +354,8 @@ public:
 	  //(*ibV)[f][0]=-angV*r*sin(angle);
 	  //(*ibV)[f][1]=angV*r*cos(angle);
 	  //(*ibV)[f][2]=0.0;
-	  (*ibV)[f][0]=0.0;
-	  (*ibV)[f][1]=pV[0][1];
+	  (*ibV)[f][0]=0.1;
+	  (*ibV)[f][1]=0.0;
 	  (*ibV)[f][2]=0.0;
 	}
 	  
@@ -1764,7 +1764,7 @@ FlowModel<T>::computeIBFaceVelocity(const StorageSite& particles)
   return _impl->computeIBFaceVelocity(particles);
 }
 
-<<<<<<< .mine
+
 template<class T>
 void
 FlowModel<T>::computeIBandSolidVelocity(const StorageSite& particles)
@@ -1773,7 +1773,7 @@ FlowModel<T>::computeIBandSolidVelocity(const StorageSite& particles)
 }
 
 
-=======
+
 template<class T>
 boost::shared_ptr<ArrayBase>
 FlowModel<T>::getStressTensor(const Mesh& mesh, const ArrayBase& cellIds)
@@ -1781,7 +1781,7 @@ FlowModel<T>::getStressTensor(const Mesh& mesh, const ArrayBase& cellIds)
   return _impl->getStressTensor(mesh, cellIds);
 }
 
->>>>>>> .r644
+
 #ifndef USING_ATYPE_TANGENT
 template<class T>  
 void
