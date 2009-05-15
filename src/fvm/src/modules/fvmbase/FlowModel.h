@@ -46,14 +46,20 @@ public:
   Vector<T,3> getPVIntegral(const Field& velCoeff, const Mesh& mesh, const int faceGroupID);
   Vector<T,3> getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupID);
 
+
+  Vector<T,3> getPressureIntegralonIBFaces(const Mesh& mesh);
+  Vector<T,3> getMomentumFluxIntegralonIBFaces(const Mesh& mesh);
+
+
   boost::shared_ptr<ArrayBase> getStressTensor(const Mesh& mesh, const ArrayBase& cellIds);
+
   
   void printPressureIntegrals();
   void printMomentumFluxIntegrals();
   void printMassFluxIntegrals();
   
   void computeIBFaceVelocity(const StorageSite& particles);
-  
+  void computeIBandSolidVelocity(const StorageSite& particles);
   //LinearSolver& getMomentumSolver();
   //LinearSolver& getContinuitySolver();
 

@@ -361,7 +361,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   Array<T>& cellToIBCoeff = cellToIB->getCoeff();
   Array<T>& particlesToIBCoeff = particlesToIB->getCoeff();
 
-#if 0
+#if 1
   /******distance weighted interpolation******/
 
   for(int n=0; n<nIBFaces; n++)
@@ -404,7 +404,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   }
 #endif
 
-#if 1
+#if 0
 
   /**********linear least square interpolation*********/
   // X=x-xf  Y=y-yf  Z=Z-zf
@@ -720,6 +720,113 @@ MeshMetricsCalculator<T>::computeGridInterpolationMatrices
 
 template<class T>
 void
+MeshMetricsCalculator<T>::computeIBandSolidInterpolationMatrices
+(const Mesh& mesh,
+ const StorageSite& mpmParticles)
+{
+  typedef CRMatrixTranspose<T,T,T> IMatrix;
+  const StorageSite& cells = mesh.getCells();
+  const CRConnectivity& cellToParticles
+    = mesh.getConnectivity(cells,mpmParticles);
+
+  const VectorT3Array& xCells =
+    dynamic_cast<const VectorT3Array&>(_coordField[cells]);
+
+  const VectorT3Array& xParticles =
+    dynamic_cast<const VectorT3Array&>(_coordField[mpmParticles]);
+
+  const Array<int>& CPRow = cellToParticles.getRow();
+  const Array<int>& CPCol = cellToParticles.getCol();
+  
+  const int nCells = cells.getCount();
+
+  shared_ptr<IMatrix> particlesToCell(new IMatrix(cellToParticles));
+
+  Array<T>& particlesToCellCoeff = particlesToCell->getCoeff();
+
+  for (int c=0; c<nCells; c++){
+    const int nP = CPRow[c+1] - CPRow[c];
+    if (nP == 0){
+      //fluid cell. do nothing
+    }
+    
+    if (nP == 1){
+      //only one particle in this cell
+      particlesToCellCoeff[ CPRow[c] ] = 1.0;
+      cout<<"only one particle in cell "<<c<<endl;
+    }
+
+    if (nP == 2){
+      for(int nc=CPRow[c]; nc<CPRow[c+1]; nc++){
+	particlesToCellCoeff[nc] = 0.5;
+      }
+    }
+
+    if (nP == 3){
+      for(int nc=CPRow[c]; nc<CPRow[c+1]; nc++){
+	particlesToCellCoeff[nc] = 1./3.;
+      }
+    }
+
+    if (nP >= 4){
+
+      T wt(0);
+      int nnb(0);
+      
+      T Q[4][4];
+      T Qinv[4][4];
+
+      for(int i=0; i<4; i++){
+	for(int j=0; j<4; j++){
+	  Q[i][j]=Qinv[i][j]=0;
+	}
+      }
+      
+      for(int nc=CPRow[c]; nc<CPRow[c+1]; nc++)
+	{
+	  const int p = CPCol[nc];
+	  VectorT3 dr(xParticles[p]-xCells[c]);
+	  Q[0][0] += 1.0;
+	  Q[0][1] += dr[0];
+	  Q[0][2] += dr[1];
+	  Q[0][3] += dr[2];
+	  Q[1][1] += dr[0]*dr[0];
+	  Q[1][2] += dr[0]*dr[1];
+	  Q[1][3] += dr[0]*dr[2];
+	  Q[2][2] += dr[1]*dr[1];
+	  Q[2][3] += dr[1]*dr[2];
+	  Q[3][3] += dr[2]*dr[2];      
+	  nnb++;
+	}
+
+      for(int i=0; i<4; i++){
+	for(int j=0; j<i; j++){
+	  Q[i][j]=Q[j][i];
+	}
+      }
+      matrix<T> matrix;
+      matrix.Invert4x4(Q, Qinv);
+
+      for (int  nc=CPRow[c]; nc<CPRow[c+1]; nc++)
+	{
+	  const int p = CPCol[nc];
+	  VectorT3 dr(xParticles[p]-xCells[c]);
+	  wt = Qinv[0][0];
+	  for (int i=1; i<=3; i++){
+	    wt += Qinv[0][i]*dr[i-1];
+	  }
+	  particlesToCellCoeff[nc] = wt;
+	}
+    }
+  }
+    GeomFields::SSPair key2(&cells,&mpmParticles);
+    this->_geomFields._interpolationMatrices[key2] = particlesToCell;
+
+}
+//**************************************************************************//
+
+template<class T>
+void
 MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p)
 {
   const int numMeshes = _meshes.size();
@@ -729,6 +836,19 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p)
       computeIBInterpolationMatrices(mesh,p);
   }
 }
+
+template<class T>
+void
+MeshMetricsCalculator<T>::computeIBandSolidInterpolationMatrices(const StorageSite& p)
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      computeIBandSolidInterpolationMatrices(mesh,p);
+  }
+}
+
 template<class T>
 void
 MeshMetricsCalculator<T>::computeGridInterpolationMatrices(const StorageSite& g,const StorageSite& f )

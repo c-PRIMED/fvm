@@ -30,7 +30,7 @@ void reportCellMark (const Mesh& mesh, const int nCells,
 		     const VecD3Array& cellCentroid,
 		     const string fileBase);
 
-void markCell( Mesh& mesh, const int nCells, 
+void markCell( Mesh& mesh, const int nCells, const int nSelfCells, 
 	       const CRConnectivity& cellParticles, const CRConnectivity& cellCells );
 
 const  shared_ptr<CRConnectivity> setParticleCells

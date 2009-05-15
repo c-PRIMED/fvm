@@ -14,7 +14,7 @@ using namespace std;
 class MPM
 {
  public: 
-  MPM();
+  MPM(string fileName);
 
   ~MPM();
   
@@ -33,8 +33,7 @@ class MPM
    
   const boost::shared_ptr<ArrayBase> getVelocities() {return  _velocities;}
 
-  void Impl(string fileName);
-
+ 
   void setandwriteParticles(const char *file);	
 };
 

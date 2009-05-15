@@ -61,7 +61,8 @@ public:
     {
       IBTYPE_FLUID,
       IBTYPE_BOUNDARY,
-      IBTYPE_SOLID
+      IBTYPE_SOLID,
+      IBTYPE_REALBOUNDARY
     };
   
   Mesh(const int dimension, const int id);

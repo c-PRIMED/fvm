@@ -17,6 +17,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     const StorageSite& cells = mesh.getCells();
     const int nCells = cells.getCount();          //need to include BC cells?
+    const int nSelfCells = cells.getSelfCount();
     const VecD3Array& cellCentroid = dynamic_cast<const VecD3Array& > (geomFields.coordinate[cells]);
     const StorageSite& faces = mesh.getFaces();
     const int nFaces = faces.getCount();
@@ -274,7 +275,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	
 	int pID = cellParticles(c,p);
 	if ((*particleTypes)[pID] == 1)
-	fprintf(fp,"%i\t%lf\t%lf\t%lf\t%i\n", c, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
+	fprintf(fp,"%i\t%e\t%e\t%e\t%i\n", c, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
       }
     } 
     fclose(fp);
@@ -283,7 +284,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
    
 
     /**************************mark cell**********************************/
-    markCell ( mesh, nCells, cellParticles, cellCells);
+    markCell ( mesh, nCells,nSelfCells, cellParticles, cellCells);
 
     //test mark cell
     
@@ -307,7 +308,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     //test
     for(int f=0; f<ibFaces.getCount(); f++){
       int fID = ibFaceList[f];
-      fprintf(fp,"%i\t%lf\t%lf\t%lf\n", fID, faceCentroid[fID][0],faceCentroid[fID][1],faceCentroid[fID][2]);
+      fprintf(fp,"%i\t%e\t%e\t%e\n", fID, faceCentroid[fID][0],faceCentroid[fID][1],faceCentroid[fID][2]);
     }
     fclose(fp);
 
@@ -355,7 +356,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	int pID = ibFaceParticles(f,c);
 	//cout<<"face "<<faceIndex<<"  has  "<<ibFaceParticles(f, c)<<endl;
 	//cout<<(*MPM_Points)[ibFaceParticles(f,c)]<<endl;
-	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
+	fprintf(fp, "%i\t%i\t%e\t%e\t%e\t%i\n", faceIndex,pID, (*MPM_Points)[pID][0],(*MPM_Points)[pID][1],(*MPM_Points)[pID][2],(*particleTypes)[pID]);
 	//fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\t%i\n", faceIndex,pID, (*MPM_Vels)[pID][0],(*MPM_Vels)[pID][1],(*MPM_Vels)[pID][2],(*particleTypes)[pID]);
       }
      } 
@@ -377,7 +378,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 	//cout<<"face "<<faceIndex<<"  has  "<<ibFaceCells(f, c)<<endl;
 	//cout<<(cellCentroid)[ibFaceCells(f,c)]<<endl;
 	int cID = ibFaceCells(f,c);
-	fprintf(fp, "%i\t%i\t%lf\t%lf\t%lf\n",faceIndex,cID, (cellCentroid)[cID][0],(cellCentroid)[cID][1],(cellCentroid)[cID][2]);
+	fprintf(fp, "%i\t%i\t%e\t%e\t%e\n",faceIndex,cID, (cellCentroid)[cID][0],(cellCentroid)[cID][1],(cellCentroid)[cID][2]);
       }
      }
      fclose(fp);

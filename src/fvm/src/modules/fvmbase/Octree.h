@@ -46,6 +46,7 @@ class   Octree
  
   // Construction/Destruction
              Octree();
+
   virtual   ~Octree();
 
   // Accessors
@@ -89,9 +90,9 @@ class   Octree
 
   const vector<int>       Naive_getNodes(const VectorT3 coordinate, const int count, const Point * points, const double radius);
 
-  void Impl(const Mesh& mesh,const GeomFields& geomFields);
+  
 
-
+  void Impl(const Mesh& mesh, const GeomFields& geomFields);
   //void Impl(const int nCells, shared_ptr<VectorT3Array> cellCentroid); 
 //virtual const   bool            traverse(callback proc, void *data) const;
 

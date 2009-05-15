@@ -70,7 +70,7 @@ inCell(const int cellIndex,
 
 
 
-void markCell( Mesh& mesh, const int nCells, 
+void markCell( Mesh& mesh, const int nCells, const int nSelfCells,
 	       const CRConnectivity& cellParticles, const CRConnectivity& cellCells )
 {
 
@@ -78,13 +78,18 @@ void markCell( Mesh& mesh, const int nCells,
   //and Mark the cells with no solid particles as fluid
 
    for(int c=0; c<nCells; c++){
-      const int particleCount = cellParticles.getCount(c);
+     if (c >= nSelfCells){
+       mesh.setIBTypeForCell (c, Mesh::IBTYPE_REALBOUNDARY);
+     }
+     else{
+       const int particleCount = cellParticles.getCount(c);
       //if no particle in cell, mark as fluid
-      if (particleCount == 0) {
-	mesh.setIBTypeForCell(c,Mesh::IBTYPE_FLUID);
-      }
-      //if has particle in cell, mark as solid
-      else { mesh.setIBTypeForCell(c,Mesh::IBTYPE_SOLID); }
+       if (particleCount == 0) {
+	 mesh.setIBTypeForCell(c,Mesh::IBTYPE_FLUID);
+       }
+       //if has particle in cell, mark as solid
+       else { mesh.setIBTypeForCell(c,Mesh::IBTYPE_SOLID); }
+     }
     }
 
    //step2: in solid cells, mark cells with no fluid neighbors as solid
@@ -107,6 +112,7 @@ void markCell( Mesh& mesh, const int nCells,
 	if(flag==0) mesh.setIBTypeForCell(c,Mesh::IBTYPE_BOUNDARY);
       }
     }
+   
 }
 
 
@@ -143,13 +149,13 @@ void reportCellMark (const Mesh& mesh, const int nCells,
     for(int c=0; c<nCells; c++){
       int ibType = mesh.getIBTypeForCell(c);
       if(ibType == Mesh::IBTYPE_FLUID){
-	fprintf(fp1, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
+	fprintf(fp1, "%i\t%e\t%e\t%e\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
       else if(ibType==Mesh::IBTYPE_BOUNDARY){
-	fprintf(fp2, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
+	fprintf(fp2, "%i\t%e\t%e\t%e\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
       else if(ibType==Mesh::IBTYPE_SOLID){
-	fprintf(fp3, "%i\t%f\t%f\t%f\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
+	fprintf(fp3, "%i\t%e\t%e\t%e\n", c, cellCentroid[c][0],cellCentroid[c][1],cellCentroid[c][2]);
       }
     } 
     fclose(fp1);  

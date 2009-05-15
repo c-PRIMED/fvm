@@ -11,7 +11,7 @@
 class MPM
 {
  public: 
-  MPM();
+  MPM(string fileName);
 
   ~MPM();
 

@@ -362,9 +362,6 @@ Grid::findNeighbors(const VecD3& point)
 }
 
 
-
-
-
 //set up pointToNodes connectivity
 
 const shared_ptr<CRConnectivity>

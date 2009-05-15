@@ -13,6 +13,7 @@ public:
   MeshMetricsCalculator(GeomFields& geomFields, const MeshList& meshes);
   virtual void init();
   void computeIBInterpolationMatrices(const StorageSite& particles);
+  void computeIBandSolidInterpolationMatrices(const StorageSite& particles);
   void computeGridInterpolationMatrices(const StorageSite& grids, const StorageSite& faces );	
 #ifdef USING_ATYPE_TANGENT
   void setTangentCoords(int meshID, int faceZoneID, int dim);

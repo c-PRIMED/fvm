@@ -30,6 +30,8 @@ public:
 
   void computeIBInterpolationMatrices(const StorageSite& particles);
 
+  void computeIBandSolidInterpolationMatrices(const StorageSite& particles);
+
   void computeGridInterpolationMatrices(const StorageSite& grids, const StorageSite& faces );
 
   DEFINE_TYPENAME("MeshMetricsCalculator<"+NumTypeTraits<T>::getTypeName()+">");
@@ -57,6 +59,8 @@ private:
   virtual void calculateCellVolumes(const Mesh& mesh);
 
   void computeIBInterpolationMatrices(const Mesh& mesh,
+                                      const StorageSite& particles);
+  void computeIBandSolidInterpolationMatrices(const Mesh& mesh,
                                       const StorageSite& particles);
   void computeGridInterpolationMatrices(const Mesh& mesh,
 					const StorageSite& grids,

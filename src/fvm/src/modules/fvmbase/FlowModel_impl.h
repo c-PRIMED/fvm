@@ -345,10 +345,74 @@ public:
 	center[0]=0.;
 	center[1]=0.;
 	center[2]=0.;	
+
+
+	for(int f=0; f<ibFaces.getCount();f++){
+	  int fID = ibFaceList[f];
+	  double r = mag(faceCentroid[fID]-center);
+	  double angle = atan2(faceCentroid[fID][1]-center[1],faceCentroid[fID][0]-center[0]);
+	  //(*ibV)[f][0]=-angV*r*sin(angle);
+	  //(*ibV)[f][1]=angV*r*cos(angle);
+	  //(*ibV)[f][2]=0.0;
+	  (*ibV)[f][0]=0.0;
+	  (*ibV)[f][1]=pV[0][1];
+	  (*ibV)[f][2]=0.0;
+	}
+	  
+	//for(int f=0; f<ibFaces.getCount();f++){
+	//cout<<f<<" "<<(*ibV)[f]<<endl;
+	//}
+
 #endif
         _flowFields.velocity.addArray(ibFaces,ibV);
     }
 
+  }
+
+
+ void computeIBandSolidVelocity(const StorageSite& particles)
+  {
+    typedef CRMatrixTranspose<T,T,T> IMatrix;
+    typedef CRMatrixTranspose<T,VectorT3,VectorT3> IMatrixV3;
+
+    const VectorT3Array& pV =
+      dynamic_cast<const VectorT3Array&>(_flowFields.velocity[particles]);
+    
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+
+        const StorageSite& cells = mesh.getCells();
+     	const int nCells = cells.getCount();
+	
+	GeomFields::SSPair key2(&cells,&particles);
+        const IMatrix& mIP =
+          dynamic_cast<const IMatrix&>
+          (*_geomFields._interpolationMatrices[key2]);
+
+        IMatrixV3 mIPV(mIP);
+
+
+        shared_ptr<VectorT3Array> icV(new VectorT3Array(nCells));
+
+        icV->zero();
+
+       	mIPV.multiplyAndAdd(*icV,pV);
+	
+	//only modify the solid cell and IB cell velocity by interpolating of particles
+	VectorT3Array& cV =
+	  dynamic_cast<VectorT3Array&>(_flowFields.velocity[cells]);
+		
+	for (int c = 0; c < nCells; c ++){
+	  const int cellType = mesh.getIBTypeForCell(c);
+	  if (cellType == Mesh::IBTYPE_REALBOUNDARY){
+	    cV[c] = (*icV)[c];
+	  }
+	}
+	
+	//_flowFields.velocity.addArray(cells,cV);
+    }
   }
   
   void initMomentumLinearization(LinearSystem& ls)
@@ -437,7 +501,7 @@ public:
           _options["momentumURF"]));
 
     discretizations.push_back(dd);
-    //discretizations.push_back(cd);
+    discretizations.push_back(cd);
     discretizations.push_back(pd);
     discretizations.push_back(ud);
 
@@ -1320,11 +1384,30 @@ public:
             found=true;
         }
     }
-  if (!found)
-    throw CException("getPressureIntegral: invalid faceGroupID");
+    if (!found)
+      throw CException("getPressureIntegral: invalid faceGroupID");
     return r;
   }
-  
+
+  VectorT3 getPressureIntegralonIBFaces(const Mesh& mesh)
+  {
+    VectorT3 r(VectorT3::getZero());
+    const StorageSite& ibFaces = mesh.getIBFaces();
+    const StorageSite& faces = mesh.getFaces();
+    const Array<int>& ibFaceIndices = mesh.getIBFaceList();
+    const int nibf = ibFaces.getCount();
+    const VectorT3Array& faceArea =
+              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+    const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
+    for ( int f = 0; f < nibf; f ++){
+      const int ibFaceIndex = ibFaceIndices[f];
+      r += faceArea[ibFaceIndex]*facePressure[ibFaceIndex];
+    }
+    if (nibf == 0)
+      throw CException("getPressureIntegralonIBFaces: no IBFaces found!");
+    return r;
+  }
+
   VectorT3 getPVIntegral(const Field& velCoeffField,
                          const Mesh& mesh, const int faceGroupId)
   {
@@ -1368,7 +1451,6 @@ public:
               dynamic_cast<const VectorT3Array&>(_flowFields.momentumFlux[faces]);
             for(int f=0; f<nFaces; f++)
               r += momFlux[f];
-
             found=true;
         }
     }
@@ -1416,6 +1498,25 @@ public:
 
     return stressTensorPtr;
   }
+
+  VectorT3 getMomentumFluxIntegralonIBFaces(const Mesh& mesh)
+  {
+    VectorT3 r(VectorT3::getZero());
+    const StorageSite& ibFaces = mesh.getIBFaces();
+    const StorageSite& faces = mesh.getFaces();
+    const Array<int>& ibFaceIndices = mesh.getIBFaceList();
+    const int nibf = ibFaces.getCount();
+    const VectorT3Array& momFlux =
+              dynamic_cast<const VectorT3Array&>(_flowFields.momentumFlux[faces]);
+    for ( int f = 0; f < nibf; f ++){
+      const int ibFaceIndex = ibFaceIndices[f];
+      r += momFlux[ibFaceIndex];
+    }
+    if (nibf == 0)
+      throw CException("getMomentumFluxIntegralonIBFaces:  no ibFaces found!");
+    return r;
+  }
+  
 
   void printPressureIntegrals()
   {
@@ -1643,12 +1744,36 @@ FlowModel<T>::getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupId)
 }
 
 template<class T>
+Vector<T,3>
+FlowModel<T>::getPressureIntegralonIBFaces(const Mesh& mesh)
+{
+ return  _impl->getPressureIntegralonIBFaces(mesh);
+}
+
+template<class T>
+Vector<T,3>
+FlowModel<T>::getMomentumFluxIntegralonIBFaces(const Mesh& mesh)
+{
+ return  _impl->getMomentumFluxIntegralonIBFaces(mesh);
+}
+
+template<class T>
 void
 FlowModel<T>::computeIBFaceVelocity(const StorageSite& particles)
 {
   return _impl->computeIBFaceVelocity(particles);
 }
 
+<<<<<<< .mine
+template<class T>
+void
+FlowModel<T>::computeIBandSolidVelocity(const StorageSite& particles)
+{
+  return _impl->computeIBandSolidVelocity(particles);
+}
+
+
+=======
 template<class T>
 boost::shared_ptr<ArrayBase>
 FlowModel<T>::getStressTensor(const Mesh& mesh, const ArrayBase& cellIds)
@@ -1656,6 +1781,7 @@ FlowModel<T>::getStressTensor(const Mesh& mesh, const ArrayBase& cellIds)
   return _impl->getStressTensor(mesh, cellIds);
 }
 
+>>>>>>> .r644
 #ifndef USING_ATYPE_TANGENT
 template<class T>  
 void
