@@ -58,7 +58,7 @@ typedef Vector<double,3> VecD3;
 %include "Octree.i"
 %include "Grid.i"
 %include "FVMParticles.i"
-
+%include "MPMCoupling.i"
 
 
 %inline %{
