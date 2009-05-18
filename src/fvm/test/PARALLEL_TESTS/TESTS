@@ -1,41 +1,21 @@
-CAVITY_TRI44_PROCS1_PARMETIS     ./ptest.py  --np 1  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc1     --test  parmetis
-CAVITY_TRI44_PROCS2_PARMETIS     ./ptest.py  --np 2  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc2     --test  parmetis
-CAVITY_TRI44_PROCS4_PARMETIS     ./ptest.py  --np 4  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc4     --test  parmetis
-CAVITY_TRI44_PROCS8_PARMETIS     ./ptest.py  --np 8  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc8     --test  parmetis
-CAVITY_TRI44_PROCS12_PARMETIS    ./ptest.py  --np 12 --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc12    --test  parmetis
-CAVITY_TRI44_PROCS1_MESH         ./ptest.py  --np 1  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc1     --test  mesh
-CAVITY_TRI44_PROCS2_MESH         ./ptest.py  --np 2  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc2     --test  mesh
-CAVITY_TRI44_PROCS4_MESH         ./ptest.py  --np 4  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc4     --test  mesh
-CAVITY_TRI44_PROCS8_MESH         ./ptest.py  --np 8  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc8     --test  mesh
-CAVITY_TRI44_PROCS12_MESH        ./ptest.py  --np 12 --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc12    --test  mesh
-CAVITY_TRI44_PROCS1_PARMETIS     ./ptest.py  --np 1  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc1     --test  mapping
-CAVITY_TRI44_PROCS2_PARMETIS     ./ptest.py  --np 2  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc2     --test  mapping
-CAVITY_TRI44_PROCS4_PARMETIS     ./ptest.py  --np 4  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc4     --test  mapping
-CAVITY_TRI44_PROCS8_PARMETIS     ./ptest.py  --np 8  --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc8     --test  mapping
-CAVITY_TRI44_PROCS12_PARMETIS    ./ptest.py  --np 12 --script PARTHMESH/TRI_44/testPartMesh.py   --directory PARTHMESH/TRI_44/proc12    --test  mapping
-CAVITY_TRI26_PROCS1_PARMETIS     ./ptest.py  --np 1  --script PARTHMESH/TRI_26/testPartMesh.py   --directory PARTHMESH/TRI_26/proc1     --test  parmetis
-CAVITY_TRI26_PROCS2_PARMETIS     ./ptest.py  --np 2  --script PARTHMESH/TRI_26/testPartMesh.py   --directory PARTHMESH/TRI_26/proc2     --test  parmetis
-CAVITY_TRI26_PROCS1_MESH         ./ptest.py  --np 1  --script PARTHMESH/TRI_26/testPartMesh.py   --directory PARTHMESH/TRI_26/proc1     --test  mesh
-CAVITY_TRI26_PROCS2_MESH         ./ptest.py  --np 2  --script PARTHMESH/TRI_26/testPartMesh.py   --directory PARTHMESH/TRI_26/proc2     --test  mesh
-CAVITY_TRI26_PROCS1_PARMETIS     ./ptest.py  --np 1  --script PARTHMESH/TRI_26/testPartMesh.py   --directory PARTHMESH/TRI_26/proc1     --test  mapping
-CAVITY_TRI26_PROCS2_PARMETIS     ./ptest.py  --np 2  --script PARTHMESH/TRI_26/testPartMesh.py   --directory PARTHMESH/TRI_26/proc2     --test  mapping
-CAVITY_TRI894_PROCS1_PARMETIS    ./ptest.py  --np 1  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc1     --test  parmetis
-CAVITY_TRI894_PROCS2_PARMETIS    ./ptest.py  --np 2  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc2     --test  parmetis
-CAVITY_TRI894_PROCS4_PARMETIS    ./ptest.py  --np 4  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc4     --test  parmetis
-CAVITY_TRI894_PROCS8_PARMETIS    ./ptest.py  --np 8  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc8     --test  parmetis
-CAVITY_TRI894_PROCS12_PARMETIS   ./ptest.py  --np 12 --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc12    --test  parmetis
-CAVITY_TRI894_PROCS1_MESH        ./ptest.py  --np 1  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc1     --test  mesh
-CAVITY_TRI894_PROCS2_MESH        ./ptest.py  --np 2  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc2     --test  mesh
-CAVITY_TRI894_PROCS4_MESH        ./ptest.py  --np 4  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc4     --test  mesh
-CAVITY_TRI894_PROCS8_MESH        ./ptest.py  --np 8  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc8     --test  mesh
-CAVITY_TRI894_PROCS12_MESH       ./ptest.py  --np 12 --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc12    --test  mesh
-CAVITY_TRI894_PROCS1_PARMETIS    ./ptest.py  --np 1  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc1     --test  mapping
-CAVITY_TRI894_PROCS2_PARMETIS    ./ptest.py  --np 2  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc2     --test  mapping
-CAVITY_TRI894_PROCS4_PARMETIS    ./ptest.py  --np 4  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc4     --test  mapping
-CAVITY_TRI894_PROCS8_PARMETIS    ./ptest.py  --np 8  --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc8     --test  mapping
-CAVITY_TRI894_PROCS12_PARMETIS   ./ptest.py  --np 12 --script PARTHMESH/TRI_894/testPartMesh.py   --directory PARTHMESH/TRI_894/proc12    --test  mapping
-CAVITY_TRI894_PROCS1_THERMALSOLVER    ./ptest.py  --np 1  --script SOLVER_AMG/ThermalSolver/TRI_894/testThermalParallel.py   --directory SOLVER_AMG/ThermalSolver/TRI_894/proc1  --test thermal_solver
-CAVITY_TRI894_PROCS2_THERMALSOLVER    ./ptest.py  --np 2  --script SOLVER_AMG/ThermalSolver/TRI_894/testThermalParallel.py   --directory SOLVER_AMG/ThermalSolver/TRI_894/proc2  --test thermal_solver
-CAVITY_TRI894_PROCS4_THERMALSOLVER    ./ptest.py  --np 4  --script SOLVER_AMG/ThermalSolver/TRI_894/testThermalParallel.py   --directory SOLVER_AMG/ThermalSolver/TRI_894/proc4  --test thermal_solver
-CAVITY_TRI894_PROCS8_THERMALSOLVER    ./ptest.py  --np 8  --script SOLVER_AMG/ThermalSolver/TRI_894/testThermalParallel.py   --directory SOLVER_AMG/ThermalSolver/TRI_894/proc8  --test thermal_solver
-CAVITY_TRI894_PROCS12_THERMALSOLVER   ./ptest.py  --np 12 --script SOLVER_AMG/ThermalSolver/TRI_894/testThermalParallel.py   --directory SOLVER_AMG/ThermalSolver/TRI_894/proc12 --test thermal_solver
+CAVITY_TRI44_PROCS1  ./ptest.py  --np 1  --script testPartMesh.py --in ../cav_44_tri.cas --golden PARTHMESH/TRI_44/proc1  --outdir TESTDIR
+CAVITY_TRI44_PROCS2  ./ptest.py  --np 2  --script testPartMesh.py --in ../cav_44_tri.cas --golden PARTHMESH/TRI_44/proc2  --outdir TESTDIR
+CAVITY_TRI44_PROCS4  ./ptest.py  --np 4  --script testPartMesh.py --in ../cav_44_tri.cas --golden PARTHMESH/TRI_44/proc4  --outdir TESTDIR
+CAVITY_TRI44_PROCS8  ./ptest.py  --np 8  --script testPartMesh.py --in ../cav_44_tri.cas --golden PARTHMESH/TRI_44/proc8  --outdir TESTDIR
+CAVITY_TRI44_PROCS12 ./ptest.py  --np 12 --script testPartMesh.py --in ../cav_44_tri.cas --golden PARTHMESH/TRI_44/proc12 --outdir TESTDIR
+
+CAVITY_TRI26_PROCS1  ./ptest.py  --np 1  --script testPartMesh.py --in ../cav_26_tri.cas --golden PARTHMESH/TRI_26/proc1  --outdir TESTDIR
+CAVITY_TRI26_PROCS2  ./ptest.py  --np 2  --script testPartMesh.py --in ../cav_26_tri.cas --golden PARTHMESH/TRI_26/proc2  --outdir TESTDIR
+CAVITY_TRI26_PROCS4  ./ptest.py  --np 4  --script testPartMesh.py --in ../cav_26_tri.cas --golden PARTHMESH/TRI_26/proc4  --outdir TESTDIR
+
+CAVITY_TRI894_PROCS1  ./ptest.py  --np 1  --script testPartMesh.py --in ../tri_894.cas --golden PARTHMESH/TRI_894/proc1  --outdir TESTDIR
+CAVITY_TRI894_PROCS2  ./ptest.py  --np 2  --script testPartMesh.py --in ../tri_894.cas --golden PARTHMESH/TRI_894/proc2  --outdir TESTDIR
+CAVITY_TRI894_PROCS4  ./ptest.py  --np 4  --script testPartMesh.py --in ../tri_894.cas --golden PARTHMESH/TRI_894/proc4  --outdir TESTDIR
+CAVITY_TRI894_PROCS8  ./ptest.py  --np 8  --script testPartMesh.py --in ../tri_894.cas --golden PARTHMESH/TRI_894/proc8  --outdir TESTDIR
+CAVITY_TRI894_PROCS12 ./ptest.py  --np 12 --script testPartMesh.py --in ../tri_894.cas --golden PARTHMESH/TRI_894/proc12 --outdir TESTDIR
+
+CAVITY_TRI894_PROCS1_THERMALSOLVER  ./ptest.py  --np 1  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc1  --outdir TESTDIR
+CAVITY_TRI894_PROCS2_THERMALSOLVER  ./ptest.py  --np 2  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc2  --outdir TESTDIR
+CAVITY_TRI894_PROCS4_THERMALSOLVER  ./ptest.py  --np 4  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc4  --outdir TESTDIR
+CAVITY_TRI894_PROCS8_THERMALSOLVER  ./ptest.py  --np 8  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc8  --outdir TESTDIR
+CAVITY_TRI894_PROCS12_THERMALSOLVER ./ptest.py  --np 12 --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc12 --outdir TESTDIR

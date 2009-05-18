@@ -5,16 +5,18 @@ Given script and destination directory,
 this run the script in the destinationdirectory and compared
 results in destination directory/GOLDEN and return 0 in success
 
-Usage: ptest.py [options] input_dirname
+Usage: ptest.py [options]
 Options:
-  --datadir      Directory where test data is stored. Default is current dir.
-  --np           Number of processors. Default in 1. 
+  --outdir       Directory where test data is written. Default is current dir.
+  --np           Number of processors. Default is 1.
+  --in           Input file (required).
+  --golden       Directory where golden results are kept.
+  --script       Script to run (required).
 """
 
-import sys, os, shutil
+import sys, os
 from optparse import OptionParser
-import filecmp
-
+import numfile_compare
 
 def usage():
     print __doc__
@@ -24,13 +26,10 @@ def cleanup(ec):
     sys.exit(ec)
 
 def check_mesh(options):
-    
-    check_file = []
-    reference_file = []
     for np in range(0,options.np):
-       check_file.append ( str(options.datadir) + "/mesh_proc" + str(np) + ".dat" )
-       reference_file.append( str(options.datadir) +"/GOLDEN/" + "mesh_proc" + str(np) + ".dat" )
-       if  not(filecmp.cmp( check_file[np], reference_file[np], 0)) :
+       check_file = os.path.join(options.outdir, 'mesh_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'mesh_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
          print "mesh files didn't match GOLDEN/* !!!!!!!!!!!!!"
          return  -1
          break;
@@ -38,31 +37,20 @@ def check_mesh(options):
     return 0
 
 def check_parmetis(options):
-    
-    check_file = []
-    reference_file = []
     for np in range(0,options.np):
-       check_file.append ( str(options.datadir) + "/proc" + str(np) +"_debug_print" + ".dat" )
-       reference_file.append( str(options.datadir) +"/GOLDEN/" + "proc" + str(np) +"_debug_print" + ".dat" )
-       print check_file[np]
-       print reference_file[np]
-       if  not(filecmp.cmp( check_file[np], reference_file[np], 0)) :
+       check_file = os.path.join(options.outdir, 'proc%s_debug_print.dat' % np)
+       reference_file = os.path.join(options.golden, 'proc%s_debug_print.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
          print "parmetis files didn't match GOLDEN/* !!!!!!!!!!!!!"
          return  -1
-         break;
     print "parmetis files are ok"
     return 0
 
 def check_mapping(options):
-    
-    check_file = []
-    reference_file = []
     for np in range(0,options.np):
-       check_file.append ( str(options.datadir) + "/mesh_proc" + str(np) +"_info" + ".dat" )
-       reference_file.append( str(options.datadir) +"/GOLDEN/" + "mesh_proc" + str(np) + "_info" + ".dat" )
-       print check_file[np]
-       print reference_file[np]
-       if  not(filecmp.cmp( check_file[np], reference_file[np], 0)) :
+       check_file = os.path.join(options.outdir, 'mesh_proc%s_info.dat' % np)
+       reference_file = os.path.join(options.golden, 'mesh_proc%s_info.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
          print "mapping files didn't match GOLDEN/* !!!!!!!!!!!!!"
          return  -1
          break;
@@ -70,78 +58,51 @@ def check_mapping(options):
     return 0
 
 def check_thermal_solver(options):
-    
-    check_file = []
-    reference_file = []
     for np in range(0,options.np):
-       check_file.append ( str(options.datadir) + "/temp_proc" + str(np) + ".dat" )
-       reference_file.append( str(options.datadir) +"/GOLDEN/" + "temp_proc" + str(np) + ".dat" )
-       if  not(filecmp.cmp( check_file[np], reference_file[np], 0)) :
+       check_file = os.path.join(options.outdir, 'temp_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'temp_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
          print "temp files didn't match GOLDEN/* !!!!!!!!!!!!!"
          return  -1
          break;
     print "temp files are ok"
     return 0
 
-
-
 def main():
+    funcs = {'testPartMesh.py' : [check_parmetis, check_mesh, check_mapping],
+             'testThermalParallel.py' : [check_thermal_solver]}
+
     parser = OptionParser()
-    parser.set_defaults(np=1)  
-    parser.set_defaults(test="mesh")
-    parser.set_defaults(runmode="run")
-    parser.add_option("--script",
-                      action="store", type="string", dest="scriptname", help="Name of script ")
-    parser.add_option("--np",
-                      action="store", dest="np", type=int, help="Number of Processors.")
-    parser.add_option("--directory",
-                      action="store", dest="datadir", help="working directory location")
-    parser.add_option("--runmode", action="store", dest="mode", type="string", help="decide to which mode (run or  compare)")
-    parser.add_option("--test", action="store", dest="testType", type="string", help="test function to be called")
-
-
+    parser.set_defaults(np=1,outdir='')
+    parser.add_option("--in", dest='infile', help="Input file (required).")
+    parser.add_option("--golden", help="Directory where golden files are stored.")
+    parser.add_option("--np", type=int, help="Number of Processors.")
+    parser.add_option("--outdir", help="Output directory.")
+    parser.add_option("--script", help="Script to run.")    
     (options, args) = parser.parse_args()
-    cwd = os.getcwd()
-    options.scriptname = cwd + "/" + options.scriptname
-    options.datadir    = cwd + "/" + options.datadir
-    print options.datadir
-    print options.scriptname
 
-    
-    mpi = "mpirun -np %s  " % options.np + " python " + options.scriptname
+    # convert path to absolute because we may cd to the test directory
+    options.script   = os.path.abspath(options.script)
+    options.outdir   = os.path.abspath(options.outdir)
+    options.golden   = os.path.abspath(os.path.join(options.golden,'GOLDEN'))
+    options.infile   = os.path.abspath(options.infile)
 
-    if options.datadir:
-        if not os.path.isdir(options.datadir):
+    if options.outdir:
+        if not os.path.isdir(options.outdir):
             try:
-                os.makedirs(options.datadir)
+                os.makedirs(options.outdir)
             except:
-                fatal("error creating directory " + options.datadir)
-        os.chdir(options.datadir)
+                fatal("error creating directory " + options.outdir)
+        os.chdir(options.outdir)
 
-    
+    mpi = 'mpirun -np %s %s %s' % (options.np, options.script, options.infile)
     if os.system( mpi ):
         cleanup(-1)
-    
 
-    # OK.  Now check results.
-    print options.testType
-    if options.testType == "parmetis" :
-       err = check_parmetis( options )
-       cleanup(err)
-
-    if options.testType == "mesh" :
-       err = check_mesh( options )
-       cleanup(err)
-
-    if options.testType == "mapping" :
-       err = check_mapping( options )
-       cleanup(err)
- 
-    if options.testType == "thermal_solver":
-       err = check_thermal_solver( options )
-       cleanup(err)
-
-
+    for f in funcs[os.path.basename(options.script)]:
+        err = f(options)
+        if err:
+            cleanup(err)
 
 if __name__ == "__main__":
     main()
