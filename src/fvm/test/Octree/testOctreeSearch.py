@@ -2,7 +2,7 @@
 import pdb
 import sys
 sys.setdlopenflags(0x100|0x2)
-
+from mpi4py import MPI
 import fvmbaseExt
 import importers
 #pdb.set_trace()
