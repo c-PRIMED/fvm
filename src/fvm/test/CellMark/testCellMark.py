@@ -68,7 +68,5 @@ nCells = cells.getCount()
 cellCentroid = geomFields.coordinate[cells].asNumPyArray()
 octree.Impl(mesh0, geomFields)
 
-solid = fvmbaseExt.MPM()
-#solid.setandwriteParticles(mpmfile)
-solid.Impl(mpmfile)
+solid = fvmbaseExt.MPM(mpmfile)
 fvmbaseExt.CellMark_Impl(mesh0, geomFields, fileBase, octree, solid, options.search)
