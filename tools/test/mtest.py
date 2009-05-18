@@ -12,7 +12,7 @@ Options:
   --golden file      Golden file
   --datafile file    Write stdout and stderr to this file.
   --output file      Use this file for comparison with golden.
-  --compare exe      Comparison executable. Default is "diff".
+  --compare exe      Comparison executable. Default is "numfile_compare.py".
 """
 
 import sys, os, tempfile, re
@@ -29,16 +29,12 @@ def cleanup(ec, datafile, dl):
 
 def main():
     parser = OptionParser()
-    parser.add_option("--expect",
-                      action="store", dest="expect", help="Expected output")
-    parser.add_option("--golden",
-                      action="store", dest="golden", help="Golden filename")
-    parser.add_option("--datafile",
-                      action="store", dest="datafile", help="Data filename")
-    parser.add_option("--output",
-                      action="store", dest="output", help="Output filename")
-    parser.add_option("--compare",
-                      action="store", dest="compare", help="Comparison executable. Default is \"diff\".")
+    parser.set_defaults(compare='diff')
+    parser.add_option("--expect", help="Expected output")
+    parser.add_option("--golden", help="Golden filename")
+    parser.add_option("--datafile", help="Data filename")
+    parser.add_option("--output", help="Output filename")
+    parser.add_option("--compare", help="Comparison executable. Default is \"numfile_compare.py\".")
     (options, args) = parser.parse_args()
 
     if options.golden and options.expect:
@@ -52,11 +48,6 @@ def main():
     if options.expect and (options.datafile or options.output):
         print "Cannot use --expect with --datafile or --output."
         usage()
-
-    if options.compare:
-        diff = options.compare
-    else:
-        diff = 'diff'
 
     delete_datafile = 0
     datafile = options.datafile
@@ -77,7 +68,7 @@ def main():
         if os.system("/bin/bash -c '%s'" % cmd):
             cleanup(-1, datafile, delete_datafile)
         count = 0
-        exe = os.popen("%s %s %s" % (diff, datafile, options.golden))
+        exe = os.popen("%s %s %s" % (options.compare, datafile, options.golden))
         for line in exe:
             if count < 100:
                 print line.rstrip()
