@@ -1,1 +1,1 @@
-CantileverVelocityInterpolation     ../../scripts/testGrid.py --output InterpolatedFaceVelocity.dat --golden ToCompare.dat
+CantileverVelocityInterpolation  mtest.py ./testGrid.py --datafile TESTOUT --golden ToCompare.dat
