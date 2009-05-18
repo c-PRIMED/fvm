@@ -23,6 +23,7 @@ from optparse import OptionParser
 sys.setdlopenflags(0x100|0x2)
 import fvmbaseExt
 from FluentCase import FluentCase
+from mpi4py import MPI
 
 def usage():
     print __doc__
