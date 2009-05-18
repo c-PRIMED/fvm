@@ -28,7 +28,6 @@ srcBase = ['CException.cpp',
 	   'MPM_Particles.cpp',
 	   'Grid.cpp',
 	   'FVMParticles.cpp',
-	   'MPMCoupling.cpp'
            ]
 
 env.createSharedLibrary('fvmbase',srcBase,['rlog'])
