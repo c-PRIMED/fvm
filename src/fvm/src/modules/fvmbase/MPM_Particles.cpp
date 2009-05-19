@@ -15,7 +15,7 @@ MPM::MPM(string fileName):
   char* file;
   file = &fileName[0];
 
-  //MPM::setandwriteParticles(file);
+  // MPM::setandwriteParticles(file);
   //get coordinate
   const shared_ptr<VecD3Array> MPM_Coordinates = MPM::readCoordinates(file);
 
@@ -27,6 +27,12 @@ MPM::MPM(string fileName):
 
   //store all the information in MPM class
   MPM::Init(MPM_Coordinates, MPM_Velocities, MPM_Types);}
+
+MPM::MPM( ):
+  _particles(0),
+  _coordinates()
+{}
+
 
 MPM::~MPM() { }
 
@@ -80,7 +86,7 @@ void MPM::setandwriteParticles(const char *file)
 #endif
 
 #if 0
-    int nX=50, nY=1000, nZ=1;
+    int nX=51, nY=1000, nZ=1;
     double radius1=0., radius2=0.2;
     double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
     VecD3 solidPoint[nX*nY*nZ];
@@ -157,7 +163,7 @@ void MPM::setandwriteParticles(const char *file)
     //set up particle velocity
 #if 1
     for(int p=0; p<count; p++){
-      solidVelocity[p][0]=0.0;
+      solidVelocity[p][0]=0.001;
       solidVelocity[p][1]=0.0;
       solidVelocity[p][2]=0.0;
     }

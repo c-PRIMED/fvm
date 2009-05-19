@@ -354,7 +354,7 @@ public:
 	  //(*ibV)[f][0]=-angV*r*sin(angle);
 	  //(*ibV)[f][1]=angV*r*cos(angle);
 	  //(*ibV)[f][2]=0.0;
-	  (*ibV)[f][0]=0.1;
+	  (*ibV)[f][0]=0.001;
 	  (*ibV)[f][1]=0.0;
 	  (*ibV)[f][2]=0.0;
 	}

@@ -78,20 +78,14 @@ void markCell( Mesh& mesh, const int nCells, const int nSelfCells,
   //and Mark the cells with no solid particles as fluid
 
    for(int c=0; c<nCells; c++){
-     if (c >= nSelfCells){
-       mesh.setIBTypeForCell (c, Mesh::IBTYPE_REALBOUNDARY);
+     const int particleCount = cellParticles.getCount(c);
+     //if no particle in cell, mark as fluid
+     if (particleCount == 0) {
+       mesh.setIBTypeForCell(c,Mesh::IBTYPE_FLUID);
      }
-     else{
-       const int particleCount = cellParticles.getCount(c);
-      //if no particle in cell, mark as fluid
-       if (particleCount == 0) {
-	 mesh.setIBTypeForCell(c,Mesh::IBTYPE_FLUID);
-       }
-       //if has particle in cell, mark as solid
-       else { mesh.setIBTypeForCell(c,Mesh::IBTYPE_SOLID); }
-     }
-    }
-
+     //if has particle in cell, mark as solid
+     else { mesh.setIBTypeForCell(c,Mesh::IBTYPE_SOLID); }
+   }
    //step2: in solid cells, mark cells with no fluid neighbors as solid
    //and mark cells with at least one fluid neighbors as IB cells
 
@@ -104,7 +98,7 @@ void markCell( Mesh& mesh, const int nCells, const int nSelfCells,
 	const int ncNumber=cellCells.getCount(c);
 	for(int nc=0; nc<ncNumber; nc++){
 	  const int cellIndex=cellCells(c,nc);
-	  if(mesh.getIBTypeForCell(cellIndex)==Mesh::IBTYPE_FLUID){ 
+	  if(mesh.getIBTypeForCell(cellIndex)==Mesh::IBTYPE_FLUID && cellIndex < nSelfCells){ 
 	    flag=0;   
 	  }
 	}

@@ -13,6 +13,8 @@ class MPM
  public: 
   MPM(string fileName);
 
+  MPM();
+
   ~MPM();
 
   typedef Vector<double,3> VecD3;
