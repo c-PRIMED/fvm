@@ -123,6 +123,7 @@ t0 = time.time()
 solid = fvmbaseExt.MPM()
 
 octree = fvmbaseExt.Octree() 
+octree.Impl(mesh0, geomFields)
 
 option = 1
 
