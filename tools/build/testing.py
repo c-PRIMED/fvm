@@ -45,7 +45,7 @@ def run_tests(pname, file, logfile):
         line = line.replace('TESTOUT', outfile)
         line = line.split()
         cmd = ' '.join(line[1:])
-        debug("Test %s: %s" % (tname, cmd))
+        verbose("Test %s: %s" % (tname, cmd))
         ostr = "\t<Name>%s</Name>\n" % tname
         ostr += "\t<Path>%s</Path>\n" % os.path.dirname(file)
         ostr += "\t<FullName>%s</FullName>\n" % tname        
@@ -58,7 +58,7 @@ def run_tests(pname, file, logfile):
         ret = exe.close()
         if ret:
             ret >>= 8
-            debug("%s Failed" % line[0])
+            verbose_warn("%s Failed" % tname)
             ostr = "<Test Status=\"failed\">\n" + ostr
             errs += 1
         else:

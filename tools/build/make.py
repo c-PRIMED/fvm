@@ -16,6 +16,7 @@ Options:
   --update       Update sources from the subversion repository.
   --all          Removes build directory then builds config and config-pkgs.
   -v, --verbose  Verbose output.
+  -d, --debug    Debug output.
   --nocolor      Disable color output.
 
 Configuration names are stored in the "config" subdirectory.
@@ -33,35 +34,19 @@ def usage():
 def main():
 
     parser = OptionParser()
-    parser.add_option("--build (default)",
-                      action="store_true", dest="build",
-                      help="Build sources.")
-    parser.add_option("--test",
-                      action="store_true", dest="test",
-                      help="Run tests.")
-    parser.add_option("--update",
-                      action="store_true", dest="update",
-                      help="Update sources from the subversion repository.")
-    parser.add_option("--submit",
-                      action="store_true", dest="submit",
-                      help="Submit test and build results.")
-    parser.add_option("--all",
-                      action="store_true", dest="all",
-                      help="Removes build directory then builds config and config-pkgs.")
-    parser.add_option("-v", "--verbose",
-                      action="store_true", dest="verbose", help="verbose output")
-    parser.add_option("--nocolor",
-                      action="store_true", dest="nocolor", help="Disable color output.")
-    parser.add_option("--nightly",
-                      action="store_true", dest="nightly", help="Do nightly build and test.")
-
+    parser.add_option("--build",  action="store_true")
+    parser.add_option("--test", action="store_true")
+    parser.add_option("--update", action="store_true")
+    parser.add_option("--submit", action="store_true")
+    parser.add_option("--all", action="store_true")
+    parser.add_option("-v", "--verbose", action="store_true")
+    parser.add_option("-d", "--debug", action="store_true")
+    parser.add_option("--nocolor", action="store_true")
+    parser.add_option("--nightly", action="store_true")
     (options, args) = parser.parse_args()
-    build_utils.verbose = options.verbose
+    build_utils.set_options(options)
 
     srcpath = os.path.abspath(os.path.dirname(sys.argv[0]))
-
-    if options.nocolor:
-        build_utils.clear_colors()
 
     if options.nightly:
         options.all = options.update = options.test = options.submit = True

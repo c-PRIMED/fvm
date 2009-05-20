@@ -24,8 +24,16 @@ colors = {
 
 
 maxlen = 20
-verbose = False
+opt_verbose = False
+opt_debug = False
 myenv = {}
+
+def set_options(options):
+    global opt_verbose, opt_debug
+    if options.nocolor:
+        build_utils.clear_colors()
+    opt_verbose = options.verbose or options.debug
+    opt_debug = options.debug
 
 def _reset_types():
     global g_type
@@ -54,22 +62,43 @@ def cprint(col, str):
     print "%s%s%s" % (mycol, str, colors['NORMAL'])
 
 def _niceprint(msg, type=''):
+    print_type = True
     def print_pat(color):
-        print '\n%s: %s%s%s' % (type, colors[color], msg, colors['NORMAL'])
+        if not opt_verbose:
+            print '\n'
+        if print_type:
+            print '%s: %s%s%s' % (type, colors[color], msg, colors['NORMAL'])
+        else:
+            print '%s%s%s' % (colors[color], msg, colors['NORMAL'])
     if type == 'ERROR' or type == 'WARNING':
         print_pat('RED')
-    elif type=='DEBUG':
+    elif type == 'DEBUG':
         print_pat('DCYAN')
+    elif type == 'VERBOSE':
+        print_type = False
+        print_pat('DYELLOW')
     else:
         print_pat('NORMAL')
                       
 def debug(msg):
-    global verbose
-    if not verbose:
+    global opt_debug
+    if not opt_debug:
         return
     _niceprint(msg, 'DEBUG')
 
+def verbose(msg):
+    global opt_verbose
+    if not opt_verbose:
+        return
+    _niceprint(msg, 'VERBOSE')
+
 def warning(msg):
+    _niceprint(msg, 'WARNING')
+
+def verbose_warn(msg):
+    global opt_verbose
+    if not opt_verbose:
+        return
     _niceprint(msg, 'WARNING')
 
 def error(msg):
@@ -86,8 +115,11 @@ def pmess(type, pkg, dir):
     sr = '%s %s%s%s in %s' % (g_type[type], colors['DCYAN'], pkg, colors['NORMAL'], dir)
     global maxlen
     maxlen = max(maxlen, len(sr))
-    print "%s :" % sr.ljust(maxlen),
-    sys.stdout.flush()
+    if opt_verbose:
+        print "%s :" % sr.ljust(maxlen)
+    else:
+        print "%s :" % sr.ljust(maxlen),
+        sys.stdout.flush()
 
 def remove_file(name):
     try:
@@ -283,7 +315,11 @@ if __name__ == '__main__':
     pstatus(0,"(excellent in fact)")
 
     debug("unseen debug message")
-    verbose = True
+    verbose("unseen verbose message")
+    opt_verbose = True
+    verbose("verbose message")
+    debug("unseen debug message")
+    opt_debug = True
     debug("debug message")
     warning("reactor overheating")
     error("reactor exploding")

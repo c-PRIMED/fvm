@@ -117,9 +117,8 @@ def putfile(f, uri, username=None, password=None):
             authorized, authorization = True, 'Basic ' + userpass
 
          elif scheme == 'digest':
-            if build_utils.verbose:
-               msg = "uses fragile, undocumented features in urllib2"
-               build_utils.debug("Warning! Digest Auth %s" % msg)
+            msg = "uses fragile, undocumented features in urllib2"
+            build_utils.debug("Warning! Digest Auth %s" % msg)
 
             import urllib2 # See warning above
 
@@ -147,7 +146,7 @@ def putfile(f, uri, username=None, password=None):
             msg = "Warning! The supplied username and password went unused"
             print msg
 
-         if build_utils.verbose:
+         if build_utils.opt_debug:
             resultLine = "Success! Resource %s"
             statuses = {200: 'modified', 201: 'created', 204: 'modified'}
             build_utils.debug(resultLine % statuses[status])

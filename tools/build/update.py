@@ -3,7 +3,7 @@ Do subversion update and write out xml file.
 """
 
 import cgi, time, datetime, os, socket
-from build_utils import debug
+from build_utils import debug, verbose
 
 Dirname=None
 
@@ -69,7 +69,7 @@ def svn_up(f):
          write_update(f, line.split()[1], "Deleted")
    ret = exe.close()
    if ret:
-      debug("\"svn update\" Failed. Return code %s" % ret >> 8)
+      verbose("\"svn update\" Failed. Return code %s" % ret >> 8)
 
    exe = os.popen("svn status")
    for line in exe:
@@ -79,7 +79,7 @@ def svn_up(f):
          write_update(f, line.split()[1], "Conflicting")
    ret = exe.close()
    if ret:
-      debug("\"svn status\" Failed. Return code %s" % ret >> 8)
+      verbose("\"svn status\" Failed. Return code %s" % ret >> 8)
    write_update(f)
 
 def update(bp, cname, nightly):
