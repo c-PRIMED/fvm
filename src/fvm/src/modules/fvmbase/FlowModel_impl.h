@@ -24,6 +24,7 @@
 #include "Linearizer.h"
 #include "GradientModel.h"
 #include "MomentumIBDiscretization.h"
+#include "StressTensor.h"
 
 template<class T>
 class FlowModel<T>::Impl
@@ -1461,6 +1462,8 @@ public:
 
   boost::shared_ptr<ArrayBase> getStressTensor(const Mesh& mesh, const ArrayBase& gcellIds)
   {
+    typedef Array<StressTensor<T> > StressTensorArray;
+    
     const StorageSite& cells = mesh.getCells();
     
     const Array<int>& cellIds = dynamic_cast<const Array<int> &>(gcellIds);
@@ -1477,8 +1480,8 @@ public:
 
     const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
 
-    boost::shared_ptr<VGradArray> stressTensorPtr( new VGradArray(nCells));
-    VGradArray& stressTensor = *stressTensorPtr;
+    boost::shared_ptr<StressTensorArray> stressTensorPtr( new StressTensorArray(nCells));
+    StressTensorArray& stressTensor = *stressTensorPtr;
 
     for(int n=0; n<nCells; n++)
     {
@@ -1490,10 +1493,12 @@ public:
           for(int j=0;j<3;j++)
             vgPlusTranspose[i][j] += vg[j][i];
         
-        stressTensor[n] = vgPlusTranspose*mu[c];
-
-        for(int i=0;i<3;i++)
-          stressTensor[n][i][i] = pGrad[c][i];
+        stressTensor[n][0] = vgPlusTranspose[0][0]*mu[c] + pGrad[c][0];
+        stressTensor[n][1] = vgPlusTranspose[1][1]*mu[c] + pGrad[c][1];
+        stressTensor[n][2] = vgPlusTranspose[2][2]*mu[c] + pGrad[c][2];
+        stressTensor[n][3] = vgPlusTranspose[0][1]*mu[c];
+        stressTensor[n][4] = vgPlusTranspose[1][2]*mu[c];
+        stressTensor[n][5] = vgPlusTranspose[2][0]*mu[c];
     }
 
     return stressTensorPtr;
