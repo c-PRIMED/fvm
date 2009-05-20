@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-import pdb
 import sys
 sys.setdlopenflags(0x100|0x2)
-
-import fvmbaseExt
-import importers
+import fvmbaseExt, importers
 from numpy import *
 from mpi4py  import MPI
 import time
@@ -22,14 +19,13 @@ elif atype == 'tangent':
 
 from FluentCase import FluentCase
 
-fileBase = sys.argv[1]
-#fileBase = "/home/yildirim/memosa/src/fvm/test/"
-
+fileBase = ''
+casefile = sys.argv[1]
+nsweep = int(sys.argv[2])
 
 def usage():
-    print "Usage: %s filebase [outfilename]" % sys.argv[0]
-    print "Where filebase.cas is a Fluent case file."
-    print "Output will be in filebase-cellmark.dat if it is not specified."
+    print "Usage: %s casefile nsweep" % sys.argv[0]
+    print "Where casefile is a Fluent case file."
     sys.exit(1)
 
 
@@ -49,11 +45,11 @@ def particle_coordinates(mesh0, geometry, nradius, ntheta, xc, yc, zc):
            theta = theta + dtheta
            r = 0.0;
            for i in range(0, nradius):
-               r = r + dr;
+               r += dr;
                ppx[indx,0] = xc + r * math.cos(theta)
                ppx[indx,1] = yc + r * math.sin(theta)
                ppx[indx,2] = 0.0;
-               indx = indx + 1
+               indx += 1
 
    return px
 
@@ -65,41 +61,18 @@ def tecplot_particles(mesh0, fvmParticles, geomFields, nsweep ):
      nparticles = size( particleID )
      cells = mesh0.getCells()
      xc = geomFields.coordinate[cells].asNumPyArray()
-
-     file_name = "cavity_nsweep" +  str( nsweep ) + ".dat"
-     f = open(file_name, 'w')
-     zone_name = "Zone T ="  + "\"" + "sweep " + str(nsweep) + "\"" +  "\n"
-     f.write( zone_name )
+     f = open("cavity_nsweep%s.dat" % nsweep, 'w')
+     f.write( "Zone T =\"sweep %d\"\n" % nsweep)
      for i in range(0,nparticles):
-        cell_id = particleID[i]
-        line = str(xc[cell_id][0]) + "       " + str(xc[cell_id][1]) + "        " +str(xc[cell_id][2]) + "\n"
-        f.write( line )
-
+        cell = xc[particleID[i]]
+        f.write("%f %f %s\n" % (cell[0], cell[1], cell[2]))
      f.close()
 
 
-
-
-
-outfile = None
-if __name__ == '__main__' and fileBase is None:
-    if len(sys.argv) < 2:
-        usage()
-    fileBase = sys.argv[1]
-    if len(sys.argv) == 3:
-        outfile = sys.argv[2]
-
-if outfile == None:
-    outfile = fileBase+"-cellmark.dat"
-
-
-reader = FluentCase( fileBase )
-
-#import ddd
+reader = FluentCase(casefile )
 reader.read();
 
 meshes = reader.getMeshList()
-
 mesh0 = meshes[0]
 
 geomFields =  models.GeomFields('geom')
@@ -117,16 +90,13 @@ fmodel = models.FlowModelA(geomFields,flowFields,meshes)
 
 reader.importFlowBCs(fmodel)
 fmodel.init()
-import time
+
 t0 = time.time()
-
 solid = fvmbaseExt.MPM()
-
-octree = fvmbaseExt.Octree() 
+octree = fvmbaseExt.Octree()
 octree.Impl(mesh0, geomFields)
 
 option = 1
-
 nradius = 50;
 ntheta  = 320;
 nparticles = nradius * ntheta 
@@ -148,30 +118,19 @@ flowFields.velocity[particles]  =pv
 fvmbaseExt.CellMark_Impl(mesh0, geomFields, fileBase, octree, solid, option)
 
 fvmParticles = fvmbaseExt.FVMParticles( meshes )
-nsweep = sys.argv[2]
-print "nsweep = ", nsweep
-fvmParticles.setParticles( int(nsweep) )
+
+#print "nsweep = ", nsweep
+fvmParticles.setParticles(nsweep)
 tecplot_particles( mesh0, fvmParticles, geomFields, nsweep )
 
 pxFVM  = fvmParticles.getCellIDs( 0)
-print pxFVM.asNumPyArray()
-
-
+#print pxFVM.asNumPyArray()
 
 cells = mesh0.getCells()
-
 nCells = cells.getSelfCount()
-
-print nCells
-
-
-
-
+#print nCells
 
 t1 = time.time()
-if outfile != '/dev/stdout':
-    print '\nsolution time = %f' % (t1-t0)
-
 print 'solution time = %f' % (t1-t0)
 
 
