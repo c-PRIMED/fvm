@@ -31,7 +31,7 @@ def checknc(file, indir, mpi):
         use_part = ""
 
     count = 0
-    exe = os.popen("ncdiff -e %s %s %s %s" % (maxerr, use_part, file, os.path.join(indir,file)))
+    exe = os.popen("ncdiff -e %s %s %s %s" % (maxerr, use_part, os.path.join(indir,file), file))
     for line in exe:
         if count < 100:
             print line.rstrip()
