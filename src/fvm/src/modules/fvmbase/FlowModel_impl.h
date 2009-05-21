@@ -1397,13 +1397,26 @@ public:
     const StorageSite& faces = mesh.getFaces();
     const Array<int>& ibFaceIndices = mesh.getIBFaceList();
     const int nibf = ibFaces.getCount();
+    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+    const Array<int>& ibType = mesh.getIBType();
     const VectorT3Array& faceArea =
               dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
     const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
-    for ( int f = 0; f < nibf; f ++){
-      const int ibFaceIndex = ibFaceIndices[f];
-      r += faceArea[ibFaceIndex]*facePressure[ibFaceIndex];
+
+    for ( int f = 0; f < nibf; f ++)
+    {
+        const int ibFaceIndex = ibFaceIndices[f];
+        const int c0 = faceCells(ibFaceIndex,0);
+
+        // need to check whether the face points in or out of the
+        // fluid cell and adjust sign of area accordingly
+        
+        if (ibType[c0] == Mesh::IBTYPE_FLUID)
+          r += faceArea[ibFaceIndex]*facePressure[ibFaceIndex];
+        else
+          r -= faceArea[ibFaceIndex]*facePressure[ibFaceIndex];
     }
+    
     if (nibf == 0)
       throw CException("getPressureIntegralonIBFaces: no IBFaces found!");
     return r;
