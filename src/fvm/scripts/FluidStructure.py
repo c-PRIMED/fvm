@@ -71,7 +71,7 @@ class MPMCoupling:
          mesh0 = int(0)   
          self.fvmParticles.setParticles( nsweep );
          self.totParticlesFVM[0] = int(self.fvmParticles.getNumOfFluidParticles( mesh0 ))
-          self.FVM_COMM_MPM.Send( [self.totParticlesFVM, MPI.INT], dest=0, tag=self.totParticlesSendTAG )
+         self.FVM_COMM_MPM.Send( [self.totParticlesFVM, MPI.INT], dest=0, tag=self.totParticlesSendTAG )
 
          self.dtFVM   = zeros(1,float)
          self.timeFVM = zeros(1,float)
