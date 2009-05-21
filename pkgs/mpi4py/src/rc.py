@@ -22,7 +22,7 @@ Request for thread support at MPI initialization
 """
 
 
-thread_level = "multiple"
+thread_level = "single"
 """
 Level of thread support to request at MPI initialization
 
