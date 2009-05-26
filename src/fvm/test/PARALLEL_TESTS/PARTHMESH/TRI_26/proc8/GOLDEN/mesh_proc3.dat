@@ -1,0 +1,21 @@
+title = " tecplot file for process Mesh " 
+variables = "x",  "y", "z", "cell_type" 
+zone N = 5 E = 8 DATAPACKING = BLOCK,  VARLOCATION = ([4]=CELLCENTERED), ZONETYPE=FETRIANGLE 
+2.249185e-01     
+3.333333e-01     3.091946e-01     5.000000e-01     6.908054e-01     
+7.827520e-01     
+1.000000e+00     5.000000e-01     7.542750e-01     5.000000e-01     
+0.000000e+00     
+0.000000e+00     0.000000e+00     0.000000e+00     0.000000e+00     
+
+0      
+1      1      0      0      1      1      1      
+
+1      4      2      
+1      4      3      
+3      4      5      
+2      1       2      
+1      3       1      
+4      2       4      
+5      4       5      
+3      5       3      
