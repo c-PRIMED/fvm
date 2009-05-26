@@ -7,6 +7,9 @@ CAVITY_TRI44_PROCS12 ./ptest.py  --np 12 --script testPartMesh.py --in ../cav_44
 CAVITY_TRI26_PROCS1  ./ptest.py  --np 1  --script testPartMesh.py --in ../cav_26_tri.cas --golden PARTHMESH/TRI_26/proc1  --outdir TESTDIR
 CAVITY_TRI26_PROCS2  ./ptest.py  --np 2  --script testPartMesh.py --in ../cav_26_tri.cas --golden PARTHMESH/TRI_26/proc2  --outdir TESTDIR
 CAVITY_TRI26_PROCS4  ./ptest.py  --np 4  --script testPartMesh.py --in ../cav_26_tri.cas --golden PARTHMESH/TRI_26/proc4  --outdir TESTDIR
+CAVITY_TRI26_PROCS6  ./ptest.py  --np 6  --script testPartMesh.py --in ../cav_26_tri.cas --golden PARTHMESH/TRI_26/proc6  --outdir TESTDIR
+CAVITY_TRI26_PROCS8  ./ptest.py  --np 8  --script testPartMesh.py --in ../cav_26_tri.cas --golden PARTHMESH/TRI_26/proc8  --outdir TESTDIR
+
 
 CAVITY_TRI894_PROCS1  ./ptest.py  --np 1  --script testPartMesh.py --in ../tri_894.cas --golden PARTHMESH/TRI_894/proc1  --outdir TESTDIR
 CAVITY_TRI894_PROCS2  ./ptest.py  --np 2  --script testPartMesh.py --in ../tri_894.cas --golden PARTHMESH/TRI_894/proc2  --outdir TESTDIR
