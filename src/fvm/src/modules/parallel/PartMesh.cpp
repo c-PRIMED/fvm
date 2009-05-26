@@ -1433,8 +1433,10 @@ PartMesh::order_faceCells_faceNodes()
          for ( int face = 0; face < nface_local; face++){
              int cell_0 = (*_faceCells.at(id))(face,0);
              int cell_1 = (*_faceCells.at(id))(face,1);
+             //find if this face is interior or not
              bool is_interior = _nonInteriorCells.at(id).count(cell_0) == 0 &&
                                 _nonInteriorCells.at(id).count(cell_1) == 0; 
+
               if ( is_interior ) {
                   bool is_Counted =  ( _cellToOrderedCell[id][cell_0] != -1 );
                   if (  !is_Counted ){
@@ -1472,6 +1474,26 @@ PartMesh::order_faceCells_faceNodes()
               }
          }
 
+        //now specical case, if there is some inner element but fail in above search (example  an inner element surrounded by only boundary
+        // or interfaces, then above search will skip that). We want to renumber remaining cells (after above search) 
+        //first get number of cells surroindgin cells for inner cells
+        int max_sur_cells = 0;
+        for ( int elem = 0; elem < _cellCells.at(id)->getRowDim(); elem++ )
+            max_sur_cells = std::max( max_sur_cells, _cellCells.at(id)->getCount(elem) );
+
+        for ( int elem = 0; elem < _cellCells.at(id)->getRowDim(); elem++ ){ 
+            if ( _cellCells.at(id)->getCount(elem) == max_sur_cells && _cellToOrderedCell[id][elem] == -1 ){
+                _cellToOrderedCell[id][elem] = cellID;
+                int global_id = _faceCells.at(id)->getLocalToGlobalMap()[elem];
+                _globalToLocalMappers.at(id).insert( pair<int,int>(global_id,cellID)  );
+                _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
+                (*_globalToLocalMap.at(id))[global_id] = cellID;
+                (*_localToGlobalMap.at(id))[cellID] = global_id;
+                // cout << " _procid = " << " global_id = " << global_id << " cellID = " << cellID << endl;
+                cellID++;
+            }
+        }
+
         //then boundary faces
        multimap<int,int>::const_iterator it_cell;
        pair<multimap<int,int>::const_iterator,multimap<int,int>::const_iterator> it;
@@ -1480,7 +1502,6 @@ PartMesh::order_faceCells_faceNodes()
        //loop over boundaries
        for ( it_set = _boundarySet.at(id).begin(); it_set != _boundarySet.at(id).end(); it_set++){
           int bndryID = *it_set;
-
           it = _mapBounIDAndCell.at(id).equal_range(bndryID);
           //if it is not empty
           if ( _mapBounIDAndCell.at(id).count( bndryID ) > 0 )
@@ -1498,7 +1519,7 @@ PartMesh::order_faceCells_faceNodes()
                (*_localToGlobalMap.at(id))[cellID] = it_cell->second;
                _globalToLocalMappers.at(id).insert( pair<int,int>(it_cell->second,cellID ) );
                _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, it_cell->second) );
-//                assert( cellID >=0 && cellID < array_length );
+                assert( cellID >=0 && cellID < array_length );
                _cellToOrderedCell[id][elem_0] = cellID;
 
               _faceCellsOrdered.at(id)->add(face_track, inner_elem);
@@ -1538,7 +1559,7 @@ PartMesh::order_faceCells_faceNodes()
              //update maps
              int global_id = _faceCells.at(id)->getLocalToGlobalMap()[outer_elem_id];
              (*_globalToLocalMap.at(id))[global_id] = cellID;
-//             assert( cellID >=0 && cellID < array_length );
+             assert( cellID >=0 && cellID < array_length );
              (*_localToGlobalMap.at(id))[cellID] = global_id;
              _globalToLocalMappers.at(id).insert( pair<int,int>(global_id, cellID) );
              _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
@@ -1558,11 +1579,12 @@ PartMesh::order_faceCells_faceNodes()
               offset++;
               cellID++;
           }
+
        }
 
         _faceCellsOrdered.at(id)->finishAdd(); 
         _faceNodesOrdered.at(id)->finishAdd();
-
+         assert(  cellID == tot_cells );
 //        //checking _cellToOrderedCell
 //        double sum = 0;
 //        for ( int n = 0; n < _cellToOrderedCell.at(id).size(); n++ )
@@ -1647,7 +1669,7 @@ PartMesh::exchange_interface_meshes()
         //local offset and interfaceMeshID are stored in contigous memory
         int index = 0;
         set<int>::const_iterator it_set;
-        for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++){
+        for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++ ){
             int neighMeshID = *it_set;
             interfaceMeshIDs.push_back( neighMeshID );
             //loop over interface
@@ -1692,11 +1714,9 @@ void
 PartMesh::mappers()
 {
 
-
     for ( int id = 0; id < _nmesh; id++){
- 
         create_window( id );
-        fence_window();      
+        fence_window();
 
         StorageSite::ScatterMap & cellScatterMap = _meshListLocal.at(id)->getCells().getScatterMap();
         StorageSite::GatherMap  & cellGatherMap  = _meshListLocal.at(id)->getCells().getGatherMap();
@@ -1750,11 +1770,11 @@ PartMesh::mappers()
                int elem_id =  it->second;
                (*_toIndices.at(id).at(interfaceIndx))[n] =  elem_id;
 
-//                if ( _procID == 0 ) {
+//                if ( _procID == 1 ) {
 //                   cout << " neighMeshID = " << neighMeshID << endl;
 //                   cout << " size        = " << size        << endl;
 //                   cout << " key         = " << key         << endl;
-//                   cout << " count       = " << count       << endl;
+// //                  cout << " count       = " << count       << endl;
 //                   cout << " elem_id     = " << elem_id     << endl;
 //                   cout << " mapKeyCount[" << key << "] = " << mapKeyCount[key] << endl;
 //                   cout << " _fromIndices= " << (*_fromIndices.at(id).at(interfaceIndx))[n] << endl;
@@ -1900,10 +1920,9 @@ PartMesh::mesh_tecplot()
 
       const Mesh& mesh = *(_meshListLocal.at(0));
       const CRConnectivity&  cellNodes = mesh.getCellNodes();
-
-     const Array<Mesh::VecD3>&  coord = mesh.getNodeCoordinates();
-     int tot_elems = cellNodes.getRowDim();
-     int tot_nodes = cellNodes.getColDim();
+      const Array<Mesh::VecD3>&  coord = mesh.getNodeCoordinates();
+      int tot_elems = cellNodes.getRowDim();
+      int tot_nodes =  coord.getLength();
 
      mesh_file << "title = \" tecplot file for process Mesh \" "  << endl;
      mesh_file << "variables = \"x\",  \"y\", \"z\", \"cell_type\" " << endl;
@@ -1915,24 +1934,23 @@ PartMesh::mesh_tecplot()
          mesh_file << scientific  << coord[n][0] << "     " ;
          if ( n % 5 == 0 ) mesh_file << endl;
      }
-
      mesh_file << endl;
+
      //y
      for ( int n= 0; n < tot_nodes; n++){
          mesh_file << scientific << coord[n][1] << "     ";
          if ( n % 5 == 0 ) mesh_file << endl;
      }
-
-
      mesh_file << endl;
+
      //z
      for ( int n = 0; n < tot_nodes; n++){
           mesh_file << scientific << coord[n][2] << "     ";
           if ( n % 5 == 0) mesh_file << endl;
      }
 
-     mesh_file <<  endl;
-     mesh_file << endl;  
+     mesh_file << endl;
+     mesh_file << endl;
      //cell type
       int cell_type = -1;
       for ( int n = 0; n < tot_elems;  n++){
