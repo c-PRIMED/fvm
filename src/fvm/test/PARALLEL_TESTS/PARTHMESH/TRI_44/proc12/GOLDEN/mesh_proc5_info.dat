@@ -1,4 +1,5 @@
-  neightMeshID = 1        9    ===>    4
-  neightMeshID = 3        10    ===>    6
-  neightMeshID = 4        11    ===>    3
-  neightMeshID = 6        12    ===>    1
+  neightMeshID = 0        4    ===>    1
+  neightMeshID = 1        5    ===>    3
+  neightMeshID = 3        6    ===>    1
+  neightMeshID = 3        7    ===>    2
+  neightMeshID = 4        8    ===>    3
