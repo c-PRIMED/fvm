@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf xmlns:xi="http://www.w3.org/2001/XInclude" Version="2.0">
+	<Domain>
+     <Grid GridType="Collection" CollectionType="Temporal">
+        <xi:include href="Demo_00001.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00002.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00003.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00004.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00005.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00006.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00007.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00008.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00009.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+        <xi:include href="Demo_00010.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)" />
+    </Grid>
+	</Domain>
+</Xdmf>

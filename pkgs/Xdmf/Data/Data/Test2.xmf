@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" [
+]>
+
+<Xdmf>
+<Domain>
+		<Grid Name="Mesh">
+		<Topology Type="3DSMesh"
+			Dimensions="4 2 2">
+		</Topology>
+		<Geometry Type="XYZ">
+			<DataStructure Format="XML" DataType="Float" Precision="8"
+			Dimensions="16 3">
+			0 0 0      1 0 0
+			0 1 0      1 1 0 
+
+			0 0 1      1 0 1
+			0 1 1      1 1 1 
+
+			0 0 2      1 0 2
+			0 1 2      1 1 2 
+
+			0 0 3      1 0 3
+			0 1 3      1 1 3 
+
+			</DataStructure>
+		</Geometry>
+		<Attribute Name="DataOne" Center="Node" Type="Scalar">
+			<DataTransform Type="Function" Dimensions="16"
+				Function="($0 + $1) / 2">
+				<DataStructure Format="XML"
+				 	DataType="Float" Precision="8"
+					 Dimensions="16">
+					100 200 300 400 500 600 700 800
+					900 1000 1100 1200 1300 1400 1500 1600
+				</DataStructure>
+				<DataStructure Format="XML"
+					 DataType="Float" Precision="8"
+					 Dimensions="16">
+					1100 1200 1300 1400 1500 1600 1700 1800
+					1900 11000 11100 11200 11300 11400 11500 11600
+				</DataStructure>
+			</DataTransform>
+		</Attribute>
+		<Attribute Name="DataTwo" Center="Node" Type="Scalar">
+			<DataStructure Format="XML"
+			 DataType="Float" Precision="8"
+			 Dimensions="16">
+			100 200 300 400 500 600 700 800
+			900 1000 1100 1200 1300 1400 1500 1600
+			</DataStructure>
+		</Attribute>
+</Grid>
+</Domain>
+</Xdmf>

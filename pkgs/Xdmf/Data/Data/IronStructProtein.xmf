@@ -1,0 +1,316 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" [
+<!ENTITY HeavyData "IronStructProtein.h5">
+]>
+
+
+
+<Xdmf>
+  <Domain Name="IronStructProtein">
+    <Grid Name="Iron00">
+      <Topology 
+         Type="3DSMESH" Dimensions="36 36 36">
+      </Topology>
+      <Geometry Type="XYZ">
+        <DataStructure
+           DataType="Float"
+           Precision="4"
+           Dimensions="46656 3"
+           Format="HDF">
+           IronStructProtein.h5:/Iron0/XYZ
+          
+        </DataStructure>
+      </Geometry>
+      <Attribute
+         Center="Node"
+         Name="UnnamedNodeArray0">
+        <DataStructure
+           DataType="Float"
+           Precision="8"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron0/UnnamedNodeArray0
+          
+        </DataStructure>
+      </Attribute>
+      <Attribute
+         Center="Node"
+         Name="scalars">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron0/scalars
+          
+        </DataStructure>
+      </Attribute>
+      
+    </Grid>
+    <Grid Name="Iron01">
+      <Topology 
+         Type="3DSMESH" Dimensions="36 36 36">
+      </Topology>
+      <Geometry Type="XYZ">
+        <DataStructure
+           DataType="Float"
+           Precision="4"
+           Dimensions="46656 3"
+           Format="HDF">
+           IronStructProtein.h5:/Iron1/XYZ
+          
+        </DataStructure>
+      </Geometry>
+      <Attribute
+         Center="Node"
+         Name="UnnamedNodeArray0">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron1/UnnamedNodeArray0
+          
+        </DataStructure>
+      </Attribute>
+      <Attribute
+         Center="Node"
+         Name="scalars">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron1/scalars
+          
+        </DataStructure>
+      </Attribute>
+      
+    </Grid>
+    <Grid Name="Iron02">
+      <Topology 
+         Type="3DSMESH" Dimensions="36 36 36">
+      </Topology>
+      <Geometry Type="XYZ">
+        <DataStructure
+           DataType="Float"
+           Precision="4"
+           Dimensions="46656 3"
+           Format="HDF">
+           IronStructProtein.h5:/Iron2/XYZ
+          
+        </DataStructure>
+      </Geometry>
+      <Attribute
+         Center="Node"
+         Name="UnnamedNodeArray0">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron2/UnnamedNodeArray0
+          
+        </DataStructure>
+      </Attribute>
+      <Attribute
+         Center="Node"
+         Name="scalars">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron2/scalars
+          
+        </DataStructure>
+      </Attribute>
+      
+    </Grid>
+    <Grid Name="Iron03">
+      <Topology 
+         Type="3DSMESH" Dimensions="36 36 36">
+      </Topology>
+      <Geometry Type="XYZ">
+        <DataStructure
+           DataType="Float"
+           Precision="4"
+           Dimensions="46656 3"
+           Format="HDF">
+           IronStructProtein.h5:/Iron3/XYZ
+          
+        </DataStructure>
+      </Geometry>
+      <Attribute
+         Center="Node"
+         Name="UnnamedNodeArray0">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron3/UnnamedNodeArray0
+          
+        </DataStructure>
+      </Attribute>
+      <Attribute
+         Center="Node"
+         Name="scalars">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron3/scalars
+          
+        </DataStructure>
+      </Attribute>
+      
+    </Grid>
+    <Grid Name="Iron04">
+      <Topology 
+         Type="3DSMESH" Dimensions="36 36 36">
+      </Topology>
+      <Geometry Type="XYZ">
+        <DataStructure
+           DataType="Float"
+           Precision="4"
+           Dimensions="46656 3"
+           Format="HDF">
+           IronStructProtein.h5:/Iron4/XYZ
+          
+        </DataStructure>
+      </Geometry>
+      <Attribute
+         Center="Node"
+         Name="UnnamedNodeArray0">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron4/UnnamedNodeArray0
+          
+        </DataStructure>
+      </Attribute>
+      <Attribute
+         Center="Node"
+         Name="scalars">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron4/scalars
+          
+        </DataStructure>
+      </Attribute>
+      
+    </Grid>
+    <Grid Name="Iron05">
+      <Topology 
+         Type="3DSMESH" Dimensions="36 36 36">
+      </Topology>
+      <Geometry Type="XYZ">
+        <DataStructure
+           DataType="Float"
+           Precision="4"
+           Dimensions="46656 3"
+           Format="HDF">
+           IronStructProtein.h5:/Iron5/XYZ
+          
+        </DataStructure>
+      </Geometry>
+      <Attribute
+         Center="Node"
+         Name="UnnamedNodeArray0">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron5/UnnamedNodeArray0
+          
+        </DataStructure>
+      </Attribute>
+      <Attribute
+         Center="Node"
+         Name="scalars">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron5/scalars
+          
+        </DataStructure>
+      </Attribute>
+      
+    </Grid>
+    <Grid Name="Iron06">
+      <Topology 
+         Type="3DSMESH" Dimensions="36 36 36">
+      </Topology>
+      <Geometry Type="XYZ">
+        <DataStructure
+           DataType="Float"
+           Precision="4"
+           Dimensions="46656 3"
+           Format="HDF">
+           IronStructProtein.h5:/Iron6/XYZ
+          
+        </DataStructure>
+      </Geometry>
+      <Attribute
+         Center="Node"
+         Name="UnnamedNodeArray0">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron6/UnnamedNodeArray0
+          
+        </DataStructure>
+      </Attribute>
+      <Attribute
+         Center="Node"
+         Name="scalars">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron6/scalars
+          
+        </DataStructure>
+      </Attribute>
+      
+    </Grid>
+    <Grid Name="Iron07">
+      <Topology 
+         Type="3DSMESH" Dimensions="36 36 36">
+      </Topology>
+      <Geometry Type="XYZ">
+        <DataStructure
+           DataType="Float"
+           Precision="4"
+           Dimensions="46656 3"
+           Format="HDF">
+           IronStructProtein.h5:/Iron7/XYZ
+          
+        </DataStructure>
+      </Geometry>
+      <Attribute
+         Center="Node"
+         Name="UnnamedNodeArray0">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron7/UnnamedNodeArray0
+          
+        </DataStructure>
+      </Attribute>
+      <Attribute
+         Center="Node"
+         Name="scalars">
+        <DataStructure
+           DataType="UChar"
+           Dimensions="36 36 36"
+           Format="HDF">
+           IronStructProtein.h5:/Iron7/scalars
+          
+        </DataStructure>
+      </Attribute>
+      
+    </Grid>
+  </Domain>
+</Xdmf>

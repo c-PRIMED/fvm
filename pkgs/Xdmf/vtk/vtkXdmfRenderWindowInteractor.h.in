@@ -1,0 +1,45 @@
+/*******************************************************************/
+/*                               XDMF                              */
+/*                   eXtensible Data Model and Format              */
+/*                                                                 */
+/*  Id : $Id: vtkXdmfRenderWindowInteractor.h.in,v 1.2 2007-02-22 13:36:39 clarke Exp $ */
+/*  Date : $Date: 2007-02-22 13:36:39 $ */
+/*  Version : $Revision: 1.2 $ */
+/*                                                                 */
+/*  Author:                                                        */
+/*     Jerry A. Clarke                                             */
+/*     clarke@arl.army.mil                                         */
+/*     US Army Research Laboratory                                 */
+/*     Aberdeen Proving Ground, MD                                 */
+/*                                                                 */
+/*     Copyright @ 2002 US Army Research Laboratory                */
+/*     All Rights Reserved                                         */
+/*     See Copyright.txt or http://www.arl.hpc.mil/ice for details */
+/*                                                                 */
+/*     This software is distributed WITHOUT ANY WARRANTY; without  */
+/*     even the implied warranty of MERCHANTABILITY or FITNESS     */
+/*     FOR A PARTICULAR PURPOSE.  See the above copyright notice   */
+/*     for more information.                                       */
+/*                                                                 */
+/*******************************************************************/
+#ifndef _@XDMF_WINDOWINTERACTOR@_h
+#define _@XDMF_WINDOWINTERACTOR@_h
+
+#include "@XDMF_WINDOWINTERACTOR@.h"
+
+class VTK_EXPORT vtkXdmfRenderWindowInteractor : public @XDMF_WINDOWINTERACTOR@
+{
+public:
+  static vtkXdmfRenderWindowInteractor *New();
+  vtkTypeMacro(vtkXdmfRenderWindowInteractor,@XDMF_WINDOWINTERACTOR@);
+  virtual void LoopOnce();
+  virtual void Start( int Block );
+  virtual void Start( ) { this->Start(0); }
+protected:
+  vtkXdmfRenderWindowInteractor() {}
+private:
+  vtkXdmfRenderWindowInteractor(const vtkXdmfRenderWindowInteractor&); // Not implemented
+  void operator=(const vtkXdmfRenderWindowInteractor&); // Not implemented
+};
+
+#endif

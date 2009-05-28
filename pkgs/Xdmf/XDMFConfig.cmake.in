@@ -1,0 +1,43 @@
+#-----------------------------------------------------------------------------
+#
+# XDMFConfig.cmake - XDMF CMake configuration file for external projects.
+#
+# This file is configured by XDMF and used by the UseXDMF.cmake module
+# to load XDMF's settings for an external project.
+
+# Top level for development or install
+SET(XDMF_INSTALL_DIR "@XDMF_INSTALL_DIR_CONFIG@")
+
+# The XDMF include file directories.
+SET(XDMF_INCLUDE_DIRS "@XDMF_INCLUDE_DIRS_CONFIG@")
+
+# The XDMF library directories.
+SET(XDMF_LIBRARY_DIRS "@XDMF_LIBRARY_DIRS_CONFIG@")
+
+# The location of the UseXDMF.cmake file.
+SET(XDMF_USE_FILE "@XDMF_USE_FILE@")
+
+# The build settings file.
+SET(XDMF_BUILD_SETTINGS_FILE "@XDMF_BUILD_SETTINGS_FILE@")
+
+# The directory containing class list files for each kit.
+SET(XDMF_KITS_DIR "@XDMF_KITS_DIR@")
+
+# The names of utility libraries used by XDMF.
+SET(XDMF_BUILD_MPI "@XDMF_BUILD_MPI@")
+SET(XDMF_MPI_LIBRARIES "@XDMF_MPI_LIBRARIES@")
+SET(XDMF_MPI_INCLUDE_PATH "@XDMF_MPI_INCLUDE_PATH@")
+SET(XDMF_HDF5_LIBRARIES "@XDMF_HDF5_LIBRARIES@")
+SET(XDMF_HDF5_INCLUDE "@XDMF_HDF5_INCLUDE_CONFIG@")
+SET(XDMF_LIBXML2_INCLUDE "@XDMF_LIBXML2_INCLUDE_CONFIG@")
+SET(XDMF_LIBXML2_LIBRARIES "@XDMF_LIBXML2_LIBRARIES_CONFIG@")
+SET(XDMF_ZLIB_LIBRARIES "@XDMF_ZLIB_LIBRARIES@")
+SET(XDMF_SYSTEM_HDF5 "@XDMF_SYSTEM_HDF5@")
+
+# The location of VTK
+SET(XDMF_VTK_DIR "@VTK_DIR@")
+
+# The XDMF library dependencies.
+IF(NOT XDMF_NO_LIBRARY_DEPENDS)
+  INCLUDE("@XDMF_LIBRARY_DEPENDS_FILE@")
+ENDIF(NOT XDMF_NO_LIBRARY_DEPENDS)
