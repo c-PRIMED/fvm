@@ -46,6 +46,7 @@ class BuildPkg:
             Boost("pkgs/boost", 0),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
+            Xdmf("pkgs/Xdmf", 0),
             Netcdf("pkgs/netcdf", 2),
             NetCDF4("pkgs/netCDF4", 1),
             ParMetis("pkgs/ParMetis", 1),
@@ -268,6 +269,18 @@ class Netcdf(BuildPkg):
         return self.sys_log("make")
     def _install(self):
         return self.sys_log("make install")
+    def _clean(self):
+        return self.sys_log("make clean")
+
+class Xdmf(BuildPkg):
+    name = 'Xdmf'
+    def _configure(self):
+        return self.sys_log("cmake %s -DCMAKE_INSTALL_PREFIX=%s" % (self.sdir, self.blddir))
+    def _build(self):
+        return self.sys_log("make")
+    def _install(self):
+        os.chdir(os.path.join(self.bdir, "bin"))
+        return self.sys_log("install %s *.so %s" % (os.path.join(self.sdir, 'libsrc','Xdmf.py'), self.libdir))
     def _clean(self):
         return self.sys_log("make clean")
 
