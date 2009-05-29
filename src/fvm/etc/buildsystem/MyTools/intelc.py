@@ -35,7 +35,7 @@ def generate(env):
     if env['PARALLEL']:
         env['CXX'] = 'mpicxx'
     else:
-        env['CXX'] = 'icc'
+        env['CXX'] = 'icpcc'
 
     env['CCFLAGS'] = env['CXXFLAGS']
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')
