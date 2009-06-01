@@ -179,6 +179,7 @@ XdmfString XdmfValuesHDF::DataItemFromHDF(XdmfConstString H5DataSet){
     }
     StringOutput << "<DataItem NumberType=\"";
     StringOutput << XdmfTypeToClassString(H5.GetNumberType());
+    StringOutput << "\" Format=\"HDF";
     StringOutput << "\" Precision=\"";
     StringOutput << H5.GetElementSize();
     StringOutput << "\" Dimensions=\"";
