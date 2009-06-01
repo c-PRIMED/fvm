@@ -76,6 +76,12 @@ public:
   getLocalizedSubset(const StorageSite& newRowSite,
                      StorageSite& newColSite,
                      const Array<int>& indices) const;
+
+  shared_ptr<CRConnectivity>
+  getLocalizedSubsetOfFaceCells(const StorageSite& newRowSite,  StorageSite& newColSite,
+                                const Array<int>& indices, const CRConnectivity& faceCells, 
+                                const CRConnectivity& cellCells) const;
+
   void
   localize(const Array<int>& globalToLocal,const StorageSite& newColSite);
  

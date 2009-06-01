@@ -83,11 +83,13 @@ private:
    void resize_elem(int id);
    void CRConnectivity_faceParts(); 
    void faceCells_faceNodes(); 
+
    void interfaces();
    void coordinates();
    int  count_interior_faces( int id );
    void order_faceCells_faceNodes(); 
    void non_interior_cells();
+   void non_interior_cells2();
    void local_number_elems();
    void exchange_interface_meshes();
    void mappers();
@@ -98,8 +100,8 @@ private:
    void construct_mesh( int id );
 
     
-   void mesh_tecplot();
    void mesh_file();
+   void mesh_tecplot();
 
 
    const MeshList _meshList;
@@ -148,6 +150,9 @@ private:
 
    vector< const CRConnectivity* >  _faceCellsGlobal;      //global mesh
    vector< const CRConnectivity* >  _faceNodesGlobal;      //global mesh
+   vector< const CRConnectivity* >  _cellNodesGlobal;      //global mesh
+   vector< const CRConnectivity* >  _cellCellsGlobal;      //global mesh
+
 
    vector< CRConnectivityPtr >  _faceCells; //belongs to this partition
    vector< CRConnectivityPtr >  _faceNodes; //belongs to this partition
@@ -157,6 +162,7 @@ private:
    vector< CRConnectivityPtr >  _faceNodesOrdered;
 
    vector< CRConnectivityPtr >  _cellParts;
+   vector< CRConnectivityPtr >  _partCells;
    vector< CRConnectivityPtr >  _faceParts; 
    vector< CRConnectivityPtr >  _partFaces; //transpose of _faceParts
    vector< CRConnectivityPtr >  _partNodes;
@@ -175,11 +181,9 @@ private:
    vector< map<int,int> > _bndryOffsets;
    vector< map<int,int> > _interfaceOffsets;
    vector< vector<int> > _cellToOrderedCell;
-   vector< vector<bool> > _isOneToOneMap;
    vector< multimap<int,int> > _globalToLocalMappers; 
    vector< multimap<int,int> > _localToGlobalMappers;
 
-  vector< ArrayIntPtr > _globalToLocalMap;
   vector< ArrayIntPtr > _localToGlobalMap;
 
   //variables aglomorated for MPI communications

@@ -99,8 +99,9 @@ PartMesh::mesh()
     CRConnectivity_faceParts();
     interfaces();
     faceCells_faceNodes();
-    local_number_elems();
-    non_interior_cells();
+    //local_number_elems();  // no use just keep if I need it
+    //non_interior_cells();  // old way of finding non_interior_cells which has bug, never use until fix or just use version2 (non_interior_cells2)
+    non_interior_cells2();
     order_faceCells_faceNodes();
     coordinates();
 
@@ -709,7 +710,6 @@ PartMesh::init()
    _bndryOffsets.resize( _nmesh );
    _interfaceOffsets.resize( _nmesh );
    _cellToOrderedCell.resize( _nmesh );
-   _isOneToOneMap.resize( _nmesh );
    _globalToLocalMappers.resize( _nmesh );
    _localToGlobalMappers.resize( _nmesh );
    _windowSize.resize( _nmesh );
@@ -1084,7 +1084,7 @@ PartMesh::mesh_setup()
          }
 
 
-       _meshListLocal.at(id)->setCoordinates( _coord.at(id) );
+       _meshListLocal.at(id)->setCoordinates( _coord.at(id)            );
        _meshListLocal.at(id)->setFaceNodes  ( _faceNodesOrdered.at(id) );
        _meshListLocal.at(id)->setFaceCells  ( _faceCellsOrdered.at(id) );
 
@@ -1102,6 +1102,9 @@ PartMesh::CRConnectivity_faceParts()
      for ( int id = 0; id < _nmesh; id++){
           _faceCellsGlobal.push_back( &_meshList.at(id)->getAllFaceCells() );
           _faceNodesGlobal.push_back( &_meshList.at(id)->getAllFaceNodes() );
+          _cellNodesGlobal.push_back( &_meshList.at(id)->getCellNodes()    );
+          _cellCellsGlobal.push_back( &_meshList.at(id)->getCellCells()    );
+
           _faceParts.push_back( _faceCellsGlobal.at(id)->multiply( *_cellParts.at(id), false) );
           _partFaces.push_back( _faceParts.at(id)->getTranspose() );
           _partNodes.push_back( _partFaces.at(id)->multiply( *_faceNodesGlobal.at(id), false) );
@@ -1171,7 +1174,7 @@ PartMesh::CRConnectivity_cellParts()
       }
 
       _cellParts.at(id)->finishAdd();
-
+      _partCells.push_back( _cellParts.at(id)->getTranspose() );
    }
 
     //deleting allocated arrays in this method
@@ -1262,6 +1265,9 @@ void
 PartMesh::faceCells_faceNodes()
 {
     vector< ArrayIntPtr  >   indices;
+    vector< CRConnectivityPtr >  faceCells; //local variable
+    vector< CRConnectivityPtr >  cellCells; //local variable
+ 
     for ( int id = 0; id < _nmesh; id++){
         //form site 
         int face_count = _partFaces.at(id)->getCount( _procID );
@@ -1281,18 +1287,27 @@ PartMesh::faceCells_faceNodes()
             indx++;
         }
         //getting subset from global _faceCellsGlobal and _faceNodesGlobal
-        int cell_count = _nelemsWithGhosts.at(id) + _interfaceMap.at(id).size();
-       _cellSite.push_back( StorageSitePtr(new StorageSite(cell_count)) );
-      _faceCells.push_back( _faceCellsGlobal.at(id)->getLocalizedSubset( *_faceSite.at(id), *_cellSite.at(id), *indices.at(id) )  );
-      _faceNodes.push_back( _faceNodesGlobal.at(id)->getLocalizedSubset( *_faceSite.at(id), *_nodeSite.at(id), *indices.at(id) )  );
+        int cell_count  = _nelems.at(id);
+        int ghost_count = _nelemsWithGhosts.at(id) - _nelems.at(id) + _interfaceMap.at(id).size();
+       _cellSite.push_back( StorageSitePtr(new StorageSite( cell_count, ghost_count)) );
+
+        //locallly formed to use CRCOnnectvitiy::getLocalizedSubsetOfFaceCells specialized for PartMesh class 
+        faceCells.push_back( _faceCellsGlobal.at(id)->getLocalizedSubset( *_faceSite.at(id), *_cellSite.at(id), *indices.at(id) )  );
+        cellCells.push_back( ( faceCells.at(id)->getTranspose())->multiply(*faceCells.at(id), true) );
+ 
+       _faceCells.push_back( _faceCellsGlobal.at(id)->getLocalizedSubsetOfFaceCells( *_faceSite.at(id), *_cellSite.at(id), *indices.at(id), *faceCells.at(id),
+                              *cellCells.at(id) )  );
+       _faceNodes.push_back( _faceNodesGlobal.at(id)->getLocalizedSubset( *_faceSite.at(id), *_nodeSite.at(id), *indices.at(id) )  );
        _cellCells.push_back( (_faceCells.at(id)->getTranspose())->multiply(*_faceCells.at(id), true) );
        _cellNodes.push_back( (_faceCells.at(id)->getTranspose())->multiply(*_faceNodes.at(id), false) );
 
     }
 
 
-
 }
+
+
+
 
 
 //form interfaces
@@ -1386,6 +1401,36 @@ PartMesh::non_interior_cells()
 
 }
 
+//this is expensive way, lets keep it
+void
+PartMesh::non_interior_cells2()
+{
+     for ( int id = 0; id < _nmesh; id++ ){
+         int nface_local = _partFaces.at(id)->getCount( _procID );
+         for ( int face = 0; face < nface_local; face++){
+             int cell_0 = (*_faceCells.at(id))(face,0);
+             int cell_1 = (*_faceCells.at(id))(face,1);
+/*             if ( _procID == 0 ) 
+                cout << " face = " << face << " cell_0 = " << cell_0 << " cell_1 = " << cell_1 << endl;*/
+             if ( cell_0 >= _nelems.at(id) ) 
+               _nonInteriorCells.at(id).insert(cell_0);
+             if ( cell_1 >= _nelems.at(id) ) 
+               _nonInteriorCells.at(id).insert(cell_1);
+
+        }
+    }
+
+//     set<int>::const_iterator it;
+//    int i = 0;
+//     if ( _procID == 0 )
+//            for ( it = _nonInteriorCells.at(0).begin(); it != _nonInteriorCells.at(0).end(); it++ )
+//               cout << " noninterior[" << i++ << "] = " << *it << endl;
+
+}
+
+
+
+
 //faceCells and faceNodes are order such that interior face come first and 
 //then  boundary faces or interfaces follows after that
 //interface and boundary cells which are always stored as second element 
@@ -1401,7 +1446,6 @@ PartMesh::order_faceCells_faceNodes()
         _faceCellsOrdered.push_back( CRConnectivityPtr( new  CRConnectivity(_meshListLocal.at(id)->getFaces(), _meshListLocal.at(id)->getCells() ) ) );
         _faceNodesOrdered.push_back( CRConnectivityPtr( new  CRConnectivity(_meshListLocal.at(id)->getFaces(), _meshListLocal.at(id)->getNodes() ) ) );
         _cellToOrderedCell[id].assign(tot_cells, -1);
-        _isOneToOneMap[id].assign(tot_cells, true); 
 
           //faceCells 
          _faceCellsOrdered.at(id)->initCount();
@@ -1419,10 +1463,7 @@ PartMesh::order_faceCells_faceNodes()
          _faceNodesOrdered.at(id)->finishCount();
 
          //start with interior faces
-          int array_length = _faceCells.at(id)->getGlobalToLocalMap().getLength();
-         _globalToLocalMap.push_back(  ArrayIntPtr( new Array<int> (array_length) ) );
-         (*_globalToLocalMap.at(id)) = -1; 
-          array_length = tot_cells; 
+         int array_length = _faceCells.at(id)->getLocalToGlobalMap().getLength(); 
          _localToGlobalMap.push_back(  ArrayIntPtr( new Array<int> (array_length) ) );
          (*_localToGlobalMap.at(id)) = -1; 
 
@@ -1443,9 +1484,9 @@ PartMesh::order_faceCells_faceNodes()
                       _cellToOrderedCell[id][cell_0] = cellID;
                       _faceCellsOrdered.at(id)->add(face_track,cellID);
                        int global_id = _faceCells.at(id)->getLocalToGlobalMap()[cell_0];
-                       (*_globalToLocalMap.at(id))[global_id] = cellID;
                        (*_localToGlobalMap.at(id))[cellID] = global_id;
                        _globalToLocalMappers.at(id).insert( pair<int,int>(global_id,cellID)  );
+                        assert( cellID < _localToGlobalMap.at(id)->getLength() );
                        _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
                        cellID++;
                   } else {
@@ -1457,9 +1498,9 @@ PartMesh::order_faceCells_faceNodes()
                       _cellToOrderedCell[id][cell_1] = cellID;
                       _faceCellsOrdered.at(id)->add(face_track,cellID);
                        int global_id = _faceCells.at(id)->getLocalToGlobalMap()[cell_1];
-                       (*_globalToLocalMap.at(id))[global_id] = cellID;
                        (*_localToGlobalMap.at(id))[cellID] = global_id;
                        _globalToLocalMappers.at(id).insert( pair<int,int>(global_id,cellID)  );
+                        assert( cellID < _localToGlobalMap.at(id)->getLength() );
                        _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
                       cellID++;
                   } else {
@@ -1474,6 +1515,7 @@ PartMesh::order_faceCells_faceNodes()
               }
          }
 
+
         //now specical case, if there is some inner element but fail in above search (example  an inner element surrounded by only boundary
         // or interfaces, then above search will skip that). We want to renumber remaining cells (after above search) 
         //first get number of cells surroindgin cells for inner cells
@@ -1484,15 +1526,15 @@ PartMesh::order_faceCells_faceNodes()
         for ( int elem = 0; elem < _cellCells.at(id)->getRowDim(); elem++ ){ 
             if ( _cellCells.at(id)->getCount(elem) == max_sur_cells && _cellToOrderedCell[id][elem] == -1 ){
                 _cellToOrderedCell[id][elem] = cellID;
-                int global_id = _faceCells.at(id)->getLocalToGlobalMap()[elem];
+                int global_id = _faceCells.at(id)->getLocalToGlobalMap()[elem]; 
                 _globalToLocalMappers.at(id).insert( pair<int,int>(global_id,cellID)  );
                 _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
-                (*_globalToLocalMap.at(id))[global_id] = cellID;
+                assert( cellID < _localToGlobalMap.at(id)->getLength() );
                 (*_localToGlobalMap.at(id))[cellID] = global_id;
-                // cout << " _procid = " << " global_id = " << global_id << " cellID = " << cellID << endl;
                 cellID++;
             }
         }
+
 
         //then boundary faces
        multimap<int,int>::const_iterator it_cell;
@@ -1508,14 +1550,16 @@ PartMesh::order_faceCells_faceNodes()
              _bndryOffsets.at(id).insert( pair<int,int>(bndryID, offset) );
  
           for ( it_cell = it.first; it_cell != it.second; it_cell++ ){
-
+               //faceCells.at(id)->getGlobalToLocalMap() is only allowed for boundary and inner cells, be cautious!!!!!!!!!!!!!
                int elem_0 =  _faceCells.at(id)->getGlobalToLocalMap()[it_cell->second];
+               assert(elem_0 > 0 );
                int elem_1 =  (*_cellCells.at(id))(elem_0, 0);
+               assert( elem_0 != elem_1 );
                int inner_elem = _cellToOrderedCell[id][elem_1];
                int outer_elem = cellID;
 
                //update globalToLocal and localToGlobalMaps
-               (*_globalToLocalMap.at(id))[it_cell->second] = cellID;
+               assert( cellID < _localToGlobalMap.at(id)->getLength() );
                (*_localToGlobalMap.at(id))[cellID] = it_cell->second;
                _globalToLocalMappers.at(id).insert( pair<int,int>(it_cell->second,cellID ) );
                _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, it_cell->second) );
@@ -1534,6 +1578,7 @@ PartMesh::order_faceCells_faceNodes()
               cellID++;
           }
        }
+
 
        //then interface faces
        multimap<int,int>::const_iterator it_face;
@@ -1558,8 +1603,8 @@ PartMesh::order_faceCells_faceNodes()
 
              //update maps
              int global_id = _faceCells.at(id)->getLocalToGlobalMap()[outer_elem_id];
-             (*_globalToLocalMap.at(id))[global_id] = cellID;
              assert( cellID >=0 && cellID < array_length );
+             assert( cellID < _localToGlobalMap.at(id)->getLength() );
              (*_localToGlobalMap.at(id))[cellID] = global_id;
              _globalToLocalMappers.at(id).insert( pair<int,int>(global_id, cellID) );
              _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
@@ -1582,9 +1627,10 @@ PartMesh::order_faceCells_faceNodes()
 
        }
 
+
         _faceCellsOrdered.at(id)->finishAdd(); 
         _faceNodesOrdered.at(id)->finishAdd();
-         assert(  cellID == tot_cells );
+        assert(  cellID == tot_cells );
 //        //checking _cellToOrderedCell
 //        double sum = 0;
 //        for ( int n = 0; n < _cellToOrderedCell.at(id).size(); n++ )
@@ -1637,6 +1683,7 @@ PartMesh::construct_mesh( int id )
 void 
 PartMesh::exchange_interface_meshes()
 {
+
     vector<int>  offset;
     vector<int>  interfaceMeshIDs;
     int *recv_counts = NULL;
@@ -1679,6 +1726,8 @@ PartMesh::exchange_interface_meshes()
              int  nend  = nstart + _interfaceMap.at(id).count( neighMeshID );
             for ( int n = nstart;  n < nend; n++){
                   int elem_local_id  = (*_faceCellsOrdered.at(id))(n,0);
+                  assert( elem_local_id >= 0 && elem_local_id < _localToGlobalMap.at(id)->getLength() );
+
                   int elem_global_id = (*_localToGlobalMap.at(id))[ elem_local_id ];
 
                  (*_ghostCellsLocal.at(id))[index]  = elem_local_id;
@@ -1707,6 +1756,7 @@ PartMesh::exchange_interface_meshes()
        delete [] displ;
 
     }
+
 }
 
 
@@ -1792,7 +1842,7 @@ PartMesh::mappers()
           }
 
           cellScatterMap[ _meshListLocal.at(id)->getGhostCellSiteScatter( neighMeshID ) ] = _fromIndices.at(id).at(interfaceIndx);
-          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSiteGather( neighMeshID ) ] = _toIndices.at(id).at(interfaceIndx);
+          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSiteGather ( neighMeshID ) ] = _toIndices.at(id).at(interfaceIndx);
  
           interfaceIndx++;
 
@@ -1878,27 +1928,22 @@ PartMesh::mesh_file()
           const Mesh::GhostCellSiteMap& ghostCellSiteGatherMap  = _meshListLocal.at(id)->getGhostCellSiteGatherMap();
 
            Mesh::GhostCellSiteMap::const_iterator it_ghostScatter;
-           Mesh::GhostCellSiteMap::const_iterator  it_ghostGather;
-           StorageSite::ScatterMap::const_iterator it_mapperScatter;
-           StorageSite::GatherMap::const_iterator  it_mapperGather;
-           it_ghostScatter = ghostCellSiteScatterMap.begin();
-           it_ghostGather  = ghostCellSiteGatherMap.end();
-           it_mapperGather = cellGatherMap.begin();
             //loop over interfaces
-           for ( it_mapperScatter = cellScatterMap.begin(); it_mapperScatter != cellScatterMap.end(); it_mapperScatter++){
-               const StorageSite *siteScatter = it_mapperScatter->first;
-//               const StorageSite *siteGather  = it_mapperGather->first;
-               const Array<int>&  scatterArray = *(it_mapperScatter->second);
-               const Array<int>&  gatherArray  = *(it_mapperGather->second);
-               for ( int i = 0; i < siteScatter->getCount(); i++){
-                     mesh_file <<   "  neightMeshID = " <<  it_ghostScatter->first  << "        "
+           for ( it_ghostScatter = ghostCellSiteScatterMap.begin(); it_ghostScatter != ghostCellSiteScatterMap.end(); it_ghostScatter++){
+
+               int neighID = it_ghostScatter->first;
+
+               const StorageSite& siteScatter =  *( ghostCellSiteScatterMap.find( neighID )->second );
+               const StorageSite& siteGather  =  *( ghostCellSiteGatherMap.find ( neighID )->second );
+
+
+               const Array<int>&  scatterArray =  *(cellScatterMap.find( &siteScatter )->second);
+               const Array<int>&  gatherArray  =  *(cellGatherMap.find ( &siteGather )->second);
+               for ( int i = 0; i < siteScatter.getCount(); i++){
+                     mesh_file <<   "  neightMeshID = " <<  neighID  << "        "
                                << gatherArray[i]  + 1  << "    ===>    " 
                                << scatterArray[i] + 1  << endl;
                }
-               it_ghostScatter++;
-               it_ghostGather++;
-               it_mapperGather++;
-
           }
 
       }
