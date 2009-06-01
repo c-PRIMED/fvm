@@ -318,11 +318,11 @@ Boundary multimap = 4    wall
  globalToLocalMap[8] = 7
  globalToLocalMap[9] = 9
  globalToLocalMap[10] = -1
- globalToLocalMap[11] = 10
+ globalToLocalMap[11] = 13
  globalToLocalMap[12] = -1
  globalToLocalMap[13] = -1
- globalToLocalMap[14] = 11
- globalToLocalMap[15] = 12
+ globalToLocalMap[14] = 14
+ globalToLocalMap[15] = 10
  globalToLocalMap[16] = 1
  globalToLocalMap[17] = 3
  globalToLocalMap[18] = 5
@@ -330,9 +330,9 @@ Boundary multimap = 4    wall
  globalToLocalMap[20] = -1
  globalToLocalMap[21] = 8
  globalToLocalMap[22] = -1
- globalToLocalMap[23] = 13
+ globalToLocalMap[23] = 11
  globalToLocalMap[24] = 15
- globalToLocalMap[25] = 14
+ globalToLocalMap[25] = 12
  globalToLocalMap[26] = -1
  globalToLocalMap[27] = -1
  globalToLocalMap[28] = -1
@@ -357,11 +357,11 @@ Boundary multimap = 4    wall
  localToGlobalMap[7] = 8
  localToGlobalMap[8] = 21
  localToGlobalMap[9] = 9
- localToGlobalMap[10] = 11
- localToGlobalMap[11] = 14
- localToGlobalMap[12] = 15
- localToGlobalMap[13] = 23
- localToGlobalMap[14] = 25
+ localToGlobalMap[10] = 15
+ localToGlobalMap[11] = 23
+ localToGlobalMap[12] = 25
+ localToGlobalMap[13] = 11
+ localToGlobalMap[14] = 14
  localToGlobalMap[15] = 24
  localToGlobalMap[16] = 29
  localToGlobalMap[17] = 30
@@ -378,20 +378,20 @@ Boundary multimap = 4    wall
  row[7] = 13    8    9    
  row[8] = 14    8    10    
  row[9] = 15    10    2    
- row[10] = 18    11    4    
- row[11] = 23    12    13    
- row[12] = 24    13    6    
- row[13] = 25    2    14    
- row[14] = 26    4    14    
+ row[10] = 18    14    4    
+ row[11] = 23    15    11    
+ row[12] = 24    11    6    
+ row[13] = 25    2    12    
+ row[14] = 26    4    12    
  row[15] = 27    6    9    
- row[16] = 30    9    15    
- row[17] = 32    14    15    
- row[18] = 33    16    15    
+ row[16] = 30    9    13    
+ row[17] = 32    12    13    
+ row[18] = 33    16    13    
  row[19] = 37    1    17    
  row[20] = 38    10    18    
  row[21] = 39    7    19    
  row[22] = 40    5    20    
- row[23] = 41    13    21    
+ row[23] = 41    11    21    
  row[24] = 43    3    22    
 
  _faceNodes :  
@@ -435,11 +435,11 @@ Boundary multimap = 4    wall
  row[8]  = 6    8    9    
  row[9]  = 6    9    11    
  row[10]  = 9    8    1    
- row[11]  = 4    10    
- row[12]  = 11    12    
- row[13]  = 11    12    5    
- row[14]  = 9    2    10    
- row[15]  = 11    9    10    
+ row[11]  = 11    12    5    
+ row[12]  = 9    2    10    
+ row[13]  = 11    9    10    
+ row[14]  = 4    10    
+ row[15]  = 11    12    
  row[16]  = 10    11    
  row[17]  = 3    1    
  row[18]  = 1    8    
@@ -452,26 +452,26 @@ Boundary multimap = 4    wall
  _cellCells->getRowDim() = 22
  _cellCells->getColDim() = 22
  row[1] =     2    3    17    
- row[2] =     1    10    14    
+ row[2] =     1    10    12    
  row[3] =     1    4    22    
- row[4] =     3    11    14    
+ row[4] =     3    14    12    
  row[5] =     6    7    20    
- row[6] =     5    13    9    
+ row[6] =     5    11    9    
  row[7] =     5    8    19    
  row[8] =     7    9    10    
- row[9] =     8    6    15    
+ row[9] =     8    6    13    
  row[10] =     8    2    18    
- row[11] =     4    
- row[12] =     13    
- row[13] =     12    6    21    
- row[14] =     2    4    15    
- row[15] =     9    14    16    
- row[16] =     15    
+ row[11] =     15    6    21    
+ row[12] =     2    4    13    
+ row[13] =     9    12    16    
+ row[14] =     4    
+ row[15] =     11    
+ row[16] =     13    
  row[17] =     1    
  row[18] =     10    
  row[19] =     7    
  row[20] =     5    
- row[21] =     13    
+ row[21] =     11    
  row[22] =     3    
 
  node ID =          1,  x = 0.3333333,  y = 0.0000000,  z = 0.0000000
@@ -493,24 +493,11 @@ Boundary multimap = 4    wall
 
  interior face counts = 15
 
- total interior cells = 13
-      0
-      1
-      2
-      3
-      4
-      5
-      6
-      7
-      8
-      9
-      12
-      13
-      14
+ total interior cells = 0
 
  total non-interior cells = 9
-      10
-      11
+      13
+      14
       15
       16
       17

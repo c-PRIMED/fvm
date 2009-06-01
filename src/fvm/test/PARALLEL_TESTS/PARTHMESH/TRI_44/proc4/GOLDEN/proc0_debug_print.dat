@@ -359,10 +359,10 @@ Boundary multimap = 4    wall
  globalToLocalMap[20] = 3
  globalToLocalMap[21] = 7
  globalToLocalMap[22] = -1
- globalToLocalMap[23] = 10
+ globalToLocalMap[23] = 12
  globalToLocalMap[24] = -1
  globalToLocalMap[25] = -1
- globalToLocalMap[26] = 9
+ globalToLocalMap[26] = 11
  globalToLocalMap[27] = 6
  globalToLocalMap[28] = -1
  globalToLocalMap[29] = -1
@@ -371,12 +371,12 @@ Boundary multimap = 4    wall
  globalToLocalMap[32] = 4
  globalToLocalMap[33] = 14
  globalToLocalMap[34] = -1
- globalToLocalMap[35] = 12
+ globalToLocalMap[35] = 13
  globalToLocalMap[36] = -1
  globalToLocalMap[37] = -1
  globalToLocalMap[38] = -1
- globalToLocalMap[39] = 11
- globalToLocalMap[40] = 13
+ globalToLocalMap[39] = 9
+ globalToLocalMap[40] = 10
  globalToLocalMap[41] = -1
  globalToLocalMap[42] = 15
  globalToLocalMap[43] = -1
@@ -407,11 +407,11 @@ Boundary multimap = 4    wall
  localToGlobalMap[6] = 27
  localToGlobalMap[7] = 21
  localToGlobalMap[8] = 31
- localToGlobalMap[9] = 26
- localToGlobalMap[10] = 23
- localToGlobalMap[11] = 39
- localToGlobalMap[12] = 35
- localToGlobalMap[13] = 40
+ localToGlobalMap[9] = 39
+ localToGlobalMap[10] = 40
+ localToGlobalMap[11] = 26
+ localToGlobalMap[12] = 23
+ localToGlobalMap[13] = 35
  localToGlobalMap[14] = 33
  localToGlobalMap[15] = 42
  localToGlobalMap[16] = 50
@@ -426,15 +426,15 @@ Boundary multimap = 4    wall
  row[6] = 18    6    7    
  row[7] = 31    4    8    
  row[8] = 32    4    9    
- row[9] = 33    8    10    
- row[10] = 36    11    7    
- row[11] = 40    7    12    
- row[12] = 45    9    13    
+ row[9] = 33    8    12    
+ row[10] = 36    13    7    
+ row[11] = 40    7    10    
+ row[12] = 45    9    14    
  row[13] = 46    9    5    
- row[14] = 47    5    14    
- row[15] = 48    15    12    
- row[16] = 55    12    14    
- row[17] = 56    14    16    
+ row[14] = 47    5    11    
+ row[15] = 48    15    10    
+ row[16] = 55    10    11    
+ row[17] = 56    11    16    
  row[18] = 65    6    17    
  row[19] = 66    1    18    
  row[20] = 67    2    19    
@@ -477,11 +477,11 @@ Boundary multimap = 4    wall
  row[7]  = 5    6    9    
  row[8]  = 4    7    8    
  row[9]  = 7    2    10    
- row[10]  = 8    7    
- row[11]  = 6    9    
- row[12]  = 5    9    11    
- row[13]  = 7    10    
- row[14]  = 10    5    11    
+ row[10]  = 5    9    11    
+ row[11]  = 10    5    11    
+ row[12]  = 8    7    
+ row[13]  = 6    9    
+ row[14]  = 7    10    
  row[15]  = 9    11    
  row[16]  = 10    11    
  row[17]  = 6    3    
@@ -496,18 +496,18 @@ Boundary multimap = 4    wall
  row[2] =     1    4    19    
  row[3] =     1    5    6    
  row[4] =     2    8    9    
- row[5] =     3    9    14    
+ row[5] =     3    9    11    
  row[6] =     3    7    17    
- row[7] =     6    11    12    
- row[8] =     4    10    20    
- row[9] =     4    13    5    
- row[10] =     8    
- row[11] =     7    
- row[12] =     7    15    14    
- row[13] =     9    
- row[14] =     5    12    16    
- row[15] =     12    
- row[16] =     14    
+ row[7] =     6    13    10    
+ row[8] =     4    12    20    
+ row[9] =     4    14    5    
+ row[10] =     7    15    11    
+ row[11] =     5    10    16    
+ row[12] =     8    
+ row[13] =     7    
+ row[14] =     9    
+ row[15] =     10    
+ row[16] =     11    
  row[17] =     6    
  row[18] =     1    
  row[19] =     2    
@@ -533,23 +533,12 @@ Boundary multimap = 4    wall
 
  interior face counts = 12
 
- total interior cells = 11
-      0
-      1
-      2
-      3
-      4
-      5
-      6
-      7
-      8
-      11
-      13
+ total interior cells = 0
 
  total non-interior cells = 9
-      9
-      10
+      11
       12
+      13
       14
       15
       16

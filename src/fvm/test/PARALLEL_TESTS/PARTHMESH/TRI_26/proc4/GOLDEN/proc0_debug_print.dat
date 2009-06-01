@@ -227,74 +227,75 @@ Boundary multimap = 4    wall
 
  _faceCells :  
  _faceCells->getRowDim() = 13
- _faceCells->getColDim() = 13
+ _faceCells->getColDim() = 14
  globalToLocalMap.length() = 38
  globalToLocalMap[0] = -1
  globalToLocalMap[1] = -1
  globalToLocalMap[2] = -1
  globalToLocalMap[3] = -1
  globalToLocalMap[4] = 0
- globalToLocalMap[5] = 2
+ globalToLocalMap[5] = 1
  globalToLocalMap[6] = -1
  globalToLocalMap[7] = -1
  globalToLocalMap[8] = -1
  globalToLocalMap[9] = -1
  globalToLocalMap[10] = -1
  globalToLocalMap[11] = -1
- globalToLocalMap[12] = 1
+ globalToLocalMap[12] = 7
  globalToLocalMap[13] = -1
- globalToLocalMap[14] = 3
- globalToLocalMap[15] = 5
+ globalToLocalMap[14] = 2
+ globalToLocalMap[15] = 4
  globalToLocalMap[16] = -1
  globalToLocalMap[17] = -1
- globalToLocalMap[18] = 6
+ globalToLocalMap[18] = 8
  globalToLocalMap[19] = -1
- globalToLocalMap[20] = 7
+ globalToLocalMap[20] = 9
  globalToLocalMap[21] = -1
- globalToLocalMap[22] = 4
+ globalToLocalMap[22] = 3
  globalToLocalMap[23] = -1
- globalToLocalMap[24] = 8
- globalToLocalMap[25] = 9
- globalToLocalMap[26] = 10
+ globalToLocalMap[24] = 5
+ globalToLocalMap[25] = 10
+ globalToLocalMap[26] = 11
  globalToLocalMap[27] = -1
  globalToLocalMap[28] = -1
  globalToLocalMap[29] = -1
  globalToLocalMap[30] = -1
  globalToLocalMap[31] = -1
  globalToLocalMap[32] = -1
- globalToLocalMap[33] = 11
- globalToLocalMap[34] = 12
+ globalToLocalMap[33] = 12
+ globalToLocalMap[34] = 13
  globalToLocalMap[35] = -1
  globalToLocalMap[36] = -1
  globalToLocalMap[37] = -1
 
- localToGlobalMap.length() = 13
+ localToGlobalMap.length() = 14
  localToGlobalMap[0] = 4
- localToGlobalMap[1] = 12
- localToGlobalMap[2] = 5
- localToGlobalMap[3] = 14
- localToGlobalMap[4] = 22
- localToGlobalMap[5] = 15
- localToGlobalMap[6] = 18
- localToGlobalMap[7] = 20
- localToGlobalMap[8] = 24
- localToGlobalMap[9] = 25
- localToGlobalMap[10] = 26
- localToGlobalMap[11] = 33
- localToGlobalMap[12] = 34
- row[1] = 7    1    2    
- row[2] = 8    1    3    
- row[3] = 9    3    4    
- row[4] = 20    2    5    
- row[5] = 22    4    5    
- row[6] = 23    4    6    
- row[7] = 24    6    7    
- row[8] = 29    8    9    
- row[9] = 31    5    9    
- row[10] = 33    9    10    
- row[11] = 34    1    11    
- row[12] = 41    6    12    
- row[13] = 42    3    13    
+ localToGlobalMap[1] = 5
+ localToGlobalMap[2] = 14
+ localToGlobalMap[3] = 22
+ localToGlobalMap[4] = 15
+ localToGlobalMap[5] = 24
+ localToGlobalMap[6] = 12
+ localToGlobalMap[7] = 12
+ localToGlobalMap[8] = 18
+ localToGlobalMap[9] = 20
+ localToGlobalMap[10] = 25
+ localToGlobalMap[11] = 26
+ localToGlobalMap[12] = 33
+ localToGlobalMap[13] = 34
+ row[1] = 7    1    7    
+ row[2] = 8    1    2    
+ row[3] = 9    2    3    
+ row[4] = 20    8    4    
+ row[5] = 22    3    4    
+ row[6] = 23    3    5    
+ row[7] = 24    5    9    
+ row[8] = 29    10    6    
+ row[9] = 31    4    6    
+ row[10] = 33    6    11    
+ row[11] = 34    1    12    
+ row[12] = 41    5    13    
+ row[13] = 42    2    14    
 
  _faceNodes :  
  _faceNodes->getRowDim() = 13
@@ -314,38 +315,40 @@ Boundary multimap = 4    wall
  row[13] = 42    4    3    
 
  _cellNodes(Local Numbering) :  
- _cellNodes->getRowDim() = 13
+ _cellNodes->getRowDim() = 14
  _cellNodes->getColDim() = 8
  row[1]  = 1    2    3    
- row[2]  = 1    2    5    
- row[3]  = 2    3    4    
- row[4]  = 2    4    6    
- row[5]  = 5    2    6    
- row[6]  = 6    4    7    
- row[7]  = 6    7    
- row[8]  = 8    5    
- row[9]  = 8    5    6    
- row[10]  = 8    6    
- row[11]  = 3    1    
- row[12]  = 7    4    
- row[13]  = 4    3    
+ row[2]  = 2    3    4    
+ row[3]  = 2    4    6    
+ row[4]  = 5    2    6    
+ row[5]  = 6    4    7    
+ row[6]  = 8    5    6    
+ row[7]  = 1    2    
+ row[8]  = 5    2    
+ row[9]  = 6    7    
+ row[10]  = 8    5    
+ row[11]  = 8    6    
+ row[12]  = 3    1    
+ row[13]  = 7    4    
+ row[14]  = 4    3    
 
  _cellCells :  
- _cellCells->getRowDim() = 13
- _cellCells->getColDim() = 13
- row[1] =     2    3    11    
- row[2] =     1    5    
- row[3] =     1    4    13    
- row[4] =     3    5    6    
- row[5] =     2    4    9    
- row[6] =     4    7    12    
- row[7] =     6    
- row[8] =     9    
- row[9] =     8    5    10    
- row[10] =     9    
- row[11] =     1    
- row[12] =     6    
- row[13] =     3    
+ _cellCells->getRowDim() = 14
+ _cellCells->getColDim() = 14
+ row[1] =     7    2    12    
+ row[2] =     1    3    14    
+ row[3] =     2    4    5    
+ row[4] =     8    3    6    
+ row[5] =     3    9    13    
+ row[6] =     10    4    11    
+ row[7] =     1    
+ row[8] =     4    
+ row[9] =     5    
+ row[10] =     6    
+ row[11] =     6    
+ row[12] =     1    
+ row[13] =     5    
+ row[14] =     2    
 
  node ID =          1,  x = 0.6666667,  y = 1.0000000,  z = 0.0000000
  node ID =          2,  x = 0.7750815,  y = 0.7827520,  z = 0.0000000
@@ -364,22 +367,17 @@ Boundary multimap = 4    wall
 
  interior face counts = 5
 
- total interior cells = 6
-      0
-      2
-      3
-      4
-      5
-      8
+ total interior cells = 0
 
- total non-interior cells = 7
-      1
+ total non-interior cells = 8
       6
       7
+      8
       9
       10
       11
       12
+      13
 
    bndry group ID = 3 offsets = 5
    bndry group ID = 4 offsets = 6

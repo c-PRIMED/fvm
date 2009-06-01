@@ -12,8 +12,8 @@ zone N = 8 E = 14 DATAPACKING = BLOCK,  VARLOCATION = ([4]=CELLCENTERED), ZONETY
 0.000000e+00     0.000000e+00     
 
 0      
-0      0      1      1      1      1      1      1      0      1      
-0      0      0      
+0      0      0      0      1      1      1      1      1      1      
+1      1      1      
 
 1      2      3      
 1      2      4      

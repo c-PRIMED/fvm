@@ -357,28 +357,28 @@ Boundary multimap = 4    wall
  globalToLocalMap[18] = -1
  globalToLocalMap[19] = -1
  globalToLocalMap[20] = -1
- globalToLocalMap[21] = 9
+ globalToLocalMap[21] = 12
  globalToLocalMap[22] = -1
  globalToLocalMap[23] = -1
- globalToLocalMap[24] = 8
+ globalToLocalMap[24] = 11
  globalToLocalMap[25] = -1
  globalToLocalMap[26] = 6
  globalToLocalMap[27] = -1
  globalToLocalMap[28] = 4
  globalToLocalMap[29] = -1
  globalToLocalMap[30] = -1
- globalToLocalMap[31] = 12
+ globalToLocalMap[31] = 13
  globalToLocalMap[32] = -1
  globalToLocalMap[33] = -1
  globalToLocalMap[34] = -1
- globalToLocalMap[35] = 10
+ globalToLocalMap[35] = 8
  globalToLocalMap[36] = -1
  globalToLocalMap[37] = -1
  globalToLocalMap[38] = -1
  globalToLocalMap[39] = -1
- globalToLocalMap[40] = 13
- globalToLocalMap[41] = 11
- globalToLocalMap[42] = 14
+ globalToLocalMap[40] = 14
+ globalToLocalMap[41] = 9
+ globalToLocalMap[42] = 10
  globalToLocalMap[43] = 15
  globalToLocalMap[44] = 16
  globalToLocalMap[45] = 17
@@ -406,13 +406,13 @@ Boundary multimap = 4    wall
  localToGlobalMap[5] = 9
  localToGlobalMap[6] = 26
  localToGlobalMap[7] = 13
- localToGlobalMap[8] = 24
- localToGlobalMap[9] = 21
- localToGlobalMap[10] = 35
- localToGlobalMap[11] = 41
- localToGlobalMap[12] = 31
- localToGlobalMap[13] = 40
- localToGlobalMap[14] = 42
+ localToGlobalMap[8] = 35
+ localToGlobalMap[9] = 41
+ localToGlobalMap[10] = 42
+ localToGlobalMap[11] = 24
+ localToGlobalMap[12] = 21
+ localToGlobalMap[13] = 31
+ localToGlobalMap[14] = 40
  localToGlobalMap[15] = 43
  localToGlobalMap[16] = 44
  localToGlobalMap[17] = 45
@@ -426,15 +426,15 @@ Boundary multimap = 4    wall
  row[6] = 15    6    7    
  row[7] = 19    4    8    
  row[8] = 20    4    5    
- row[9] = 21    8    9    
- row[10] = 33    10    7    
- row[11] = 39    7    11    
- row[12] = 41    5    12    
- row[13] = 45    13    11    
- row[14] = 51    11    12    
- row[15] = 56    14    15    
- row[16] = 57    12    15    
- row[17] = 58    15    16    
+ row[9] = 21    8    12    
+ row[10] = 33    13    7    
+ row[11] = 39    7    9    
+ row[12] = 41    5    10    
+ row[13] = 45    14    9    
+ row[14] = 51    9    10    
+ row[15] = 56    15    11    
+ row[16] = 57    10    11    
+ row[17] = 58    11    16    
  row[18] = 59    2    17    
  row[19] = 60    8    18    
  row[20] = 69    6    19    
@@ -476,13 +476,13 @@ Boundary multimap = 4    wall
  row[6]  = 5    3    6    
  row[7]  = 5    6    9    
  row[8]  = 4    7    8    
- row[9]  = 8    7    
- row[10]  = 6    9    
- row[11]  = 5    9    10    
- row[12]  = 7    5    10    
- row[13]  = 9    10    
- row[14]  = 10    11    
- row[15]  = 10    11    7    
+ row[9]  = 5    9    10    
+ row[10]  = 7    5    10    
+ row[11]  = 10    11    7    
+ row[12]  = 8    7    
+ row[13]  = 6    9    
+ row[14]  = 9    10    
+ row[15]  = 10    11    
  row[16]  = 7    11    
  row[17]  = 1    4    
  row[18]  = 4    8    
@@ -496,18 +496,18 @@ Boundary multimap = 4    wall
  row[2] =     1    4    17    
  row[3] =     1    5    6    
  row[4] =     2    8    5    
- row[5] =     3    4    12    
+ row[5] =     3    4    10    
  row[6] =     3    7    19    
- row[7] =     6    10    11    
- row[8] =     4    9    18    
- row[9] =     8    
- row[10] =     7    
- row[11] =     7    13    12    
- row[12] =     5    11    15    
- row[13] =     11    
- row[14] =     15    
- row[15] =     14    12    16    
- row[16] =     15    
+ row[7] =     6    13    9    
+ row[8] =     4    12    18    
+ row[9] =     7    14    10    
+ row[10] =     5    9    11    
+ row[11] =     15    10    16    
+ row[12] =     8    
+ row[13] =     7    
+ row[14] =     9    
+ row[15] =     11    
+ row[16] =     11    
  row[17] =     2    
  row[18] =     8    
  row[19] =     6    
@@ -533,24 +533,13 @@ Boundary multimap = 4    wall
 
  interior face counts = 12
 
- total interior cells = 11
-      0
-      1
-      2
-      3
-      4
-      5
-      6
-      7
-      10
-      11
-      14
+ total interior cells = 0
 
  total non-interior cells = 9
-      8
-      9
+      11
       12
       13
+      14
       15
       16
       17

@@ -284,11 +284,11 @@ Boundary multimap = 4    wall
  globalToLocalMap[15] = -1
  globalToLocalMap[16] = -1
  globalToLocalMap[17] = -1
- globalToLocalMap[18] = 2
+ globalToLocalMap[18] = 3
  globalToLocalMap[19] = -1
  globalToLocalMap[20] = -1
  globalToLocalMap[21] = -1
- globalToLocalMap[22] = 3
+ globalToLocalMap[22] = 2
  globalToLocalMap[23] = 4
  globalToLocalMap[24] = -1
  globalToLocalMap[25] = -1
@@ -330,17 +330,17 @@ Boundary multimap = 4    wall
  localToGlobalMap.length() = 8
  localToGlobalMap[0] = 0
  localToGlobalMap[1] = 1
- localToGlobalMap[2] = 18
- localToGlobalMap[3] = 22
+ localToGlobalMap[2] = 22
+ localToGlobalMap[3] = 18
  localToGlobalMap[4] = 23
  localToGlobalMap[5] = 33
  localToGlobalMap[6] = 48
  localToGlobalMap[7] = 59
  row[1] = 1    1    2    
- row[2] = 2    1    3    
- row[3] = 3    2    4    
- row[4] = 34    4    5    
- row[5] = 35    4    6    
+ row[2] = 2    1    4    
+ row[3] = 3    2    3    
+ row[4] = 34    3    5    
+ row[5] = 35    3    6    
  row[6] = 63    2    7    
  row[7] = 74    1    8    
 
@@ -360,8 +360,8 @@ Boundary multimap = 4    wall
  _cellNodes->getColDim() = 5
  row[1]  = 1    2    3    
  row[2]  = 1    2    4    
- row[3]  = 2    3    
- row[4]  = 4    2    5    
+ row[3]  = 4    2    5    
+ row[4]  = 2    3    
  row[5]  = 4    5    
  row[6]  = 5    2    
  row[7]  = 1    4    
@@ -370,12 +370,12 @@ Boundary multimap = 4    wall
  _cellCells :  
  _cellCells->getRowDim() = 8
  _cellCells->getColDim() = 8
- row[1] =     2    3    8    
- row[2] =     1    4    7    
- row[3] =     1    
- row[4] =     2    5    6    
- row[5] =     4    
- row[6] =     4    
+ row[1] =     2    4    8    
+ row[2] =     1    3    7    
+ row[3] =     2    5    6    
+ row[4] =     1    
+ row[5] =     3    
+ row[6] =     3    
  row[7] =     2    
  row[8] =     1    
 
@@ -401,13 +401,10 @@ Boundary multimap = 4    wall
 
  interior face counts = 2
 
- total interior cells = 3
-      0
-      1
-      3
+ total interior cells = 0
 
  total non-interior cells = 5
-      2
+      3
       4
       5
       6

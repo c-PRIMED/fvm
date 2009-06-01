@@ -288,7 +288,7 @@ Boundary multimap = 4    wall
  globalToLocalMap[13] = -1
  globalToLocalMap[14] = 2
  globalToLocalMap[15] = 5
- globalToLocalMap[16] = 3
+ globalToLocalMap[16] = 4
  globalToLocalMap[17] = -1
  globalToLocalMap[18] = -1
  globalToLocalMap[19] = -1
@@ -302,7 +302,7 @@ Boundary multimap = 4    wall
  globalToLocalMap[27] = -1
  globalToLocalMap[28] = -1
  globalToLocalMap[29] = 6
- globalToLocalMap[30] = 4
+ globalToLocalMap[30] = 3
  globalToLocalMap[31] = -1
  globalToLocalMap[32] = -1
  globalToLocalMap[33] = -1
@@ -337,8 +337,8 @@ Boundary multimap = 4    wall
  localToGlobalMap[0] = 6
  localToGlobalMap[1] = 7
  localToGlobalMap[2] = 14
- localToGlobalMap[3] = 16
- localToGlobalMap[4] = 30
+ localToGlobalMap[3] = 30
+ localToGlobalMap[4] = 16
  localToGlobalMap[5] = 15
  localToGlobalMap[6] = 29
  localToGlobalMap[7] = 36
@@ -346,11 +346,11 @@ Boundary multimap = 4    wall
  localToGlobalMap[9] = 56
  row[1] = 10    1    2    
  row[2] = 11    1    3    
- row[3] = 12    2    4    
- row[4] = 22    3    5    
+ row[3] = 12    2    5    
+ row[4] = 22    3    4    
  row[5] = 23    3    6    
- row[6] = 43    7    5    
- row[7] = 44    5    8    
+ row[6] = 43    7    4    
+ row[7] = 44    4    8    
  row[8] = 62    1    9    
  row[9] = 71    2    10    
 
@@ -373,8 +373,8 @@ Boundary multimap = 4    wall
  row[1]  = 1    2    3    
  row[2]  = 1    2    4    
  row[3]  = 2    3    5    
- row[4]  = 4    2    
- row[5]  = 2    5    6    
+ row[4]  = 2    5    6    
+ row[5]  = 4    2    
  row[6]  = 5    3    
  row[7]  = 6    2    
  row[8]  = 6    5    
@@ -385,13 +385,13 @@ Boundary multimap = 4    wall
  _cellCells->getRowDim() = 10
  _cellCells->getColDim() = 10
  row[1] =     2    3    9    
- row[2] =     1    4    10    
- row[3] =     1    5    6    
- row[4] =     2    
- row[5] =     3    7    8    
+ row[2] =     1    5    10    
+ row[3] =     1    4    6    
+ row[4] =     3    7    8    
+ row[5] =     2    
  row[6] =     3    
- row[7] =     5    
- row[8] =     5    
+ row[7] =     4    
+ row[8] =     4    
  row[9] =     1    
  row[10] =     2    
 
@@ -418,14 +418,10 @@ Boundary multimap = 4    wall
 
  interior face counts = 3
 
- total interior cells = 4
-      0
-      1
-      2
-      4
+ total interior cells = 0
 
  total non-interior cells = 6
-      3
+      4
       5
       6
       7

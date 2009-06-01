@@ -422,12 +422,7 @@ Boundary multimap = 4    wall
 
  interior face counts = 5
 
- total interior cells = 5
-      0
-      1
-      2
-      3
-      4
+ total interior cells = 0
 
  total non-interior cells = 5
       5
