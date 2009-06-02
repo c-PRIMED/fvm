@@ -115,25 +115,7 @@ def main():
         be = time.time()
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
 
-    # TESTING
-    if options.test and not pbs.start(BuildPkg, cname):
-        ts = time.time()
-        open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
-        try:
-            testing.run_all_tests(BuildPkg)
-        except:
-            pass
-        te = time.time()
-        open(BuildPkg.logdir+'/EndTestTime','w').write(str(te))
-
-    # SUBMIT
-    if options.submit:
-        cdash.submit(BuildPkg, cname, sys.argv, options.nightly)
-
-    if not options.test:
-        build_utils.run_commands('ALL', 'after')
-
-    if options.build:
+        # write out env.sh
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
         print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
         try:
@@ -154,6 +136,24 @@ def main():
             pass
         print "export PATH=%s:$PATH" % BuildPkg.bindir
         print "OR source env.sh"
+
+    # TESTING
+    if options.test and not pbs.start(BuildPkg, cname):
+        ts = time.time()
+        open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
+        try:
+            testing.run_all_tests(BuildPkg)
+        except:
+            pass
+        te = time.time()
+        open(BuildPkg.logdir+'/EndTestTime','w').write(str(te))
+
+    # SUBMIT
+    if options.submit:
+        cdash.submit(BuildPkg, cname, sys.argv, options.nightly)
+
+    if not options.test:
+        build_utils.run_commands('ALL', 'after')
 
     fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
     if oldpypath:
