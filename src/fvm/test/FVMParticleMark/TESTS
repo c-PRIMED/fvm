@@ -1,11 +1,11 @@
-FVMPARTICLE_CAV32_QUAD  ./test.py  --np 1 --golden CAV32_QUAD/nsweep1 --nsweep 1 --mesh ../cav32.cas --outdir TESTDIR
-FVMPARTICLE_CAV32_QUAD  ./test.py  --np 1 --golden CAV32_QUAD/nsweep2 --nsweep 2 --mesh ../cav32.cas --outdir TESTDIR
-FVMPARTICLE_CAV32_QUAD  ./test.py  --np 1 --golden CAV32_QUAD/nsweep3 --nsweep 3 --mesh ../cav32.cas --outdir TESTDIR
-FVMPARTICLE_CAV32_QUAD  ./test.py  --np 1 --golden CAV32_QUAD/nsweep4 --nsweep 4 --mesh ../cav32.cas --outdir TESTDIR
-FVMPARTICLE_CAV32_QUAD  ./test.py  --np 1 --golden CAV32_QUAD/nsweep5 --nsweep 5 --mesh ../cav32.cas --outdir TESTDIR
-FVMPARTICLE_TRI_100_100 ./test.py  --np 1 --golden TRI_22498/nsweep1 --nsweep 1 --mesh ../test_tri_100by100.cas --outdir TESTDIR
-FVMPARTICLE_TRI_100_100 ./test.py  --np 1 --golden TRI_22498/nsweep2 --nsweep 2 --mesh ../test_tri_100by100.cas --outdir TESTDIR
-FVMPARTICLE_TRI_100_100 ./test.py  --np 1 --golden TRI_22498/nsweep3 --nsweep 3 --mesh ../test_tri_100by100.cas --outdir TESTDIR
-FVMPARTICLE_TRI_100_100 ./test.py  --np 1 --golden TRI_22498/nsweep4 --nsweep 4 --mesh ../test_tri_100by100.cas --outdir TESTDIR
-FVMPARTICLE_TRI_100_100 ./test.py  --np 1 --golden TRI_22498/nsweep5 --nsweep 5 --mesh ../test_tri_100by100.cas --outdir TESTDIR
+FVMPARTICLE_CAV32_QUAD_SWEEP1  ./test.py  --np 1 --golden CAV32_QUAD/nsweep1 --nsweep 1 --mesh ../cav32.cas --outdir TESTDIR
+FVMPARTICLE_CAV32_QUAD_SWEEP2  ./test.py  --np 1 --golden CAV32_QUAD/nsweep2 --nsweep 2 --mesh ../cav32.cas --outdir TESTDIR
+FVMPARTICLE_CAV32_QUAD_SWEEP3  ./test.py  --np 1 --golden CAV32_QUAD/nsweep3 --nsweep 3 --mesh ../cav32.cas --outdir TESTDIR
+FVMPARTICLE_CAV32_QUAD_SWEEP4  ./test.py  --np 1 --golden CAV32_QUAD/nsweep4 --nsweep 4 --mesh ../cav32.cas --outdir TESTDIR
+FVMPARTICLE_CAV32_QUAD_SWEEP5  ./test.py  --np 1 --golden CAV32_QUAD/nsweep5 --nsweep 5 --mesh ../cav32.cas --outdir TESTDIR
+FVMPARTICLE_TRI_100_100_SWEEP1 ./test.py  --np 1 --golden TRI_22498/nsweep1 --nsweep 1 --mesh ../test_tri_100by100.cas --outdir TESTDIR
+FVMPARTICLE_TRI_100_100_SWEEP2 ./test.py  --np 1 --golden TRI_22498/nsweep2 --nsweep 2 --mesh ../test_tri_100by100.cas --outdir TESTDIR
+FVMPARTICLE_TRI_100_100_SWEEP3 ./test.py  --np 1 --golden TRI_22498/nsweep3 --nsweep 3 --mesh ../test_tri_100by100.cas --outdir TESTDIR
+FVMPARTICLE_TRI_100_100_SWEEP4 ./test.py  --np 1 --golden TRI_22498/nsweep4 --nsweep 4 --mesh ../test_tri_100by100.cas --outdir TESTDIR
+FVMPARTICLE_TRI_100_100_SWEEP5 ./test.py  --np 1 --golden TRI_22498/nsweep5 --nsweep 5 --mesh ../test_tri_100by100.cas --outdir TESTDIR
 
