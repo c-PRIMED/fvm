@@ -1483,13 +1483,12 @@ public:
     const int nCells = cellIds.getLength();
 
     _velocityGradientModel.compute();
-    _pressureGradientModel.compute();
-    
+
     const VGradArray& vGrad =
       dynamic_cast<const VGradArray&>(_flowFields.velocityGradient[cells]);
 
-    const PGradArray& pGrad =
-      dynamic_cast<const PGradArray&>(_flowFields.pressureGradient[cells]);
+    const TArray& pCell =
+      dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
 
     const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
 
@@ -1506,9 +1505,9 @@ public:
           for(int j=0;j<3;j++)
             vgPlusTranspose[i][j] += vg[j][i];
         
-        stressTensor[n][0] = vgPlusTranspose[0][0]*mu[c] + pGrad[c][0];
-        stressTensor[n][1] = vgPlusTranspose[1][1]*mu[c] + pGrad[c][1];
-        stressTensor[n][2] = vgPlusTranspose[2][2]*mu[c] + pGrad[c][2];
+        stressTensor[n][0] = vgPlusTranspose[0][0]*mu[c] + pCell[c];
+        stressTensor[n][1] = vgPlusTranspose[1][1]*mu[c] + pCell[c];
+        stressTensor[n][2] = vgPlusTranspose[2][2]*mu[c] + pCell[c];
         stressTensor[n][3] = vgPlusTranspose[0][1]*mu[c];
         stressTensor[n][4] = vgPlusTranspose[1][2]*mu[c];
         stressTensor[n][5] = vgPlusTranspose[2][0]*mu[c];
