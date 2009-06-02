@@ -46,6 +46,7 @@ class BuildPkg:
             Boost("pkgs/boost", 0),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
+            H5py("pkgs/h5py", 2),
             Xdmf("pkgs/Xdmf", 0),
             Netcdf("pkgs/netcdf", 2),
             NetCDF4("pkgs/netCDF4", 1),
@@ -211,6 +212,12 @@ class Gmsh(BuildPkg):
         return self.sys_log("make install")
     def _clean(self):
         return self.sys_log("make clean")
+
+class H5py(BuildPkg):
+    def _build(self):
+        return self.sys_log("HDF5_API=18 python setup.py build")
+    def _install(self):
+        return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
 
 class Numpy(BuildPkg):
     def _install(self):
