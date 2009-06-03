@@ -28,8 +28,8 @@ fileBase = None
 numIterations = 10
 #fileBase = "/home/yildirim/memosa/src/fvm/test/cav_44_tri"
 fileBase = "/home/yildirim/memosa/src/fvm/test/tri_894"
-#fileBase = "/home/yildirim/memosa/src/fvm/test/test_tri_100by100"
-#fileBase = "/home/sm/a/data/wj"
+#fileBase = "/home/yildirim/memosa/src/fvm/test/cav_tri_915K"
+#fileBase = "/home/yildirim/memosa/src/fvm/test/test_tri"
 
 def usage():
     print "Usage: %s filebase [outfilename]" % sys.argv[0]
@@ -43,6 +43,19 @@ def advance(fmodel,niter):
             fmodel.advance(1)
         except KeyboardInterrupt:
             break
+
+
+def dumpMPITimeProfile(part_mesh_maxtime, part_mesh_mintime, solver_maxtime, solver_mintime):
+
+      fname = "time_mpi_totalprocs"  + str(MPI.COMM_WORLD.Get_size()) + ".dat"
+      f = open(fname,'w')
+      line = " part_mesh_mintime = " + str(part_mesh_mintime[0]) + "\n" + \
+             " part_mesh_maxtime = " + str(part_mesh_maxtime[0]) + "\n" + \
+             " solver_mintime    = " + str(solver_mintime[0])    + "\n" + \
+             " solver_maxtime    = " + str(solver_maxtime[0])    + "\n"
+      print line
+      f.write(line)
+      f.close()
 
 
 def dumpTecplotFile(nmesh, meshes):
@@ -178,15 +191,44 @@ npart = [MPI.COMM_WORLD.Get_size()]
 etype = [1]
 
 #partMesh constructor and setTypes
+
+#time profile for partmesh
+part_mesh_time = zeros(1,dtype='d')
+part_mesh_start = zeros(1, dtype='d')
+part_mesh_end   = zeros(1, dtype='d')
+part_mesh_maxtime = zeros(1,dtype='d')
+part_mesh_mintime = zeros(1, dtype='d')
+
+part_mesh_start[0] = MPI.Wtime()
+
 part_mesh = fvmparallel.PartMesh( fluent_meshes, npart, etype );
 part_mesh.setWeightType(0);
 part_mesh.setNumFlag(0);
 
+#print "nmesh = ", nmesh,  "procID = ", MPI.COMM_WORLD.Get_rank() 
 #actions
 part_mesh.partition()
 part_mesh.mesh()
 part_mesh.mesh_debug()
 meshes = part_mesh.meshList()
+
+part_mesh_end[0] = MPI.Wtime()
+part_mesh_time[0] = part_mesh_end[0] - part_mesh_start[0]
+MPI.COMM_WORLD.Allreduce( [part_mesh_time,MPI.DOUBLE], [part_mesh_maxtime, MPI.DOUBLE], op=MPI.MAX) 
+MPI.COMM_WORLD.Allreduce( [part_mesh_time,MPI.DOUBLE], [part_mesh_mintime, MPI.DOUBLE], op=MPI.MIN) 
+
+
+#print "procid = ", MPI.COMM_WORLD.Get_rank(), " part_mesh_time = ", \
+#                   part_mesh_time, "part_mesh_mintime = ",  part_mesh_mintime, \
+#                   part_mesh_time, "part_mesh_maxtime = ",  part_mesh_maxtime 
+
+solver_start   = zeros(1, dtype='d')
+solver_end     = zeros(1, dtype='d')
+solver_time    = zeros(1, dtype='d')
+solver_maxtime = zeros(1,dtype='d')
+solver_mintime = zeros(1,dtype='d')
+
+solver_start[0] = MPI.Wtime()
 
 geomFields =  models.GeomFields('geom')
 
@@ -222,7 +264,7 @@ if 4 in bcMap:
 
 
 tSolver = fvmbaseExt.AMG()
-tSolver.relativeTolerance = 1e-9
+tSolver.relativeTolerance = 1e-5
 tSolver.nMaxIterations = 2000
 tSolver.maxCoarseLevels=20
 tSolver.verbosity=2
@@ -235,5 +277,15 @@ toptions.linearSolver = tSolver
 tmodel.init()
 print "nmesh = ", nmesh,  "procID = ", MPI.COMM_WORLD.Get_rank() 
 tmodel.advance(1)
+
+solver_end[0] = MPI.Wtime()
+solver_time[0] = solver_end[0] - solver_start[0]
+MPI.COMM_WORLD.Allreduce( [solver_time,MPI.DOUBLE], [solver_maxtime, MPI.DOUBLE], op=MPI.MAX) 
+MPI.COMM_WORLD.Allreduce( [solver_time,MPI.DOUBLE], [solver_mintime, MPI.DOUBLE], op=MPI.MIN) 
+
+if MPI.COMM_WORLD.Get_rank() == 0:
+   dumpMPITimeProfile(part_mesh_maxtime, part_mesh_mintime, solver_maxtime, solver_mintime)
+
+
 
 dumpTecplotFile( nmesh, meshes)
