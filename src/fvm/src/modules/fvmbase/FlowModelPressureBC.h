@@ -191,6 +191,11 @@ void pressureBoundaryPostContinuitySolve(const StorageSite& faces,
 
       if (massFlux[f] > 0)
       {
+          //const T Vn = massFlux[f]/(rhoF*faceAreaMag[f]);
+          //const VectorT3 Vt = V[c0]
+          //  - dot(V[c0],faceArea[f])/(faceAreaMag[f]*faceAreaMag[f])*faceArea[f];
+          // V[c1] = Vn/faceAreaMag[f]*faceArea[f]+Vt ;
+          V[c1] = V[c0];
           p[c1]=bp;
       }
       else
