@@ -571,8 +571,8 @@ public:
             {
                 gbc.applyDirichletBC(bVelocity);
             }
-            else if (bc.bcType == "VelocityBoundary")
-                     //(bc.bcType == "PressureBoundary"))
+            else if ((bc.bcType == "VelocityBoundary") ||
+                     (bc.bcType == "PressureBoundary"))
             {
                 for(int f=0; f<nFaces; f++)
                 {
@@ -585,9 +585,11 @@ public:
                         gbc.applyDirichletBC(f,bVelocity[f]);
                     }
                 }
-            }
-            else if (bc.bcType == "PressureBoundary")
-            {
+                if (bc.bcType == "PressureBoundary")
+                {
+                    fixedPressureMomentumBC(faces,mesh,
+                                            ls.getMatrix(), ls.getX(), ls.getB());
+                }
             }
             else if ((bc.bcType == "Symmetry"))
             {
