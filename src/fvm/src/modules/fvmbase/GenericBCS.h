@@ -46,6 +46,7 @@ public:
              MultiField& xField, MultiField& rField) :
     _faces(faces),
     _cells(mesh.getCells()),
+    _ibType(mesh.getIBType()),
     _faceCells(mesh.getFaceCells(_faces)),
     _varField(varField),
     _fluxField(fluxField),
@@ -68,7 +69,10 @@ public:
   {
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
-        
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    
     // the current value of flux and its Jacobians
     const X fluxB = -_r[c1];
     const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
@@ -119,6 +123,8 @@ public:
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
 
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
     // the current value of flux and its Jacobians
     const X fluxB = -_r[c1];
     const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
@@ -173,6 +179,9 @@ public:
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
         
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+
     // the current value of flux and its Jacobians
     const X fluxB = -_r[c1];
     const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
@@ -204,6 +213,9 @@ public:
   {
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
 
     // the current value of flux and its Jacobians
     const X fluxInterior = -_r[c1];
@@ -291,6 +303,7 @@ public:
 private:
   const StorageSite& _faces;
   const StorageSite& _cells;
+  const Array<int>& _ibType;
   const CRConnectivity& _faceCells;
   const Field& _varField;
   const Field& _fluxField;
