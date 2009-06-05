@@ -1,7 +1,9 @@
 #include "CRConnectivity.h"
 #include "CException.h"
 #include "StorageSite.h"
+#ifdef FVM_PARALLEL
 #include <mpi.h>
+#endif
 #include <map>
 #include <set>
 
