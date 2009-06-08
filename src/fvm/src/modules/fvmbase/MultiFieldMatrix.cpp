@@ -595,7 +595,8 @@ MultiFieldMatrix::getSize() const
 
 #ifdef FVM_PARALLEL
          int count = 1;
-         MPI::COMM_WORLD.Allreduce( &size, &size, count, MPI::INT, MPI::MIN);
+         int local_size = size;
+         MPI::COMM_WORLD.Allreduce( &local_size, &size, count, MPI::INT, MPI::MIN);
 #endif
 
 
