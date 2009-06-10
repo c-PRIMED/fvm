@@ -34,6 +34,7 @@ def generate(env):
     
     if env['PARALLEL']:
         env['CXX'] = 'mpicxx'
+        env.Append(CXXFLAGS=['-DFVM_PARALLEL'])        
         # bug fix for mpich
         env.Append(CXXFLAGS=['-DMPICH_IGNORE_CXX_SEEK'])        
     else:
