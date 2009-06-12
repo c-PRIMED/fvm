@@ -64,6 +64,7 @@ def cprint(col, str):
 def _niceprint(msg, type=''):
     print_type = True
     def print_pat(color):
+        global opt_verbose
         if not opt_verbose:
             print '\n'
         if print_type:
@@ -90,7 +91,7 @@ def verbose(msg):
     global opt_verbose
     if not opt_verbose:
         return
-    _niceprint(msg, 'VERBOSE')
+    _niceprint('\n'+msg, 'VERBOSE')
 
 def warning(msg):
     _niceprint(msg, 'WARNING')
@@ -116,7 +117,7 @@ def pmess(type, pkg, dir):
     global maxlen
     maxlen = max(maxlen, len(sr))
     if opt_verbose:
-        print "%s :" % sr.ljust(maxlen)
+        print "%s :" % sr.ljust(maxlen),
     else:
         print "%s :" % sr.ljust(maxlen),
         sys.stdout.flush()

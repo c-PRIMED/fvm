@@ -214,8 +214,58 @@ class Gmsh(BuildPkg):
         return self.sys_log("make clean")
 
 class H5py(BuildPkg):
+    def find_h5_inc(self):
+        f = ''
+        for path in ['/usr/include','/usr/local/include']:
+            for fn in ['H5pubconf.h', '/usr/include/H5pubconf-64.h']:
+                try:
+                    f = open(os.path.join(path, fn), 'r')
+                except:
+                    pass
+                if f:
+                    return f
+        return f
+
+    def h5_vers(self,f):
+        if not f:
+            return ''
+        v = ''
+        mpi=''
+        while True:
+            line = f.readline()
+            if not line:
+                break
+            if not v:
+                v = re.findall(r'#define H5_PACKAGE_VERSION "([^"]*)"',line)
+                if v:
+                    v = v[0]
+            if not mpi:
+                mpi = re.findall(r'#define H5_HAVE_MPI_GET_SIZE ([0-9]*)',line)
+            if v and mpi:
+                break
+        return v,mpi
+    
     def _build(self):
-        return self.sys_log("HDF5_API=18 python setup.py build")
+        v = config(self.name,'HDF5_VERSION')
+        if not v:
+            v, mpi = self.h5_vers(self.find_h5_inc())
+        if not v:
+            warning("HDF5_VERSION not set and hdf5 include files not found.")
+            warning("Assuming hdf5 version = 1.8 and continuing...")
+
+        if v.startswith('1.6'):
+            api = '16'
+        else:
+            api = '18'
+        if mpi:
+            verbose("Building h5py with mpi")
+            do_env('CC=mpicc')
+        self.sys_log("python setup.py configure --api=%s" % api)
+        ret = self.sys_log("python setup.py build")
+        if mpi:
+            do_env('CC=mpicc', unload=True)
+        return ret
+    
     def _install(self):
         return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
 

@@ -22,7 +22,7 @@ Options:
 Configuration names are stored in the "config" subdirectory.
 """
 
-import sys, cdash, time, pbs, update
+import sys, cdash, time, pbs, update, traceback
 from optparse import OptionParser
 from build_packages import *
 import build_utils, config, testing
@@ -110,6 +110,7 @@ def main():
                 p.build()
                 p.install()
             except:
+                traceback.print_exc()
                 build_failed = 1
                 break
         be = time.time()
