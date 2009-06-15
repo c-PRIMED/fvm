@@ -2,6 +2,7 @@
 #include "Mesh.h"
 #include "StorageSite.h"
 #include "CRConnectivity.h"
+#include "Cell.h"
 
 Mesh::Mesh(const int dimension, const int id):
   _dimension(dimension),
@@ -144,8 +145,9 @@ Mesh::getCellNodes() const
 
   _connectivityMap[keycf] = cellFaces;
   _connectivityMap[key] = cellNodes;
-
-   return *cellNodes;
+  
+  orderCellFacesAndNodes(*cellFaces, *cellNodes, faceNodes, faceCells);
+  return *cellNodes;
 }
 
 const CRConnectivity&
