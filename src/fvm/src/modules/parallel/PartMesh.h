@@ -39,7 +39,7 @@ public:
     typedef   shared_ptr< Array<Mesh::VecD3> >   ArrayVecD3Ptr;
     typedef   shared_ptr< Mesh >  MeshPtr;
 
-    enum ETYPE{ TRI = 1, TETRA = 2, HEXA = 3, QUAD = 4 };
+    enum ETYPE{ TRI = 1, QUAD = 2, TETRA = 3, HEXA = 4 };
     enum WTYPE{ NOWEIGHTS = 0, WEIGHTS_ONLY_EDGES = 1, WEIGTHS_ONLY_VERTICES  = 2,
                 WEIGHTS_BOTH_VERTICES_EDGES = 3};
     enum NUMFLAG{ C_STYLE = 0, FORTRAN_STYLE = 1 };

@@ -104,7 +104,6 @@ PartMesh::mesh()
     non_interior_cells2();
     order_faceCells_faceNodes();
     coordinates();
-
     exchange_interface_meshes();
     mesh_setup();
     mappers();
@@ -122,7 +121,7 @@ PartMesh::partition()
     map_part_elms();
     count_elems_part();
     exchange_part_elems();
-
+    //dumpTecplot();
 }
 
 
@@ -130,13 +129,33 @@ void
 PartMesh::dumpTecplot()
 {
 
-//just for mesh 0;
+    //just for mesh 0;
     MPI::COMM_WORLD.Barrier();
 
     const Mesh& mesh = *(_meshList.at(0));
     const Array<Mesh::VecD3>&  coord = mesh.getNodeCoordinates();
+    
+    const StorageSite&   cellSite   = _meshList.at(0)->getCells();
+    int tot_elems = cellSite.getSelfCount();
+    const CRConnectivity& cellNodes = _meshList.at(0)->getCellNodes();
+    //connectivity
+    if ( _procID == 0 )
+       for ( int n = 0; n < tot_elems; n++ ){
+          int nnodes =  cellNodes.getCount(n);
+         cout << " elem = " << n << ",   ";
+          for ( int node = 0; node < nnodes; node++ )
+                 cout << cellNodes(n,node) << "      ";
+          cout << endl;
+       }
 
-   int tot_nodes = coord.getLength();
+    int tot_nodes = coord.getLength();
+
+    if ( _procID == 0 )
+        for ( int node = 0; node < tot_nodes; node++)
+            cout << " nodeID = " << node << " x = " << coord[node][0] <<  " y = " << coord[node][1] << " z = " << coord[node][2] << endl;
+
+
+   
 
     if ( _procID == 0 ) {
        MPI::Status status_row;
@@ -246,8 +265,6 @@ PartMesh::dumpTecplot()
 
 
 }
-
-
 
 
 void 
@@ -651,11 +668,6 @@ PartMesh::debug_print()
 
     }
 
-       
-
-   
-
-
  
 
 //  }
@@ -745,8 +757,6 @@ PartMesh::init()
                    break;                
             case   QUAD :
                    _ncommonNodes.at(id) = 2;
-                   cout << " NO SUPPORT FOR NOW " << endl;
-                   abort();
                     break;
             default :
                     cout << " ONLY TRIANGLE, TETRAHEDRAL, HEXAHEDRAL and QUADRILATERAL elements must be chose " <<
@@ -863,8 +873,17 @@ PartMesh::set_eptr_eind( int id )
           _eElm.at(id)[indxPtr] = elem;
            indxPtr++;
           _ePtr.at(id)[indxPtr] = _ePtr.at(id)[indxPtr-1] +  cellNodes.getCount(elem);
-          for (  int node = 0; node < cellNodes.getCount(elem); node++)
-             _eInd.at(id)[indxInd++] = cellNodes(elem,node);
+
+          if ( _eType.at(id) == TRI || _eType.at(id) == TETRA  ){ // connectivity orientation is not important
+              for (  int node = 0; node < cellNodes.getCount(elem); node++ )
+                 _eInd.at(id)[indxInd++] = cellNodes(elem,node);
+          }
+
+         if ( _eType.at(id) == QUAD ) {  //connectivity orientation is reversed for QUADs since Parmetis require clockwise orientation
+              for (  int node = cellNodes.getCount(elem)-1; node >=0; node-- )
+                 _eInd.at(id)[indxInd++] = cellNodes(elem,node);
+         }
+  
       }
 
 }
@@ -1464,6 +1483,7 @@ PartMesh::order_faceCells_faceNodes()
 
          //start with interior faces
          int array_length = _faceCells.at(id)->getLocalToGlobalMap().getLength(); 
+         assert( array_length == tot_cells );
          _localToGlobalMap.push_back(  ArrayIntPtr( new Array<int> (array_length) ) );
          (*_localToGlobalMap.at(id)) = -1; 
 
@@ -1484,9 +1504,9 @@ PartMesh::order_faceCells_faceNodes()
                       _cellToOrderedCell[id][cell_0] = cellID;
                       _faceCellsOrdered.at(id)->add(face_track,cellID);
                        int global_id = _faceCells.at(id)->getLocalToGlobalMap()[cell_0];
+                        assert( cellID >= 0 && cellID < _localToGlobalMap.at(id)->getLength() );
                        (*_localToGlobalMap.at(id))[cellID] = global_id;
                        _globalToLocalMappers.at(id).insert( pair<int,int>(global_id,cellID)  );
-                        assert( cellID < _localToGlobalMap.at(id)->getLength() );
                        _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
                        cellID++;
                   } else {
@@ -1498,9 +1518,9 @@ PartMesh::order_faceCells_faceNodes()
                       _cellToOrderedCell[id][cell_1] = cellID;
                       _faceCellsOrdered.at(id)->add(face_track,cellID);
                        int global_id = _faceCells.at(id)->getLocalToGlobalMap()[cell_1];
+                       assert( cellID >= 0 && cellID < _localToGlobalMap.at(id)->getLength() );
                        (*_localToGlobalMap.at(id))[cellID] = global_id;
                        _globalToLocalMappers.at(id).insert( pair<int,int>(global_id,cellID)  );
-                        assert( cellID < _localToGlobalMap.at(id)->getLength() );
                        _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
                       cellID++;
                   } else {
@@ -1515,21 +1535,21 @@ PartMesh::order_faceCells_faceNodes()
               }
          }
 
-
         //now specical case, if there is some inner element but fail in above search (example  an inner element surrounded by only boundary
         // or interfaces, then above search will skip that). We want to renumber remaining cells (after above search) 
         //first get number of cells surroindgin cells for inner cells
         int max_sur_cells = 0;
         for ( int elem = 0; elem < _cellCells.at(id)->getRowDim(); elem++ )
             max_sur_cells = std::max( max_sur_cells, _cellCells.at(id)->getCount(elem) );
+        assert( max_sur_cells <= 6 );  // maximum six cells can surround a cell (hexa element)
 
         for ( int elem = 0; elem < _cellCells.at(id)->getRowDim(); elem++ ){ 
             if ( _cellCells.at(id)->getCount(elem) == max_sur_cells && _cellToOrderedCell[id][elem] == -1 ){
+                assert( cellID >= 0 && cellID < _localToGlobalMap.at(id)->getLength() );
                 _cellToOrderedCell[id][elem] = cellID;
                 int global_id = _faceCells.at(id)->getLocalToGlobalMap()[elem]; 
                 _globalToLocalMappers.at(id).insert( pair<int,int>(global_id,cellID)  );
                 _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
-                assert( cellID < _localToGlobalMap.at(id)->getLength() );
                 (*_localToGlobalMap.at(id))[cellID] = global_id;
                 cellID++;
             }
@@ -1550,7 +1570,6 @@ PartMesh::order_faceCells_faceNodes()
              _bndryOffsets.at(id).insert( pair<int,int>(bndryID, offset) );
  
           for ( it_cell = it.first; it_cell != it.second; it_cell++ ){
-               //faceCells.at(id)->getGlobalToLocalMap() is only allowed for boundary and inner cells, be cautious!!!!!!!!!!!!!
                int elem_0 =  _faceCells.at(id)->getGlobalToLocalMap()[it_cell->second];
                assert(elem_0 > 0 );
                int elem_1 =  (*_cellCells.at(id))(elem_0, 0);
@@ -1559,11 +1578,10 @@ PartMesh::order_faceCells_faceNodes()
                int outer_elem = cellID;
 
                //update globalToLocal and localToGlobalMaps
-               assert( cellID < _localToGlobalMap.at(id)->getLength() );
+               assert( cellID >= 0 &&  cellID < _localToGlobalMap.at(id)->getLength() );
                (*_localToGlobalMap.at(id))[cellID] = it_cell->second;
                _globalToLocalMappers.at(id).insert( pair<int,int>(it_cell->second,cellID ) );
                _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, it_cell->second) );
-                assert( cellID >=0 && cellID < array_length );
                _cellToOrderedCell[id][elem_0] = cellID;
 
               _faceCellsOrdered.at(id)->add(face_track, inner_elem);
@@ -1604,7 +1622,6 @@ PartMesh::order_faceCells_faceNodes()
              //update maps
              int global_id = _faceCells.at(id)->getLocalToGlobalMap()[outer_elem_id];
              assert( cellID >=0 && cellID < array_length );
-             assert( cellID < _localToGlobalMap.at(id)->getLength() );
              (*_localToGlobalMap.at(id))[cellID] = global_id;
              _globalToLocalMappers.at(id).insert( pair<int,int>(global_id, cellID) );
              _localToGlobalMappers.at(id).insert( pair<int,int>(cellID, global_id) );
@@ -1971,8 +1988,17 @@ PartMesh::mesh_tecplot()
 
      mesh_file << "title = \" tecplot file for process Mesh \" "  << endl;
      mesh_file << "variables = \"x\",  \"y\", \"z\", \"cell_type\" " << endl;
-     mesh_file << "zone N = " << tot_nodes << " E = " << tot_elems <<
-    " DATAPACKING = BLOCK,  VARLOCATION = ([4]=CELLCENTERED), ZONETYPE=FETRIANGLE " << endl;
+
+     stringstream zone_info;
+
+     if ( _eType.at(0) == TRI ) 
+        zone_info <<  " DATAPACKING = BLOCK,  VARLOCATION = ([4]=CELLCENTERED), ZONETYPE=FETRIANGLE ";
+
+     if ( _eType.at(0) == QUAD ) 
+        zone_info <<  " DATAPACKING = BLOCK,  VARLOCATION = ([4]=CELLCENTERED), ZONETYPE=FEQUADRILATERAL ";
+
+
+     mesh_file << "zone N = " << tot_nodes << " E = " << tot_elems << zone_info.str()  << endl;
 
      //x 
      for ( int n = 0; n < tot_nodes; n++){
@@ -2020,8 +2046,16 @@ PartMesh::mesh_tecplot()
             for ( int node = 0; node < nnodes; node++)
                 mesh_file << cellNodes(n,node)+1 << "      ";
          } else {
-                mesh_file << cellNodes(n,0)+1 << "      " << cellNodes(n,1)+1 <<
-                "       " << cellNodes(n,0)+1 << "      ";
+
+              if ( _eType.at(0) == TRI )
+                  mesh_file << cellNodes(n,0)+1 << "      " << cellNodes(n,1)+1 <<
+                   "       " << cellNodes(n,0)+1 << "      ";
+
+              if ( _eType.at(0) == QUAD )
+                  mesh_file << cellNodes(n,0)+1 << "      "  << cellNodes(n,0)+1 <<
+                   "       " << cellNodes(n,1)+1 << "      " << cellNodes(n,1)+1 << "      ";
+
+
          }
         mesh_file << endl;
      }
