@@ -19,6 +19,14 @@ CAVITY_TRI894_PROCS12 ./ptest.py  --np 12 --script testPartMesh.py --in ../tri_8
 CAVITY_TRI894_PROCS24 ./ptest.py  --np 24 --script testPartMesh.py --in ../tri_894.cas --golden PARTHMESH/TRI_894/proc24 --outdir TESTDIR
 
 
+CAVITY_QUAD1024_PROCS1   ./ptest.py  --np 1  --script testPartMesh_Quad.py --in ../cav32.cas --golden PARTHMESH/QUAD_1024/proc1  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS2   ./ptest.py  --np 2  --script testPartMesh_Quad.py --in ../cav32.cas --golden PARTHMESH/QUAD_1024/proc2  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS4   ./ptest.py  --np 4  --script testPartMesh_Quad.py --in ../cav32.cas --golden PARTHMESH/QUAD_1024/proc4  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS8   ./ptest.py  --np 8  --script testPartMesh_Quad.py --in ../cav32.cas --golden PARTHMESH/QUAD_1024/proc8  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS16  ./ptest.py  --np 16 --script testPartMesh_Quad.py --in ../cav32.cas --golden PARTHMESH/QUAD_1024/proc16 --outdir TESTDIR
+
+
+
 CAVITY_TRI894_PROCS1_THERMALSOLVER  ./ptest.py  --np 1  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc1  --outdir TESTDIR
 CAVITY_TRI894_PROCS2_THERMALSOLVER  ./ptest.py  --np 2  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc2  --outdir TESTDIR
 CAVITY_TRI894_PROCS4_THERMALSOLVER  ./ptest.py  --np 4  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc4  --outdir TESTDIR

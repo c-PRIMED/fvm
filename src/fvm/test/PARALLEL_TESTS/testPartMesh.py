@@ -37,7 +37,8 @@ part_mesh.setNumFlag(0);
 #actions
 part_mesh.partition()
 part_mesh.mesh()
-part_mesh.debug_print()
 part_mesh.mesh_debug()
-meshes = part_mesh.meshList()
+part_mesh.debug_print()
+
+#meshes = part_mesh.meshList()
 

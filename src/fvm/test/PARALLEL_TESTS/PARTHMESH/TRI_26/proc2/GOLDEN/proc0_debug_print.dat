@@ -38,18 +38,18 @@
  eelm[12] = 12
 
  elemID  = 0,   eind[0]=1    eind[1]=2    eind[2]=0   
- elemID  = 1,   eind[3]=2    eind[4]=0    eind[5]=3   
+ elemID  = 1,   eind[3]=0    eind[4]=2    eind[5]=3   
  elemID  = 2,   eind[6]=5    eind[7]=6    eind[8]=4   
- elemID  = 3,   eind[9]=6    eind[10]=4    eind[11]=7   
+ elemID  = 3,   eind[9]=4    eind[10]=6    eind[11]=7   
  elemID  = 4,   eind[12]=9    eind[13]=10    eind[14]=8   
- elemID  = 5,   eind[15]=10    eind[16]=8    eind[17]=11   
+ elemID  = 5,   eind[15]=8    eind[16]=10    eind[17]=11   
  elemID  = 6,   eind[18]=13    eind[19]=14    eind[20]=12   
- elemID  = 7,   eind[21]=14    eind[22]=12    eind[23]=15   
- elemID  = 8,   eind[24]=14    eind[25]=15    eind[26]=16   
- elemID  = 9,   eind[27]=16    eind[28]=15    eind[29]=5   
- elemID  = 10,   eind[30]=1    eind[31]=2    eind[32]=17   
- elemID  = 11,   eind[33]=1    eind[34]=17    eind[35]=7   
- elemID  = 12,   eind[36]=9    eind[37]=10    eind[38]=18   
+ elemID  = 7,   eind[21]=12    eind[22]=14    eind[23]=15   
+ elemID  = 8,   eind[24]=15    eind[25]=14    eind[26]=16   
+ elemID  = 9,   eind[27]=15    eind[28]=16    eind[29]=5   
+ elemID  = 10,   eind[30]=2    eind[31]=1    eind[32]=17   
+ elemID  = 11,   eind[33]=17    eind[34]=1    eind[35]=7   
+ elemID  = 12,   eind[36]=10    eind[37]=9    eind[38]=18   
 
  elmwgt[0]=1
  elmwgt[1]=1
@@ -167,41 +167,41 @@ tpwgts[1] = 0.5
  _col[0] = 5
  _col[1] = 6
  _col[2] = 4
- _col[3] = 6
- _col[4] = 4
+ _col[3] = 4
+ _col[4] = 6
  _col[5] = 7
  _col[6] = 13
  _col[7] = 14
  _col[8] = 12
- _col[9] = 14
- _col[10] = 12
+ _col[9] = 12
+ _col[10] = 14
  _col[11] = 15
- _col[12] = 14
- _col[13] = 15
+ _col[12] = 15
+ _col[13] = 14
  _col[14] = 16
- _col[15] = 16
- _col[16] = 15
+ _col[15] = 15
+ _col[16] = 16
  _col[17] = 5
- _col[18] = 19
- _col[19] = 11
+ _col[18] = 11
+ _col[19] = 19
  _col[20] = 13
- _col[21] = 5
- _col[22] = 6
+ _col[21] = 6
+ _col[22] = 5
  _col[23] = 16
- _col[24] = 6
- _col[25] = 7
+ _col[24] = 7
+ _col[25] = 6
  _col[26] = 17
- _col[27] = 13
- _col[28] = 14
+ _col[27] = 14
+ _col[28] = 13
  _col[29] = 19
- _col[30] = 14
- _col[31] = 16
+ _col[30] = 16
+ _col[31] = 14
  _col[32] = 19
- _col[33] = 16
- _col[34] = 6
+ _col[33] = 6
+ _col[34] = 16
  _col[35] = 17
- _col[36] = 19
- _col[37] = 16
+ _col[36] = 16
+ _col[37] = 19
  _col[38] = 17
  _cellParts : 
  _cellParts->getRowDim() = 38

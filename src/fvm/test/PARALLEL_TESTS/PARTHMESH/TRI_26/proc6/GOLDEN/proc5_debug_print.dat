@@ -27,10 +27,10 @@
  eelm[2] = 24
  eelm[3] = 25
 
- elemID  = 0,   eind[0]=18    eind[1]=10    eind[2]=19   
- elemID  = 1,   eind[3]=16    eind[4]=6    eind[5]=17   
- elemID  = 2,   eind[6]=17    eind[7]=18    eind[8]=19   
- elemID  = 3,   eind[9]=19    eind[10]=16    eind[11]=17   
+ elemID  = 0,   eind[0]=10    eind[1]=18    eind[2]=19   
+ elemID  = 1,   eind[3]=6    eind[4]=16    eind[5]=17   
+ elemID  = 2,   eind[6]=18    eind[7]=17    eind[8]=19   
+ elemID  = 3,   eind[9]=16    eind[10]=19    eind[11]=17   
 
  elmwgt[0]=1
  elmwgt[1]=1
@@ -63,11 +63,11 @@ tpwgts[5] = 0.166667
  elem = 22 partion = 5
  elem = 23 partion = 2
  elem = 24 partion = 4
- elem = 25 partion = 4
+ elem = 25 partion = 0
 
+ partID = 0 elemID = 3
  partID = 2 elemID = 1
  partID = 4 elemID = 2
- partID = 4 elemID = 3
  partID = 5 elemID = 0
 
  total elements  = 5
@@ -97,17 +97,17 @@ tpwgts[5] = 0.166667
  _col[0] = 9
  _col[1] = 10
  _col[2] = 8
- _col[3] = 10
- _col[4] = 8
+ _col[3] = 8
+ _col[4] = 10
  _col[5] = 11
- _col[6] = 9
- _col[7] = 10
+ _col[6] = 10
+ _col[7] = 9
  _col[8] = 18
- _col[9] = 10
- _col[10] = 11
+ _col[9] = 11
+ _col[10] = 10
  _col[11] = 19
- _col[12] = 18
- _col[13] = 10
+ _col[12] = 10
+ _col[13] = 18
  _col[14] = 19
  _cellParts : 
  _cellParts->getRowDim() = 38
@@ -128,16 +128,16 @@ tpwgts[5] = 0.166667
  row[13] = 13    4    
  row[14] = 14    5    
  row[15] = 15    0    
- row[16] = 16    2    
+ row[16] = 16    1    
  row[17] = 17    2    
- row[18] = 18    1    
+ row[18] = 18    0    
  row[19] = 19    4    
  row[20] = 20    4    
- row[21] = 21    1    
+ row[21] = 21    0    
  row[22] = 22    5    
  row[23] = 23    2    
  row[24] = 24    4    
- row[25] = 25    4    
+ row[25] = 25    0    
  row[26] = 26    5    
  row[27] = 27    4    
  row[28] = 28    3    
@@ -162,18 +162,18 @@ Boundary multimap = 4    wall
  row[0] = 0    3    
  row[1] = 1    3    
  row[2] = 2    3    4    
- row[3] = 4    2    
- row[4] = 5    2    
- row[5] = 6    2    
- row[6] = 7    5    
- row[7] = 8    5    
- row[8] = 9    5    
- row[9] = 10    0    1    
+ row[3] = 4    2    1    
+ row[4] = 6    2    
+ row[5] = 7    2    
+ row[6] = 8    5    
+ row[7] = 9    5    
+ row[8] = 10    5    
+ row[9] = 11    0    
  row[10] = 12    0    
  row[11] = 13    0    1    
- row[12] = 15    1    
- row[13] = 16    1    
- row[14] = 17    1    2    
+ row[12] = 15    1    0    
+ row[13] = 17    1    
+ row[14] = 18    1    
  row[15] = 19    3    
  row[16] = 20    3    4    
  row[17] = 22    3    2    
@@ -182,16 +182,16 @@ Boundary multimap = 4    wall
  row[20] = 27    4    
  row[21] = 28    5    
  row[22] = 29    5    0    
- row[23] = 31    0    1    
- row[24] = 33    2    
+ row[23] = 31    0    
+ row[24] = 32    1    2    
  row[25] = 34    2    
- row[26] = 35    1    
+ row[26] = 35    0    
  row[27] = 36    4    
  row[28] = 37    4    
- row[29] = 38    1    4    
- row[30] = 40    5    4    
- row[31] = 42    2    4    
- row[32] = 44    4    
+ row[29] = 38    0    
+ row[30] = 39    5    4    
+ row[31] = 41    2    0    
+ row[32] = 43    4    0    
  row[33] = 45    5    
  row[34] = 46    4    
  row[35] = 47    3    
@@ -372,44 +372,44 @@ Boundary multimap = 4    wall
  row[8] = 2        1    5    
  row[9] = 2        5    6    
 
- total mesh surrounding = 2
- total mesh surrounding = 3
- total mesh surrounding = 3
- total mesh surrounding = 2
  total mesh surrounding = 4
+ total mesh surrounding = 2
+ total mesh surrounding = 3
+ total mesh surrounding = 2
+ total mesh surrounding = 3
  total mesh surrounding = 2
 
  offset for ghost Cells from adjacent meshes to read data from _ghostCellsGlobal : 
-    n  =  0 offsetInterfaceCells = 4
-    n  =  1 offsetInterfaceCells = 7
-    n  =  2 offsetInterfaceCells = 4
-    n  =  3 offsetInterfaceCells = 7
-    n  =  4 offsetInterfaceCells = 8
-    n  =  5 offsetInterfaceCells = 7
-    n  =  6 offsetInterfaceCells = 8
-    n  =  7 offsetInterfaceCells = 9
-    n  =  8 offsetInterfaceCells = 6
-    n  =  9 offsetInterfaceCells = 7
-    n  =  10 offsetInterfaceCells = 5
-    n  =  11 offsetInterfaceCells = 6
-    n  =  12 offsetInterfaceCells = 7
-    n  =  13 offsetInterfaceCells = 9
+    n  =  0 offsetInterfaceCells = 8
+    n  =  1 offsetInterfaceCells = 10
+    n  =  2 offsetInterfaceCells = 11
+    n  =  3 offsetInterfaceCells = 12
+    n  =  4 offsetInterfaceCells = 3
+    n  =  5 offsetInterfaceCells = 5
+    n  =  6 offsetInterfaceCells = 5
+    n  =  7 offsetInterfaceCells = 6
+    n  =  8 offsetInterfaceCells = 8
+    n  =  9 offsetInterfaceCells = 6
+    n  =  10 offsetInterfaceCells = 7
+    n  =  11 offsetInterfaceCells = 4
+    n  =  12 offsetInterfaceCells = 5
+    n  =  13 offsetInterfaceCells = 7
     n  =  14 offsetInterfaceCells = 7
     n  =  15 offsetInterfaceCells = 8
 
  neightboorhood cell IDs : 
     n  =  0  interfaced Mesh ID = 1
-    n  =  1  interfaced Mesh ID = 5
-    n  =  2  interfaced Mesh ID = 0
-    n  =  3  interfaced Mesh ID = 2
-    n  =  4  interfaced Mesh ID = 4
-    n  =  5  interfaced Mesh ID = 1
-    n  =  6  interfaced Mesh ID = 3
-    n  =  7  interfaced Mesh ID = 4
-    n  =  8  interfaced Mesh ID = 2
-    n  =  9  interfaced Mesh ID = 4
-    n  =  10  interfaced Mesh ID = 1
-    n  =  11  interfaced Mesh ID = 2
+    n  =  1  interfaced Mesh ID = 2
+    n  =  2  interfaced Mesh ID = 4
+    n  =  3  interfaced Mesh ID = 5
+    n  =  4  interfaced Mesh ID = 0
+    n  =  5  interfaced Mesh ID = 2
+    n  =  6  interfaced Mesh ID = 0
+    n  =  7  interfaced Mesh ID = 1
+    n  =  8  interfaced Mesh ID = 3
+    n  =  9  interfaced Mesh ID = 2
+    n  =  10  interfaced Mesh ID = 4
+    n  =  11  interfaced Mesh ID = 0
     n  =  12  interfaced Mesh ID = 3
     n  =  13  interfaced Mesh ID = 5
     n  =  14  interfaced Mesh ID = 0

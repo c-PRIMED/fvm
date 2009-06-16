@@ -37,17 +37,17 @@
  eelm[9] = 42
  eelm[10] = 43
 
- elemID  = 0,   eind[0]=27    eind[1]=2    eind[2]=30   
- elemID  = 1,   eind[3]=2    eind[4]=25    eind[5]=30   
- elemID  = 2,   eind[6]=16    eind[7]=26    eind[8]=29   
- elemID  = 3,   eind[9]=22    eind[10]=20    eind[11]=28   
- elemID  = 4,   eind[12]=25    eind[13]=23    eind[14]=30   
- elemID  = 5,   eind[15]=23    eind[16]=28    eind[17]=30   
- elemID  = 6,   eind[18]=18    eind[19]=27    eind[20]=30   
- elemID  = 7,   eind[21]=29    eind[22]=18    eind[23]=30   
- elemID  = 8,   eind[24]=20    eind[25]=16    eind[26]=29   
- elemID  = 9,   eind[27]=29    eind[28]=30    eind[29]=20   
- elemID  = 10,   eind[30]=28    eind[31]=20    eind[32]=30   
+ elemID  = 0,   eind[0]=2    eind[1]=27    eind[2]=30   
+ elemID  = 1,   eind[3]=25    eind[4]=2    eind[5]=30   
+ elemID  = 2,   eind[6]=26    eind[7]=16    eind[8]=29   
+ elemID  = 3,   eind[9]=20    eind[10]=22    eind[11]=28   
+ elemID  = 4,   eind[12]=23    eind[13]=25    eind[14]=30   
+ elemID  = 5,   eind[15]=28    eind[16]=23    eind[17]=30   
+ elemID  = 6,   eind[18]=27    eind[19]=18    eind[20]=30   
+ elemID  = 7,   eind[21]=18    eind[22]=29    eind[23]=30   
+ elemID  = 8,   eind[24]=16    eind[25]=20    eind[26]=29   
+ elemID  = 9,   eind[27]=30    eind[28]=29    eind[29]=20   
+ elemID  = 10,   eind[30]=20    eind[31]=28    eind[32]=30   
 
  elmwgt[0]=1
  elmwgt[1]=1
@@ -91,14 +91,14 @@ tpwgts[3] = 0.25
  elem = 39 partion = 0
  elem = 40 partion = 0
  elem = 41 partion = 1
- elem = 42 partion = 1
+ elem = 42 partion = 0
  elem = 43 partion = 2
 
  partID = 0 elemID = 6
  partID = 0 elemID = 7
+ partID = 0 elemID = 9
  partID = 1 elemID = 2
  partID = 1 elemID = 8
- partID = 1 elemID = 9
  partID = 2 elemID = 3
  partID = 2 elemID = 5
  partID = 2 elemID = 10
@@ -154,35 +154,35 @@ tpwgts[3] = 0.25
  _col[0] = 1
  _col[1] = 2
  _col[2] = 0
- _col[3] = 1
- _col[4] = 2
+ _col[3] = 2
+ _col[4] = 1
  _col[5] = 3
- _col[6] = 15
- _col[7] = 23
+ _col[6] = 23
+ _col[7] = 15
  _col[8] = 24
- _col[9] = 2
- _col[10] = 0
+ _col[9] = 0
+ _col[10] = 2
  _col[11] = 25
- _col[12] = 25
- _col[13] = 0
+ _col[12] = 0
+ _col[13] = 25
  _col[14] = 24
- _col[15] = 3
- _col[16] = 2
+ _col[15] = 2
+ _col[16] = 3
  _col[17] = 27
- _col[18] = 3
- _col[19] = 27
+ _col[18] = 27
+ _col[19] = 3
  _col[20] = 19
- _col[21] = 24
- _col[22] = 23
+ _col[21] = 23
+ _col[22] = 24
  _col[23] = 25
- _col[24] = 27
- _col[25] = 2
+ _col[24] = 2
+ _col[25] = 27
  _col[26] = 30
- _col[27] = 2
- _col[28] = 25
+ _col[27] = 25
+ _col[28] = 2
  _col[29] = 30
- _col[30] = 25
- _col[31] = 23
+ _col[30] = 23
+ _col[31] = 25
  _col[32] = 30
  _cellParts : 
  _cellParts->getRowDim() = 60
@@ -208,7 +208,7 @@ tpwgts[3] = 0.25
  row[18] = 18    3    
  row[19] = 19    3    
  row[20] = 20    0    
- row[21] = 21    0    
+ row[21] = 21    1    
  row[22] = 22    3    
  row[23] = 23    3    
  row[24] = 24    2    
@@ -229,7 +229,7 @@ tpwgts[3] = 0.25
  row[39] = 39    0    
  row[40] = 40    0    
  row[41] = 41    1    
- row[42] = 42    1    
+ row[42] = 42    0    
  row[43] = 43    2    
  row[44] = 44    1    
  row[45] = 45    1    
@@ -240,7 +240,7 @@ tpwgts[3] = 0.25
  row[50] = 50    0    
  row[51] = 51    0    
  row[52] = 52    0    
- row[53] = 53    0    
+ row[53] = 53    1    
  row[54] = 54    1    
  row[55] = 55    1    
  row[56] = 56    2    
@@ -289,9 +289,9 @@ Boundary multimap = 4    wall
  row[27] = 29    3    
  row[28] = 30    3    
  row[29] = 31    3    
- row[30] = 32    0    
- row[31] = 33    0    
- row[32] = 34    0    1    
+ row[30] = 32    0    1    
+ row[31] = 34    0    
+ row[32] = 35    1    
  row[33] = 36    3    
  row[34] = 37    3    
  row[35] = 38    3    0    
@@ -314,9 +314,9 @@ Boundary multimap = 4    wall
  row[52] = 58    3    2    
  row[53] = 60    2    
  row[54] = 61    0    
- row[55] = 62    0    1    
- row[56] = 64    1    
- row[57] = 65    1    2    
+ row[55] = 62    0    
+ row[56] = 63    1    0    
+ row[57] = 65    0    2    
  row[58] = 67    1    
  row[59] = 68    1    
  row[60] = 69    2    
@@ -326,7 +326,7 @@ Boundary multimap = 4    wall
  row[64] = 73    0    
  row[65] = 74    0    
  row[66] = 75    0    
- row[67] = 76    0    
+ row[67] = 76    1    
  row[68] = 77    1    
  row[69] = 78    1    
  row[70] = 79    2    
@@ -603,30 +603,34 @@ Boundary multimap = 4    wall
  row[19] = 2        6    5    
  row[20] = 2        11    6    
 
+ total mesh surrounding = 3
  total mesh surrounding = 2
- total mesh surrounding = 2
- total mesh surrounding = 2
+ total mesh surrounding = 3
  total mesh surrounding = 2
 
  offset for ghost Cells from adjacent meshes to read data from _ghostCellsGlobal : 
-    n  =  0 offsetInterfaceCells = 16
-    n  =  1 offsetInterfaceCells = 19
-    n  =  2 offsetInterfaceCells = 16
-    n  =  3 offsetInterfaceCells = 19
-    n  =  4 offsetInterfaceCells = 16
-    n  =  5 offsetInterfaceCells = 18
+    n  =  0 offsetInterfaceCells = 15
+    n  =  1 offsetInterfaceCells = 18
+    n  =  2 offsetInterfaceCells = 19
+    n  =  3 offsetInterfaceCells = 17
+    n  =  4 offsetInterfaceCells = 20
+    n  =  5 offsetInterfaceCells = 16
     n  =  6 offsetInterfaceCells = 17
-    n  =  7 offsetInterfaceCells = 19
+    n  =  7 offsetInterfaceCells = 18
+    n  =  8 offsetInterfaceCells = 17
+    n  =  9 offsetInterfaceCells = 19
 
  neightboorhood cell IDs : 
     n  =  0  interfaced Mesh ID = 1
-    n  =  1  interfaced Mesh ID = 3
-    n  =  2  interfaced Mesh ID = 0
-    n  =  3  interfaced Mesh ID = 2
-    n  =  4  interfaced Mesh ID = 1
-    n  =  5  interfaced Mesh ID = 3
-    n  =  6  interfaced Mesh ID = 0
-    n  =  7  interfaced Mesh ID = 2
+    n  =  1  interfaced Mesh ID = 2
+    n  =  2  interfaced Mesh ID = 3
+    n  =  3  interfaced Mesh ID = 0
+    n  =  4  interfaced Mesh ID = 2
+    n  =  5  interfaced Mesh ID = 0
+    n  =  6  interfaced Mesh ID = 1
+    n  =  7  interfaced Mesh ID = 3
+    n  =  8  interfaced Mesh ID = 0
+    n  =  9  interfaced Mesh ID = 2
 
 interface cells looking interior domain (global numbering)  : 
     n  =  0  cell ID = 23

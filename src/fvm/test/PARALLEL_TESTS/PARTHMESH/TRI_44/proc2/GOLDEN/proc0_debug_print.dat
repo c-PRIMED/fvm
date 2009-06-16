@@ -56,27 +56,27 @@
  eelm[21] = 21
 
  elemID  = 0,   eind[0]=1    eind[1]=2    eind[2]=0   
- elemID  = 1,   eind[3]=1    eind[4]=2    eind[5]=3   
+ elemID  = 1,   eind[3]=2    eind[4]=1    eind[5]=3   
  elemID  = 2,   eind[6]=5    eind[7]=6    eind[8]=4   
- elemID  = 3,   eind[9]=5    eind[10]=6    eind[11]=7   
+ elemID  = 3,   eind[9]=6    eind[10]=5    eind[11]=7   
  elemID  = 4,   eind[12]=9    eind[13]=10    eind[14]=8   
- elemID  = 5,   eind[15]=9    eind[16]=10    eind[17]=11   
+ elemID  = 5,   eind[15]=10    eind[16]=9    eind[17]=11   
  elemID  = 6,   eind[18]=13    eind[19]=14    eind[20]=12   
- elemID  = 7,   eind[21]=13    eind[22]=14    eind[23]=15   
- elemID  = 8,   eind[24]=6    eind[25]=4    eind[26]=16   
- elemID  = 9,   eind[27]=16    eind[28]=4    eind[29]=17   
- elemID  = 10,   eind[30]=10    eind[31]=8    eind[32]=18   
- elemID  = 11,   eind[33]=18    eind[34]=8    eind[35]=19   
- elemID  = 12,   eind[36]=7    eind[37]=6    eind[38]=20   
- elemID  = 13,   eind[39]=7    eind[40]=20    eind[41]=21   
- elemID  = 14,   eind[42]=14    eind[43]=12    eind[44]=22   
- elemID  = 15,   eind[45]=22    eind[46]=12    eind[47]=21   
- elemID  = 16,   eind[48]=15    eind[49]=14    eind[50]=23   
- elemID  = 17,   eind[51]=15    eind[52]=23    eind[53]=24   
- elemID  = 18,   eind[54]=2    eind[55]=0    eind[56]=25   
- elemID  = 19,   eind[57]=25    eind[58]=0    eind[59]=24   
- elemID  = 20,   eind[60]=11    eind[61]=10    eind[62]=26   
- elemID  = 21,   eind[63]=11    eind[64]=26    eind[65]=17   
+ elemID  = 7,   eind[21]=14    eind[22]=13    eind[23]=15   
+ elemID  = 8,   eind[24]=4    eind[25]=6    eind[26]=16   
+ elemID  = 9,   eind[27]=4    eind[28]=16    eind[29]=17   
+ elemID  = 10,   eind[30]=8    eind[31]=10    eind[32]=18   
+ elemID  = 11,   eind[33]=8    eind[34]=18    eind[35]=19   
+ elemID  = 12,   eind[36]=6    eind[37]=7    eind[38]=20   
+ elemID  = 13,   eind[39]=20    eind[40]=7    eind[41]=21   
+ elemID  = 14,   eind[42]=12    eind[43]=14    eind[44]=22   
+ elemID  = 15,   eind[45]=12    eind[46]=22    eind[47]=21   
+ elemID  = 16,   eind[48]=14    eind[49]=15    eind[50]=23   
+ elemID  = 17,   eind[51]=23    eind[52]=15    eind[53]=24   
+ elemID  = 18,   eind[54]=0    eind[55]=2    eind[56]=25   
+ elemID  = 19,   eind[57]=0    eind[58]=25    eind[59]=24   
+ elemID  = 20,   eind[60]=10    eind[61]=11    eind[62]=26   
+ elemID  = 21,   eind[63]=26    eind[64]=11    eind[65]=17   
 
  elmwgt[0]=1
  elmwgt[1]=1
@@ -250,68 +250,68 @@ tpwgts[1] = 0.5
  _col[0] = 5
  _col[1] = 6
  _col[2] = 4
- _col[3] = 5
- _col[4] = 6
+ _col[3] = 6
+ _col[4] = 5
  _col[5] = 7
  _col[6] = 9
  _col[7] = 10
  _col[8] = 8
- _col[9] = 9
- _col[10] = 10
+ _col[9] = 10
+ _col[10] = 9
  _col[11] = 11
- _col[12] = 6
- _col[13] = 4
+ _col[12] = 4
+ _col[13] = 6
  _col[14] = 16
- _col[15] = 16
- _col[16] = 4
+ _col[15] = 4
+ _col[16] = 16
  _col[17] = 17
- _col[18] = 10
- _col[19] = 8
+ _col[18] = 8
+ _col[19] = 10
  _col[20] = 18
- _col[21] = 18
- _col[22] = 8
+ _col[21] = 8
+ _col[22] = 18
  _col[23] = 19
- _col[24] = 7
- _col[25] = 6
+ _col[24] = 6
+ _col[25] = 7
  _col[26] = 20
- _col[27] = 7
- _col[28] = 20
+ _col[27] = 20
+ _col[28] = 7
  _col[29] = 21
- _col[30] = 11
- _col[31] = 10
+ _col[30] = 10
+ _col[31] = 11
  _col[32] = 26
- _col[33] = 11
- _col[34] = 26
+ _col[33] = 26
+ _col[34] = 11
  _col[35] = 17
- _col[36] = 16
- _col[37] = 17
+ _col[36] = 17
+ _col[37] = 16
  _col[38] = 26
- _col[39] = 18
- _col[40] = 19
+ _col[39] = 19
+ _col[40] = 18
  _col[41] = 27
- _col[42] = 6
- _col[43] = 16
+ _col[42] = 16
+ _col[43] = 6
  _col[44] = 20
- _col[45] = 26
- _col[46] = 10
+ _col[45] = 10
+ _col[46] = 26
  _col[47] = 29
- _col[48] = 10
- _col[49] = 18
+ _col[48] = 18
+ _col[49] = 10
  _col[50] = 29
- _col[51] = 16
- _col[52] = 26
+ _col[51] = 26
+ _col[52] = 16
  _col[53] = 29
- _col[54] = 18
- _col[55] = 27
+ _col[54] = 27
+ _col[55] = 18
  _col[56] = 30
- _col[57] = 29
- _col[58] = 18
+ _col[57] = 18
+ _col[58] = 29
  _col[59] = 30
- _col[60] = 20
- _col[61] = 16
+ _col[60] = 16
+ _col[61] = 20
  _col[62] = 29
- _col[63] = 29
- _col[64] = 30
+ _col[63] = 30
+ _col[64] = 29
  _col[65] = 20
  _cellParts : 
  _cellParts->getRowDim() = 60

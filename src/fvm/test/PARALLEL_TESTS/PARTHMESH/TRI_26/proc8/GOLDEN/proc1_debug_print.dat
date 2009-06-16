@@ -32,9 +32,9 @@
  eelm[3] = 7
 
  elemID  = 0,   eind[0]=9    eind[1]=10    eind[2]=8   
- elemID  = 1,   eind[3]=10    eind[4]=8    eind[5]=11   
+ elemID  = 1,   eind[3]=8    eind[4]=10    eind[5]=11   
  elemID  = 2,   eind[6]=13    eind[7]=14    eind[8]=12   
- elemID  = 3,   eind[9]=14    eind[10]=12    eind[11]=15   
+ elemID  = 3,   eind[9]=12    eind[10]=14    eind[11]=15   
 
  elmwgt[0]=1
  elmwgt[1]=1
@@ -66,15 +66,15 @@ tpwgts[7] = 0.125
 
  edgecut = 15
 
- elem = 4 partion = 1
- elem = 5 partion = 2
- elem = 6 partion = 7
- elem = 7 partion = 7
+ elem = 4 partion = 3
+ elem = 5 partion = 3
+ elem = 6 partion = 5
+ elem = 7 partion = 5
 
- partID = 1 elemID = 0
- partID = 2 elemID = 1
- partID = 7 elemID = 2
- partID = 7 elemID = 3
+ partID = 3 elemID = 0
+ partID = 3 elemID = 1
+ partID = 5 elemID = 2
+ partID = 5 elemID = 3
 
  total elements  = 3
  total dim of col = 9
@@ -84,68 +84,68 @@ tpwgts[7] = 0.125
  _row[2] = 6
  _row[3] = 9
 
- _elem[0] = 4
- _elem[1] = 12
- _elem[2] = 13
+ _elem[0] = 1
+ _elem[1] = 13
+ _elem[2] = 19
 
- _elemWithGhosts[0] = 4
- _elemWithGhosts[1] = 12
- _elemWithGhosts[2] = 13
- _elemWithGhosts[3] = 26
+ _elemWithGhosts[0] = 1
+ _elemWithGhosts[1] = 13
+ _elemWithGhosts[2] = 19
+ _elemWithGhosts[3] = 28
  _elemWithGhosts[4] = 27
 
- _col[0] = 9
- _col[1] = 10
- _col[2] = 8
- _col[3] = 9
- _col[4] = 10
- _col[5] = 18
- _col[6] = 9
- _col[7] = 18
- _col[8] = 3
+ _col[0] = 0
+ _col[1] = 2
+ _col[2] = 3
+ _col[3] = 18
+ _col[4] = 9
+ _col[5] = 3
+ _col[6] = 3
+ _col[7] = 2
+ _col[8] = 18
  _cellParts : 
  _cellParts->getRowDim() = 38
  _cellParts->getColDim() = 8
  row[0] = 0    0    
- row[1] = 1    0    
- row[2] = 2    5    
- row[3] = 3    5    
- row[4] = 4    1    
- row[5] = 5    2    
- row[6] = 6    7    
- row[7] = 7    7    
+ row[1] = 1    1    
+ row[2] = 2    6    
+ row[3] = 3    6    
+ row[4] = 4    3    
+ row[5] = 5    3    
+ row[6] = 6    5    
+ row[7] = 7    5    
  row[8] = 8    4    
- row[9] = 9    4    
+ row[9] = 9    6    
  row[10] = 10    0    
- row[11] = 11    0    
- row[12] = 12    1    
+ row[11] = 11    7    
+ row[12] = 12    2    
  row[13] = 13    1    
- row[14] = 14    2    
- row[15] = 15    7    
- row[16] = 16    4    
- row[17] = 17    5    
- row[18] = 18    7    
- row[19] = 19    3    
- row[20] = 20    3    
- row[21] = 21    6    
+ row[14] = 14    3    
+ row[15] = 15    5    
+ row[16] = 16    6    
+ row[17] = 17    7    
+ row[18] = 18    5    
+ row[19] = 19    1    
+ row[20] = 20    0    
+ row[21] = 21    4    
  row[22] = 22    2    
- row[23] = 23    6    
- row[24] = 24    3    
- row[25] = 25    6    
- row[26] = 26    1    
+ row[23] = 23    7    
+ row[24] = 24    2    
+ row[25] = 25    4    
+ row[26] = 26    3    
  row[27] = 27    1    
- row[28] = 28    0    
- row[29] = 29    5    
- row[30] = 30    4    
- row[31] = 31    7    
- row[32] = 32    7    
- row[33] = 33    7    
- row[34] = 34    2    
- row[35] = 35    5    
- row[36] = 36    0    
+ row[28] = 28    1    
+ row[29] = 29    6    
+ row[30] = 30    6    
+ row[31] = 31    5    
+ row[32] = 32    5    
+ row[33] = 33    5    
+ row[34] = 34    3    
+ row[35] = 35    6    
+ row[36] = 36    7    
  row[37] = 37    0    
 
-Boundary multimap = 3    26
+Boundary multimap = 3    28
 Boundary multimap = 3    27
 Boundary multimap = 3    velocity-inlet
 Boundary multimap = 4    wall
@@ -154,84 +154,84 @@ Boundary multimap = 4    wall
  _faceParts->getRowDim() = 45
  _faceParts->getColDim() = 8
  row[0] = 0    0    
- row[1] = 1    0    
- row[2] = 2    0    3    
- row[3] = 4    5    4    
- row[4] = 6    5    
- row[5] = 7    5    
- row[6] = 8    1    
- row[7] = 9    1    2    
- row[8] = 11    2    
- row[9] = 12    7    
- row[10] = 13    7    
- row[11] = 14    7    4    
- row[12] = 16    4    6    
- row[13] = 18    4    
- row[14] = 19    4    
- row[15] = 20    0    
- row[16] = 21    0    3    
- row[17] = 23    0    5    
- row[18] = 25    1    
- row[19] = 26    1    2    
- row[20] = 28    1    3    
- row[21] = 30    2    
- row[22] = 31    2    7    
- row[23] = 33    7    
- row[24] = 34    4    6    
- row[25] = 36    5    6    
- row[26] = 38    7    6    
- row[27] = 40    3    
- row[28] = 41    3    
- row[29] = 42    6    
- row[30] = 43    2    3    
- row[31] = 45    6    
- row[32] = 46    3    6    
- row[33] = 48    1    
+ row[1] = 1    0    1    
+ row[2] = 3    1    
+ row[3] = 4    6    
+ row[4] = 5    6    
+ row[5] = 6    6    7    
+ row[6] = 8    3    2    
+ row[7] = 10    3    
+ row[8] = 11    3    
+ row[9] = 12    5    
+ row[10] = 13    5    
+ row[11] = 14    5    4    
+ row[12] = 16    4    
+ row[13] = 17    4    6    
+ row[14] = 19    6    
+ row[15] = 20    0    7    
+ row[16] = 22    0    
+ row[17] = 23    7    
+ row[18] = 24    2    1    
+ row[19] = 26    2    
+ row[20] = 27    1    
+ row[21] = 28    3    2    
+ row[22] = 30    3    5    
+ row[23] = 32    5    
+ row[24] = 33    6    7    
+ row[25] = 35    7    
+ row[26] = 36    5    4    
+ row[27] = 38    1    0    
+ row[28] = 40    0    2    
+ row[29] = 42    4    
+ row[30] = 43    2    
+ row[31] = 44    7    4    
+ row[32] = 46    2    4    
+ row[33] = 48    3    
  row[34] = 49    1    
- row[35] = 50    0    
- row[36] = 51    5    
- row[37] = 52    4    
- row[38] = 53    7    
- row[39] = 54    7    
- row[40] = 55    7    
- row[41] = 56    2    
- row[42] = 57    5    
- row[43] = 58    0    
+ row[35] = 50    1    
+ row[36] = 51    6    
+ row[37] = 52    6    
+ row[38] = 53    5    
+ row[39] = 54    5    
+ row[40] = 55    5    
+ row[41] = 56    3    
+ row[42] = 57    6    
+ row[43] = 58    7    
  row[44] = 59    0    
 
  _faceCells :  
  _faceCells->getRowDim() = 7
  _faceCells->getColDim() = 8
  globalToLocalMap.length() = 38
- globalToLocalMap[0] = -1
- globalToLocalMap[1] = -1
+ globalToLocalMap[0] = 3
+ globalToLocalMap[1] = 0
  globalToLocalMap[2] = -1
  globalToLocalMap[3] = -1
- globalToLocalMap[4] = 0
- globalToLocalMap[5] = 3
+ globalToLocalMap[4] = -1
+ globalToLocalMap[5] = -1
  globalToLocalMap[6] = -1
  globalToLocalMap[7] = -1
  globalToLocalMap[8] = -1
  globalToLocalMap[9] = -1
  globalToLocalMap[10] = -1
  globalToLocalMap[11] = -1
- globalToLocalMap[12] = 1
+ globalToLocalMap[12] = 4
  globalToLocalMap[13] = 2
  globalToLocalMap[14] = -1
  globalToLocalMap[15] = -1
  globalToLocalMap[16] = -1
  globalToLocalMap[17] = -1
  globalToLocalMap[18] = -1
- globalToLocalMap[19] = 5
- globalToLocalMap[20] = -1
+ globalToLocalMap[19] = 1
+ globalToLocalMap[20] = 5
  globalToLocalMap[21] = -1
- globalToLocalMap[22] = 4
+ globalToLocalMap[22] = -1
  globalToLocalMap[23] = -1
  globalToLocalMap[24] = -1
  globalToLocalMap[25] = -1
- globalToLocalMap[26] = 6
- globalToLocalMap[27] = 7
- globalToLocalMap[28] = -1
+ globalToLocalMap[26] = -1
+ globalToLocalMap[27] = 6
+ globalToLocalMap[28] = 7
  globalToLocalMap[29] = -1
  globalToLocalMap[30] = -1
  globalToLocalMap[31] = -1
@@ -243,68 +243,68 @@ Boundary multimap = 4    wall
  globalToLocalMap[37] = -1
 
  localToGlobalMap.length() = 8
- localToGlobalMap[0] = 4
- localToGlobalMap[1] = 12
+ localToGlobalMap[0] = 1
+ localToGlobalMap[1] = 19
  localToGlobalMap[2] = 13
- localToGlobalMap[3] = 5
- localToGlobalMap[4] = 22
- localToGlobalMap[5] = 19
- localToGlobalMap[6] = 26
- localToGlobalMap[7] = 27
- row[1] = 7    1    2    
- row[2] = 8    1    4    
- row[3] = 19    2    3    
- row[4] = 20    2    5    
- row[5] = 21    3    6    
- row[6] = 34    1    7    
- row[7] = 35    3    8    
+ localToGlobalMap[3] = 0
+ localToGlobalMap[4] = 12
+ localToGlobalMap[5] = 20
+ localToGlobalMap[6] = 27
+ localToGlobalMap[7] = 28
+ row[1] = 2    4    1    
+ row[2] = 3    1    2    
+ row[3] = 19    5    3    
+ row[4] = 21    3    2    
+ row[5] = 28    2    6    
+ row[6] = 35    3    7    
+ row[7] = 36    1    8    
 
  _faceNodes :  
  _faceNodes->getRowDim() = 7
  _faceNodes->getColDim() = 5
- row[1] = 7    1    2    
- row[2] = 8    2    3    
- row[3] = 19    1    4    
- row[4] = 20    4    2    
- row[5] = 21    5    4    
- row[6] = 34    3    1    
- row[7] = 35    1    5    
+ row[1] = 2    1    2    
+ row[2] = 3    1    3    
+ row[3] = 19    4    5    
+ row[4] = 21    3    5    
+ row[5] = 28    1    5    
+ row[6] = 35    4    3    
+ row[7] = 36    3    2    
 
  _cellNodes(Local Numbering) :  
  _cellNodes->getRowDim() = 8
  _cellNodes->getColDim() = 5
  row[1]  = 1    2    3    
- row[2]  = 1    2    4    
- row[3]  = 1    4    5    
- row[4]  = 2    3    
- row[5]  = 4    2    
- row[6]  = 5    4    
- row[7]  = 3    1    
- row[8]  = 1    5    
+ row[2]  = 1    3    5    
+ row[3]  = 4    5    3    
+ row[4]  = 1    2    
+ row[5]  = 4    5    
+ row[6]  = 1    5    
+ row[7]  = 4    3    
+ row[8]  = 3    2    
 
  _cellCells :  
  _cellCells->getRowDim() = 8
  _cellCells->getColDim() = 8
- row[1] =     2    4    7    
- row[2] =     1    3    5    
- row[3] =     2    6    8    
+ row[1] =     4    2    8    
+ row[2] =     1    3    6    
+ row[3] =     5    2    7    
  row[4] =     1    
- row[5] =     2    
- row[6] =     3    
- row[7] =     1    
- row[8] =     3    
+ row[5] =     3    
+ row[6] =     2    
+ row[7] =     3    
+ row[8] =     1    
 
- node ID =          1,  x = 0.6666667,  y = 1.0000000,  z = 0.0000000
- node ID =          2,  x = 0.7750815,  y = 0.7827520,  z = 0.0000000
- node ID =          3,  x = 1.0000000,  y = 1.0000000,  z = 0.0000000
- node ID =          4,  x = 0.5000000,  y = 0.7542750,  z = 0.0000000
- node ID =          5,  x = 0.3333333,  y = 1.0000000,  z = 0.0000000
+ node ID =          1,  x = 0.2249185,  y = 0.7827520,  z = 0.0000000
+ node ID =          2,  x = 0.0000000,  y = 1.0000000,  z = 0.0000000
+ node ID =          3,  x = 0.3333333,  y = 1.0000000,  z = 0.0000000
+ node ID =          4,  x = 0.6666667,  y = 1.0000000,  z = 0.0000000
+ node ID =          5,  x = 0.5000000,  y = 0.7542750,  z = 0.0000000
 
  _interfaceMap.size() = 3
- interface ID =  0  =>  
+ interface ID =  0  =>  2  28  
  interface ID =  1  =>  
- interface ID =  2  =>  8  20  
- interface ID =  3  =>  21  
+ interface ID =  2  =>  19  
+ interface ID =  3  =>  
  interface ID =  4  =>  
  interface ID =  5  =>  
  interface ID =  6  =>  
@@ -323,14 +323,14 @@ Boundary multimap = 4    wall
 
    bndry group ID = 3 offsets = 2
 
-   interface ID = 2 offsets = 4
-   interface ID = 3 offsets = 6
+   interface ID = 0 offsets = 4
+   interface ID = 2 offsets = 6
 
  _faceCellsOrdered :  
  _faceCellsOrdered->getRowDim() = 7
  _faceCellsOrdered->getColDim() = 8
  row[0] = 1    2    
- row[1] = 2    3    
+ row[1] = 3    2    
  row[2] = 1    4    
  row[3] = 3    5    
  row[4] = 1    6    
@@ -340,78 +340,74 @@ Boundary multimap = 4    wall
  _faceNodesOrdered :  
  _faceNodesOrdered->getRowDim() = 7
  _faceNodesOrdered->getColDim() = 5
- row[0] = 2        1    2    
- row[1] = 2        1    4    
- row[2] = 2        3    1    
- row[3] = 2        1    5    
- row[4] = 2        2    3    
- row[5] = 2        4    2    
+ row[0] = 2        1    3    
+ row[1] = 2        3    5    
+ row[2] = 2        3    2    
+ row[3] = 2        4    3    
+ row[4] = 2        2    1    
+ row[5] = 2        1    5    
  row[6] = 2        5    4    
 
+ total mesh surrounding = 3
+ total mesh surrounding = 2
+ total mesh surrounding = 4
+ total mesh surrounding = 2
+ total mesh surrounding = 4
  total mesh surrounding = 2
  total mesh surrounding = 2
- total mesh surrounding = 3
- total mesh surrounding = 4
- total mesh surrounding = 3
- total mesh surrounding = 3
- total mesh surrounding = 4
  total mesh surrounding = 3
 
  offset for ghost Cells from adjacent meshes to read data from _ghostCellsGlobal : 
-    n  =  0 offsetInterfaceCells = 6
-    n  =  1 offsetInterfaceCells = 8
-    n  =  2 offsetInterfaceCells = 4
-    n  =  3 offsetInterfaceCells = 6
-    n  =  4 offsetInterfaceCells = 3
-    n  =  5 offsetInterfaceCells = 5
-    n  =  6 offsetInterfaceCells = 6
-    n  =  7 offsetInterfaceCells = 2
-    n  =  8 offsetInterfaceCells = 4
-    n  =  9 offsetInterfaceCells = 5
+    n  =  0 offsetInterfaceCells = 3
+    n  =  1 offsetInterfaceCells = 5
+    n  =  2 offsetInterfaceCells = 6
+    n  =  3 offsetInterfaceCells = 4
+    n  =  4 offsetInterfaceCells = 6
+    n  =  5 offsetInterfaceCells = 2
+    n  =  6 offsetInterfaceCells = 3
+    n  =  7 offsetInterfaceCells = 4
+    n  =  8 offsetInterfaceCells = 6
+    n  =  9 offsetInterfaceCells = 4
     n  =  10 offsetInterfaceCells = 6
-    n  =  11 offsetInterfaceCells = 3
-    n  =  12 offsetInterfaceCells = 4
-    n  =  13 offsetInterfaceCells = 6
-    n  =  14 offsetInterfaceCells = 4
-    n  =  15 offsetInterfaceCells = 5
-    n  =  16 offsetInterfaceCells = 6
-    n  =  17 offsetInterfaceCells = 2
-    n  =  18 offsetInterfaceCells = 3
-    n  =  19 offsetInterfaceCells = 5
-    n  =  20 offsetInterfaceCells = 6
-    n  =  21 offsetInterfaceCells = 6
-    n  =  22 offsetInterfaceCells = 7
-    n  =  23 offsetInterfaceCells = 8
+    n  =  11 offsetInterfaceCells = 2
+    n  =  12 offsetInterfaceCells = 3
+    n  =  13 offsetInterfaceCells = 5
+    n  =  14 offsetInterfaceCells = 6
+    n  =  15 offsetInterfaceCells = 6
+    n  =  16 offsetInterfaceCells = 7
+    n  =  17 offsetInterfaceCells = 6
+    n  =  18 offsetInterfaceCells = 7
+    n  =  19 offsetInterfaceCells = 3
+    n  =  20 offsetInterfaceCells = 4
+    n  =  21 offsetInterfaceCells = 5
 
  neightboorhood cell IDs : 
-    n  =  0  interfaced Mesh ID = 3
-    n  =  1  interfaced Mesh ID = 5
-    n  =  2  interfaced Mesh ID = 2
-    n  =  3  interfaced Mesh ID = 3
-    n  =  4  interfaced Mesh ID = 1
-    n  =  5  interfaced Mesh ID = 3
-    n  =  6  interfaced Mesh ID = 7
-    n  =  7  interfaced Mesh ID = 0
-    n  =  8  interfaced Mesh ID = 1
+    n  =  0  interfaced Mesh ID = 1
+    n  =  1  interfaced Mesh ID = 2
+    n  =  2  interfaced Mesh ID = 7
+    n  =  3  interfaced Mesh ID = 0
+    n  =  4  interfaced Mesh ID = 2
+    n  =  5  interfaced Mesh ID = 0
+    n  =  6  interfaced Mesh ID = 1
+    n  =  7  interfaced Mesh ID = 3
+    n  =  8  interfaced Mesh ID = 4
     n  =  9  interfaced Mesh ID = 2
-    n  =  10  interfaced Mesh ID = 6
-    n  =  11  interfaced Mesh ID = 5
-    n  =  12  interfaced Mesh ID = 6
-    n  =  13  interfaced Mesh ID = 7
-    n  =  14  interfaced Mesh ID = 0
-    n  =  15  interfaced Mesh ID = 4
-    n  =  16  interfaced Mesh ID = 6
-    n  =  17  interfaced Mesh ID = 3
-    n  =  18  interfaced Mesh ID = 4
-    n  =  19  interfaced Mesh ID = 5
-    n  =  20  interfaced Mesh ID = 7
-    n  =  21  interfaced Mesh ID = 2
-    n  =  22  interfaced Mesh ID = 4
-    n  =  23  interfaced Mesh ID = 6
+    n  =  10  interfaced Mesh ID = 5
+    n  =  11  interfaced Mesh ID = 2
+    n  =  12  interfaced Mesh ID = 5
+    n  =  13  interfaced Mesh ID = 6
+    n  =  14  interfaced Mesh ID = 7
+    n  =  15  interfaced Mesh ID = 3
+    n  =  16  interfaced Mesh ID = 4
+    n  =  17  interfaced Mesh ID = 4
+    n  =  18  interfaced Mesh ID = 7
+    n  =  19  interfaced Mesh ID = 0
+    n  =  20  interfaced Mesh ID = 4
+    n  =  21  interfaced Mesh ID = 6
 
 interface cells looking interior domain (global numbering)  : 
-    n  =  0  cell ID = 4
-    n  =  1  cell ID = 12
+    n  =  0  cell ID = 1
+    n  =  1  cell ID = 19
     n  =  2  cell ID = 13
 interface cells looking interior domain (local numbering)  : 
     n  =  0  interfaced Mesh ID = 0
