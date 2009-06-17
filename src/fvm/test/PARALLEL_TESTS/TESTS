@@ -32,3 +32,10 @@ CAVITY_TRI894_PROCS2_THERMALSOLVER  ./ptest.py  --np 2  --script testThermalPara
 CAVITY_TRI894_PROCS4_THERMALSOLVER  ./ptest.py  --np 4  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc4  --outdir TESTDIR
 CAVITY_TRI894_PROCS8_THERMALSOLVER  ./ptest.py  --np 8  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc8  --outdir TESTDIR
 CAVITY_TRI894_PROCS12_THERMALSOLVER ./ptest.py  --np 12 --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc12 --outdir TESTDIR
+
+
+CAVITY_QUAD1024_PROCS1_THERMALSOLVER  ./ptest.py  --np 1  --script testThermalParallel_Quad1024.py --in ../cav32_thermal.cas --golden SOLVER_AMG/ThermalSolver/QUAD_1024/proc1  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS2_THERMALSOLVER  ./ptest.py  --np 2  --script testThermalParallel_Quad1024.py --in ../cav32_thermal.cas --golden SOLVER_AMG/ThermalSolver/QUAD_1024/proc2  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS4_THERMALSOLVER  ./ptest.py  --np 4  --script testThermalParallel_Quad1024.py --in ../cav32_thermal.cas --golden SOLVER_AMG/ThermalSolver/QUAD_1024/proc4  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS8_THERMALSOLVER  ./ptest.py  --np 8  --script testThermalParallel_Quad1024.py --in ../cav32_thermal.cas --golden SOLVER_AMG/ThermalSolver/QUAD_1024/proc8  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS12_THERMALSOLVER ./ptest.py  --np 16 --script testThermalParallel_Quad1024.py --in ../cav32_thermal.cas --golden SOLVER_AMG/ThermalSolver/QUAD_1024/proc16 --outdir TESTDIR
