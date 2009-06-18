@@ -11,6 +11,8 @@ struct FlowBC : public FloatVarDict<T>
       this->defineVar("specifiedYVelocity",T(0.0));
       this->defineVar("specifiedZVelocity",T(0.0));
       this->defineVar("specifiedPressure",T(0.0));
+      this->defineVar("accomodationCoefficient",T(1.0));
+      
   }
   string bcType;
 };
@@ -40,6 +42,7 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->defineVar("velocityURF",T(1.0));
     this->defineVar("pressureURF",T(0.3));
     this->defineVar("timeStep",T(0.1));
+    this->defineVar("KnudsenNumber",T(1e-9));
     this->momentumTolerance=1e-4;
     this->continuityTolerance=1e-4;
     this->printNormalizedResiduals = true;

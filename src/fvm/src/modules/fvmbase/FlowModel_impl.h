@@ -223,6 +223,7 @@ public:
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
             if ((bc.bcType == "NoSlipWall") ||
+                (bc.bcType == "SlipJump") ||
                 (bc.bcType == "VelocityBoundary"))
             {
                 // arrays for this face group
@@ -571,6 +572,12 @@ public:
             {
                 gbc.applyDirichletBC(bVelocity);
             }
+            else if (bc.bcType == "SlipJump")
+            {
+                slipJumpMomentumBC(faces,mesh,
+                                   gbc,
+                                   bc["accomodationCoefficient"]);
+            }
             else if ((bc.bcType == "VelocityBoundary") ||
                      (bc.bcType == "PressureBoundary"))
             {
@@ -886,6 +893,7 @@ public:
             const FlowBC<T>& bc = *_bcMap[fg.id];
             
             if ((bc.bcType == "NoSlipWall") ||
+                (bc.bcType == "SlipJump") ||
                 (bc.bcType == "Symmetry") ||
                 (bc.bcType == "VelocityBoundary"))
             {
@@ -1612,6 +1620,7 @@ public:
 #include "FlowModelPressureBC.h"
 #include "FlowModelVelocityBC.h"
 #include "FlowModelInterior.h"
+#include "FlowModelSlipJump.h"
   
 private:
   const MeshList _meshes;
