@@ -69,8 +69,12 @@ def check_thermal_solver(options):
     return 0
 
 def main():
-    funcs = {'testPartMesh.py' : [check_parmetis, check_mesh, check_mapping],
-             'testThermalParallel.py' : [check_thermal_solver]}
+    funcs = {
+        'testPartMesh.py' : [check_parmetis, check_mesh, check_mapping],
+        'testPartMesh_Quad.py' : [check_parmetis, check_mesh, check_mapping],
+        'testThermalParallel.py' : [check_thermal_solver],
+        'testThermalParallel_Quad1024.py' : [check_thermal_solver]
+        }
 
     parser = OptionParser()
     parser.set_defaults(np=1,outdir='')
