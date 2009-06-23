@@ -36,9 +36,9 @@ class BuildPkg:
         BuildPkg.packages = [
             Python("pkgs/python", 0),
             Numpy("pkgs/numpy", 1),
-            Nose("pkgs/python-nose", 1),
             Ipython("pkgs/ipython.tgz",-1),
             Mpi4py("pkgs/mpi4py", 1),
+            Nose("pkgs/python-nose", 1),            
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
