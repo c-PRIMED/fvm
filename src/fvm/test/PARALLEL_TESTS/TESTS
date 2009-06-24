@@ -25,6 +25,19 @@ CAVITY_QUAD1024_PROCS4   ./ptest.py  --np 4  --script testPartMesh_Quad.py --in 
 CAVITY_QUAD1024_PROCS8   ./ptest.py  --np 8  --script testPartMesh_Quad.py --in ../cav32.cas --golden PARTHMESH/QUAD_1024/proc8  --outdir TESTDIR
 CAVITY_QUAD1024_PROCS16  ./ptest.py  --np 16 --script testPartMesh_Quad.py --in ../cav32.cas --golden PARTHMESH/QUAD_1024/proc16 --outdir TESTDIR
 
+CAVITY_HEXA10K_PROCS1   ./ptest.py  --np 1  --script testPartMesh_Hexa.py --in ../cav_hexa.cas --golden PARTHMESH/HEXA_10K/proc1  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS2   ./ptest.py  --np 2  --script testPartMesh_Hexa.py --in ../cav_hexa.cas --golden PARTHMESH/HEXA_10K/proc2  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS4   ./ptest.py  --np 4  --script testPartMesh_Hexa.py --in ../cav_hexa.cas --golden PARTHMESH/HEXA_10K/proc4  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS8   ./ptest.py  --np 8  --script testPartMesh_Hexa.py --in ../cav_hexa.cas --golden PARTHMESH/HEXA_10K/proc8  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS16  ./ptest.py  --np 16 --script testPartMesh_Hexa.py --in ../cav_hexa.cas --golden PARTHMESH/HEXA_10K/proc16 --outdir TESTDIR
+CAVITY_HEXA10K_PROCS32  ./ptest.py  --np 32 --script testPartMesh_Hexa.py --in ../cav_hexa.cas --golden PARTHMESH/HEXA_10K/proc32 --outdir TESTDIR
+
+CAVITY_TETRA8K_PROCS1   ./ptest.py  --np 1  --script testPartMesh_Tetra.py --in ../cav_tetra.cas --golden PARTHMESH/TETRA_8K/proc1  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS2   ./ptest.py  --np 2  --script testPartMesh_Tetra.py --in ../cav_tetra.cas --golden PARTHMESH/TETRA_8K/proc2  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS4   ./ptest.py  --np 4  --script testPartMesh_Tetra.py --in ../cav_tetra.cas --golden PARTHMESH/TETRA_8K/proc4  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS8   ./ptest.py  --np 8  --script testPartMesh_Tetra.py --in ../cav_tetra.cas --golden PARTHMESH/TETRA_8K/proc8  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS16  ./ptest.py  --np 16 --script testPartMesh_Tetra.py --in ../cav_tetra.cas --golden PARTHMESH/TETRA_8K/proc16 --outdir TESTDIR
+CAVITY_TETRA8K_PROCS32  ./ptest.py  --np 32 --script testPartMesh_Tetra.py --in ../cav_tetra.cas --golden PARTHMESH/TETRA_8K/proc32 --outdir TESTDIR
 
 
 CAVITY_TRI894_PROCS1_THERMALSOLVER  ./ptest.py  --np 1  --script testThermalParallel.py --in ../tri_894.cas --golden SOLVER_AMG/ThermalSolver/TRI_894/proc1  --outdir TESTDIR
@@ -39,3 +52,19 @@ CAVITY_QUAD1024_PROCS2_THERMALSOLVER  ./ptest.py  --np 2  --script testThermalPa
 CAVITY_QUAD1024_PROCS4_THERMALSOLVER  ./ptest.py  --np 4  --script testThermalParallel_Quad1024.py --in ../cav32_thermal.cas --golden SOLVER_AMG/ThermalSolver/QUAD_1024/proc4  --outdir TESTDIR
 CAVITY_QUAD1024_PROCS8_THERMALSOLVER  ./ptest.py  --np 8  --script testThermalParallel_Quad1024.py --in ../cav32_thermal.cas --golden SOLVER_AMG/ThermalSolver/QUAD_1024/proc8  --outdir TESTDIR
 CAVITY_QUAD1024_PROCS12_THERMALSOLVER ./ptest.py  --np 16 --script testThermalParallel_Quad1024.py --in ../cav32_thermal.cas --golden SOLVER_AMG/ThermalSolver/QUAD_1024/proc16 --outdir TESTDIR
+
+
+CAVITY_HEXA10K_PROCS1_THERMALSOLVER  ./ptest.py  --np 1  --script testThermalParallel_Hexa10K.py --in ../cav_hexa.cas --golden SOLVER_AMG/ThermalSolver/HEXA_10K/proc1  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS2_THERMALSOLVER  ./ptest.py  --np 2  --script testThermalParallel_Hexa10K.py --in ../cav_hexa.cas --golden SOLVER_AMG/ThermalSolver/HEXA_10K/proc2  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS4_THERMALSOLVER  ./ptest.py  --np 4  --script testThermalParallel_Hexa10K.py --in ../cav_hexa.cas --golden SOLVER_AMG/ThermalSolver/HEXA_10K/proc4  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS8_THERMALSOLVER  ./ptest.py  --np 8  --script testThermalParallel_Hexa10K.py --in ../cav_hexa.cas --golden SOLVER_AMG/ThermalSolver/HEXA_10K/proc8  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS16_THERMALSOLVER ./ptest.py  --np 16 --script testThermalParallel_Hexa10K.py --in ../cav_hexa.cas --golden SOLVER_AMG/ThermalSolver/HEXA_10K/proc16 --outdir TESTDIR
+CAVITY_HEXA10K_PROCS32_THERMALSOLVER ./ptest.py  --np 32 --script testThermalParallel_Hexa10K.py --in ../cav_hexa.cas --golden SOLVER_AMG/ThermalSolver/HEXA_10K/proc32 --outdir TESTDIR
+
+
+CAVITY_TETRA8K_PROCS1_THERMALSOLVER  ./ptest.py  --np 1  --script testThermalParallel_Tetra8K.py --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc1  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS2_THERMALSOLVER  ./ptest.py  --np 2  --script testThermalParallel_Tetra8K.py --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc2  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS4_THERMALSOLVER  ./ptest.py  --np 4  --script testThermalParallel_Tetra8K.py --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc4  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS8_THERMALSOLVER  ./ptest.py  --np 8  --script testThermalParallel_Tetra8K.py --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc8  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS16_THERMALSOLVER ./ptest.py  --np 16 --script testThermalParallel_Tetra8K.py --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc16 --outdir TESTDIR
+CAVITY_TETRA8K_PROCS32_THERMALSOLVER ./ptest.py  --np 32 --script testThermalParallel_Tetra8K.py --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc32 --outdir TESTDIR
