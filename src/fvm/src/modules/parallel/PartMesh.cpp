@@ -752,9 +752,7 @@ PartMesh::init()
                    break;
             case   HEXA :
                    _ncommonNodes.at(id) = 4;
-                   cout << " NO SUPPORT FOR NOW " << endl;
-                    abort();
-                   break;                
+                   break;
             case   QUAD :
                    _ncommonNodes.at(id) = 2;
                     break;
@@ -874,7 +872,7 @@ PartMesh::set_eptr_eind( int id )
            indxPtr++;
           _ePtr.at(id)[indxPtr] = _ePtr.at(id)[indxPtr-1] +  cellNodes.getCount(elem);
 
-          if ( _eType.at(id) == TRI || _eType.at(id) == TETRA  ){ // connectivity orientation is not important
+          if ( _eType.at(id) == TRI || _eType.at(id) == TETRA || _eType.at(id) == HEXA ){ // connectivity orientation is not important
               for (  int node = 0; node < cellNodes.getCount(elem); node++ )
                  _eInd.at(id)[indxInd++] = cellNodes(elem,node);
           }
@@ -1997,6 +1995,12 @@ PartMesh::mesh_tecplot()
      if ( _eType.at(0) == QUAD ) 
         zone_info <<  " DATAPACKING = BLOCK,  VARLOCATION = ([4]=CELLCENTERED), ZONETYPE=FEQUADRILATERAL ";
 
+     if ( _eType.at(0) == HEXA ) 
+        zone_info <<  " DATAPACKING = BLOCK,  VARLOCATION = ([4]=CELLCENTERED), ZONETYPE=FEBRICK ";
+
+     if ( _eType.at(0) == TETRA ) 
+        zone_info <<  " DATAPACKING = BLOCK,  VARLOCATION = ([4]=CELLCENTERED), ZONETYPE=FETETRAHEDRON ";
+
 
      mesh_file << "zone N = " << tot_nodes << " E = " << tot_elems << zone_info.str()  << endl;
 
@@ -2026,6 +2030,7 @@ PartMesh::mesh_tecplot()
       int cell_type = -1;
       for ( int n = 0; n < tot_elems;  n++){
           int elem_id = _cellToOrderedCell[0][n];
+          cell_type = 1;
           if ( _nonInteriorCells.at(0).count(elem_id) == 0 ){
              cell_type = 0;
           } else {
@@ -2055,6 +2060,16 @@ PartMesh::mesh_tecplot()
                   mesh_file << cellNodes(n,0)+1 << "      "  << cellNodes(n,0)+1 <<
                    "       " << cellNodes(n,1)+1 << "      " << cellNodes(n,1)+1 << "      ";
 
+              if ( _eType.at(0) == HEXA )
+                  mesh_file << cellNodes(n,0)+1 << "      "  << cellNodes(n,1)+1 << "      "
+                            << cellNodes(n,2)+1 << "      "  << cellNodes(n,3)+1 << "      "
+                            << cellNodes(n,0)+1 << "      "  << cellNodes(n,1)+1 << "      "
+                            << cellNodes(n,2)+1 << "      "  << cellNodes(n,3)+1 << "      ";
+
+             if ( _eType.at(0) == TETRA ) 
+                  mesh_file << cellNodes(n,0)+1 << "      "  << cellNodes(n,1)+1 <<
+                   "       " << cellNodes(n,2)+1 << "      " << cellNodes(n,0)+1 << "      ";
+                  
 
          }
         mesh_file << endl;
