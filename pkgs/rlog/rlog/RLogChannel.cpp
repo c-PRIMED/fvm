@@ -185,7 +185,7 @@ RLogChannel *rlog::GetComponentChannel( const char *component,
 	if((current->logLevel() == Log_Undef) && (level != Log_Undef))
 	    current->setLogLevel( level );
 
-	char *next = strchr( path , '/' );
+	const char *next = strchr( path , '/' );
 	size_t len = next ? next - path : strlen( path );
 
 	if(len > 1)
