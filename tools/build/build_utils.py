@@ -277,7 +277,7 @@ def copytree(src, dst, ctype):
 def set_python_path(dir):
     py = os.popen("/bin/bash -c 'which python 2>&1'").readline()    
     ver = os.popen("/bin/bash -c 'python -V 2>&1'").readline()
-    a,b = re.compile(r'Python ([^.]*).([^\n]*)').findall(ver)[0]
+    a,b = re.compile(r'Python ([^.]*).([^.\n]*)').findall(ver)[0]
     libpath = os.path.join(dir, 'lib')
     pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a,b), 'site-packages')
     pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a,b), 'site-packages')
