@@ -72,8 +72,12 @@ def main():
     funcs = {
         'testPartMesh.py' : [check_parmetis, check_mesh, check_mapping],
         'testPartMesh_Quad.py' : [check_parmetis, check_mesh, check_mapping],
+        'testPartMesh_Hexa.py' : [check_parmetis, check_mesh, check_mapping],
+        'testPartMesh_Tetra.py' : [check_parmetis, check_mesh, check_mapping],
         'testThermalParallel.py' : [check_thermal_solver],
-        'testThermalParallel_Quad1024.py' : [check_thermal_solver]
+        'testThermalParallel_Quad1024.py' : [check_thermal_solver],
+        'testThermalParallel_Hexa10K.py' : [check_thermal_solver],
+        'testThermalParallel_Tetra8K.py' : [check_thermal_solver]
         }
 
     parser = OptionParser()
