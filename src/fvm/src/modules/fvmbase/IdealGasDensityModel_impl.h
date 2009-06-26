@@ -30,9 +30,9 @@ public:
 
   VCMap& getVCMap() {return _vcMap;}
 
-  void init() {}
+  void init() { advance(1,true); }
   
-  bool advance(const int niter)
+  bool advance(const int niter, bool init = false)
   {
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -56,6 +56,7 @@ public:
 
         const T pMin = 1000;
         const T TMin = 1;
+        const T urf = init ? 1 : vc["urf"];
         
         for(int c=0; c<nCells; c++)
         {
@@ -63,8 +64,11 @@ public:
             T temp = cellT[c];
             if (absP < pMin) absP  = pMin;
             if (temp < TMin) temp  = TMin;
-            
-            density[c] = absP/(Rgas*temp);
+
+            if (init)
+              density[c] = absP/(Rgas*temp);
+            else
+              density[c] = urf*absP/(Rgas*temp) + (1.0-urf)*density[c];
         }
     }
     return true;

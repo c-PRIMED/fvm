@@ -24,6 +24,8 @@ struct IdealGasVC : public FloatVarDict<T>
     this->defineVar("operatingPressure",T(101325.0));
     this->defineVar("temperature",T(300.0));
     this->defineVar("molecularWeight",T(28.966));
+    this->defineVar("urf",T(1.0));
+    
   }
 };
 
