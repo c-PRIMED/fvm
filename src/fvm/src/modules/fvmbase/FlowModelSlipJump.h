@@ -7,7 +7,8 @@
 void slipJumpMomentumBC(const StorageSite& faces,
                         const Mesh& mesh,
                         GenericBCS<VectorT3,DiagTensorT3,T>& gbc,
-                        const T accomodationCoefficient)
+                        const T accomodationCoefficient,
+                        const FloatValEvaluator<VectorT3>& bVelocity)
 {
   const StorageSite& cells = mesh.getCells();
 
@@ -27,8 +28,15 @@ void slipJumpMomentumBC(const StorageSite& faces,
 
   const VectorT3Array& V = dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
 
-  const T Kn(_options["KnudsenNumber"]);
-    
+  const TArray& p = dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
+  const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
+
+  const T opPressure( _options["operatingPressure"]);
+  const T opTemperature(_options["operatingTemperature"]);
+  const T molWt(_options["molecularWeight"]);
+  const T Rgas = 8314.472/molWt;
+
+
   const int nFaces = faces.getCount();
 
   for(int f=0; f<nFaces; f++)
@@ -50,9 +58,23 @@ void slipJumpMomentumBC(const StorageSite& faces,
       // normal distance between face and cell centroid
       const T dn = dot(ds,en);
 
-      const T coeff = 1 + dn/(accomodationCoefficient*Kn);
-      const VectorT3 Vb(Vp/coeff);
-      gbc.applyDirichletBC(f,Vb);
+      const T pAbs = (p[c0]+opPressure);
+      const T muCell = mu[c0];
+      const T lambda = muCell/pAbs*sqrt(0.5*M_PI*Rgas*opTemperature);
+
+      const T coeff = accomodationCoefficient*lambda/ (dn+(accomodationCoefficient*lambda));
+      const VectorT3 Vwp(Vp*coeff);
+
+      // specified velocity at the boundary
+      const VectorT3 bv = bVelocity[f];
+      
+      // normal component of the specified boundary velocity
+      const VectorT3 Vwn(bv-dot(bv,en)*bv);
+
+      // the velocity at the boundary is the parallel component
+      // computed above + the normal from the bc specfication
+      const VectorT3 Vw(Vwn + Vwp);
+      gbc.applyDirichletBC(f,Vw);
   }
 }
 
