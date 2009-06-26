@@ -576,7 +576,8 @@ public:
             {
                 slipJumpMomentumBC(faces,mesh,
                                    gbc,
-                                   bc["accomodationCoefficient"]);
+                                   bc["accomodationCoefficient"],
+                                   bVelocity);
             }
             else if ((bc.bcType == "VelocityBoundary") ||
                      (bc.bcType == "PressureBoundary"))
