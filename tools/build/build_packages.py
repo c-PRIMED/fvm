@@ -43,7 +43,8 @@ class BuildPkg:
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
             Rlog("pkgs/rlog", 1),
-            Boost("pkgs/boost", 0),
+#            Boost("pkgs/boost", 0),
+            Boost("pkgs/boost.tgz", -1),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
             H5py("pkgs/h5py", 2),
@@ -413,7 +414,7 @@ class Fftw(BuildPkg):
 class Boost(BuildPkg):
     def _install(self):
         idir = os.path.join(self.blddir, "include")
-        return self.sys_log("/bin/ln -fs %s %s" % (self.sdir, idir))
+        return self.sys_log("/bin/ln -fs %s %s" % (self.bdir, idir))
 
 class MPM(BuildPkg):
     name = "MPM"

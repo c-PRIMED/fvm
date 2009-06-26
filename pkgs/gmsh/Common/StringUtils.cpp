@@ -7,6 +7,7 @@
 #include <sys/cygwin.h>
 #endif
 
+#include <stdio.h>
 #include "StringUtils.h"
 #include "GmshMessage.h"
 

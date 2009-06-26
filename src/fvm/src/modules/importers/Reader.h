@@ -2,6 +2,7 @@
 #define _READER_H_
 
 #include <iostream>
+#include <stdio.h>
 
 #include "RLogInterface.h"
 
