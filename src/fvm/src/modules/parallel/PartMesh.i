@@ -28,7 +28,7 @@ public:
     void dumpTecplot();
     void mesh_debug();
     void debug_print();
-
+    void mesh_xdmfplot();
 
     // set property methods
     void setWeightType(PartMesh::WTYPE weight_type);

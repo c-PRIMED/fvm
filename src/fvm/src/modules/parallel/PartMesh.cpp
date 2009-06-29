@@ -1968,8 +1968,6 @@ PartMesh::mesh_file()
 }
 
 
-
-
 //need modification for quad, hexa, tetra
 void
 PartMesh::mesh_tecplot()
@@ -2078,4 +2076,127 @@ PartMesh::mesh_tecplot()
 
     mesh_file.close();
 
+}
+
+void
+PartMesh::mesh_xdmf_header()
+{
+  int nprocs = MPI::COMM_WORLD.Get_size();
+  ofstream  mesh_file("mesh.xmf");
+  mesh_file << "<?xml version='1.0' ?>" << endl;
+  mesh_file << "<!DOCTYPE Xdmf SYSTEM 'Xdmf.dtd' []>" << endl;
+  mesh_file << "<Xdmf xmlns:xi='http://www.w3.org/2001/XInclude' Version='2.0'>" << endl;
+  mesh_file << "  <Domain>" << endl;
+  for (int i=0; i < nprocs; i++)
+    mesh_file << "    <xi:include href='mesh_proc" << i << ".xmf' />" << endl;
+  mesh_file << "  </Domain>" << endl;
+  mesh_file << "</Xdmf>" << endl;
+  mesh_file.close();
+}
+
+
+// Dump the mesh in xdmf format.
+// We use ASCII for convenience with the values encoded in the XML, 
+// rather that a seperate hdf5 file. 
+void
+PartMesh::mesh_xdmfplot()
+{
+  if (_procID == 0)
+    mesh_xdmf_header();
+      
+  stringstream ss;
+  ss << "mesh_proc" << _procID << ".xmf";
+  ofstream  mesh_file( (ss.str()).c_str() );
+  
+  const Mesh& mesh = *(_meshListLocal.at(0));
+  const CRConnectivity&  cellNodes = mesh.getCellNodes();
+  const Array<Mesh::VecD3>&  coord = mesh.getNodeCoordinates();
+  int tot_elems = cellNodes.getRowDim();
+  int tot_nodes =  coord.getLength();
+  int epn;
+
+  mesh_file << "<Grid Name='Mesh-" << _procID << "' GridType='Uniform'>" << endl << "  ";
+  
+  switch (_eType.at(0)) {
+  case TRI:
+    mesh_file << "<Topology TopologyType='Triangle'";
+    epn = 3;
+    break;
+  case QUAD:
+    mesh_file << "<Topology TopologyType='Quadrilateral'";
+    epn = 4;
+    break;
+  case HEXA:
+    mesh_file << "<Topology TopologyType='Hexahedron'";
+    epn = 8;
+    break;
+  case TETRA:
+    mesh_file << "<Topology TopologyType='Tetrahedron'";
+    epn = 4;
+    break;
+  default:
+    cout << "Unknown mesh type " << _eType.at(0) << endl;
+    return;
+  }
+  mesh_file << " Dimensions='" << tot_elems << "'>" << endl;
+  mesh_file << "    <DataItem Dimensions='" << tot_elems << " " << epn << "'>" << endl;
+
+  //connectivity (Topology)
+  for (int n = 0; n < tot_elems; n++) {
+    mesh_file << "      ";
+    if ( n < _nelems.at(0)) {
+      for (int node = 0; node < cellNodes.getCount(n); node++)
+	mesh_file << cellNodes(n,node) << " ";
+    } else {
+      if ( _eType.at(0) == TRI )
+	mesh_file << cellNodes(n,0) << " " << cellNodes(n,1) << " " << cellNodes(n,0);
+      else if ( _eType.at(0) == QUAD )
+	mesh_file << cellNodes(n,0) << " "  << cellNodes(n,0) <<
+	  " " << cellNodes(n,1) << " " << cellNodes(n,1);
+      else if ( _eType.at(0) == HEXA )
+	mesh_file << cellNodes(n,0) << " "  << cellNodes(n,1) << " "
+		  << cellNodes(n,2) << " "  << cellNodes(n,3) << " "
+		  << cellNodes(n,0) << " "  << cellNodes(n,1) << " "
+		  << cellNodes(n,2) << " "  << cellNodes(n,3);
+      else if ( _eType.at(0) == TETRA ) 
+	mesh_file << cellNodes(n,0) << " "  << cellNodes(n,1) <<
+	  " " << cellNodes(n,2) << " " << cellNodes(n,0);
+    }
+    mesh_file << endl;
+  }
+  mesh_file << "    </DataItem>" << endl;
+  mesh_file << "  </Topology>" << endl;
+
+  // Geometry
+  mesh_file << "  <Geometry Type='XYZ'>" << endl;
+  mesh_file << "    <DataItem Dimensions='" << tot_nodes << " 3' NumberType='Float'>" << endl;
+  for (int n = 0; n < tot_nodes; n++) {
+    mesh_file << "      ";
+    mesh_file << coord[n][0] << " " ;
+    mesh_file << coord[n][1] << " " ;
+    mesh_file << coord[n][2] << endl;
+  }
+  mesh_file << "    </DataItem>" << endl;     
+  mesh_file << "  </Geometry>" << endl;     
+
+  // cell type
+  mesh_file << "  <Attribute Name='Cell Type' Center='Cell'>" << endl;
+  mesh_file << "    <DataItem Dimensions='" << tot_elems << "'>" << endl;
+  int cell_type = -1;
+  for ( int n = 0; n < tot_elems;  n++){
+    int elem_id = _cellToOrderedCell[0][n];
+    cell_type = 1;
+    if ( _nonInteriorCells.at(0).count(elem_id) == 0 ){
+      cell_type = 0;
+    } else {
+      cell_type = 1;
+    }
+    mesh_file << "      " << cell_type;
+    if ((n+1) % 5 == 0)
+      mesh_file << endl;
+  }
+  mesh_file << "    </DataItem>" << endl;
+  mesh_file << "  </Attribute>" << endl;
+  mesh_file << "</Grid>" << endl;
+  mesh_file.close();
 }

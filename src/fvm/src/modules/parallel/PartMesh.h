@@ -56,7 +56,7 @@ public:
     void debug_print();
     void dumpTecplot();
     void mesh_debug();
-
+    void mesh_xdmfplot();
 
     // set property methods
     void setWeightType( int weight_type );
@@ -99,10 +99,9 @@ private:
    int  get_window_displ( int id, int neigh_mesh_id );
    void construct_mesh( int id );
 
-    
+   void mesh_xdmf_header();    
    void mesh_file();
    void mesh_tecplot();
-
 
    const MeshList _meshList;
    vector<int> _nPart;
@@ -201,6 +200,8 @@ private:
 
    MPI::Win  _winGlobal;
    MPI::Win  _winLocal;
+
+   ofstream _meshfile;
 
    vector< Mesh* >  _meshListLocal;  //all is for you
 };
