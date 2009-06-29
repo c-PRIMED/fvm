@@ -201,8 +201,6 @@ private:
    MPI::Win  _winGlobal;
    MPI::Win  _winLocal;
 
-   ofstream _meshfile;
-
    vector< Mesh* >  _meshListLocal;  //all is for you
 };
 
