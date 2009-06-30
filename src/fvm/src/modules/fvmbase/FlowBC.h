@@ -54,6 +54,8 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->momentumLinearSolver = 0;
     this->pressureLinearSolver = 0;
     this->coupledLinearSolver = 0;
+
+    this->incompressible = true;
   }
   
   bool printNormalizedResiduals;
@@ -66,6 +68,7 @@ struct FlowModelOptions : public FloatVarDict<T>
   LinearSolver *pressureLinearSolver;
   LinearSolver *coupledLinearSolver;
 
+  bool incompressible;
 #ifndef SWIG
   LinearSolver& getMomentumLinearSolver()
   {

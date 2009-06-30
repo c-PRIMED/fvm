@@ -36,7 +36,8 @@ void slipJumpMomentumBC(const StorageSite& faces,
   const T molWt(_options["molecularWeight"]);
   const T Rgas = 8314.472/molWt;
 
-
+  const bool incompressible = _options.incompressible;
+  
   const int nFaces = faces.getCount();
 
   for(int f=0; f<nFaces; f++)
@@ -58,7 +59,8 @@ void slipJumpMomentumBC(const StorageSite& faces,
       // normal distance between face and cell centroid
       const T dn = dot(ds,en);
 
-      const T pAbs = (p[c0]+opPressure);
+      const T pAbs = incompressible ? opPressure : (p[c0]+opPressure);
+      
       const T muCell = mu[c0];
       const T lambda = muCell/pAbs*sqrt(0.5*M_PI*Rgas*opTemperature);
 
