@@ -71,22 +71,17 @@ def check_thermal_solver(options):
 def main():
     funcs = {
         'testPartMesh.py' : [check_parmetis, check_mesh, check_mapping],
-        'testPartMesh_Quad.py' : [check_parmetis, check_mesh, check_mapping],
-        'testPartMesh_Hexa.py' : [check_parmetis, check_mesh, check_mapping],
-        'testPartMesh_Tetra.py' : [check_parmetis, check_mesh, check_mapping],
         'testThermalParallel.py' : [check_thermal_solver],
-        'testThermalParallel_Quad1024.py' : [check_thermal_solver],
-        'testThermalParallel_Hexa10K.py' : [check_thermal_solver],
-        'testThermalParallel_Tetra8K.py' : [check_thermal_solver]
         }
-
     parser = OptionParser()
-    parser.set_defaults(np=1,outdir='')
+    parser.set_defaults(np=1,outdir='',type='tri')
     parser.add_option("--in", dest='infile', help="Input file (required).")
     parser.add_option("--golden", help="Directory where golden files are stored.")
     parser.add_option("--np", type=int, help="Number of Processors.")
     parser.add_option("--outdir", help="Output directory.")
-    parser.add_option("--script", help="Script to run.")    
+    parser.add_option("--script", help="Script to run.")
+    parser.add_option("--type", help="'tri'[default], 'quad', 'hexa', or 'tetra'")
+    parser.add_option("--xdmf", action='store_true', help="Dump data in xdmf")
     (options, args) = parser.parse_args()
 
     # convert path to absolute because we may cd to the test directory
@@ -103,7 +98,10 @@ def main():
                 fatal("error creating directory " + options.outdir)
         os.chdir(options.outdir)
 
-    mpi = 'mpirun -np %s %s %s' % (options.np, options.script, options.infile)
+    mpi = 'mpirun -np %s %s %s --type=%s' % (options.np, options.script, options.infile, options.type);
+    if options.xdmf:
+        mpi += ' --xdmf'
+
     if os.system( mpi ):
         cleanup(-1)
 
