@@ -26,6 +26,7 @@ struct FlowModelOptions : public FloatVarDict<T>
   bool printNormalizedResiduals;
   bool transient;
   bool correctVelocity;
+  bool incompressible;
   double momentumTolerance;
   double continuityTolerance;
   int timeDiscretizationOrder;
