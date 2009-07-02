@@ -1,8 +1,10 @@
-This is /data/hunt/memosa/pkgs/netcdf/man/netcdf-cxx.info, produced by
-makeinfo version 4.12 from
-/data/hunt/memosa/pkgs/netcdf/man//defines.texi.
+This is
+/home/aerosun/a/schigull/FVM-trial/pkgs/netcdf/man/netcdf-cxx.info,
+produced by makeinfo version 4.8 from
+/home/aerosun/a/schigull/FVM-trial/pkgs/netcdf/man/netcdf-cxx.texi.
 
-Copyright (C) 2005-2006 University Corporation for Atmospheric Research
+   Copyright (C) 2005-2006 University Corporation for Atmospheric
+Research
 
 
 
@@ -51,7 +53,7 @@ document.  The rest of the menu lists all the lower level nodes in the
 document.
 
    For a complete description of the netCDF format and utilities see
-*note The NetCDF Users Guide: (netcdf)Top.
+*Note The NetCDF Users Guide: (netcdf)Top.
 
 * Menu:
 
@@ -430,9 +432,9 @@ Class NcTypedComponent
 
 `NcTypedComponent' is an abstract base class for `NcVar' and `NcAtt'
 that captures the similarities between netCDF variables and attributes.
-We list here the member functions that variables and attributes inherit
-from `NcTypedComponent', but these member functions are also documented
-under the `NcVar' and `NcAtt' classes for convenience.
+We list here the member functions that variables and attributes
+inherit from `NcTypedComponent', but these member functions are also
+documented under the `NcVar' and `NcAtt' classes for convenience.
 
 Public Member Functions
 -----------------------
@@ -1236,19 +1238,19 @@ Index
 
 
 Tag Table:
-Node: Top1421
-Node: Introduction2835
-Node: Class Hierarchy4472
-Node: Auxiliary Types and Constants5905
-Node: NetCDF Classes7066
-Node: Class NcFile7456
-Node: Class NcDim14474
-Node: Class NcTypedComponent15560
-Node: Class NcVar18059
-Node: Class NcAtt30043
-Node: Auxiliary Classes32597
-Node: Class NcValues32929
-Node: Class NcError34702
-Node: Combined Index37455
+Node: Top1459
+Node: Introduction2873
+Node: Class Hierarchy4510
+Node: Auxiliary Types and Constants5943
+Node: NetCDF Classes7104
+Node: Class NcFile7494
+Node: Class NcDim14512
+Node: Class NcTypedComponent15598
+Node: Class NcVar18097
+Node: Class NcAtt30081
+Node: Auxiliary Classes32635
+Node: Class NcValues32967
+Node: Class NcError34740
+Node: Combined Index37493
 
 End Tag Table

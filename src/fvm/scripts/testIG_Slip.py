@@ -23,11 +23,11 @@ from FluentCase import FluentCase
 
 fileBase = None
 numIterations = 5000
-fileBase = "/home/shared/app-memosa/src/fvm/test/testIG_Slip"
+#fileBase = "/home/shared/app-memosa/src/fvm/test/testIG_Slip"
 #fileBase = "/home/shared/app-memosa/src/fvm/test/fine2"
-
+#fileBase="/home/aerosun/a/schigull/FVM-trial/Slip_BC/test/Slip/Idealgas/Memosa/grid800/slipbc_igc_sruti"
 #fileBase = "/home/sm/a/data/wj"
-#fileBase="/trunk/src/fvm/test/testIG_Slip"
+fileBase="/trunk/src/fvm/test/testIG_Slip"
 
 def usage():
     print "Usage: %s filebase [outfilename]" % sys.argv[0]
@@ -53,7 +53,7 @@ def advance(models,dmodel,nstart,niter):
 
 
 def saveData(flowFields,reader,fileBase,i):
-    writer = exporters.FluentDataExporterA(reader,fileBase+str(i+1)+"-memosanew.dat",False,0)
+    writer = exporters.FluentDataExporterA(reader,fileBase+str(i+1)+"-noslipnew.dat",False,0)
     writer.init()
     writer.writeScalarField(flowFields.pressure,1)
     writer.writeScalarField(flowFields.density,101)
@@ -118,18 +118,10 @@ reader.importFlowBCs(fmodel)
 for i,bc in fmodel.getBCMap().iteritems():
     if bc.bcType == 'NoSlipWall':
         bc.bcType = 'SlipJump'
-        bc.setVar('accomodationCoefficient', 1.0)
+        bc.setVar('accomodationCoefficient', 0.0)
 
 #calculation of KnudsenNumber*H=meanfreepath
-T_N2=300.0
-mu_N2=1.789E-5*(T_N2/297.0)**0.77 #viscosity power law for Nitrogen at 300K
-P_N2=101325.0 #operating pressure
-R_N2=287.0   #gas constant
-pi=3.1416
-lambda_N2=mu_N2/P_N2*(pi*R_N2*T_N2*0.5)**0.5
-#fmodel.KnudsenNumber = 0.1*1e-6
-    
-print "knudsen %s" %(lambda_N2/1e-6)
+#meanfreepath=mu_N2/P_N2*(pi*R_N2*T_N2*0.5)**0.5
 
 momSolver = fvmbaseExt.AMG()
 momSolver.relativeTolerance = 1e-3
@@ -189,7 +181,6 @@ if atype=='tangent':
 
 fmodel.init()
 dmodel.init()
-#fmodel.advance(numIterations)
 initIterations=0
 #advancenew([fmodel],dmodel,0,initIterations)
 advance([fmodel],dmodel,initIterations,numIterations)

@@ -59,12 +59,14 @@ void slipJumpMomentumBC(const StorageSite& faces,
       // normal distance between face and cell centroid
       const T dn = dot(ds,en);
 
+      
       const T pAbs = incompressible ? opPressure : (p[c0]+opPressure);
       
+      
       const T muCell = mu[c0];
-      const T lambda = muCell/pAbs*sqrt(0.5*M_PI*Rgas*opTemperature);
+      const T MeanFreePath = muCell/pAbs*sqrt(0.5*M_PI*Rgas*opTemperature);
 
-      const T coeff = accomodationCoefficient*lambda/ (dn+(accomodationCoefficient*lambda));
+      const T coeff = accomodationCoefficient*MeanFreePath/ (dn+(accomodationCoefficient*MeanFreePath));
       const VectorT3 Vwp(Vp*coeff);
 
       // specified velocity at the boundary
@@ -77,6 +79,7 @@ void slipJumpMomentumBC(const StorageSite& faces,
       // computed above + the normal from the bc specfication
       const VectorT3 Vw(Vwn + Vwp);
       gbc.applyDirichletBC(f,Vw);
+     
   }
 }
 
