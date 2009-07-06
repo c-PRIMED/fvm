@@ -8,7 +8,7 @@ options are:
 
 import sys
 sys.setdlopenflags(0x100|0x2)
-import fvmbaseExt, importers, fvmparallel
+import fvmbaseExt, importers, fvmparallel, time
 from numpy import *
 from mpi4py  import MPI
 from optparse import OptionParser
@@ -48,6 +48,17 @@ xtype = {
         'tetra' : 'Tetrahedron',
         'hexa' : 'Hexahedron'
         }
+
+def dumpMPITimeProfile(part_mesh_maxtime, part_mesh_mintime, solver_maxtime, solver_mintime):
+    fname = "time_mpi_totalprocs%s.dat" % MPI.COMM_WORLD.Get_size()
+    f = open(fname,'w')
+    line = " part_mesh_mintime = " + str(part_mesh_mintime[0]) + "\n" + \
+        " part_mesh_maxtime = " + str(part_mesh_maxtime[0]) + "\n" + \
+        " solver_mintime    = " + str(solver_mintime[0])    + "\n" + \
+        " solver_maxtime    = " + str(solver_maxtime[0])    + "\n"
+    print line
+    f.write(line)
+    f.close()
 
 def dumpTecplotFile(nmesh, meshes, mtype):
   #cell sites
@@ -266,6 +277,7 @@ parser = OptionParser()
 parser.set_defaults(type='tri')
 parser.add_option("--type", help="'tri'[default], 'quad', 'hexa', or 'tetra'")
 parser.add_option("--xdmf", action='store_true', help="Dump data in xdmf")
+parser.add_option("--time","-t",action='store_true',help="Print timing information.")
 (options, args) = parser.parse_args()
 if len(args) != 1:
     usage()
@@ -279,6 +291,15 @@ nmesh = 1
 npart = [MPI.COMM_WORLD.Get_size()]
 etype = [etype[options.type]]
 
+if options.time:
+    # time profile for partmesh
+    part_mesh_time = zeros(1,dtype='d')
+    part_mesh_start = zeros(1, dtype='d')
+    part_mesh_end   = zeros(1, dtype='d')
+    part_mesh_maxtime = zeros(1,dtype='d')
+    part_mesh_mintime = zeros(1, dtype='d')
+    part_mesh_start[0] = MPI.Wtime()
+
 #partMesh constructor and setTypes
 part_mesh = fvmparallel.PartMesh( fluent_meshes, npart, etype );
 part_mesh.setWeightType(0);
@@ -289,6 +310,17 @@ part_mesh.partition()
 part_mesh.mesh()
 part_mesh.mesh_debug()
 meshes = part_mesh.meshList()
+if options.time:
+    part_mesh_end[0] = MPI.Wtime()
+    part_mesh_time[0] = part_mesh_end[0] - part_mesh_start[0]
+    MPI.COMM_WORLD.Allreduce( [part_mesh_time,MPI.DOUBLE], [part_mesh_maxtime, MPI.DOUBLE], op=MPI.MAX) 
+    MPI.COMM_WORLD.Allreduce( [part_mesh_time,MPI.DOUBLE], [part_mesh_mintime, MPI.DOUBLE], op=MPI.MIN) 
+    solver_start   = zeros(1, dtype='d')
+    solver_end     = zeros(1, dtype='d')
+    solver_time    = zeros(1, dtype='d')
+    solver_maxtime = zeros(1,dtype='d')
+    solver_mintime = zeros(1,dtype='d')
+    solver_start[0] = MPI.Wtime()
 
 geomFields =  models.GeomFields('geom')
 
@@ -342,6 +374,14 @@ toptions.linearSolver = tSolver
 tmodel.init()
 print "nmesh = ", nmesh,  "procID = ", MPI.COMM_WORLD.Get_rank() 
 tmodel.advance(1)
+
+if options.time:
+    solver_end[0] = MPI.Wtime()
+    solver_time[0] = solver_end[0] - solver_start[0]
+    MPI.COMM_WORLD.Allreduce( [solver_time,MPI.DOUBLE], [solver_maxtime, MPI.DOUBLE], op=MPI.MAX) 
+    MPI.COMM_WORLD.Allreduce( [solver_time,MPI.DOUBLE], [solver_mintime, MPI.DOUBLE], op=MPI.MIN) 
+    if MPI.COMM_WORLD.Get_rank() == 0:
+        dumpMPITimeProfile(part_mesh_maxtime, part_mesh_mintime, solver_maxtime, solver_mintime)
 
 dumpTecplotFile( nmesh, meshes, options.type)
 if options.xdmf:
