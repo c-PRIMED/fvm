@@ -73,6 +73,9 @@ public:
     const VectorT3Array& cellCentroid =
       dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
 
+    const VectorT3Array& faceCentroid =
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
+
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
     
@@ -89,17 +92,38 @@ public:
 
     const TArray& diffCell =
       dynamic_cast<const TArray&>(_diffusivityField[cells]);
-    
+
+    const Array<int>& ibType = mesh.getIBType();
+
     const int nFaces = faces.getCount();
     for(int f=0; f<nFaces; f++)
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
-        const T_Scalar vol0 = cellVolume[c0];
-        const T_Scalar vol1 = cellVolume[c1];
-        
-        const VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
 
+        T_Scalar vol0 = cellVolume[c0];
+        T_Scalar vol1 = cellVolume[c1];
+        
+        VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
+
+        // for ib faces ignore the solid cell and use the face centroid for diff metric
+        if (((ibType[c0] == Mesh::IBTYPE_FLUID)
+             && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+            ((ibType[c1] == Mesh::IBTYPE_FLUID)
+             && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+        {
+            if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+                vol1 = 0.;
+                ds = faceCentroid[f]-cellCentroid[c0];
+            }
+            else
+            {
+                vol0 = 0.;
+                ds = cellCentroid[c1]-faceCentroid[f];
+            }
+        }
+        
         T_Scalar faceDiffusivity(1.0);
         if (vol0 == 0.)
           faceDiffusivity = diffCell[c1];
