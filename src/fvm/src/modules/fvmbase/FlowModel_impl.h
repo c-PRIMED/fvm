@@ -1484,6 +1484,51 @@ public:
     return r;
   }
 
+  VectorT3 getMomentumDerivativeIntegral(const Mesh& mesh)
+  {
+    VectorT3 r(VectorT3::getZero());
+    const StorageSite& cells = mesh.getCells();
+    const int nCells = cells.getSelfCount();
+
+    const TArray& density =
+          dynamic_cast<const TArray&>(_flowFields.density[cells]);
+    const VectorT3Array& v =
+          dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
+    const VectorT3Array& vN1 =
+      dynamic_cast<const VectorT3Array&>(_flowFields.velocityN1[cells]);
+
+    const TArray& volume =
+      dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+    
+    const T deltaT = _options["timeStep"];
+    
+    if (_flowFields.velocityN2.hasArray(cells))
+    {
+        // second order
+        const VectorT3Array& vN2 =
+          dynamic_cast<const VectorT3Array&>(_flowFields.velocityN2[cells]);
+        T onePointFive(1.5);
+        T two(2.0);
+        T pointFive(0.5);
+        
+        for(int c=0; c<nCells; c++)
+        {
+            const T rhoVbydT = density[c]*volume[c]/deltaT;
+            r += rhoVbydT*(onePointFive*v[c]- two*vN1[c]
+                           + pointFive*vN2[c]);
+        }
+    }
+    else
+    {
+        for(int c=0; c<nCells; c++)
+        {
+            const T rhoVbydT = density[c]*volume[c]/deltaT;
+            r += rhoVbydT*(v[c]- vN1[c]);
+        }
+    }
+    return r;
+  }
+
   boost::shared_ptr<ArrayBase> getStressTensor(const Mesh& mesh, const ArrayBase& gcellIds)
   {
     typedef Array<StressTensor<T> > StressTensorArray;
@@ -1770,6 +1815,13 @@ Vector<T,3>
 FlowModel<T>::getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupId)
 {
  return  _impl->getMomentumFluxIntegral(mesh,faceGroupId);
+}
+
+template<class T>
+Vector<T,3>
+FlowModel<T>::getMomentumDerivativeIntegral(const Mesh& mesh)
+{
+ return  _impl->getMomentumDerivativeIntegral(mesh);
 }
 
 template<class T>
