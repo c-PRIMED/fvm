@@ -29,11 +29,22 @@ opt_debug = False
 myenv = {}
 
 def set_options(options):
-    global opt_verbose, opt_debug
+    global opt_verbose, opt_debug, opt_jobs
     if options.nocolor:
         build_utils.clear_colors()
     opt_verbose = options.verbose or options.debug
     opt_debug = options.debug
+    opt_jobs = options.jobs
+
+# number of jobs for make -j argument
+def jobs(pkg):
+    if config(pkg,'jobs'):
+        return config(pkg,'jobs')
+    if config('ALL','jobs'):
+        return config('ALL','jobs')
+    if opt_jobs:
+        return opt_jobs
+    return 1
 
 def _reset_types():
     global g_type

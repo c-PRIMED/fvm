@@ -22,9 +22,9 @@ Options:
 Configuration names are stored in the "config" subdirectory.
 """
 
-import sys, cdash, time, pbs, update, traceback
+import sys, os, cdash, time, pbs, update, traceback
 from optparse import OptionParser
-from build_packages import *
+from build_packages import BuildPkg
 import build_utils, config, testing
 
 def usage():
@@ -43,8 +43,8 @@ def main():
     parser.add_option("-d", "--debug", action="store_true")
     parser.add_option("--nocolor", action="store_true")
     parser.add_option("--nightly", action="store_true")
+    parser.add_option("--jobs", "-j")
     (options, args) = parser.parse_args()
-    build_utils.set_options(options)
 
     srcpath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
@@ -67,21 +67,23 @@ def main():
     if cname == '' or not config.read(srcpath, cname, packages):
         usage()
 
+    build_utils.set_options(options)
+
     if options.all:
         os.system("/bin/rm -rf %s" % os.path.join(os.getcwd(), "build-%s" % cname))
 
     BuildPkg.setup(cname, srcpath)
     build_utils.run_commands('ALL', 'before')        
-    fix_path('PATH', BuildPkg.bindir, 1, 0)
-    fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
+    build_utils.fix_path('PATH', BuildPkg.bindir, 1, 0)
+    build_utils.fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
     os.environ['MEMOSA_HOME'] = BuildPkg.blddir
     os.environ['MEMOSA_CONFNAME'] = cname
-    bs = be = ts = te = 0
+    build_start_time = build_end_time = test_start_time = test_end_time = 0
     try:
         oldpypath = os.environ['PYTHONPATH']
     except:
         oldpypath = ''
-    BuildPkg.pypath = set_python_path(BuildPkg.blddir)    
+    BuildPkg.pypath = build_utils.set_python_path(BuildPkg.blddir)    
 
     # if no options, default to build
     if not options.build and not options.test and not options.submit and not options.update:
@@ -96,10 +98,10 @@ def main():
         update.update(BuildPkg, cname, options.nightly)
 
     # BUILDING
-    build_failed = 0
+    build_failed = 0 
     if options.build:
-        bs = time.time()
-        open(BuildPkg.logdir+'/StartBuildTime','w').write(str(bs))
+        build_start_time = time.time()
+        open(BuildPkg.logdir+'/StartBuildTime','w').write(str(build_start_time))
         for p in BuildPkg.packages:
             x = config.config(p.name,'Build')
             if x == '' or not eval(x):
@@ -113,41 +115,39 @@ def main():
                 traceback.print_exc()
                 build_failed = 1
                 break
-        be = time.time()
-        open(BuildPkg.logdir+'/EndBuildTime','w').write(str(be))
+        build_end_time = time.time()
+        open(BuildPkg.logdir+'/EndBuildTime','w').write(str(build_end_time))
 
         # write out env.sh
         f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
-        print >>f, "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
+        modules = config.config('Testing', 'modules')
+        if modules:
+            for m in modules.split():
+                f.write('module load %s\n' % m)            
+        print >> f, "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
         try:
             if os.environ['PYTHONPATH']:
-                print >>f, "export PYTHONPATH="+os.environ['PYTHONPATH']
+                print >> f, "export PYTHONPATH="+os.environ['PYTHONPATH']
         except:
             pass
-        print >>f, "export PATH=%s:$PATH" % BuildPkg.bindir
-        print >>f, "\n# Need this to recompile MPM in its directory."
-        print >>f, "export MEMOSA_CONFNAME=%s" % cname
-        f.close
-        print "\nDONE\nYou need to do the following to use the build."
-        print "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
-        try:
-            if os.environ['PYTHONPATH']:
-                print "export PYTHONPATH="+os.environ['PYTHONPATH']
-        except:
-            pass
-        print "export PATH=%s:$PATH" % BuildPkg.bindir
-        print "OR source env.sh"
+        print >> f, "export PATH=%s:$PATH" % BuildPkg.bindir
+        print >> f, "\n# Need this to recompile MPM in its directory."
+        print >> f, "export MEMOSA_CONFNAME=%s" % cname
+        f.close()
+        if not build_failed:
+            print "\nDONE\nYou need to source %s to use this build." \
+                %  os.path.join(BuildPkg.topdir, 'env.sh')
 
     # TESTING
     if options.test and not pbs.start(BuildPkg, cname):
-        ts = time.time()
-        open(BuildPkg.logdir+'/StartTestTime','w').write(str(ts))
+        test_start_time = time.time()
+        open(BuildPkg.logdir+'/StartTestTime','w').write(str(test_start_time))
         try:
             testing.run_all_tests(BuildPkg)
         except:
             pass
-        te = time.time()
-        open(BuildPkg.logdir+'/EndTestTime','w').write(str(te))
+        test_end_time = time.time()
+        open(BuildPkg.logdir+'/EndTestTime','w').write(str(test_end_time))
 
     # SUBMIT
     if options.submit:
@@ -156,12 +156,12 @@ def main():
     if not options.test:
         build_utils.run_commands('ALL', 'after')
 
-    fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
+    build_utils.fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
     if oldpypath:
         os.environ['PYTHONPATH'] = oldpypath
     else:
         del os.environ['PYTHONPATH']
-    fix_path('PATH', BuildPkg.bindir, 1, 1)
+    build_utils.fix_path('PATH', BuildPkg.bindir, 1, 1)
 
 if __name__ == "__main__":
     main()

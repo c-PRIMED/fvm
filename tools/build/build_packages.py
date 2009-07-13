@@ -43,7 +43,6 @@ class BuildPkg:
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
             Rlog("pkgs/rlog", 1),
-#            Boost("pkgs/boost", 0),
             Boost("pkgs/boost.tgz", -1),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
@@ -186,7 +185,7 @@ class Ipython(BuildPkg):
 class Lammps(BuildPkg):
     def _build(self):
         os.chdir('src')
-        ret = self.sys_log("make -j4");
+        ret = self.sys_log("make -j%s" % jobs(self.name));
         os.chdir('..')
         return ret
     def _clean(self):
@@ -208,7 +207,7 @@ class Gmsh(BuildPkg):
         return self.sys_log("%s/configure --prefix=%s --with-fltk-prefix= %s --with-gsl-prefix=%s" \
                                 % (self.sdir, self.blddir, self.blddir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j4")
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
     def _clean(self):
@@ -302,7 +301,7 @@ class Fltk(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --enable-xft --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j4")
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
     def _clean(self):
@@ -312,7 +311,7 @@ class Python(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s --enable-shared" % (self.sdir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j4")
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         self.sys_log("make install")
         BuildPkg.pypath = set_python_path(self.blddir)
@@ -349,7 +348,7 @@ class Gsl(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j4")
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
     def _clean(self):
@@ -384,7 +383,7 @@ class Rlog(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --disable-docs --disable-valgrind --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j4")
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
     def _clean(self):
@@ -394,7 +393,7 @@ class Swig(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j4")
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
     def _clean(self):
@@ -404,7 +403,7 @@ class Fftw(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --enable-float --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j4")
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
     def _clean(self):
@@ -475,8 +474,8 @@ class Fvm(BuildPkg):
         comp = config(self.name, 'compiler')
         ver = config(self.name, 'version')
         os.putenv("PYTHONPATH",os.path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
-        return self.sys_log("%s/etc/buildsystem/build -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s" \
-                                % (self.sdir, self.sdir, par, ver, comp))
+        return self.sys_log("%s/etc/buildsystem/build -j%s -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s" \
+                                % (self.sdir, jobs(self.name), self.sdir, par, ver, comp))
     def _install(self):
         vers = self.getCompiler(config(self.name, 'compiler'))
         rel = config(self.name, 'version')
