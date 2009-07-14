@@ -67,3 +67,21 @@ CAVITY_TETRA8K_PROCS4_THERMALSOLVER  ./ptest.py  --np 4  --script testThermalPar
 CAVITY_TETRA8K_PROCS8_THERMALSOLVER  ./ptest.py  --np 8  --script testThermalParallel.py --type=tetra --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc8  --outdir TESTDIR
 CAVITY_TETRA8K_PROCS16_THERMALSOLVER ./ptest.py  --np 16 --script testThermalParallel.py --type=tetra --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc16 --outdir TESTDIR
 CAVITY_TETRA8K_PROCS32_THERMALSOLVER ./ptest.py  --np 32 --script testThermalParallel.py --type=tetra --in ../cav_tetra.cas --golden SOLVER_AMG/ThermalSolver/TETRA_8K/proc32 --outdir TESTDIR
+
+STORAGE_SITE_MERGER_PROC1_TRI26 ./ptest.py --np 1 --script testMerger.py --in ../cav_26_tri.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_26/proc1  TESTDIR
+STORAGE_SITE_MERGER_PROC4_TRI26 ./ptest.py --np 4 --script testMerger.py --in ../cav_26_tri.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_26/proc4  TESTDIR
+STORAGE_SITE_MERGER_PROC8_TRI26 ./ptest.py --np 8 --script testMerger.py --in ../cav_26_tri.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_26/proc8  TESTDIR
+
+STORAGE_SITE_MERGER_PROC1_TRI44 ./ptest.py --np 1 --script testMerger.py --in ../cav_44_tri.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_44/proc1  TESTDIR
+STORAGE_SITE_MERGER_PROC4_TRI44 ./ptest.py --np 4 --script testMerger.py --in ../cav_44_tri.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_44/proc4  TESTDIR
+STORAGE_SITE_MERGER_PROC8_TRI44 ./ptest.py --np 8 --script testMerger.py --in ../cav_44_tri.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_44/proc8  TESTDIR
+
+
+STORAGE_SITE_MERGER_PROC1_TRI894 ./ptest.py --np 1 --script testMerger.py --in ../tri_894.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_894/proc1  TESTDIR
+STORAGE_SITE_MERGER_PROC4_TRI894 ./ptest.py --np 4 --script testMerger.py --in ../tri_894.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_894/proc4  TESTDIR
+STORAGE_SITE_MERGER_PROC8_TRI894 ./ptest.py --np 8 --script testMerger.py --in ../tri_894.cas --golden SOLVER_AMG/StorageSiteMerger/TRI_894/proc8  TESTDIR
+
+
+
+
+

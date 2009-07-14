@@ -68,10 +68,22 @@ def check_thermal_solver(options):
     print "temp files are ok"
     return 0
 
+def check_storage_site_merger(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'proc%s_storage_site_merger.dat' % np)
+       reference_file = os.path.join(options.golden, 'proc%s_storage_site_merger.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "site merger files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "site merger files are ok"
+    return 0
+
 def main():
     funcs = {
         'testPartMesh.py' : [check_parmetis, check_mesh, check_mapping],
-        'testThermalParallel.py' : [check_thermal_solver],
+        'testThermalParallel.py' : [check_thermal_solver], 
+        'testMerger.py'                  : [check_storage_site_merger]
         }
     parser = OptionParser()
     parser.set_defaults(np=1,outdir='',type='tri')
