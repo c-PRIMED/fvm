@@ -19,11 +19,13 @@ rlog::StdioNode *stdLog;
 %include "std_vector.i"
 %include "std_except.i"
 %include "std_map.i"
+%include "std_set.i"
 
 
 namespace std{
 %template(vectorStr) vector<string>;
 %template(vectorInt) vector<int>;
+%template(IntSet)    set<int>;
  }
 
 
@@ -59,7 +61,7 @@ typedef Vector<double,3> VecD3;
 %include "Grid.i"
 %include "FVMParticles.i"
 #%include "MPMCoupling.i"
-
+%include "StorageSiteMerger.i"
 
 %inline %{
   void enableDebug(const string channel)

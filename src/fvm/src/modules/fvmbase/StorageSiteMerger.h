@@ -1,0 +1,49 @@
+#ifndef _STORAGESITEMERGER_H_
+#define _STORAGESITEMERGER_H_
+
+#include "StorageSite.h"
+#include <cassert>
+#include <set>
+#include <mpi.h>
+
+class StorageSiteMerger
+{
+public:
+   StorageSiteMerger( int target_proc_id, const set<int>& group, const StorageSite& cell_site );
+   ~StorageSiteMerger();
+
+
+   void  debug_print();
+
+   int  getSelfCount()  const { return _mergeSiteSize; }
+   int  getGhostCount() const { return _mergeSiteGhostSize; }
+   int  getCount()      const { return _mergeSiteSize + _mergeSiteGhostSize; }
+
+private:
+  StorageSiteMerger(const StorageSiteMerger&);
+  int _count;
+  int _selfCount;
+  int _offset;
+
+  int _groupID;              
+  const set<int>&  _group;
+  const StorageSite& _cellSite;
+  int _mergeSiteSize;
+  int _mergeSiteGhostSize;
+
+  MPI::Intracomm _comm;
+
+  //const StorageSite*   const _parent;
+  StorageSite::ScatterMap   _scatterMap;
+  StorageSite::GatherMap    _gatherMap;
+
+  int   _scatterProcID;
+  int   _gatherProcID;
+
+  void  init();
+  void merge();
+
+};
+
+
+#endif
