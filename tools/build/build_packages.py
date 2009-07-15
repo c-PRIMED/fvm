@@ -224,6 +224,8 @@ class H5py(BuildPkg):
                     pass
                 if f:
                     return f
+        if not f:
+            fatal("\nhdf5 include files not found. Please install them and restart build.")
         return f
 
     def h5_vers(self,f):
@@ -252,7 +254,6 @@ class H5py(BuildPkg):
         if not v:
             warning("HDF5_VERSION not set and hdf5 include files not found.")
             warning("Assuming hdf5 version = 1.8 and continuing...")
-
         if v.startswith('1.6'):
             api = '16'
         else:
