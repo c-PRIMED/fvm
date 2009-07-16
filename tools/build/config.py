@@ -17,7 +17,7 @@ _config = {
         },
     'fvm': {
         'parallel': 'False',
-        'version': 'debug',
+        'version': 'release',
         'compiler': 'gcc',
         },
     'MEMOSA': {
