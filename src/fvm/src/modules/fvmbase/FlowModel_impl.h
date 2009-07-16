@@ -1561,9 +1561,9 @@ public:
           for(int j=0;j<3;j++)
             vgPlusTranspose[i][j] += vg[j][i];
         
-        stressTensor[n][0] = vgPlusTranspose[0][0]*mu[c] + pCell[c];
-        stressTensor[n][1] = vgPlusTranspose[1][1]*mu[c] + pCell[c];
-        stressTensor[n][2] = vgPlusTranspose[2][2]*mu[c] + pCell[c];
+        stressTensor[n][0] = vgPlusTranspose[0][0]*mu[c] - pCell[c];
+        stressTensor[n][1] = vgPlusTranspose[1][1]*mu[c] - pCell[c];
+        stressTensor[n][2] = vgPlusTranspose[2][2]*mu[c] - pCell[c];
         stressTensor[n][3] = vgPlusTranspose[0][1]*mu[c];
         stressTensor[n][4] = vgPlusTranspose[1][2]*mu[c];
         stressTensor[n][5] = vgPlusTranspose[2][0]*mu[c];
