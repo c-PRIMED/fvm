@@ -22,7 +22,7 @@ fvm:
 
 	# 'release' or 'debug'
 	# release is built with optimization on
-	# default is debug
+	# default is release
 	#version=release
 
 	# compiler. 'intelc' or 'gcc'
