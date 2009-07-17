@@ -46,7 +46,7 @@ class BuildPkg:
             Boost("pkgs/boost.tgz", -1),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
-            H5py("pkgs/h5py", 2),
+            H5py("pkgs/h5py-1.2.0.bz2", -1),
             Xdmf("pkgs/Xdmf", 0),
             Netcdf("pkgs/netcdf", 2),
             NetCDF4("pkgs/netCDF4-0.8.1.bz2", -1),
