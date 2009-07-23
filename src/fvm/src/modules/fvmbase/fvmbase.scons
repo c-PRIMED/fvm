@@ -29,6 +29,7 @@ srcBase = ['CException.cpp',
 	   'Grid.cpp',
 	   'FVMParticles.cpp',
 	   'StorageSiteMerger.cpp',
+           'LinearSystemMerger.cpp'
            ]
 
 env.createSharedLibrary('fvmbase',srcBase,['rlog'])

@@ -62,6 +62,7 @@ typedef Vector<double,3> VecD3;
 %include "FVMParticles.i"
 #%include "MPMCoupling.i"
 %include "StorageSiteMerger.i"
+%include "LinearSystemMerger.i"
 
 %inline %{
   void enableDebug(const string channel)
