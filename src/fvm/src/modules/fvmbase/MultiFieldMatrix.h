@@ -41,6 +41,7 @@ class  MultiFieldMatrix
 public:
 
   friend class LinearSystem;
+  friend class LinearSystemMerger;
   
   typedef MultiField::ArrayIndex Index;
 
