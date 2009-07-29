@@ -21,5 +21,5 @@ public:
      void   setSweepIter( int sweep);
 
       const ArrayBase&  getCellIDs( int mesh_id ) const;
-
+      int  getNumOfFluidParticles ( int mesh_id ) const;
 };

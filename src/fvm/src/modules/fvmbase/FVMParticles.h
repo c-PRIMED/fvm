@@ -32,7 +32,7 @@ class FVMParticles{
        void   setSweepIter( int sweep) { _sweepIter = sweep; };
 
        const ArrayBase&  getCellIDs( int mesh_id ) const { return *_cellID.at(mesh_id); }
-
+       int  getNumOfFluidParticles ( int mesh_id ) const { return _cellID.at(mesh_id)->getLength(); }
 
     private:
 
