@@ -52,11 +52,15 @@ class MPMCoupling:
          assert self.PARENT != MPI.COMM_NULL
          
          self.portName =  array('c', ['\0']*MPI.MAX_PORT_NAME)
-         #get port name from parent (sent by MPM)
+         print " self.portName = ", self.portName 
+         print " self.portName = ", self.portName.tostring();
+          #get port name from parent (sent by MPM)
          if  self.procID == 0:
            self.PARENT.Recv([self.portName, MPI.CHAR], source=0, tag=7777)
+         print " self.portName = ", self.portName 
+         print " self.portName = ", self.portName.tostring();
          #Connect this port
-         self.FVM_COMM_MPM = MPI.COMM_WORLD.Connect(self.portName.tostring(), MPI.INFO_NULL, root=0) 
+         self.FVM_COMM_MPM = MPI.COMM_WORLD.Connect(self.portName.tostring().rstrip('\0'), MPI.INFO_NULL, root=0) 
          #construct FVMParticles class
          self.fvmParticles = fvmbaseExt.FVMParticles( self.meshList );
          self.totParticlesFVM = zeros(1,int32);
