@@ -100,6 +100,7 @@ class MPMCoupling:
 
              self.dtFVM   = zeros(1,float)
              self.timeFVM = zeros(1,float)
+             self.stress = zeros( (self.totParticlesFVM[0], 6), float)
              self.dtFVM[0]   = dt
              self.timeFVM[0] = time
              #time and time step of FVM to MPM side
@@ -108,7 +109,7 @@ class MPMCoupling:
 
              #get coordinate, volume and stress at FVM particles
              self.cellIDs  = self.fvmParticles.getCellIDs( mesh0 )
-             self.stress = self.flowModel.getStressTensor( self.meshList[ mesh0], self.cellIDs ).asNumPyArray()
+             self.stress = self.flowModel.getStressTensor( self.meshList[ mesh0], self.cellIDs ).asNumPyArray().copy()
              fileMaxPressure = open("max_pressure.dat",'a')
              fileMaxPressure.write( str( abs(self.stress).max() ) + "\n" )
              fileMaxPressure.close()
