@@ -33,23 +33,31 @@ class BuildPkg:
         BuildPkg.libdir = os.path.join(BuildPkg.blddir, "lib")
         create_build_dir()
         
+        # Some packages require building in the source directory.
+        # Others require separate build directories.
+        # We don't want to build in our subversion sources. So we define
+        # 'copytype' as follows:
+        #     0 - no copy. Build directory is separate from sources.
+        #     1 - copy with symlinks
+        #     2 - full copy
+        # For tarballs, copytype of nonzero means source and build directories are the same.
         BuildPkg.packages = [
             Python("pkgs/python", 0),
             Numpy("pkgs/numpy", 1),
-            Ipython("pkgs/ipython.tgz",-1),
-            Mpi4py("pkgs/mpi4py-1.1.0.bz2", -1),
+            Ipython("pkgs/ipython.tgz", 0),
+            Mpi4py("pkgs/mpi4py-1.1.0.bz2", 0),
             Nose("pkgs/python-nose", 1),            
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
             Rlog("pkgs/rlog", 1),
-            Boost("pkgs/boost.tgz", -1),
+            Boost("pkgs/boost.tgz", 0),
             Swig("pkgs/swig", 0),
             Fftw("pkgs/fftw", 0),
-            H5py("pkgs/h5py-1.2.0.bz2", -1),
-            Xdmf("pkgs/Xdmf", 0),
+            H5py("pkgs/h5py-1.2.0.bz2", 0),
+            Xdmf("pkgs/Xdmf-07172009.bz2", 1),
             Netcdf("pkgs/netcdf", 2),
-            NetCDF4("pkgs/netCDF4-0.8.1.bz2", -1),
+            NetCDF4("pkgs/netCDF4-0.8.1.bz2", 0),
             ParMetis("pkgs/ParMetis", 1),
             Lammps("src/lammps", 1),
             MPM("src/MPM", 2),
@@ -79,6 +87,37 @@ class BuildPkg:
         else:
             cprint('YELLOW', state)
 
+    # unpack tarball
+    def unpack_srcs(self):
+        dst = self.bdir
+        src = self.sdir
+        ctype = self.copy_sources
+
+        suffix = src.split('.')[-1]
+        compress = None
+        if suffix == 'tgz' or suffix == 'gz':
+            compress = 'z'
+        elif suffix == 'bz2':
+            compress = 'j'
+        elif suffix == 'tar':
+            compress = ''
+
+        # it wasn't a tarball
+        if compress == None:
+            return 0
+
+        if self.copy_sources:
+            self.sdir = os.path.join(dst,'SOURCES')
+            os.makedirs(self.sdir)
+            self.bdir = os.path.join(dst,'BUILD')
+            os.makedirs(self.bdir)
+        else:
+            self.sdir = self.bdir
+            os.makedirs(self.bdir)
+
+        self.sys_log('tar -C %s -%sxf %s' % (self.sdir, compress, src)) 
+        return 1
+
     def configure(self):
         self.state = 'configure'
         self.logfile = os.path.join(self.logdir, self.name+"-conf.log")
@@ -86,9 +125,11 @@ class BuildPkg:
         pmess("CONF",self.name,self.bdir)
         # remove any old sources
         os.system("/bin/rm -rf %s" % self.bdir)            
+
         # get new sources
-        copytree(self.sdir, self.bdir, self.copy_sources)
-        self.sdir = self.sdir.split('.')[0]
+        if not self.unpack_srcs():
+            copytree(self.sdir, self.bdir, self.copy_sources)
+
         os.chdir(self.bdir)
         run_commands(self.name, 'before')
         self.pstatus(self._configure())
