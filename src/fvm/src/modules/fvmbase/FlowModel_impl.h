@@ -23,7 +23,7 @@
 #include "AMG.h"
 #include "Linearizer.h"
 #include "GradientModel.h"
-#include "MomentumIBDiscretization.h"
+#include "GenericIBDiscretization.h"
 #include "StressTensor.h"
 
 template<class T>
@@ -521,17 +521,9 @@ public:
         discretizations.push_back(td);
     }
 
-#if 0
     shared_ptr<Discretization>
-      id(new IbmDiscretization<VectorT3,DiagTensorT3,T>
-         (_meshes,_geomFields, _flowFields));
-
-    discretizations.push_back(id);
-#endif
-
-    shared_ptr<Discretization>
-      ibm(new MomentumIBDiscretization<VectorT3,DiagTensorT3,T>
-             (_meshes,_geomFields,_flowFields));
+      ibm(new GenericIBDiscretization<VectorT3,DiagTensorT3,T>
+             (_meshes,_geomFields,_flowFields.velocity));
       
     discretizations.push_back(ibm);
     Linearizer linearizer;

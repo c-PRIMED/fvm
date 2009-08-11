@@ -1,5 +1,5 @@
-#ifndef _MOMENTUMIBDISCRETIZATION_H_
-#define _MOMENTUMIBDISCRETIZATION_H_
+#ifndef _GENERICIBDISCRETIZATION_H_
+#define _GENERICIBDISCRETIZATION_H_
 
 #include "CRMatrix.h"
 #include "Field.h"
@@ -17,7 +17,7 @@
 
   
 template <class X, class Diag, class OffDiag>
-class MomentumIBDiscretization: public Discretization
+class GenericIBDiscretization: public Discretization
 {
 public:
 
@@ -33,12 +33,12 @@ public:
   typedef Vector<T_Scalar,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
 
-  MomentumIBDiscretization (const MeshList& meshes,
+  GenericIBDiscretization (const MeshList& meshes,
 		     const GeomFields& geomFields,
-		     FlowFields& flowFields) :
+		     Field& phiField) :
     Discretization(meshes),
     _geomFields(geomFields),
-    _flowFields(flowFields)
+    _phiField(phiField)
 {}
 
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -54,17 +54,17 @@ public:
     
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
 
-    const MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
+    const MultiField::ArrayIndex vIndex(&_phiField,&cells);
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(vIndex,vIndex));
     CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
 
-    VectorT3Array& cellVelocity =
-      dynamic_cast<VectorT3Array&> (_flowFields.velocity[cells]);
+    XArray& cellPhi =
+      dynamic_cast<XArray&> (_phiField[cells]);
 
     XArray& rCell = dynamic_cast<XArray&>(rField[vIndex]); 
     
-    const VectorT3Array& ibVelocity =
-      dynamic_cast<const VectorT3Array&>(_flowFields.velocity[mesh.getIBFaces()]);
+    const XArray& ibPhi =
+      dynamic_cast<const XArray&>(_phiField[mesh.getIBFaces()]);
 
     const Array<int>& ibType = mesh.getIBType();
     const int nIBFaces = ibFaces.getCount();
@@ -84,18 +84,18 @@ public:
             if (ibFace >= nIBFaces)
               throw CException("incorrect number of IB faces");
             // this is an iBFace, determine which cell is interior and which boundary
-            const VectorT3& faceVelocity = ibVelocity[ibFace];
+            const X& facePhi = ibPhi[ibFace];
             if (ibType[c0] == Mesh::IBTYPE_FLUID)
             {
-                rCell[c0] += assembler.getCoeff01(f)*(faceVelocity-cellVelocity[c1]);
-                rCell[c1].zero();
+                rCell[c0] += assembler.getCoeff01(f)*(facePhi-cellPhi[c1]);
+                rCell[c1] = NumTypeTraits<X>::getZero();
                 assembler.getCoeff01(f) = OffDiag(0);
                 matrix.setDirichlet(c1);
             }
             else
             {
-                rCell[c1] += assembler.getCoeff10(f)*(faceVelocity-cellVelocity[c0]);
-                rCell[c0].zero();
+                rCell[c1] += assembler.getCoeff10(f)*(facePhi-cellPhi[c0]);
+                rCell[c0] = NumTypeTraits<X>::getZero();
                 assembler.getCoeff10(f) = OffDiag(0);
                 matrix.setDirichlet(c0);
             }
@@ -109,8 +109,8 @@ public:
         else
         {
             // setup to get zero corrections
-            rCell[c0].zero();
-            rCell[c1].zero();
+            rCell[c0] = NumTypeTraits<X>::getZero();
+            rCell[c1] = NumTypeTraits<X>::getZero();
             matrix.setDirichlet(c0);
             matrix.setDirichlet(c1);
         }
@@ -121,7 +121,7 @@ public:
 
 private:
   const GeomFields& _geomFields;
-  FlowFields& _flowFields;
+  Field& _phiField;
 };
 
 #endif

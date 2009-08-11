@@ -31,7 +31,11 @@ public:
   ThermalBC<T>& getBC(const int id);
 
   ThermalModelOptions<T>& getOptions();
+  
+  void computeIBFaceTemperature(const StorageSite& particles);
 
+  T getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
+  
   void printBCs();
 
   void advance(const int niter);

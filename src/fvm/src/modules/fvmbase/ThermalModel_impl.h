@@ -17,6 +17,7 @@
 #include "AMG.h"
 #include "Linearizer.h"
 #include "GradientModel.h"
+#include "GenericIBDiscretization.h"
 
 template<class T>
 class ThermalModel<T>::Impl
@@ -184,6 +185,13 @@ public:
                                             _thermalFields.conductivity,
                                             _thermalFields.temperatureGradient));
     discretizations.push_back(dd);
+
+    shared_ptr<Discretization>
+      ibm(new GenericIBDiscretization<T,T,T>
+             (_meshes,_geomFields,_thermalFields.temperature));
+      
+    discretizations.push_back(ibm);
+
     Linearizer linearizer;
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
@@ -237,6 +245,29 @@ public:
     }
   }
   
+  T getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
+  {
+    T r(0.);
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+        {
+            const StorageSite& faces = fg.site;
+            const int nFaces = faces.getCount();
+            const TArray& heatFlux =
+              dynamic_cast<const TArray&>(_thermalFields.heatFlux[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += heatFlux[f];
+            found=true;
+        }
+    }
+    if (!found)
+      throw CException("getHeatFluxIntegral: invalid faceGroupID");
+    return r;
+  }
+
 
   void advance(const int niter)
   {
@@ -284,6 +315,47 @@ public:
         }
     }
   }
+
+  void computeIBFaceTemperature(const StorageSite& particles)
+  {
+    typedef CRMatrixTranspose<T,T,T> IMatrix;
+
+    const TArray& pT =
+      dynamic_cast<const TArray&>(_thermalFields.temperature[particles]);
+
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+
+        const StorageSite& cells = mesh.getCells();
+        const StorageSite& ibFaces = mesh.getIBFaces();
+        
+        GeomFields::SSPair key1(&ibFaces,&cells);
+        const IMatrix& mIC =
+          dynamic_cast<const IMatrix&>
+          (*_geomFields._interpolationMatrices[key1]);
+
+        GeomFields::SSPair key2(&ibFaces,&particles);
+        const IMatrix& mIP =
+          dynamic_cast<const IMatrix&>
+          (*_geomFields._interpolationMatrices[key2]);
+
+        shared_ptr<TArray> ibT(new TArray(ibFaces.getCount()));
+        
+        const TArray& cT =
+          dynamic_cast<const TArray&>(_thermalFields.temperature[cells]);
+    
+
+        ibT->zero();
+
+	mIC.multiplyAndAdd(*ibT,cT);
+	mIP.multiplyAndAdd(*ibT,pT);
+        _thermalFields.temperature.addArray(ibFaces,ibT);
+    }
+
+  }
+
 private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
@@ -346,4 +418,18 @@ void
 ThermalModel<T>::advance(const int niter)
 {
   _impl->advance(niter);
+}
+
+template<class T>
+void
+ThermalModel<T>::computeIBFaceTemperature(const StorageSite& particles)
+{
+  _impl->computeIBFaceTemperature(particles);
+}
+
+template<class T>
+T
+ThermalModel<T>::getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
+{
+  return _impl->getHeatFluxIntegral(mesh, faceGroupId);
 }
