@@ -17,6 +17,7 @@ Options:
   --all          Removes build directory then builds config and config-pkgs.
   -v, --verbose  Verbose output.
   -d, --debug    Debug output.
+  -j num         Specify the number of jobs to run simultaneously.
   --nocolor      Disable color output.
 
 Configuration names are stored in the "config" subdirectory.

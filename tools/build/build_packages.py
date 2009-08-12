@@ -52,7 +52,7 @@ class BuildPkg:
             Gmsh("pkgs/gmsh", 1),
             Rlog("pkgs/rlog", 1),
             Boost("pkgs/boost.tgz", 0),
-            Swig("pkgs/swig", 0),
+            Swig("pkgs/swig-1.3.39.tar.gz", 0),
             Fftw("pkgs/fftw", 0),
             H5py("pkgs/h5py-1.2.0.bz2", 0),
             Xdmf("pkgs/Xdmf-07172009.bz2", 1),
@@ -517,7 +517,7 @@ class Fvm(BuildPkg):
         ver = config(self.name, 'version')
         os.putenv("PYTHONPATH",os.path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
         return self.sys_log("%s/etc/buildsystem/build -j%s -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s" \
-                                % (self.sdir, jobs(self.name), self.sdir, par, ver, comp))
+                                % (self.sdir, 1 , self.sdir, par, ver, comp))
     def _install(self):
         vers = self.getCompiler(config(self.name, 'compiler'))
         rel = config(self.name, 'version')
