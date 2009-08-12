@@ -28,7 +28,7 @@ fileBase = None
 numIterationsPerStep = 100
 #mpm number of steps shoul numTimeSteps-1
 numTimeSteps = 501
-fileBase = "/data/hunt/"
+fileBase = "/home/yildirim/memosa/src/fvm/test/"
 
 vFile = open(fileBase + "velocity-fullbeam-test.out","w")
 pFile = open(fileBase + "pIntegral-fullbeam-new.out","w")
@@ -99,7 +99,7 @@ if __name__ == '__main__' and fileBase is None:
     fileBase = sys.argv[1]
 
 
-reader = FluentCase("/data/hunt/memosa/src/fvm/test/3D_cantilever_Pressure_83593.cas")
+reader = FluentCase(fileBase+"3D_cantilever_Pressure_83593_viscosity1000000times.cas")
 
 #import debug
 reader.read();
