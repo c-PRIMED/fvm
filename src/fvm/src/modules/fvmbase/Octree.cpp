@@ -49,7 +49,7 @@ Octree::~Octree()
         // count: number of points
         // threshold:maximum number of points each node contains
         // maximumDepth: 
-const   bool    Octree::build(Point *points,
+bool    Octree::build(Point *points,
 			      const unsigned int count,
                               const unsigned int threshold,
                               const unsigned int maximumDepth,
@@ -302,7 +302,7 @@ const Octree::Bounds Octree::calcCubicBounds(const Point * points,
 // Print out the octree leaf nodes
 // -----------------------------------------------------------------------------
 
-const bool Octree::report(FILE *fp)
+bool Octree::report(FILE *fp)
 {
   
   //if it is a leaf, then print out the data
@@ -517,6 +517,7 @@ const int Octree::Naive_getNode(const VectorT3 coordinate, const int count, cons
     double shortestDistance=100000;
     double shortestDistanceSqr=shortestDistance*shortestDistance;
     int cellIndex;
+    cellIndex=-1;
 
     for (int i=0; i<count; i++){
       VectorT3 dR=coordinate-points[i].coordinate;
@@ -537,6 +538,7 @@ const vector<int> Octree::Naive_getNodes(const VectorT3 coordinate, const int co
   //naive search by looping over all points
    
     vector<int> cellIndexList;
+    
     double radiusSqr=radius*radius;
     for (int i=0; i<count; i++){
       VectorT3 dR=coordinate-points[i].coordinate;
