@@ -60,7 +60,7 @@ class   Octree
 
   shared_ptr<ArrayBase> getArrayPtr(const VectorT3Array&);
 
-  virtual const   bool            build(Point *points,
+  virtual   bool            build(Point *points,
 				      const unsigned int count,
                                       const unsigned int threshold,
                                       const unsigned int maximumDepth,
@@ -73,7 +73,7 @@ class   Octree
                                                 const unsigned int count);
 
   //report octree
-  const bool              report(FILE *fp);
+  bool              report(FILE *fp);
 
   const int               getNode(const double x, const double y, const double z);
 
