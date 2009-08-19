@@ -252,12 +252,16 @@ Grid::findNeighborsByCells(const VecD3& point)
           }
           return(neighborList);
       }
+      else {
+	return(neighborList);	
+	throw CException("could not find which cell this point falls into!");
+      }
   }
   //point falls outside of grid boundary
   //find the cloest cell to this point
   //use that cell to interpolate
  
-#if 1
+
   if (find==0) {
       double distMin = 1.0e10;
       int cloestCell = 0; 
@@ -284,7 +288,7 @@ Grid::findNeighborsByCells(const VecD3& point)
       }
       return(neighborList);
   }
-#endif  
+
 }
     
 
