@@ -1,7 +1,5 @@
 #include "Grid.h"
 
-
-
 typedef Vector<double,3>  VecD3;
 
 typedef Array<VecD3> VecD3Array;
@@ -211,84 +209,73 @@ Grid::findNeighborsByCells(const VecD3& point)
   const CRConnectivity& cellNodes = *_cellNodes;
   const Array<VecD3>& nodeCoords = *_coordinates;
   
-  int find = 0;
   for ( int c=0; c<nCells; c++){
-      const int nsize = cellNodes.getCount(c);
-      int node[nsize];
-      for(int n=0; n<nsize; n++){
-          node[n] = cellNodes(c,n);
-      }
-      Array<VecD3> faceArea(nsize);
-      Array<VecD3> faceCentroid(nsize);
-      Array<VecD3> faceNorm(nsize);
-      for(int n=0; n<nsize-1; n++){
-          faceArea[n]=nodeCoords[node[n+1]]-nodeCoords[node[n]];
-          faceCentroid[n]=(nodeCoords[node[n+1]]+nodeCoords[node[n]])/2.;
-      }
-      faceArea[nsize-1]=nodeCoords[node[0]]-nodeCoords[node[nsize-1]];
-      faceCentroid[nsize-1]=(nodeCoords[node[0]]+nodeCoords[node[nsize-1]])/2.;
-      for (int n=0; n<nsize; n++){
-          faceNorm[n][0]=faceArea[n][1];
-          faceNorm[n][1]=-faceArea[n][0];
-          faceNorm[n][2]=faceArea[n][2];
-      }
+    const int nsize = cellNodes.getCount(c);
+    int node[nsize];
+    for(int n=0; n<nsize; n++){
+      node[n] = cellNodes(c,n);
+    }
+    Array<VecD3> faceArea(nsize);
+    Array<VecD3> faceCentroid(nsize);
+    for(int n=0; n<nsize-1; n++){
+      faceArea[n]=nodeCoords[node[n+1]]-nodeCoords[node[n]];
+      faceCentroid[n]=(nodeCoords[node[n+1]]+nodeCoords[node[n]])/2.;
+    }
+    faceArea[nsize-1]=nodeCoords[node[0]]-nodeCoords[node[nsize-1]];
+    faceCentroid[nsize-1]=(nodeCoords[node[0]]+nodeCoords[node[nsize-1]])/2.;
+    
+    int find = 1;
+    for(int n=0; n<nsize; n++){
+      VecD3 faceNorm;
+      faceNorm[0]=faceArea[n][1];
+      faceNorm[1]=-faceArea[n][0];
+      faceNorm[2]=faceArea[n][2];
 
-      int sum = 0;
-      int flag[nsize];
+      VecD3 dr = point - faceCentroid[n];
+      dr[2] = 0.0;  //difference in z direction is neglected. just check x-y plane
+      if (dot(faceNorm,dr) > 0.0) {
+	find = 0;
+	break;
+      }
+    }
+    //point falls into a cell
+    if (find){
       for(int n=0; n<nsize; n++){
-          VecD3 dr = point - faceCentroid[n];
-          dr[2] = 0.0;  //difference in z direction is neglected. just check x-y plane
-          double product = dot(faceNorm[n],dr);
-          if(product > 0.0) flag[n] = 1;
-          else flag[n] = -1;
-          sum+=flag[n];
+	node[n]=cellNodes(c,n);
+	neighborList.push_back(node[n]);
       }
-      //point falls into a cell
-      if (sum == -nsize){
-          find=1;
-          for(int n=0; n<nsize; n++){
-              node[n]=cellNodes(c,n);
-              neighborList.push_back(node[n]);
-          }
-          return(neighborList);
-      }
-      else {
-	return(neighborList);	
-	throw CException("could not find which cell this point falls into!");
-      }
+      return(neighborList);
+    }
   }
+
   //point falls outside of grid boundary
   //find the cloest cell to this point
   //use that cell to interpolate
- 
 
-  if (find==0) {
-      double distMin = 1.0e10;
-      int cloestCell = 0; 
-      for ( int c=0; c<nCells; c++){
-          const int nsize = cellNodes.getCount(c);
-          VecD3 cellCentroid;
-          cellCentroid[0]=0.0;
-          cellCentroid[1]=0.0;
-          cellCentroid[2]=0.0;
-          for(int n=0; n<nsize; n++){
-              cellCentroid += nodeCoords[cellNodes(c,n)];
-          }
-          cellCentroid /= 3.;
-          VecD3 dr = point - cellCentroid;
-          double distance = mag(dr);
-          if(distance < distMin){
-              distMin = distance; 
-              cloestCell = c;
-          }
-      }
-      const int nsize = cellNodes.getCount(cloestCell);
-      for(int n=0; n<nsize; n++){
-          neighborList.push_back(cellNodes(cloestCell,n));
-      }
-      return(neighborList);
+  double distMin = 1.0e10;
+  int closestCell = 0; 
+  for ( int c=0; c<nCells; c++){
+    const int nsize = cellNodes.getCount(c);
+    VecD3 cellCentroid;
+    cellCentroid[0]=0.0;
+    cellCentroid[1]=0.0;
+    cellCentroid[2]=0.0;
+    for(int n=0; n<nsize; n++){
+      cellCentroid += nodeCoords[cellNodes(c,n)];
+    }
+    cellCentroid /= 3.;
+    VecD3 dr = point - cellCentroid;
+    double distance = mag(dr);
+    if(distance < distMin){
+      distMin = distance; 
+      closestCell = c;
+    }
   }
-
+  const int nsize = cellNodes.getCount(closestCell);
+  for(int n=0; n<nsize; n++){
+    neighborList.push_back(cellNodes(closestCell,n));
+  }
+  return(neighborList);
 }
     
 
