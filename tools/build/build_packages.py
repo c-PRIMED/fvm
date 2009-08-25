@@ -42,8 +42,8 @@ class BuildPkg:
         #     2 - full copy
         # For tarballs, copytype of nonzero means source and build directories are the same.
         BuildPkg.packages = [
-            Python("pkgs/python", 0),
-            Numpy("pkgs/numpy", 1),
+            Python("pkgs/Python-2.6.2.tgz", 0),
+            Numpy("pkgs/numpy-1.3.0.tar.gz", 0),
             Ipython("pkgs/ipython.tgz", 0),
             Mpi4py("pkgs/mpi4py-1.1.0.bz2", 0),
             Nose("pkgs/python-nose", 1),            
@@ -94,6 +94,7 @@ class BuildPkg:
         ctype = self.copy_sources
 
         suffix = src.split('.')[-1]
+
         compress = None
         if suffix == 'tgz' or suffix == 'gz':
             compress = 'z'
@@ -115,7 +116,16 @@ class BuildPkg:
             self.sdir = self.bdir
             os.makedirs(self.bdir)
 
-        self.sys_log('tar -C %s -%sxf %s' % (self.sdir, compress, src)) 
+        # If tarballs have everything in a directory with the same name as the tarball,
+        # strip out that directory name.
+        name = os.path.basename(src.rstrip('.'+suffix).rstrip('.tar'))
+        dir = os.popen("/bin/bash -c 'tar -%stf %s 2> /dev/null'" % (compress, src)).readline().split()[0]
+        if dir.startswith('%s/' % name):
+            strip = '--strip-components 1'
+        else:
+            strip = ''
+
+        self.sys_log('tar -C %s %s -%sxf %s' % (self.sdir, strip, compress, src)) 
         return 1
 
     def configure(self):
