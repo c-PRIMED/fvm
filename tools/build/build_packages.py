@@ -125,7 +125,7 @@ class BuildPkg:
         else:
             strip = ''
 
-        self.sys_log('tar -C %s %s -%sxf %s' % (self.sdir, strip, compress, src)) 
+        os.system('tar -C %s %s -%sxf %s' % (self.sdir, strip, compress, src)) 
         return 1
 
     def configure(self):

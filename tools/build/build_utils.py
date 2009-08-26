@@ -156,10 +156,11 @@ def do_env(c, unload=False):
             os.environ.pop(a)
     else:
         debug("Set %s=%s" % (a,b))
-        if not myenv.has_key(a):
+        if not os.environ.has_key(a):
             myenv[a] = []
+        else:
+            myenv[a].append(os.environ[a])
         os.environ[a] = b
-        myenv[a].append(os.environ[a])
 
 def fix_path(k, v, prepend, unload):
     if unload:
