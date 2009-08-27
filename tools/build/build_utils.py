@@ -156,9 +156,9 @@ def do_env(c, unload=False):
             os.environ.pop(a)
     else:
         debug("Set %s=%s" % (a,b))
-        if not os.environ.has_key(a):
+        if not myenv.has_key(a):
             myenv[a] = []
-        else:
+        if os.environ.has_key(a):
             myenv[a].append(os.environ[a])
         os.environ[a] = b
 
