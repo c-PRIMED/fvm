@@ -26,7 +26,7 @@ def generate(env):
     if env['DEBUG']:
         env.Append(CXXFLAGS=['-g'])
     else:
-        env.Append(CXXFLAGS=['-O3', '-xT', '-axT'])
+        env.Append(CXXFLAGS=['-O3', '-xHost'])
 
 
     if env['OPENMP']:
