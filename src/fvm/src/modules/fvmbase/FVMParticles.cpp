@@ -19,7 +19,7 @@ using namespace std;
 FVMParticles::FVMParticles( const MeshList& meshList )
 :_meshList( meshList ), _sweepIter(5)
 {
-   _nmesh = _meshList.size();
+   _nmesh     = _meshList.size();
    _cellIDSet.resize( _nmesh );
 
 }
@@ -29,8 +29,6 @@ FVMParticles::~FVMParticles()
 {
    
 }
-
-
 
 void   
 FVMParticles::setParticles(int nsweep)
@@ -43,6 +41,7 @@ FVMParticles::setParticles(int nsweep)
         const Array<int>&  faceIBList = _meshList.at(id)->getIBFaceList();
         const CRConnectivity& cellCells = _meshList.at(id)->getCellCells();
         const CRConnectivity& faceCells  = _meshList.at(id)->getAllFaceCells();
+        int num_inner_cells = _meshList.at(id)->getCells().getSelfCount();
         vector<int> sweep_particles_old;
         vector<int> sweep_particles_new;
         for ( int sweep = 0; sweep < _sweepIter; sweep++ ){
@@ -63,7 +62,8 @@ FVMParticles::setParticles(int nsweep)
                    int count_neigh_cells = cellCells.getCount(cell_id);
                    for ( int j = 0; j < count_neigh_cells; j++){
                        int neigh_cell_id = cellCells(cell_id, j);
-                       bool is_fvm_particle = (_cellIDSet.at(id).count(neigh_cell_id) == 0) &&  (cellType[neigh_cell_id] == Mesh::IBTYPE_FLUID);
+                       bool is_fvm_particle = (_cellIDSet.at(id).count(neigh_cell_id) == 0) &&  (cellType[neigh_cell_id] == Mesh::IBTYPE_FLUID) && 
+                                               (neigh_cell_id < num_inner_cells);
                        //accept only if it is a fluid and not in _cellIDSet
                        if ( is_fvm_particle ){
                           _cellIDSet.at(id).insert( neigh_cell_id );
@@ -78,7 +78,8 @@ FVMParticles::setParticles(int nsweep)
                    int count_neigh_cells = cellCells.getCount(n);
                    for ( int j = 0; j < count_neigh_cells; j++){
                        int neigh_cell_id = cellCells(cell_id, j);
-                       bool is_fvm_particle =  (_cellIDSet.at(id).count(neigh_cell_id) == 0) &&  (cellType[neigh_cell_id] == Mesh::IBTYPE_FLUID);
+                       bool is_fvm_particle =  (_cellIDSet.at(id).count(neigh_cell_id) == 0) &&  (cellType[neigh_cell_id] == Mesh::IBTYPE_FLUID) &&
+                                              (neigh_cell_id < num_inner_cells);
                        //accept only if it is a fluid and not in _cellIDSet
                        if ( is_fvm_particle ){
                           _cellIDSet.at(id).insert( neigh_cell_id );
@@ -92,6 +93,7 @@ FVMParticles::setParticles(int nsweep)
              sweep_particles_old.resize( sweep_particles_new.size() );
              sweep_particles_old = sweep_particles_new;
           }
+         cout << "sweep_end = " << sweep << endl;
         }
     }
 
