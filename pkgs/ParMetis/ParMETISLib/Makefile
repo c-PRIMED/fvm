@@ -35,8 +35,7 @@ SHLOBJS = $(OBJS:.o=.lo)
 	$(RANLIB) $@
 
 ../libparmetis.so: $(SHLOBJS)
-	$(CC) -shared $^ -Wl,-soname,libparmetis.so.3.1.1 -o $@.3.1.1 \
-	  $(LIBDIR) -lmpi
+	$(CC) -shared $^ -Wl,-soname,libparmetis.so.3.1.1 -o $@.3.1.1 
 	ln -s libparmetis.so.3.1.1 $@
 
 clean:

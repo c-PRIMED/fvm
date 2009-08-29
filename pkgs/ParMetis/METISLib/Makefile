@@ -32,8 +32,7 @@ SHLOBJS = $(OBJS:.o=.lo)
 	$(RANLIB) $@
 
 ../libmetis.so: $(SHLOBJS)
-	$(CC) -shared $^ -Wl,-soname,libmetis.so.3.1.1 -o $@.3.1.1 \
-	$(LIBDIR) -lmpi
+	$(CC) -shared $^ -Wl,-soname,libmetis.so.3.1.1 -o $@.3.1.1 
 	ln -s libmetis.so.3.1.1 $@
 
 clean:
