@@ -177,11 +177,10 @@ class BuildPkg:
         remove_file(self.logfile)
         pmess("TEST",self.name,self.blddir)
         ok, errs = self._test()
-        if errs:
+         if errs:
             cprint('YELLOW', "%s OK, %s FAIL" % (ok, errs))
         else:
             cprint('GREEN', "%s OK" % ok)
-        run_commands(self.name,'after')
         return ok, errs
         
     def sys_log(self, cmd):
