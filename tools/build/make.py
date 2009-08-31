@@ -48,6 +48,7 @@ def main():
     (options, args) = parser.parse_args()
 
     srcpath = os.path.abspath(os.path.dirname(sys.argv[0]))
+    env_name = os.path.join(os.getcwd(), 'env.sh')
 
     if options.nightly:
         options.all = options.update = options.test = options.submit = True
@@ -120,7 +121,6 @@ def main():
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(build_end_time))
 
         # write out env.sh
-        env_name = os.path.join(os.getcwd(), 'env.sh')
         f = open(env_name, 'w')
         modules = config.config('Testing', 'modules')
         if modules:
