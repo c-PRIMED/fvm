@@ -46,7 +46,7 @@ class BuildPkg:
             Numpy("pkgs/numpy-1.3.0.tar.gz", 0),
             Ipython("pkgs/ipython.tgz", 0),
             Mpi4py("pkgs/mpi4py-1.1.0.bz2", 0),
-            Nose("pkgs/nose-0.11.0.tar.gz", 1),            
+            Nose("pkgs/nose-0.11.0.tar.gz", 0),            
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
@@ -136,11 +136,9 @@ class BuildPkg:
         pmess("CONF",self.name,self.bdir)
         # remove any old sources
         os.system("/bin/rm -rf %s" % self.bdir)            
-
         # get new sources
         if not self.unpack_srcs():
             copytree(self.sdir, self.bdir, self.copy_sources)
-
         os.chdir(self.bdir)
         run_commands(self.name, 'before')
         self.pstatus(self._configure())
@@ -470,6 +468,7 @@ class Boost(BuildPkg):
 class MPM(BuildPkg):
     name = "MPM"
     def _configure(self):
+        pass
         e = config(self.name,'configname')
         bfile = os.path.join(self.sdir, "config", e)
         if os.path.isfile(bfile):
