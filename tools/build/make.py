@@ -137,7 +137,7 @@ def main():
         print >> f, "export MEMOSA_CONFNAME=%s" % cname
         f.close()
         if not build_failed:
-            print "\nDONE\nYou need to source %s to use this build." %  env_name)
+            print "\nDONE\nYou need to source %s to use this build." %  env_name
 
     # TESTING
     if options.test and not pbs.start(BuildPkg, cname):
