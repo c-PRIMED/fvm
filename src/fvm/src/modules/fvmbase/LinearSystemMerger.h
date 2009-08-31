@@ -4,14 +4,20 @@
 #include "LinearSystem.h"
 #include <cassert>
 #include <set>
+#include <map>
 #include <mpi.h>
 
+// variable name convection
+//XXXLocal = this variable is unique to that process and only make sense in its process
+//XXXGlobl = this variable is meaningful value for all processes (all process has the same value)
+//XXXX     = this variable only make sense in target process 
 
 class LinearSystemMerger
 {
 public:
 
     typedef   shared_ptr< Array<int> >     ArrayIntPtr;
+    typedef   map<int,ArrayIntPtr>         ArrayIntPtrMap;
     friend class LinearSystem;
 
    LinearSystemMerger( int target_proc_id, const set<int>& group,  LinearSystem& ls );
@@ -30,11 +36,13 @@ private:
   void  get_scatter_cells();
   void  get_gather_cells();
   void  get_crconnectivity();
+  void  get_local_to_global_map();
+  void  set_crconnectivity();
 
   int _targetID;
   int _groupID;
   const set<int>&     _group;
-  LinearSystem& _lsCoarse;
+  LinearSystem& _lsFine;
   
   
   shared_ptr<LinearSystem> _ls;
@@ -46,23 +54,33 @@ private:
   int _totalScatterCellsLocal;
   int _totalGatherCells;
   int _totalGatherCellsLocal;
-  
-  ArrayIntPtr  _neighMeshCounts; //each local mesh has a certain number of adjacency meshes storing total numbers
-  ArrayIntPtr  _scatterInterfaceCounts;
-  ArrayIntPtr  _scatterSize;     //size = _totalProcs 
-  ArrayIntPtr  _scatterCells;     //size = totalScatterCells
-  ArrayIntPtr  _scatterMapIDs;   //size = totalInterfaces
-  ArrayIntPtr  _gatherInterfaceCounts;
-  ArrayIntPtr  _gatherSize;     //size = _totalProcs 
-  ArrayIntPtr  _gatherCells;     //size = totalScatterCells
-  ArrayIntPtr  _gatherMapIDs;   //size = totalInterfaces
+  int _totalCells;    //inner cells
+
+  //mpi buffers
+  ArrayIntPtr  _neighMeshCounts;                  //size = _totalProcs, access : [procid]
+  map<int, ArrayIntPtr>  _scatterInterfaceCounts; //size = sum[_neightMeshCouns[procid]], access:[procid][ interface_id ]
+  ArrayIntPtr  _scatterSize;                      //size = _totalProcs 
+  vector< map<int, ArrayIntPtr> > _scatterCells;  //(proc_id,interface_id) = cells
+  map<int, ArrayIntPtr>  _scatterInterfaceIDs;    //size = totalInterfaces, access to ids_array [procid]
+
+  map<int, ArrayIntPtr>  _gatherInterfaceCounts;
+  ArrayIntPtr  _gatherSize;                       //size = _totalProcs 
+  vector< map<int, ArrayIntPtr> >  _gatherCells;  //(proc_id,interface_id) = cells
+  map<int,ArrayIntPtr>   _gatherInterfaceIDs;     //size = totalInterfaces
+  ArrayIntPtr  _selfCounts;                       //size = totalProcs;
 
   ArrayIntPtr _rowLength; //CRConnecivity row_dimension,  size = _totalProcs
   ArrayIntPtr _colLength; //CRConnectivity col_dimension, size = _totalProcs
-  ArrayIntPtr  _row;   //CRConnectivity _row, size = totalCells
-  ArrayIntPtr  _col;   //CRConnectivity _col, size = ??
+  map< int, ArrayIntPtr >  _row;   //CRConnectivity _row, size = totalCells
+  map< int, ArrayIntPtr >  _col;   //CRConnectivity _col, size = ??
+
+  map< int, ArrayIntPtr >  _localToGlobal;  //[procID][localToGlobaArray] = globalID
+  ArrayIntPtr   _globalToProc;  //[globalID] = procID
+  ArrayIntPtr   _globalToLocal; //[globaID] = local id ( _globalToProc and _globalToLocal mostly need to be togethter)
+
+  shared_ptr< StorageSite    > _site;
   shared_ptr< CRConnectivity > _conn;
-  
+   
 
   MPI::Intracomm _comm;
 
