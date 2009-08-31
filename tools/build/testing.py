@@ -8,7 +8,7 @@
 Functions for running tests
 """
 
-import os, sys, cgi, config
+import os, sys, cgi, config, time
 from build_packages import *
 from build_utils import *
 
@@ -50,12 +50,16 @@ def run_tests(pname, file, logfile):
         ostr += "\t<Path>%s</Path>\n" % os.path.dirname(file)
         ostr += "\t<FullName>%s</FullName>\n" % tname        
         ostr += "\t<FullCommandLine>%s</FullCommandLine>\n" % cgi.escape(cmd)
-        ostr += "\t<Results><Measurement><Value>"
+        ostr += "\t<Results>\n"
+        t = time.time()
         exe = os.popen("/bin/bash -c '%s 2>&1'" % cmd)
-        for line in exe:
-            ostr +=  cgi.escape(line)
-        ostr += "</Value></Measurement></Results>"
+        res = exe.read()
         ret = exe.close()
+        t = time.time() - t
+        ostr += "\t\t<NamedMeasurement type=\"numeric/double\" name=\"Execution Time\"><Value>%s</Value></NamedMeasurement>\n" % t
+        ostr += "\t\t<Measurement><Value>"
+        ostr +=  cgi.escape(res)
+        ostr += "</Value></Measurement></Results>"
         if ret:
             ret >>= 8
             verbose_warn("%s Failed" % tname)
@@ -98,13 +102,14 @@ def run_all_tests(bp):
         
     # test each package
     for p in bp.packages:
-        x = config(p.name,'Build')
-        if x == '' or not eval(x):
-            debug ("Skipping " + p.name)
-            continue
-        tok, terrs =  p.test()
-        ok += tok
-        errs += terrs
+        if not p.is_pkg:
+            x = config(p.name,'Build')
+            if x == '' or not eval(x):
+                debug ("Skipping " + p.name)
+                continue
+            tok, terrs =  p.test()
+            ok += tok
+            errs += terrs
 
     # restore paths
     if oldpypath:

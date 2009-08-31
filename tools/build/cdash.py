@@ -313,7 +313,8 @@ def build_str(bp, bstart, bstop, BuildCommand):
 
     # warnings and errors go here
     for p in bp.packages:
-        bs += parse_builds(p, os.path.join(bp.logdir, "%s-build.log" % p.name))
+       if not p.is_pkg:
+          bs += parse_builds(p, os.path.join(bp.logdir, "%s-build.log" % p.name))
     bs += "\t<Log Encoding=\"base64\" Compression=\"/bin/gzip\"></Log>\n"
 
     for v in ("EndDateTime", "EndBuildTime"):
@@ -346,7 +347,7 @@ def test_str(bp, tstart, tstop):
     for v in ("StartDateTime", "StartTestTime"):
         ts += "<%s>%s</%s>\n" % (v, eval(v), v)
 
-    ts = "<TestList>\n"
+    ts += "<TestList>\n"
     for t in testlist:
         ts += "\t<Test>%s</Test>\n" % cgi.escape(t)
     ts += "</TestList>\n"

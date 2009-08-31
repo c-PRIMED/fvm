@@ -70,6 +70,7 @@ class BuildPkg:
     def __init__(self, sdir, copytype):
         if not hasattr(self, 'name'):
             self.name = string.lower(self.__class__.__name__)
+        self.is_pkg = (sdir.split('/')[0] == 'pkgs')
         self.sdir = os.path.join(self.topdir, sdir)
         self.copy_sources = copytype
         self.bdir = os.path.join(self.blddir, "build", self.name)

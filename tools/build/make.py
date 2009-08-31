@@ -143,10 +143,7 @@ def main():
     if options.test and not pbs.start(BuildPkg, cname):
         test_start_time = time.time()
         open(BuildPkg.logdir+'/StartTestTime','w').write(str(test_start_time))
-        try:
-            testing.run_all_tests(BuildPkg)
-        except:
-            pass
+        testing.run_all_tests(BuildPkg)
         test_end_time = time.time()
         open(BuildPkg.logdir+'/EndTestTime','w').write(str(test_end_time))
 
