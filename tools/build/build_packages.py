@@ -46,7 +46,7 @@ class BuildPkg:
             Numpy("pkgs/numpy-1.3.0.tar.gz", 0),
             Ipython("pkgs/ipython.tgz", 0),
             Mpi4py("pkgs/mpi4py-1.1.0.bz2", 0),
-            Nose("pkgs/python-nose", 1),            
+            Nose("pkgs/nose-0.11.0.tar.gz", 1),            
             Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),

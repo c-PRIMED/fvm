@@ -1,9 +1,0 @@
-syntax: glob
-*~
-*.pyc
-*.egg-info
-*.bak
-*.rej
-*$py.class
-*.orig
-.coverage
