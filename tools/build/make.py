@@ -120,7 +120,8 @@ def main():
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(build_end_time))
 
         # write out env.sh
-        f = open(os.path.join(BuildPkg.topdir, 'env.sh'), 'w')
+        env_name = os.path.join(os.getcwd(), 'env.sh')
+        f = open(env_name, 'w')
         modules = config.config('Testing', 'modules')
         if modules:
             for m in modules.split():
@@ -136,8 +137,7 @@ def main():
         print >> f, "export MEMOSA_CONFNAME=%s" % cname
         f.close()
         if not build_failed:
-            print "\nDONE\nYou need to source %s to use this build." \
-                %  os.path.join(BuildPkg.topdir, 'env.sh')
+            print "\nDONE\nYou need to source %s to use this build." %  env_name)
 
     # TESTING
     if options.test and not pbs.start(BuildPkg, cname):
