@@ -5,6 +5,7 @@
 #include <sstream>
 #include "LinearSystemMerger.h"
 #include "CRConnectivity.h"
+#include "StorageSiteMerger.h"
 
 
 using namespace std;
@@ -49,12 +50,14 @@ LinearSystemMerger::init()
    _selfCounts      = ArrayIntPtr( new Array<int>(_totalProcs) ); _selfCounts->zero();
    _scatterCells.reserve( _totalProcs );
    _gatherCells.reserve( _totalProcs  );
+   _gatherIDsLocalToGlobalMap.resize( _totalProcs );
    //get number of all neightbourhood of a local mesh
    get_neigh_mesh_counts();
    get_scatter_cells();
    get_gather_cells();
    get_crconnectivity();
    get_local_to_global_map();
+   set_merged_crconnectivity();
   
 }
 
@@ -82,7 +85,7 @@ LinearSystemMerger::get_neigh_mesh_counts()
 
     int nmesh = 0;
     const MultiFieldMatrix::MatrixMappersMap& scatterMap = _lsFine.getMatrix()._coarseScatterMaps;
-    foreach( MultiFieldMatrix::MatrixMappersMap::value_type pos, scatterMap ){
+    foreach( const MultiFieldMatrix::MatrixMappersMap::value_type& pos, scatterMap ){
 
          const StorageSite& site = *pos.first;
          int  neigh_proc_id  =  site.getGatherProcID();  //neig_proc_id means other mesh, so gatherProcID() will be used for this and gatherMap
@@ -102,7 +105,7 @@ LinearSystemMerger::get_neigh_mesh_counts()
 
 
     const MultiFieldMatrix::MatrixMappersMap& gatherMap = _lsFine.getMatrix()._coarseGatherMaps;
-    foreach( MultiFieldMatrix::MatrixMappersMap::value_type pos, gatherMap ){
+    foreach( const MultiFieldMatrix::MatrixMappersMap::value_type& pos, gatherMap ){
          const StorageSite& site = *pos.first;
          int  neigh_proc_id  =  site.getGatherProcID();
         //if neigh proc belongs to the group, then ok
@@ -142,7 +145,7 @@ LinearSystemMerger::get_neigh_mesh_counts()
 
    //now  filling our convenient variable
    int indx = 0;
-   foreach ( set<int>::value_type proc, _group ){
+   foreach ( const set<int>::value_type proc, _group ){
        int num_interfaces = (*_neighMeshCounts)[proc];
        ArrayIntPtr scatter_counts ( new Array<int> ( num_interfaces ) );
        ArrayIntPtr gather_counts  ( new Array<int> ( num_interfaces ) );
@@ -184,7 +187,7 @@ LinearSystemMerger::get_neigh_mesh_counts()
 
 
     indx = 0;
-    foreach ( set<int>::value_type proc, _group ){
+    foreach ( const set<int>::value_type proc, _group ){
        int num_interfaces = (*_neighMeshCounts)[proc];
        ArrayIntPtr scatterIDs ( new Array<int> ( num_interfaces ) );
        ArrayIntPtr gatherIDs  ( new Array<int> ( num_interfaces ) );
@@ -211,7 +214,7 @@ LinearSystemMerger::get_scatter_cells()
     ArrayIntPtr   scatterCellsLocal( new Array<int> ( _totalScatterCellsLocal  ) );
     int indx = 0;
     const MultiFieldMatrix::MatrixMappersMap& scatterMap = _lsFine.getMatrix()._coarseScatterMaps;
-    foreach( MultiFieldMatrix::MatrixMappersMap::value_type pos, scatterMap ){
+    foreach( const MultiFieldMatrix::MatrixMappersMap::value_type& pos, scatterMap ){
          const StorageSite& site = *pos.first;
          int  neigh_proc_id  =  site.getGatherProcID();
         //if neigh proc belongs to the group, then ok
@@ -240,7 +243,7 @@ LinearSystemMerger::get_scatter_cells()
 
    //convenient storage in map
    indx = 0;
-   foreach ( set<int>::value_type proc, _group ){
+   foreach ( const set<int>::value_type proc, _group ){
        const Array<int>& interfaceIDs    = *_scatterInterfaceIDs[proc];
        const Array<int>& interfaceCounts = *_scatterInterfaceCounts[proc]; 
        map<int, ArrayIntPtr> cell_map;
@@ -267,7 +270,7 @@ LinearSystemMerger::get_gather_cells()
     ArrayIntPtr  gatherCellsLocal( new Array<int> ( _totalGatherCellsLocal ) );
     int indx = 0;
     const MultiFieldMatrix::MatrixMappersMap& gatherMap = _lsFine.getMatrix()._coarseGatherMaps;
-    foreach( MultiFieldMatrix::MatrixMappersMap::value_type pos, gatherMap ){
+    foreach( const MultiFieldMatrix::MatrixMappersMap::value_type& pos, gatherMap ){
          const StorageSite& site = *pos.first;
          int  neigh_proc_id  =  site.getGatherProcID();
         //if neigh proc belongs to the group, then ok
@@ -292,7 +295,7 @@ LinearSystemMerger::get_gather_cells()
 
    //conveient storage in map 
    indx = 0;
-   foreach ( set<int>::value_type proc, _group ){
+   foreach ( const set<int>::value_type proc, _group ){
        const Array<int>& interfaceIDs    = *_gatherInterfaceIDs[proc];
        const Array<int>& interfaceCounts = *_gatherInterfaceCounts[proc]; 
        map<int, ArrayIntPtr> cell_map;
@@ -319,7 +322,7 @@ LinearSystemMerger::get_crconnectivity()
 
    const MultiFieldMatrix::CoarseConnectivitiesMap&  coarseConnectivities = _lsFine.getMatrix()._coarseConnectivities;
    //first fill _rowLength and _colLength
-   foreach( MultiFieldMatrix::CoarseConnectivitiesMap::value_type pos, coarseConnectivities ){
+   foreach( const MultiFieldMatrix::CoarseConnectivitiesMap::value_type& pos, coarseConnectivities ){
        //const MultiFieldMatrix::EntryIndex& entryIndx = pos.first;
        const CRConnectivity&  conn = *pos.second;
        const StorageSite& site = conn.getRowSite();
@@ -358,7 +361,7 @@ LinearSystemMerger::get_crconnectivity()
 
 
   //getting _row and _col
-   foreach( MultiFieldMatrix::CoarseConnectivitiesMap::value_type pos, coarseConnectivities ){
+   foreach( const MultiFieldMatrix::CoarseConnectivitiesMap::value_type& pos, coarseConnectivities ){
        //const MultiFieldMatrix::EntryIndex& entryIndx = pos.first;
        const Array<int>&  row_local = pos.second->getRow();
        const Array<int>&  col_local = pos.second->getCol();
@@ -370,7 +373,7 @@ LinearSystemMerger::get_crconnectivity()
 
    //copying to map data structures, procid->row, or procid->col
    int local = 0;
-   foreach ( set<int>::value_type proc_id, _group ){
+   foreach ( const set<int>::value_type proc_id, _group ){
      _row[proc_id] = ArrayIntPtr ( new Array<int> ( (*_rowLength)[local] ) );
      _col[proc_id] = ArrayIntPtr ( new Array<int> ( (*_colLength)[local] ) );
       local++;
@@ -378,7 +381,7 @@ LinearSystemMerger::get_crconnectivity()
 
    int indx = 0;
    local = 0;
-   foreach ( set<int>::value_type proc_id, _group ){
+   foreach ( const set<int>::value_type proc_id, _group ){
       for ( int i = 0; i < (*_rowLength)[local]; i++ )
          (*_row[proc_id])[i] = (*row)[indx++];
       local++;
@@ -386,7 +389,7 @@ LinearSystemMerger::get_crconnectivity()
 
    indx  = 0;
    local = 0;
-   foreach ( set<int>::value_type proc_id, _group ){
+   foreach ( const set<int>::value_type proc_id, _group ){
       for ( int i = 0; i < (*_colLength)[local]; i++ )
          (*_col[proc_id])[i] = (*col)[indx++];
       local++;
@@ -402,7 +405,7 @@ LinearSystemMerger::get_local_to_global_map()
     //selfCounts is array from 0, 1, ... NPROCS-1 but groupID is not necessaryl holding that
     //future we might group processes so it will not be always from 0, 1, .. NPROCS-1
     int indx = 0;
-    foreach ( set<int>::value_type proc_id, _group){
+    foreach ( const set<int>::value_type proc_id, _group){
        _localToGlobal[proc_id] = ArrayIntPtr( new Array<int> ( (*_selfCounts)[indx] ) );
        _totalCells +=  (*_selfCounts)[indx];
         indx++;
@@ -412,10 +415,9 @@ LinearSystemMerger::get_local_to_global_map()
    _globalToProc  = ArrayIntPtr( new Array<int> ( _totalCells ) );
    _globalToLocal = ArrayIntPtr( new Array<int> ( _totalCells ) );
 
-
     indx = 0;
     int global_id = 0;
-    foreach ( set<int>::value_type proc_id, _group ){
+    foreach ( const set<int>::value_type proc_id, _group ){
         for ( int n = 0; n < (*_selfCounts)[indx]; n++ ){
             cout << "proc_id = " << proc_id << " n = " << n << endl;
             (*_localToGlobal[proc_id])[n] = global_id;
@@ -426,11 +428,109 @@ LinearSystemMerger::get_local_to_global_map()
         indx++;
     }
 
+
+}
+
+
+
+void  
+LinearSystemMerger::set_merged_crconnectivity()
+{
+    //this might change in future for multiple meshes
+    const MultiFieldMatrix::StorageSiteMap&  coarseSites = _lsFine.getMatrix()._coarseSites;
+    foreach( const MultiFieldMatrix::StorageSiteMap::value_type& pos, coarseSites ){
+       const StorageSite& cell_site = *pos.second;
+       _siteMerger = shared_ptr< StorageSiteMerger > ( new StorageSiteMerger( _targetID, _group, cell_site) );
+    }
+
+         
+    //sev
+    _site = _siteMerger->merge();
+    update_gatherCells_from_scatterCells();
+
+   _conn = shared_ptr< CRConnectivity > ( new CRConnectivity(*_site, *_site) );
+   //initCount
+   _conn->initCount();
+
+   //addcount
+   int indx = 0;
+   foreach ( set<int>::value_type proc, _group ){
+       const Array<int>& row = *_row[proc];
+       int selfCount = (*_selfCounts)[proc];
+       //loop over row
+       for ( int i = 0; i < selfCount; i++ ){
+            int count = row[i+1] - row[i];
+           _conn->addCount( indx++, count );
+       }
+   }
+    //finish count
+   _conn->finishCount();
+    
+   //add
+   indx = 0;
+   foreach ( set<int>::value_type proc, _group ){
+       const Array<int>& row = *(_row[proc]);
+       const Array<int>& col = *(_col[proc]);
+       const Array<int>& localToGlobal = *_localToGlobal[proc];
+       const map<int,int>& gatherIDsLocalToGlobal  = _gatherIDsLocalToGlobalMap[proc];
+       int selfCount = (*_selfCounts)[proc];
+       //loop over row
+       for ( int i = 0; i < selfCount; i++ ){
+            int count = row[i+1] - row[i];
+            //loop over surrounding cells
+            for ( int j = 0; j < count; j++ ){
+               int localID  = col[ row[i]+j ]; //get surrounding local cellID
+               int globalID = -1;
+               //ghost cell check if inner cells or ghost cells
+               if ( localID < selfCount ){
+                   globalID = localToGlobal[ localID ];
+               } else {
+                   globalID = gatherIDsLocalToGlobal.find(localID)->second;
+               }
+
+              _conn->add( indx, globalID );
+            }
+            indx++;
+       }
+    }
+    //finish add
+    _conn->finishAdd();
+
     MPI::COMM_WORLD.Barrier();
     cout << " _totalScatterCells = " << _totalScatterCells << " procid = " << _procID << endl;
     MPI::COMM_WORLD.Barrier();
 
+
+  //
    debug_print();
+
+}
+
+
+void
+LinearSystemMerger::update_gatherCells_from_scatterCells()
+{
+    //get scatter cells from neighbouring mesh and update the current mesh gather cells
+    //loop over meshes
+
+    foreach ( set<int>::value_type proc, _group ){
+        const Array<int>& gatherInterfaceIDs   = *_gatherInterfaceIDs[proc];
+        //const Array<int>& scatterInterfaceIDs  = *_scatterInterfaceIDs[proc];
+        //loop over interfaces  on this mesh
+        for ( int n = 0; n < gatherInterfaceIDs.getLength(); n++ ){
+            int neighMeshID  = gatherInterfaceIDs[n];
+            const Array<int>& gatherCells  = *_gatherCells [proc][neighMeshID];
+            const Array<int>& scatterCells = *_scatterCells[neighMeshID][proc];
+            //update gatherCells
+            for ( int i = 0; i < gatherCells.getLength(); i++ ){
+                int cellID = (*_localToGlobal[neighMeshID])[ scatterCells[i] ]; //get global numbering of scatter cells on other mesh
+                int gatherID = gatherCells[i];
+               _gatherIDsLocalToGlobalMap[proc][ gatherID ] = cellID;
+                //gatherCells[i] = cellID;
+            }
+        }
+    }
+
 }
 
 
@@ -522,7 +622,7 @@ LinearSystemMerger::debug_print()
          debug_file  << endl;
       }
 
-      //gather interface ids
+      //gather cells
       foreach ( set<int>::value_type proc, _group ){
           debug_file << "procID : " << proc << endl;
           //loop over scatter segments
@@ -581,7 +681,29 @@ LinearSystemMerger::debug_print()
        debug_file << "_globalToLocal[" << n << "] = " << (*_globalToLocal)[n] << " resides at procID = " << (*_globalToProc)[n] << endl;
     debug_file << endl;
  
-
+      //gather cells
+    foreach ( set<int>::value_type proc, _group ){
+        debug_file << "procID (global numbering) : " << proc << endl;
+        //loop over scatter segments
+        const map<int, ArrayIntPtr>& cell_map = _gatherCells[proc];
+        foreach ( const ArrayIntPtrMap::value_type& pos, cell_map ){
+            debug_file << "    gatherID = " << pos.first <<  endl;
+            for ( int n = 0; n < pos.second->getLength(); n++ )
+                debug_file << "         " << (*pos.second)[n] << endl;
+            debug_file << endl;
+        }
+        debug_file << endl;
+    } 
+    debug_file << endl;
+    //merged CRconnectivity
+    int row_dim = _conn->getRowDim();
+    for ( int i = 0; i < row_dim; i++ ){
+       int col_dim = _conn->getCount(i);
+       for ( int j = 0; j < col_dim; j++ ){
+          debug_file << " mergedCR(" << i << "," << j << ") = " << (*_conn)(i,j) << endl;
+       }
+    }
+    debug_file << endl;
 
 
      debug_file.close();
@@ -590,18 +712,3 @@ LinearSystemMerger::debug_print()
 
 }
 
-
-void  
-LinearSystemMerger::set_crconnectivity()
-{
-
-//     const MultiFieldMatrix::StorageSiteMap&  coarseSites = _lsFine.getMatrix()._coarseSites;
-//     foreach( MultiFieldMatrix::StorageSiteMap::value_type pos, coarseSites ){
-//        const StorageSite& cell_site = *pos.second;
-//        _site = shared_ptr< StorageSite > ( new StorageSiteMerger( _targetID, _group, cell_site) );
-//     }
-
-
-   // _conn = share_ptr<CRConnectivity> ( new CRConnecit
-
-}

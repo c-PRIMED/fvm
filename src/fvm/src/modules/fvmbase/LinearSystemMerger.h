@@ -12,6 +12,8 @@
 //XXXGlobl = this variable is meaningful value for all processes (all process has the same value)
 //XXXX     = this variable only make sense in target process 
 
+class StorageSiteMerger;
+
 class LinearSystemMerger
 {
 public:
@@ -37,7 +39,8 @@ private:
   void  get_gather_cells();
   void  get_crconnectivity();
   void  get_local_to_global_map();
-  void  set_crconnectivity();
+  void  set_merged_crconnectivity();
+  void  update_gatherCells_from_scatterCells();
 
   int _targetID;
   int _groupID;
@@ -67,6 +70,7 @@ private:
   ArrayIntPtr  _gatherSize;                       //size = _totalProcs 
   vector< map<int, ArrayIntPtr> >  _gatherCells;  //(proc_id,interface_id) = cells
   map<int,ArrayIntPtr>   _gatherInterfaceIDs;     //size = totalInterfaces
+  vector< map<int,int> > _gatherIDsLocalToGlobalMap;  //[proc][localid] = globalID
   ArrayIntPtr  _selfCounts;                       //size = totalProcs;
 
   ArrayIntPtr _rowLength; //CRConnecivity row_dimension,  size = _totalProcs
@@ -74,11 +78,12 @@ private:
   map< int, ArrayIntPtr >  _row;   //CRConnectivity _row, size = totalCells
   map< int, ArrayIntPtr >  _col;   //CRConnectivity _col, size = ??
 
-  map< int, ArrayIntPtr >  _localToGlobal;  //[procID][localToGlobaArray] = globalID
+  map< int, ArrayIntPtr >  _localToGlobal;  //[procID][localID] = globalID
   ArrayIntPtr   _globalToProc;  //[globalID] = procID
   ArrayIntPtr   _globalToLocal; //[globaID] = local id ( _globalToProc and _globalToLocal mostly need to be togethter)
 
   shared_ptr< StorageSite    > _site;
+  shared_ptr< StorageSiteMerger > _siteMerger;
   shared_ptr< CRConnectivity > _conn;
    
 
