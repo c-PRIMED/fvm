@@ -47,7 +47,6 @@ class BuildPkg:
             Ipython("pkgs/ipython.tgz", 0),
             Mpi4py("pkgs/mpi4py-1.1.0.bz2", 0),
             Nose("pkgs/nose-0.11.0.tar.gz", 0),            
-            Gsl("pkgs/gsl", 0),            
             Fltk("pkgs/fltk", 1),
             Gmsh("pkgs/gmsh", 1),
             Rlog("pkgs/rlog", 1),
@@ -88,6 +87,9 @@ class BuildPkg:
         else:
             cprint('YELLOW', state)
 
+    def copy_srcs(self):
+        copytree(self.sdir, self.bdir, self.copy_sources)
+        
     # unpack tarball
     def unpack_srcs(self):
         dst = self.bdir
@@ -104,9 +106,10 @@ class BuildPkg:
         elif suffix == 'tar':
             compress = ''
 
-        # it wasn't a tarball
         if compress == None:
-            return 0
+            # it wasn't a tarball
+            self.copy_srcs()
+            return
 
         if self.copy_sources:
             self.sdir = os.path.join(dst,'SOURCES')
@@ -127,7 +130,6 @@ class BuildPkg:
             strip = ''
 
         os.system('tar -C %s %s -%sxf %s' % (self.sdir, strip, compress, src)) 
-        return 1
 
     def configure(self):
         self.state = 'configure'
@@ -137,8 +139,8 @@ class BuildPkg:
         # remove any old sources
         os.system("/bin/rm -rf %s" % self.bdir)            
         # get new sources
-        if not self.unpack_srcs():
-            copytree(self.sdir, self.bdir, self.copy_sources)
+        self.unpack_srcs()
+
         os.chdir(self.bdir)
         run_commands(self.name, 'before')
         self.pstatus(self._configure())
@@ -391,18 +393,16 @@ class Xdmf(BuildPkg):
     def _clean(self):
         return self.sys_log("make clean")
 
-# The GNU Scientific Library (GSL) is a collection of routines for
-# numerical analysis, written in C. 
-# http://www.gnu.org/software/gsl/
-class Gsl(BuildPkg):
-    def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
+# Not used anymore. Keeping as an example of another way to do tests.
+#class Gsl(BuildPkg):
+#    def _configure(self):
+#        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
+#    def _build(self):
+#        return self.sys_log("make -j%s" % jobs(self.name))
+#    def _install(self):
+#        return self.sys_log("make install")
+#    def _clean(self):
+#        return self.sys_log("make clean")
 #    def _test(self):
 #        ok = errs = 0
 #        os.chdir(self.bdir)
@@ -467,6 +467,16 @@ class Boost(BuildPkg):
 
 class MPM(BuildPkg):
     name = "MPM"
+
+    # just copy the sources we need
+    def copy_srcs(self):
+        os.makedirs(self.bdir)
+        shutil.copy2(os.path.join(self.sdir,'Makefile'), self.bdir)
+        for dirname in ['config', 'F95', 'py']:
+            src = os.path.join(self.sdir, dirname)
+            dst = os.path.join(self.bdir, dirname)
+            shutil.copytree(src, dst)
+
     def _configure(self):
         pass
         e = config(self.name,'configname')
