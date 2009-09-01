@@ -148,12 +148,7 @@ class BuildPkg:
     def clean(self):
         self.state = 'clean'
         self.logfile = ''
-        os.chdir(self.bdir)
         self._clean()
-        if self.sdir != self.bdir:
-            os.chdir(self.sdir)
-            if os.path.isdir(self.bdir):            
-                os.system("/bin/rm -rf %s/*" % self.bdir)
 
     def build(self):
         self.state = 'build'
@@ -239,12 +234,6 @@ class Lammps(BuildPkg):
         ret = self.sys_log("make -j%s" % jobs(self.name));
         os.chdir('..')
         return ret
-    def _clean(self):
-        os.chdir('src')
-        self.sys_log("make clean-all")
-        self.sys_log("/bin/rm -f lmp_*")
-        os.chdir('..')
-        return 0
     def _install(self):
         os.chdir('src')
         self.sys_log("install lmp_* %s" % self.bindir)
@@ -261,8 +250,6 @@ class Gmsh(BuildPkg):
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
 
 class H5py(BuildPkg):
     def find_h5_inc(self):
@@ -356,8 +343,6 @@ class Fltk(BuildPkg):
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
     
 class Python(BuildPkg):
     def _configure(self):
@@ -367,8 +352,6 @@ class Python(BuildPkg):
     def _install(self):
         self.sys_log("make install")
         BuildPkg.pypath = set_python_path(self.blddir)
-    def _clean(self):
-        return self.sys_log("make clean")
 
 class Netcdf(BuildPkg):
     def _configure(self):
@@ -378,8 +361,6 @@ class Netcdf(BuildPkg):
         return self.sys_log("make")
     def _install(self):
         return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
 
 class Xdmf(BuildPkg):
     name = 'Xdmf'
@@ -390,8 +371,6 @@ class Xdmf(BuildPkg):
     def _install(self):
         os.chdir(os.path.join(self.bdir, "bin"))
         return self.sys_log("install %s *.so %s" % (os.path.join(self.sdir, 'libsrc','Xdmf.py'), self.libdir))
-    def _clean(self):
-        return self.sys_log("make clean")
 
 # Not used anymore. Keeping as an example of another way to do tests.
 #class Gsl(BuildPkg):
@@ -401,8 +380,6 @@ class Xdmf(BuildPkg):
 #        return self.sys_log("make -j%s" % jobs(self.name))
 #    def _install(self):
 #        return self.sys_log("make install")
-#    def _clean(self):
-#        return self.sys_log("make clean")
 #    def _test(self):
 #        ok = errs = 0
 #        os.chdir(self.bdir)
@@ -436,8 +413,6 @@ class Rlog(BuildPkg):
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
 
 class Swig(BuildPkg):
     def _configure(self):
@@ -446,8 +421,6 @@ class Swig(BuildPkg):
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
 
 class Fftw(BuildPkg):
     def _configure(self):
@@ -456,8 +429,6 @@ class Fftw(BuildPkg):
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
 
 # We don't build boost, just use the headers
 class Boost(BuildPkg):
@@ -497,8 +468,6 @@ class MPM(BuildPkg):
         return self.sys_log("make")
     def _install(self):
         return self.sys_log("make install")
-    def _clean(self):
-        return self.sys_log("make clean")
 
 class Fvm(BuildPkg):
     # from fvm sources
@@ -549,6 +518,11 @@ class Fvm(BuildPkg):
         os.chdir(pdir)   
         self.sys_log("install *.py %s" % self.bindir)     
         return 0
+
+    def _clean(self):
+        bd = os.path.join(self.sdir, "build")
+        pmess("CLEAN",self.name,bd)
+        return self.sys_log("rm -rf %s/*" % bd)
 
 class MEMOSA(BuildPkg):
     name = "MEMOSA"

@@ -19,6 +19,7 @@ Options:
   -d, --debug    Debug output.
   -j num         Specify the number of jobs to run simultaneously.
   --nocolor      Disable color output.
+  --clean        Clean up. Currently only removes old binaries from fvm directory.
 
 Configuration names are stored in the "config" subdirectory.
 """
@@ -44,6 +45,7 @@ def main():
     parser.add_option("-d", "--debug", action="store_true")
     parser.add_option("--nocolor", action="store_true")
     parser.add_option("--nightly", action="store_true")
+    parser.add_option("--clean", action="store_true")
     parser.add_option("--jobs", "-j")
     (options, args) = parser.parse_args()
 
@@ -88,7 +90,8 @@ def main():
     BuildPkg.pypath = build_utils.set_python_path(BuildPkg.blddir)    
 
     # if no options, default to build
-    if not options.build and not options.test and not options.submit and not options.update:
+    if not options.build and not options.test and not options.submit \
+            and not options.update and not options.clean:
         options.build = True
 
     if options.build:
@@ -160,6 +163,11 @@ def main():
     else:
         del os.environ['PYTHONPATH']
     build_utils.fix_path('PATH', BuildPkg.bindir, 1, 1)
+
+    # CLEAN
+    if options.clean:
+        for p in BuildPkg.packages:
+            p.clean()
 
 if __name__ == "__main__":
     main()

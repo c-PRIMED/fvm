@@ -52,7 +52,8 @@ def _reset_types():
         'CONF':"%s%s%s"%(colors['BOLD'],"Configuring",colors['NORMAL']),
         'BUILD':"%s%s%s"%(colors['BOLD'],"Building",colors['NORMAL']),
         'INSTALL':"%s%s%s"%(colors['BOLD'],"Installing",colors['NORMAL']),
-        'TEST':"%s%s%s"%(colors['BOLD'],"Testing",colors['NORMAL'])
+        'TEST':"%s%s%s"%(colors['BOLD'],"Testing",colors['NORMAL']),
+        'CLEAN':"%s%s%s"%(colors['BOLD'],"Cleaning",colors['NORMAL'])
         }
 
 def clear_colors():
