@@ -11,7 +11,6 @@ StorageSiteMerger::StorageSiteMerger(int target_proc_id, const set<int>& group, 
 :_groupID(target_proc_id), _group(group), _cellSite(cell_site), _mergeSiteSize(-1), _mergeSiteGhostSize(-1)
 {
     init();
-    merge();
 }
 
 StorageSiteMerger::~StorageSiteMerger()
@@ -30,18 +29,15 @@ StorageSiteMerger::init()
 }
 
 
-void
+shared_ptr<StorageSite>
 StorageSiteMerger::merge()
 {
-
     StorageSite::GatherMap::const_iterator   it;
     int tot_adjacent_count = 0; //this will be substracted before sending groupID
 
     for ( it = _cellSite.getGatherMap().begin(); it != _cellSite.getGatherMap().end(); it++){
-
         const StorageSite* site = it->first;
         int  gatherID = site->getGatherProcID();
-
         //this check if neighbour mesh id is in group list, if it is, we want to increse tot_adjacent_count
         if ( _group.count( gatherID) > 0 ){
             int interface_count =it->second->getLength();
@@ -56,14 +52,16 @@ StorageSiteMerger::merge()
 
    _comm.Reduce( &self_size , &_mergeSiteSize     , 1, MPI::INT, MPI::SUM, _groupID );
    _comm.Reduce( &ghost_size, &_mergeSiteGhostSize, 1, MPI::INT, MPI::SUM, _groupID );
- 
+   //debug_print();
+   return shared_ptr<StorageSite> ( new StorageSite(_mergeSiteSize) );
+
 } 
 
 
 void
 StorageSiteMerger::debug_print()
 {
-
+  shared_ptr<StorageSite> tempSite = merge();
   stringstream ss;
   ss << "proc" << MPI::COMM_WORLD.Get_rank() << "_storage_site_merger.dat";
   ofstream  debug_file( (ss.str()).c_str() );

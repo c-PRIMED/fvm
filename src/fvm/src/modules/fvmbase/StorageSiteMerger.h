@@ -12,7 +12,7 @@ public:
    StorageSiteMerger( int target_proc_id, const set<int>& group, const StorageSite& cell_site );
    ~StorageSiteMerger();
 
-
+   shared_ptr<StorageSite>  merge();
    void  debug_print();
 
    int  getSelfCount()  const { return _mergeSiteSize; }
@@ -21,6 +21,9 @@ public:
 
 private:
   StorageSiteMerger(const StorageSiteMerger&);
+  void  init();
+
+
   int _count;
   int _selfCount;
   int _offset;
@@ -40,8 +43,6 @@ private:
   int   _scatterProcID;
   int   _gatherProcID;
 
-  void  init();
-  void merge();
 
 };
 
