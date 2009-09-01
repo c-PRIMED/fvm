@@ -29,12 +29,11 @@ def start(bp, cname):
 
 # write pbs batch file and submit it
 def qsub(bp, cname):
-    os.chdir(bp.topdir)
 
     # first remove any old results
     os.system('/bin/rm -f run_tests.pbs.*')
     
-    f = open(os.path.join(bp.topdir, 'run_tests.pbs'), 'w')
+    f = open('run_tests.pbs', 'w')
     f.write('#!/bin/bash\n')
 
     qname = config.config('Testing', 'queue')
@@ -57,7 +56,8 @@ def qsub(bp, cname):
     # Execute optional command
     f.write(config.config('Testing', 'before') + '\n')
 
-    f.write('./make.py --test %s\n' % cname)
+    make = os.path.join(bp.topdir,'make.py')
+    f.write('%s --test %s\n' % (make, cname))
     f.close()
 
     job = os.popen("qsub run_tests.pbs").readline()

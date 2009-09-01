@@ -50,7 +50,7 @@ def main():
     (options, args) = parser.parse_args()
 
     srcpath = os.path.abspath(os.path.dirname(sys.argv[0]))
-    env_name = os.path.join(os.getcwd(), 'env.sh')
+    cwd = os.getcwd()
 
     if options.nightly:
         options.all = options.update = options.test = options.submit = True
@@ -74,7 +74,7 @@ def main():
     build_utils.set_options(options)
 
     if options.all:
-        os.system("/bin/rm -rf %s" % os.path.join(os.getcwd(), "build-%s" % cname))
+        os.system("/bin/rm -rf %s" % os.path.join(cwd, "build-%s" % cname))
 
     BuildPkg.setup(cname, srcpath)
     build_utils.run_commands('ALL', 'before')        
@@ -124,6 +124,7 @@ def main():
         open(BuildPkg.logdir+'/EndBuildTime','w').write(str(build_end_time))
 
         # write out env.sh
+        env_name = os.path.join(cwd, 'env.sh')        
         f = open(env_name, 'w')
         modules = config.config('Testing', 'modules')
         if modules:
@@ -141,6 +142,9 @@ def main():
         f.close()
         if not build_failed:
             print "\nDONE\nYou need to source %s to use this build." %  env_name
+
+    # make sure we are back in the original directory
+    os.chdir(cwd)
 
     # TESTING
     if options.test and not pbs.start(BuildPkg, cname):
