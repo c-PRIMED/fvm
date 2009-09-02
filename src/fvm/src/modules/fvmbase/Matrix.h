@@ -31,6 +31,7 @@ public:
   virtual int createCoarsening(IContainer& coarseIndex, const int groupSize,
                                const double weighRatioThreshold);
   
+  virtual const CRConnectivity& getConnectivity( ) const {throw;}
   virtual shared_ptr<CRConnectivity>
   createCoarseConnectivity(const IContainer& coarseIndex,
                            const CRConnectivity& coarseToFine,

@@ -22,7 +22,7 @@ public:
     typedef   map<int,ArrayIntPtr>         ArrayIntPtrMap;
     friend class LinearSystem;
 
-   LinearSystemMerger( int target_proc_id, const set<int>& group,  LinearSystem& ls );
+   LinearSystemMerger( int target_proc_id, const set<int>& group, LinearSystem& ls );
    ~LinearSystemMerger();
 
 
@@ -41,15 +41,15 @@ private:
   void  get_local_to_global_map();
   void  set_merged_crconnectivity();
   void  update_gatherCells_from_scatterCells();
+  void  get_ls_vectors();
 
   int _targetID;
   int _groupID;
   const set<int>&     _group;
-  LinearSystem& _lsFine;
-  
-  
-  shared_ptr<LinearSystem> _ls;
-  
+  LinearSystem& _ls;
+ 
+  shared_ptr<LinearSystem> _mergedLS;
+
   int _procID;
   int _totalProcs;
   int _totalInterfaces;

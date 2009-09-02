@@ -11,11 +11,8 @@
 using namespace std;
 
 LinearSystemMerger::LinearSystemMerger(int target_proc_id, const set<int>& group, LinearSystem& ls )
-:_targetID(target_proc_id), _groupID(target_proc_id), _group(group), _lsFine(ls)
+:_targetID(target_proc_id), _groupID(target_proc_id), _group(group), _ls(ls)
 {
-
-  //cout << " matrix size = " << _lsFine.getMatrix().getSize()  << endl;
-
 
     init();
     merge();
@@ -58,6 +55,7 @@ LinearSystemMerger::init()
    get_crconnectivity();
    get_local_to_global_map();
    set_merged_crconnectivity();
+   get_ls_vectors();
   
 }
 
@@ -84,39 +82,46 @@ LinearSystemMerger::get_neigh_mesh_counts()
     vector<int> gatherMapIDsLocal;
 
     int nmesh = 0;
-    const MultiFieldMatrix::MatrixMappersMap& scatterMap = _lsFine.getMatrix()._coarseScatterMaps;
-    foreach( const MultiFieldMatrix::MatrixMappersMap::value_type& pos, scatterMap ){
-
-         const StorageSite& site = *pos.first;
-         int  neigh_proc_id  =  site.getGatherProcID();  //neig_proc_id means other mesh, so gatherProcID() will be used for this and gatherMap
-        //if neigh proc belongs to the group, then ok
-         if ( _group.count( neigh_proc_id ) > 0 ){
-            const Array<int>& fromIndices = *pos.second;
-            _totalScatterCellsLocal += fromIndices.getLength();
-            siteScatterOffsetLocal.push_back( fromIndices.getLength() );
-            scatterMapIDsLocal.push_back( neigh_proc_id );
-            nmesh++;
-         }
+    const MultiField::ArrayIndexList& arrayIndices = _ls.getB().getArrayIndices();
+    foreach( MultiField::ArrayIndex k, arrayIndices ){
+        const StorageSite& site = *k.second;
+        const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+        foreach( const StorageSite::ScatterMap::value_type& pos, scatterMap ){
+            const StorageSite& site = *pos.first;
+            int  neigh_proc_id  =  site.getGatherProcID();  //neig_proc_id means other mesh, so gatherProcID() will be used for this and gatherMap
+            //if neigh proc belongs to the group, then ok
+            if ( _group.count( neigh_proc_id ) > 0 ){
+                const Array<int>& fromIndices = *pos.second;
+                _totalScatterCellsLocal += fromIndices.getLength();
+                siteScatterOffsetLocal.push_back( fromIndices.getLength() );
+                scatterMapIDsLocal.push_back( neigh_proc_id );
+                nmesh++;
+            }
+       }
     }
-   
+
 
    _comm.Gather( &nmesh, 1, MPI::INT,  _neighMeshCounts->getData(), 1, MPI::INT, _targetID );
    _comm.Gather( &_totalScatterCellsLocal, 1, MPI::INT, _scatterSize->getData(), 1, MPI::INT, _targetID );
 
 
-    const MultiFieldMatrix::MatrixMappersMap& gatherMap = _lsFine.getMatrix()._coarseGatherMaps;
-    foreach( const MultiFieldMatrix::MatrixMappersMap::value_type& pos, gatherMap ){
+   foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const StorageSite& site = *k.second;
+       const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+       foreach( const StorageSite::GatherMap::value_type& pos, gatherMap ){
          const StorageSite& site = *pos.first;
          int  neigh_proc_id  =  site.getGatherProcID();
         //if neigh proc belongs to the group, then ok
          if ( _group.count( neigh_proc_id ) > 0 ){
             const Array<int>& toIndices = *pos.second;
             _totalGatherCellsLocal += toIndices.getLength();
-         
             siteGatherOffsetLocal.push_back( toIndices.getLength() );
             gatherMapIDsLocal.push_back( neigh_proc_id );
          }
-    }
+      }
+   }
+
+
    _comm.Gather( &_totalGatherCellsLocal, 1, MPI::INT, _gatherSize->getData(), 1, MPI::INT, _targetID );
      //cout << " procid = " << _procID << " _scatterSize = " <<  (*_scatterSize)[_procID] << " _gatherSize =  " << (*_gatherSize)[_procID] << endl;
 
@@ -213,18 +218,21 @@ LinearSystemMerger::get_scatter_cells()
    
     ArrayIntPtr   scatterCellsLocal( new Array<int> ( _totalScatterCellsLocal  ) );
     int indx = 0;
-    const MultiFieldMatrix::MatrixMappersMap& scatterMap = _lsFine.getMatrix()._coarseScatterMaps;
-    foreach( const MultiFieldMatrix::MatrixMappersMap::value_type& pos, scatterMap ){
-         const StorageSite& site = *pos.first;
-         int  neigh_proc_id  =  site.getGatherProcID();
-        //if neigh proc belongs to the group, then ok
-         if ( _group.count( neigh_proc_id ) > 0 ){
-            const Array<int>& fromIndices = *pos.second;
-            for ( int i = 0; i < fromIndices.getLength(); i++) 
-                 (*scatterCellsLocal)[indx++] = fromIndices[i];
-         }
-    }
-
+   const MultiField::ArrayIndexList& arrayIndices = _ls.getB().getArrayIndices();
+   foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const StorageSite& site = *k.second;
+       const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+       foreach( const StorageSite::ScatterMap::value_type& pos, scatterMap ){
+          const StorageSite& site = *pos.first;
+          int  neigh_proc_id  =  site.getGatherProcID();
+         //if neigh proc belongs to the group, then ok
+          if ( _group.count( neigh_proc_id ) > 0 ){
+             const Array<int>& fromIndices = *pos.second;
+             for ( int i = 0; i < fromIndices.getLength(); i++) 
+                  (*scatterCellsLocal)[indx++] = fromIndices[i];
+          }
+       }
+   }
 
     //fill in scatterCells
     ArrayIntPtr scatterCells( new Array<int> ( _totalScatterCells) );
@@ -269,16 +277,20 @@ LinearSystemMerger::get_gather_cells()
    //fill gather cells in local for shipping
     ArrayIntPtr  gatherCellsLocal( new Array<int> ( _totalGatherCellsLocal ) );
     int indx = 0;
-    const MultiFieldMatrix::MatrixMappersMap& gatherMap = _lsFine.getMatrix()._coarseGatherMaps;
-    foreach( const MultiFieldMatrix::MatrixMappersMap::value_type& pos, gatherMap ){
-         const StorageSite& site = *pos.first;
-         int  neigh_proc_id  =  site.getGatherProcID();
-        //if neigh proc belongs to the group, then ok
-         if ( _group.count( neigh_proc_id ) > 0 ){
-            const Array<int>& toIndices = *pos.second;
-            for ( int i = 0; i < toIndices.getLength(); i++ ) 
+    const MultiField::ArrayIndexList& arrayIndices = _ls.getB().getArrayIndices();
+    foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const StorageSite& site = *k.second;
+       const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+       foreach( const StorageSite::GatherMap::value_type& pos, gatherMap ){
+          const StorageSite& site = *pos.first;
+          int  neigh_proc_id  =  site.getGatherProcID();
+          //if neigh proc belongs to the group, then ok
+          if ( _group.count( neigh_proc_id ) > 0 ){
+             const Array<int>& toIndices = *pos.second;
+             for ( int i = 0; i < toIndices.getLength(); i++ ) 
                  (*gatherCellsLocal)[indx++] = toIndices[i];
-         }
+          }
+       }
     }
 
     //fill in gatherCells
@@ -319,12 +331,9 @@ void
 LinearSystemMerger::get_crconnectivity()
 {
 
-
-   const MultiFieldMatrix::CoarseConnectivitiesMap&  coarseConnectivities = _lsFine.getMatrix()._coarseConnectivities;
-   //first fill _rowLength and _colLength
-   foreach( const MultiFieldMatrix::CoarseConnectivitiesMap::value_type& pos, coarseConnectivities ){
-       //const MultiFieldMatrix::EntryIndex& entryIndx = pos.first;
-       const CRConnectivity&  conn = *pos.second;
+    const MultiField::ArrayIndexList& arrayIndices = _ls.getB().getArrayIndices();
+    foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const CRConnectivity& conn = _ls.getMatrix().getMatrix( k, k).getConnectivity();
        const StorageSite& site = conn.getRowSite();
        int inner_cells = site.getSelfCount();
        int rowLength = conn.getRow().getLength();
@@ -332,10 +341,8 @@ LinearSystemMerger::get_crconnectivity()
        _comm.Gather( &rowLength  , 1, MPI::INT, _rowLength->getData() , 1, MPI::INT, _targetID );
        _comm.Gather( &colLength  , 1, MPI::INT, _colLength->getData() , 1, MPI::INT, _targetID );
        _comm.Gather( &inner_cells, 1, MPI::INT, _selfCounts->getData(), 1, MPI::INT, _targetID );
-   }
-
-
-
+   
+    }
 
   //compute aggloremation size
    int row_size = 0;
@@ -361,10 +368,10 @@ LinearSystemMerger::get_crconnectivity()
 
 
   //getting _row and _col
-   foreach( const MultiFieldMatrix::CoarseConnectivitiesMap::value_type& pos, coarseConnectivities ){
-       //const MultiFieldMatrix::EntryIndex& entryIndx = pos.first;
-       const Array<int>&  row_local = pos.second->getRow();
-       const Array<int>&  col_local = pos.second->getCol();
+    foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const CRConnectivity& conn = _ls.getMatrix().getMatrix( k, k).getConnectivity();
+       const Array<int>&  row_local = conn.getRow();
+       const Array<int>&  col_local = conn.getCol();
        int rowLength = row_local.getLength();
        int colLength = col_local.getLength();
       _comm.Gatherv( row_local.getData(), rowLength, MPI::INT, row->getData(), &(*_rowLength)[0], displs_row, MPI::INT, _targetID );
@@ -410,7 +417,6 @@ LinearSystemMerger::get_local_to_global_map()
        _totalCells +=  (*_selfCounts)[indx];
         indx++;
     }
-    cout << " _totalCells = " << _totalCells << " procid = " << _procID << endl;
 
    _globalToProc  = ArrayIntPtr( new Array<int> ( _totalCells ) );
    _globalToLocal = ArrayIntPtr( new Array<int> ( _totalCells ) );
@@ -419,7 +425,6 @@ LinearSystemMerger::get_local_to_global_map()
     int global_id = 0;
     foreach ( const set<int>::value_type proc_id, _group ){
         for ( int n = 0; n < (*_selfCounts)[indx]; n++ ){
-            cout << "proc_id = " << proc_id << " n = " << n << endl;
             (*_localToGlobal[proc_id])[n] = global_id;
             (*_globalToProc )[global_id] = proc_id;
             (*_globalToLocal)[global_id] = n;
@@ -432,17 +437,16 @@ LinearSystemMerger::get_local_to_global_map()
 }
 
 
-
+//merging connectivities
 void  
 LinearSystemMerger::set_merged_crconnectivity()
 {
-    //this might change in future for multiple meshes
-    const MultiFieldMatrix::StorageSiteMap&  coarseSites = _lsFine.getMatrix()._coarseSites;
-    foreach( const MultiFieldMatrix::StorageSiteMap::value_type& pos, coarseSites ){
-       const StorageSite& cell_site = *pos.second;
+   //mergin sites
+   const MultiField::ArrayIndexList& arrayIndices = _ls.getB().getArrayIndices();
+   foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const StorageSite& cell_site = *k.second;
        _siteMerger = shared_ptr< StorageSiteMerger > ( new StorageSiteMerger( _targetID, _group, cell_site) );
     }
-
          
     //sev
     _site = _siteMerger->merge();
@@ -496,14 +500,6 @@ LinearSystemMerger::set_merged_crconnectivity()
     //finish add
     _conn->finishAdd();
 
-    MPI::COMM_WORLD.Barrier();
-    cout << " _totalScatterCells = " << _totalScatterCells << " procid = " << _procID << endl;
-    MPI::COMM_WORLD.Barrier();
-
-
-  //
-   debug_print();
-
 }
 
 
@@ -530,6 +526,29 @@ LinearSystemMerger::update_gatherCells_from_scatterCells()
             }
         }
     }
+
+}
+
+//merging x, b, residual  from coarse linear systems
+void
+LinearSystemMerger::get_ls_vectors() 
+{
+    const MultiField&  delta = _ls.getDelta();
+    const MultiField::ArrayIndexList& arrayIndices = delta.getArrayIndices();
+    int indx = 0;
+    foreach ( const MultiField::ArrayIndex& ai, arrayIndices){
+        const Array<double> & xarray = dynamic_cast< const Array<double> & > ( delta[ai] );
+        cout << " procid = " << _procID << " xarray.getLength() = " << xarray.getLength() << endl;
+        for ( int i = 0; i < xarray.getLength(); i++ )
+            cout << " xarray[" << i << "] = " << xarray[i] << endl;
+
+    }
+
+
+    MPI::COMM_WORLD.Barrier();
+    cout << " _totalScatterCells = " << _totalScatterCells << " procid = " << _procID << endl;
+    MPI::COMM_WORLD.Barrier();
+    debug_print();
 
 }
 
