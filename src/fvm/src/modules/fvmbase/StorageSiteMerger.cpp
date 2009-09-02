@@ -8,7 +8,7 @@
 using namespace std;
 
 StorageSiteMerger::StorageSiteMerger(int target_proc_id, const set<int>& group, const StorageSite& cell_site )
-:_groupID(target_proc_id), _group(group), _cellSite(cell_site), _mergeSiteSize(-1), _mergeSiteGhostSize(-1)
+:_groupID(target_proc_id), _group(group), _cellSite(cell_site), _mergeSiteSize(0), _mergeSiteGhostSize(0)
 {
     init();
 }

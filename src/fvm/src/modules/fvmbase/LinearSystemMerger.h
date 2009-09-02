@@ -41,7 +41,7 @@ private:
   void  get_local_to_global_map();
   void  set_merged_crconnectivity();
   void  update_gatherCells_from_scatterCells();
-  void  get_ls_vectors();
+  void  set_ls_vectors();
 
   int _targetID;
   int _groupID;

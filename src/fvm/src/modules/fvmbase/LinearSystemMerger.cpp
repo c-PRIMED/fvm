@@ -27,6 +27,10 @@ LinearSystemMerger::~LinearSystemMerger()
 void
 LinearSystemMerger::init()
 {
+
+   //construct merged Linearsystem
+  _mergedLS = shared_ptr< LinearSystem > ( new LinearSystem() );
+
    //subcommunicator
    int color = _groupID;
    int key   = MPI::COMM_WORLD.Get_rank();
@@ -55,7 +59,7 @@ LinearSystemMerger::init()
    get_crconnectivity();
    get_local_to_global_map();
    set_merged_crconnectivity();
-   get_ls_vectors();
+   set_ls_vectors();
   
 }
 
@@ -531,18 +535,31 @@ LinearSystemMerger::update_gatherCells_from_scatterCells()
 
 //merging x, b, residual  from coarse linear systems
 void
-LinearSystemMerger::get_ls_vectors() 
+LinearSystemMerger::set_ls_vectors() 
 {
+    _mergedLS->_b = shared_ptr<MultiField> ( new MultiField() );
+
     const MultiField&  delta = _ls.getDelta();
     const MultiField::ArrayIndexList& arrayIndices = delta.getArrayIndices();
     int indx = 0;
     foreach ( const MultiField::ArrayIndex& ai, arrayIndices){
+         const StorageSite&  mergedSite = *_site;
+         MultiField::ArrayIndex mergedIndex( ai.first, &mergedSite );
+         _mergedLS->_b->addArray( mergedIndex, delta[ai].newSizedClone( mergedSite.getCount()) );
+/*
         const Array<double> & xarray = dynamic_cast< const Array<double> & > ( delta[ai] );
         cout << " procid = " << _procID << " xarray.getLength() = " << xarray.getLength() << endl;
         for ( int i = 0; i < xarray.getLength(); i++ )
-            cout << " xarray[" << i << "] = " << xarray[i] << endl;
+            cout << " xarray[" << i << "] = " << xarray[i] << endl;*/
 
     }
+
+   _mergedLS->_b->zero();
+   _mergedLS->_delta = dynamic_pointer_cast<MultiField> ( _mergedLS->_b->newClone() );
+   _mergedLS->_delta->zero();
+   _mergedLS->_residual = dynamic_pointer_cast<MultiField> ( _mergedLS->_b->newClone() );
+   _mergedLS->_residual->zero();
+   
 
 
     MPI::COMM_WORLD.Barrier();
