@@ -3,9 +3,13 @@
 
 #include "MultiFieldMatrix.h"
 
+
 class LinearSystem
 {
 public:
+ 
+  friend class LinearSystemMerger;
+
   LinearSystem();
 
   virtual ~LinearSystem();
