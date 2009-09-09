@@ -6,6 +6,10 @@
 #include "Array.h"
 #include "StorageSite.h"
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 
 /**
  * Sparse matrix stored using a compressed row format. The sparsity
@@ -289,7 +293,7 @@ public:
     Array<int> coarseCount(nRows);
 
     coarseCount = 0;
-    
+
     for(int nr=0; nr<nRows; nr++)
       if (coarseIndex[nr] == -1 && !_isBoundary[nr])
       {
@@ -297,9 +301,9 @@ public:
           // neighbours to group with; it starts off being the current
           // row but for group sizes greater than 2 it will be reset
           // to the ones that we group this one with
-          
+
           int current = nr;
-          
+
           int colMaxGrouped=-1; // columnn with largest coeff among grouped ones
           int colMaxUngrouped=-1; // columnn with largest coeff among ungrouped ones
 
@@ -308,7 +312,7 @@ public:
           // assign current row to a new coarse row
 
           coarseIndex[current] = nCoarseRows;
-          
+
           for(nGrouped=1; nGrouped<groupSize; nGrouped++)
           {
               // find largest coeff among both grouped and ungrouped columns
@@ -389,6 +393,7 @@ public:
               coarseCount[coarseIndex[colMaxGrouped]]++;
           }
       }
+
     return nCoarseRows;
   }
 
@@ -410,7 +415,7 @@ public:
     const Array<int>&  coarseIndex = dynamic_cast<const Array<int>& >(gCoarseIndex);
 
     const int nCoarseRows = coarseRowSite.getCount();
-    
+
     shared_ptr<CRConnectivity> coarseCR(new CRConnectivity(coarseRowSite,coarseColSite));
 
 
@@ -422,15 +427,16 @@ public:
     
     for(int nrCoarse=0; nrCoarse<nCoarseRows; nrCoarse++)
     {
-        const int nFine = coarseToFine.getCount(nrCoarse);
+        const int nFine = coarseToFine.getCount(nrCoarse); 
         for(int nfr=0; nfr<nFine; nfr++)
         {
             const int nrFine = coarseToFine(nrCoarse,nfr);
-
             for (int nb = _row[nrFine]; nb<_row[nrFine+1]; nb++)
             {
                 const int nc = _col[nb];
                 const int ncCoarse = coarseIndex[nc];
+
+
                 if (ncCoarse>=0 && nrCoarse!=ncCoarse && !coarseCounted[ncCoarse])
                 {
                     coarseCounted[ncCoarse] = true;
@@ -490,7 +496,9 @@ public:
         }
     }
 
+
     coarseCR->finishAdd();
+ 
     return coarseCR;
   }
 
@@ -561,14 +569,18 @@ public:
     return coarseMatrix;
   }
   
-  const CRConnectivity& getConnectivity() const {return _conn;}
+  virtual const CRConnectivity& getConnectivity() const {return _conn;}
 
   Array<Diag>& getDiag() {return _diag;}
   Array<OffDiag>& getOffDiag() {return _offDiag;}
 
   const Array<Diag>& getDiag() const {return _diag;}
   const Array<OffDiag>& getOffDiag() const {return _offDiag;}
-
+ 
+  void *getDiagData() const { return _diag.getData(); }
+  void *getOffDiagData() const { return _offDiag.getData(); }
+  int   getDiagDataSize() const { return _diag.getDataSize(); }
+  int   getOffDiagDataSize() const { return _offDiag.getDataSize(); }
   
   PairWiseAssembler& getPairWiseAssembler(const CRConnectivity& pairs)
   {

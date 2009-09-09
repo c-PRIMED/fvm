@@ -535,13 +535,12 @@ LinearSystemMerger::update_gatherCells_from_scatterCells()
 
 //merging x, b, residual  from coarse linear systems
 void
-LinearSystemMerger::set_ls_vectors() 
+LinearSystemMerger::set_ls_vectors()
 {
     _mergedLS->_b = shared_ptr<MultiField> ( new MultiField() );
 
     const MultiField&  delta = _ls.getDelta();
     const MultiField::ArrayIndexList& arrayIndices = delta.getArrayIndices();
-    int indx = 0;
     foreach ( const MultiField::ArrayIndex& ai, arrayIndices){
          const StorageSite&  mergedSite = *_site;
          MultiField::ArrayIndex mergedIndex( ai.first, &mergedSite );
@@ -559,13 +558,177 @@ LinearSystemMerger::set_ls_vectors()
    _mergedLS->_delta->zero();
    _mergedLS->_residual = dynamic_pointer_cast<MultiField> ( _mergedLS->_b->newClone() );
    _mergedLS->_residual->zero();
-   
+ 
+}
+
+//constructing mergin matrix
+void
+LinearSystemMerger::get_matrix()
+{
+
+    //getting  diag and off diag size (in BYTE )
+    Array<int> sizeDiag   ( _totalProcs );
+    Array<int> sizeOffDiag( _totalProcs );
+    sizeDiag.zero();
+    sizeOffDiag.zero();
+    const MultiField::ArrayIndexList& arrayIndices = _ls.getB().getArrayIndices();
+    foreach( MultiField::ArrayIndex k, arrayIndices ){
+        int send_buffer = _ls.getMatrix().getMatrix(k,k).getDiagDataSize();
+       _comm.Gather( &send_buffer , 1, MPI::INT, sizeDiag.getData(), 1, MPI::INT, _targetID );
+        send_buffer = _ls.getMatrix().getMatrix(k,k).getOffDiagDataSize();
+       _comm.Gather( &send_buffer , 1, MPI::INT, sizeOffDiag.getData(), 1, MPI::INT, _targetID );
+    }
+
+    //estimate size for diag and offdiag arrays for gathering
+    int size_diag    = 0;
+    int size_offdiag = 0;
+    foreach ( set<int>::value_type proc, _group ){
+         sizeDiag[proc]    = sizeDiag[proc]    / sizeof( double );
+         sizeOffDiag[proc] = sizeOffDiag[proc] / sizeof( double );
+         size_diag    += sizeDiag[proc];
+         size_offdiag += sizeOffDiag[proc];
+    }
+
+    //
+    int displs_diag[ _totalProcs ];
+    int displs_offdiag[ _totalProcs ];
+    displs_diag[0]    = 0;
+    displs_offdiag[0] = 0;
+    for ( int i = 1; i < _totalProcs; i++ ){
+       displs_diag[i]    = displs_diag[i-1]    + sizeDiag[i-1];
+       displs_offdiag[i] = displs_offdiag[i-1] + sizeOffDiag[i-1];
+    }
 
 
-    MPI::COMM_WORLD.Barrier();
-    cout << " _totalScatterCells = " << _totalScatterCells << " procid = " << _procID << endl;
-    MPI::COMM_WORLD.Barrier();
-    debug_print();
+    //allocating space for diag and offdiag
+    ArrayDblePtr  diag   ( new Array<double> ( size_diag    ) );
+    ArrayDblePtr  offdiag( new Array<double> ( size_offdiag ) );
+//     cout << " procIDdDDDDDDDDDDDDD = " << _procID << " size_diag = " << size_diag << " size_offdiag = " << size_offdiag << endl;
+//     if ( _procID == _targetID )
+//        for ( int n = 0; n < _totalProcs; n++ )
+//           cout << " sizeDiag[" << n << "] = " << sizeDiag[n] << " sizeOffDiag[" << n << "] = " << sizeOffDiag[n] << endl;
+// 
+
+
+    //gathering diag and offdiag 
+    foreach( MultiField::ArrayIndex k, arrayIndices ){
+       int send_cnts_diag    = _ls.getMatrix().getMatrix(k,k).getDiagDataSize();
+      _comm.Gatherv( _ls.getMatrix().getMatrix(k,k).getDiagData(), send_cnts_diag, MPI::BYTE, diag->getData(), &sizeDiag[0], displs_diag, MPI::DOUBLE, _targetID );
+       int send_cnts_offdiag = _ls.getMatrix().getMatrix(k,k).getOffDiagDataSize();
+      _comm.Gatherv( _ls.getMatrix().getMatrix(k,k).getOffDiagData(), send_cnts_offdiag, MPI::BYTE, offdiag->getData(), &sizeOffDiag[0], displs_offdiag, MPI::DOUBLE, _targetID );
+    }
+
+    //fill diag
+    int indx = 0;
+    foreach ( const set<int>::value_type proc_id, _group){
+       _diag[proc_id]    = ArrayDblePtr( new Array<double> ( sizeDiag[proc_id]    ) );
+        Array<double>& diagonal   = *_diag[proc_id];
+       //fill data
+        for ( int i = 0; i < sizeDiag[proc_id]; i++ ){
+           diagonal[i]    = (*diag)[indx];
+           indx++;
+        }
+    }
+    //fill off diaogonal
+    indx = 0;
+    foreach ( const set<int>::value_type proc_id, _group){
+       _offDiag[proc_id]    = ArrayDblePtr( new Array<double> ( sizeOffDiag[proc_id] ) );
+        Array<double>& offDiagonal   = *_offDiag[proc_id];
+       //fill data
+        for ( int i = 0; i < sizeOffDiag[proc_id]; i++ ){
+           offDiagonal[i]  = (*offdiag)[indx];
+           indx++;
+        }
+    }
+
+   //monday
+   //_ls.getMatrix().getMatrix(k,k).addnew method to return CRMatrix
+   //add get_ls_vector() get delta before mergin and put it delta created in set_ls_vector()
+   // then create gather scatter methods in this class. gather will call get_matrix and get_vector() but scatter will only scatter delta (nned to implement) to distributed mesh
+
+
+}
+
+
+void
+LinearSystemMerger::gather()
+{
+   get_matrix();
+   gather_ls_vector();
+}
+
+
+void
+LinearSystemMerger::scatter()
+{
+   scatter_ls_vector();
+
+}
+
+
+void 
+LinearSystemMerger::gather_ls_vector()
+{
+
+    int displs[ _totalProcs ];
+    displs[0] = 0;
+    for ( int i = 1; i < _totalProcs; i++ ){
+         displs[i] = displs[i-1] + (*_selfCounts)[i-1];
+     }
+
+    //getting delta
+   int i = 0;
+   const MultiField::ArrayIndexList& arrayIndices = _ls.getDelta().getArrayIndices();
+   const MultiField& multiField = _ls.getDelta();
+   MultiField& mergedMultiField = _mergedLS->getDelta();
+   foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const StorageSite& site = *k.second;
+       int send_cnts = site.getSelfCount();
+       const ArrayBase&  delta = multiField[k];
+/*       Array<double>&  deltaDouble = dynamic_cast<  Array<double>&  > ( delta );
+       for ( int indx = 0; indx < deltaDouble.getLength(); indx++ ){
+           deltaDouble[indx] = double(_procID) * double(100) + double(indx) ;
+           cout << "proc_id = " << _procID << " delta(" << indx << ") = " << deltaDouble[indx] << endl;
+       }*/
+       const MultiField::ArrayIndex& mergerIndex = mergedMultiField.getArrayIndex(i++);
+       ArrayBase&  mergedDelta      = mergedMultiField[mergerIndex];
+      _comm.Gatherv( delta.getData(), send_cnts, MPI::DOUBLE, mergedDelta.getData(), &(*_selfCounts)[0], displs, MPI::DOUBLE, _targetID );
+
+   }
+
+
+}
+
+void
+LinearSystemMerger::scatter_ls_vector()
+{
+   MPI::COMM_WORLD.Barrier();
+   int displs[ _totalProcs ];
+   displs[0] = 0;
+   for ( int i = 1; i < _totalProcs; i++ )
+       displs[i] = displs[i-1] + (*_selfCounts)[i-1];
+
+   int i = 0;
+   MultiField& multiField = _ls.getDelta();
+   const MultiField::ArrayIndexList& arrayIndices = _ls.getDelta().getArrayIndices();
+   foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const StorageSite& site = *k.second;
+       int recv_cnts = site.getSelfCount();
+       ArrayBase&  delta = multiField[k];
+
+       const MultiField& mergedMultiField = _mergedLS->getDelta();
+       const MultiField::ArrayIndex& mergerIndex = mergedMultiField.getArrayIndex(i++);
+       const ArrayBase&  mergedDelta      = mergedMultiField[mergerIndex];
+      _comm.Scatterv( mergedDelta.getData(), &(*_selfCounts)[0], displs, MPI::DOUBLE, delta.getData(), recv_cnts,  MPI::DOUBLE, _targetID );
+
+   }
+
+
+//     MPI::COMM_WORLD.Barrier();
+//     cout << " _totalScatterCellss = " << _totalScatterCells << " procid = " << _procID << endl;
+//     MPI::COMM_WORLD.Barrier();
+// 
+//     debug_print();
 
 }
 
@@ -740,6 +903,16 @@ LinearSystemMerger::debug_print()
        }
     }
     debug_file << endl;
+
+   const MultiField::ArrayIndexList& arrayIndices = _mergedLS->getDelta().getArrayIndices();
+    foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const StorageSite& site = *k.second;
+       const MultiField& multiField = _mergedLS->getDelta();
+       const Array<double>&  delta = dynamic_cast< const Array<double>&  > ( multiField[k] );
+       for ( int i = 0; i < delta.getLength(); i++ )
+           debug_file << " delta(" << i << ") = " << delta[i] << endl;
+
+   }
 
 
      debug_file.close();

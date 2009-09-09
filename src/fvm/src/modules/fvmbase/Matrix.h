@@ -32,6 +32,14 @@ public:
                                const double weighRatioThreshold);
   
   virtual const CRConnectivity& getConnectivity( ) const {throw;}
+
+  
+  virtual void *getDiagData() const {throw;}
+  virtual void *getOffDiagData() const {throw;}
+  virtual int   getDiagDataSize() const {throw;}
+  virtual int   getOffDiagDataSize() const {throw;}
+
+  
   virtual shared_ptr<CRConnectivity>
   createCoarseConnectivity(const IContainer& coarseIndex,
                            const CRConnectivity& coarseToFine,

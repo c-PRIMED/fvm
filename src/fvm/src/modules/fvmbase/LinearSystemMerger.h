@@ -18,6 +18,7 @@ class LinearSystemMerger
 {
 public:
 
+    typedef   shared_ptr< Array<double> >  ArrayDblePtr;
     typedef   shared_ptr< Array<int> >     ArrayIntPtr;
     typedef   map<int,ArrayIntPtr>         ArrayIntPtrMap;
     friend class LinearSystem;
@@ -25,6 +26,8 @@ public:
    LinearSystemMerger( int target_proc_id, const set<int>& group, LinearSystem& ls );
    ~LinearSystemMerger();
 
+   void gather();
+   void scatter();
 
    void  debug_print();
 
@@ -42,6 +45,10 @@ private:
   void  set_merged_crconnectivity();
   void  update_gatherCells_from_scatterCells();
   void  set_ls_vectors();
+  void  get_matrix();
+  void  gather_ls_vector();
+  void  scatter_ls_vector();
+
 
   int _targetID;
   int _groupID;
@@ -81,6 +88,10 @@ private:
   map< int, ArrayIntPtr >  _localToGlobal;  //[procID][localID] = globalID
   ArrayIntPtr   _globalToProc;  //[globalID] = procID
   ArrayIntPtr   _globalToLocal; //[globaID] = local id ( _globalToProc and _globalToLocal mostly need to be togethter)
+
+  map<int, ArrayDblePtr > _diag;
+  map<int, ArrayDblePtr > _offDiag;
+
 
   shared_ptr< StorageSite    > _site;
   shared_ptr< StorageSiteMerger > _siteMerger;
