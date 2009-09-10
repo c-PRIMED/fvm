@@ -55,7 +55,7 @@ class BuildPkg:
             Fftw("pkgs/fftw", 0),
             H5py("pkgs/h5py-1.2.0.bz2", 0),
             Xdmf("pkgs/Xdmf-07172009.bz2", 1),
-            Netcdf("pkgs/netcdf", 2),
+            Netcdf("pkgs/netcdf-4.0.1.tar.gz", 0),
             NetCDF4("pkgs/netCDF4-0.8.1.bz2", 0),
             ParMetis("pkgs/ParMetis", 1),
             Lammps("src/lammps", 1),
@@ -357,8 +357,7 @@ class Netcdf(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --with-pic -prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        # Don't use parallel make here. Breaks on some systems.
-        return self.sys_log("make")
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
 
