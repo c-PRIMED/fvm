@@ -180,7 +180,9 @@ def fix_path(k, v, prepend, unload):
         e = ''
         
     if unload:
-        os.environ[k] = e.replace(v,'',1).strip(':')
+        p = e.split(':')
+        p.remove(v)
+        os.environ[k] = ':'.join(p)
     else:
         if prepend:
             os.environ[k] = (v + ':' + e).strip(':')
