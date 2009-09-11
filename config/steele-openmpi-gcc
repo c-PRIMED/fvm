@@ -1,0 +1,41 @@
+# config file for steele builds
+Testing:
+	PBS=True
+	queue=jmurthy
+	walltime=4:00:00
+	nodes=1
+	cpus=8
+	modules=openmpi-gcc
+
+lammps:
+	Build=0
+	modules=openmpi-gcc
+	build=openmpi
+
+fvm:
+	Build=0
+	modules=openmpi-gcc
+
+	# build using MPI
+	# default is False
+	parallel=True
+
+	# 'release' or 'debug'
+	# release is built with optimization on
+	# default is release
+	version=release
+
+	# compiler. 'intelc' or 'gcc'
+	# default is gcc
+	compiler=gcc
+
+MPM:
+	Build=1
+	modules=openmpi-gcc
+	configname=gnu-linux
+
+ALL:
+	modules=gcc atlas hdf5-1.8.3/gcc-4.4.0
+
+
+

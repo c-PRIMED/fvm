@@ -1,0 +1,47 @@
+# config file for steele builds
+# Format updated 13 Feb 2009
+
+# Unfortunately the installed python is too old for the latest numpy
+# and the optional python modules don't include required libraries.
+python:
+	Build=1
+
+# needed for netCDF4 and general array usage
+numpy:
+	Build=1
+
+# needed for testing
+nose:
+	Build=1
+
+# MPI for Python 
+mpi4py:
+	modules=mpich2-intel
+	Build=True
+
+# needed for FVM
+rlog:
+	Build=True
+boost:
+	Build=True
+swig:
+	Build=True
+
+# needed for gmsh and lammps
+fftw:
+	Build=1
+
+# needed for MPM
+netcdf:
+	env=F90=ifort
+	env=CC=icc
+	Build=True
+
+# Needed for MPM scripts
+netCDF4:
+	Build=1
+
+# Needed for FVM
+parmetis:
+	modules=mpich2-intel
+	Build=True

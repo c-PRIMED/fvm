@@ -1,0 +1,40 @@
+# config file for steele builds
+Testing:
+	PBS=True
+	queue=jmurthy
+	walltime=4:00:00
+	nodes=3
+	ncpus=8
+	modules=mpich2-intel
+
+lammps:
+	Build=0
+	modules=mpich2-intel
+	build=steele
+
+fvm:
+	Build=True
+
+	# build using MPI
+	# default is False
+	parallel=True
+
+	# 'release' or 'debug'
+	# release is built with optimization on
+	# default is release
+	version=release
+
+	# compiler. 'intelc' or 'gcc'
+	# default is gcc
+	compiler=intelc
+	modules=mpich2-intel
+
+MPM:
+	Build=1
+	modules=mpich2-intel
+	configname=intel-linux
+
+ALL:
+	modules=intel
+
+
