@@ -17,7 +17,7 @@ class StorageSiteMerger;
 class LinearSystemMerger
 {
 public:
-
+    
     typedef   shared_ptr< Array<double> >  ArrayDblePtr;
     typedef   shared_ptr< Array<int> >     ArrayIntPtr;
     typedef   map<int,ArrayIntPtr>         ArrayIntPtrMap;
@@ -26,11 +26,28 @@ public:
    LinearSystemMerger( int target_proc_id, const set<int>& group, LinearSystem& ls );
    ~LinearSystemMerger();
 
+
    void gather();
    void scatter();
+   shared_ptr< LinearSystem > getLS() { return _mergeLS;}
 
    void  debug_print();
 
+   //get methods
+
+   const map<int, ArrayIntPtr>& getLocalToGlobal() const { return _localToGlobal;}
+   const Array<int>& getGlobalToProc() const { return *_globalToProc;}
+   const Array<int>& getGlobalToLocal() const { return *_globalToLocal;}
+   const Array<int>& getSelfCounts()   const { return *_selfCounts;}   
+
+   const map<int, ArrayDblePtr>& getDiag() const { return _diag; }
+   const map<int, ArrayDblePtr>& getOffDiag() const { return _offDiag;}
+   const map< int, ArrayIntPtr >& getLocalConnRow() const { return  _row;}
+   const map< int, ArrayIntPtr >& getLocalConnCol() const { return  _col;}
+
+   const CRConnectivity& getConnectivity() const { return *_mergeCR;}
+   const MPI::Intracomm&  getComm() const { return _comm;}
+   const set<int>& getGroup() const { return  _group;}
 
 
 private:
@@ -55,7 +72,7 @@ private:
   const set<int>&     _group;
   LinearSystem& _ls;
  
-  shared_ptr<LinearSystem> _mergedLS;
+  shared_ptr<LinearSystem> _mergeLS;
 
   int _procID;
   int _totalProcs;
@@ -84,6 +101,8 @@ private:
   ArrayIntPtr _colLength; //CRConnectivity col_dimension, size = _totalProcs
   map< int, ArrayIntPtr >  _row;   //CRConnectivity _row, size = totalCells
   map< int, ArrayIntPtr >  _col;   //CRConnectivity _col, size = ??
+  map< int, ArrayIntPtr >  _colPos;   //return cell position in col array
+  ArrayIntPtr   _mergeColPos;
 
   map< int, ArrayIntPtr >  _localToGlobal;  //[procID][localID] = globalID
   ArrayIntPtr   _globalToProc;  //[globalID] = procID
@@ -95,7 +114,7 @@ private:
 
   shared_ptr< StorageSite    > _site;
   shared_ptr< StorageSiteMerger > _siteMerger;
-  shared_ptr< CRConnectivity > _conn;
+  shared_ptr< CRConnectivity > _mergeCR;
    
 
   MPI::Intracomm _comm;

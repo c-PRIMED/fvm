@@ -5,11 +5,13 @@
 #include "CRConnectivity.h"
 #include "Array.h"
 #include "StorageSite.h"
+#include "LinearSystemMerger.h"
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
 #endif
 
+#include <set>
 
 /**
  * Sparse matrix stored using a compressed row format. The sparsity
@@ -28,13 +30,16 @@ template<class T_Diag, class T_OffDiag, class X>
 class CRMatrix : public Matrix
 {
 public:
+
+   //friend class LinearSystemMerger;
+
   typedef T_Diag Diag;
   typedef T_OffDiag OffDiag;
   typedef Array<Diag> DiagArray;
   typedef Array<OffDiag> OffDiagArray;
   typedef Array<X> XArray;
-
-
+  typedef shared_ptr< Array<int> >     ArrayIntPtr;
+  typedef shared_ptr< Array<double> >  ArrayDblePtr;
   /**
    * Embedded class used for easy (ie. no search) access to matrix
    * entries for the special case of face based finite volume
@@ -568,6 +573,70 @@ public:
 
     return coarseMatrix;
   }
+
+
+shared_ptr<Matrix>
+createMergeMatrix( const LinearSystemMerger& mergeLS )
+{
+
+   const CRConnectivity&  conn = mergeLS.getConnectivity();
+
+   const map<int,ArrayIntPtr>& localToGlobalMap = mergeLS.getLocalToGlobal();
+
+   const Array<int>& globalToProc  = mergeLS.getGlobalToProc();
+   const Array<int>& globalToLocal = mergeLS.getGlobalToLocal();
+   const Array<int>& selfCounts    = mergeLS.getSelfCounts();
+
+   const map< int, ArrayIntPtr >&  rowMap = mergeLS.getLocalConnRow();
+   const map< int, ArrayIntPtr >&  colMap = mergeLS.getLocalConnCol();
+
+   const map<int, ArrayDblePtr> &  diagMap   =  mergeLS.getDiag();
+   const map<int, ArrayDblePtr> & offDiagMap =  mergeLS.getOffDiag();
+
+   const MPI::Intracomm& comm = mergeLS.getComm();
+   const set<int>& group = mergeLS.getGroup();
+
+   shared_ptr<CRMatrix> mergeMatrix( new CRMatrix(conn) );
+   mergeMatrix->initAssembly();
+
+   Array<Diag>&    mergeDiag    = mergeMatrix->getDiag();
+   Array<OffDiag>& mergeOffDiag = mergeMatrix->getOffDiag();
+   const Array<int>& mergeRow = conn.getRow();
+   const Array<int>& mergeCol = conn.getCol();
+   foreach ( const set<int>::value_type proc_id, group ){
+      const Array<double>& diag    = *diagMap.find(proc_id)->second;
+      const Array<double>& offDiag = *offDiagMap.find(proc_id)->second;
+
+      const Array<int>& localToGlobal = *localToGlobalMap.find(proc_id)->second;
+
+      const Array<int>& row = *rowMap.find(proc_id)->second;
+      const Array<int>& col = *colMap.find(proc_id)->second;
+
+      for ( int i = 0; i < selfCounts[proc_id]; i++ ){
+          int glbl_indx = localToGlobal[i];
+          mergeDiag[glbl_indx] = diag[i];
+      }
+
+      for ( int i = 0; i < selfCounts[proc_id]; i++ ){
+           int global_indx = localToGlobal[i];
+           for ( int np = row[i]; np < row[i+1]; np++ ){ 
+                int local_j = col[np];
+                int global_j = localToGlobal[ local_j ];
+                for ( int npg = mergeRow[global_indx]; npg < mergeRow[global_indx+1]; npg++ ){
+                      if ( mergeCol[npg] == global_j ) 
+                          mergeOffDiag[npg] = offDiag[np];
+                 }
+           }
+      }
+
+   }
+
+
+    return mergeMatrix;
+
+}
+
+
   
   virtual const CRConnectivity& getConnectivity() const {return _conn;}
 

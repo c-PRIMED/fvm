@@ -2,9 +2,11 @@
 #define _MATRIX_H_
 
 #include "misc.h"
+
 class IContainer;
 class StorageSite;
 class CRConnectivity;
+class LinearSystemMerger;
 
 
 class Matrix
@@ -38,6 +40,7 @@ public:
   virtual void *getOffDiagData() const {throw;}
   virtual int   getDiagDataSize() const {throw;}
   virtual int   getOffDiagDataSize() const {throw;}
+  virtual shared_ptr<Matrix> createMergeMatrix( const LinearSystemMerger& mergeLS ) { throw;}
 
   
   virtual shared_ptr<CRConnectivity>
