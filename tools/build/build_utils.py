@@ -260,8 +260,12 @@ def copytree(src, dst, ctype):
         return
     errors = []
     for name in os.listdir(src):
+        # filter out things we don't want to copy
+        if name in ['.svn', 'CVS'] or name.endswith('.o'):
+            continue
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
+        print "Copytree %s -> %s" %(name, dstname)
         try:
             if os.path.islink(srcname):
                 linkto = os.readlink(srcname)

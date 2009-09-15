@@ -59,7 +59,7 @@ class BuildPkg:
             NetCDF4("pkgs/netCDF4-0.8.1.bz2", 0),
             ParMetis("pkgs/ParMetis", 1),
             Lammps("src/lammps", 1),
-            MPM("src/MPM", 2),
+            MPM("src/MPM", 1),
             Fvm("src/fvm", 0),
             MEMOSA("src/MEMOSA", 0),
             ]
@@ -445,7 +445,7 @@ class MPM(BuildPkg):
         for dirname in ['config', 'F95', 'py']:
             src = os.path.join(self.sdir, dirname)
             dst = os.path.join(self.bdir, dirname)
-            shutil.copytree(src, dst)
+            copytree(src, dst, 1)
 
     def _configure(self):
         pass
