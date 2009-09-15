@@ -265,7 +265,6 @@ def copytree(src, dst, ctype):
             continue
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
-        print "Copytree %s -> %s" %(name, dstname)
         try:
             if os.path.islink(srcname):
                 linkto = os.readlink(srcname)
