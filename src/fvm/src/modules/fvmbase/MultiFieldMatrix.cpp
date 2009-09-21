@@ -432,7 +432,7 @@ MultiFieldMatrix::createCoarseToFineMapping(const MultiField& coarseIndexField)
       const Index rowIndex = coarseIndexField.getArrayIndex(i);
 
       const StorageSite& fineSite = *rowIndex.second;
-      
+
       const StorageSite& coarseSite = *_coarseSites[rowIndex];
 
       const int nFineRows = fineSite.getCount();
@@ -440,15 +440,14 @@ MultiFieldMatrix::createCoarseToFineMapping(const MultiField& coarseIndexField)
       const Array<int>& coarseIndex =
         dynamic_cast<const Array<int>& >(coarseIndexField[rowIndex]);
 
-      
       shared_ptr<CRConnectivity> coarseToFine(new CRConnectivity(coarseSite,fineSite));
 
       coarseToFine->initCount();
-      
+
       for(int nr=0; nr<nFineRows; nr++)
         if (coarseIndex[nr]>=0)
           coarseToFine->addCount(coarseIndex[nr],1);
-      
+
       coarseToFine->finishCount();
 
       for(int nr=0; nr<nFineRows; nr++)
@@ -595,8 +594,8 @@ MultiFieldMatrix::getSize() const
 
 #ifdef FVM_PARALLEL
          int count = 1;
-         int local_size = size;
-         MPI::COMM_WORLD.Allreduce( &local_size, &size, count, MPI::INT, MPI::MIN);
+         MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &size, count, MPI::INT, MPI::MIN);
+
 #endif
 
 

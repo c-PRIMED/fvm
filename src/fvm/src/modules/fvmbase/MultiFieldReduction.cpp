@@ -165,7 +165,7 @@ MultiFieldReduction::sync()
         const Field& field = *(it->first);
          ArrayBase&  myArray = *(it->second);
          int count = myArray.getDataSize() / sizeof(double); 
-         MPI::COMM_WORLD.Allreduce( myArray.getData(), myArray.getData(), count, MPI::DOUBLE, MPI::SUM);
+         MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, myArray.getData(), count, MPI::DOUBLE, MPI::SUM);
    }
 #endif
 
