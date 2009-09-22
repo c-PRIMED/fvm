@@ -5,6 +5,9 @@
 #include "MultiField.h"
 #include <set>
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
 //UnorderedSet doesn't duplicate and  sort elements
 class UnorderedSet
 {
@@ -105,7 +108,7 @@ public:
                   MultiField& fineSolutionField,
                   const MultiField& coarseSolutionField);
   
-  int getSize() const;
+  int getSize( const MPI::Intracomm& comm ) const;
 
   void addMatrix(const Index& rowI, const Index& colI, shared_ptr<Matrix> m)
   {

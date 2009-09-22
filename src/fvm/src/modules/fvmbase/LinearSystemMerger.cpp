@@ -382,12 +382,15 @@ LinearSystemMerger::get_crconnectivity()
       _comm.Gatherv( col_local.getData(), colLength, MPI::INT, col->getData(), &(*_colLength)[0], displs_col, MPI::INT, _targetID );
    }
 
+  //for ( int i = 0; i < col->getLength(); i++ )
+    // cout << " col(" << i << ") = " << (*col)[i] << endl;
+
    //copying to map data structures, procid->row, or procid->col
    int local = 0;
    foreach ( const set<int>::value_type proc_id, _group ){
      _row[proc_id] = ArrayIntPtr ( new Array<int> ( (*_rowLength)[local] ) );
      _col[proc_id] = ArrayIntPtr ( new Array<int> ( (*_colLength)[local] ) );
-     _colPos[proc_id] = ArrayIntPtr ( new Array<int> ( (*_colLength)[local] ) );
+     //_colPos[proc_id] = ArrayIntPtr ( new Array<int> ( (*_colLength)[local] ) );
       local++;
    }
 
@@ -407,16 +410,16 @@ LinearSystemMerger::get_crconnectivity()
       local++;
    }
 
-  //create colPos data structure, you ask for cellID and returns position in col
-  indx  = 0;
-  local = 0;
-  foreach( const set<int>::value_type proc_id, _group ){
-     for ( int i = 0; i < (*_colLength)[local]; i++ ){
-        int cell_id = (*col)[indx++];
-        (*_colPos[proc_id])[cell_id] = i;
-     }
-     local++;
-  }
+//   //create colPos data structure, you ask for cellID and returns position in col
+//   indx  = 0;
+//   local = 0;
+//   foreach( const set<int>::value_type proc_id, _group ){
+//      for ( int i = 0; i < (*_colLength)[local]; i++ ){
+//         int cell_id = (*col)[indx++];
+//         (*_colPos[proc_id])[cell_id] = i;
+//      }
+//      local++;
+//   }
 
 
 
@@ -465,7 +468,7 @@ LinearSystemMerger::set_merged_crconnectivity()
        const StorageSite& cell_site = *k.second;
        _siteMerger = shared_ptr< StorageSiteMerger > ( new StorageSiteMerger( _targetID, _group, cell_site) );
     }
-         
+
     //sev
     _site = _siteMerger->merge();
     update_gatherCells_from_scatterCells();
@@ -478,16 +481,30 @@ LinearSystemMerger::set_merged_crconnectivity()
    int indx = 0;
    foreach ( set<int>::value_type proc, _group ){
        const Array<int>& row = *_row[proc];
+       const Array<int>& col = *(_col[proc]);
+       const map<int,int>& gatherIDsLocalToGlobal  = _gatherIDsLocalToGlobalMap[proc];
+       
+       int ghost_endID   = row.getLength()-1;
+       int ghost_startID = ghost_endID - int( gatherIDsLocalToGlobal.size() );
        int selfCount = (*_selfCounts)[proc];
+
        //loop over row
        for ( int i = 0; i < selfCount; i++ ){
             int count = row[i+1] - row[i];
-           _mergeCR->addCount( indx++, count );
+//            _mergeCR->addCount(indx++,count);
+            for ( int j = 0; j < count; j++){
+              int localID  = col[ row[i]+j ]; //get surrounding local cellID
+              //excluding boundary conditions
+              if ( !(localID >= selfCount && localID < ghost_startID) )
+                _mergeCR->addCount( indx, 1 );
+            }
+            indx++;
        }
    }
+
     //finish count
    _mergeCR->finishCount();
-    
+
    //add
    indx = 0;
    foreach ( set<int>::value_type proc, _group ){
@@ -495,7 +512,11 @@ LinearSystemMerger::set_merged_crconnectivity()
        const Array<int>& col = *(_col[proc]);
        const Array<int>& localToGlobal = *_localToGlobal[proc];
        const map<int,int>& gatherIDsLocalToGlobal  = _gatherIDsLocalToGlobalMap[proc];
-       int selfCount = (*_selfCounts)[proc];
+
+       int ghost_endID   = row.getLength()-1;
+       int ghost_startID = ghost_endID - int( gatherIDsLocalToGlobal.size() );
+       int selfCount     = (*_selfCounts)[proc];
+
        //loop over row
        for ( int i = 0; i < selfCount; i++ ){
             int count = row[i+1] - row[i];
@@ -510,7 +531,9 @@ LinearSystemMerger::set_merged_crconnectivity()
                    globalID = gatherIDsLocalToGlobal.find(localID)->second;
                }
 
-              _mergeCR->add( indx, globalID );
+              //excluding boundary conditions
+              if ( !(localID >= selfCount && localID < ghost_startID) )
+                 _mergeCR->add( indx, globalID );
             }
             indx++;
        }
@@ -518,14 +541,17 @@ LinearSystemMerger::set_merged_crconnectivity()
     //finish add
     _mergeCR->finishAdd();
 
-    const Array<int>& col = _mergeCR->getCol();
+    //update ghost cells as globalID
+    // update_col();
+
+//    const Array<int>& col = _mergeCR->getCol();
 //     cout << "llllllllllllllllllllllllllllllllllllllllcol =  " << col.getLength() << endl;
-   _mergeColPos = ArrayIntPtr( new Array<int> ( col.getLength() ) );
+/*   _mergeColPos = ArrayIntPtr( new Array<int> ( col.getLength() ) );
    //store col position for given id
     for ( int i = 0; i < col.getLength(); i++ ){
        int id = col[i];
        (*_mergeColPos)[id] = i;
-    }
+    }*/
 }
 
 
@@ -554,18 +580,37 @@ LinearSystemMerger::update_gatherCells_from_scatterCells()
     }
 
 
+
+
+}
+
+//update col
+void
+LinearSystemMerger::update_col()
+{
    //update _col for gather Cells
    foreach( set<int>::value_type proc_id, _group ){
       Array<int>& col = *_col[proc_id];
+      const Array<int>& row = *_row[proc_id];
       const map<int,int>& gatherIDsLocalToGLobal = _gatherIDsLocalToGlobalMap[proc_id];
-      int selfCount = (*_selfCounts)[proc_id];
-      for ( int i = 0; i < col.getLength(); i++ ){
-         //check if it is not  inner cells
-         if ( col[i] >= selfCount )
-            col[i] = gatherIDsLocalToGLobal.find( col[i] )->second;
-      }
-   }
 
+      int ghost_endID   = row.getLength()-1;
+      int ghost_startID = ghost_endID - int( gatherIDsLocalToGLobal.size() );
+      int selfCount = (*_selfCounts)[proc_id];
+
+      for ( int i = 0; i < col.getLength(); i++ ){
+         //check if it is ghost cells
+         if ( col[i] >= ghost_startID && col[i] <= ghost_endID )
+            col[i] = gatherIDsLocalToGLobal.find( col[i] )->second;
+         
+        //mark boundary as -1 
+         if( col[i] >= selfCount && col[i] < ghost_startID ){
+            col[i] = -1;
+         }
+      }
+
+
+   }
 
 }
 
@@ -580,6 +625,7 @@ LinearSystemMerger::set_ls_vectors()
     foreach ( const MultiField::ArrayIndex& ai, arrayIndices){
          const StorageSite&  mergeSite = *_site;
          MultiField::ArrayIndex mergeIndex( ai.first, &mergeSite );
+          cout << " _procIDDDD=  " << _procID << " mergeSite.getCount() = " << mergeSite.getCount() << endl;
          _mergeLS->_b->addArray( mergeIndex, delta[ai].newSizedClone( mergeSite.getCount()) );
 /*
         const Array<double> & xarray = dynamic_cast< const Array<double> & > ( delta[ai] );
@@ -595,13 +641,14 @@ LinearSystemMerger::set_ls_vectors()
    _mergeLS->_residual = dynamic_pointer_cast<MultiField> ( _mergeLS->_b->newClone() );
    _mergeLS->_residual->zero();
  
-   _mergeLS->initAssembly();
+   //_mergeLS->initAssembly();
+   //_mergeLS->getMatrix().initAssembly();
 
 }
 
 //constructing mergin matrix
 void
-LinearSystemMerger::get_matrix()
+LinearSystemMerger::gatherMatrix()
 {
 
     //getting  diag and off diag size (in BYTE )
@@ -621,10 +668,10 @@ LinearSystemMerger::get_matrix()
     int size_diag    = 0;
     int size_offdiag = 0;
     foreach ( set<int>::value_type proc, _group ){
-         sizeDiag[proc]    = sizeDiag[proc]    / sizeof( double );
-         sizeOffDiag[proc] = sizeOffDiag[proc] / sizeof( double );
-         size_diag    += sizeDiag[proc];
-         size_offdiag += sizeOffDiag[proc];
+        sizeDiag[proc]    = sizeDiag[proc]    / sizeof( double );
+        sizeOffDiag[proc] = sizeOffDiag[proc] / sizeof( double );
+        size_diag    += sizeDiag[proc];
+        size_offdiag += sizeOffDiag[proc];
     }
 
     //
@@ -650,6 +697,20 @@ LinearSystemMerger::get_matrix()
 
     //gathering diag and offdiag 
     foreach( MultiField::ArrayIndex k, arrayIndices ){
+
+
+//        //assigning fake value before shipping
+//        double *diagPtr = reinterpret_cast < double* > (_ls.getMatrix().getMatrix(k,k).getDiagData() );
+//        int diag_cnt = _ls.getMatrix().getMatrix(k,k).getDiagDataSize()    / sizeof( double );
+//        int off_cnt  = _ls.getMatrix().getMatrix(k,k).getOffDiagDataSize() / sizeof( double );
+//        for ( int i = 0; i < diag_cnt; i++)
+//            *(diagPtr+i) = double(_procID * 100 + i);
+// 
+//        double *offDiagPtr = reinterpret_cast < double* > (_ls.getMatrix().getMatrix(k,k).getOffDiagData() );
+//        for ( int i = 0; i < off_cnt; i++)
+//            *(offDiagPtr+i) = double(_procID * 100 + i);
+
+
        int send_cnts_diag    = _ls.getMatrix().getMatrix(k,k).getDiagDataSize();
       _comm.Gatherv( _ls.getMatrix().getMatrix(k,k).getDiagData(), send_cnts_diag, MPI::BYTE, diag->getData(), &sizeDiag[0], displs_diag, MPI::DOUBLE, _targetID );
        int send_cnts_offdiag = _ls.getMatrix().getMatrix(k,k).getOffDiagDataSize();
@@ -679,41 +740,25 @@ LinearSystemMerger::get_matrix()
         }
     }
 
-   //adding matrix
-   const MultiField::ArrayIndexList& mergeArrayIndices = _mergeLS->getB().getArrayIndices();
-   foreach( MultiField::ArrayIndex k , mergeArrayIndices ){
-       Matrix& mIJ = _mergeLS->getMatrix().getMatrix( k, k );
-      _mergeLS->getMatrix().addMatrix( k, k , mIJ.createMergeMatrix( *this) );
+
+
+   int i = 0;
+   MultiField& mergeMultiField = _mergeLS->getDelta();
+   foreach( MultiField::ArrayIndex k, arrayIndices ){
+       const MultiField::ArrayIndex& mergeIndex = mergeMultiField.getArrayIndex(i++);
+       Matrix& mIJ = _ls.getMatrix().getMatrix( k, k );
+      _mergeLS->getMatrix().addMatrix( mergeIndex, mergeIndex , mIJ.createMergeMatrix( *this) );
    }
 
-   //monday
-   //_ls.getMatrix().getMatrix(k,k).addnew method to return CRMatrix
-   //add get_ls_vector() get delta before mergin and put it delta created in set_ls_vector()
-   // then create gather scatter methods in this class. gather will call get_matrix and get_vector() but scatter will only scatter delta (nned to implement) to distributed mesh
-
-    
 
 }
 
 
-void
-LinearSystemMerger::gather()
-{
-   get_matrix();
-   gather_ls_vector();
-}
 
-
-void
-LinearSystemMerger::scatter()
-{
-   scatter_ls_vector();
-
-}
 
 
 void 
-LinearSystemMerger::gather_ls_vector()
+LinearSystemMerger::gatherB()
 {
 
     int displs[ _totalProcs ];
@@ -724,21 +769,21 @@ LinearSystemMerger::gather_ls_vector()
 
     //getting delta
    int i = 0;
-   const MultiField::ArrayIndexList& arrayIndices = _ls.getDelta().getArrayIndices();
-   const MultiField& multiField = _ls.getDelta();
-   MultiField& mergeMultiField = _mergeLS->getDelta();
+   const MultiField::ArrayIndexList& arrayIndices = _ls.getB().getArrayIndices();
+   const MultiField& multiField = _ls.getB();
+   MultiField& mergeMultiField = _mergeLS->getB();
    foreach( MultiField::ArrayIndex k, arrayIndices ){
        const StorageSite& site = *k.second;
        int send_cnts = site.getSelfCount();
-       const ArrayBase&  delta = multiField[k];
+       const ArrayBase&  B = multiField[k];
 /*       Array<double>&  deltaDouble = dynamic_cast<  Array<double>&  > ( delta );
        for ( int indx = 0; indx < deltaDouble.getLength(); indx++ ){
            deltaDouble[indx] = double(_procID) * double(100) + double(indx) ;
            cout << "proc_id = " << _procID << " delta(" << indx << ") = " << deltaDouble[indx] << endl;
        }*/
        const MultiField::ArrayIndex& mergerIndex = mergeMultiField.getArrayIndex(i++);
-       ArrayBase&  mergeDelta      = mergeMultiField[mergerIndex];
-      _comm.Gatherv( delta.getData(), send_cnts, MPI::DOUBLE, mergeDelta.getData(), &(*_selfCounts)[0], displs, MPI::DOUBLE, _targetID );
+       ArrayBase&  mergeB      = mergeMultiField[mergerIndex];
+      _comm.Gatherv( B.getData(), send_cnts, MPI::DOUBLE, mergeB.getData(), &(*_selfCounts)[0], displs, MPI::DOUBLE, _targetID );
 
    }
 
@@ -746,7 +791,7 @@ LinearSystemMerger::gather_ls_vector()
 }
 
 void
-LinearSystemMerger::scatter_ls_vector()
+LinearSystemMerger::scatterDelta()
 {
    MPI::COMM_WORLD.Barrier();
    int displs[ _totalProcs ];
@@ -958,10 +1003,10 @@ LinearSystemMerger::debug_print()
        debug_file << " mergeCol(" << i << ") = " << mergeCol[i] << endl;
     debug_file << endl;
 
-   //mergeColPos
-    for ( int i = 0; i < _mergeColPos->getLength(); i++ )
-       debug_file << " mergeColPos(" << i << ") = " << (*_mergeColPos)[i] << endl;
-    debug_file << endl;
+//    //mergeColPos
+//     for ( int i = 0; i < _mergeColPos->getLength(); i++ )
+//        debug_file << " mergeColPos(" << i << ") = " << (*_mergeColPos)[i] << endl;
+//     debug_file << endl;
 
    //delta
    const MultiField::ArrayIndexList& arrayIndices = _mergeLS->getDelta().getArrayIndices();
@@ -972,6 +1017,26 @@ LinearSystemMerger::debug_print()
            debug_file << " delta(" << i << ") = " << delta[i] << endl;
 
    }
+
+    //matrix (diag)
+    foreach ( set<int>::value_type proc, _group ){
+         debug_file << "procID : " << proc << endl;
+         const Array<double>& diag  = *_diag[proc];
+         for ( int n = 0; n < diag.getLength(); n++ )
+             debug_file << " diag[" << n << "] = " << diag[n] << endl;
+         debug_file  << endl;
+      }
+     
+     debug_file << endl;
+    //matrix (diag)
+    foreach ( set<int>::value_type proc, _group ){
+         debug_file << "procID : " << proc << endl;
+         const Array<double>& offDiag  = *_offDiag[proc];
+         for ( int n = 0; n < offDiag.getLength(); n++ )
+             debug_file << " offDiag[" << n << "] = " << offDiag[n] << endl;
+         debug_file  << endl;
+      }
+     
 
 
 

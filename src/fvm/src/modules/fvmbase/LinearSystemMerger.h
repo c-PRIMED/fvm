@@ -27,8 +27,9 @@ public:
    ~LinearSystemMerger();
 
 
-   void gather();
-   void scatter();
+   void gatherMatrix();
+   void gatherB();
+   void scatterDelta();
    shared_ptr< LinearSystem > getLS() { return _mergeLS;}
 
    void  debug_print();
@@ -44,6 +45,7 @@ public:
    const map<int, ArrayDblePtr>& getOffDiag() const { return _offDiag;}
    const map< int, ArrayIntPtr >& getLocalConnRow() const { return  _row;}
    const map< int, ArrayIntPtr >& getLocalConnCol() const { return  _col;}
+   const vector< map<int,int> >&  getGatherIDsLocalToGlobal() const { return _gatherIDsLocalToGlobalMap; }  //[proc][localid] = globalID
 
    const CRConnectivity& getConnectivity() const { return *_mergeCR;}
    const MPI::Intracomm&  getComm() const { return _comm;}
@@ -62,9 +64,7 @@ private:
   void  set_merged_crconnectivity();
   void  update_gatherCells_from_scatterCells();
   void  set_ls_vectors();
-  void  get_matrix();
-  void  gather_ls_vector();
-  void  scatter_ls_vector();
+  void  update_col();
 
 
   int _targetID;

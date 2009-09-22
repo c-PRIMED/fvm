@@ -578,7 +578,6 @@ public:
 shared_ptr<Matrix>
 createMergeMatrix( const LinearSystemMerger& mergeLS )
 {
-
    const CRConnectivity&  conn = mergeLS.getConnectivity();
 
    const map<int,ArrayIntPtr>& localToGlobalMap = mergeLS.getLocalToGlobal();
@@ -589,6 +588,7 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
 
    const map< int, ArrayIntPtr >&  rowMap = mergeLS.getLocalConnRow();
    const map< int, ArrayIntPtr >&  colMap = mergeLS.getLocalConnCol();
+   const vector< map<int,int> >&   gatherIDsLocalToGlobal = mergeLS.getGatherIDsLocalToGlobal();  //[proc][localid] = globalID
 
    const map<int, ArrayDblePtr> &  diagMap   =  mergeLS.getDiag();
    const map<int, ArrayDblePtr> & offDiagMap =  mergeLS.getOffDiag();
@@ -608,6 +608,7 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
       const Array<double>& offDiag = *offDiagMap.find(proc_id)->second;
 
       const Array<int>& localToGlobal = *localToGlobalMap.find(proc_id)->second;
+      const map<int,int>& gatherIDsMap = gatherIDsLocalToGlobal[proc_id];
 
       const Array<int>& row = *rowMap.find(proc_id)->second;
       const Array<int>& col = *colMap.find(proc_id)->second;
@@ -621,12 +622,23 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
            int global_indx = localToGlobal[i];
            for ( int np = row[i]; np < row[i+1]; np++ ){ 
                 int local_j = col[np];
-                int global_j = localToGlobal[ local_j ];
-                for ( int npg = mergeRow[global_indx]; npg < mergeRow[global_indx+1]; npg++ ){
-                      if ( mergeCol[npg] == global_j ) 
-                          mergeOffDiag[npg] = offDiag[np];
-                 }
-           }
+
+                //if -1 means boundary skip it
+                if ( local_j >= 0 ){
+                    int global_j = -1;
+                    if ( local_j < selfCounts[proc_id] )
+                        global_j = localToGlobal[ local_j ];
+                    else  //ghost 
+                        global_j = gatherIDsMap.find(local_j)->second;
+
+
+                     for ( int npg = mergeRow[global_indx]; npg < mergeRow[global_indx+1]; npg++ ){
+                         if ( mergeCol[npg] == global_j ){ 
+                             mergeOffDiag[npg] = offDiag[np];
+                         }
+                     }
+                }
+           }	
       }
 
    }

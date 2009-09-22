@@ -5,9 +5,6 @@
 #include "StorageSite.h"
 #include "OneToOneIndexMap.h"
 
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 
 MultiFieldMatrix::MultiFieldMatrix() :
   _matrices(),
@@ -579,7 +576,7 @@ MultiFieldMatrix::correctSolution(const MultiField& coarseIndex,
 
 
 int
-MultiFieldMatrix::getSize() const
+MultiFieldMatrix::getSize( const MPI::Intracomm& comm ) const
 {
   int size=0;
   foreach(const MatrixMap::value_type& pos, _matrices)
@@ -594,7 +591,7 @@ MultiFieldMatrix::getSize() const
 
 #ifdef FVM_PARALLEL
          int count = 1;
-         MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &size, count, MPI::INT, MPI::MIN);
+         comm.Allreduce(MPI::IN_PLACE, &size, count, MPI::INT, MPI::MIN);
 
 #endif
 
