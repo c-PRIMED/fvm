@@ -1,5 +1,4 @@
-# config file for steele builds
-# Format updated 13 Feb 2009
+# config file for Coates gcc builds
 
 # Unfortunately the installed python is too old for the latest numpy
 # and the optional python modules don't include required libraries.
@@ -16,7 +15,7 @@ nose:
 
 # MPI for Python 
 mpi4py:
-	modules=mpich2-intel
+	modules=mpich2-gcc
 	Build=True
 
 # needed for FVM
@@ -33,8 +32,8 @@ fftw:
 
 # needed for MPM
 netcdf:
-	env=F90=ifort
-	env=CC=icc
+	env=F90=gfortran
+	env=CC=gcc
 	Build=True
 
 # Needed for MPM scripts
@@ -43,5 +42,5 @@ netCDF4:
 
 # Needed for FVM
 parmetis:
-	modules=mpich2-intel
+	modules=mpich2-gcc
 	Build=True

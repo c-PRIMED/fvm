@@ -5,15 +5,15 @@ Testing:
 	walltime=4:00:00
 	nodes=3
 	ncpus=8
-	modules=mpich2-intel
+	modules=mpich2-gcc
 
 lammps:
-	Build=0
-	modules=mpich2-intel
+	Build=True
+	modules=mpich2-gcc
 	build=steele
 
 fvm:
-	Build=True
+	Build=1
 
 	# build using MPI
 	# default is False
@@ -26,15 +26,15 @@ fvm:
 
 	# compiler. 'intelc' or 'gcc'
 	# default is gcc
-	compiler=intelc
-	modules=mpich2-intel
+	compiler=gcc
+	modules=mpich2-gcc
 
 MPM:
 	Build=1
-	modules=mpich2-intel
-	configname=intel-linux
+	modules=mpich2-gcc
+	configname=gnu-linux
 
 ALL:
-	modules=intel
+	modules=gcc
 
 
