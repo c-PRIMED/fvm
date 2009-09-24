@@ -53,7 +53,7 @@ class BuildPkg:
             Boost("pkgs/boost.tgz", 0),
             Swig("pkgs/swig-1.3.39.tar.gz", 0),
             Fftw("pkgs/fftw", 0),
-            H5py("pkgs/h5py-1.2.0.bz2", 0),
+            H5py("pkgs/h5py-1.2.1.tar.gz", 0),
             Xdmf("pkgs/Xdmf-07172009.bz2", 1),
             Netcdf("pkgs/netcdf-4.0.1.tar.gz", 0),
             NetCDF4("pkgs/netCDF4-0.8.1.bz2", 0),
@@ -61,7 +61,7 @@ class BuildPkg:
             Lammps("src/lammps", 1),
             MPM("src/MPM", 1),
             Fvm("src/fvm", 0),
-            MEMOSA("src/MEMOSA", 0),
+            MEMOSA("src/MEMOSA", 1),
             ]
         
     setup = staticmethod(setup)
@@ -525,9 +525,12 @@ class Fvm(BuildPkg):
 
 class MEMOSA(BuildPkg):
     name = "MEMOSA"
+    def _build(self):
+        return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         os.chdir(self.sdir)
         self.sys_log("install bin/* %s" % self.bindir)
+        self.sys_log("install src/sparse_grid_cc %s" % self.bindir)
         self.sys_log("install lib/* %s" % self.libdir)        
         return 0
 
