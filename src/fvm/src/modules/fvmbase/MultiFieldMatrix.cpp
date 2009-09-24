@@ -595,8 +595,31 @@ MultiFieldMatrix::getSize( const MPI::Intracomm& comm ) const
 
 #endif
 
-
   return size;
 
+}
+
+
+int
+MultiFieldMatrix::getSize( ) const
+{
+  int size=0;
+  foreach(const MatrixMap::value_type& pos, _matrices)
+  {
+      EntryIndex k = pos.first;
+
+      if (k.first == k.second)
+      {
+          size += k.first.second->getCount();
+      }
+  }
+
+#ifdef FVM_PARALLEL
+         int count = 1;
+         MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &size, count, MPI::INT, MPI::MIN);
+
+#endif
+
+  return size;
 
 }

@@ -109,6 +109,8 @@ public:
                   const MultiField& coarseSolutionField);
   
   int getSize( const MPI::Intracomm& comm ) const;
+  int getSize( ) const;
+
 
   void addMatrix(const Index& rowI, const Index& colI, shared_ptr<Matrix> m)
   {
