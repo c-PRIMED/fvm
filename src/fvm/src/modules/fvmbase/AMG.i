@@ -3,6 +3,8 @@ class AMG : public LinearSolver
 public:
 
   AMG();
+
+  void setMergeLevelSize( int level_size);
   
   enum CycleType
     {

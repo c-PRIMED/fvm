@@ -2,10 +2,14 @@
 #define _AMG_H_
 
 #include <vector>
+#include <cmath>
 #include "LinearSystem.h"
 #include "LinearSolver.h"
 
 #include "MultiFieldReduction.h"
+#include "LinearSystemMerger.h"
+
+class LinearSystemMerger;
 
 using namespace std;
 
@@ -33,6 +37,20 @@ public:
   virtual MFRPtr solve(LinearSystem & ls);
   virtual void smooth(LinearSystem & ls);
 
+
+  virtual void setMergeLevelSize(int ls_size){ 
+#ifdef FVM_PARALLEL
+      _mergeLevelSize = ceil(  double(ls_size) / double(MPI::COMM_WORLD.Get_size()) ); 
+      _isMerge = true;
+#endif
+
+#ifndef FVM_PARALLEL
+      _mergeLevelSize = ls_size;
+      cout << " you can not set mergeLevelSize in serial version !!!!!!!!!!! " << endl;
+      abort();
+#endif
+}
+
   virtual void cleanup();
   
   // these parameters can be tuned.
@@ -48,10 +66,25 @@ private:
   
   LinearSystem* _finestLinearSystem;
   vector<shared_ptr<LinearSystem> > _coarseLinearSystems;
+  shared_ptr<LinearSystemMerger>   _mergeLS;
 
-  void createCoarseLevels();
-  void doSweeps(const int nSweeps, const int level);
-  void cycle(const CycleType cycleType, const int level);
+  void  createCoarseLevels( );
+  void  doSweeps( const int nSweeps, const int level );
+  void  cycle( const CycleType cycleType, const int level );
+  void  flipComm();
+
+  static int amg_indx;
+ 
+  int _mergeLevelSize; //where 
+  int _mergeLevel; 
+  bool _isMerge;
+
+#ifdef FVM_PARALLEL
+  MPI::Intracomm _commTarget;
+#endif
+
+
+  bool _isCOMMWORLD;
 };
 
 #endif
