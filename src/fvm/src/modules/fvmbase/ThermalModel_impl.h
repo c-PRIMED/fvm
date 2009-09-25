@@ -132,7 +132,7 @@ public:
         ls.getX().addArray(tIndex,_thermalFields.temperature.getArrayPtr(cells));
 
         const CRConnectivity& cellCells = mesh.getCellCells();
-        
+
         shared_ptr<Matrix> m(new CRMatrix<T,T,T>(cellCells));
 
         ls.getMatrix().addMatrix(tIndex,tIndex,m);
@@ -288,7 +288,7 @@ public:
         
         MFRPtr normRatio((*rNorm)/(*_initialNorm));
 
-        cout << _niters << ": " << *rNorm << endl;
+        //cout << _niters << ": " << *rNorm << endl;
 
         
         _options.getLinearSolver().cleanup();

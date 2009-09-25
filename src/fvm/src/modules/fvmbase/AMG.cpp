@@ -124,17 +124,16 @@ AMG::createCoarseLevels( )
 #ifdef FVM_PARALLEL
      _coarseLinearSystems.push_back(coarseLS);
 
-      if (verbosity > 1)
-        cout << " proc_id = " << MPI::COMM_WORLD.Get_rank() << "  Created coarse level " << n << " of size "
-             << coarseLS->getMatrix().getSize( _commTarget ) << endl;
+      int size = coarseLS->getMatrix().getSize( _commTarget );
 
-      if ( coarseLS->getMatrix().getSize(_commTarget) <= 3  ){
-        cout << "procID = " << MPI::COMM_WORLD.Get_rank() << " n = " << n << endl;
+      if ( verbosity > 1 && MPI::COMM_WORLD.Get_rank() == 0 )
+        cout << " proc_id = " << MPI::COMM_WORLD.Get_rank() << "  Created coarse level " << n << " of size "
+             << size  << endl;
+
+      if ( coarseLS->getMatrix().getSize(_commTarget) <= 3  )
         break;
-      }
 
       if ( coarseLS->getMatrix().getSize( _commTarget ) < _mergeLevelSize &&  _mergeLevel == -1  && _isMerge ){
-         cout << " asla buraya girme " << endl;
          _mergeLevel = n;
          set<int> group;
          int size = MPI::COMM_WORLD.Get_size();
@@ -147,11 +146,10 @@ AMG::createCoarseLevels( )
           n++;
           flipComm(); //this change to COMM_WORLD to one-processedGROUP 
       } 
-     if ( MPI::COMM_WORLD.Get_rank() == 0 ) cout << " n = " << n << " mergeLEvel = " << _mergeLevel << endl;
+
 #endif 
 
 #ifndef FVM_PARALLEL
-
     if ( verbosity > 1 )
         cout << "Created coarse level " << n << " of size " << coarseLS->getMatrix().getSize() << endl;
     _coarseLinearSystems.push_back(coarseLS);
@@ -196,6 +194,7 @@ AMG::solve(LinearSystem & ls)
 #endif
 
 #ifndef FVM_PARALLEL
+ cout << " NOOOOOOOOOOOOO " << endl;
    if ( verbosity > 0 )
       cout << "0: " << *rNorm0 << endl;
 #endif
@@ -212,10 +211,6 @@ AMG::solve(LinearSystem & ls)
                                    _finestLinearSystem->getResidual());
       MFRPtr rNorm(_finestLinearSystem->getResidual().getOneNorm());
       MFRPtr normRatio((*rNorm)/(*rNorm0));
-#ifdef FVM_PARALLEL
-      if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0 )
-        cout << i << ": " << "procID = " << MPI::COMM_WORLD.Get_rank() <<  *rNorm << endl;
-#endif
 
 #ifndef FVM_PARALLEL
       if (verbosity >0  )
@@ -223,10 +218,18 @@ AMG::solve(LinearSystem & ls)
 #endif
 
 
+#ifdef FVM_PARALLEL
+     if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance || i == nMaxIterations-1)
+        if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0  )
+        cout <<i << ": " << "procID = " << MPI::COMM_WORLD.Get_rank() <<  *rNorm << endl;
+#endif
+
       if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance)
          break;
 
   }
+
+
 
   return rNorm0;
 }
