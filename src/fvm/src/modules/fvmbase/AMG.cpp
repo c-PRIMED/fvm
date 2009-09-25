@@ -18,7 +18,9 @@ AMG::AMG() :
   cycleType(V_CYCLE),
   _finestLinearSystem(0),
   _mergeLevel(-1),
+#ifdef FVM_PARALLEL
   _commTarget(MPI::COMM_WORLD),
+#endif
   _isMerge(false),
   _isCOMMWORLD(true)
 {
