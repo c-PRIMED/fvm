@@ -27,13 +27,16 @@ class MPM
 
   void setTypes      (const boost::shared_ptr<ArrayBase> type);
 
+  void setTemperatures      (const boost::shared_ptr<ArrayBase> temperatures);
+
   const StorageSite& getParticles() const {return _particles;}
   
   
   const boost::shared_ptr<ArrayBase> getCoordinates() {return  _coordinates;}
    
   const boost::shared_ptr<ArrayBase> getVelocities() {return  _velocities;}
-
+	
+  const boost::shared_ptr<ArrayBase> getTemperatures() {return  _temperatures;}
  
   void setandwriteParticles(const char *file);	
 };

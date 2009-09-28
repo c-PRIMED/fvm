@@ -10,12 +10,15 @@ typedef MPM::VecD3Array VecD3Array;
 
 MPM::MPM(string fileName):
   _particles(0),
-  _coordinates()
+  _coordinates(),
+  _velocities(),
+  _types(),
+  _temperatures()
 {
   char* file;
   file = &fileName[0];
 
-  // MPM::setandwriteParticles(file);
+  //MPM::setandwriteParticles(file);
   //get coordinate
   const shared_ptr<VecD3Array> MPM_Coordinates = MPM::readCoordinates(file);
 
@@ -25,12 +28,17 @@ MPM::MPM(string fileName):
   //get type
   const shared_ptr<Array<int> > MPM_Types = MPM::readTypes(file);
 
+  //get temperature
+  const shared_ptr<Array<double> > MPM_Temperatures = MPM::readTemperatures(file);
   //store all the information in MPM class
-  MPM::Init(MPM_Coordinates, MPM_Velocities, MPM_Types);}
+  MPM::Init(MPM_Coordinates, MPM_Velocities, MPM_Types, MPM_Temperatures);}
 
 MPM::MPM( ):
   _particles(0),
-  _coordinates()
+  _coordinates(),
+  _velocities(),
+  _types(),
+  _temperatures()
 {}
 
 
@@ -39,59 +47,96 @@ MPM::~MPM() { }
 
 void MPM::setandwriteParticles(const char *file)
 {
- //here, we want to build up a solid circle 
- //the number of solid points and coordiantes are written to file
+ 
     FILE *fp;
            
     VecD3 center;
-    center[0]=0.;
-    center[1]=0.;
+    center[0]=0.0;
+    center[1]=0.0;
     center[2]=0.0;
 
     int count=0;   
-    double radius = 0.20;
-   
+        
 #if 1
     //set up particle cartesian coordinate
     VecD3 temp;
     
-    int nX=101, nY=21, nZ=1;
-    double gapX=35e-6/(nX-1), gapY=1e-6/(nY-1), gapZ=0.0/nZ;
-    VecD3 solidPoint[nX*nY*nZ];
-    VecD3 solidVelocity[nX*nY*nZ];
-    int type[nX*nY*nZ];
+    const double innerSide = 1.0; 
+    const double midSide = 3.0;
+    const double outerSide = 4.2;
 
-
-    for(int i=0; i<nX; i++){
-      for(int j=0; j<nY; j++){
+    int nX=20, nY=20, nZ=1;
+    
+    double gapX=outerSide/(nX), gapY=outerSide/(nY), gapZ=0;
+    const int nMPM = (nX+1)*(nY+1)*nZ;
+    Array<VecD3> solidPoint(nMPM);
+    Array<VecD3> solidVelocity(nMPM);
+    Array<int> type(nMPM);
+    Array<double> solidTemperature(nMPM);  
+    for(int i=0; i<=nX; i++){
+      for(int j=0; j<=nY; j++){
 	for(int k=0; k<nZ; k++){
-	  temp[0]=i*gapX-17.5e-6;
-	  temp[1]=j*gapY-0.5e-6;
+	  temp[0]=i*gapX-outerSide/2.;
+	  temp[1]=j*gapY-outerSide/2.;
 	  temp[2]=k*gapZ;
-	  //VecD3 dr = temp-center;
-	  //if(mag2(dr)<=radius*radius){
-	    solidPoint[count][0]=temp[0];
-	    solidPoint[count][1]=temp[1];
-	    solidPoint[count][2]=temp[2];
-	    type[count] = 1;  //internal particles
-	    if(i==0||i==nX-1||j==0||j==nY-1||k==0||k==nZ-1){
-	      type[count] = 1;       //surface particles	   
+	  //inner square
+	  if( temp[0]>=(-innerSide/2.) && temp[0]<=(innerSide/2.) && temp[1]>=(-innerSide/2.) && temp[1]<=(innerSide/2.))
+	    {
+	     //surface particles
+	      type[count] = 0;  
+	      if( temp[0]> (innerSide/2.0-gapX) || temp[0]<(-innerSide/2.0+gapX))
+		type[count]=1;
+	      if( temp[1]> (innerSide/2.0-gapY) || temp[1]<(-innerSide/2.0+gapY))
+		type[count]=1;
+	      //rotate
+	      double alfa = atan(1.);
+	      solidPoint[count][0]=temp[0]*cos(alfa)-temp[1]*sin(alfa);
+	      solidPoint[count][1]=temp[1]*cos(alfa)+temp[0]*sin(alfa);
+	      solidPoint[count][2]=temp[2];
+	          
+	      count+=1;
 	    }
-	    count+=1;
-	    //}
+	  
+	  //outer square
+	  if( !(temp[0]>(-midSide/2.) && temp[0]<(midSide/2.) && temp[1]>(-midSide/2.) && temp[1]<(midSide/2.)))
+	    {
+	      type[count] = 0;  
+	      //surface particles
+	      
+	      if( temp[0]< (midSide/2.0+gapX) && temp[0]>(midSide/2.0-gapX) && temp[1]<(midSide/2.0+gapY) && temp[1]>(-midSide/2.0-gapY))
+		type[count]=1;
+	      if( temp[0]> (-midSide/2.0-gapX) && temp[0]<(-midSide/2.0+gapX) && temp[1]<(midSide/2.0+gapY) && temp[1]>(-midSide/2.0-gapY))
+		type[count]=1;
+	      if( temp[1]< (midSide/2.0+gapY) && temp[1]>(midSide/2.0-gapY) && temp[0]<(midSide/2.0+gapX) && temp[0]>(-midSide/2.0-gapX))
+		type[count]=1;
+	      if( temp[1]> (-midSide/2.0-gapY) && temp[1]<(-midSide/2.0+gapY) && temp[0]<(midSide/2.0+gapX) && temp[0]>(-midSide/2.0-gapX))
+		type[count]=1;
+	      
+	      double alfa = atan(1);
+	      solidPoint[count][0]=temp[0]*cos(alfa)-temp[1]*sin(alfa);
+	      solidPoint[count][1]=temp[1]*cos(alfa)+temp[0]*sin(alfa);
+	      solidPoint[count][2]=temp[2];
+	      count+=1;
+	    }
+	  
 	}
       }
     }
+	    
 
 #endif
 
 #if 0
-    int nX=51, nY=1000, nZ=1;
+    int nX=81, nY=400, nZ=1;
     double radius1=0., radius2=0.2;
-    double gapR=(radius2-radius1)/nX, gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
-    VecD3 solidPoint[nX*nY*nZ];
-    VecD3 solidVelocity[nX*nY*nZ];
-    int type[nX*nY*nZ];
+    double gapR=(radius2-radius1)/(nX-1), gapAngle=2*3.1415926/nY, gapZ=1.0/nZ;
+    
+    const int nMPM = nX*nY*nZ;
+    Array<VecD3> solidPoint(nMPM);
+    Array<VecD3> solidVelocity(nMPM);
+    Array<int> type(nMPM);
+    Array<double> solidTemperature(nMPM);
+
 
     //polar coordinate 
      for(int i=0; i<nX; i++){
@@ -133,17 +178,17 @@ void MPM::setandwriteParticles(const char *file)
      */
 #endif
 #if 0
-     int nX=10,  nY=50, nZ=50;
+     int nX=41,  nY=200, nZ=100;
   const double pi = atan(1.0)*4.0;
-    double radius1=0., radius2=10.0;
-    double gapR=(radius2-radius1)/nX, gapAlfa=pi/nY, gapBeta=2*pi/nZ;
+    double radius1=0., radius2=0.015/2.0;
+    double gapR=(radius2-radius1)/(nX-1), gapAlfa=pi/nY, gapBeta=2*pi/nZ;
     const int nMPM = nX*nY*nZ;
     Array<VecD3> solidPoint(nMPM);
     Array<VecD3> solidVelocity(nMPM);
     Array<int> type(nMPM);
 
     //polar coordinate 
-     for(int i=1; i<=nX; i++){
+     for(int i=0; i<nX; i++){
       for(int j=0; j<nY; j++){
 	for(int k=0; k<nZ; k++){	 
 	  solidPoint[count][0]=(radius1+i*gapR)*sin(j*gapAlfa)*(cos(k*gapBeta))+center[0];
@@ -151,7 +196,7 @@ void MPM::setandwriteParticles(const char *file)
 	  solidPoint[count][2]=(radius1+i*gapR)*cos(j*gapAlfa)+center[2];
 	  
 	  type[count] = 1;  //internal particles
-	  if(i==nX || i==nX-1){
+	  if(i==nX-1){
 	    type[count] = 1;       //surface particles	   
 	  }
 	  count+=1;
@@ -163,12 +208,11 @@ void MPM::setandwriteParticles(const char *file)
     //set up particle velocity
 #if 1
     for(int p=0; p<count; p++){
-      solidVelocity[p][0]=0.001;
+      solidVelocity[p][0]=0.0;
       solidVelocity[p][1]=0.0;
       solidVelocity[p][2]=0.0;
     }
 #endif 
-
 
 #if 0
     //set up rotating cylinder velcity
@@ -180,8 +224,14 @@ void MPM::setandwriteParticles(const char *file)
       solidVelocity[p][1] = angV*r*cos(angle);
       solidVelocity[p][2] = 0.0;
     }
-
 #endif
+
+    //set up temperature 
+    const double InitT=300.0;
+    for (int p=0; p<count; p++){
+      solidTemperature[p]=InitT;
+    }
+
 
     cout<<"count of particles is "<<count<<endl;
     //write out coordinate and velocity and particle type into file
@@ -196,7 +246,11 @@ void MPM::setandwriteParticles(const char *file)
     for(int p=0; p<count; p++){
       fprintf(fp, "%i\n", type[p]);
     } 
+    for(int p=0; p<count; p++){
+      fprintf(fp, "%f\n", solidTemperature[p]);
+    }
     fclose(fp);
+
 }
 
 
@@ -278,11 +332,44 @@ const shared_ptr<Array<int> > MPM::readTypes(const char *file)
     fclose(fp);   
     return (MPM_Points);
 }
+const shared_ptr<Array<double> > MPM::readTemperatures(const char *file)
 
+{
+    FILE *fp;
+    int nMPM;
+    double vx=0, vy=0, vz=0;
+    double x=0, y=0, z=0;
+    int t=0;
+    double temperature=0.0;
+    fp=fopen(file,"r");
+    fscanf(fp,"%i\n",&nMPM);
+    
+    shared_ptr<Array<double> > MPM_Points ( new Array<double> (nMPM));
+    //read in cooridnate and skip
+    for(int i=0; i<nMPM; i++){
+      fscanf(fp,"%lf\t%lf\t%lf\n", &x, &y, &z);      
+    }
+    //read in velocity and skip
+    for(int i=0; i<nMPM; i++){
+      fscanf(fp,"%lf\t%lf\t%lf\n", &x, &y, &z);      
+    }
+    //read in type
+    for(int i=0; i<nMPM; i++){
+      fscanf(fp,"%i\n", & t);
+    }
+    //read in temperature
+    for(int i=0; i<nMPM; i++){
+      fscanf(fp,"%lf\n", & temperature);
+      (*MPM_Points)[i]=temperature;
+    }
+    fclose(fp);   
+    return (MPM_Points);
+}
 
 void MPM::Init(const shared_ptr<Array<VecD3> > coordinates,
 	       const shared_ptr<Array<VecD3> > velocities,
-	       const shared_ptr<Array<int> > types)
+	       const shared_ptr<Array<int> > types,
+	       const shared_ptr<Array<double> > temperatures)
 {
 
   const int n = (*coordinates).getLength();  //number of particles
@@ -291,6 +378,7 @@ void MPM::Init(const shared_ptr<Array<VecD3> > coordinates,
   MPM::setCoordinates(coordinates);
   MPM::setVelocities(velocities);
   MPM::setTypes(types);
+  MPM::setTemperatures(temperatures);
 
 }
 
