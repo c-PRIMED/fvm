@@ -274,7 +274,9 @@ MultiFieldMatrix::computeResidual(const IContainer& xB, const IContainer& bB,
           }
       }
   }
+#ifdef FVM_PARALLEL
   r.sync();
+#endif
 }
 
 void
