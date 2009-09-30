@@ -274,6 +274,7 @@ MultiFieldMatrix::computeResidual(const IContainer& xB, const IContainer& bB,
           }
       }
   }
+  r.sync();
 }
 
 void

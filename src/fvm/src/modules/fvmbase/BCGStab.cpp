@@ -72,6 +72,7 @@ BCGStab::solve(LinearSystem & ls)
       preconditioner->smooth(ls);
 
       matrix.multiply(*v,*pHat);
+      pHat->sync();
 
       MFRPtr rtv = rTilda->dotWith(*v);
       rtv->reduceSum();
@@ -97,6 +98,7 @@ BCGStab::solve(LinearSystem & ls)
       preconditioner->smooth(ls);
 
       matrix.multiply(*t,*sHat);
+      sHat->sync();
 
       MFRPtr tdotr = t->dotWith(*r);
       MFRPtr tdott = t->dotWith(*t);
