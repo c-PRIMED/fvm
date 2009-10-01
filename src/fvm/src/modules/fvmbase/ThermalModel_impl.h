@@ -218,7 +218,8 @@ public:
 
             if (bc.bcType == "SpecifiedTemperature")
             {
-                const T bT(bc["specifiedTemperature"]);
+                FloatValEvaluator<T>
+                  bT(bc.getVal("specifiedTemperature"),faces);
                 gbc.applyDirichletBC(bT);
             }
             else if (bc.bcType == "SpecifiedHeatFlux")
@@ -288,7 +289,7 @@ public:
         
         MFRPtr normRatio((*rNorm)/(*_initialNorm));
 
-        //cout << _niters << ": " << *rNorm << endl;
+        cout << _niters << ": " << *rNorm << endl;
 
         
         _options.getLinearSolver().cleanup();
