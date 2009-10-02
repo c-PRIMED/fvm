@@ -579,7 +579,7 @@ MultiFieldMatrix::correctSolution(const MultiField& coarseIndex,
 
 
 int
-MultiFieldMatrix::getSize( const MPI::Intracomm& comm ) const
+MultiFieldMatrix::getMinSize( const MPI::Intracomm& comm ) const
 {
   int size=0;
   foreach(const MatrixMap::value_type& pos, _matrices)
@@ -604,6 +604,31 @@ MultiFieldMatrix::getSize( const MPI::Intracomm& comm ) const
 
 
 int
+MultiFieldMatrix::getMergeSize( const MPI::Intracomm& comm ) const
+{
+  int size=0;
+  foreach(const MatrixMap::value_type& pos, _matrices)
+  {
+      EntryIndex k = pos.first;
+
+      if (k.first == k.second)
+      {
+          size += k.first.second->getCount();
+      }
+  }
+
+#ifdef FVM_PARALLEL
+         int count = 1;
+         comm.Allreduce(MPI::IN_PLACE, &size, count, MPI::INT, MPI::SUM);
+
+
+#endif
+
+  return size;
+
+}
+
+int
 MultiFieldMatrix::getSize( ) const
 {
   int size=0;
@@ -622,6 +647,25 @@ MultiFieldMatrix::getSize( ) const
          MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &size, count, MPI::INT, MPI::MIN);
 
 #endif
+
+  return size;
+
+}
+
+
+int
+MultiFieldMatrix::getLocalSize( ) const
+{
+  int size=0;
+  foreach(const MatrixMap::value_type& pos, _matrices)
+  {
+      EntryIndex k = pos.first;
+
+      if (k.first == k.second)
+      {
+          size += k.first.second->getCount();
+      }
+  }
 
   return size;
 

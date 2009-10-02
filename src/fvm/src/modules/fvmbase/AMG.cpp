@@ -10,7 +10,7 @@
 int AMG::amg_indx = 0;
 
 AMG::AMG() :
-  maxCoarseLevels(20),
+  maxCoarseLevels(30),
   nPreSweeps(0),
   nPostSweeps(1),
   coarseGroupSize(2),
@@ -120,20 +120,26 @@ AMG::createCoarseLevels( )
       shared_ptr<LinearSystem>
         coarseLS(fineLS.createCoarse(coarseGroupSize,weightRatioThreshold));
 
-
+     int isContinue =  int( fineLS.getMatrix().getLocalSize() != coarseLS->getMatrix().getLocalSize() );
+#ifdef FVM_PARALLEL     
+     _commTarget.Allreduce(MPI::IN_PLACE, &isContinue, 1, MPI::INT, MPI::SUM);
+#endif     
+     if ( isContinue == 0 )
+            break;
+	  
 #ifdef FVM_PARALLEL
      _coarseLinearSystems.push_back(coarseLS);
-
-      int size = coarseLS->getMatrix().getSize( _commTarget );
+       
+      int min_size = coarseLS->getMatrix().getMinSize( _commTarget );
 
       if ( verbosity > 1 && MPI::COMM_WORLD.Get_rank() == 0 )
         cout << " proc_id = " << MPI::COMM_WORLD.Get_rank() << "  Created coarse level " << n << " of size "
-             << size  << endl;
+             << min_size  << endl;
 
-      if ( coarseLS->getMatrix().getSize(_commTarget) <= 3  )
+      if ( min_size <= 3  )
         break;
 
-      if ( coarseLS->getMatrix().getSize( _commTarget ) < _mergeLevelSize &&  _mergeLevel == -1  && _isMerge ){
+      if ( coarseLS->getMatrix().getMergeSize( _commTarget ) < _mergeLevelSize &&  _mergeLevel == -1  && _isMerge ){
          _mergeLevel = n;
          set<int> group;
          int size = MPI::COMM_WORLD.Get_size();
