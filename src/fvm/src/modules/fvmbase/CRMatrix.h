@@ -219,6 +219,33 @@ public:
   }
 
   /**
+   * Jacobi update for this * x  = b
+   * 
+   */
+
+  virtual void Jacobi(IContainer& xnewB, const IContainer& xoldB,
+                         const IContainer& bB) const
+  {
+    XArray& xnew = dynamic_cast<XArray&>(xnewB);
+    const XArray& xold = dynamic_cast<const XArray&>(xoldB);
+    const XArray& b = dynamic_cast<const XArray&>(bB);
+    
+    const int nRows = _conn.getRowSite().getSelfCount();
+
+    X sum;
+    for(int nr=0; nr<nRows; nr++)
+    {
+        sum = b[nr];
+        for (int nb = _row[nr]; nb<_row[nr+1]; nb++)
+        {
+            const int j = _col[nb];
+            sum += _offDiag[nb]*xold[j];
+        }
+        xnew[nr] = -sum/_diag[nr];
+    }
+  }
+  
+  /**
    * r = b + this*x
    * 
    */
@@ -574,6 +601,7 @@ public:
     return coarseMatrix;
   }
 
+#ifdef FVM_PARALLEL
 
 shared_ptr<Matrix>
 createMergeMatrix( const LinearSystemMerger& mergeLS )
@@ -648,7 +676,7 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
 
 }
 
-
+#endif
   
   virtual const CRConnectivity& getConnectivity() const {return _conn;}
 
