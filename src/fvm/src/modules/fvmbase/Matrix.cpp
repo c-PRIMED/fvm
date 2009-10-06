@@ -56,6 +56,12 @@ void Matrix::reverseGS(IContainer& xB, IContainer& bB,
   throw CException("reverseGS not implemented");
 }
 
+void Matrix::Jacobi(IContainer&, const IContainer&,
+                       const IContainer&) const
+{
+  throw CException("Jacobi not implemented");
+}
+
 void Matrix::solveBoundary(IContainer& xB, IContainer& bB,
                            IContainer& residual) const
 {
