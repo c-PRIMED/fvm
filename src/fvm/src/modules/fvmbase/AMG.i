@@ -13,12 +13,20 @@ public:
       F_CYCLE
     };
   
+  enum SmootherType
+    {
+      GAUSS_SEIDEL,
+      JACOBI
+    };
+
   int maxCoarseLevels;
   int nPreSweeps;
   int nPostSweeps;
   int coarseGroupSize;
   double weightRatioThreshold;
   CycleType cycleType;
+  SmootherType smootherType;
+  
 private:
   AMG(const AMG&);
 };

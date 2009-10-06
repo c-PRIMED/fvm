@@ -28,6 +28,12 @@ public:
       W_CYCLE,
       F_CYCLE
     };
+
+  enum SmootherType
+    {
+      GAUSS_SEIDEL,
+      JACOBI
+    };
   
   AMG();
   virtual ~AMG();
@@ -60,6 +66,8 @@ public:
   int coarseGroupSize;
   double weightRatioThreshold;
   CycleType cycleType;
+  SmootherType smootherType;
+  
 private:
 
   AMG(const AMG&);

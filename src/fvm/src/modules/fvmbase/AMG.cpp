@@ -16,6 +16,7 @@ AMG::AMG() :
   coarseGroupSize(2),
   weightRatioThreshold(0.65),
   cycleType(V_CYCLE),
+  smootherType(GAUSS_SEIDEL),
   _finestLinearSystem(0),
   _mergeLevel(-1),
   _isMerge(false),
@@ -47,8 +48,16 @@ AMG::doSweeps(const int nSweeps, const int level)
 
   for(int i=0; i<nSweeps; i++)
   {
-      m.forwardGS(delta,b,r);
-      m.reverseGS(delta,b,r);
+      if (smootherType == GAUSS_SEIDEL)
+      {
+          m.forwardGS(delta,b,r);
+          m.reverseGS(delta,b,r);
+      }
+      else
+      {
+          m.Jacobi(delta,b,r);
+          m.Jacobi(delta,b,r);
+      }
   }
 }
 
@@ -200,7 +209,6 @@ AMG::solve(LinearSystem & ls)
 #endif
 
 #ifndef FVM_PARALLEL
- cout << " NOOOOOOOOOOOOO " << endl;
    if ( verbosity > 0 )
       cout << "0: " << *rNorm0 << endl;
 #endif
