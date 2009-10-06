@@ -160,6 +160,59 @@ MultiFieldMatrix::forwardGS(IContainer& xB, const IContainer& bB, IContainer& te
 }
 
 void 
+MultiFieldMatrix::Jacobi(IContainer& xB, const IContainer& bB, IContainer& tempB) const
+{
+  MultiField& x = dynamic_cast<MultiField&>(xB);
+  const MultiField& b = dynamic_cast<const MultiField&>(bB);
+  MultiField& temp = dynamic_cast<MultiField&>(tempB);
+  
+  shared_ptr<MultiField> xnew = dynamic_pointer_cast<MultiField>(x.newClone());
+  
+  const int xLen = x.getLength();
+  //#pragma omp parallel for
+  for(int i=0; i<xLen; i++)
+  {
+      const Index rowIndex = x.getArrayIndex(i);
+      if (hasMatrix(rowIndex,rowIndex))
+      {
+          const ArrayBase& bI = b[rowIndex];
+          ArrayBase& r = temp[rowIndex];
+          const StorageSite& rowSite = *rowIndex.second;
+          r.copyPartial(bI,0,rowSite.getSelfCount());
+          
+          for(int j=0; j<xLen; j++)
+          {
+              const Index colIndex = x.getArrayIndex(j);
+              if ((rowIndex!=colIndex) && hasMatrix(rowIndex,colIndex))
+              {
+                  const Matrix& mIJ = getMatrix(rowIndex,colIndex);
+                  mIJ.multiplyAndAdd(r,x[colIndex]);
+              }
+          }
+          
+          const Matrix& mII = getMatrix(rowIndex,rowIndex);
+          mII.Jacobi((*xnew)[rowIndex],x[rowIndex],r);
+
+      }
+  }
+
+  //#pragma omp parallel for
+  for(int i=0; i<xLen; i++)
+  {
+      const Index rowIndex = x.getArrayIndex(i);
+      if (hasMatrix(rowIndex,rowIndex))
+      {
+          const ArrayBase& xnewI = (*xnew)[rowIndex];
+          ArrayBase& xI = x[rowIndex];
+          const StorageSite& rowSite = *rowIndex.second;
+          xI.copyPartial(xnewI,0,rowSite.getSelfCount());
+      }
+  }
+  x.sync();
+}
+
+
+void 
 MultiFieldMatrix::solveBoundary(IContainer& xB, const IContainer& bB, IContainer& tempB) const
 {
   MultiField& x = dynamic_cast<MultiField&>(xB);
@@ -577,6 +630,7 @@ MultiFieldMatrix::correctSolution(const MultiField& coarseIndex,
   }
 }
 
+#ifdef FVM_PARALLEL
 
 int
 MultiFieldMatrix::getMinSize( const MPI::Intracomm& comm ) const
@@ -601,7 +655,7 @@ MultiFieldMatrix::getMinSize( const MPI::Intracomm& comm ) const
   return size;
 
 }
-
+#endif
 
 int
 MultiFieldMatrix::getMergeSize( const MPI::Intracomm& comm ) const

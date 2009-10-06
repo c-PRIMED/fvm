@@ -73,6 +73,8 @@ public:
   
   virtual void reverseGS(IContainer& xB, const IContainer& bB, IContainer& temp) const;
 
+  virtual void  Jacobi(IContainer& xB, const IContainer& bB, IContainer& tempB) const;
+
   virtual void solveBoundary(IContainer& xB, const IContainer& bB, IContainer& temp) const;
 
   virtual void
@@ -107,10 +109,11 @@ public:
   correctSolution(const MultiField& coarseIndex,
                   MultiField& fineSolutionField,
                   const MultiField& coarseSolutionField);
-  
+#ifdef FVM_PARALLEL
   int getMinSize( const MPI::Intracomm& comm ) const;  
   int getMergeSize( const MPI::Intracomm& comm ) const;
     
+#endif
   int getSize( ) const;
   int getLocalSize() const;
 
