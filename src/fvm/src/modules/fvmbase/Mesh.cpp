@@ -227,12 +227,15 @@ Mesh::getOrCreateIBType() const
   }
   return *_ibType;
 }
-  
+
+
+#if 0
 Mesh::VecD3
 Mesh::getCellCoordinate(const int c) const
 {
   return (*_coordinates)[c];
 }
+#endif
 
 void
 Mesh::createIBFaceList(const int size) const

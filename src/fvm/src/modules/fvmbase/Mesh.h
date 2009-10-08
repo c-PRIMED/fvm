@@ -161,7 +161,7 @@ public:
   
   void setIBTypeForCell(const int c, const int type);
 
-  VecD3 getCellCoordinate(const int c) const;
+  //VecD3 getCellCoordinate(const int c) const;
 
 
   void addIBFace(const int i, const int c);

@@ -42,7 +42,7 @@ void Invert4x4(T b[4][4], T a[4][4])
       for (j = 0; j < 4; j++) {
         if (ipiv[j] != 0) {
             if (ipiv[0] == -1) {
-                if ((bb = (float) fabs(a[j][0])) > big) {
+                if ((bb =  fabs(a[j][0])) > big) {
                     big = bb;
                     irow = j;
                     icol = 0;
@@ -51,7 +51,7 @@ void Invert4x4(T b[4][4], T a[4][4])
 	      return;
 	    }
 	    if (ipiv[1] == -1) {
-	      if ((bb = (float) fabs((float) a[j][1])) > big) {
+	      if ((bb =  fabs( a[j][1])) > big) {
 		big = bb;
 		irow = j;
 		icol = 1;
@@ -60,7 +60,7 @@ void Invert4x4(T b[4][4], T a[4][4])
 	      return;
 	    }
 	    if (ipiv[2] == -1) {
-    if ((bb = (float) fabs((float) a[j][2])) > big) {
+    if ((bb =  fabs( a[j][2])) > big) {
         big = bb;
         irow = j;
         icol = 2;
@@ -69,7 +69,7 @@ void Invert4x4(T b[4][4], T a[4][4])
     return;
 }
 if (ipiv[3] == -1) {
-    if ((bb = (float) fabs((float) a[j][3])) > big) {
+    if ((bb =  fabs(a[j][3])) > big) {
         big = bb;
         irow = j;
         icol = 3;
@@ -211,7 +211,7 @@ if (indxr[2] != indxc[2]) {
 //invert matrix a
 void Invert3x3(T b[3][3], T a[3][3])
 {
-  const double det = b[0][0]*b[1][1]*b[2][2]+
+  const T det = b[0][0]*b[1][1]*b[2][2]+
     b[0][1]*b[1][2]*b[2][0]+
     b[0][2]*b[2][0]*b[2][1]-
     b[0][0]*b[1][2]*b[2][1]-

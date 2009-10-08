@@ -58,7 +58,7 @@ public:
   
   void setIBTypeForCell(const int c, const int type);
 
-  VecD3 getCellCoordinate(const int c) const;
+  //VecD3 getCellCoordinate(const int c) const;
   const StorageSite& getCells() const;
   const StorageSite& getNodes() const;
   const StorageSite& getFaces() const;

@@ -744,7 +744,13 @@ FluentReader::createMesh(const int cellZoneID)
   const int interfaceFaceCount = interfaceFaceList.size();
   if (interfaceFaceCount > 0)
   {
+      // need to create an Array from the vector<int> since CRConnectivity
+      // methods expect Array
       Array<int> ifFacesArray(interfaceFaceCount);
+
+      for(int i=0; i<interfaceFaceCount; i++)
+        ifFacesArray[i] = interfaceFaceList[i];
+  
       StorageSite ifFacesSite(interfaceFaceCount,0);
       StorageSite ifNodesSite(0,0);
       StorageSite ifCellsSite(0,0);
@@ -851,12 +857,15 @@ FluentReader::getMeshList()
   {
       const FluentCellZone& cz = *(pos.second);
       Mesh *mesh = cz.mesh;
-
+      StorageSite& thisSite = mesh->getCells();
       foreach(const GhostCellMapsMap::value_type& pos2, cz.ghostCellMaps)
       {
           const FluentCellZone& ocz = *_cellZones[pos2.first];
+          shared_ptr<OneToOneIndexMap> mappers = pos2.second;
           Mesh *omesh = ocz.mesh;
-          mesh->getCells().getMappers()[&omesh->getCells()] = pos2.second;
+          StorageSite& oSite = omesh->getCells();
+          thisSite.getGatherMap()[&oSite] = mappers->_toIndices;
+          oSite.getScatterMap()[&thisSite] = mappers->_fromIndices;
       }
   }
   return meshes;

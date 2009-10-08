@@ -1,5 +1,6 @@
 #ifndef _STORAGESITEMERGER_H_
 #define _STORAGESITEMERGER_H_
+#ifdef FVM_PARALLEL
 
 #include "StorageSite.h"
 #include <cassert>
@@ -47,4 +48,5 @@ private:
 };
 
 
+#endif
 #endif

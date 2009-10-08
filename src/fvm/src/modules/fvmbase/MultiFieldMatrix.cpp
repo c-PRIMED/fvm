@@ -655,7 +655,6 @@ MultiFieldMatrix::getMinSize( const MPI::Intracomm& comm ) const
   return size;
 
 }
-#endif
 
 int
 MultiFieldMatrix::getMergeSize( const MPI::Intracomm& comm ) const
@@ -681,6 +680,7 @@ MultiFieldMatrix::getMergeSize( const MPI::Intracomm& comm ) const
   return size;
 
 }
+#endif
 
 int
 MultiFieldMatrix::getSize( ) const

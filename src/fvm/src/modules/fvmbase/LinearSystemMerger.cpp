@@ -1,3 +1,4 @@
+#ifdef FVM_PARALLEL
 
 #include <iostream>
 #include <fstream>
@@ -1046,3 +1047,4 @@ LinearSystemMerger::debug_print()
 
 }
 
+#endif

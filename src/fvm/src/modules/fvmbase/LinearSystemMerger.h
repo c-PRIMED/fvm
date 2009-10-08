@@ -1,5 +1,6 @@
 #ifndef _LINEARSYSTEMMERGER_H_
 #define _LINEARSYSTEMMERGER_H_
+#ifdef FVM_PARALLEL
 
 #include "LinearSystem.h"
 #include <cassert>
@@ -123,4 +124,5 @@ private:
 };
 
 
+#endif
 #endif

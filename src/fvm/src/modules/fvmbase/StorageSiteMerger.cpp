@@ -1,3 +1,4 @@
+#ifdef FVM_PARALLEL
 
 #include <iostream>
 #include <fstream>
@@ -74,3 +75,4 @@ StorageSiteMerger::debug_print()
 
 }
 
+#endif

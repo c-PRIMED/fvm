@@ -17,7 +17,6 @@ public:
   const Array<int>& getFromIndices() const {return *_fromIndices;}
   const Array<int>& getToIndices() const {return *_toIndices;}
   
-private:
   shared_ptr<Array<int> > _fromIndices;
   shared_ptr<Array<int> > _toIndices;
 };

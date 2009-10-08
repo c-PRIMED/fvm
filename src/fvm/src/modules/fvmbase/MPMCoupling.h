@@ -11,6 +11,7 @@
 //
 #ifndef MPMCoupling_H
 #define MPMCoupling_H
+#ifdef FVM_PARALLEL
 
 #include "Mesh.h"
 #include "Array.h"
@@ -67,4 +68,5 @@ class MPMCoupling{
 
 };
 
+#endif
 #endif

@@ -9,6 +9,7 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+#ifdef FVM_PARALLEL
 
 #include <iostream>
 #include <mpi.h>
@@ -87,3 +88,4 @@ MPMCoupling::acceptMPM( )
 
 
 }
+#endif
