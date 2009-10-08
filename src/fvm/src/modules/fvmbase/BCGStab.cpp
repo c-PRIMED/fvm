@@ -1,5 +1,9 @@
 #include "BCGStab.h"
 
+#ifndef  FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 BCGStab::BCGStab() :
   preconditioner(0)
 {}
@@ -41,8 +45,15 @@ BCGStab::solve(LinearSystem & ls)
   MFRPtr alpha;
   MFRPtr omega;
 
+#ifndef  FVM_PARALLEL
   if (verbosity >0)
     cout << 0 << ": " << *rNorm0 << endl;
+#endif
+
+#ifdef  FVM_PARALLEL
+  if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0)
+    cout << 0 << ": " << *rNorm0 << endl;
+#endif
 
   for(int i = 0; i<nMaxIterations; i++)
   {
@@ -111,8 +122,17 @@ BCGStab::solve(LinearSystem & ls)
       rNorm = r->getOneNorm();
 
       MFRPtr normRatio((*rNorm)/(*rNorm0));
+      
+#ifndef FVM_PARALLEL      
       if (verbosity >0)
         cout << i+1 << ": " << *rNorm << endl;
+#endif	
+	
+#ifdef  FVM_PARALLEL
+  if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0)
+    cout << i+1 << ": " << *rNorm0 << endl;
+#endif
+	
       if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance)
         break;
     
@@ -126,8 +146,19 @@ BCGStab::solve(LinearSystem & ls)
 
   matrix.computeResidual(ls.getDelta(),ls.getB(),ls.getResidual());
   MFRPtr rNormn(ls.getResidual().getOneNorm());
+
+#ifndef FVM_PARALLEL  
   if (verbosity >0)
     cout << "n" << ": " << *rNormn << endl;
+#endif
+
+
+#ifdef  FVM_PARALLEL
+  if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0)
+    cout << "n" << ": " << *rNorm0 << endl;
+#endif
+  
+  
   
   return rNorm0;
 }
