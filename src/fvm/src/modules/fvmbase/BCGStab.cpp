@@ -130,7 +130,7 @@ BCGStab::solve(LinearSystem & ls)
 	
 #ifdef  FVM_PARALLEL
   if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0)
-    cout << i+1 << ": " << *rNorm0 << endl;
+    cout << i+1 << ": " << *rNorm << endl;
 #endif
 	
       if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance)
@@ -155,7 +155,7 @@ BCGStab::solve(LinearSystem & ls)
 
 #ifdef  FVM_PARALLEL
   if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0)
-    cout << "n" << ": " << *rNorm0 << endl;
+    cout << "n" << ": " << *rNormn << endl;
 #endif
   
   
