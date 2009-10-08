@@ -260,11 +260,11 @@ public:
   
 
   virtual shared_ptr<ArrayBase>
-  dotWith(const ArrayBase& abase) const
+  dotWith(const ArrayBase& abase, const int lengthToUse) const
   {
     const Array& a = dynamic_cast<const Array&>(abase);
     T sum(NumTypeTraits<T>::getZero());
-    for(int i=0; i<_length; i++)
+    for(int i=0; i<lengthToUse; i++)
       NumTypeTraits<T>::accumulateDotProduct(sum,_data[i],a._data[i]);
     shared_ptr<Array> nPtr(new Array(1));
     (*nPtr)[0] = sum;

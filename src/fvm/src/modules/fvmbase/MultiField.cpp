@@ -224,9 +224,10 @@ MultiField::dotWith(const MultiField& ofield)
 
   for(int i=0; i<_length; i++)
   {
+      const  StorageSite& thisSite = *(_arrayIndices[i].second);
       const ArrayBase& myArray = *_arrays[i];
       const ArrayBase& otherArray = ofield[_arrayIndices[i]];
-      dotpField->addArray(_arrayIndices[i],myArray.dotWith(otherArray));
+      dotpField->addArray(_arrayIndices[i],myArray.dotWith(otherArray, thisSite.getSelfCount()));
   }
 
   shared_ptr<MultiFieldReduction> r(dotpField->reduceSum());
@@ -387,10 +388,11 @@ MultiField::sync()
   foreach(ArrayIndex i, _arrayIndices)
     syncScatter(i);
 
-  if ( !_syncGatherArrays ) 
+  if ( !_syncGatherArrays )
+  {
      foreach(ArrayIndex i, _arrayIndices)
         createSyncGatherArrays(i);
-
+  }
 
 #ifdef FVM_PARALLEL
   //SENDING
