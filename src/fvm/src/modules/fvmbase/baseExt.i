@@ -8,6 +8,7 @@
 #include <rlog/RLogChannel.h>
 #include "AMG.h"
 #include "BCGStab.h"
+#include "JacobiSolver.h"
 #include "ArrayBase.h"
 #include "Array.h"
   
@@ -54,6 +55,7 @@ typedef Vector<double,3> VecD3;
 %include "LinearSolver.i"
 %include "AMG.i"
 %include "BCGStab.i"
+%include "JacobiSolver.i"
 
 %include "CellMark.i"
 %include "MPM_Particles.i"
