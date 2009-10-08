@@ -72,9 +72,6 @@ BCGStab::solve(LinearSystem & ls)
       preconditioner->smooth(ls);
 
       matrix.multiply(*v,*pHat);
-#ifdef FVM_PARALLEL
-      pHat->sync();
-#endif
 
       MFRPtr rtv = rTilda->dotWith(*v);
       rtv->reduceSum();
@@ -88,7 +85,6 @@ BCGStab::solve(LinearSystem & ls)
 
       if (*rNorm < absoluteTolerance)
       {
-          cout << "converged with small r " << endl;
           break;
       }
 
@@ -100,9 +96,6 @@ BCGStab::solve(LinearSystem & ls)
       preconditioner->smooth(ls);
 
       matrix.multiply(*t,*sHat);
-#ifdef FVM_PARALLEL
-      sHat->sync();
-#endif
 
       MFRPtr tdotr = t->dotWith(*r);
       MFRPtr tdott = t->dotWith(*t);
@@ -127,6 +120,9 @@ BCGStab::solve(LinearSystem & ls)
   }
   ls.replaceDelta(x);
   ls.replaceB(bOrig);
+#ifdef FVM_PARALLEL
+  x->sync();
+#endif
 
   matrix.computeResidual(ls.getDelta(),ls.getB(),ls.getResidual());
   MFRPtr rNormn(ls.getResidual().getOneNorm());
