@@ -54,9 +54,9 @@ public:
         const T Rgas = 8314.472/molWt;
         const int nCells = cells.getCount();
 
-        const T pMin = 1000;
-        const T TMin = 1;
-        const T urf = init ? 1 : vc["urf"];
+        const T pMin(1000);
+        const T TMin(1);
+        const T urf = init ? T(1) : T(vc["urf"]);
         
         for(int c=0; c<nCells; c++)
         {

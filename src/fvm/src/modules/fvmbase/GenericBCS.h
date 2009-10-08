@@ -94,7 +94,7 @@ public:
     // identity
     _x[c1] = bValue;
     _assembler.getCoeff10(f) = OffDiag(0);
-    _r[c1] = 0;
+    _r[c1] = NumTypeTraits<X>::getZero();
     _dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
 
     //setup the equation for the boundary flux correction

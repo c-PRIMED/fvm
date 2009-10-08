@@ -10,6 +10,7 @@ private:
 
 %template(FloatValA) FloatVal<ATYPE_STR>;
 
+%include "atype.i"
 
 template <class T>
 class FloatVarDict // : public std::map<string,T>
@@ -38,6 +39,20 @@ public:
         throw CException("uknown var" + varName);
     }
 
+#ifdef USING_ATYPE_TANGENT
+    void __setitem__(std::string varName, double val)
+    {
+      FloatVarDict<T>::iterator pos(self->find(varName));
+      if (pos != self->end())
+      {
+          pos->second.constant = T(val);
+          pos->second.field = 0;
+      }
+      else
+        throw CException("uknown var" + varName);
+    }
+#endif
+    
     void __setitem__(std::string varName, Field* field)
     {
       FloatVarDict<T>::iterator pos(self->find(varName));

@@ -54,7 +54,7 @@ T discretizeMassFluxInterior(const Mesh& mesh,
     &(dynamic_cast<const VectorT3Array&>(_flowFields.velocity[mesh.getIBFaces()])) : 0;
 
   // the net flux from ib faces
-  T boundaryFlux=0;
+  T boundaryFlux(0);
       
   // used to keep track of the current ib face index
   int ibFace =0;

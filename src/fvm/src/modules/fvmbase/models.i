@@ -27,3 +27,10 @@ using namespace std;
 %include "FlowModel.i"
 
 %include "IdealGasDensityModel.i"
+
+#ifdef USING_ATYPE_TANGENT
+
+typedef Vector<Tangent,3> VecTangent3;
+%template(VecTangent3) Vector<Tangent,3>;
+
+#endif

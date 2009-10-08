@@ -2,6 +2,7 @@
 #include "Tangent.h"
   %}
 
+#if 0
 %typemap(in) Tangent
 {
   if (PyFloat_Check($input))
@@ -20,6 +21,7 @@
   else
     throw CException("invalid Tangent input");
 }
+#endif
 
 class Tangent
 {

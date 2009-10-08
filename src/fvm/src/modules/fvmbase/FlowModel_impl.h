@@ -830,9 +830,9 @@ public:
         PVDiagArray& pvDiag = pvMatrix.getDiag();
         PVDiagArray& pvCoeff = pvMatrix.getOffDiag();
 
-        pvDiag[0] = 0;
+        pvDiag[0] = NumTypeTraits<VectorT3>::getZero();
         for(int nb=row[0]; nb<row[1]; nb++)
-          pvCoeff[nb] = 0;
+          pvCoeff[nb] = NumTypeTraits<VectorT3>::getZero();
     }
   }
 

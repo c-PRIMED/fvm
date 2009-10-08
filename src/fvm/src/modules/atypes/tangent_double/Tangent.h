@@ -247,6 +247,8 @@ public:
     sum._dv += v0._v*v1._dv + v0._dv*v1._v;
   }
 
+  static void reduceSum(Tangent& sum, const Tangent& x) {sum+=x;}
+
   static void safeDivide(Tangent& x, const Tangent& y) {if (y._v!=0) x/=y;}
   static void setMax(Tangent& x, const Tangent& y) {if (y._v>x._v) x=y;}
   

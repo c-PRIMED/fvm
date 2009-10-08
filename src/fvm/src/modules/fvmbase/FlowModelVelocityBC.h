@@ -77,7 +77,7 @@
         {
             const int c0 = faceCells(f,0);
             vpDiag[c0] += vpAssembler.getCoeff01(f);
-            vpAssembler.getCoeff01(f) = 0;
+            vpAssembler.getCoeff01(f) = NumTypeTraits<T>::getZero();
         }
     }
 #endif

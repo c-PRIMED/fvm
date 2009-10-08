@@ -2,6 +2,12 @@
 #include "Vector.h"
 %}
 
+#ifdef USING_ATYPE_TANGENT
+
+%include "atype.i"
+
+#endif
+
 template <class T, int N>
 class Vector
 {
