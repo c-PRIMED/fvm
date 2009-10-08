@@ -221,7 +221,10 @@ class MyEnvironment(SConsEnvironment):
         
         env.Append(CPPPATH=['$AUTOGENDIR'])
         env['SHLIBPREFIX'] = ""
-        env.AppendUnique(SWIGFLAGS = CLVar('-c++ -python -module %s' % target))
+        if env['PARALLEL']:
+            env.AppendUnique(SWIGFLAGS = CLVar('-DFVM_PARALLEL -c++ -python -module %s' % target))
+        else:
+            env.AppendUnique(SWIGFLAGS = CLVar('-c++ -python -module %s' % target))
         env['SWIGOUTDIR'] = '$COMPONENTTARGETDIR'
 
 
