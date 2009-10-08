@@ -210,8 +210,10 @@ MultiField::getOneNorm() const
   shared_ptr<MultiField> c(new MultiField());
   for(int i=0; i<_length; i++)
   {
+      const  StorageSite& thisSite = *(_arrayIndices[i].second);
       const ArrayBase& myArray = *_arrays[i];
-      c->addArray(_arrayIndices[i],myArray.getOneNorm());
+      c->addArray(_arrayIndices[i],
+                  myArray.getOneNorm(thisSite.getSelfCount()));
   }
   shared_ptr<MultiFieldReduction> r(c->reduceSum());
   return r;
@@ -227,7 +229,8 @@ MultiField::dotWith(const MultiField& ofield)
       const  StorageSite& thisSite = *(_arrayIndices[i].second);
       const ArrayBase& myArray = *_arrays[i];
       const ArrayBase& otherArray = ofield[_arrayIndices[i]];
-      dotpField->addArray(_arrayIndices[i],myArray.dotWith(otherArray, thisSite.getSelfCount()));
+      dotpField->addArray(_arrayIndices[i],
+                          myArray.dotWith(otherArray, thisSite.getSelfCount()));
   }
 
   shared_ptr<MultiFieldReduction> r(dotpField->reduceSum());

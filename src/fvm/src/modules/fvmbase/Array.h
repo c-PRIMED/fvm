@@ -272,10 +272,10 @@ public:
   }
 
   virtual shared_ptr<ArrayBase>
-  getOneNorm() const
+  getOneNorm(const int lengthToUse) const
   {
     T sum(NumTypeTraits<T>::getZero());
-    for(int i=0; i<_length; i++)
+    for(int i=0; i<lengthToUse; i++)
       NumTypeTraits<T>::accumulateOneNorm(sum,_data[i]);
     shared_ptr<Array> nPtr(new Array(1));
     (*nPtr)[0] = sum;
