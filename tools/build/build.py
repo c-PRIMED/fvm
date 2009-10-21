@@ -99,7 +99,8 @@ class Build:
             if t < self.database[pkg.name]:
                 return 0
         if not pkg in self.packages:
-            verbose(1, '%s needs rebuilt' % pkg.name)
+            if check_timestamp:
+                verbose(1, '%s needs rebuilt' % pkg.name)
             self.packages.append(pkg)
         return 1
 

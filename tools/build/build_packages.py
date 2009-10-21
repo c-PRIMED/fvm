@@ -91,6 +91,7 @@ class BuildPkg(Build):
 
     def configure(self):
         self.state = 'configure'
+        self.bld.database[self.name] = 0 # mark this package as not built        
         self.logfile = os.path.join(self.logdir, self.name + "-conf.log")
         remove_file(self.logfile)
         pmess("CONF", self.name, self.bdir)
