@@ -1,4 +1,4 @@
-# config file for steele builds
+# config file for Coates gcc builds
 Testing:
 	PBS=True
 	queue=prism
@@ -34,6 +34,17 @@ MPM:
 	modules=mpich2-gcc
 	configname=gnu-linux
 
+
+mpi4py:
+	modules=mpich2-gcc
+
+netcdf:
+	env=F90=gfortran
+	env=CC=gcc
+
+parmetis:
+	modules=mpich2-gcc
+	
 ALL:
 	modules=gcc
 
