@@ -58,36 +58,32 @@ def set_value(val):
         _config[section] = {lval:rval}
     return True
 
-def read(srcpath, filename, packages):
+def read(srcpath, filename):
     global _config
 
     if filename == '': return False
 
     filename = os.path.join(srcpath, "config", filename)
-    filenames = [filename]
-    if packages:
-        filenames.append(filename+'-pkgs')
 
-    for fn in filenames:
-        lnum = 0
-        f = open(fn, 'r')
-        while True:
-            line = f.readline()
-            lnum = lnum + 1
-            if not line:
-                break
-            line = line.rstrip()
-            if line == '' or line[0] in '#;':
+    lnum = 0
+    f = open(filename, 'r')
+    while True:
+        line = f.readline()
+        lnum = lnum + 1
+        if not line:
+            break
+        line = line.rstrip()
+        if line == '' or line[0] in '#;':
+            continue
+        if line[-1] == ':' and set_section(line[:-1]):
+            continue
+        if line[0].isspace():
+            line = line.lstrip()
+            if line[0] in '#;':
                 continue
-            if line[-1] == ':' and set_section(line[:-1]):
+            if set_value(line):
                 continue
-            if line[0].isspace():
-                line = line.lstrip()
-                if line[0] in '#;':
-                    continue
-                if set_value(line):
-                    continue
-            print "Cannot parse line %s in %s: %s" % (lnum, fn, line)
-            return False
+        print "Cannot parse line %s in %s: %s" % (lnum, filename, line)
+        return False
     return  True
         

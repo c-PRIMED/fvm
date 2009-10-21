@@ -5,29 +5,37 @@
 # Martin Hunt <mmh@purdue.edu>
 
 """
-This script configures and builds all the MEMOSA
-packages and tools.
+This script configures and builds all the MEMOSA packages.
 
-Usage: make.py [options] config[-pkgs]
+Usage: make.py [options] config
 Options:
   --build        Build sources. This is the default.
-  --test         Run tests.
-  --submit       Submit test and build results.
+  --test         Run tests. Will build first if necessary.
+  --submit       Submit the latest test and build results.
   --update       Update sources from the subversion repository.
-  --all          Removes build directory then builds config and config-pkgs.
+  --all          Removes build directory then builds everything.
   -v, --verbose  Verbose output.
   -d, --debug    Debug output.
   -j num         Specify the number of jobs to run simultaneously.
   --nocolor      Disable color output.
   --clean        Clean up. Currently only removes old binaries from fvm directory.
+  --nightly      Build, test, and submit to cdash. Flag as a "nightly" build.
 
 Configuration names are stored in the "config" subdirectory.
 """
 
-import sys, os, cdash, time, pbs, update, traceback
+from build import Build
 from optparse import OptionParser
-from build_packages import BuildPkg
-import build_utils, config, testing
+import build_utils
+import config
+import testing
+import sys
+import os
+import cdash
+import time
+import pbs
+import update
+import traceback
 
 def usage():
     print __doc__
@@ -36,12 +44,13 @@ def usage():
 def main():
 
     parser = OptionParser()
-    parser.add_option("--build",  action="store_true")
+    parser.set_defaults(verbose=0)
+    parser.add_option("--build", action="store_true")
     parser.add_option("--test", action="store_true")
     parser.add_option("--update", action="store_true")
     parser.add_option("--submit", action="store_true")
     parser.add_option("--all", action="store_true")
-    parser.add_option("-v", "--verbose", action="store_true")
+    parser.add_option("-v", "--verbose", action="count")
     parser.add_option("-d", "--debug", action="store_true")
     parser.add_option("--nocolor", action="store_true")
     parser.add_option("--nightly", action="store_true")
@@ -53,22 +62,15 @@ def main():
     cwd = os.getcwd()
 
     if options.nightly:
-        options.all = options.update = options.test = options.submit = True
+        options.update = options.test = options.submit = True
 
-    if options.all:
+    if options.all or options.test:
         options.build = True
-        
+
     cname = ''
     if len(args) == 1:
         cname = args[0]
-
-    packages = options.all
-    if cname.endswith('-pkgs'):
-        where = cname.find("-pkgs")
-        cname = cname[0:where]
-        packages = True
-
-    if cname == '' or not config.read(srcpath, cname, packages):
+    if cname == '' or not config.read(srcpath, cname):
         usage()
 
     build_utils.set_options(options)
@@ -76,18 +78,18 @@ def main():
     if options.all:
         os.system("/bin/rm -rf %s" % os.path.join(cwd, "build-%s" % cname))
 
-    BuildPkg.setup(cname, srcpath)
-    build_utils.run_commands('ALL', 'before')        
-    build_utils.fix_path('PATH', BuildPkg.bindir, 1, 0)
-    build_utils.fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 0)
-    os.environ['MEMOSA_HOME'] = BuildPkg.blddir
+    bld = Build(cname, srcpath)
+    build_utils.run_commands('ALL', 'before')
+    build_utils.fix_path('PATH', bld.bindir, 1, 0)
+    build_utils.fix_path('LD_LIBRARY_PATH', bld.libdir, 1, 0)
+    os.environ['MEMOSA_HOME'] = bld.blddir
     os.environ['MEMOSA_CONFNAME'] = cname
     build_start_time = build_end_time = test_start_time = test_end_time = 0
     try:
         oldpypath = os.environ['PYTHONPATH']
     except:
         oldpypath = ''
-    BuildPkg.pypath = build_utils.set_python_path(BuildPkg.blddir)    
+    bld.pypath = build_utils.set_python_path(bld.blddir)
 
     # if no options, default to build
     if not options.build and not options.test and not options.submit \
@@ -96,22 +98,22 @@ def main():
 
     if options.build:
         # Remove all test results.  They are now invalid
-        os.system("/bin/rm -f %s/*.xml" % BuildPkg.logdir)
+        os.system("/bin/rm -f %s/*.xml" % bld.logdir)
 
     # UPDATE
     if options.update:
-        update.update(BuildPkg, cname, options.nightly)
+        update.update(bld, cname, options.nightly)
 
     # BUILDING
-    build_failed = 0 
-    if options.build:
+    build_failed = 0
+
+    if options.build and bld.packages == []:
+        print "No packages need built."
+    
+    if options.build and bld.packages != []:
         build_start_time = time.time()
-        open(BuildPkg.logdir+'/StartBuildTime','w').write(str(build_start_time))
-        for p in BuildPkg.packages:
-            x = config.config(p.name,'Build')
-            if x == '' or not eval(x):
-                build_utils.debug ("Skipping " + p.name)
-                continue
+        open(bld.logdir + '/StartBuildTime', 'w').write(str(build_start_time))
+        for p in bld.packages:
             try:
                 p.configure()
                 p.build()
@@ -120,57 +122,62 @@ def main():
                 traceback.print_exc()
                 build_failed = 1
                 break
+        bld.done()
         build_end_time = time.time()
-        open(BuildPkg.logdir+'/EndBuildTime','w').write(str(build_end_time))
+        open(bld.logdir + '/EndBuildTime', 'w').write(str(build_end_time))
 
         # write out env.sh
-        env_name = os.path.join(cwd, 'env.sh')        
+        env_name = os.path.join(cwd, 'env.sh')
         f = open(env_name, 'w')
         modules = config.config('Testing', 'modules')
         if modules:
             for m in modules.split():
-                f.write('module load %s\n' % m)            
-        print >> f, "export LD_LIBRARY_PATH="+BuildPkg.libdir+":$LD_LIBRARY_PATH"
+                f.write('module load %s\n' % m)
+        print >> f, "export LD_LIBRARY_PATH=" + bld.libdir + ":$LD_LIBRARY_PATH"
         try:
             if os.environ['PYTHONPATH']:
-                print >> f, "export PYTHONPATH="+os.environ['PYTHONPATH']
+                print >> f, "export PYTHONPATH=" + os.environ['PYTHONPATH']
         except:
             pass
-        print >> f, "export PATH=%s:$PATH" % BuildPkg.bindir
+        print >> f, "export PATH=%s:$PATH" % bld.bindir
         print >> f, "\n# Need this to recompile MPM in its directory."
         print >> f, "export MEMOSA_CONFNAME=%s" % cname
         f.close()
         if not build_failed:
-            print "\nDONE\nYou need to source %s to use this build." %  env_name
+            print "\nDone with building.\nYou need to source %s to use this build.\n" % env_name
 
     # make sure we are back in the original directory
     os.chdir(cwd)
 
+    # set package list for testing and submit
+    bld.packages = []
+    bld.build_pkg_list(False)
+
     # TESTING
-    if options.test and not pbs.start(BuildPkg, cname):
+    if options.test and not pbs.start(bld, cname):
         test_start_time = time.time()
-        open(BuildPkg.logdir+'/StartTestTime','w').write(str(test_start_time))
-        testing.run_all_tests(BuildPkg)
+        open(bld.logdir + '/StartTestTime', 'w').write(str(test_start_time))
+        testing.run_all_tests(bld)
         test_end_time = time.time()
-        open(BuildPkg.logdir+'/EndTestTime','w').write(str(test_end_time))
+        open(bld.logdir + '/EndTestTime', 'w').write(str(test_end_time))
 
     # SUBMIT
     if options.submit:
-        cdash.submit(BuildPkg, cname, sys.argv, options.nightly)
+        cdash.submit(bld, cname, sys.argv, options.nightly)
 
     if not options.test:
         build_utils.run_commands('ALL', 'after')
 
-    build_utils.fix_path('LD_LIBRARY_PATH', BuildPkg.libdir, 1, 1)
+    build_utils.fix_path('LD_LIBRARY_PATH', bld.libdir, 1, 1)
     if oldpypath:
         os.environ['PYTHONPATH'] = oldpypath
     else:
         del os.environ['PYTHONPATH']
-    build_utils.fix_path('PATH', BuildPkg.bindir, 1, 1)
+    build_utils.fix_path('PATH', bld.bindir, 1, 1)
 
     # CLEAN
     if options.clean:
-        for p in BuildPkg.packages:
+        for p in bld.packages:
             p.clean()
 
 if __name__ == "__main__":

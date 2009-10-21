@@ -5,74 +5,36 @@
 Build package definitions.
 """
 
-import sys, os, testing, cgi, string, re
+import testing, string, time
 from build_utils import *
-from config import config
+from config import *
+from build import Build
 
-def create_build_dir():
-    for p in [BuildPkg.blddir,
-              BuildPkg.logdir,
-              BuildPkg.libdir,
-              BuildPkg.bindir,
-              ]:
+# superclass for all packages
+class BuildPkg(Build):
+    # Some packages require building in the source directory.
+    # Others require separate build directories.
+    # We don't want to build in our subversion sources. So we define
+    # 'copy_sources' as follows:
+    #     0 - no copy. Build directory is separate from sources.
+    #     1 - copy with symlinks
+    #     2 - full copy
+    # For tarballs, copy_sources of nonzero means source and build directories are not the same.    
+    copy_sources = 0
 
-        if not os.path.isdir(p):
-            try:
-                os.makedirs(p)
-            except:
-                fatal("error creating directory " + p)
-
-# abstract superclass
-class BuildPkg:
-
-    def setup(cname, srcpath):
-        BuildPkg.topdir = srcpath
-        BuildPkg.blddir = os.path.join(os.getcwd(), "build-%s" % cname)
-        BuildPkg.logdir = os.path.join(BuildPkg.blddir, "log")
-        BuildPkg.bindir = os.path.join(BuildPkg.blddir, "bin")
-        BuildPkg.libdir = os.path.join(BuildPkg.blddir, "lib")
-        create_build_dir()
-        
-        # Some packages require building in the source directory.
-        # Others require separate build directories.
-        # We don't want to build in our subversion sources. So we define
-        # 'copytype' as follows:
-        #     0 - no copy. Build directory is separate from sources.
-        #     1 - copy with symlinks
-        #     2 - full copy
-        # For tarballs, copytype of nonzero means source and build directories are the same.
-        BuildPkg.packages = [
-            Python("pkgs/Python-2.6.2.tgz", 0),
-            Numpy("pkgs/numpy-1.3.0.tar.gz", 0),
-            Ipython("pkgs/ipython.tgz", 0),
-            Mpi4py("pkgs/mpi4py-1.1.0.bz2", 0),
-            Nose("pkgs/nose-0.11.0.tar.gz", 0),            
-            Fltk("pkgs/fltk", 1),
-            Gmsh("pkgs/gmsh", 1),
-            Rlog("pkgs/rlog", 1),
-            Boost("pkgs/boost.tgz", 0),
-            Swig("pkgs/swig-1.3.39.tar.gz", 0),
-            Fftw("pkgs/fftw", 0),
-            H5py("pkgs/h5py-1.2.1.tar.gz", 0),
-            Xdmf("pkgs/Xdmf-07172009.bz2", 1),
-            Netcdf("pkgs/netcdf-4.0.1.tar.gz", 0),
-            NetCDF4("pkgs/netCDF4-0.8.1.bz2", 0),
-            ParMetis("pkgs/ParMetis", 1),
-            Lammps("src/lammps", 1),
-            MPM("src/MPM", 1),
-            Fvm("src/fvm", 0),
-            MEMOSA("src/MEMOSA", 1),
-            ]
-        
-    setup = staticmethod(setup)
-
-    def __init__(self, sdir, copytype):
+    def __init__(self, bld, sdir):
+        debug('BuildPkg Init (%s,%s,%s)' % (self, bld, sdir))
         if not hasattr(self, 'name'):
             self.name = string.lower(self.__class__.__name__)
+        self.__class__.name = self.name
         self.is_pkg = (sdir.split('/')[0] == 'pkgs')
-        self.sdir = os.path.join(self.topdir, sdir)
-        self.copy_sources = copytype
-        self.bdir = os.path.join(self.blddir, "build", self.name)
+        self.psdir = self.sdir = os.path.join(bld.topdir, sdir)
+        self.bdir = os.path.join(bld.blddir, "build", self.name)
+        self.blddir = bld.blddir
+        self.logdir = bld.logdir
+        self.libdir = bld.libdir
+        self.bindir = bld.bindir
+        self.bld = bld
 
     def pstatus(self, state, option=''):
         "update build status"
@@ -80,8 +42,7 @@ class BuildPkg:
             cprint('GREEN', 'ok ' + option)
         elif isinstance(state, int):
             cprint('RED', 'failed ' + option)
-            print "Check contents of", self.logfile
-            print "\n"
+            print "Check contents of %s\n" % self.logfile
             os.system("tail -40 " + self.logfile)
             sys.exit(state)
         else:
@@ -89,13 +50,11 @@ class BuildPkg:
 
     def copy_srcs(self):
         copytree(self.sdir, self.bdir, self.copy_sources)
-        
+
     # unpack tarball
     def unpack_srcs(self):
         dst = self.bdir
         src = self.sdir
-        ctype = self.copy_sources
-
         suffix = src.split('.')[-1]
 
         compress = None
@@ -112,9 +71,9 @@ class BuildPkg:
             return
 
         if self.copy_sources:
-            self.sdir = os.path.join(dst,'SOURCES')
+            self.sdir = os.path.join(dst, 'SOURCES')
             os.makedirs(self.sdir)
-            self.bdir = os.path.join(dst,'BUILD')
+            self.bdir = os.path.join(dst, 'BUILD')
             os.makedirs(self.bdir)
         else:
             self.sdir = self.bdir
@@ -122,27 +81,27 @@ class BuildPkg:
 
         # If tarballs have everything in a directory with the same name as the tarball,
         # strip out that directory name.
-        name = os.path.basename(src.rstrip('.'+suffix).rstrip('.tar'))
+        name = os.path.basename(src.rstrip('.' + suffix).rstrip('.tar'))
         dir = os.popen("/bin/bash -c 'tar -%stf %s 2> /dev/null'" % (compress, src)).readline().split()[0]
         if dir.startswith('%s/' % name):
             strip = '--strip-components 1'
         else:
             strip = ''
-
-        os.system('tar -C %s %s -%sxf %s' % (self.sdir, strip, compress, src)) 
+        os.system('tar -C %s %s -%sxf %s' % (self.sdir, strip, compress, src))
 
     def configure(self):
         self.state = 'configure'
-        self.logfile = os.path.join(self.logdir, self.name+"-conf.log")
+        self.logfile = os.path.join(self.logdir, self.name + "-conf.log")
         remove_file(self.logfile)
-        pmess("CONF",self.name,self.bdir)
+        pmess("CONF", self.name, self.bdir)
         # remove any old sources
-        os.system("/bin/rm -rf %s" % self.bdir)            
+        os.system("/bin/rm -rf %s" % self.bdir)
         # get new sources
         self.unpack_srcs()
 
         os.chdir(self.bdir)
         run_commands(self.name, 'before')
+        self.build_start_time = time.time()
         self.pstatus(self._configure())
 
     def clean(self):
@@ -152,37 +111,39 @@ class BuildPkg:
 
     def build(self):
         self.state = 'build'
-        self.logfile = os.path.join(self.logdir, self.name+"-build.log")
+        self.logfile = os.path.join(self.logdir, self.name + "-build.log")
         remove_file(self.logfile)
-        pmess("BUILD",self.name,self.bdir)
+        pmess("BUILD", self.name, self.bdir)
         os.chdir(self.bdir)
         self.pstatus(self._build())
 
     def install(self):
         self.state = 'install'
-        self.logfile = os.path.join(self.logdir, self.name+"-install.log")
+        self.logfile = os.path.join(self.logdir, self.name + "-install.log")
         remove_file(self.logfile)
-        pmess("INSTALL",self.name,self.blddir)
+        pmess("INSTALL", self.name, self.blddir)
         os.chdir(self.bdir)
         self.pstatus(self._install())
+        debug('database[%s] = %s' % (self.name, self.build_start_time))
+        self.bld.database[self.name] = self.build_start_time
         run_commands(self.name, 'after')
 
     def test(self):
         self.state = 'testing'
-        self.logfile = os.path.join(self.logdir, self.name+"-test.xml")
+        self.logfile = os.path.join(self.logdir, self.name + "-test.xml")
         remove_file(self.logfile)
-        pmess("TEST",self.name,self.blddir)
+        pmess("TEST", self.name, self.blddir)
         ok, errs = self._test()
         if errs:
             cprint('YELLOW', "%s OK, %s FAIL" % (ok, errs))
         else:
             cprint('GREEN', "%s OK" % ok)
         return ok, errs
-        
+
     def sys_log(self, cmd):
         "Execute a system call and log the result."
         # get configuration variable
-        e = config(self.name,self.state)
+        e = config(self.name, self.state)
         e = e.replace('BUILDDIR', self.blddir)
         e = e.replace('SRCDIR', self.sdir)
         e = e.replace('TMPBDIR', self.bdir)
@@ -191,7 +152,7 @@ class BuildPkg:
         debug(cmd)
         if self.logfile != '':
             f = open(self.logfile, 'a')
-            print >> f,"EXECUTING:", cmd
+            print >> f, "EXECUTING:", cmd
             f.close()
             cmd = cmd + " >>" + self.logfile + " 2>&1"
         return os.system("/bin/bash -c '%s'" % cmd)
@@ -207,332 +168,4 @@ class BuildPkg:
         pass
     def _test(self):
         return testing.do_tests(self.name, self.sdir, self.logfile)
-        
-
-#########################################################
-# PACKAGES 
-#
-# These contain the build methods for each package.
-# These will mostly be the same, but we implement
-# them this way to allow maximum flexibility.
-#########################################################
-
-# actually a collection of required packages for ipython
-class Ipython(BuildPkg):
-    def _configure(self):
-        cfgname = os.path.join(self.bdir,'pkginstall.cfg')
-        cf = open(cfgname, 'w')
-        cf.write('PREFIX=%s\n' % self.blddir)
-        cf.close()
-        return 0
-    def _build(self):
-        return self.sys_log("make");
-        
-class Lammps(BuildPkg):
-    def _build(self):
-        os.chdir('src')
-        ret = self.sys_log("make -j%s" % jobs(self.name));
-        os.chdir('..')
-        return ret
-    def _install(self):
-        os.chdir('src')
-        self.sys_log("install lmp_* %s" % self.bindir)
-        # for testing, we want a consistent name for the executable
-        ret = self.sys_log("/bin/ln -fs %s/lmp_* %s/lammps" % (self.bindir, self.bindir))
-        os.chdir('..')
-        return ret
-
-class Gmsh(BuildPkg):
-    def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s --with-fltk-prefix= %s --with-gsl-prefix=%s" \
-                                % (self.sdir, self.blddir, self.blddir, self.blddir))
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        return self.sys_log("make install")
-
-class H5py(BuildPkg):
-    def find_h5_inc(self):
-        f = ''
-        for path in ['/usr/include','/usr/local/include']:
-            for fn in ['H5pubconf.h', '/usr/include/H5pubconf-64.h']:
-                try:
-                    f = open(os.path.join(path, fn), 'r')
-                except:
-                    pass
-                if f:
-                    return f
-        if not f:
-            fatal("\nhdf5 include files not found. Please install them and restart build.")
-        return f
-
-    def h5_vers(self,f):
-        if not f:
-            return ''
-        v = ''
-        mpi=''
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            if not v:
-                v = re.findall(r'#define H5_PACKAGE_VERSION "([^"]*)"',line)
-                if v:
-                    v = v[0]
-            if not mpi:
-                mpi = re.findall(r'#define H5_HAVE_MPI_GET_SIZE ([0-9]*)',line)
-            if v and mpi:
-                break
-        return v,mpi
-    
-    def _build(self):
-        v = config(self.name,'HDF5_VERSION')
-        if not v:
-            v, mpi = self.h5_vers(self.find_h5_inc())
-        if not v:
-            warning("HDF5_VERSION not set and hdf5 include files not found.")
-            warning("Assuming hdf5 version = 1.8 and continuing...")
-        if v.startswith('1.6'):
-            api = '16'
-        else:
-            api = '18'
-        if mpi:
-            verbose("Building h5py with mpi")
-            do_env('CC=mpicc')
-        self.sys_log("python setup.py configure --api=%s" % api)
-        ret = self.sys_log("python setup.py build")
-        if mpi:
-            do_env('CC=mpicc', unload=True)
-        return ret
-    
-    def _install(self):
-        return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
-
-class Numpy(BuildPkg):
-    def _install(self):
-        return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
-
-class Nose(BuildPkg):
-    def _install(self):
-        return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
-
-class Mpi4py(BuildPkg):
-    def _install(self):
-        return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
-
-class ParMetis(BuildPkg):
-    def _build(self):
-        return self.sys_log("make")
-    def _install(self):
-        idir = os.path.join(self.blddir, "include")
-        self.sys_log("install --mode=444 parmetis.h %s" % idir)
-        return self.sys_log("install *.a *.so *.so.* %s" % self.libdir)
-
-class NetCDF4(BuildPkg):
-    name = "netCDF4"
-    def _install(self):
-        return self.sys_log("NETCDF3_DIR=%s python setup-nc3.py install --prefix=%s" % (self.blddir, self.blddir))
-
-# FLTK (pronounced "fulltick") is a cross-platform C++ GUI toolkit.
-# http://www.fltk.org/
-# Version 1.1.9 required by gmsh
-class Fltk(BuildPkg):
-    def _configure(self):
-        return self.sys_log("%s/configure --enable-xft --prefix=%s" % (self.sdir, self.blddir))
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        return self.sys_log("make install")
-    
-class Python(BuildPkg):
-    def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s --enable-shared" % (self.sdir, self.blddir))
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        self.sys_log("make install")
-        BuildPkg.pypath = set_python_path(self.blddir)
-
-class Netcdf(BuildPkg):
-    def _configure(self):
-        return self.sys_log("%s/configure --with-pic -prefix=%s" % (self.sdir, self.blddir))
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        return self.sys_log("make install")
-
-class Xdmf(BuildPkg):
-    name = 'Xdmf'
-    def _configure(self):
-        return self.sys_log("cmake %s -DCMAKE_INSTALL_PREFIX=%s" % (self.sdir, self.blddir))
-    def _build(self):
-        return self.sys_log("make")
-    def _install(self):
-        os.chdir(os.path.join(self.bdir, "bin"))
-        return self.sys_log("install %s *.so %s" % (os.path.join(self.sdir, 'libsrc','Xdmf.py'), self.libdir))
-
-# Not used anymore. Keeping as an example of another way to do tests.
-#class Gsl(BuildPkg):
-#    def _configure(self):
-#        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
-#    def _build(self):
-#        return self.sys_log("make -j%s" % jobs(self.name))
-#    def _install(self):
-#        return self.sys_log("make install")
-#    def _test(self):
-#        ok = errs = 0
-#        os.chdir(self.bdir)
-#        logfile = self.logfile.replace('xml','txt')
-#        os.system("make check > %s 2>&1" % logfile)
-#        for line in open(logfile):
-#            if line.find('PASS') == 0:
-#                ok += 1
-#            elif line.find('FAIL') == 0:
-#                errs += 1
-#        if errs:
-#            ostr = "<Test Status=\"failed\">\n"
-#        else:
-#            ostr = "<Test Status=\"passed\">\n"
-#        ostr += "\t<Name>gsl</Name>\n"
-#        ostr += "\t<Path>%s</Path>\n" % self.sdir
-#        ostr += "\t<FullName>gsl</FullName>\n"
-#        ostr += "\t<FullCommandLine>make check</FullCommandLine>\n"
-#        ostr += "\t<Results><Measurement><Value>"
-#        ostr += cgi.escape(open(logfile).read())
-#        ostr += "</Value></Measurement></Results></Test>\n"
-#        f = open(self.logfile,'w')
-#        f.write(ostr)
-#        f.close()
-#        return ok, errs
-
-class Rlog(BuildPkg):
-    def _configure(self):
-        return self.sys_log("%s/configure --disable-docs --disable-valgrind --prefix=%s" % (self.sdir, self.blddir))
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        return self.sys_log("make install")
-
-class Swig(BuildPkg):
-    def _configure(self):
-        return self.sys_log("%s/configure --prefix=%s" % (self.sdir, self.blddir))
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        return self.sys_log("make install")
-
-class Fftw(BuildPkg):
-    def _configure(self):
-        return self.sys_log("%s/configure --enable-float --prefix=%s" % (self.sdir, self.blddir))
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        return self.sys_log("make install")
-
-# We don't build boost, just use the headers
-class Boost(BuildPkg):
-    def _install(self):
-        idir = os.path.join(self.blddir, "include")
-        return self.sys_log("/bin/ln -fs %s %s" % (self.bdir, idir))
-
-class MPM(BuildPkg):
-    name = "MPM"
-
-    # just copy the sources we need
-    def copy_srcs(self):
-        os.makedirs(self.bdir)
-        shutil.copy2(os.path.join(self.sdir,'Makefile'), self.bdir)
-        for dirname in ['config', 'F95', 'py']:
-            src = os.path.join(self.sdir, dirname)
-            dst = os.path.join(self.bdir, dirname)
-            copytree(src, dst, 1)
-
-    def _configure(self):
-        pass
-        e = config(self.name,'configname')
-        bfile = os.path.join(self.sdir, "config", e)
-        if os.path.isfile(bfile):
-            os.chdir(os.path.join(self.sdir, "config"))
-            self.sys_log("/bin/ln -fs %s CURRENT" % bfile)
-            os.chdir(os.path.join(self.bdir, "config"))
-            bfile = os.path.join(self.bdir, "config", e)            
-            return self.sys_log("/bin/ln -fs %s CURRENT" % bfile)
-        else:
-            f = open(self.logfile, 'a')
-            print >> f, "Cannot open config file %s." % bfile
-            f.close()        
-        return False
-    def _build(self):
-        # Don't use parallel make here. Breaks on some systems.
-        return self.sys_log("make")
-    def _install(self):
-        return self.sys_log("make install")
-
-class Fvm(BuildPkg):
-    # from fvm sources
-    def getArch(self):
-        if sys.platform == 'linux2':
-            if os.uname()[4] == 'ia64':
-                return 'lnxia64'
-            elif os.uname()[4] == 'x86_64':
-                return 'lnx86_64'
-            else:
-                return 'lnx86'
-        elif sys.platform == 'win32':
-            return 'ntx86'
-        else:
-            return sys.platform
-    def getCompiler(self, comp):
-        vers = '4.2.1'
-        if comp == 'intelc':
-            comp = 'icc'
-            vers = '10.1'
-        try:
-            line = os.popen("/bin/bash -c '%s --version 2>&1'" % comp).readline()
-            vers = comp + '-' + re.compile(r'[^(]*[^)]*\) ([^\n ]*)').findall(line)[0]
-        except:
-            pass
-        return vers
-    def _configure(self):            
-        pdir = os.path.join(self.sdir, "packages")
-        self.sys_log("/bin/mkdir -p %s" % pdir)
-        pdir = os.path.join(pdir, self.getArch())
-        return self.sys_log("/bin/ln -fsn %s %s" % (self.blddir, pdir))
-    def _build(self):
-        par = config(self.name, 'parallel')
-        comp = config(self.name, 'compiler')
-        ver = config(self.name, 'version')
-        os.putenv("PYTHONPATH",os.path.join(BuildPkg.topdir, "tools","scons-local","scons-local"))
-        return self.sys_log("%s/etc/buildsystem/build -j%s -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s" \
-                                % (self.sdir, 1 , self.sdir, par, ver, comp))
-    def _install(self):
-        vers = self.getCompiler(config(self.name, 'compiler'))
-        rel = config(self.name, 'version')
-        pdir = os.path.join(self.sdir, "build", self.getArch(), vers, rel, "bin")
-        os.chdir(pdir)
-        self.sys_log("install testLinearSolver %s" % self.bindir)
-        self.sys_log("install *.py *.so %s" % self.libdir)        
-        # install scripts
-        pdir = os.path.join(self.sdir, "scripts")
-        os.chdir(pdir)   
-        self.sys_log("install *.py %s" % self.bindir)     
-        return 0
-
-    def _clean(self):
-        bd = os.path.join(self.sdir, "build")
-        pmess("CLEAN",self.name,bd)
-        return self.sys_log("rm -rf %s/*" % bd)
-
-class MEMOSA(BuildPkg):
-    name = "MEMOSA"
-    def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
-    def _install(self):
-        os.chdir(self.bdir)
-        self.sys_log("install src/sparse_grid_cc %s" % self.bindir)
-        os.chdir(self.sdir)
-        self.sys_log("install bin/* %s" % self.bindir)
-        self.sys_log("install lib/* %s" % self.libdir)        
-        return 0
-
 

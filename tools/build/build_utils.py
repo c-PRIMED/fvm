@@ -31,17 +31,17 @@ myenv = {}
 def set_options(options):
     global opt_verbose, opt_debug, opt_jobs
     if options.nocolor:
-        build_utils.clear_colors()
+        clear_colors()
     opt_verbose = options.verbose or options.debug
     opt_debug = options.debug
     opt_jobs = options.jobs
 
 # number of jobs for make -j argument
 def jobs(pkg):
-    if config(pkg,'jobs'):
-        return config(pkg,'jobs')
-    if config('ALL','jobs'):
-        return config('ALL','jobs')
+    if config(pkg, 'jobs'):
+        return config(pkg, 'jobs')
+    if config('ALL', 'jobs'):
+        return config('ALL', 'jobs')
     if opt_jobs:
         return opt_jobs
     return 1
@@ -49,28 +49,28 @@ def jobs(pkg):
 def _reset_types():
     global g_type
     g_type = {
-        'CONF':"%s%s%s"%(colors['BOLD'],"Configuring",colors['NORMAL']),
-        'BUILD':"%s%s%s"%(colors['BOLD'],"Building",colors['NORMAL']),
-        'INSTALL':"%s%s%s"%(colors['BOLD'],"Installing",colors['NORMAL']),
-        'TEST':"%s%s%s"%(colors['BOLD'],"Testing",colors['NORMAL']),
-        'CLEAN':"%s%s%s"%(colors['BOLD'],"Cleaning",colors['NORMAL'])
+        'CONF':"%s%s%s" % (colors['BOLD'], "Configuring", colors['NORMAL']),
+        'BUILD':"%s%s%s" % (colors['BOLD'], "Building", colors['NORMAL']),
+        'INSTALL':"%s%s%s" % (colors['BOLD'], "Installing", colors['NORMAL']),
+        'TEST':"%s%s%s" % (colors['BOLD'], "Testing", colors['NORMAL']),
+        'CLEAN':"%s%s%s" % (colors['BOLD'], "Cleaning", colors['NORMAL'])
         }
 
 def clear_colors():
     for k in colors.keys():
-        colors[k]=''
+        colors[k] = ''
     _reset_types()
 
-        
+
 _reset_types()
 if ('NOCOLOR' in os.environ) \
         or (os.environ.get('TERM', 'dumb') in ['dumb', 'emacs']) \
         or (not sys.stdout.isatty()):
     clear_colors()
-    
+
 def cprint(col, str):
-    try: mycol=colors[col]
-    except KeyError: mycol=''
+    try: mycol = colors[col]
+    except KeyError: mycol = ''
     print "%s%s%s" % (mycol, str, colors['NORMAL'])
 
 def _niceprint(msg, type=''):
@@ -92,18 +92,17 @@ def _niceprint(msg, type=''):
         print_pat('DYELLOW')
     else:
         print_pat('NORMAL')
-                      
+
 def debug(msg):
     global opt_debug
     if not opt_debug:
         return
     _niceprint(msg, 'DEBUG')
 
-def verbose(msg):
+def verbose(level, msg):
     global opt_verbose
-    if not opt_verbose:
-        return
-    _niceprint('\n'+msg, 'VERBOSE')
+    if level <= opt_verbose:
+        _niceprint(msg, 'VERBOSE')
 
 def warning(msg):
     _niceprint(msg, 'WARNING')
@@ -142,21 +141,21 @@ def remove_file(name):
 
 def do_env(c, unload=False):
     try:
-        a,b = c.split('=')
+        a, b = c.split('=')
     except:
-        fatal("Cannot parse command: env",c)
+        fatal("Cannot parse command: env", c)
     if unload:
         try:
             old = myenv[a].pop()
             os.environ[a] = old
             if not myenv[a]:
                 del myenv[a]
-            debug("Set %s back to %s" % (a,old))
+            debug("Set %s back to %s" % (a, old))
         except:
-            debug("Unset "+a)
+            debug("Unset " + a)
             os.environ.pop(a)
     else:
-        debug("Set %s=%s" % (a,b))
+        debug("Set %s=%s" % (a, b))
         if not myenv.has_key(a):
             myenv[a] = []
         if os.environ.has_key(a):
@@ -176,9 +175,9 @@ def fix_path(k, v, prepend, unload):
 
     try:
         e = os.environ[k]
-    except KeyError: 
+    except KeyError:
         e = ''
-        
+
     if unload:
         p = e.split(':')
         p.remove(v)
@@ -198,10 +197,10 @@ def fix_path(k, v, prepend, unload):
 # modify the current environment.
 def module_load(m, unload=False):
     if unload:
-        debug("Unoading module "+m)
+        debug("Unoading module " + m)
     else:
-        debug("Loading module "+m)
-        
+        debug("Loading module " + m)
+
     for line in os.popen("/bin/bash -l -c 'module show %s 2>&1'" % m):
         x = line.split()
         if not x: continue
@@ -225,7 +224,7 @@ def module_load(m, unload=False):
                 warning ("Unknown module command " + x[1])
         else:
             if x[0].find('ERROR') > 0:
-                fatal("ERROR loading module '%s'" %  m, -1, 0)
+                fatal("ERROR loading module '%s'" % m, -1, 0)
 
 # pkg = 'ALL' or package name
 # section = 'before' or 'after'
@@ -236,17 +235,17 @@ def run_commands(pkg, section):
     mods = config(pkg, 'modules')
     if mods:
         for m in mods.split():
-            module_load(m, section=='after')
+            module_load(m, section == 'after')
 
     # Optionally set an environment variable
     env = config(pkg, 'env')
     if env:
-        do_env(env, section=='after')
+        do_env(env, section == 'after')
 
     # Optionally run a command
     cmd = config(pkg, section)
     if cmd:
-        debug("executing: "+cmd)
+        debug("executing: " + cmd)
         s = os.system(cmd)
         if s:
             error("While running 'before' commands. Execution of")
@@ -258,46 +257,40 @@ def copytree(src, dst, ctype):
     os.makedirs(dst)
     if ctype <= 0:
         return
-    errors = []
     for name in os.listdir(src):
         # filter out things we don't want to copy
         if name in ['.svn', 'CVS'] or name.endswith('.o'):
             continue
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
-        try:
-            if os.path.islink(srcname):
-                linkto = os.readlink(srcname)
-                os.symlink(linkto, dstname)
-            elif os.path.isdir(srcname):
-                copytree(srcname, dstname, ctype)
-            elif ctype == 2:
-                shutil.copy2(srcname, dstname)
-            else:
-                os.symlink(srcname, dstname)
-        except (IOError, os.error), why:
-            errors.append((srcname, dstname, str(why)))
-    if errors:
-        raise Error, errors
+        if os.path.islink(srcname):
+            linkto = os.readlink(srcname)
+            os.symlink(linkto, dstname)
+        elif os.path.isdir(srcname):
+            copytree(srcname, dstname, ctype)
+        elif ctype == 2:
+            shutil.copy2(srcname, dstname)
+        else:
+            os.symlink(srcname, dstname)
 
 def set_python_path(dir):
-    py = os.popen("/bin/bash -c 'which python 2>&1'").readline()    
+    py = os.popen("/bin/bash -c 'which python 2>&1'").readline()
     ver = os.popen("/bin/bash -c 'python -V 2>&1'").readline()
-    a,b = re.compile(r'Python ([^.]*).([^.\n]*)').findall(ver)[0]
+    a, b = re.compile(r'Python ([^.]*).([^.\n]*)').findall(ver)[0]
     libpath = os.path.join(dir, 'lib')
-    pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a,b), 'site-packages')
-    pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a,b), 'site-packages')
+    pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a, b), 'site-packages')
+    pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a, b), 'site-packages')
     pypath = pypath1 + ':' + pypath2
     if os.path.dirname(py) == os.path.join(dir, 'bin'):
         os.environ['PYTHONPATH'] = libpath
     else:
         os.environ['PYTHONPATH'] = libpath + ':' + pypath
-    os.environ['PYTHONPATH'] += ':' +  os.path.join(dir, 'bin')
+    os.environ['PYTHONPATH'] += ':' + os.path.join(dir, 'bin')
     return pypath1
 
 if __name__ == '__main__':
     for c in colors:
-        cprint(c,c)
+        cprint(c, c)
     print "\n"
 
     def pstatus(state, option=''):
@@ -309,17 +302,17 @@ if __name__ == '__main__':
             cprint('YELLOW', state)
 
 
-    pmess("CONF","xyzzy", "/tmp")
+    pmess("CONF", "xyzzy", "/tmp")
     os.system("sleep 1")
     pstatus(0)
-    pmess("BUILD","gmsh", "/tmp/foo/bar")
+    pmess("BUILD", "gmsh", "/tmp/foo/bar")
     os.system("sleep 1")
     pstatus(1)
 
-    pmess("BUILD","foo", "/tmp/foo")
+    pmess("BUILD", "foo", "/tmp/foo")
     pstatus("skipped")
-    pmess("INSTALL","foobar", "/tmp/foobar")
-    pstatus(0,"(excellent in fact)")
+    pmess("INSTALL", "foobar", "/tmp/foobar")
+    pstatus(0, "(excellent in fact)")
 
     debug("unseen debug message")
     verbose("unseen verbose message")
