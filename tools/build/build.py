@@ -29,9 +29,9 @@ class Build:
         # load build database
         self.database = shelve.open(os.path.join(self.logdir, 'PACKAGES'))
         cwd = os.getcwd()
-        
+
         # import modules from 'packages' directory
-        os.chdir('tools/build/packages')
+        os.chdir(os.path.join(srcpath, 'tools', 'build', 'packages'))
         for m in glob.glob('*.py'):
             m = m.split('.')[0]
             if m == '__init__':
@@ -78,8 +78,8 @@ class Build:
         self.build_pkg_list(True)
         if self.packages:
             self.reorder_pkgs()
-        os.chdir(cwd)        
-              
+        os.chdir(cwd)
+
     def build_pkg_list(self, check_timestamp):
         ''' Build list of packages to build from config file. '''
         for p in self.all_packages:
