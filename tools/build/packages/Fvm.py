@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Fvm(BuildPkg):
-    requires = ['scons', 'rlog', 'boost', 'swig', 'parmetis', 'mpi4py', 'nose']
+    requires = ['scons', 'rlog', 'boost', 'swig', 'parmetis', 'mpi4py', 'nose', 'netcdf']
     # from fvm sources
     def getArch(self):
         if sys.platform == 'linux2':
