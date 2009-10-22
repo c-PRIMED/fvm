@@ -1,11 +1,15 @@
 from build_packages import *
 
+
 class H5py(BuildPkg):
     requires = ['numpy']
     def find_h5_inc(self):
         f = ''
-        for path in ['/usr/include','/usr/local/include']:
-            for fn in ['H5pubconf.h', '/usr/include/H5pubconf-64.h', '/usr/include/H5pubconf-32.h']:
+        pathlist = ['/usr/include', '/usr/local/include']
+        if os.environ.has_key('HDF5_DIR'):
+            pathlist.append(os.path.join(os.environ['HDF5_DIR'], 'include'))
+        for path in pathlist:
+            for fn in ['H5pubconf.h', 'H5pubconf-64.h', 'H5pubconf-32.h']:
                 try:
                     f = open(os.path.join(path, fn), 'r')
                 except:
@@ -16,27 +20,27 @@ class H5py(BuildPkg):
             fatal("\nhdf5 include files not found. Please install them and restart build.")
         return f
 
-    def h5_vers(self,f):
+    def h5_vers(self, f):
         if not f:
             return ''
         v = ''
-        mpi=''
+        mpi = ''
         while True:
             line = f.readline()
             if not line:
                 break
             if not v:
-                v = re.findall(r'#define H5_PACKAGE_VERSION "([^"]*)"',line)
+                v = re.findall(r'#define H5_PACKAGE_VERSION "([^"]*)"', line)
                 if v:
                     v = v[0]
             if not mpi:
-                mpi = re.findall(r'#define H5_HAVE_MPI_GET_SIZE ([0-9]*)',line)
+                mpi = re.findall(r'#define H5_HAVE_MPI_GET_SIZE ([0-9]*)', line)
             if v and mpi:
                 break
-        return v,mpi
-    
+        return v, mpi
+
     def _build(self):
-        v = config(self.name,'HDF5_VERSION')
+        v = config(self.name, 'HDF5_VERSION')
         if not v:
             v, mpi = self.h5_vers(self.find_h5_inc())
         if not v:
@@ -54,6 +58,6 @@ class H5py(BuildPkg):
         if mpi:
             do_env('CC=mpicc', unload=True)
         return ret
-    
+
     def _install(self):
         return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
