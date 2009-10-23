@@ -4,7 +4,11 @@ build utility functions.
 import sys, os, shutil, re
 from config import config
 
-#clors used for printing messages
+# define some exceptions
+class FatalException: pass # Does a trace
+class CompileException: pass
+
+#colors used for printing messages
 colors = {
     'BOLD'  :'\033[1m',
     'RED'   :'\033[1;31m',
@@ -117,10 +121,8 @@ def error(msg):
     _niceprint(msg, 'ERROR')
 
 def fatal(msg, ret=1, trace=1):
-    import traceback
     cprint('RED', '%s' % msg)
-    if trace: traceback.print_stack()
-    sys.exit(ret)
+    raise FatalException
 
 def pmess(type, pkg, dir):
     "print a build message"

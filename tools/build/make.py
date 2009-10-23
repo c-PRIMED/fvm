@@ -118,6 +118,9 @@ def main():
                 p.configure()
                 p.build()
                 p.install()
+            except build_utils.CompileFailed:
+                build_failed = 1
+                break                
             except:
                 traceback.print_exc()
                 build_failed = 1

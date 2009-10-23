@@ -44,7 +44,7 @@ class BuildPkg(Build):
             cprint('RED', 'failed ' + option)
             print "Check contents of %s\n" % self.logfile
             os.system("tail -40 " + self.logfile)
-            sys.exit(state)
+            raise CompileException
         else:
             cprint('YELLOW', state)
 
