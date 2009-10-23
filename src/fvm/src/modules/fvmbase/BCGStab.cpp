@@ -1,6 +1,6 @@
 #include "BCGStab.h"
 
-#ifndef  FVM_PARALLEL
+#ifdef  FVM_PARALLEL
 #include <mpi.h>
 #endif
 
@@ -26,11 +26,11 @@ BCGStab::solve(LinearSystem & ls)
   // original system is in delta form
   shared_ptr<MultiField> x(ls.getDeltaPtr());
   shared_ptr<MultiField> bOrig(ls.getBPtr());
-  
+
   matrix.computeResidual(ls.getDelta(),ls.getB(),ls.getResidual());
 
   MFRPtr rNorm0(ls.getResidual().getOneNorm());
-  
+
   shared_ptr<MultiField> r(dynamic_pointer_cast<MultiField>(ls.getResidual().newCopy()));
   shared_ptr<MultiField> rTilda(dynamic_pointer_cast<MultiField>(ls.getResidual().newCopy()));
 
@@ -79,7 +79,7 @@ BCGStab::solve(LinearSystem & ls)
       pHat->zero();
       ls.replaceDelta(pHat);
       ls.replaceB(p);
-      
+
       preconditioner->smooth(ls);
 
       matrix.multiply(*v,*pHat);
@@ -91,7 +91,7 @@ BCGStab::solve(LinearSystem & ls)
 
       x->msaxpy(*alpha,*pHat);
       r->msaxpy(*alpha,*v);
-      
+
       MFRPtr rNorm = r->getOneNorm();
 
       if (*rNorm < absoluteTolerance)
@@ -103,7 +103,7 @@ BCGStab::solve(LinearSystem & ls)
       sHat->zero();
       ls.replaceDelta(sHat);
       ls.replaceB(r);
-      
+
       preconditioner->smooth(ls);
 
       matrix.multiply(*t,*sHat);
@@ -122,21 +122,21 @@ BCGStab::solve(LinearSystem & ls)
       rNorm = r->getOneNorm();
 
       MFRPtr normRatio((*rNorm)/(*rNorm0));
-      
-#ifndef FVM_PARALLEL      
+
+#ifndef FVM_PARALLEL
       if (verbosity >0)
         cout << i+1 << ": " << *rNorm << endl;
-#endif	
-	
+#endif
+
 #ifdef  FVM_PARALLEL
   if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0)
     cout << i+1 << ": " << *rNorm << endl;
 #endif
-	
+
       if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance)
         break;
-    
-            
+
+
   }
   ls.replaceDelta(x);
   ls.replaceB(bOrig);
@@ -147,7 +147,7 @@ BCGStab::solve(LinearSystem & ls)
   matrix.computeResidual(ls.getDelta(),ls.getB(),ls.getResidual());
   MFRPtr rNormn(ls.getResidual().getOneNorm());
 
-#ifndef FVM_PARALLEL  
+#ifndef FVM_PARALLEL
   if (verbosity >0)
     cout << "n" << ": " << *rNormn << endl;
 #endif
@@ -157,9 +157,9 @@ BCGStab::solve(LinearSystem & ls)
   if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0)
     cout << "n" << ": " << *rNormn << endl;
 #endif
-  
-  
-  
+
+
+
   return rNorm0;
 }
 
