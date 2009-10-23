@@ -2,7 +2,11 @@ from build_packages import *
 
 class Lammps(BuildPkg):
     requires = ['fftw']
-    copy_sources = 1    
+    copy_sources = 1
+    
+    def status(self):
+        return config('lammps', 'build')
+    
     def _build(self):
         os.chdir('src')
         ret = self.sys_log("make -j%s" % jobs(self.name));
