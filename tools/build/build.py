@@ -91,6 +91,8 @@ class Build:
         for p in self.all_packages:
             x = config.config(p.name, 'Build')
             if x != '' and eval(x):
+                if check_timestamp:
+                    verbose(1, 'Checking required packages for %s: ' % p.name)
                 self.add_build(p, check_timestamp)
 
     def add_build(self, pkg, check_timestamp):
@@ -107,10 +109,12 @@ class Build:
         if not pkg in self.packages:
             if check_timestamp:
                 if self.database[pkg.name + '-status'] == pkg.status():
-                    verbose(1, '%s needs rebuilt' % pkg.name)
+                    verbose(1, '\t%s needs rebuilt' % pkg.name)
+                elif self.database[pkg.name + '-status'] == '':
+                    verbose(1, '\t%s needs built' % pkg.name)
                 else:
-                    verbose(1, "%s needs rebuilt. Status changed from '%s' to '%s.'" 
-                            % (pkg.name, self.database[pkg.name + '-status'], pkg.status()))  
+                    verbose(1, "\t%s needs rebuilt. Status changed from '%s' to '%s.'" 
+                            % (pkg.name, self.database[pkg.name + '-status'], pkg.status()))
             self.packages.append(pkg)
         return 1
 
