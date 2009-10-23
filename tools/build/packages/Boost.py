@@ -2,13 +2,29 @@ from build_packages import *
 
 # We don't build boost, just use the headers
 class Boost(BuildPkg):
-    pass
-# What was done below is crazy. If boost is needed, the proper
-# solution is to implement copy_srcs() method for this package
-# to directly untar the headers into the include directory.
-# See MPM.
-#    def _install(self):
-#        idir = os.path.join(self.blddir, "include")
-#        return self.sys_log("/bin/ln -fs %s %s" % (self.bdir, idir))
+    def unpack_srcs(self):
+        dst = os.path.join(self.blddir, 'include', 'boost')
+        src = self.sdir
+        suffix = src.split('.')[-1]
+                
+        compress = None
+        if suffix == 'tgz' or suffix == 'gz':
+            compress = 'z'
+        elif suffix == 'bz2':
+            compress = 'j'
+        elif suffix == 'tar':
+            compress = ''
+
+        if compress == None:
+            fatal('Cannot unpack %s' % src)
+
+        # need to keep the build system happy
+        self.sys_log("/bin/mkdir -p %s" % self.bdir)        
+        
+        if not os.path.isdir(dst):
+            self.sys_log("/bin/mkdir -p %s" % dst)
+        
+        os.system('tar -C %s -%sxf %s' % (dst, compress, src))
+        
 
 

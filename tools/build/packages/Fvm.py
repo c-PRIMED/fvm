@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Fvm(BuildPkg):
-    requires = ['scons', 'rlog', 'swig', 'nose', 'netcdf']
+    requires = ['scons', 'rlog', 'swig', 'nose', 'netcdf', 'boost']
     
     def add_required(self, deps):
         x = config('fvm', 'parallel')

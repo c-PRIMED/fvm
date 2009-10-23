@@ -10,4 +10,4 @@ class Ipython(BuildPkg):
         cf.close()
         return 0
     def _build(self):
-        return self.sys_log("make");
+        return self.sys_log("make")
