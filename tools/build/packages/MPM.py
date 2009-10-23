@@ -4,6 +4,9 @@ class MPM(BuildPkg):
     name = "MPM"
     requires = ['netcdf', 'netCDF4', 'h5py']
 
+    def status(self):
+        return config('MPM', 'configname')
+
     # just copy the sources we need
     def copy_srcs(self):
         os.makedirs(self.bdir)

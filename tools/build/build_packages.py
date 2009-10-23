@@ -125,8 +125,10 @@ class BuildPkg(Build):
         pmess("INSTALL", self.name, self.blddir)
         os.chdir(self.bdir)
         self.pstatus(self._install())
-        debug('database[%s] = %s' % (self.name, self.build_start_time))
         self.bld.database[self.name] = self.build_start_time
+        self.bld.database[self.name + '-status'] = self.status()
+        debug('database[%s] = %s' % (self.name, self.build_start_time))
+        debug('database[%s] = %s' % (self.name + '-status', self.bld.database[self.name + '-status']))        
         run_commands(self.name, 'after')
 
     def test(self):
@@ -158,6 +160,14 @@ class BuildPkg(Build):
             cmd = cmd + " >>" + self.logfile + " 2>&1"
         return os.system("/bin/bash -c '%s'" % cmd)
 
+
+    def add_required(self, deps):
+        ''' This method allows packages to conditionally add to the required list. '''
+        return deps
+
+    def status(self):
+        return 'normal'
+    
     # subclasses must redefine these
     def _configure(self):
         pass

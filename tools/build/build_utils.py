@@ -4,6 +4,7 @@ build utility functions.
 import sys, os, shutil, re
 from config import config
 
+#clors used for printing messages
 colors = {
     'BOLD'  :'\033[1m',
     'RED'   :'\033[1;31m',
@@ -20,7 +21,6 @@ colors = {
     'DCYAN'  :'\033[0;36m',
     'NORMAL':'\033[0m'
     }
-"colors used for printing messages"
 
 
 maxlen = 20

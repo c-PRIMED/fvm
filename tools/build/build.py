@@ -57,6 +57,11 @@ class Build:
                 debug('database[%s] = %s' % (pname, tmp))
             except KeyError:
                 self.database[pname] = 0
+            try:
+                tmp = self.database[pname + '-status']
+                debug('database[%s] = %s' % (pname + '-status', tmp))
+            except KeyError:
+                self.database[pname + '-status'] = ''
 
         # cache package instances by name key
         self.pkglist = {}
@@ -68,6 +73,7 @@ class Build:
             deps = []
             p.deps = []
             if hasattr(p, 'requires'): deps += p.requires
+            deps = p.add_required(deps)
             for dep in deps:
                 try:
                     p.deps.append(self.pkglist[dep])
@@ -96,11 +102,15 @@ class Build:
         if check_timestamp and deps_needed == 0:
             f, t = dirwalk.DirWalk(pkg.psdir).find_newest()
             debug('%s: %s\t%s' % (pkg.psdir, f, time.strftime("%b %d %Y %H:%M %Z", time.localtime(t))))
-            if t < self.database[pkg.name]:
+            if t < self.database[pkg.name] and self.database[pkg.name + '-status'] == pkg.status():
                 return 0
         if not pkg in self.packages:
             if check_timestamp:
-                verbose(1, '%s needs rebuilt' % pkg.name)
+                if self.database[pkg.name + '-status'] == pkg.status():
+                    verbose(1, '%s needs rebuilt' % pkg.name)
+                else:
+                    verbose(1, "%s needs rebuilt. Status changed from '%s' to '%s.'" 
+                            % (pkg.name, self.database[pkg.name + '-status'], pkg.status()))  
             self.packages.append(pkg)
         return 1
 

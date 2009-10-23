@@ -1,7 +1,22 @@
 from build_packages import *
 
 class Fvm(BuildPkg):
-    requires = ['scons', 'rlog', 'boost', 'swig', 'parmetis', 'mpi4py', 'nose', 'netcdf']
+    requires = ['scons', 'rlog', 'boost', 'swig', 'nose', 'netcdf']
+    
+    def add_required(self, deps):
+        x = config('fvm', 'parallel')
+        if x != '' and eval(x):
+            deps += ['mpi4py', 'parmetis']
+        return deps
+        
+    def status(self):
+        x = config('fvm', 'parallel')
+        if x != '' and eval(x):
+            par = 'parallel'
+        else:
+            par = 'serial'        
+        return '%s-%s' % (par, config('fvm', 'version'))
+    
     # from fvm sources
     def getArch(self):
         if sys.platform == 'linux2':
@@ -56,5 +71,6 @@ class Fvm(BuildPkg):
 
     def _clean(self):
         bd = os.path.join(self.sdir, "build")
-        pmess("CLEAN",self.name,bd)
+        pmess("CLEAN", self.name, bd)
+        os.system('touch %s/SConstruct' % self.psdir)
         return self.sys_log("rm -rf %s/*" % bd)
