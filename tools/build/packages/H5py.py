@@ -51,7 +51,7 @@ class H5py(BuildPkg):
         else:
             api = '18'
         if mpi:
-            verbose("Building h5py with mpi")
+            verbose(1, "Building h5py with mpi")
             do_env('CC=mpicc')
         self.sys_log("python setup.py configure --api=%s" % api)
         ret = self.sys_log("python setup.py build")
