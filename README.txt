@@ -11,7 +11,7 @@ Build a system-specific set of software:
 ./make.py configname
 
 Valid configs are stored in the config subdirectory. Current there
-are configs for mmh (a linux desktop) and steele.  You can easily add your own.
+are configs for mmh (a linux desktop), steele, and coates.  You can easily add your own.
 
-For help see https://developer.nanohub.org/projects/app-memosa/wiki/GettingStarted
+For help see https://memshub.org/infrastructure/memosa/wiki/Development
 
