@@ -1,6 +1,6 @@
 Title = " tecplot file for 2D Cavity problem " 
 variables = "x", "y", "z", "velX", "cellCentroidY" 
-Zone T = "nmesh0" N = 1613 E = 7465 DATAPACKING = BLOCK, VARLOCATION = ([4-5]=CELLCENTERED),  ZONETYPE=FETETRAHEDRON 
+Zone T = "nmesh0" N = 1613 E = 7465 DATAPACKING = BLOCK, VARLOCATION = ([4-5]=CELLCENTERED), ZONETYPE=FETETRAHEDRON
 -0.5    -0.5    -0.41134600764    -0.5    -0.34046036394    
 -0.4    -0.33816381432    -0.3    -0.5    -0.4138704772    
 -0.5    0.42916656098    0.42842150611    0.4    0.34051337454    
