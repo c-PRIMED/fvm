@@ -4,7 +4,7 @@
 """
 Build definitions.
 """
-import os, glob, shelve, dirwalk, time, config
+import os, glob, shelve, dirwalk, time, config, sys
 from build_utils import fatal, debug, verbose
 from tsort import topological_sort
 
@@ -13,7 +13,8 @@ class Build:
     def __init__(self, cname, srcpath):
 
         # create build directories
-        self.topdir = srcpath
+        cwd = os.getcwd()        
+        self.topdir = cwd
         self.blddir = os.path.join(os.getcwd(), "build-%s" % cname)
         self.logdir = os.path.join(self.blddir, "log")
         self.bindir = os.path.join(self.blddir, "bin")
@@ -28,27 +29,45 @@ class Build:
 
         # load build database
         self.database = shelve.open(os.path.join(self.logdir, 'PACKAGES'))
-        cwd = os.getcwd()
-
+        
         # import modules from 'packages' directory
-        os.chdir(os.path.join(srcpath, 'tools', 'build', 'packages'))
-        for m in glob.glob('*.py'):
-            m = m.split('.')[0]
-            if m == '__init__':
-                continue
-            debug("importing %s" % m)
-            temp = __import__('packages.' + m, globals(), locals(), [m])
-            exec('global %s; %s=temp.%s; self.%s=%s' % (m, m, m, m, m))
-
-        # create package classes
+        for path in (os.path.join(cwd, 'config', 'packages'),
+                     os.path.join(srcpath, 'packages')):
+            if os.path.isdir(path):
+                debug("importing package modules from %s" % path)
+                try:
+                    os.chdir(path)
+                    sys.path = [path] + sys.path
+                except:
+                    fatal('Cannot read modules from %s' % path)    
+                for m in glob.glob('*.py'):
+                    m = m.split('.')[0]
+                    if m == '__init__':
+                        continue
+                    debug("importing '%s'" % m)
+                    try:
+                        loaded = eval(m)
+                    except NameError:
+                        loaded = False
+                    if not loaded:
+                        temp = __import__(m, globals(), locals(), [m])
+                        exec('global %s; %s=temp.%s; self.%s=%s' % (m, m, m, m, m))
+                
+        # create package class instances        
         self.all_packages = []
+        path = os.path.join(cwd, 'config', 'packages')
+        os.chdir(path)        
+                
         for line in open('SOURCES'):
             cls, sdir = line.split()
             acls = []
-            exec("acls = %s(self, '%s')" % (cls, sdir))
-            self.all_packages.append(acls)
-            if cls == 'Scons':
-                self.Scons = acls
+            try:
+                exec("acls = %s(self, '%s')" % (cls, sdir))
+                self.all_packages.append(acls)
+                if cls == 'Scons':
+                    self.Scons = acls
+            except NameError:
+                Warning('Package %s in SOURCES, but no build script found.' % cls)
 
         # load PACKAGES database
         for pname in [p.name for p in self.all_packages]:

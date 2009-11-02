@@ -5,7 +5,7 @@
 # Martin Hunt <mmh@purdue.edu>
 
 """
-This script configures and builds all the MEMOSA packages.
+This script configures and builds a collection of packages.
 
 Usage: make.py [options] config
 Options:
@@ -58,7 +58,7 @@ def main():
     parser.add_option("--jobs", "-j")
     (options, args) = parser.parse_args()
 
-    srcpath = os.path.abspath(os.path.dirname(sys.argv[0]))
+    srcpath = os.path.abspath(os.path.dirname(os.path.realpath(sys.argv[0])))
     cwd = os.getcwd()
 
     if options.nightly:
@@ -70,7 +70,7 @@ def main():
     cname = ''
     if len(args) == 1:
         cname = args[0]
-    if cname == '' or not config.read(srcpath, cname):
+    if cname == '' or not config.read(cwd, cname):
         usage()
 
     build_utils.set_options(options)
