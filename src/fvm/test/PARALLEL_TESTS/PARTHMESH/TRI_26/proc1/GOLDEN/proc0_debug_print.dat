@@ -119,14 +119,15 @@
 
  numflag  = 0
 
- ncon = 1
+ ncon = 2
 
  ncommonnodes = 2
 
  nparts = 1
 
-tpwgts[0] = 1
+tpwgts[0] = 0.5
 
+ ubvec = 1.05
  ubvec = 1.05
 
  options = 0
@@ -271,18 +272,18 @@ tpwgts[0] = 1
  _elemWithGhosts[23] = 23
  _elemWithGhosts[24] = 24
  _elemWithGhosts[25] = 25
- _elemWithGhosts[26] = 28
- _elemWithGhosts[27] = 26
- _elemWithGhosts[28] = 27
- _elemWithGhosts[29] = 37
- _elemWithGhosts[30] = 29
- _elemWithGhosts[31] = 35
- _elemWithGhosts[32] = 34
- _elemWithGhosts[33] = 32
- _elemWithGhosts[34] = 31
- _elemWithGhosts[35] = 30
+ _elemWithGhosts[26] = 26
+ _elemWithGhosts[27] = 27
+ _elemWithGhosts[28] = 28
+ _elemWithGhosts[29] = 29
+ _elemWithGhosts[30] = 30
+ _elemWithGhosts[31] = 31
+ _elemWithGhosts[32] = 32
+ _elemWithGhosts[33] = 33
+ _elemWithGhosts[34] = 34
+ _elemWithGhosts[35] = 35
  _elemWithGhosts[36] = 36
- _elemWithGhosts[37] = 33
+ _elemWithGhosts[37] = 37
 
  _col[0] = 1
  _col[1] = 2
@@ -404,18 +405,18 @@ tpwgts[0] = 1
  row[36] = 36    0    
  row[37] = 37    0    
 
-Boundary multimap = 3    28
 Boundary multimap = 3    26
 Boundary multimap = 3    27
-Boundary multimap = 4    37
+Boundary multimap = 3    28
 Boundary multimap = 4    29
-Boundary multimap = 4    35
-Boundary multimap = 4    34
-Boundary multimap = 4    32
-Boundary multimap = 4    31
 Boundary multimap = 4    30
-Boundary multimap = 4    36
+Boundary multimap = 4    31
+Boundary multimap = 4    32
 Boundary multimap = 4    33
+Boundary multimap = 4    34
+Boundary multimap = 4    35
+Boundary multimap = 4    36
+Boundary multimap = 4    37
 Boundary multimap = 3    velocity-inlet
 Boundary multimap = 4    wall
 
@@ -811,18 +812,18 @@ Boundary multimap = 4    wall
  row[30] = 22    25    
  row[31] = 24    26    
  row[32] = 25    26    
- row[33] = 3    27    
- row[34] = 9    28    
- row[35] = 21    29    
- row[36] = 1    30    
- row[37] = 5    31    
- row[38] = 7    32    
- row[39] = 11    33    
- row[40] = 13    34    
- row[41] = 15    35    
- row[42] = 18    36    
+ row[33] = 9    27    
+ row[34] = 21    28    
+ row[35] = 3    29    
+ row[36] = 5    30    
+ row[37] = 18    31    
+ row[38] = 15    32    
+ row[39] = 13    33    
+ row[40] = 23    34    
+ row[41] = 11    35    
+ row[42] = 7    36    
  row[43] = 19    37    
- row[44] = 23    38    
+ row[44] = 1    38    
 
  _faceNodesOrdered :  
  _faceNodesOrdered->getRowDim() = 45
@@ -860,18 +861,18 @@ Boundary multimap = 4    wall
  row[30] = 2        19    20    
  row[31] = 2        17    18    
  row[32] = 2        18    20    
- row[33] = 2        4    3    
- row[34] = 2        11    9    
- row[35] = 2        9    4    
- row[36] = 2        3    1    
- row[37] = 2        7    5    
- row[38] = 2        8    7    
- row[39] = 2        12    11    
- row[40] = 2        15    13    
- row[41] = 2        16    15    
- row[42] = 2        5    16    
+ row[33] = 2        11    9    
+ row[34] = 2        9    4    
+ row[35] = 2        4    3    
+ row[36] = 2        7    5    
+ row[37] = 2        5    16    
+ row[38] = 2        16    15    
+ row[39] = 2        15    13    
+ row[40] = 2        13    12    
+ row[41] = 2        12    11    
+ row[42] = 2        8    7    
  row[43] = 2        1    8    
- row[44] = 2        13    12    
+ row[44] = 2        3    1    
 
  total mesh surrounding = 0
 
