@@ -131,6 +131,7 @@ private:
    vector< int* > _row;
    vector< int* > _col;
    vector< int* > _elem;           //just interior (local)
+   vector< set<int> > _elemSet;   
    vector< set<int> > _elemLocal;  //local numbering
    vector< int* > _elemWithGhosts; //interior+boundary (local)
    

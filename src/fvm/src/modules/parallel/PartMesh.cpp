@@ -94,7 +94,6 @@ PartMesh::~PartMesh()
 void 
 PartMesh::mesh()
 { 
-
     CRConnectivity_cellParts();
     CRConnectivity_faceParts();
     interfaces();
@@ -122,6 +121,7 @@ PartMesh::partition()
     count_elems_part();
     exchange_part_elems();
     //dumpTecplot();
+
 }
 
 
@@ -718,6 +718,7 @@ PartMesh::init()
    _colDim.resize( _nmesh );
    _edgecut.resize( _nmesh );
    _elemLocal.resize(_nmesh);  //local numbering
+   _elemSet.resize(_nmesh);
    _nonInteriorCells.resize(_nmesh ); //local numbering
    _bndryOffsets.resize( _nmesh );
    _interfaceOffsets.resize( _nmesh );
@@ -734,7 +735,7 @@ PartMesh::init()
        _totElemsAndGhosts.at(id) = site.getCount();
        _wghtFlag.at(id) = int( NOWEIGHTS ); //No Weights : default value
        _numFlag.at(id)  = int( C_STYLE );   //C Style numbering :: default_value
-       _ncon.at(id)     =  1;               //number of specified weights : default value
+       _ncon.at(id)     =  2;               //number of specified weights : default value
 
        //assign ubvec
        _ubvec.push_back( new float[_ncon.at(id) ] );
@@ -1140,7 +1141,7 @@ PartMesh::CRConnectivity_cellParts()
     for ( int id = 0; id < _nmesh; id++){
         mapBounIDAndCell(id);
         resize_elem(id);
-
+        
         elemGlobal.push_back( new int [_totElemsAndGhosts.at(id) ]   ); //global array to aggregation
         distGlobal.push_back( new int [ _nPart.at(id) + 1 ] );
         int *offsets = new int [ _nPart.at(id) ];
@@ -1224,32 +1225,52 @@ PartMesh::mapBounIDAndCell(int id)
         int group_id = boundaryFaceGroups.at(bounID)->id;
         _boundarySet.at(id).insert( group_id );
         string boun_type( boundaryFaceGroups.at(bounID)->groupType );
+ 
         _mapBounIDAndBounType.at(id).insert( pair<int,string>(group_id, boun_type) );
 
         int nBounElm = boundaryFaceGroups.at(bounID)->site.getCount();
+
         for ( int n = 0; n < nBounElm; n++){
            mapBounIDAndCell.insert( pair<int,int>(group_id, indx) );
            indx++;
         }
      }
 
+     //putting local elements  in set to check fast way 
+     for ( int n = 0; n < _nelems.at(id); n++ )
+        _elemSet.at(id).insert( _elem.at(id)[n] );
+
+     multimap<int,int>::const_iterator  it;
+     const CRConnectivity& cellCells = _meshList.at(id)->getCellCells();
+     for ( it = mapBounIDAndCell.begin(); it != mapBounIDAndCell.end(); it++ ){
+        int boun_cell_id = it->second;
+        int neigh_id     = cellCells(boun_cell_id,0); //assuming just one neighbour for boundary
+        if ( _elemSet.at(id).count( neigh_id ) > 0 )
+            _mapBounIDAndCell.at(id).insert( pair<int,int>(it->first, it->second) );
+     }
+
     //loop over local elements of process
-    multimap<int,int>::const_iterator  it;
-    const CRConnectivity& cellCells = _meshList.at(id)->getCellCells();
-    for ( int n = 0; n < _nelems.at(id); n++){
-       int ncells = cellCells.getCount( _elem.at(id)[n] );
-       for ( int m = 0; m < ncells; m++){
-           int elem_id = cellCells( _elem.at(id)[n], m );
-           //loop over boundary elements
-           for ( it = mapBounIDAndCell.begin(); it != mapBounIDAndCell.end(); it++){
-               if ( elem_id == it->second )
-                   _mapBounIDAndCell.at(id).insert( pair<int,int>(it->first, it->second) );
-           }
-       } 
-    }
+//     multimap<int,int>::const_iterator  it;
+//     const CRConnectivity& cellCells = _meshList.at(id)->getCellCells();
+//     for ( int n = 0; n < _nelems.at(id); n++){
+//        int ncells = cellCells.getCount( _elem.at(id)[n] );
+//        if ( true ){
+//           for ( int m = 0; m < ncells; m++){
+//              int elem_id = cellCells( _elem.at(id)[n], m );
+//               if ( elem_id > _totElems.at(id) ){
+//              //loop over boundary elements
+//              for ( it = mapBounIDAndCell.begin(); it != mapBounIDAndCell.end(); it++){
+//                  if ( elem_id == it->second ){
+//                      _mapBounIDAndCell.at(id).insert( pair<int,int>(it->first, it->second) );
+//                       if ( _procID == 0 ) cout << " procID = " << _procID <<  " elem = " << n << ", komsu elem  = " << elem_id << 
+//                           " it->first = " << it->first << " it->second = " << it->second << endl;
+//                  }
+// 
+//              }
+//           } 
+//        }
+//     }
 
-
-    
 
 }
 
