@@ -16,12 +16,16 @@ Options:
   --all          Removes build directory then builds everything.
   -v, --verbose  Verbose output.
   -d, --debug    Debug output.
+  -s source_dir  Directory where the sources are located.
   -j num         Specify the number of jobs to run simultaneously.
   --nocolor      Disable color output.
   --clean        Clean up. Currently only removes old binaries from fvm directory.
   --nightly      Build, test, and submit to cdash. Flag as a "nightly" build.
 
-Configuration names are stored in the "config" subdirectory.
+Configuration names are stored in the 'config' subdirectory. That directory must be
+in the source directory specified by the '-s' option (if one is given). 
+If there is a 'config' directory in the current directory, it will be used. 
+Otherwise, the build system will look for one in the same directory as 'make.py'.
 """
 
 from build import Build
@@ -56,9 +60,10 @@ def main():
     parser.add_option("--nightly", action="store_true")
     parser.add_option("--clean", action="store_true")
     parser.add_option("--jobs", "-j")
+    parser.add_option("-s", type="string")
     (options, args) = parser.parse_args()
 
-    srcpath = os.path.abspath(os.path.dirname(os.path.realpath(sys.argv[0])))
+    make_path = os.path.abspath(os.path.dirname(os.path.realpath(sys.argv[0])))
     cwd = os.getcwd()
 
     if options.nightly:
@@ -70,7 +75,19 @@ def main():
     cname = ''
     if len(args) == 1:
         cname = args[0]
-    if cname == '' or not config.read(cwd, cname):
+    if cname == '':
+        usage()
+        
+    sdir = ''
+    if options.s:
+        sdir = options.s
+    else:
+        if os.path.isdir(os.path.join(cwd, 'config')):
+            sdir = cwd
+        elif os.path.islink(sys.argv[0]):
+            sdir = os.path.dirname(sys.argv[0])
+            
+    if sdir == '' or not config.read(os.path.join(sdir, 'config'), cname):
         usage()
 
     build_utils.set_options(options)
@@ -78,7 +95,7 @@ def main():
     if options.all:
         os.system("/bin/rm -rf %s" % os.path.join(cwd, "build-%s" % cname))
 
-    bld = Build(cname, srcpath)
+    bld = Build(cname, sdir, make_path)
     build_utils.run_commands('ALL', 'before')
     build_utils.fix_path('PATH', bld.bindir, 1, 0)
     build_utils.fix_path('LD_LIBRARY_PATH', bld.libdir, 1, 0)

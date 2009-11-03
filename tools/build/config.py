@@ -58,12 +58,12 @@ def set_value(val):
         _config[section] = {lval:rval}
     return True
 
-def read(srcpath, filename):
+def read(srcpath, cname):
     global _config
 
-    if filename == '': return False
+    if cname == '': return False
 
-    filename = os.path.join(srcpath, "config", filename)
+    filename = os.path.join(srcpath, cname)
 
     lnum = 0
     f = open(filename, 'r')

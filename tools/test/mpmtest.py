@@ -70,7 +70,8 @@ def main():
             try:
                 os.makedirs(options.datadir)
             except:
-                fatal("error creating directory " + options.datadir)
+                print "error creating directory " + options.datadir
+                sys.exit(1)
         os.chdir(options.datadir)
 
     # copy input data files to test directory

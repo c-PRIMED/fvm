@@ -10,11 +10,10 @@ from tsort import topological_sort
 
 class Build:
 
-    def __init__(self, cname, srcpath):
-
+    def __init__(self, cname, topdir, make_path):
         # create build directories
         cwd = os.getcwd()        
-        self.topdir = cwd
+        self.topdir = topdir
         self.blddir = os.path.join(os.getcwd(), "build-%s" % cname)
         self.logdir = os.path.join(self.blddir, "log")
         self.bindir = os.path.join(self.blddir, "bin")
@@ -31,8 +30,8 @@ class Build:
         self.database = shelve.open(os.path.join(self.logdir, 'PACKAGES'))
         
         # import modules from 'packages' directory
-        for path in (os.path.join(cwd, 'config', 'packages'),
-                     os.path.join(srcpath, 'packages')):
+        for path in (os.path.join(topdir, 'config', 'packages'),
+                     os.path.join(make_path, 'packages')):
             if os.path.isdir(path):
                 debug("importing package modules from %s" % path)
                 try:
@@ -55,7 +54,7 @@ class Build:
                 
         # create package class instances        
         self.all_packages = []
-        path = os.path.join(cwd, 'config', 'packages')
+        path = os.path.join(topdir, 'config', 'packages')
         os.chdir(path)        
                 
         for line in open('SOURCES'):

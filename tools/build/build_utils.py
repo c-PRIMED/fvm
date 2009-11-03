@@ -155,7 +155,8 @@ def do_env(c, unload=False):
             debug("Set %s back to %s" % (a, old))
         except:
             debug("Unset " + a)
-            os.environ.pop(a)
+            if os.environ.has_key(a):            
+                os.environ.pop(a)
     else:
         debug("Set %s=%s" % (a, b))
         if not myenv.has_key(a):
