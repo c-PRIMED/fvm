@@ -162,7 +162,10 @@ def do_env(c, unload=False):
             myenv[a] = []
         if os.environ.has_key(a):
             myenv[a].append(os.environ[a])
-        os.environ[a] = b
+            if b == '':
+                del os.environ[a]
+            else:
+                os.environ[a] = b
 
 def fix_path(k, v, prepend, unload):
     if unload:
