@@ -773,6 +773,7 @@ LinearSystemMerger::gatherB()
    const MultiField::ArrayIndexList& arrayIndices = _ls.getB().getArrayIndices();
    const MultiField& multiField = _ls.getB();
    MultiField& mergeMultiField = _mergeLS->getB();
+   _mergeLS->getDelta().zero();
    foreach( MultiField::ArrayIndex k, arrayIndices ){
        const StorageSite& site = *k.second;
        int send_cnts = site.getSelfCount();
