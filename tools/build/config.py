@@ -1,7 +1,7 @@
 """
 build configuration utilities
 """
-import os
+import os, re
 
 # defaults
 
@@ -26,10 +26,23 @@ _config = {
 }
 
 def config(x,y):
+    # special hack for 'env'
+    if y == 'env':
+        new_env = []
+        if  _config.has_key(x):
+            for e in _config[x]:
+                try:
+                    new_env.append('%s=%s' % (re.compile(r'env\[(.*)\]').findall(e)[0], _config[x][e]))
+                except IndexError:
+                    pass
+            # Keep compatibility with old format, for now.
+            if  _config[x].has_key(y):            
+                new_env.append(_config[x][y])
+        return new_env
     try:
         # print "GET %s %s -> %s" % (x, y, _config[x][y])
         return _config[x][y]
-    except:
+    except KeyError:
         return ''
 
 

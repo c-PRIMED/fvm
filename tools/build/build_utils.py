@@ -165,8 +165,8 @@ def do_env(c, unload=False):
             myenv[a].append(os.environ[a])
             if b == '':
                 del os.environ[a]
-            else:
-                os.environ[a] = b
+        elif b:
+            os.environ[a] = b
 
 def fix_path(k, v, prepend, unload):
     if unload:
@@ -244,10 +244,9 @@ def run_commands(pkg, section):
             module_load(m, section == 'after')
 
     # Optionally set an environment variable
-    env = config(pkg, 'env')
-    if env:
+    for env in config(pkg, 'env'):
         do_env(env, section == 'after')
-
+    
     # Optionally run a command
     cmd = config(pkg, section)
     if cmd:
