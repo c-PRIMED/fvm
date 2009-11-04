@@ -39,14 +39,14 @@ mpi4py:
 	modules=mpich2-gcc
 
 netcdf:
-	env=F90=gfortran
-	env=CC=gcc
+	env[F90]=gfortran
+	env[CC]=gcc
 
 parmetis:
 	modules=mpich2-gcc
 	
 ALL:
 	modules=gcc atlas hdf5-1.8.3/gcc-4.4.0
-	env=HDF5_DIR=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
+	env[HDF5_DIR]=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
 
 
