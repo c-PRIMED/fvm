@@ -46,6 +46,7 @@ parmetis:
 	modules=mpich2-gcc
 	
 ALL:
+	before=module load python
 	modules=gcc atlas hdf5-1.8.3/gcc-4.4.0
 	env[HDF5_DIR]=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
 
