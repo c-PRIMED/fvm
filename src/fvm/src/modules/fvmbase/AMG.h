@@ -46,7 +46,8 @@ public:
 
   virtual void setMergeLevelSize(int ls_size){ 
 #ifdef FVM_PARALLEL
-      _mergeLevelSize = ceil(  double(ls_size) / double(MPI::COMM_WORLD.Get_size()) ); 
+      //_mergeLevelSize = ceil(  double(ls_size) / double(MPI::COMM_WORLD.Get_size()) ); 
+       _mergeLevelSize = ls_size;
       _isMerge = true;
 #endif
 
