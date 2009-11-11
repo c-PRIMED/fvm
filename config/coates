@@ -5,7 +5,7 @@ Testing:
 	walltime=4:00:00
 	nodes=4
 	ncpus=8
-	modules=mpich2-gcc
+	modules=mpich2-gcc atlas hdf5-1.8.3/gcc-4.4.0
 
 lammps:
 	Build=True
