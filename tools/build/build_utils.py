@@ -168,7 +168,7 @@ def do_env(c, unload=False):
         elif b:
             os.environ[a] = b
 
-def fix_path(k, v, prepend, unload):
+def fix_path(varname, val, prepend, unload):
     if unload:
         s1 = "remove"
         s2 = "from"
@@ -177,23 +177,29 @@ def fix_path(k, v, prepend, unload):
         if prepend: s1 = "prepend"
         else: s1 = "append"
 
-    debug("%s '%s' %s %s" % (s1, v, s2, k))
+    debug("%s '%s' %s %s" % (s1, val, s2, varname))
 
     try:
-        e = os.environ[k]
+        e = os.environ[varname]
     except KeyError:
         e = ''
 
     if unload:
         p = e.split(':')
-        p.remove(v)
-        os.environ[k] = ':'.join(p)
+
+        for v in val.split(':'):
+            try:
+                p.remove(v)
+            except ValueError:
+                fatal("While trying to remove '%s' from '%s'\n[%s]"
+                      % (v, p, e))
+        os.environ[varname] = ':'.join(p)
     else:
         if prepend:
-            os.environ[k] = (v + ':' + e).strip(':')
+            os.environ[varname] = (val + ':' + e).strip(':')
         else:
-            os.environ[k] = (e + ':' + v).strip(':')
-    debug("%s=%s" % (k, os.environ[k]))
+            os.environ[varname] = (e + ':' + val).strip(':')
+    debug("%s=%s" % (varname, os.environ[varname]))
 
 
 # python handler for Environment Modules
@@ -230,23 +236,14 @@ def module_load(m, unload=False):
                 warning ("Unknown module command " + x[1])
         else:
             if x[0].find('ERROR') > 0:
-                fatal("ERROR loading module '%s'" % m, -1, 0)
+                fatal("ERROR loading module '%s' while processing\n'%s'"
+                      % (m, line), -1, 0)
 
 # pkg = 'ALL' or package name
 # section = 'before' or 'after'
 # Runs commands and [un]loads modules and [un]sets env variables
 def run_commands(pkg, section):
 
-    # First load modules
-    mods = config(pkg, 'modules')
-    if mods:
-        for m in mods.split():
-            module_load(m, section == 'after')
-
-    # Optionally set an environment variable
-    for env in config(pkg, 'env'):
-        do_env(env, section == 'after')
-    
     # Optionally run a command
     cmd = config(pkg, section)
     if cmd:
@@ -258,6 +255,17 @@ def run_commands(pkg, section):
             print "failed."
             sys.exit(-1)
 
+    # Optionally set an environment variable
+    for env in config(pkg, 'env'):
+        do_env(env, section == 'after')
+
+    # First load modules
+    mods = config(pkg, 'modules')
+    if mods:
+        for m in mods.split():
+            module_load(m, section == 'after')
+
+    
 def copytree(src, dst, ctype):
     os.makedirs(dst)
     if ctype <= 0:
