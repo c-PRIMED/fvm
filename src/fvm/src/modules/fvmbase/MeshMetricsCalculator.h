@@ -28,6 +28,10 @@ public:
 
   virtual void init();
 
+  void createNodeDisplacement();
+
+  void calculateBoundaryNodeNormal();
+
   void computeIBInterpolationMatrices(const StorageSite& particles);
 
   void computeIBandSolidInterpolationMatrices(const StorageSite& particles);
@@ -45,6 +49,8 @@ private:
   Field& _areaField;
   Field& _areaMagField;
   Field& _volumeField;
+  Field& _nodeDisplacement;
+  Field& _boundaryNodeNormal;
 
   virtual void calculateNodeCoordinates(const Mesh& mesh);
 

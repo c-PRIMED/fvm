@@ -76,11 +76,22 @@ public:
 
     
     const int nFaces = faces.getCount();
+    TArray* gridFluxPtr = 0;
+    if (_geomFields.gridFlux.hasArray(faces))
+    {
+        gridFluxPtr = new TArray(nFaces);
+        *gridFluxPtr = dynamic_cast<const TArray&>(_geomFields.gridFlux[faces]);
+    }
     for(int f=0; f<nFaces; f++)
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
-        const T_Scalar faceCFlux = convectingFlux[f];
+        T_Scalar gridFlux(0.0);
+        T_Scalar fluxFace(0.0);
+	if(gridFluxPtr)
+	  fluxFace = (*gridFluxPtr)[f];
+        gridFlux += fluxFace;
+        const T_Scalar faceCFlux = convectingFlux[f] - gridFlux;
 
         X varFlux;
         if (faceCFlux > T_Scalar(0))

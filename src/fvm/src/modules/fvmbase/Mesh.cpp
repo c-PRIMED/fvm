@@ -10,7 +10,9 @@ Mesh::Mesh(const int dimension, const int id):
   _cells(0),
   _faces(0),
   _nodes(0),
+  _boundaryNodes(0),
   _ibFaces(0),
+  _boundaryNodeGlobalToLocalPtr(),
   _interiorFaceGroup(),
   _faceGroups(),
   _boundaryGroups(),
@@ -54,6 +56,68 @@ Mesh::createBoundaryFaceGroup(const int size, const int offset, const int id, co
   _faceGroups.push_back(fg);
   _boundaryGroups.push_back(fg);
   return fg->site;
+}
+
+
+shared_ptr<Array<int> >
+Mesh::createAndGetBNglobalToLocal() const
+{
+  if(!_boundaryNodeGlobalToLocalPtr)
+  {
+      const int nNodes = _nodes.getCount();
+      _boundaryNodeGlobalToLocalPtr = shared_ptr<Array<int> >(new Array<int>(nNodes));
+      Array<int>& globalToLocal = *_boundaryNodeGlobalToLocalPtr;
+      globalToLocal = -1;
+      int BoundaryNodeCount=0;
+      int nLocal=0;
+      foreach(const FaceGroupPtr fgPtr, getBoundaryFaceGroups())
+      {
+	  const FaceGroup& fg = *fgPtr;
+	  const StorageSite& BoundaryFaces = fg.site;
+	  const CRConnectivity& BoundaryFaceNodes = getFaceNodes(BoundaryFaces);
+	  const Array<int>& BFArray = BoundaryFaceNodes.getRow();
+	  const Array<int>& BNArray = BoundaryFaceNodes.getCol();
+	  const int nBFaces = BoundaryFaceNodes.getRowDim();
+	  for(int i=0;i<nBFaces;i++)
+	  {
+	      for(int ip=BFArray[i];ip<BFArray[i+1];ip++)
+	      {
+		  const int j = BNArray[ip];
+		  if (globalToLocal[j] == -1)
+		    globalToLocal[j] = nLocal++;
+	      }
+	  }
+      }
+      BoundaryNodeCount = nLocal;
+  }
+  return _boundaryNodeGlobalToLocalPtr;   
+}
+
+
+const StorageSite& Mesh::getBoundaryNodes() const 
+{
+  if(!_boundaryNodes)
+  {
+      const int nNodes = _nodes.getCount();
+      shared_ptr<Array<int> > GlobalToLocalPtr = createAndGetBNglobalToLocal();
+      Array<int>& GlobalToLocal = *GlobalToLocalPtr;
+      int BoundaryNodeCount = 0;
+      int nLocal = 0;
+      for(int i=0;i<nNodes;i++)
+      {
+          if(GlobalToLocal[i] != -1)
+	    nLocal++;
+      }
+      BoundaryNodeCount = nLocal;
+      _boundaryNodes = new StorageSite(BoundaryNodeCount,0,0,0);
+  }
+  return *_boundaryNodes;
+}
+
+
+const ArrayBase& Mesh::getBNglobalToLocal() const
+{
+  return *(createAndGetBNglobalToLocal());
 }
 
 

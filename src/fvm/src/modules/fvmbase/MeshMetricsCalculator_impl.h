@@ -154,7 +154,7 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
 
   // boundary cells have the corresponding face's centroid
   foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-  {
+  {   
       const FaceGroup& fg = *fgPtr;
       const StorageSite& faces = fg.site;
       const VectorT3Array& faceCentroid =
@@ -240,7 +240,87 @@ MeshMetricsCalculator<T>::calculateFaceAreas(const Mesh& mesh)
 }
 
 
+template<class T>
+void
+MeshMetricsCalculator<T>::createNodeDisplacement()
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& nodes = mesh.getNodes();
+      const int count = nodes.getCount();
+      shared_ptr<VectorT3Array> nodeDisplacementPtr(new VectorT3Array(count));
+      VectorT3Array& nDisplacement = *nodeDisplacementPtr;
+      nDisplacement.zero();
+      _nodeDisplacement.addArray(nodes,nodeDisplacementPtr);
+  }
+  _nodeDisplacement.syncLocal();
+}
+
+
+template<class T>
+void
+MeshMetricsCalculator<T>::calculateBoundaryNodeNormal()
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      shared_ptr<Array<int> > GlobalToLocalPtr = mesh.createAndGetBNglobalToLocal();
+      Array<int>& GlobalToLocal = *GlobalToLocalPtr;
+      const StorageSite& boundaryNodes = mesh.getBoundaryNodes();
+      const int nBoundaryNodes = boundaryNodes.getCount();
+      Array<bool> nodeMark(nBoundaryNodes);
+      Array<bool> nodeMarked(nBoundaryNodes);
+      shared_ptr<VectorT3Array> nodeNormalPtr(new VectorT3Array(nBoundaryNodes));
+      VectorT3Array& nodeNormal = *nodeNormalPtr;
+      TArray number(nBoundaryNodes); 
+      nodeNormal.zero();
+      number.zero();
+      const T one(1.0);
+      for(int i=0;i<nBoundaryNodes;i++)
+        nodeMarked[i] = false;      
+      foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      {
+          const FaceGroup& fg = *fgPtr;
+	  const StorageSite& faces = fg.site;
+     	  const int nFaces = faces.getCount();
+	  const CRConnectivity& BoundaryFaceNodes = mesh.getFaceNodes(faces);
+	  const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_areaField[faces]);
+          const TArray& faceAreaMag = dynamic_cast<const TArray&>(_areaMagField[faces]);
+	  for(int i=0;i<nBoundaryNodes;i++)
+	    nodeMark[i] = false;	  
+	  for(int i=0;i<nFaces;i++)
+	  {
+	      for(int j=0;j<BoundaryFaceNodes.getCount(i);j++)
+	      {
+	          const int num = BoundaryFaceNodes(i,j);
+                  if(!nodeMark[GlobalToLocal[num]])
+		    nodeMark[GlobalToLocal[num]] = true;		  
+		  if((nodeMark[GlobalToLocal[num]])&&(!(nodeMarked[GlobalToLocal[num]])))
+		  {
+		      nodeNormal[GlobalToLocal[num]] += faceArea[i]/faceAreaMag[i];
+		      number[GlobalToLocal[num]] += one;
+		  }
+	      }
+	  }
+	  for(int i=0;i<nBoundaryNodes;i++)
+	  {
+	      if((nodeMark[i])&&(!nodeMarked[i]))
+	      {
+		  nodeNormal[i][0] = nodeNormal[i][0]/number[i];
+                  nodeNormal[i][1] = nodeNormal[i][1]/number[i];
+		  nodeNormal[i][2] = nodeNormal[i][2]/number[i];
+		  nodeMarked[i] = true;
+	      }
+	  }
+      }
+      _boundaryNodeNormal.addArray(boundaryNodes,nodeNormalPtr);
+  }
+}
   
+
 template<class T>
 void
 MeshMetricsCalculator<T>::calculateFaceAreaMag(const Mesh& mesh)
@@ -537,7 +617,9 @@ MeshMetricsCalculator<T>::MeshMetricsCalculator(GeomFields& geomFields,const Mes
   _coordField(geomFields.coordinate),
   _areaField(geomFields.area),
   _areaMagField(geomFields.areaMag),
-  _volumeField(geomFields.volume)
+  _volumeField(geomFields.volume),
+  _nodeDisplacement(geomFields.nodeDisplacement),
+  _boundaryNodeNormal(geomFields.boundaryNodeNormal)
 {
   logCtor();
 }

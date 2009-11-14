@@ -150,7 +150,9 @@ public:
   void setConnectivity(const StorageSite& rowSite, const StorageSite& colSite,
 		       shared_ptr<CRConnectivity> conn);
   
-  
+  shared_ptr<Array<int> > createAndGetBNglobalToLocal() const;
+  const ArrayBase& getBNglobalToLocal() const;
+  const StorageSite& getBoundaryNodes() const;  
 
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
   ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
@@ -183,6 +185,7 @@ protected:
   StorageSite _nodes;
 
   StorageSite _ibFaces;
+  mutable StorageSite* _boundaryNodes;
  
   shared_ptr<FaceGroup> _interiorFaceGroup;
   FaceGroupList _faceGroups;
@@ -190,7 +193,7 @@ protected:
   FaceGroupList _interfaceGroups;
   mutable ConnectivityMap _connectivityMap;
   shared_ptr<Array<VecD3> > _coordinates;
-
+  mutable shared_ptr<Array<int> > _boundaryNodeGlobalToLocalPtr;
   mutable shared_ptr<Array<int> > _ibType;
 
   mutable shared_ptr<Array<int> > _ibFaceList;

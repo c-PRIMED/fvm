@@ -21,3 +21,7 @@ template class FlowModel<ATYPE>;
 
 template class IdealGasDensityModel<ATYPE>;
 
+#include "MovingMeshModel.h"
+
+template class MovingMeshModel<ATYPE>;
+

@@ -28,6 +28,8 @@ using namespace std;
 
 %include "IdealGasDensityModel.i"
 
+%include "MovingMeshModel.i"
+
 #ifdef USING_ATYPE_TANGENT
 
 typedef Vector<Tangent,3> VecTangent3;
