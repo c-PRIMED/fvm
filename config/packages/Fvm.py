@@ -1,4 +1,5 @@
 from build_packages import *
+import glob
 
 class Fvm(BuildPkg):
     requires = ['scons', 'rlog', 'swig', 'nose', 'netcdf', 'boost']
@@ -18,7 +19,7 @@ class Fvm(BuildPkg):
         return '%s-%s' % (par, config('fvm', 'version'))
     
     # from fvm sources
-    def getArch(self):
+    def get_arch(self):
         if sys.platform == 'linux2':
             if os.uname()[4] == 'ia64':
                 return 'lnxia64'
@@ -30,7 +31,7 @@ class Fvm(BuildPkg):
             return 'ntx86'
         else:
             return sys.platform
-    def getCompiler(self, comp):
+    def get_compiler(self, comp):
         vers = '4.2.1'
         if comp == 'intelc':
             comp = 'icc'
@@ -44,7 +45,7 @@ class Fvm(BuildPkg):
     def _configure(self):            
         pdir = os.path.join(self.sdir, "packages")
         self.sys_log("/bin/mkdir -p %s" % pdir)
-        pdir = os.path.join(pdir, self.getArch())
+        pdir = os.path.join(pdir, self.get_arch())
         return self.sys_log("/bin/ln -fsn %s %s" % (self.blddir, pdir))
     def _build(self):
         par = config(self.name, 'parallel')
@@ -57,12 +58,20 @@ class Fvm(BuildPkg):
         return val
 
     def _install(self):
-        vers = self.getCompiler(config(self.name, 'compiler'))
+        # The bin directory contains a mixture of libs, python scripts, and binaries.
+        # Sort it all out.
+        vers = self.get_compiler(config(self.name, 'compiler'))
         rel = config(self.name, 'version')
-        pdir = os.path.join(self.sdir, "build", self.getArch(), vers, rel, "bin")
+        pdir = os.path.join(self.sdir, "build", self.get_arch(), vers, rel, "bin")
         os.chdir(pdir)
-        self.sys_log("install testLinearSolver %s" % self.bindir)
-        self.sys_log("install *.py *.so %s" % self.libdir)        
+        all_files = glob.glob('*')
+        so_files = glob.glob('*.so')
+        py_files = glob.glob('*.py')
+        exe_files = [f for f in all_files if f not in so_files and f not in py_files]
+        self.sys_log("install %s %s" % (' '.join(exe_files), self.bindir))
+        self.sys_log("install *.so %s" % self.libdir)        
+        self.sys_log("install -d %s" % os.path.join(self.libdir, 'fvm'))
+        self.sys_log("install *.py %s " % os.path.join(self.libdir, 'fvm'))        
         # install scripts
         pdir = os.path.join(self.sdir, "scripts")
         os.chdir(pdir)   
