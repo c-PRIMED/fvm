@@ -14,11 +14,11 @@ class quadrature {
 double getmember(int x);
   // int jmax () {return (N1*N2*N3);}
 };
+
 double quadrature::getmember(int x){
 return absci1[x];
 }
 void quadrature::set_size (int a, int b, int c) {
-  int j1;
   N1 = a;N2 = b;N3 = c;
   N123= a*b*c;
   absci1=new double[N1];absci2=new double[N2];absci3=new double[N3];
@@ -30,8 +30,7 @@ void quadrature::set_abscii_cartesian(double T2){
   double clim = 5.5;
   double cxmin,cxmax,cymin,cymax,czmin,czmax;
   double dcx,dcy,dcz;
-  int j1,j2,j3,j;
- 
+   
   //velocity space
   cxmin=-clim*sqrt(0.5*T2);cxmax=clim*sqrt(0.5*T2);
   cymin=-clim*sqrt(0.5*T2);cymax=clim*sqrt(0.5*T2);
@@ -41,21 +40,20 @@ void quadrature::set_abscii_cartesian(double T2){
   dcz=(czmax-czmin)/(N3-1.0);
   
   absci1[0]=cxmin;absci2[0]=cymin; absci3[0]=czmin;
-  for  (j3=1;j3<N3;j3++){
+  for  (int j3=1;j3<N3;j3++){
     absci3[j3]=absci3[j3-1]+dcz;
     wts3[j3]=dcz;
   }
-  for (j2=1;j2<N2;j2++){
+  for (int j2=1;j2<N2;j2++){
     absci2[j2]=absci2[j2-1]+dcy;
     wts2[j2]=dcy;
   }
-  for  (j1=1;j1<N1;j1++){
+  for  (int j1=1;j1<N1;j1++){
     absci1[j1]=absci1[j1-1]+dcx;
     wts1[j1]=dcx;
   }
 
 }
-
 //void quadrature::set_abscii(int option_ur, int option_theta, int option_phi int n_int, int nphi_int){
 void quadrature::set_absci1(int option_ur){
   //Spherical type coordinates

@@ -12,9 +12,9 @@ int main(){
  myquad.set_absci1(N1);myquad.set_absci2(1,n_int);myquad.set_absci3(1,nphi_int);
 cout << myquad.getmember(4)<< '\n';
 cout <<myquad.getmember(6)<< '\n';
-  double density=0.5;
-  double temperature=2.0;
-  double x_velocity=0.1;
-  double y_velocity=0.01;
+// double density=0.5;
+// double temperature=2.0;
+//double x_velocity=0.1;
+//double y_velocity=0.01;
   return 0;
 }

@@ -2,25 +2,14 @@
 #define _DISTFUNCTMODEL_H_
 
 #include "Model.h"
-
-#include "GeomFields.h"
-#include "FlowFields.h"
-#include "DistFunctFields.h"
-#include "Mesh.h"
-#include "LinearSolver.h"
-
-#include "FlowBC.h"
-#include "DistFunctBC.h"
+#include "Array.h"
+#include "Vector.h"
 
 template<class T>
 class DistFunctModel : public Model
 {
 public:
-
-  typedef std::map<int,FlowBC<T>*> FlowBCMap;
-  typedef std::map<int,FlowVC<T>*> FlowVCMap;
-  
-  class Impl;
+  typedef Vector<T,3> VectorT3; 
   
   
   DistFunctModel(const GeomFields& geomFields,
