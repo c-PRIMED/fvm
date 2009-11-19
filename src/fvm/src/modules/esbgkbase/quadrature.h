@@ -67,6 +67,6 @@ class quadrature
     }*/
   
   //virtual ~quadrature() {}
-}
+};
 
 #endif
