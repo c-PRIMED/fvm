@@ -1,8 +1,8 @@
 Import('env')
 
-src = ['Quad_trial.h',
-           'testquad_trail.cpp',
+src = ['testquadrature.cpp',
 	   ]
-
-env.createExe('testquad_trail',['testquad_trail.cpp'])
-
+env.createSharedLibrary('esbgkbase',src,['rlog','fvmbase'])
+env.createExe('testquadrature',['testquadrature.cpp'],
+             deplibs=['fvmbase','importers','exporters', 'rlog'])
+          
