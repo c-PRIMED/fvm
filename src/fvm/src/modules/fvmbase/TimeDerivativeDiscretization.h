@@ -1,3 +1,4 @@
+
 #ifndef _TIMEDERIVATIVEDISCRETIZATION_H_
 #define _TIMEDERIVATIVEDISCRETIZATION_H_
 
@@ -64,6 +65,8 @@ public:
 
     
     const int nCells = cells.getSelfCount();
+
+
     if (_varN2Field.hasArray(cells))
     {
         // second order
@@ -72,23 +75,59 @@ public:
         T_Scalar onePointFive(1.5);
         T_Scalar two(2.0);
         T_Scalar pointFive(0.5);
-        
-        for(int c=0; c<nCells; c++)
-        {
-            const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
-            rCell[c] -= rhoVbydT*(onePointFive*x[c]- two*xN1[c]
-                                  + pointFive*xN2[c]);
-            diag[c] -= rhoVbydT*onePointFive;
+        if (_geomFields.volumeN1.hasArray(cells))
+	{
+	    const TArray& cellVolumeN1 = 
+	      dynamic_cast<const TArray&>(_geomFields.volumeN1[cells]);
+	    const TArray& cellVolumeN2 = 
+              dynamic_cast<const TArray&>(_geomFields.volumeN2[cells]);
+            for(int c=0; c<nCells; c++)
+	    {
+                const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
+                const T_Scalar rhobydT = density[c]/_dT;
+		const T_Scalar term1 = onePointFive*cellVolume[c];
+                const T_Scalar term2 = two*cellVolumeN1[c];
+                const T_Scalar term3 = pointFive*cellVolumeN2[c];
+                rCell[c] -= rhobydT*(term1*x[c]- term2*xN1[c]
+                                      + term3*xN2[c]);
+                diag[c] -= rhoVbydT*onePointFive;
+	    }
+	}
+	else
+	{
+            for(int c=0; c<nCells; c++)
+            {
+                const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
+                rCell[c] -= rhoVbydT*(onePointFive*x[c]- two*xN1[c]
+                                      + pointFive*xN2[c]);
+                diag[c] -= rhoVbydT*onePointFive;
+	    }
         }
     }
     else
     {
-        for(int c=0; c<nCells; c++)
-        {
-            const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
-            rCell[c] -= rhoVbydT*(x[c]- xN1[c]);
-            diag[c] -= rhoVbydT;
-        }
+        if (_geomFields.volumeN1.hasArray(cells))
+	{
+	    const TArray& cellVolumeN1 =
+	      dynamic_cast<const TArray&>(_geomFields.volumeN1[cells]);
+	    for(int c=0; c<nCells; c++)
+            {	    
+	        const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
+		const T_Scalar rhobydT = density[c]/_dT;
+	        rCell[c] -= rhobydT*(cellVolume[c]*x[c] 
+                                     - cellVolumeN1[c]*xN1[c]);
+	        diag[c] -= rhoVbydT;
+            }
+	}
+        else
+	{
+            for(int c=0; c<nCells; c++)
+            {
+                const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
+                rCell[c] -= rhoVbydT*(x[c]- xN1[c]);
+                diag[c] -= rhoVbydT;
+	    }
+	}
     }
   }
 private:
