@@ -1,8 +1,0 @@
-Import('env')
-
-src = ['quadrature.h',
-           'testquadrature.cpp',
-	   ]
-env.createSharedLibrary('esbgkbase',src,['rlog','fvmbase'])
-env.createExe('testquadrature',['testquadrature.cpp'],
-             deplibs=['fvmbase','importers','exporters', 'rlog'])
