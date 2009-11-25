@@ -4,6 +4,7 @@
 #include "Model.h"
 #include "Array.h"
 #include "Vector.h"
+#include "quadrature.h"
 
 template<class T>
 class DistFunctModel : public Model
