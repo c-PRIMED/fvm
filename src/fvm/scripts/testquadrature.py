@@ -6,7 +6,7 @@ sys.setdlopenflags(0x100|0x2)
 
 import fvmbaseExt
 
-import Quadrature
+import quad
 
 atype = 'double'
 
