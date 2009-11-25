@@ -14,6 +14,7 @@ public:
   virtual void init();
   void createNodeDisplacement();
   void calculateBoundaryNodeNormal();
+  void recalculate();
   void computeIBInterpolationMatrices(const StorageSite& particles);
   void computeIBandSolidInterpolationMatrices(const StorageSite& particles);
   void computeGridInterpolationMatrices(const StorageSite& grids, const StorageSite& faces );	

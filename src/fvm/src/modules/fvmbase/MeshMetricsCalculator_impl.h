@@ -648,6 +648,26 @@ MeshMetricsCalculator<T>::init()
 
 template<class T>
 void
+MeshMetricsCalculator<T>::recalculate()
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      calculateFaceAreas(mesh);
+      calculateFaceAreaMag(mesh);
+      calculateFaceCentroids(mesh);
+      calculateCellCentroids(mesh);
+  }
+
+  _volumeField.syncLocal();
+  _coordField.syncLocal();
+}
+//***********************************************************************//
+
+
+template<class T>
+void
 MeshMetricsCalculator<T>::computeGridInterpolationMatrices
 (const Mesh& mesh,
  const StorageSite& grids, 

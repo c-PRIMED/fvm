@@ -32,6 +32,8 @@ public:
 
   void calculateBoundaryNodeNormal();
 
+  void recalculate();
+
   void computeIBInterpolationMatrices(const StorageSite& particles);
 
   void computeIBandSolidInterpolationMatrices(const StorageSite& particles);
