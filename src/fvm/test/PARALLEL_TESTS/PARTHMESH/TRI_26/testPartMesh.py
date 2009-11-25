@@ -1,15 +1,10 @@
 #!/usr/bin/env python
-
-import sys
-sys.setdlopenflags(0x100|0x2)
-
-import fvmbaseExt
-import importers
-import fvmparallel
-from mpi4py import MPI
-
+import fvm
+import fvm.fvmparallel as fvmparallel
+import time
+from numpy import *
+from mpi4py  import MPI
 from FluentCase import FluentCase
-
 
 fileBase = None
 numIterations = 10

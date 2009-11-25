@@ -6,9 +6,10 @@ options are:
 --type  'tri'[default], 'quad', 'hexa', or 'tetra'
 --xdmf  Dump data in xdmf
 """
-import sys
-sys.setdlopenflags(0x100|0x2)
-import fvmbaseExt, importers, fvmparallel
+import sys, fvm
+import fvm.fvmbaseExt as fvmbaseExt
+import fvm.importers as importers
+import fvm.fvmparallel as fvmparallel
 from mpi4py import MPI
 from FluentCase import FluentCase
 from optparse import OptionParser

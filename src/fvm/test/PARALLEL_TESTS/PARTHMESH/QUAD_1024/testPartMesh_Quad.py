@@ -3,10 +3,11 @@
 """
 Usage: testPartMesh.py infile
 """
-import sys
-sys.setdlopenflags(0x100|0x2)
-import fvmbaseExt, importers, fvmparallel
-from mpi4py import MPI
+import fvm
+import fvm.fvmparallel as fvmparallel
+import sys, time
+from numpy import *
+from mpi4py  import MPI
 from FluentCase import FluentCase
 
 numIterations = 10

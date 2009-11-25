@@ -20,8 +20,8 @@ Options:
 """
 import sys, time
 from optparse import OptionParser
-sys.setdlopenflags(0x100|0x2)
-import fvmbaseExt
+import fvm
+import fvm.fvmbaseExt as fvmbaseExt
 from FluentCase import FluentCase
 from mpi4py import MPI
 
@@ -59,15 +59,10 @@ else:
 
 if options.tangent:
     atype = 'tangent'
-    print "Tangent not implemented yet."
-    # these don't seem to exist
-    #import models_atyped_tangent_double as models
-    #import exporters_atyped_tangent_double as exporters
-    sys.exit(1)
 else:
     atype = 'double'
-    import models_atyped_double as models
-    import exporters_atyped_double as exporters
+fvm.set_atype(atype)
+exporters = fvm.exporters
 
 #fvmbaseExt.enableDebug("cdtor")
 
@@ -77,15 +72,15 @@ reader.read();
 meshes = reader.getMeshList()
 
 t0 = time.time()
-geomFields =  models.GeomFields('geom')
-metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
+geomFields =  fvm.models.GeomFields('geom')
+metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
 
 if atype == 'tangent':
     metricsCalculator.setTangentCoords(0,7,1)
 
-flowFields =  models.FlowFields('flow')
-fmodel = models.FlowModelA(geomFields,flowFields,meshes)
+flowFields =  fvm.models.FlowFields('flow')
+fmodel = fvm.models.FlowModelA(geomFields,flowFields,meshes)
 
 reader.importFlowBCs(fmodel)
 #fmodel.printBCs()

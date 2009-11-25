@@ -1,18 +1,9 @@
 #!/usr/bin/env python
-import sys
-sys.setdlopenflags(0x100|0x2)
-import os, fvmbaseExt, importers
+import fvm
+fvm.set_atype('double')
+import fvm.fvmbaseExt as fvmbaseExt
+import os
 from mpi4py import MPI
-
-atype = 'double'
-#atype = 'tangent'
-if atype == 'double':
-    import models_atyped_double as models
-    import exporters_atyped_double as exporters
-elif atype == 'tangent':
-    import models_atyped_tangent_double as models
-    import exporters_atyped_tangent_double as exporters
-
 from FluentCase import FluentCase
 
 fileBase = os.getcwd()
@@ -26,16 +17,16 @@ reader.read();
 
 meshes = reader.getMeshList()
 mesh0 = meshes[0]
-geomFields =  models.GeomFields('geom')
+geomFields =  fvm.models.GeomFields('geom')
 
-metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
+metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
 
-if atype == 'tangent':
+if fvm.atype == 'tangent':
     metricsCalculator.setTangentCoords(0,7,1)
 
-flowFields =  models.FlowFields('flow')
-fmodel = models.FlowModelA(geomFields,flowFields,meshes)
+flowFields =  fvm.models.FlowFields('flow')
+fmodel = fvm.models.FlowModelA(geomFields,flowFields,meshes)
 
 reader.importFlowBCs(fmodel)
 fmodel.init()

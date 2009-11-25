@@ -1,34 +1,22 @@
 #!/usr/bin/env python
-import pdb
-import sys
-sys.setdlopenflags(0x100|0x2)
-from mpi4py import MPI
-import fvmbaseExt
-import importers
-#pdb.set_trace()
-
-atype = 'double'
-if atype == 'double':
-    import models_atyped_double as models
-    import exporters_atyped_double as exporters
-elif atype == 'tangent':
-    import models_atyped_tangent_double as models
-    import exporters_atyped_tangent_double as exporters
-
-
+import fvm
+fvm.set_atype('double')
+import fvm.fvmbaseExt as fvmbaseExt
+import fvm.importers as importers
 from FluentCase import FluentCase
-from fvmbaseExt import vectorInt
-from fvmbaseExt import VecD3
+from mpi4py import MPI
+from fvm.fvmbaseExt import vectorInt
+from fvm.fvmbaseExt import VecD3
 
 reader = FluentCase("cav32.cas")
 reader.read();
 meshes = reader.getMeshList()
 
-geomFields =  models.GeomFields('geom')
-metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
+geomFields =  fvm.models.GeomFields('geom')
+metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
-flowFields =  models.FlowFields('flow')
-fmodel = models.FlowModelA(geomFields,flowFields,meshes)
+flowFields =  fvm.models.FlowFields('flow')
+fmodel = fvm.models.FlowModelA(geomFields,flowFields,meshes)
 reader.importFlowBCs(fmodel)
 octree = fvmbaseExt.Octree()
 mesh0 = meshes[0]

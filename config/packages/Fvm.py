@@ -69,12 +69,17 @@ class Fvm(BuildPkg):
         py_files = glob.glob('*.py')
         exe_files = [f for f in all_files if f not in so_files and f not in py_files]
         self.sys_log("install %s %s" % (' '.join(exe_files), self.bindir))
-        self.sys_log("install *.so %s" % self.libdir)        
+        self.sys_log("install *.so %s" % self.libdir)
+
+        # install swig-generated python files in lib/fvm
         self.sys_log("install -d %s" % os.path.join(self.libdir, 'fvm'))
-        self.sys_log("install *.py %s " % os.path.join(self.libdir, 'fvm'))        
+        self.sys_log("install *.py %s " % os.path.join(self.libdir, 'fvm'))
+        # install python files from source lib to lib/fvm
+        os.chdir(os.path.join(self.sdir, "lib"))
+        self.sys_log("install *.py %s " % os.path.join(self.libdir, 'fvm'))
+
         # install scripts
-        pdir = os.path.join(self.sdir, "scripts")
-        os.chdir(pdir)   
+        os.chdir(os.path.join(self.sdir, "scripts"))
         self.sys_log("install *.py %s" % self.bindir)     
         return 0
 

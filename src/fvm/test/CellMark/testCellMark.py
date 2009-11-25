@@ -9,27 +9,16 @@ Where 'casefile' is a Fluent case file.
 Options:
   --search n   Search Option [1-4] (default 1)
 """
-
-import sys
-sys.setdlopenflags(0x100|0x2)
-import fvmbaseExt
-import importers
+import fvm
+fvm.set_atype('double')
+import fvm.fvmbaseExt as fvmbaseExt
+import fvm.importers as importers
 from mpi4py import MPI
+from FluentCase import FluentCase
+from optparse import OptionParser
+
 #import pdb
 #pdb.set_trace()
-
-atype = 'double'
-if atype == 'double':
-    import models_atyped_double as models
-    import exporters_atyped_double as exporters
-elif atype == 'tangent':
-    import models_atyped_tangent_double as models
-    import exporters_atyped_tangent_double as exporters
-
-from FluentCase import FluentCase
-from fvmbaseExt import vectorInt
-from fvmbaseExt import VecD3
-from optparse import OptionParser
 
 def usage():
     print __doc__
@@ -52,13 +41,13 @@ fileBase = ''
 reader = FluentCase(casefile)
 reader.read();
 meshes = reader.getMeshList()
-geomFields =  models.GeomFields('geom')
+geomFields =  fvm.models.GeomFields('geom')
 
-metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
+metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
 
-flowFields =  models.FlowFields('flow')
-fmodel = models.FlowModelA(geomFields,flowFields,meshes)
+flowFields =  fvm.models.FlowFields('flow')
+fmodel = fvm.models.FlowModelA(geomFields,flowFields,meshes)
 reader.importFlowBCs(fmodel)
 
 octree = fvmbaseExt.Octree()

@@ -12,5 +12,6 @@ class MEMOSA(BuildPkg):
         self.sys_log("install src/xyz2xdmf %s" % self.bindir)
         os.chdir(self.sdir)
         self.sys_log("install bin/* %s" % self.bindir)
-        self.sys_log("install lib/* %s" % self.libdir)        
+        self.sys_log("install -d %s" % os.path.join(self.libdir, 'memosa'))
+        self.sys_log("install lib/* %s" % os.path.join(self.libdir, 'memosa'))
         return 0

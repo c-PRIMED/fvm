@@ -1,25 +1,12 @@
 #!/usr/bin/env python
 
-import sys
-sys.setdlopenflags(0x100|0x2)
-
-import fvmbaseExt
-import importers
-import fvmparallel
-import time
+import fvm
+import fvm.fvmbaseExt as fvmbaseExt
+import fvm.importers as importers
+import fvm.fvmparallel as fvmparallel
+import sys, time
 from numpy import *
 from mpi4py  import MPI
-atype = 'double'
-#atype = 'tangent'
-
-if atype == 'double':
-    import models_atyped_double as models
-    import exporters_atyped_double as exporters
-elif atype == 'tangent':
-    import models_atyped_tangent_double as models
-    import exporters_atyped_tangent_double as exporters
-
-
 from FluentCase import FluentCase
 
 #fvmbaseExt.enableDebug("cdtor")

@@ -1,28 +1,12 @@
 #!/usr/bin/env python
 import pdb
-import sys
-sys.setdlopenflags(0x100|0x2)
-
-import fvmbaseExt
-import importers
-
-
-atype = 'double'
-#atype = 'tangent'
-
-if atype == 'double':
-    import models_atyped_double as models
-    import exporters_atyped_double as exporters
-elif atype == 'tangent':
-    import models_atyped_tangent_double as models
-    import exporters_atyped_tangent_double as exporters
-
-
+import sys, time
+import fvm
+fvm.set_atype('double')
+import fvm.fvmbaseExt as fvmbaseExt
 from FluentCase import FluentCase
 
-
 fileBase = "/home/lin/work/app-memosa/src/fvm/test/Grid/"
-
 
 def usage():
     print "Usage: %s filebase [outfilename]" % sys.argv[0]
@@ -56,7 +40,7 @@ metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
 
 metricsCalculator.init()
 
-if atype == 'tangent':
+if fvm.atype == 'tangent':
     metricsCalculator.setTangentCoords(0,7,1)
 
 flowFields =  models.FlowFields('flow')
@@ -65,7 +49,6 @@ fmodel = models.FlowModelA(geomFields,flowFields,meshes)
 
 reader.importFlowBCs(fmodel)
 fmodel.init()
-import time
 t0 = time.time()
 #pdg.set_trace()
 

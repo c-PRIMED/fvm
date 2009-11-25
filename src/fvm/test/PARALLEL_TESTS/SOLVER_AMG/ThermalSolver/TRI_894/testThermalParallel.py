@@ -1,25 +1,12 @@
 #!/usr/bin/env python
 
-import sys
-sys.setdlopenflags(0x100|0x2)
-
-import fvmbaseExt
-import importers
-import fvmparallel
-import time
+import fvm
+fvm.set_atype('double')
+import fvm.fvmbaseExt as fvmbaseExt
+import fvm.fvmparallel as fvmparallel
+import sys, time
 from numpy import *
 from mpi4py  import MPI
-atype = 'double'
-#atype = 'tangent'
-
-if atype == 'double':
-    import models_atyped_double as models
-    import exporters_atyped_double as exporters
-elif atype == 'tangent':
-    import models_atyped_tangent_double as models
-    import exporters_atyped_tangent_double as exporters
-
-
 from FluentCase import FluentCase
 
 #fvmbaseExt.enableDebug("cdtor")
@@ -188,18 +175,18 @@ part_mesh.mesh()
 part_mesh.mesh_debug()
 meshes = part_mesh.meshList()
 
-geomFields =  models.GeomFields('geom')
+geomFields =  fvm.models.GeomFields('geom')
 
-metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
+metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 
 metricsCalculator.init()
 
-if atype == 'tangent':
+if fvm.atype == 'tangent':
     metricsCalculator.setTangentCoords(0,7,1)
 
-thermalFields =  models.ThermalFields('therm')
+thermalFields =  fvm.models.ThermalFields('therm')
 
-tmodel = models.ThermalModelA(geomFields,thermalFields,meshes)
+tmodel = fvm.models.ThermalModelA(geomFields,thermalFields,meshes)
 
 
 ## set bc for top to be at 400
