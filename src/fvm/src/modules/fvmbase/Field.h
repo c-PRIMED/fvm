@@ -12,7 +12,9 @@ class Field : public IContainer
 public:
   typedef map<const StorageSite*, shared_ptr<ArrayBase> > ArrayMap;
   typedef map<const StorageSite*, vector<const StorageSite*>* > ChildSitesMap;
-  
+  typedef pair<const StorageSite*, const StorageSite*> EntryIndex;
+  typedef map<EntryIndex, shared_ptr<ArrayBase> > GhostArrayMap;
+
   Field(const string& name);
   
   virtual ~Field();
@@ -47,18 +49,18 @@ public:
 private:
   Field(const Field&);
 
-  ArrayBase& getGhostArray(const StorageSite&);
+  //ArrayBase& getGhostArray(const StorageSite&);
   
   const string _name;
   ArrayMap _arrays;
-  ArrayMap _ghostScatterArrays;
-  ArrayMap _ghostGatherArrays;
+  GhostArrayMap _ghostArrays;
+  
   
   ChildSitesMap _childSitesMap;
 
   ArrayBase& _create(const StorageSite& site);
   int  MPI_FIELD_TAG;
-  bool  _syncGatherArrays;
+  //bool  _syncGatherArrays;
 };
 
 #endif

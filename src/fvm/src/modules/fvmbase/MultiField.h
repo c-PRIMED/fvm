@@ -17,9 +17,10 @@ public:
   typedef pair<const Field*,  const StorageSite*> ArrayIndex;
   typedef map<ArrayIndex,int> ArrayMap;
   typedef vector<shared_ptr<ArrayBase> > ArrayList;
-  typedef map<ArrayIndex,shared_ptr<ArrayBase> > GhostArrayMap;
   typedef vector<ArrayIndex> ArrayIndexList;
-  
+  typedef pair<ArrayIndex,ArrayIndex>  EntryIndex;
+  typedef map <EntryIndex,shared_ptr<ArrayBase> > GhostArrayMap;
+
   MultiField();
   
   virtual ~MultiField();
@@ -75,8 +76,7 @@ private:
   ArrayList _arrays;
   ArrayIndexList _arrayIndices;
   ArrayMap _arrayMap;
-  GhostArrayMap _ghostScatterArrays;
-  GhostArrayMap _ghostGatherArrays;
+  GhostArrayMap _ghostArrays;
   int MPI_MULTIFIELD_TAG;
   bool _syncGatherArrays;
 };

@@ -19,8 +19,7 @@ Field::Field(const string& name):
   IContainer(),
   _name(name),
   _arrays(),
-  MPI_FIELD_TAG(2009),
-  _syncGatherArrays(false)
+  MPI_FIELD_TAG(2009)
 {
   logCtor();
 }  
@@ -183,7 +182,6 @@ Field::copyFrom(const IContainer& oc)
 void
 Field::createSyncGatherArrays(const StorageSite& site)
 {
-  _syncGatherArrays = true;
   ArrayBase& thisArray = operator[](site);
 
   const StorageSite::GatherMap& gatherMap = site.getGatherMap();
@@ -191,10 +189,12 @@ Field::createSyncGatherArrays(const StorageSite& site)
   foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
   {
       const StorageSite& oSite = *mpos.first;
+      EntryIndex e(&oSite, &site);
+      const Array<int>& toIndices = *(mpos.second);
 
-      if (_ghostGatherArrays.find(&oSite) == _ghostGatherArrays.end())
+      if (_ghostArrays.find(e) == _ghostArrays.end())
       {
-          _ghostGatherArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
+          _ghostArrays[e] = thisArray.newSizedClone(toIndices.getLength());
       }
   }
 }
@@ -209,14 +209,14 @@ Field::syncScatter(const StorageSite& site)
   foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
   {
       const StorageSite& oSite = *mpos.first;
-
+      EntryIndex e(&site, &oSite);
       const Array<int>& fromIndices = *(mpos.second);
-      if (_ghostScatterArrays.find(&oSite) == _ghostScatterArrays.end()){
-        _ghostScatterArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
+      if (_ghostArrays.find(e) == _ghostArrays.end()){
+        _ghostArrays[e] = thisArray.newSizedClone( fromIndices.getLength() );
       }
 
-      ArrayBase& ghostScatterArray = *_ghostScatterArrays[&oSite];
-      thisArray.scatter(ghostScatterArray,fromIndices);
+      ArrayBase& ghostArray = *_ghostArrays[e];
+      thisArray.scatter(ghostArray,fromIndices);
 
 
   }
@@ -234,18 +234,18 @@ Field::syncGather(const StorageSite& site)
       const StorageSite& oSite = *mpos.first;
 
       const Array<int>& toIndices = *(mpos.second);
+      EntryIndex e(&oSite, &site);
 
-      if (_ghostGatherArrays.find(&oSite) == _ghostGatherArrays.end())
+      if (_ghostArrays.find(e) == _ghostArrays.end())
       {
-          _ghostGatherArrays[&oSite] = thisArray.newSizedClone(oSite.getCount());
-//          ostringstream e;
-//          e << "Field::syncScatter: ghost array not found for"
-//            << &oSite << endl;
-//          throw CException(e.str());
+         ostringstream e;
+         e << "Field::syncScatter: ghost array not found for"
+           << &oSite << endl;
+         throw CException(e.str());
       }
-      
-      const ArrayBase& ghostGatherArray = *_ghostGatherArrays[&oSite];
-      thisArray.gather(ghostGatherArray,toIndices);
+
+      const ArrayBase& ghostArray = *_ghostArrays[e];
+      thisArray.gather(ghostArray,toIndices);
   }
 }
 
@@ -257,7 +257,7 @@ Field::syncLocal()
       syncScatter(*pos.first);
 
   //gather arrays  are allocated (once)
-   if ( !_syncGatherArrays )
+//   if ( !_syncGatherArrays )
       foreach(ArrayMap::value_type& pos, _arrays)
          createSyncGatherArrays(*pos.first);
 

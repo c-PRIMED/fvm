@@ -1,5 +1,10 @@
 #include "LinearSystem.h"
 #include "Array.h"
+#include "Field.h"
+
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
 
 LinearSystem::LinearSystem() :
   _x(new MultiField()),
@@ -11,7 +16,10 @@ LinearSystem::LinearSystem() :
 {}
 
 LinearSystem::~LinearSystem()
-{}
+{
+  
+
+}
 
 
 
@@ -51,8 +59,9 @@ LinearSystem::initSolve()
 shared_ptr<LinearSystem>
 LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshold)
 {
+
   shared_ptr<LinearSystem> coarseLS(new LinearSystem());
-  
+
   /**
    * we create only one entry in coarseIndex for each
    * StorageSite even if the site is present in multiple fine
@@ -60,25 +69,26 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
    * use that otherwise the first one gets used
    * 
    */
-
-  
+ 
   // keep track of which fieldIndex was used for coarsening each site
   map<const StorageSite*, const Field *> sitesCoarsenedWithField; 
+  
 
   const MultiField::ArrayIndexList& arrayIndices = _b->getArrayIndices();
   foreach(MultiField::ArrayIndex ai,arrayIndices)
   {
       const Field *fieldIndex = ai.first;
       const StorageSite *site = ai.second;
+
       if (!_coarseningField || fieldIndex == _coarseningField)
       {
           if (sitesCoarsenedWithField.find(site) == sitesCoarsenedWithField.end())
           {
               sitesCoarsenedWithField[site] = fieldIndex;
-              
+
               shared_ptr<Array<int> > cIndex(new Array<int>(site->getCount()));
               _coarseIndex.addArray(ai,cIndex);
-              
+
           }
       }
 
@@ -91,25 +101,26 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
    * variables in the matrix as well create the mappers
    * 
    */
-              
+
   _matrix.createCoarsening(_coarseIndex,groupSize,weightRatioThreshold);
+
   _coarseIndex.sync();
-  _matrix.syncGhostCoarsening(_coarseIndex);
+
+_matrix.syncGhostCoarsening(_coarseIndex);
   
   // we can now create the coarse sites for each fine site
-
   foreach(MultiField::ArrayIndex k,arrayIndices)
   {
       // we will only have entries for indices which were selected to be coarsened
       if (_matrix._coarseSizes.find(k) != _matrix._coarseSizes.end())
       {
-          
           int selfSize = _matrix._coarseSizes[k];
           int ghostSize = _matrix._coarseGhostSizes[k];
           _matrix._coarseSites[k] =
             shared_ptr<StorageSite>(new StorageSite(selfSize,ghostSize));
       }
   }
+
 
   // set the mappers in the newly created coarse sites
   foreach(MultiField::ArrayIndex k,arrayIndices)
@@ -126,19 +137,17 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
           foreach(const StorageSite::ScatterMap::value_type& pos, fineScatterMap)
           {
               const StorageSite& fineGhostSite = *pos.first;
-              const StorageSite& coarseGhostSite = *_matrix._coarseGhostSites[&fineGhostSite];
-
+              const StorageSite& coarseGhostSite = *_matrix._coarseScatterGhostSites[&fineGhostSite];
               coarseScatterMap[&coarseGhostSite] = _matrix._coarseScatterMaps[&coarseGhostSite];
           }
-          
+
           const StorageSite::GatherMap& fineGatherMap = fineSite.getGatherMap();
           StorageSite::GatherMap& coarseGatherMap = coarseSite.getGatherMap();
 
           foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMap)
           {
               const StorageSite& fineGhostSite = *pos.first;
-              const StorageSite& coarseGhostSite = *_matrix._coarseGhostSites[&fineGhostSite];
-
+              const StorageSite& coarseGhostSite = *_matrix._coarseGatherGhostSites[&fineGhostSite];
               coarseGatherMap[&coarseGhostSite] = _matrix._coarseGatherMaps[&coarseGhostSite];
           }
       }
@@ -155,7 +164,6 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
    *  need to be created for all the fine matrices * present
    * 
    */
-
 
   foreach(MultiField::ArrayIndex k,arrayIndices)
   {
@@ -174,7 +182,6 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
 
   _matrix.createCoarseConnectivity(_coarseIndex);
   _matrix.createCoarseMatrices(_coarseIndex);
-  
   foreach(MultiField::ArrayIndex fineRowIndex,arrayIndices)
   {
       MultiField::ArrayIndex coarseRowIndex (fineRowIndex.first,
@@ -192,23 +199,22 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
           }
       }
   }
-  
+
   coarseLS->_b = shared_ptr<MultiField>(new MultiField());
 
   foreach(MultiField::ArrayIndex k,arrayIndices)
   {
       const StorageSite& coarseSite = *_matrix._coarseSites[k];
       MultiField::ArrayIndex coarseIndex(k.first,&coarseSite);
-      
       coarseLS->_b->addArray(coarseIndex, (*_b)[k].newSizedClone(coarseSite.getCount()));
   }
-  
+
   coarseLS->_b->zero();
   coarseLS->_delta = dynamic_pointer_cast<MultiField>(coarseLS->_b->newClone());
   coarseLS->_delta->zero();
   coarseLS->_residual = dynamic_pointer_cast<MultiField>(coarseLS->_b->newClone());
   coarseLS->_residual->zero();
-  
+
   return coarseLS;
 }
 

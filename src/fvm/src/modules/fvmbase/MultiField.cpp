@@ -325,18 +325,25 @@ MultiField::syncScatter(const ArrayIndex& i)
   foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
   {
       const StorageSite& oSite = *mpos.first;
-      ArrayIndex oIndex(i.first,&oSite);
 
+      ArrayIndex oIndex(i.first,&oSite);
+      // arrays are stored with (Sender,receiver) as the key
+      EntryIndex eIndex(i,oIndex);
       const Array<int>& fromIndices = *(mpos.second);
-      if (_ghostScatterArrays.find(oIndex) == _ghostScatterArrays.end()){
-        _ghostScatterArrays[oIndex] = thisArray.newSizedClone(oSite.getCount());
+//       cout << " fromIndices.getLength() = " << fromIndices.getLength() << endl;
+//       cout << " scatterArray " << endl;
+//       for ( int n  = 0; n < fromIndices.getLength(); n++)
+//          cout << "      fromIndices[" << n << "] = " << fromIndices[n] << endl;
+
+      if (_ghostArrays.find(eIndex) == _ghostArrays.end()){
+        _ghostArrays[eIndex] = thisArray.newSizedClone(fromIndices.getLength());
       }
 
-      ArrayBase& ghostScatterArray = *_ghostScatterArrays[oIndex];
+      ArrayBase& ghostArray = *_ghostArrays[eIndex];
 /*      cout << " proc_id = " << MPI::COMM_WORLD.Get_rank() << " ghostScatterArray.getDataSize() = " <<
             ghostScatterArray.getDataSize() << " fromIndices.getDataSize() =  " << fromIndices.getDataSize() << 
             " thisArray.getDatasize() = " << thisArray.getDataSize() << endl;*/
-      thisArray.scatter(ghostScatterArray,fromIndices);
+      thisArray.scatter(ghostArray,fromIndices);
   }
 
 }
@@ -344,18 +351,26 @@ MultiField::syncScatter(const ArrayIndex& i)
 void
 MultiField::createSyncGatherArrays(const ArrayIndex& i)
 {
+
   ArrayBase& thisArray = *_arrays[_arrayMap[i]];
   const StorageSite& thisSite = *i.second;
 
   const StorageSite::GatherMap& gatherMap = thisSite.getGatherMap();
- 
+   //cout << " MultiField::creaeSyncGatherArrays() " << endl; 
   foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
   {
+     // cout << " checking map " << endl;
       const StorageSite& oSite = *mpos.first;
-      ArrayIndex oIndex(i.first,&oSite);
 
-      if (_ghostGatherArrays.find(oIndex) == _ghostGatherArrays.end())
-         _ghostGatherArrays[oIndex]  = thisArray.newSizedClone(oSite.getCount());
+      ArrayIndex oIndex(i.first,&oSite);
+      EntryIndex eIndex(oIndex,i);
+      //cout << " checking map 0 " << endl;
+     const Array<int>& toIndices = *(mpos.second);
+
+
+      if (_ghostArrays.find(eIndex) == _ghostArrays.end()){
+         _ghostArrays[eIndex]  = thisArray.newSizedClone(toIndices.getLength());
+      }
   }
 
 }
@@ -364,6 +379,7 @@ MultiField::createSyncGatherArrays(const ArrayIndex& i)
 void
 MultiField::syncGather(const ArrayIndex& i)
 {
+
   ArrayBase& thisArray = *_arrays[_arrayMap[i]];
   const StorageSite& thisSite = *i.second;
 
@@ -375,27 +391,31 @@ MultiField::syncGather(const ArrayIndex& i)
       ArrayIndex oIndex(i.first,&oSite);
 
       const Array<int>& toIndices = *(mpos.second);
-      if (_ghostGatherArrays.find(oIndex) == _ghostGatherArrays.end())
-         _ghostGatherArrays[oIndex]  = thisArray.newSizedClone(oSite.getCount());
-       ArrayBase& ghostGatherArray = *_ghostGatherArrays[oIndex];
-       thisArray.gather(ghostGatherArray,toIndices);
-  }
+      EntryIndex eIndex(oIndex,i);
+//       cout << " gatherArray " << endl;
+//       for ( int n  = 0; n < toIndices.getLength(); n++)
+//          cout << "      toIndices[" << n << "] = " << toIndices[n] << endl;
 
+      if (_ghostArrays.find(eIndex) != _ghostArrays.end()){	
+          const ArrayBase& ghostArray = *_ghostArrays[eIndex];
+          thisArray.gather(ghostArray,toIndices);
+      }
+  }
 
 }
 
 void
 MultiField::sync()
 {
-
+ // syncLocal();
   foreach(ArrayIndex i, _arrayIndices)
     syncScatter(i);
 
-  if ( !_syncGatherArrays )
-  {
+//  if ( !_syncGatherArrays )
+ // {
      foreach(ArrayIndex i, _arrayIndices)
         createSyncGatherArrays(i);
-  }
+ // }
 
 #ifdef FVM_PARALLEL
   //SENDING
