@@ -142,13 +142,13 @@ _matrix.syncGhostCoarsening(_coarseIndex);
 #ifdef FVM_PARALLEL
               // the ghost site will not have its corresponding coarse
               // site created yet so we create it here
-              if (_coarseSites.find(k0) == _coarseSites.end())
+              if (_matrix._coarseSites.find(kO) == _matrix._coarseSites.end())
               {
                   shared_ptr<StorageSite> ghostSite
                     (new StorageSite(-1));
                   ghostSite->setGatherProcID ( fineOSite.getGatherProcID() );
                   ghostSite->setScatterProcID( fineOSite.getScatterProcID() );
-                  _coarseSites[k0] = ghostSite;
+                  _matrix._coarseSites[kO] = ghostSite;
               }
 #endif
               const StorageSite& coarseOSite = *_matrix._coarseSites[kO];

@@ -48,6 +48,9 @@ public:
 
 private:
   Field(const Field&);
+  void assign_mpi_tag();
+  int  get_request_size();
+
 
   //ArrayBase& getGhostArray(const StorageSite&);
   
@@ -55,11 +58,10 @@ private:
   ArrayMap _arrays;
   GhostArrayMap _ghostArrays;
   
-  
   ChildSitesMap _childSitesMap;
 
   ArrayBase& _create(const StorageSite& site);
-  int  MPI_FIELD_TAG;
+  vector<int>  MPI_FIELD_TAG;
   //bool  _syncGatherArrays;
 };
 

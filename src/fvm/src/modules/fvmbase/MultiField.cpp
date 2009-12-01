@@ -15,7 +15,6 @@ MultiField::MultiField():
   _arrays(),
   _arrayIndices(),
   _arrayMap(),
-  MPI_MULTIFIELD_TAG(3009),
   _syncGatherArrays( false )
 {
   logCtor();
@@ -407,7 +406,7 @@ MultiField::syncGather(const ArrayIndex& i)
 void
 MultiField::sync()
 {
- // syncLocal();
+
   foreach(ArrayIndex i, _arrayIndices)
     syncScatter(i);
 
@@ -419,36 +418,84 @@ MultiField::sync()
 
 #ifdef FVM_PARALLEL
   //SENDING
-   MPI::Request   request_send[ _ghostScatterArrays.size() ];
+   MPI::Request   request_send[ get_request_size() ];
    int indx = 0;
-   foreach( const GhostArrayMap::value_type& mpos, _ghostScatterArrays ){
-       const ArrayIndex& arrayIndex = mpos.first;
-       const StorageSite&  site =  *arrayIndex.second;
-       ArrayBase& sendArray = *mpos.second;
-       int to_where  = site.getGatherProcID();
-       request_send[indx++] =  
-             MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_MULTIFIELD_TAG );
-   }
+   int fieldIndx = 0;
+   foreach ( ArrayIndex i, _arrayIndices ){
+       const  StorageSite& thisSite = *i.second;
+       const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMap();
+       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite& oSite = *mpos.first;
+           ArrayIndex oIndex(i.first,&oSite);
+          // arrays are stored with (Sender,receiver) as the key
+          if ( oSite.getCount() == -1 ){
+             EntryIndex eIndex(i,oIndex);
+             ArrayBase& sendArray = *_ghostArrays[eIndex];
+             int to_where  = oSite.getGatherProcID();
+             request_send[indx++] =  
+                   MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_MULTIFIELD_TAG[fieldIndx] );
+          }
+       }
+    }
 
 
    //RECIEVING
-   MPI::Request   request_recv[ _ghostGatherArrays.size() ];
+   MPI::Request   request_recv[ indx ];
    //getting values from other meshes to fill g
    indx = 0;
-   foreach( const GhostArrayMap::value_type& mpos, _ghostGatherArrays){
-       const ArrayIndex& arrayIndex = mpos.first;
-       const StorageSite&  site = *arrayIndex.second;
-       ArrayBase& recvArray = *mpos.second;
-       int from_where  = site.getGatherProcID();
-       request_recv[indx++] = 
-             MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, MPI_MULTIFIELD_TAG );
+   fieldIndx = 0;
+   foreach ( ArrayIndex i, _arrayIndices ){
+       const  StorageSite& thisSite = *i.second;
+       const StorageSite::GatherMap& gatherMap = thisSite.getGatherMap();
+       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+           const StorageSite& oSite = *mpos.first;
+           ArrayIndex oIndex(i.first,&oSite);
+          // arrays are stored with (Sender,receiver) as the key
+          if ( oSite.getCount() == -1 ){
+             EntryIndex eIndex(oIndex,i);
+             ArrayBase& recvArray = *_ghostArrays[eIndex];
+             int from_where  = oSite.getGatherProcID();
+             request_recv[indx++] =  
+                   MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, MPI_MULTIFIELD_TAG[fieldIndx] );
+          }
+      }
    }
-   int count_recv = _ghostGatherArrays.size();
+
+   int count_recv = indx;
    MPI::Request::Waitall( count_recv, request_recv );
 
 #endif
 
   foreach(ArrayIndex i, _arrayIndices)
     syncGather(i);
+
+}
+
+
+void
+MultiField::assign_mpi_tag()
+{
+    MPI_MULTIFIELD_TAG.resize( _arrays.size() );
+    for ( unsigned int i = 0; i < _arrays.size(); i++ )
+          MPI_MULTIFIELD_TAG[i] = 3900 + i;
+
+}
+
+int
+MultiField::get_request_size()
+{
+   int indx = 0;
+   foreach ( ArrayIndex i, _arrayIndices ){
+       const  StorageSite& thisSite = *i.second;
+       const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMap();
+       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite& oSite = *mpos.first;
+           ArrayIndex oIndex(i.first,&oSite);
+          // arrays are stored with (Sender,receiver) as the key
+          if ( oSite.getCount() == -1 )
+              indx++;
+       }
+    }
+   return indx;
 
 }

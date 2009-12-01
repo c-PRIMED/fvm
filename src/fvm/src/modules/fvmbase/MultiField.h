@@ -72,12 +72,15 @@ public:
   void sync();
   
 private:
+   void assign_mpi_tag();
+   int  get_request_size();
+
   int _length;
   ArrayList _arrays;
   ArrayIndexList _arrayIndices;
   ArrayMap _arrayMap;
   GhostArrayMap _ghostArrays;
-  int MPI_MULTIFIELD_TAG;
+  vector<int> MPI_MULTIFIELD_TAG;
   bool _syncGatherArrays;
 };
 
