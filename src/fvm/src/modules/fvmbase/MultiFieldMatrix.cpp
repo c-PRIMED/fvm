@@ -418,13 +418,6 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
 
           const int coarseMappersSize = otherToMyMapping.size();
 
-          shared_ptr<StorageSite> ghostSite(new StorageSite(coarseMappersSize));
-#ifdef FVM_PARALLEL
-          ghostSite->setGatherProcID ( oSite.getGatherProcID() );
-          ghostSite->setScatterProcID( oSite.getScatterProcID() );
-#endif 
-          _coarseGhostSites[&oSite] = ghostSite;
-
           shared_ptr<Array<int> > coarseToIndices(new Array<int>(coarseMappersSize));
 
           for(int n = 0; n < gatherSet.size(); n++)
@@ -432,7 +425,8 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
               (*coarseToIndices)[n]   = gatherSet.getData().at(n);
           }
 
-          _coarseGatherMaps [ghostSite.get()] = coarseToIndices;
+          SSPair sskey(&site,&oSite);
+          _coarseGatherMaps [sskey] = coarseToIndices;
 
         }
 
@@ -448,25 +442,20 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
           for(int ng=0; ng<nGhostRows; ng++)
           {
               const int fineIndex = fromIndices[ng];
-              const int coarseOtherIndex	 = coarseIndex[fineIndex];
+              //              const int coarseOtherIndex	 = coarseIndex[fineIndex];
               scatterSet.insert( coarseIndex[fineIndex] );
           }
 
           const int coarseMappersSize = scatterSet.size();
-
-          shared_ptr<StorageSite> ghostSite(new StorageSite(coarseMappersSize));
-#ifdef FVM_PARALLEL
-          ghostSite->setScatterProcID( oSite.getScatterProcID() );
-          ghostSite->setGatherProcID ( oSite.getGatherProcID() );
-#endif 
-          _coarseGhostSites[&oSite] = ghostSite;
 
           shared_ptr<Array<int> > coarseFromIndices(new Array<int>(coarseMappersSize));
 
           for(int n = 0; n < scatterSet.size(); n++ ) {
               (*coarseFromIndices)[n] = scatterSet.getData().at(n);
           }
-          _coarseScatterMaps[ghostSite.get()] = coarseFromIndices;
+
+          SSPair sskey(&site,&oSite);
+          _coarseScatterMaps[sskey] = coarseFromIndices;
 
         }
 

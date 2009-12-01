@@ -136,9 +136,24 @@ _matrix.syncGhostCoarsening(_coarseIndex);
 
           foreach(const StorageSite::ScatterMap::value_type& pos, fineScatterMap)
           {
-              const StorageSite& fineGhostSite = *pos.first;
-              const StorageSite& coarseGhostSite = *_matrix._coarseScatterGhostSites[&fineGhostSite];
-              coarseScatterMap[&coarseGhostSite] = _matrix._coarseScatterMaps[&coarseGhostSite];
+              const StorageSite& fineOSite = *pos.first;
+              MultiField::ArrayIndex kO(k.first,&fineOSite);
+
+#ifdef FVM_PARALLEL
+              // the ghost site will not have its corresponding coarse
+              // site created yet so we create it here
+              if (_coarseSites.find(k0) == _coarseSites.end())
+              {
+                  shared_ptr<StorageSite> ghostSite
+                    (new StorageSite(-1));
+                  ghostSite->setGatherProcID ( fineOSite.getGatherProcID() );
+                  ghostSite->setScatterProcID( fineOSite.getScatterProcID() );
+                  _coarseSites[k0] = ghostSite;
+              }
+#endif
+              const StorageSite& coarseOSite = *_matrix._coarseSites[kO];
+              MultiFieldMatrix::SSPair sskey(&fineSite,&fineOSite);
+              coarseScatterMap[&coarseOSite] = _matrix._coarseScatterMaps[sskey];
           }
 
           const StorageSite::GatherMap& fineGatherMap = fineSite.getGatherMap();
@@ -146,9 +161,11 @@ _matrix.syncGhostCoarsening(_coarseIndex);
 
           foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMap)
           {
-              const StorageSite& fineGhostSite = *pos.first;
-              const StorageSite& coarseGhostSite = *_matrix._coarseGatherGhostSites[&fineGhostSite];
-              coarseGatherMap[&coarseGhostSite] = _matrix._coarseGatherMaps[&coarseGhostSite];
+              const StorageSite& fineOSite = *pos.first;
+              MultiField::ArrayIndex kO(k.first,&fineOSite);
+              const StorageSite& coarseOSite = *_matrix._coarseSites[kO];
+              MultiFieldMatrix::SSPair sskey(&fineSite,&fineOSite);
+              coarseGatherMap[&coarseOSite] = _matrix._coarseGatherMaps[sskey];
           }
       }
   }

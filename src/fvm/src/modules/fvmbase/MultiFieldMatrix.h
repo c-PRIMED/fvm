@@ -49,9 +49,13 @@ public:
   typedef MultiField::ArrayIndex Index;
 
   typedef pair<Index,Index> EntryIndex;
+  typedef pair<const StorageSite*, const StorageSite*> SSPair;
+  
   typedef map<EntryIndex,shared_ptr<Matrix> > MatrixMap;
   typedef map<Index,int> MatrixSizeMap;
-  typedef map<const StorageSite*,shared_ptr<Array<int> > > MatrixMappersMap;
+
+  typedef map<SSPair,shared_ptr<Array<int> > > MatrixMappersMap;
+
   typedef map<Index,shared_ptr<StorageSite> > StorageSiteMap;
   typedef map<const StorageSite*,shared_ptr<StorageSite> > GhostStorageSiteMap;
   
@@ -131,7 +135,6 @@ private:
   MatrixMappersMap _coarseGatherMaps;
   
   StorageSiteMap _coarseSites;
-  GhostStorageSiteMap _coarseGhostSites;
   CoarseToFineMappingMap _coarseToFineMappings;
   CoarseConnectivitiesMap _coarseConnectivities;
   MatrixMap _coarseMatrices;
