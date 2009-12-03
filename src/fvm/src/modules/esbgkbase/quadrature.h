@@ -6,12 +6,12 @@
 #include "Vector.h"
 
 template<class T>
-//! Class quadrature for ESBGK simulations
-/*!
-two types of constructors:
-1) cartesian type of discrete velocity grid (int N1, int N2, int N3, double T2)
-2) spherical type with Gauss-Hermite quadrature in velocity magnitude and
-either constant or 3/8th rule in theta and phi angles.
+/**
+ * Class quadrature for ESBGK simulations
+ * two types of constructors:
+ * 1) cartesian type of discrete velocity grid (int N1, int N2, int N3, double T2)
+ * 2) spherical type with Gauss-Hermite quadrature in velocity magnitude and
+ *    either constant or 3/8th rule in theta and phi angles.
  */
 
 class quadrature 
@@ -30,17 +30,38 @@ class quadrature
   dArray* wts1Ptr;
   dArray* wts2Ptr; 
   dArray* wts3Ptr;
-  dArray* cxPtr;    //! Cx pointer.  /*! Pointer to discrete velocity in x-direction.*/
-  dArray* cyPtr;    //! Cy pointer.  /*! Pointer to discrete velocity in y-direction.*/
-  dArray* czPtr;    //! Cz pointer.  /*! Pointer to discrete velocity in z-direction.*/
-  dArray* dcxyzPtr; //! dcxyz pointer./*! Pointer to weights associated with each direction in velocity space.*/
-  quadrature(int N1,  /*!< Number of ordinates in x-velocity. */
-	     int N2,  /*!< Number of ordinates in y-velocity. */ 
-	     int N3,  /*!< Number of ordinates in z-velocity. */
-	     double clim, /*!< cut-off range in velocity/sqrt(T2/2). */
-	     double T2 /*!< Lowest non-dimensional temperature used to set the 
-			 limit on discrete velocities in each direction . */
-	     )
+  /**
+   *  Cx pointer. 
+   *  Pointer to discrete velocity in x-direction.
+   */
+  dArray* cxPtr;  
+  /**
+   * Cy pointer.  
+   * Pointer to discrete velocity in y-direction.
+   */ 
+  dArray* cyPtr; 
+  /**
+   * Cz pointer.  
+   * Pointer to discrete velocity in z-direction.
+   */  
+  dArray* czPtr;   
+  /**
+   * dcxyz pointer. 
+   * Pointer to weights associated with each direction in velocity space.
+   */ 
+  dArray* dcxyzPtr; 
+
+
+  // bool printCx;
+  /**
+   * cartesian-type member taking in 5 argumetns
+   * @param N1 -Number of ordinates in x-velocity. 
+   * @param N2 -Number of ordinates in y-velocity.  
+   * @param N3 -Number of ordinates in z-velocity. 
+   * @param clim -cut-off range in velocity/sqrt(T2/2). 
+   * @param T2 -Lowest non-dimensional temperature used to set the limit on discrete velocities in each direction . 
+ */
+quadrature(int N1,  int N2,  int N3, double clim,  double T2)
     {
       absci1Ptr=new dArray(N1);
       dArray & absci1= *absci1Ptr;
@@ -54,12 +75,16 @@ class quadrature
       dArray & wts2= *wts2Ptr; 
       wts3Ptr=new dArray(N3);
       dArray & wts3= *wts3Ptr;
+      /**
+       * integer N123
+       * total number of velocity directions.
+       */
       int N123=N1*N2*N3;
       cxPtr= new dArray(N123); cyPtr= new dArray(N123); czPtr= new dArray(N123);
       dcxyzPtr= new dArray(N123);
       dArray & cx= *cxPtr;dArray & cy= *cyPtr;dArray & cz= *czPtr;
       dArray & dcxyz= *dcxyzPtr;
-      //Array<Vector<double,3>> * cxyz;//! Cxyz Vector pointer.  /*! Pointer to discrete velocity in xyz-directions. cxyz= (cx,cy,cz)*/
+      //Array<Vector<double,3>> * cxyz;// Cxyz Vector pointer.  /* Pointer to discrete velocity in xyz-directions. cxyz= (cx,cy,cz)*/
       T cxmin,cxmax,cymin,cymax,czmin,czmax;
       T dcx,dcy,dcz;
       //const T clim (5.5);
@@ -70,17 +95,23 @@ class quadrature
       dcy=(cymax-cymin)/(N2-1.0);  
       dcz=(czmax-czmin)/(N3-1.0);
       absci1[0]=cxmin;absci2[0]=cymin; absci3[0]=czmin;
+      wts1[0]=dcx;	wts2[0]=dcy;	wts3[0]=dcz;
       for  (int j3=1;j3<N3;j3++){
 	absci3[j3]=absci3[j3-1]+dcz;
 	wts3[j3]=dcz;
+	//cout << j3 << " : "<< absci3[j3]<< endl;
       }
       for (int j2=1;j2<N2;j2++){
 	absci2[j2]=absci2[j2-1]+dcy;
 	wts2[j2]=dcy;
+	//cout << j2 << " : "<< absci2[j2]<< endl;
       }
+     
       for  (int j1=1;j1<N1;j1++){
 	absci1[j1]=absci1[j1-1]+dcx;	
 	wts1[j1]=dcx;
+	//if (_options.printNormalizedResiduals){
+	//cout << j1 << " : "<< absci1[j1]<< endl; //}
       }
       
       int j;
@@ -98,25 +129,29 @@ class quadrature
       }
       
     }
-  quadrature(int option_ur,   /* !< =0 for constant; =2,4,8,16 for Gauss-Hermite quadrature in velocity magnitude .*/ 
-	     int Nr,          /* !< =number of ordinates in velocity magnitude if option_ur=0 .*/ 
-	     int option_theta,/* !< =0 for constant; =1 for 3/8th rule discretization of azimuthal angle(theta).*/ 
-	     int n_int,       /* !< =number of ordinates in theta if option_theta =0; =number of coarse intervals for 3/8th rule if option_theta=1.*/
-	     int option_phi,  /* !< =0 for constant; =1 for 3/8th rule discretization of polar angle(phi).*/
-	     int nphi_int     /* !< =number of ordinates in phi if option_phi =0; =number of coarse intervals for 3/8th rule if option_phi=1 .*/
-	     )  
-    // add a comment explaining options in Gauss-Hermite quadrature
-    {
+
+/**
+   * spherical-type member taking in 6 argumetns
+   * @param option_ur =0 for constant; =2,4,8,16 for Gauss-Hermite quadrature in velocity magnitude . 
+   * @param Nr =number of ordinates in velocity magnitude if option_ur=0.  
+   * @param option_theta =0 for constant; =1 for 3/8th rule discretization of azimuthal angle(theta). 
+   * @param n_int =number of ordinates in theta if option_theta =0;
+   *              =number of coarse intervals for 3/8th rule if option_theta=1(total no. of angles = 3*n_int).
+   * @param option_phi  =0 for constant; =1 for 3/8th rule discretization of polar angle(phi).
+   * @param nphi_int  =number of ordinates in phi if option_phi =0; =number of coarse intervals for 3/8th rule if option_phi=1 (total no. of angles = 3*n_int+1)
+ */
+  quadrature(int option_ur, int Nr, int option_theta, int n_int, int option_phi, int nphi_int)  
+       {
       int N1,N2,N3;
       if(option_ur ==0){
 	N1=Nr;}
       else{N1=option_ur;}
       if(option_theta ==0){
 	N2=n_int;}
-      else{N2=4*n_int;}
+      else{N2=3*n_int;}
       if(option_phi ==0){
-	N3=n_int;}
-      else{N3=4*n_int+1;}
+	N3=nphi_int;}
+      else{N3=3*nphi_int+1;}
       absci1Ptr=new dArray(N1);
       dArray & absci1= *absci1Ptr;
       absci2Ptr=new dArray(N2);
@@ -302,8 +337,10 @@ class quadrature
 	   }
 	 }
        }
+       // for (int j=10;j<21;j++){cout << j <<" : "<<cx[j] << " , " << dcxyz[j] <<endl; };cout<<endl;
        
     }
+  
   /*quadrature(int& N1, int& N2, double& T2) :
     _var1(N1),
     _var2(N2),
