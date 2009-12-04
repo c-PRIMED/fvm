@@ -18,7 +18,8 @@ using namespace std;
 Field::Field(const string& name):
   IContainer(),
   _name(name),
-  _arrays()
+  _arrays(),
+  MPI_FIELD_TAG(1900)
 {
   logCtor();
 }  
@@ -251,10 +252,10 @@ Field::syncGather(const StorageSite& site)
 void
 Field::syncLocal()
 {
+
    // scatter first (prepare ship packages)
    foreach(ArrayMap::value_type& pos, _arrays)
       syncScatter(*pos.first);
-   assign_mpi_tag();
 
   //gather arrays  are allocated (once)
 //   if ( !_syncGatherArrays )
@@ -264,49 +265,38 @@ Field::syncLocal()
 #ifdef FVM_PARALLEL
    //SENDING
    MPI::Request   request_send[ get_request_size() ];
-   int indx = 0;
-   int fieldIndx = 0;
+   MPI::Request   request_recv[ get_request_size() ];
    foreach(ArrayMap::value_type& pos, _arrays){
       const StorageSite& site = *pos.first;
       const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+      int indx = 0;
       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
           const StorageSite&  oSite = *mpos.first;
           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
-          if ( oSite.getCount() == -1 ){
              EntryIndex e(&site,&oSite);
              ArrayBase& sendArray = *_ghostArrays[e];
              int to_where  = oSite.getGatherProcID();
              request_send[indx++] =  
-                 MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_FIELD_TAG[fieldIndx] );
-          }
+                 MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_FIELD_TAG );
       }
-      fieldIndx++;
-   }
+      //RECIEVING
 
-   //RECIEVING
-   MPI::Request   request_recv[ indx ];
-   //getting values from other meshes to fill g
-   indx = 0;
-   fieldIndx = 0;
-   foreach(ArrayMap::value_type& pos, _arrays){
-      const StorageSite& site = *pos.first;
+      //getting values from other meshes to fill g
+      indx = 0;
       const StorageSite::GatherMap& gatherMap = site.getGatherMap();
       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
-          const StorageSite&  oSite = *mpos.first;
-          //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
-          if ( oSite.getCount() == -1 ){
-             EntryIndex e(&oSite,&site);
-             ArrayBase& recvArray = *_ghostArrays[e];
-             int from_where       = oSite.getGatherProcID();
-             request_recv[indx++] =  
-                 MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, MPI_FIELD_TAG[fieldIndx] );
-          }
+         const StorageSite&  oSite = *mpos.first;
+         //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+         EntryIndex e(&oSite,&site);
+         ArrayBase& recvArray = *_ghostArrays[e];
+         int from_where       = oSite.getGatherProcID();
+         request_recv[indx++] =  
+                 MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where,MPI_FIELD_TAG );
       }
-      fieldIndx++;
+
    }
 
-
-   int count_recv = indx;
+   int count_recv = get_request_size();
    MPI::Request::Waitall( count_recv, request_recv );
 
 #endif
@@ -315,14 +305,6 @@ Field::syncLocal()
   // gather 
   foreach(ArrayMap::value_type& pos, _arrays)
     syncGather(*pos.first);
-}
-
-void
-Field::assign_mpi_tag()
-{
-    MPI_FIELD_TAG.resize( _arrays.size() );
-    for ( unsigned int i = 0; i < _arrays.size(); i++ )
-          MPI_FIELD_TAG[i] = 3900 + i;
 
 }
 
@@ -336,9 +318,7 @@ Field::get_request_size()
       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
           const StorageSite&  oSite = *mpos.first;
           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
-          if ( oSite.getCount() == -1 ){
              indx++;
-          }
       }
    }
    return indx;

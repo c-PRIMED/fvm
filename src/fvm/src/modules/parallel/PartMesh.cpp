@@ -1097,7 +1097,7 @@ PartMesh::mesh_setup()
             siteScatter->setGatherProcID ( interfaceID );
 
            _meshListLocal.at(id)->createGhostCellSiteScatter( interfaceID,  siteScatter );
-           _meshListLocal.at(id)->createGhostCellSiteGather( interfaceID,  siteGather  );
+           _meshListLocal.at(id)->createGhostCellSiteGather( interfaceID,  siteScatter  );
 
          }
 

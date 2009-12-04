@@ -15,7 +15,8 @@ MultiField::MultiField():
   _arrays(),
   _arrayIndices(),
   _arrayMap(),
-  _syncGatherArrays( false )
+  _syncGatherArrays( false ),
+  _isTagged( false)
 {
   logCtor();
 }
@@ -365,8 +366,6 @@ MultiField::createSyncGatherArrays(const ArrayIndex& i)
       EntryIndex eIndex(oIndex,i);
       //cout << " checking map 0 " << endl;
      const Array<int>& toIndices = *(mpos.second);
-
-
       if (_ghostArrays.find(eIndex) == _ghostArrays.end()){
          _ghostArrays[eIndex]  = thisArray.newSizedClone(toIndices.getLength());
       }
@@ -406,7 +405,7 @@ MultiField::syncGather(const ArrayIndex& i)
 void
 MultiField::sync()
 {
-
+  assign_mpi_tag();
   foreach(ArrayIndex i, _arrayIndices)
     syncScatter(i);
 
@@ -417,51 +416,43 @@ MultiField::sync()
  // }
 
 #ifdef FVM_PARALLEL
+  //this communication is based on assumption that MPI communication will be only done inside the same field
   //SENDING
    MPI::Request   request_send[ get_request_size() ];
-   int indx = 0;
+   MPI::Request   request_recv[ get_request_size() ];
    int fieldIndx = 0;
    foreach ( ArrayIndex i, _arrayIndices ){
        const  StorageSite& thisSite = *i.second;
        const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMap();
+       int indx = 0;
        foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
            const StorageSite& oSite = *mpos.first;
            ArrayIndex oIndex(i.first,&oSite);
           // arrays are stored with (Sender,receiver) as the key
-          if ( oSite.getCount() == -1 ){
              EntryIndex eIndex(i,oIndex);
              ArrayBase& sendArray = *_ghostArrays[eIndex];
              int to_where  = oSite.getGatherProcID();
              request_send[indx++] =  
                    MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_MULTIFIELD_TAG[fieldIndx] );
-          }
        }
-    }
 
-
-   //RECIEVING
-   MPI::Request   request_recv[ indx ];
-   //getting values from other meshes to fill g
-   indx = 0;
-   fieldIndx = 0;
-   foreach ( ArrayIndex i, _arrayIndices ){
-       const  StorageSite& thisSite = *i.second;
-       const StorageSite::GatherMap& gatherMap = thisSite.getGatherMap();
-       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+  
+     //RECIEVING
+      indx = 0;
+      const StorageSite::GatherMap& gatherMap = thisSite.getGatherMap();
+      foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
            const StorageSite& oSite = *mpos.first;
            ArrayIndex oIndex(i.first,&oSite);
-          // arrays are stored with (Sender,receiver) as the key
-          if ( oSite.getCount() == -1 ){
              EntryIndex eIndex(oIndex,i);
              ArrayBase& recvArray = *_ghostArrays[eIndex];
              int from_where  = oSite.getGatherProcID();
              request_recv[indx++] =  
                    MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, MPI_MULTIFIELD_TAG[fieldIndx] );
-          }
       }
+      fieldIndx++;
    }
 
-   int count_recv = indx;
+   int count_recv = get_request_size();
    MPI::Request::Waitall( count_recv, request_recv );
 
 #endif
@@ -475,9 +466,12 @@ MultiField::sync()
 void
 MultiField::assign_mpi_tag()
 {
-    MPI_MULTIFIELD_TAG.resize( _arrays.size() );
-    for ( unsigned int i = 0; i < _arrays.size(); i++ )
-          MPI_MULTIFIELD_TAG[i] = 3900 + i;
+    if ( !_isTagged ){
+       MPI_MULTIFIELD_TAG.resize( _arrays.size() );
+       for ( unsigned int i = 0; i < _arrays.size(); i++ )
+           MPI_MULTIFIELD_TAG[i] = 3900 + i;
+       _isTagged = true;
+    }
 
 }
 
@@ -492,7 +486,6 @@ MultiField::get_request_size()
            const StorageSite& oSite = *mpos.first;
            ArrayIndex oIndex(i.first,&oSite);
           // arrays are stored with (Sender,receiver) as the key
-          if ( oSite.getCount() == -1 )
               indx++;
        }
     }
