@@ -8,6 +8,8 @@
 
 #include "MultiFieldReduction.h"
 #include "LinearSystemMerger.h"
+#include <iostream>
+#include <fstream>
 
 class LinearSystemMerger;
 
@@ -58,7 +60,10 @@ public:
 #endif
 }
 
-  virtual void cleanup();
+   void redirectPrintToFile( const string& fname );
+   void redirectPrintToScreen( );
+
+   virtual void cleanup();
   
   // these parameters can be tuned.
   int maxCoarseLevels;
@@ -79,7 +84,7 @@ private:
 
   void  createCoarseLevels( );
   void  doSweeps( const int nSweeps, const int level );
-  void  cycle( const CycleType cycleType, const int level );
+  void  cycle(  CycleType cycleType, const int level );
   void  flipComm();
 
   static int amg_indx;
@@ -92,7 +97,9 @@ private:
   MPI::Intracomm _commTarget;
 #endif
 
-
+  streambuf *m_psbuf;
+  streambuf *m_backup;
+  ofstream m_filestr;
   bool _isCOMMWORLD;
 };
 

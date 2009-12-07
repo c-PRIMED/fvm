@@ -5,6 +5,8 @@ public:
   AMG();
 
   void setMergeLevelSize( int level_size);
+  void redirectPrintToFile( const string& fname );
+  void redirectPrintToScreen( );
   
   enum CycleType
     {

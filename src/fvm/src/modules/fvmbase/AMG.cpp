@@ -62,9 +62,10 @@ AMG::doSweeps(const int nSweeps, const int level)
 }
 
 void
-AMG::cycle(const CycleType cycleType, const int level)
+AMG::cycle( CycleType cycleType, const int level)
 {
   doSweeps(nPreSweeps,level);
+
   if (level < (int)_coarseLinearSystems.size())
   {
       LinearSystem& fineLS = (level == 0) ?
@@ -86,24 +87,24 @@ AMG::cycle(const CycleType cycleType, const int level)
  
       int nextLevel = level+1;
 #ifdef  FVM_PARALLEL
-      if ( level == _mergeLevel ) 
+      if ( nextLevel == _mergeLevel ) 
       {	
           _mergeLS->gatherB();
           nextLevel++;
       }
 #endif
+     //if ( level == 4 ) 
+     //   cycleType = W_CYCLE;
 
-      cycle(cycleType,nextLevel);
+     cycle(cycleType,nextLevel);
 
       if (cycleType == W_CYCLE)
         cycle(W_CYCLE,nextLevel);
       else if (cycleType == F_CYCLE)
         cycle(V_CYCLE,nextLevel);
 
-
-
 #ifdef  FVM_PARALLEL
-      if ( level == _mergeLevel ) {
+      if ( level+1 == _mergeLevel ) {
           _mergeLS->scatterDelta();
       }
 #endif
@@ -114,7 +115,9 @@ AMG::cycle(const CycleType cycleType, const int level)
 
 
   }
-  doSweeps(nPostSweeps,level);
+
+doSweeps(nPostSweeps,level);
+  
 }
 
 void
@@ -149,7 +152,7 @@ AMG::createCoarseLevels( )
         break;
 
       if ( coarseLS->getMatrix().getMergeSize( _commTarget ) < _mergeLevelSize &&  _mergeLevel == -1  && _isMerge ){
-         _mergeLevel = n;
+         _mergeLevel = n+1;
          set<int> group;
          int size = MPI::COMM_WORLD.Get_size();
          for ( int i = 0; i < size; i++ )
@@ -174,7 +177,7 @@ AMG::createCoarseLevels( )
 
   }
 
- 
+
 }
 
 void
@@ -187,8 +190,7 @@ AMG::cleanup()
 MFRPtr
 AMG::solve(LinearSystem & ls)
 {
-
-     if (_finestLinearSystem != &ls)
+    if (_finestLinearSystem != &ls)
      {
        _finestLinearSystem = &ls;
        createCoarseLevels();
@@ -227,11 +229,13 @@ AMG::solve(LinearSystem & ls)
       MFRPtr normRatio((*rNorm)/(*rNorm0));
 
 #ifndef FVM_PARALLEL
-      if (verbosity >0  )
+    if (verbosity >0  )
         cout << i << ": " <<  *rNorm << endl;
+
+
 #endif
 
-
+   
 #ifdef FVM_PARALLEL
      if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance || i == nMaxIterations-1)
         if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0  )
@@ -242,8 +246,6 @@ AMG::solve(LinearSystem & ls)
          break;
 
   }
-
-
 
   return rNorm0;
 }
@@ -282,4 +284,21 @@ AMG::flipComm()
 
 
 
+}
+
+
+//this will dump convergence history to file rather than screen
+void 
+AMG::redirectPrintToFile( const string& fname ) {
+    m_filestr.open ( fname.c_str() );
+    m_backup = cout.rdbuf();     // back up cout's streambuf
+    m_psbuf = m_filestr.rdbuf();   // get file's streambuf
+    cout.rdbuf(m_psbuf); 
+}
+
+
+void 
+AMG::redirectPrintToScreen( ) {
+   cout.rdbuf(m_backup);        // restore cout's original streambuf
+   m_filestr.close();
 }
