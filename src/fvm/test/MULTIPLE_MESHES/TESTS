@@ -1,0 +1,5 @@
+MULTIPLE_MESHES2_QUAD    ./test.py    --script testThermalMultipleMeshes2.py --type=quad --in ../c2s_1600.cas            --golden QUAD_MESH2  --outdir TESTDIR
+MULTIPLE_MESHES4_QUAD    ./test.py    --script testThermalMultipleMeshes4.py --type=quad --in ../quad_multiple_mesh4.cas --golden QUAD_MESH4  --outdir TESTDIR
+
+
+
