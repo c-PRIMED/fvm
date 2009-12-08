@@ -1,2 +1,2 @@
-0: [therm.temperature : 63200]procID = 0
-863: procID = 0[therm.temperature : 0.629004]
+0: [therm.temperature : 63200]
+863: [therm.temperature : 0.629004]

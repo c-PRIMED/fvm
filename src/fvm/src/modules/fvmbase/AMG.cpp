@@ -207,7 +207,7 @@ AMG::solve(LinearSystem & ls)
 
 #ifdef FVM_PARALLEL
   if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0 )
-    cout << "0: " << *rNorm0 << "procID = " << MPI::COMM_WORLD.Get_rank() << endl;
+    cout << "0: " << *rNorm0 <<  endl;
 #endif
 
 #ifndef FVM_PARALLEL
@@ -239,7 +239,7 @@ AMG::solve(LinearSystem & ls)
 #ifdef FVM_PARALLEL
      if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance || i == nMaxIterations-1)
         if (verbosity >0 && MPI::COMM_WORLD.Get_rank() == 0  )
-        cout <<i << ": " << "procID = " << MPI::COMM_WORLD.Get_rank() <<  *rNorm << endl;
+        cout <<i << ": " <<   *rNorm << endl;
 #endif
 
       if (*rNorm < absoluteTolerance || *normRatio < relativeTolerance)
