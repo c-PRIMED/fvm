@@ -14,10 +14,8 @@ options are:
 import fvm.fvmbaseExt as fvmbaseExt
 import fvm
 fvm.set_atype('double')
-import  importers, fvmparallel, time
 from numpy import *
 from optparse import OptionParser
-
 from FluentCase import FluentCase
 
 def usage():

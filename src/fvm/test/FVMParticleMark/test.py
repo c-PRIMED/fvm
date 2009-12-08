@@ -56,7 +56,8 @@ def main():
             try:
                 os.makedirs(options.outdir)
             except:
-                fatal("error creating directory " + options.outdir)
+                print "error creating directory " + options.outdir
+                sys.exit(1)
         os.chdir(options.outdir)
 
     mpi = 'mpirun -np %s %s %s %s' % (options.np, script, options.mesh, options.nsweep)    
