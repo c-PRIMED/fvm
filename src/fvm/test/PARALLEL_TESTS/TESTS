@@ -83,5 +83,31 @@ STORAGE_SITE_MERGER_PROC8_TRI894 ./ptest.py --np 8 --script testMerger.py --in .
 
 
 
+CAVITY_TRI894_PROCS1_JACOBISOLVER  ./ptest.py  --np 1  --script testThermalParallelJacobi.py --type=tri --in ../tri_894.cas --golden SOLVER_JACOBI/TRI_894/proc1   --outdir TESTDIR
+CAVITY_TRI894_PROCS2_JACOBISOLVER  ./ptest.py  --np 2  --script testThermalParallelJacobi.py --type=tri --in ../tri_894.cas --golden SOLVER_JACOBI/TRI_894/proc2   --outdir TESTDIR
+CAVITY_TRI894_PROCS17_JACOBISOLVER ./ptest.py  --np 17 --script testThermalParallelJacobi.py --type=tri --in ../tri_894.cas --golden SOLVER_JACOBI/TRI_894/proc17  --outdir TESTDIR
+CAVITY_TRI894_PROCS29_JACOBISOLVER ./ptest.py  --np 29 --script testThermalParallelJacobi.py --type=tri --in ../tri_894.cas --golden SOLVER_JACOBI/TRI_894/proc29  --outdir TESTDIR
+CAVITY_TRI894_PROCS47_JACOBISOLVER ./ptest.py  --np 47 --script testThermalParallelJacobi.py --type=tri --in ../tri_894.cas --golden SOLVER_JACOBI/TRI_894/proc47  --outdir TESTDIR
+
+
+CAVITY_TETRA8K_PROCS1_JACOBISOLVER  ./ptest.py  --np 1  --script testThermalParallelJacobi.py --type=tetra --in ../cav_tetra.cas --golden SOLVER_JACOBI/TETRA_8K/proc1   --outdir TESTDIR
+CAVITY_TETRA8K_PROCS2_JACOBISOLVER  ./ptest.py  --np 2  --script testThermalParallelJacobi.py --type=tetra --in ../cav_tetra.cas --golden SOLVER_JACOBI/TETRA_8K/proc2   --outdir TESTDIR
+CAVITY_TETRA8K_PROCS17_JACOBISOLVER ./ptest.py  --np 17 --script testThermalParallelJacobi.py --type=tetra --in ../cav_tetra.cas --golden SOLVER_JACOBI/TETRA_8K/proc17  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS29_JACOBISOLVER ./ptest.py  --np 29 --script testThermalParallelJacobi.py --type=tetra --in ../cav_tetra.cas --golden SOLVER_JACOBI/TETRA_8K/proc29  --outdir TESTDIR
+CAVITY_TETRA8K_PROCS47_JACOBISOLVER ./ptest.py  --np 47 --script testThermalParallelJacobi.py --type=tetra --in ../cav_tetra.cas --golden SOLVER_JACOBI/TETRA_8K/proc47  --outdir TESTDIR
+
+
+CAVITY_QUAD1024_PROCS1_JACOBISOLVER  ./ptest.py  --np 1  --script testThermalParallelJacobi.py --type=quad --in ../cav32.cas --golden SOLVER_JACOBI/QUAD_1024/proc1   --outdir TESTDIR
+CAVITY_QUAD1024_PROCS2_JACOBISOLVER  ./ptest.py  --np 2  --script testThermalParallelJacobi.py --type=quad --in ../cav32.cas --golden SOLVER_JACOBI/QUAD_1024/proc2   --outdir TESTDIR
+CAVITY_QUAD1024_PROCS17_JACOBISOLVER ./ptest.py  --np 17 --script testThermalParallelJacobi.py --type=quad --in ../cav32.cas --golden SOLVER_JACOBI/QUAD_1024/proc17  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS29_JACOBISOLVER ./ptest.py  --np 29 --script testThermalParallelJacobi.py --type=quad --in ../cav32.cas --golden SOLVER_JACOBI/QUAD_1024/proc29  --outdir TESTDIR
+CAVITY_QUAD1024_PROCS47_JACOBISOLVER ./ptest.py  --np 47 --script testThermalParallelJacobi.py --type=quad --in ../cav32.cas --golden SOLVER_JACOBI/QUAD_1024/proc47  --outdir TESTDIR
+
+
+CAVITY_HEXA10K_PROCS1_JACOBISOLVER  ./ptest.py  --np 1  --script testThermalParallelJacobi.py --type=hexa --in ../cav_hexa.cas --golden SOLVER_JACOBI/HEXA_10K/proc1   --outdir TESTDIR
+CAVITY_HEXA10K_PROCS2_JACOBISOLVER  ./ptest.py  --np 2  --script testThermalParallelJacobi.py --type=hexa --in ../cav_hexa.cas --golden SOLVER_JACOBI/HEXA_10K/proc2   --outdir TESTDIR
+CAVITY_HEXA10K_PROCS17_JACOBISOLVER ./ptest.py  --np 17 --script testThermalParallelJacobi.py --type=hexa --in ../cav_hexa.cas --golden SOLVER_JACOBI/HEXA_10K/proc17  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS29_JACOBISOLVER ./ptest.py  --np 29 --script testThermalParallelJacobi.py --type=hexa --in ../cav_hexa.cas --golden SOLVER_JACOBI/HEXA_10K/proc29  --outdir TESTDIR
+CAVITY_HEXA10K_PROCS47_JACOBISOLVER ./ptest.py  --np 47 --script testThermalParallelJacobi.py --type=hexa --in ../cav_hexa.cas --golden SOLVER_JACOBI/HEXA_10K/proc47  --outdir TESTDIR
 
 

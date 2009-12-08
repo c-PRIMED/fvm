@@ -78,12 +78,25 @@ def check_storage_site_merger(options):
          break;
     print "site merger files are ok"
     return 0
+    
+    
+def check_convergence(options):
+    check_file     = os.path.join(options.outdir, 'convergence.dat')
+    reference_file = os.path.join(options.golden, 'convergence.dat')
+    if numfile_compare.check_files(check_file, reference_file, 1.0e-8):
+       print "convergence history files didn't match GOLDEN/* !!!!!!!!!!!!!"
+       return  -1
+      # break;
+    print "convergence history files are ok"
+    return 0
+  
 
 def main():
     funcs = {
         'testPartMesh.py' : [check_parmetis, check_mesh, check_mapping],
         'testThermalParallel.py' : [check_thermal_solver], 
-        'testMerger.py'                  : [check_storage_site_merger]
+        'testMerger.py'                  : [check_storage_site_merger],
+        'testThermalParallelJacobi.py':[check_convergence]
         }
     parser = OptionParser()
     parser.set_defaults(np=1,outdir='',type='tri')
