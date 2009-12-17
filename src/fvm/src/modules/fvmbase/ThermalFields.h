@@ -13,7 +13,11 @@ struct ThermalFields
   Field heatFlux;
   Field temperatureGradient;
   Field conductivity;
+  Field source;
+  Field convectionFlux;
 
+  Field zero;                     //used to fill in continuityResidual
+  Field one;                      //used to fill in density
 };
 
 #endif

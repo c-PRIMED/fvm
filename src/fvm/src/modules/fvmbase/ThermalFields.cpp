@@ -4,6 +4,11 @@ ThermalFields::ThermalFields(const string baseName) :
   temperature(baseName + ".temperature"),
   heatFlux(baseName + ".heatFlux"),
   temperatureGradient(baseName + ".temperatureGradient"),
-  conductivity(baseName + ".conductivity")
+  conductivity(baseName + ".conductivity"),
+  source(baseName + ".source"),
+  convectionFlux(baseName + ".convectionFlux"),
+  zero(baseName + "zero"),
+  one(baseName + "one")
 {}
+
 

@@ -14,10 +14,13 @@
 #include "GenericBCS.h"
 #include "Vector.h"
 #include "DiffusionDiscretization.h"
+#include "ConvectionDiscretization.h"
 #include "AMG.h"
 #include "Linearizer.h"
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
+#include "SourceDiscretization.h"
+
 
 template<class T>
 class ThermalModel<T>::Impl
@@ -26,7 +29,8 @@ public:
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
-
+  typedef Gradient<T> TGradType;
+  typedef Array<Gradient<T> > TGradArray;
   Impl(const GeomFields& geomFields,
        ThermalFields& thermalFields,
        const MeshList& meshes) :
@@ -74,17 +78,45 @@ public:
         const Mesh& mesh = *_meshes[n];
 
         const StorageSite& cells = mesh.getCells();
-
+	
+	//temperature
         shared_ptr<TArray> tCell(new TArray(cells.getCount()));
-
         *tCell = _options["initialTemperature"];
-      
         _thermalFields.temperature.addArray(cells,tCell);
-      
+	
+	//conductivity
         shared_ptr<TArray> condCell(new TArray(cells.getCount()));
         *condCell = 1.0;
         _thermalFields.conductivity.addArray(cells,condCell);
+	
+	//source 
+	shared_ptr<TArray> sCell(new TArray(cells.getCount()));
+	*sCell = 0;
+	_thermalFields.source.addArray(cells,sCell);
 
+	//create a zero field
+	shared_ptr<TArray> zeroCell(new TArray(cells.getCount()));
+	*zeroCell = 0.0;
+	_thermalFields.zero.addArray(cells,zeroCell);
+
+	//create a one field
+	shared_ptr<TArray> oneCell(new TArray(cells.getCount()));
+	*oneCell = 1.0;
+	_thermalFields.one.addArray(cells,oneCell);
+
+	//initial temparature gradient array
+	shared_ptr<TGradArray> gradT(new TGradArray(cells.getCount()));
+	gradT->zero();
+	_thermalFields.temperatureGradient.addArray(cells,gradT);
+        
+	//inital convection flux at faces
+
+	const StorageSite& allFaces = mesh.getFaces();
+	shared_ptr<TArray> convFlux(new TArray(allFaces.getCount()));
+	convFlux->zero();
+	_thermalFields.convectionFlux.addArray(allFaces,convFlux);
+
+	//heat flux at faces
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
@@ -107,6 +139,8 @@ public:
             _thermalFields.heatFlux.addArray(faces,fluxFace);
           
         }
+	
+	
     }
 
     _niters  =0;
@@ -179,16 +213,36 @@ public:
     _temperatureGradientModel.compute();
     
     DiscrList discretizations;
+    
     shared_ptr<Discretization>
-      dd(new DiffusionDiscretization<T,T,T>(_meshes,_geomFields,
-                                            _thermalFields.temperature,
-                                            _thermalFields.conductivity,
-                                            _thermalFields.temperatureGradient));
+      dd(new DiffusionDiscretization<T,T,T>
+	 (_meshes,_geomFields,
+	  _thermalFields.temperature,
+	  _thermalFields.conductivity,
+	  _thermalFields.temperatureGradient));
     discretizations.push_back(dd);
-
+    
+    shared_ptr<Discretization>
+      cd(new ConvectionDiscretization<T,T,T>
+	 (_meshes,_geomFields,
+	  _thermalFields.temperature,
+	  _thermalFields.convectionFlux,
+	  _thermalFields.zero,
+	  _thermalFields.temperatureGradient));
+    discretizations.push_back(cd);
+    
+    
+    shared_ptr<Discretization>
+      sd(new SourceDiscretization<T>
+	 (_meshes, 
+	  _geomFields, 
+	  _thermalFields.temperature,
+	  _thermalFields.source));
+    discretizations.push_back(sd);
+    
     shared_ptr<Discretization>
       ibm(new GenericIBDiscretization<T,T,T>
-             (_meshes,_geomFields,_thermalFields.temperature));
+	  (_meshes,_geomFields,_thermalFields.temperature));
       
     discretizations.push_back(ibm);
 
@@ -352,7 +406,7 @@ public:
 
 	mIC.multiplyAndAdd(*ibT,cT);
 	mIP.multiplyAndAdd(*ibT,pT);
-        _thermalFields.temperature.addArray(ibFaces,ibT);
+	_thermalFields.temperature.addArray(ibFaces,ibT);
     }
 
   }
