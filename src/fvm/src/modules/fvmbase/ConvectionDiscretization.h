@@ -76,39 +76,61 @@ public:
 
     
     const int nFaces = faces.getCount();
-    TArray* gridFluxPtr = 0;
     if (_geomFields.gridFlux.hasArray(faces))
     {
-        gridFluxPtr = new TArray(nFaces);
-        *gridFluxPtr = dynamic_cast<const TArray&>(_geomFields.gridFlux[faces]);
-    }
-    for(int f=0; f<nFaces; f++)
-    {
-        const int c0 = faceCells(f,0);
-        const int c1 = faceCells(f,1);
-        T_Scalar gridFlux(0.0);
-        T_Scalar fluxFace(0.0);
-	if(gridFluxPtr)
-	  fluxFace = (*gridFluxPtr)[f];
-        gridFlux += fluxFace;
-        const T_Scalar faceCFlux = convectingFlux[f] - gridFlux;
+        shared_ptr<TArray> gridFluxPtr(new TArray(nFaces));
+	TArray& gridFlux = *gridFluxPtr;
+        gridFlux = dynamic_cast<const TArray&>(_geomFields.gridFlux[faces]);
 
-        X varFlux;
-        if (faceCFlux > T_Scalar(0))
-        {
-            varFlux = faceCFlux*xCell[c0];
-            diag[c0] -= faceCFlux;
-            assembler.getCoeff10(f) += faceCFlux;
-        }
-        else
-        {
-            varFlux = faceCFlux*xCell[c1];
-            diag[c1] += faceCFlux;
-            assembler.getCoeff01(f)-= faceCFlux;
-        }
+	for(int f=0; f<nFaces; f++)
+	{
+            const int c0 = faceCells(f,0);
+	    const int c1 = faceCells(f,1);
+	    const T_Scalar faceCFlux = convectingFlux[f] - gridFlux[f];
+
+	    X varFlux;
+	    if (faceCFlux > T_Scalar(0))
+	    {
+	        varFlux = faceCFlux*xCell[c0];
+                diag[c0] -= faceCFlux;
+                assembler.getCoeff10(f) += faceCFlux;
+	    }
+	    else
+	    {
+                varFlux = faceCFlux*xCell[c1];
+                diag[c1] += faceCFlux;
+                assembler.getCoeff01(f)-= faceCFlux;
+	    }
         
-        rCell[c0] -= varFlux;
-        rCell[c1] += varFlux;
+	    rCell[c0] -= varFlux;
+	    rCell[c1] += varFlux;
+	}
+    }
+    else
+    {
+        for(int f=0; f<nFaces; f++)
+	{
+            const int c0 = faceCells(f,0);
+            const int c1 = faceCells(f,1);
+            const T_Scalar faceCFlux = convectingFlux[f];
+
+            X varFlux;
+            if (faceCFlux > T_Scalar(0))
+	    {
+                varFlux = faceCFlux*xCell[c0];
+                diag[c0] -= faceCFlux;
+                assembler.getCoeff10(f) += faceCFlux;
+	    }
+            else
+	    {
+                varFlux = faceCFlux*xCell[c1];
+                diag[c1] += faceCFlux;
+                assembler.getCoeff01(f)-= faceCFlux;
+	    }
+
+            rCell[c0] -= varFlux;
+            rCell[c1] += varFlux;
+	}
     }
 
     const int nCells = cells.getSelfCount();
