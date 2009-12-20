@@ -12,6 +12,7 @@ GeomFields::GeomFields(const string baseName) :
   sweptVolDot(baseName+"sweptVolDot"),
   sweptVolDotN1(baseName+"sweptVolDotN1"),
   gridFlux(baseName+"gridFlux"),
+  faceVel(baseName+"faceVel"),
   nodeDisplacement(baseName+"nodeDisplacement"),
   boundaryNodeNormal(baseName+"boundaryNodeNormal")
 {}

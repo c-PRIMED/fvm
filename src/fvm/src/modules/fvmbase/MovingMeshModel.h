@@ -209,10 +209,10 @@ public:
 	    dynamic_cast<TArray&>(_geomFields.volume[cells]);
 	  TArray& gridFlux = 
             dynamic_cast<TArray&>(_geomFields.gridFlux[faces]);
+          VectorT3Array& faceVel =
+            dynamic_cast<VectorT3Array&>(_geomFields.faceVel[faces]);
 	  TArray& sweptVolDot = 
 	    dynamic_cast<TArray&>(_geomFields.sweptVolDot[faces]);
-	  shared_ptr<VectorT3Array> faceVelPtr(new VectorT3Array(nFaces));
-	  VectorT3Array& faceVel = *faceVelPtr;
 	  shared_ptr<VectorT3Array> gridVelPtr(new VectorT3Array(nNodes));
 	  VectorT3Array& gridVel = *gridVelPtr;
 	  TArray volChangeDot(cells.getCount());
@@ -344,6 +344,9 @@ public:
 	  shared_ptr<TArray> gridFlux(new TArray(faces.getCount()));
           gridFlux->zero();
           _geomFields.gridFlux.addArray(faces,gridFlux);
+          shared_ptr<VectorT3Array> faceVel(new VectorT3Array(faces.getCount()));
+          faceVel->zero();
+          _geomFields.faceVel.addArray(faces,faceVel);
 	  const VectorT3Array& faceArea =
             dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
 	  _geomFields.areaN1.addArray(faces,

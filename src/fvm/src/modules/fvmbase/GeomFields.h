@@ -23,6 +23,7 @@ struct GeomFields
   Field sweptVolDot;
   Field sweptVolDotN1;
   Field gridFlux;
+  Field faceVel;
   Field nodeDisplacement;
   Field boundaryNodeNormal;
   // this file gets directly included in a swig ineterface definition
