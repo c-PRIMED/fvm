@@ -62,12 +62,15 @@ typedef Vector<double,3> VecD3;
 %include "Octree.i"
 %include "Grid.i"
 %include "FVMParticles.i"
+%include "MeshAssembler.i"
+
 
 #ifdef FVM_PARALLEL
 
 %include "StorageSiteMerger.i"
 %include "LinearSystemMerger.i"
 #endif
+
 
 %inline %{
   void enableDebug(const string channel)
