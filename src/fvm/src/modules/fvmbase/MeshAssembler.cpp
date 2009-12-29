@@ -16,7 +16,9 @@ MeshAssembler::   MeshAssembler( const MeshList& meshList ):_meshList( meshList 
 
 MeshAssembler::~MeshAssembler()
 {
-  
+   vector< Mesh* >::iterator it_mesh;
+   for ( it_mesh = _mesh.begin(); it_mesh != _mesh.end(); it_mesh++)
+        delete *it_mesh;
 }
 
 
@@ -24,9 +26,9 @@ void
 MeshAssembler::init()
 {
   int id = 9;
-  int dim = 2;
+  int dim = _meshList.at(0)->getDimension();
    //construct merged Linearsystem
-  _mesh = new Mesh( dim, id);
+  _mesh.push_back( new Mesh( dim, id) );
 
 
   _interfaceNodesSet.resize( _meshList.size() );
@@ -38,13 +40,12 @@ MeshAssembler::init()
    //countInterfaceNodes();
    setNodesSite();
    setCellsMapper();
-   cout << " 1 " << endl;
-   setNodesMapper();
-cout << " 2 " << endl;
    setFaceCells();
-cout << " 3 " << endl;
+   setNodesMapper();
    setFaceNodes();
-cout << " 4 " << endl;
+   setCoord();
+   setMesh();
+
 }
 
 //setting storagesite for cells
@@ -301,7 +302,6 @@ MeshAssembler::setFaceCells()
                    }
                }
            }
-        cout << endl;
       }
      //now add boundary faces
      for ( unsigned int n = 0; n < _meshList.size(); n++ ){
@@ -355,21 +355,71 @@ MeshAssembler::setFaceNodes()
      int face = 0;
      for ( unsigned int n = 0; n < _meshList.size(); n++ ){
         const Mesh& mesh = *(_meshList[n]);
-        const StorageSite& faceSite = mesh.getFaces();
         const CRConnectivity& faceNodes = mesh.getAllFaceNodes();
+        const FaceGroup& faceGroup = mesh.getInteriorFaceGroup();
+        const StorageSite& faceGroupSite = faceGroup.site;
         const Array<int>& localToGlobal = *_localNodeToGlobal[n];
-        cout << " size = " << localToGlobal.getLength() << endl;
-        for ( int i = 0; i < faceSite.getCount(); i++ ){
+        for ( int i = 0; i < faceGroupSite.getCount(); i++ ){
            for ( int j = 0; j < faceNodes.getCount(i); j++ ){
-              int nodeID = faceNodes(i,j);
-              cout << " n = " << n << " nodeID = " << nodeID << endl;
+               int nodeID = faceNodes(i,j);
               _faceNodes->add( face, localToGlobal[nodeID] );
            }
            face++;
         }
      }
+
+     //interfaces (mesh)
+     set<int> faceGroupSet;
+     for ( unsigned int n = 0; n < _meshList.size(); n++ ){
+         const Mesh& mesh = *(_meshList[n]);
+         const CRConnectivity& faceNodes = mesh.getAllFaceNodes();
+         const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();
+         const Array<int>& localToGlobal = *_localNodeToGlobal[n];
+         for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
+               int faceGroupID = faceGroupList[i]->id;
+               //pass only if it is not in faceGroupSet
+               if ( faceGroupSet.count( faceGroupID) == 0 ){
+                   faceGroupSet.insert( faceGroupID );
+                   //sweep interfaces for add up operation
+                   int ibeg = faceGroupList[i]->site.getOffset();
+                   int iend = ibeg + faceGroupList[i]->site.getCount();
+                   for ( int i = ibeg; i < iend; i++ ){
+                       for ( int j = 0; j < faceNodes.getCount(i); j++ ){
+                           int nodeID = faceNodes(i,j);
+                           _faceNodes->add( face, localToGlobal[nodeID] );
+                       }
+                       face++;
+                   }
+                }
+         }
+     }
+     //interior face size stored
+     _interiorFaceSize = face;
+
+
+     //now add boundary faces
+     for ( unsigned int n = 0; n < _meshList.size(); n++ ){
+          const Mesh& mesh = *(_meshList[n]);
+          const CRConnectivity& faceNodes = mesh.getAllFaceNodes();
+          const FaceGroupList&  bounGroupList = mesh.getBoundaryFaceGroups();
+          const Array<int>& localToGlobal = *_localNodeToGlobal[n];
+          //loop over interfaces 
+          for ( int i = 0; i <mesh.getBoundaryGroupCount(); i++ ){
+              //sweep interfaces for add up operation
+              int ibeg = bounGroupList[i]->site.getOffset();
+              int iend = ibeg + bounGroupList[i]->site.getCount();
+              for ( int i = ibeg; i < iend; i++ ){
+                  for ( int j = 0; j < faceNodes.getCount(i); j++ ){
+                      int nodeID = faceNodes(i,j);
+                      _faceNodes->add( face, localToGlobal[nodeID] );
+                   }
+                  face++;
+              }
+          }
+       }
+
     //finishAdd
-     _faceNodes->finishAdd();
+    _faceNodes->finishAdd();
 }
 
 //count only inner nodes of all mesh after assembly
@@ -471,6 +521,8 @@ MeshAssembler::getInterfaceNodesCount()
         indx++;
      }
   }
+
+
   _nInterfaceNodes = indx;
   //filling localInterfaceNodes to GlobalNodes data structure
    indx = 0;
@@ -497,23 +549,110 @@ MeshAssembler::setNodesMapper()
 {
 
     int glblIndx = _nInterfaceNodes; // node numbering first from interfaces
+    cout << " glbIndx = " << glblIndx << endl;
     for ( unsigned int id = 0; id < _meshList.size(); id++ ){
        const StorageSite& nodeSite = _meshList[id]->getNodes();
-       cout << " nodeSite .getLength() = " << nodeSite.getSelfCount() << endl;
+       const StorageSite& faceSite = _meshList[id]->getFaces();
+       const CRConnectivity& faceNodes = _meshList[id]->getAllFaceNodes();
        _localNodeToGlobal[id]   = ArrayIntPtr( new Array<int>( nodeSite.getCount() ) ); 
-        const map<int,int>&  interfaceNodesMap = _localInterfaceNodesToGlobalMap[id];
+       Array<bool> isVisitedNodes( nodeSite.getCount() );
+       isVisitedNodes = false;
         Array<int>&  localToGlobal = *_localNodeToGlobal[id];
         localToGlobal = -1; //initializer 
-        //loop over inner cells
-        for ( int n = 0; n < nodeSite.getCount(); n++ ){
-            if ( interfaceNodesMap.count(n) == 0 ) //if it is not in the map, it is inner nodes
-               localToGlobal[n] = glblIndx++;
-            else                                  // else get from interfaceNodesMap
-               localToGlobal[n] = interfaceNodesMap.find(n)->second;
+        const  map<int,int>&  localInterfaceNodesToGlobalMap = _localInterfaceNodesToGlobalMap[id];
+        //loop over faces then connecting nodes
+        for ( int face = 0; face < faceSite.getCount(); face++ ){
+           for ( int n = 0; n < faceNodes.getCount(face); n++ ){
+               int nodeID = faceNodes(face,n); 
+               //cout << " nodeID = " << nodeID << " isVisitedNodes = " << isVisitedNodes[nodeID] << endl;
+               if ( !isVisitedNodes[nodeID]){ //if it is not visited, we renumber it
+                   if ( localInterfaceNodesToGlobalMap.count( nodeID ) == 0 ) 
+                      localToGlobal[nodeID] = glblIndx++;
+                   else 
+                      localToGlobal[nodeID] = localInterfaceNodesToGlobalMap.find(nodeID)->second;
+                   isVisitedNodes[nodeID] = true;
+               }
+           }
         }
     }
 
+
+
 }
+
+
+void
+MeshAssembler::setBoundaryFaceGroup()
+{
+     //interior face size stored
+     int face =   _interiorFaceSize;
+     //now add boundary faces
+     for ( unsigned int n = 0; n < _meshList.size(); n++ ){
+          const Mesh& mesh = *(_meshList[n]);
+          const FaceGroupList&  bounGroupList = mesh.getBoundaryFaceGroups();
+          //loop over interfaces 
+          for ( int i = 0; i <mesh.getBoundaryGroupCount(); i++ ){
+              //sweep interfaces for add up operation
+              int size   = bounGroupList[i]->site.getCount();
+              int offset = face;
+              int id     = bounGroupList[i]->id;
+              string  boundaryType = bounGroupList[i]->groupType;
+              //update face for offset
+              face += size;
+              _mesh.at(0)->createBoundaryFaceGroup( size, offset, id, boundaryType );
+          }
+     }
+
+}
+
+//setting coordinates
+void
+MeshAssembler::setCoord()
+{
+   _coord = ArrayVecD3Ptr(new Array<Mesh::VecD3>(_nodeSite->getCount()));
+    for ( unsigned n = 0; n < _meshList.size(); n++ ){
+         const Mesh& mesh = *(_meshList[n]);
+         const StorageSite& nodeSite = mesh.getNodes();
+         const Array<int>& localToGlobal = *_localNodeToGlobal[n];
+         const Array<Mesh::VecD3>&   coordLocal = mesh.getNodeCoordinates();
+         //loop over local mesh nodes
+         for ( int i = 0; i < nodeSite.getCount(); i++ ){
+               if ( localToGlobal[i] != -1 ) //so mapping is well defined
+                 (*_coord)[ localToGlobal[i] ] = coordLocal[i];
+         }
+    }
+}
+
+//set StorageSites
+void
+MeshAssembler::setSites()
+{
+   StorageSite& faceSite = _mesh.at(0)->getFaces();
+   StorageSite& cellSite = _mesh.at(0)->getCells();
+   StorageSite& nodeSite = _mesh.at(0)->getNodes();
+   faceSite.setCount( _faceSite->getCount() );
+   cellSite.setCount( _cellSite->getSelfCount(), _cellSite->getCount()-_cellSite->getSelfCount() );
+   nodeSite.setCount( _nodeSite->getCount() );
+}
+//setting assembled mesh
+void
+MeshAssembler::setMesh()
+{
+    //set sites
+    setSites();
+    //interior face group
+    _mesh.at(0)->createInteriorFaceGroup( _interiorFaceSize );
+    //boundary face group
+    setBoundaryFaceGroup();
+    //setting coordinates
+    _mesh.at(0)->setCoordinates( _coord     );
+    //setting faceNodes CRConnecitivty
+    _mesh.at(0)->setFaceNodes  ( _faceNodes );
+    //setting faceCells CRConnectivity
+    _mesh.at(0)->setFaceCells  ( _faceCells );
+
+}
+
 
 void  
 MeshAssembler::debug_print()
@@ -597,13 +736,14 @@ MeshAssembler::debug_print()
   //printing things
   debug_file << " localCellToGlobal after sync() opeartion " << endl;
   for ( unsigned int n = 0; n < _meshList.size(); n++ ){
-     Array<int>&  localToGlobal = *_localCellToGlobal[n];
+     const Array<int>&  localToGlobal = *_localCellToGlobal[n];
      debug_file << " mesh = " << n << endl;
      for ( int i = 0; i < localToGlobal.getLength(); i++ )
          debug_file << " localToGlobal[" << i << "] = " << localToGlobal[i] << endl;
      debug_file << endl;
   }
   debug_file << endl;
+
   //faceCells
   debug_file << " faceCells Connectivity " << endl;
   for ( int i = 0; i < _faceSite->getCount(); i++ ) { 
@@ -613,7 +753,16 @@ MeshAssembler::debug_print()
       }
       debug_file << endl;
   }
-  
+  //localNodeToGlobal
+  debug_file << " localNodeToGlobal " << endl;
+  for (  int n = 0; n < _meshList.size(); n++ ){
+      const Array<int>&  localToGlobal = *_localNodeToGlobal[n];
+      for ( int i = 0; i < localToGlobal.getLength(); i++ )
+         debug_file << " localToGlobal[" << i << "] = " << localToGlobal[i] << endl;
+      debug_file << endl;
+  }
+  debug_file << endl;
+
 
   debug_file.close();
 

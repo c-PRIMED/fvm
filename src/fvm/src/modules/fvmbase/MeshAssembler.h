@@ -25,6 +25,9 @@ public:
    MeshAssembler( const MeshList& meshList );
    ~MeshAssembler();
 
+  //return single mesh, for sake of compatibality we return as meshList
+   const MeshList&  meshList() const { return _mesh;}
+
    void  debug_print();
 
    //get methods
@@ -40,9 +43,15 @@ private:
    void setNodesSite();
    void setCellsMapper(); 
    void setNodesMapper();
+   void setBoundaryFaceGroup();
+   void setCoord();
+   void setSites();
+
+
 
    void setFaceCells();
    void setFaceNodes();
+   void setMesh();  
 
    void countInterfaceNodes();
    
@@ -64,16 +73,17 @@ private:
    vector<int>             _globalCellToLocal;   //gives local Cell ID from Global ID but which mesh comes from mapGlobalCellToMeshID
 
    vector < map<int,int> >  _localInterfaceNodesToGlobalMap; // for each mesh
-   map<int, ArrayIntPtr >   _localNodeToGlobal; //this include ghost cells at interfaces, ghostcells on boundary is set =-1
+   map<int, ArrayIntPtr >   _localNodeToGlobal; 
 
    set<Mesh::VecD3>  _interfaceNodeCoord;  //after merging, 
 
-   CRConnectivityPtr _faceCells;
-   CRConnectivityPtr _faceNodes;
+   CRConnectivityPtr   _faceCells;
+   CRConnectivityPtr   _faceNodes;
+   ArrayVecD3Ptr       _coord;
 
    int  _nInterfaceNodes;
-
-   Mesh* _mesh;
+   int   _interiorFaceSize;
+   MeshList _mesh;   //even it is one-element vector, so compatiable with PartMesh class
 
 };
 
