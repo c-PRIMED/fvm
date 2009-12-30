@@ -277,7 +277,7 @@ MeshAssembler::setFaceCells()
         }
      }
 
-     //now add interior faces
+     //now add interfaces
      set<int> faceGroupSet; // this set make sure that no duplication in sweep
      for ( unsigned int n = 0; n < _meshList.size(); n++ ){
           const Mesh& mesh = *(_meshList[n]);
@@ -304,8 +304,10 @@ MeshAssembler::setFaceCells()
            }
       }
      //now add boundary faces
+     int indx = _cellSite->getSelfCount();
      for ( unsigned int n = 0; n < _meshList.size(); n++ ){
           const Mesh& mesh = *(_meshList[n]);
+          const StorageSite& cellSite = mesh.getCells();
           const CRConnectivity& faceCells = mesh.getAllFaceCells();
           const FaceGroupList&  bounGroupList = mesh.getBoundaryFaceGroups();
           const Array<int>& localToGlobal = *_localCellToGlobal[n];
@@ -318,15 +320,13 @@ MeshAssembler::setFaceCells()
                   int cell1 = faceCells(i,0);
                   int cell2 = faceCells(i,1);
                   //cell1
-                  if ( cell1 < _cellSite->getSelfCount() )
+                  if ( cell1 < cellSite.getSelfCount() )
                       _faceCells->add( face, localToGlobal[ cell1 ] ); 
                   else 
-                      _faceCells->add( face, cell1  );  //use original boundary cell ID
-                  //cell2
-                  if ( cell2 < _cellSite->getSelfCount() )
                       _faceCells->add( face, localToGlobal[ cell2 ] ); 
-                  else 
-                       _faceCells->add( face, cell2 );  //use original boundary cell ID
+                  //adding boundary cells
+                  _faceCells->add( face, indx  ); 
+                  indx++;
                   face++;
               }
           }
