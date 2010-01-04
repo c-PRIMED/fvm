@@ -276,8 +276,9 @@ Field::syncLocal()
              EntryIndex e(&site,&oSite);
              ArrayBase& sendArray = *_ghostArrays[e];
              int to_where  = oSite.getGatherProcID();
-             request_send[indx++] =  
-                 MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_FIELD_TAG );
+             if ( to_where != -1 )
+                request_send[indx++] =  
+                     MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_FIELD_TAG );
       }
       //RECIEVING
 
@@ -290,8 +291,9 @@ Field::syncLocal()
          EntryIndex e(&oSite,&site);
          ArrayBase& recvArray = *_ghostArrays[e];
          int from_where       = oSite.getGatherProcID();
-         request_recv[indx++] =  
-                 MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where,MPI_FIELD_TAG );
+         if ( from_where != -1 )
+             request_recv[indx++] =  
+                    MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where,MPI_FIELD_TAG );
       }
 
    }

@@ -46,8 +46,8 @@ public:
   GatherMap &  getGatherMap ()  { return _gatherMap; }
 
 
-  int getScatterProcID() const { assert( _scatterProcID != -1 ); return _scatterProcID;}
-  int getGatherProcID()  const { assert( _gatherProcID  != -1 ); return _gatherProcID; }
+  int getScatterProcID() const { return _scatterProcID;}
+  int getGatherProcID()  const { return _gatherProcID; }
 
 
   const StorageSite* const getParent() const {return _parent;}

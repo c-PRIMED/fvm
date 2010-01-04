@@ -432,8 +432,9 @@ MultiField::sync()
              EntryIndex eIndex(i,oIndex);
              ArrayBase& sendArray = *_ghostArrays[eIndex];
              int to_where  = oSite.getGatherProcID();
-             request_send[indx++] =  
-                   MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_MULTIFIELD_TAG[fieldIndx] );
+             if ( to_where != -1 )
+                request_send[indx++] =  
+                       MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_MULTIFIELD_TAG[fieldIndx] );
        }
 
   
@@ -446,8 +447,9 @@ MultiField::sync()
              EntryIndex eIndex(oIndex,i);
              ArrayBase& recvArray = *_ghostArrays[eIndex];
              int from_where  = oSite.getGatherProcID();
-             request_recv[indx++] =  
-                   MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, MPI_MULTIFIELD_TAG[fieldIndx] );
+             if ( from_where != -1 )
+                 request_recv[indx++] =  
+                       MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, MPI_MULTIFIELD_TAG[fieldIndx] );
       }
       fieldIndx++;
    }
