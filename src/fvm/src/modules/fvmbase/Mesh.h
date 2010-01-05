@@ -162,6 +162,7 @@ public:
   int getIBTypeForCell(const int c) const;
   
   void setIBTypeForCell(const int c, const int type);
+  void setNumOfAssembleMesh( int nmesh ){ _numOfAssembleMesh = nmesh; }
 
   //VecD3 getCellCoordinate(const int c) const;
 
@@ -169,6 +170,10 @@ public:
   void addIBFace(const int i, const int c);
 
   const Array<int>& getIBFaceList() const;
+
+  Array<int>& getCellColors() { return *_cellColor;}
+  bool isMergedMesh() const { return _isAssembleMesh;}
+  int  getNumOfAssembleMesh() const { return _numOfAssembleMesh;}
  
   void createIBFaceList(const int size) const;
 
@@ -176,6 +181,8 @@ public:
 
   void createGhostCellSiteScatter( int id, shared_ptr<StorageSite> site ); 
   void createGhostCellSiteGather ( int id, shared_ptr<StorageSite> site ); 
+  void createCellColor();
+
 protected:
   const int _dimension;
   const int _id;
@@ -197,6 +204,10 @@ protected:
   mutable shared_ptr<Array<int> > _ibType;
 
   mutable shared_ptr<Array<int> > _ibFaceList;
+
+  shared_ptr< Array<int> > _cellColor;
+  int  _numOfAssembleMesh;
+  bool _isAssembleMesh;
 
   Array<int>& getOrCreateIBType() const;
 

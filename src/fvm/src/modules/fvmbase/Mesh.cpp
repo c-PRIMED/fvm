@@ -20,7 +20,9 @@ Mesh::Mesh(const int dimension, const int id):
   _connectivityMap(),
   _coordinates(),
   _ibType(),
-  _ibFaceList()
+  _ibFaceList(),
+  _numOfAssembleMesh(1),
+  _isAssembleMesh(false)
 {
   logCtor();
 }
@@ -333,5 +335,12 @@ Mesh::createGhostCellSiteGather( int id, shared_ptr<StorageSite> site )
   _ghostCellSiteGatherMap.insert( pair<int, shared_ptr<StorageSite> >( id, site ) );
 
 }
-
+//this 
+void 
+Mesh::createCellColor()
+{
+   _cellColor = shared_ptr< Array<int> > ( new Array<int>( _cells.getCount() ) );
+   *_cellColor = -1;
+   _isAssembleMesh = true;
+}
 

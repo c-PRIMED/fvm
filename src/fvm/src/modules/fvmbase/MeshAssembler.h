@@ -46,7 +46,7 @@ private:
    void setBoundaryFaceGroup();
    void setCoord();
    void setSites();
-
+   void setMeshCellColor();
 
 
    void setFaceCells();

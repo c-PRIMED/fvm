@@ -735,7 +735,10 @@ PartMesh::init()
        _totElemsAndGhosts.at(id) = site.getCount();
        _wghtFlag.at(id) = int( NOWEIGHTS ); //No Weights : default value
        _numFlag.at(id)  = int( C_STYLE );   //C Style numbering :: default_value
-       _ncon.at(id)     =  2;               //number of specified weights : default value
+       _ncon.at(id)     = 2;               //number of specified weights : default value for contigous domain ncon > 1
+       //if it is assemble mesh ncon will be equal to num of assembled mesh
+       if (  _meshList.at(id)->isMergedMesh() )
+           _ncon.at(id)     = _meshList.at(id)->getNumOfAssembleMesh();
 
        //assign ubvec
        _ubvec.push_back( new float[_ncon.at(id) ] );
@@ -823,10 +826,25 @@ PartMesh::elem_connectivity()
       _ePtr.push_back( new int[mesh_nlocal+1] );
       _eElm.push_back( new int[mesh_nlocal+1] );
        //element weights  
-      _elmWght.push_back( new int[mesh_nlocal] );
-       for ( int n = 0; n < mesh_nlocal; n++)
-          _elmWght.at(id)[n] = 1;
-
+      _elmWght.push_back( new int[_ncon.at(id)*mesh_nlocal] );
+       if (  !_meshList.at(id)->isMergedMesh() ){
+          _wghtFlag.at(id) = int( NOWEIGHTS ); //No Weights : default value
+          for ( int n = 0; n < _ncon.at(id)*mesh_nlocal; n++)
+             _elmWght.at(id)[n] = 1;
+       } else {
+          _wghtFlag.at(id) = int( WEIGTHS_ONLY_VERTICES ); //No Weights : default value
+           const Array<int>& cellColors = _meshList.at(id)->getCellColors();
+           int indx = 0 ;
+           for ( int n =0; n < mesh_nlocal; n++ ){
+              for ( int i = 0; i < _meshList.at(id)->getNumOfAssembleMesh(); i++ ){
+                 _elmWght.at(id)[indx] = 0;
+                  if ( cellColors[ (*_globalIndx[id])[_procID] + n ] == i )
+                      _elmWght.at(id)[indx] = 1;
+                  indx++;
+              }
+           }
+       }
+   
        //allocate local eInd for ParMETIS
       _eInd.push_back( new int[local_nodes(id)] );
 
@@ -1100,7 +1118,6 @@ PartMesh::mesh_setup()
            _meshListLocal.at(id)->createGhostCellSiteGather( interfaceID,  siteScatter  );
 
          }
-
 
        _meshListLocal.at(id)->setCoordinates( _coord.at(id)            );
        _meshListLocal.at(id)->setFaceNodes  ( _faceNodesOrdered.at(id) );
@@ -1965,7 +1982,7 @@ PartMesh::mesh_file()
 
            Mesh::GhostCellSiteMap::const_iterator it_ghostScatter;
             //loop over interfaces
-           for ( it_ghostScatter = ghostCellSiteScatterMap.begin(); it_ghostScatter != ghostCellSiteScatterMap.end(); it_ghostScatter++){
+           for ( it_ghostScatter = ghostCellSiteScatterMap.begin(); it_ghostScatter != ghostCellSiteScatterMap.end(); it_ghostScatter++ ){
 
                int neighID = it_ghostScatter->first;
 

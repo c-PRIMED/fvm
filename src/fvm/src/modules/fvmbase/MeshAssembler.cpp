@@ -45,6 +45,7 @@ MeshAssembler::init()
    setFaceNodes();
    setCoord();
    setMesh();
+   setMeshCellColor();
 
 }
 
@@ -324,7 +325,7 @@ MeshAssembler::setFaceCells()
                       _faceCells->add( face, localToGlobal[ cell1 ] ); 
                   else 
                       _faceCells->add( face, localToGlobal[ cell2 ] ); 
-                  //adding boundary cells
+                  //adding boundary cells 	
                   _faceCells->add( face, indx  ); 
                   indx++;
                   face++;
@@ -652,6 +653,52 @@ MeshAssembler::setMesh()
     _mesh.at(0)->setFaceCells  ( _faceCells );
 
 }
+
+//filling _cellColor array in the merged mesh. This will be used in Parmetis (elmWghts)
+void
+MeshAssembler::setMeshCellColor()
+{
+     //allocate Mesh::_cellColor
+    _mesh.at(0)->createCellColor();
+
+    Array<int>& cellColor = _mesh.at(0)->getCellColors();
+    //first interior faces of local meshes
+    int face = 0;
+    for ( unsigned int n = 0; n < _meshList.size(); n++ ){
+       const Mesh& mesh = *(_meshList[n]);
+       const CRConnectivity& faceCells = mesh.getAllFaceCells();
+       const FaceGroup& faceGroup = mesh.getInteriorFaceGroup();
+       const Array<int>& localToGlobal = *_localCellToGlobal[n];
+       for ( int i = 0; i < faceGroup.site.getCount(); i++ ){
+           int cell1 = faceCells(i,0);
+           int cell2 = faceCells(i,1);
+           cellColor[ localToGlobal[ cell1 ] ] = n;
+           cellColor[ localToGlobal[ cell2 ] ] = n;
+       }
+    }
+
+  //now color only boundary cells
+     int indx = _cellSite->getSelfCount();
+     for ( unsigned int n = 0; n < _meshList.size(); n++ ){
+          const Mesh& mesh = *(_meshList[n]);
+          const FaceGroupList&  bounGroupList = mesh.getBoundaryFaceGroups();
+          //loop over interfaces 
+          for ( int i = 0; i <mesh.getBoundaryGroupCount(); i++ ){
+              //sweep interfaces for add up operation
+              int ibeg = bounGroupList[i]->site.getOffset();
+              int iend = ibeg + bounGroupList[i]->site.getCount();
+              for ( int i = ibeg; i < iend; i++ ){
+                  cellColor[indx] = n;
+                  //adding boundary cells 	
+                  indx++;
+              }
+          }
+       }
+      //assigning Mesh::numOfAssembleMesh
+     _mesh[0]->setNumOfAssembleMesh( int(_meshList.size()) );
+
+}
+
 
 
 void  
