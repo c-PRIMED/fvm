@@ -1,7 +1,7 @@
 from build_packages import *
 
 class MEMOSA(BuildPkg):
-    requires=['mpi4py']
+    requires=['mpi4py', 'hdf5']
     copy_sources = 1    
     name = "MEMOSA"
     def _build(self):

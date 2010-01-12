@@ -19,3 +19,4 @@ Lammps   src/lammps
 MPM      src/MPM
 Fvm      src/fvm
 MEMOSA   src/MEMOSA
+Hdf5	 pkgs/hdf5-1.8.4.tar.bz2
