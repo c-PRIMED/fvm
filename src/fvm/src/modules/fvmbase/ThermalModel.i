@@ -17,7 +17,7 @@ struct ThermalModelOptions : public FloatVarDict<T>
 {
   double relativeTolerance;
   double absoluteTolerance;
-
+  bool useCentralDifference;
   LinearSolver *linearSolver;
 }; 
 
