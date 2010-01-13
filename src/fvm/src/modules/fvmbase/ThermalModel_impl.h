@@ -275,7 +275,27 @@ public:
             {
                 FloatValEvaluator<T>
                   bT(bc.getVal("specifiedTemperature"),faces);
-                gbc.applyDirichletBC(bT);
+                if (_thermalFields.convectionFlux.hasArray(faces))
+                {
+                    const TArray& convectingFlux =
+                      dynamic_cast<const TArray&>
+                      (_thermalFields.convectionFlux[faces]);
+                    const int nFaces = faces.getCount();
+                                
+                    for(int f=0; f<nFaces; f++)
+                    {
+                        if (convectingFlux[f] > 0.)
+                        {
+                            gbc.applyExtrapolationBC(f);
+                        }
+                        else
+                        {
+                            gbc.applyDirichletBC(f,bT[f]);
+                        }
+                    }
+                }
+                else
+                  gbc.applyDirichletBC(bT);
             }
             else if (bc.bcType == "SpecifiedHeatFlux")
             {
