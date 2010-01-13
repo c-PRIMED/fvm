@@ -31,7 +31,7 @@ fvm:
 
 MPM:
 	Build=1
-	modules=openmpi-gcc
+	modules=atlas openmpi-gcc
 	configname=gnu-linux
 
 
@@ -50,7 +50,7 @@ MEMOSA:
 	Build=1
 	
 ALL:
-	modules=gcc/4.3.0 atlas
+	modules=gcc/4.3.0
 	before=module load python
 #	env[HDF5_DIR]=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
 
