@@ -228,7 +228,8 @@ public:
 	  _thermalFields.temperature,
 	  _thermalFields.convectionFlux,
 	  _thermalFields.zero,
-	  _thermalFields.temperatureGradient));
+	  _thermalFields.temperatureGradient,
+          _options.useCentralDifference));
     discretizations.push_back(cd);
     
     

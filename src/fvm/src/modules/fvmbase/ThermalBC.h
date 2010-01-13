@@ -23,10 +23,11 @@ struct ThermalModelOptions : public FloatVarDict<T>
     this->relativeTolerance=1e-8;
     this->absoluteTolerance=1e-16;
     this->linearSolver = 0;
+    this->useCentralDifference=false;
   }
   double relativeTolerance;
   double absoluteTolerance;
-
+  bool useCentralDifference;
   LinearSolver *linearSolver;
 
 #ifndef SWIG

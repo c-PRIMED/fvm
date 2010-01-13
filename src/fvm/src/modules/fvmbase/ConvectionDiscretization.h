@@ -34,13 +34,15 @@ public:
                            Field& varField,
                            const Field& convectingFluxField,
                            const Field& continuityResidualField,
-                           const Field& varGradientField) :
+                           const Field& varGradientField,
+                           const bool useCentralDifference=false) :
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
     _convectingFluxField(convectingFluxField),
     _continuityResidualField(continuityResidualField),
-    _varGradientField(varGradientField)
+    _varGradientField(varGradientField),
+    _useCentralDifference(useCentralDifference)
   {}
   
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -74,6 +76,7 @@ public:
 
     //const GradArray& xGradCell = dynamic_cast<GradArray>(_varGradientField[cells]);
 
+    const Array<int>& ibType = mesh.getIBType();
     
     const int nFaces = faces.getCount();
     if (_geomFields.gridFlux.hasArray(faces))
@@ -108,29 +111,76 @@ public:
     }
     else
     {
-        for(int f=0; f<nFaces; f++)
-	{
-            const int c0 = faceCells(f,0);
-            const int c1 = faceCells(f,1);
-            const T_Scalar faceCFlux = convectingFlux[f];
+        if (_useCentralDifference)
+          for(int f=0; f<nFaces; f++)
+          {
+              const int c0 = faceCells(f,0);
+              const int c1 = faceCells(f,1);
+              const T_Scalar faceCFlux = convectingFlux[f];
+              bool isIBFace = (((ibType[c0] == Mesh::IBTYPE_FLUID)
+                                && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+                               ((ibType[c1] == Mesh::IBTYPE_FLUID)
+                                && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)));
+            
 
-            X varFlux;
-            if (faceCFlux > T_Scalar(0))
-	    {
-                varFlux = faceCFlux*xCell[c0];
-                diag[c0] -= faceCFlux;
-                assembler.getCoeff10(f) += faceCFlux;
-	    }
-            else
-	    {
-                varFlux = faceCFlux*xCell[c1];
-                diag[c1] += faceCFlux;
-                assembler.getCoeff01(f)-= faceCFlux;
-	    }
+              X varFlux =0.5*faceCFlux*(xCell[c0] + xCell[c0]);
 
-            rCell[c0] -= varFlux;
-            rCell[c1] += varFlux;
-	}
+              rCell[c0] -= varFlux;
+              rCell[c1] += varFlux;
+
+              if (isIBFace)
+              {
+                  // linearize the actual flux as calculated
+                  // above. this will ensure that the Ib
+                  // discretization will be able to fix the value
+                  // correctly using the ib face value
+                  
+                  diag[c0] -= 0.5*faceCFlux;
+                  assembler.getCoeff10(f) -= 0.5*faceCFlux;
+                  diag[c1] += 0.5*faceCFlux;
+                  assembler.getCoeff01(f) += 0.5*faceCFlux;
+              }
+              else
+              {
+                  // linearize as upwind flux so that linear system
+                  // remains diagonally dominant
+                  if (faceCFlux > T_Scalar(0))
+                  {
+                      diag[c0] -= faceCFlux;
+                      assembler.getCoeff10(f) += faceCFlux;
+                  }
+                  else
+                  {
+                      diag[c1] += faceCFlux;
+                      assembler.getCoeff01(f)-= faceCFlux;
+                  }
+              }
+          }
+        else
+          for(int f=0; f<nFaces; f++)
+          {
+              const int c0 = faceCells(f,0);
+              const int c1 = faceCells(f,1);
+              const T_Scalar faceCFlux = convectingFlux[f];
+
+              X varFlux;
+            
+              if (faceCFlux > T_Scalar(0))
+              {
+                  varFlux = faceCFlux*xCell[c0];
+                  diag[c0] -= faceCFlux;
+                  assembler.getCoeff10(f) += faceCFlux;
+              }
+              else
+              {
+                  varFlux = faceCFlux*xCell[c1];
+                  diag[c1] += faceCFlux;
+                  assembler.getCoeff01(f)-= faceCFlux;
+              }
+
+              rCell[c0] -= varFlux;
+              rCell[c1] += varFlux;
+          }
     }
 
     const int nCells = cells.getSelfCount();
@@ -147,6 +197,7 @@ private:
   const Field& _convectingFluxField; 
   const Field& _continuityResidualField;
   const Field& _varGradientField;
+  const bool _useCentralDifference;
 };
 
 #endif
