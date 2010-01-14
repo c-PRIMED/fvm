@@ -301,6 +301,44 @@ def set_python_path(dir):
     os.environ['PYTHONPATH'] += ':' + os.path.join(dir, 'bin')
     return pypath1
 
+def write_env(bld, cwd, cname):
+    # write out env.csh for people who haven't yet learned bash
+    env_name = os.path.join(cwd, 'env.csh')
+    f = open(env_name, 'w')
+    modules = config('Testing', 'modules')
+    if modules:
+        for m in modules.split():
+            f.write('module load %s\n' % m)
+        print >> f, "setenv LD_LIBRARY_PATH " + bld.libdir + ":$LD_LIBRARY_PATH"
+    try:
+        if os.environ['PYTHONPATH']:
+            print >> f, "setenv PYTHONPATH " + os.environ['PYTHONPATH']
+    except:
+        pass
+    print >> f, "setenv PATH %s:$PATH" % bld.bindir
+    print >> f, "\n# Need this to recompile MPM in its directory."
+    print >> f, "setenv MEMOSA_CONFNAME %s" % cname
+    f.close()
+
+    # write out env.sh
+    env_name = os.path.join(cwd, 'env.sh')
+    f = open(env_name, 'w')
+    modules = config('Testing', 'modules')
+    if modules:
+        for m in modules.split():
+            f.write('module load %s\n' % m)
+        print >> f, "export LD_LIBRARY_PATH=" + bld.libdir + ":$LD_LIBRARY_PATH"
+    try:
+        if os.environ['PYTHONPATH']:
+            print >> f, "export PYTHONPATH=" + os.environ['PYTHONPATH']
+    except:
+        pass
+    print >> f, "export PATH=%s:$PATH" % bld.bindir
+    print >> f, "\n# Need this to recompile MPM in its directory."
+    print >> f, "export MEMOSA_CONFNAME=%s" % cname
+    f.close()
+    return env_name
+
 if __name__ == '__main__':
     for c in colors:
         cprint(c, c)

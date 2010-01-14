@@ -146,23 +146,9 @@ def main():
         build_end_time = time.time()
         open(bld.logdir + '/EndBuildTime', 'w').write(str(build_end_time))
 
-        # write out env.sh
-        env_name = os.path.join(cwd, 'env.sh')
-        f = open(env_name, 'w')
-        modules = config.config('Testing', 'modules')
-        if modules:
-            for m in modules.split():
-                f.write('module load %s\n' % m)
-        print >> f, "export LD_LIBRARY_PATH=" + bld.libdir + ":$LD_LIBRARY_PATH"
-        try:
-            if os.environ['PYTHONPATH']:
-                print >> f, "export PYTHONPATH=" + os.environ['PYTHONPATH']
-        except:
-            pass
-        print >> f, "export PATH=%s:$PATH" % bld.bindir
-        print >> f, "\n# Need this to recompile MPM in its directory."
-        print >> f, "export MEMOSA_CONFNAME=%s" % cname
-        f.close()
+        # write out env.[c]sh 
+        env_name = build_utils.write_env(bld, cwd, cname)
+
         if not build_failed:
             print "\nDone with building.\nYou need to source %s to use this build.\n" % env_name
 
