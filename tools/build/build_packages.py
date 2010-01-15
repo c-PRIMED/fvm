@@ -89,7 +89,13 @@ class BuildPkg(Build):
             strip = ''
         os.system('tar -C %s %s -%sxf %s' % (self.sdir, strip, compress, src))
 
-    def configure(self):
+    def clean(self):
+        self.state = 'clean'
+        self.logfile = ''
+        self._clean()
+
+    def build(self):
+        # Configure
         self.state = 'configure'
         self.bld.database[self.name] = 0 # mark this package as not built        
         self.logfile = os.path.join(self.logdir, self.name + "-conf.log")
@@ -99,18 +105,12 @@ class BuildPkg(Build):
         os.system("/bin/rm -rf %s" % self.bdir)
         # get new sources
         self.unpack_srcs()
-
         os.chdir(self.bdir)
         run_commands(self.name, 'before')
         self.build_start_time = time.time()
         self.pstatus(self._configure())
 
-    def clean(self):
-        self.state = 'clean'
-        self.logfile = ''
-        self._clean()
-
-    def build(self):
+        # Build
         self.state = 'build'
         self.logfile = os.path.join(self.logdir, self.name + "-build.log")
         remove_file(self.logfile)
@@ -118,7 +118,7 @@ class BuildPkg(Build):
         os.chdir(self.bdir)
         self.pstatus(self._build())
 
-    def install(self):
+        # Install
         self.state = 'install'
         self.logfile = os.path.join(self.logdir, self.name + "-install.log")
         remove_file(self.logfile)

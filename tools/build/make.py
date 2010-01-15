@@ -132,9 +132,7 @@ def main():
         open(bld.logdir + '/StartBuildTime', 'w').write(str(build_start_time))
         for p in bld.packages:
             try:
-                p.configure()
                 p.build()
-                p.install()
             except build_utils.CompileException:
                 build_failed = 1
                 break                

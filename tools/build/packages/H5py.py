@@ -5,18 +5,19 @@ class H5py(BuildPkg):
     requires = ['numpy', 'hdf5']
     def find_h5_inc(self):
         f = ''
-        pathlist = ['/usr/include', '/usr/local/include']
+        pathlist = [self.blddir, '/usr', '/usr/local']
         if os.environ.has_key('HDF5_DIR'):
-            pathlist.append(os.path.join(os.environ['HDF5_DIR'], 'include'))
+            pathlist.insert(0, os.environ['HDF5_DIR'])
         for path in pathlist:
             verbose(2,'Checking for HDF5 headers in %s' % path)
             for fn in ['H5pubconf.h', 'H5pubconf-64.h', 'H5pubconf-32.h']:
                 try:
-                    f = open(os.path.join(path, fn), 'r')
+                    f = open(os.path.join(path, 'include', fn), 'r')
                 except:
                     pass
                 if f:
                     verbose(2,'Found HDF5 headers.')
+                    do_env('HDF5_DIR=%s' % path)
                     return f
         if not f:
             fatal("\nhdf5 include files not found. Please install them and restart build.")

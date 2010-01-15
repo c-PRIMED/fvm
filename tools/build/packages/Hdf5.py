@@ -6,5 +6,6 @@ class Hdf5(BuildPkg):
     def _build(self):
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
-        do_env('HDF5_DIR=%s' % self.blddir)
         return self.sys_log("make install")
+
+
