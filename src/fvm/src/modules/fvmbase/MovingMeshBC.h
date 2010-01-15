@@ -8,6 +8,7 @@ struct MovingMeshModelOptions : public FloatVarDict<T>
   MovingMeshModelOptions()
   {
       this->defineVar("timeStep",T(0.1));
+      this->defineVar("underrelaxation",T(1.0));
 
       this->absTolerance = 1e-4;
       this->nNodeDisplacementSweeps = 20;

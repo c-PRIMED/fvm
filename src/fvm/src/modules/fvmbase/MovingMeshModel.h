@@ -47,7 +47,7 @@ public:
 	nodeDisplacement.zero();
         const T one(1.0);
 	const T zero(0.0);
-	const T underrelaxation(1.0);
+	const T underrelaxation = _options["underrelaxation"];
 	const T small(1e-10);
 	T changeInDisplacement(0.0);
 	T previousChangeInDisplacement(0.0);
