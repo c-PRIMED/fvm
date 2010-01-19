@@ -5,7 +5,7 @@ class MEMOSA(BuildPkg):
     copy_sources = 1    
     name = "MEMOSA"
     def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
+        return self.sys_log("HDF5_DIR=%s make -j%s" % (self.blddir, jobs(self.name)))
     def _install(self):
         os.chdir(self.bdir)
         self.sys_log("install src/sparse_grid_cc %s" % self.bindir)
