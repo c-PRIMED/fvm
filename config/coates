@@ -5,11 +5,12 @@ Testing:
 	walltime=4:00:00
 	nodes=4
 	ncpus=8
-	modules=openmpi-gcc
+	modules=openmpi-1.4.1-gcc64/4.4.0
+
 
 lammps:
 	Build=True
-	modules=openmpi-gcc
+	modules=openmpi-1.4.1-gcc64/4.4.0
 	build=openmpi
 
 fvm:
@@ -27,16 +28,16 @@ fvm:
 	# compiler. 'intelc' or 'gcc'
 	# default is gcc
 	compiler=gcc
-	modules=openmpi-gcc
+	modules=openmpi-1.4.1-gcc64/4.4.0
 
 MPM:
 	Build=1
-	modules=atlas openmpi-gcc
+	modules=atlas openmpi-1.4.1-gcc64/4.4.0
 	configname=gnu-linux
 
 
 mpi4py:
-	modules=openmpi-gcc
+	modules=openmpi-1.4.1-gcc64/4.4.0
 
 netcdf:
 	Build=1
@@ -44,13 +45,13 @@ netcdf:
 	env[CC]=gcc
 
 parmetis:
-	modules=openmpi-gcc
+	modules=openmpi-1.4.1-gcc64/4.4.0
 
 MEMOSA:
 	Build=1
 	
 ALL:
-	modules=gcc/4.3.0
+	modules=gcc/4.4.0
 	before=module load python
 #	env[HDF5_DIR]=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
 
