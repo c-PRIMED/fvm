@@ -108,23 +108,24 @@ class BuildPkg(Build):
         os.chdir(self.bdir)
         run_commands(self.name, 'before')
         self.build_start_time = time.time()
-        self.pstatus(self._configure())
+        c = self._configure()
+        self.pstatus(c)
+        if c != 'installed':
+            # Build
+            self.state = 'build'
+            self.logfile = os.path.join(self.logdir, self.name + "-build.log")
+            remove_file(self.logfile)
+            pmess("BUILD", self.name, self.bdir)
+            os.chdir(self.bdir)
+            self.pstatus(self._build())
 
-        # Build
-        self.state = 'build'
-        self.logfile = os.path.join(self.logdir, self.name + "-build.log")
-        remove_file(self.logfile)
-        pmess("BUILD", self.name, self.bdir)
-        os.chdir(self.bdir)
-        self.pstatus(self._build())
-
-        # Install
-        self.state = 'install'
-        self.logfile = os.path.join(self.logdir, self.name + "-install.log")
-        remove_file(self.logfile)
-        pmess("INSTALL", self.name, self.blddir)
-        os.chdir(self.bdir)
-        self.pstatus(self._install())
+            # Install
+            self.state = 'install'
+            self.logfile = os.path.join(self.logdir, self.name + "-install.log")
+            remove_file(self.logfile)
+            pmess("INSTALL", self.name, self.blddir)
+            os.chdir(self.bdir)
+            self.pstatus(self._install())
         self.bld.database[self.name] = self.build_start_time
         self.bld.database[self.name + '-status'] = self.status()
         debug('database[%s] = %s' % (self.name, self.build_start_time))
