@@ -87,4 +87,4 @@ class Fvm(BuildPkg):
         bd = os.path.join(self.sdir, "build")
         pmess("CLEAN", self.name, bd)
         os.system('touch %s/SConstruct' % self.psdir)
-        return self.sys_log("rm -rf %s/*" % bd)
+        self.pstatus(self.sys_log("rm -rf %s/*" % bd))
