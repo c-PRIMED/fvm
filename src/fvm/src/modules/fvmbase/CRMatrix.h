@@ -625,14 +625,14 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
 {
    const CRConnectivity&  conn = mergeLS.getConnectivity();
 
-   const map<int,ArrayIntPtr>& localToGlobalMap = mergeLS.getLocalToGlobal();
+   const map<int,IntArrayPtr>& localToGlobalMap = mergeLS.getLocalToGlobal();
 
    const Array<int>& globalToProc  = mergeLS.getGlobalToProc();
    const Array<int>& globalToLocal = mergeLS.getGlobalToLocal();
    const Array<int>& selfCounts    = mergeLS.getSelfCounts();
 
-   const map< int, ArrayIntPtr >&  rowMap = mergeLS.getLocalConnRow();
-   const map< int, ArrayIntPtr >&  colMap = mergeLS.getLocalConnCol();
+   const map< int, IntArrayPtr >&  rowMap = mergeLS.getLocalConnRow();
+   const map< int, IntArrayPtr >&  colMap = mergeLS.getLocalConnCol();
    const vector< map<int,int> >&   gatherIDsLocalToGlobal = mergeLS.getGatherIDsLocalToGlobal();  //[proc][localid] = globalID
 
    const map<int, ArrayDblePtr> &  diagMap   =  mergeLS.getDiag();
