@@ -96,6 +96,12 @@ def main():
         os.system("/bin/rm -rf %s" % os.path.join(cwd, "build-%s" % cname))
 
     bld = Build(cname, sdir, make_path)
+    
+    # CLEAN
+    if options.clean or options.all:
+        for p in bld.packages:
+            p.clean()
+
     build_utils.run_commands('ALL', 'before')
     build_utils.fix_path('PATH', bld.bindir, 1, 0)
     build_utils.fix_path('LD_LIBRARY_PATH', bld.libdir, 1, 0)
@@ -178,11 +184,6 @@ def main():
     else:
         del os.environ['PYTHONPATH']
     build_utils.fix_path('PATH', bld.bindir, 1, 1)
-
-    # CLEAN
-    if options.clean:
-        for p in bld.packages:
-            p.clean()
 
 if __name__ == "__main__":
     main()

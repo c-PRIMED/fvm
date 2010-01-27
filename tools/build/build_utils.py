@@ -327,7 +327,8 @@ def write_env(bld, cwd, cname):
     if modules:
         for m in modules.split():
             f.write('module load %s\n' % m)
-        print >> f, "export LD_LIBRARY_PATH=" + bld.libdir + ":$LD_LIBRARY_PATH"
+
+    print >> f, "export LD_LIBRARY_PATH=" + bld.libdir + ":$LD_LIBRARY_PATH"
     try:
         if os.environ['PYTHONPATH']:
             print >> f, "export PYTHONPATH=" + os.environ['PYTHONPATH']
