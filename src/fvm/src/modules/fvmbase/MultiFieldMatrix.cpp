@@ -212,6 +212,31 @@ MultiFieldMatrix::Jacobi(IContainer& xB, const IContainer& bB, IContainer& tempB
 }
 
 
+// iluSolve only works on the diagonal matrices since we intend for it
+// to be used in a BlockJacobi preconditioner.
+
+void 
+MultiFieldMatrix::iluSolve(IContainer& xB, const IContainer& bB, IContainer& tempB) const
+{
+  MultiField& x = dynamic_cast<MultiField&>(xB);
+  const MultiField& b = dynamic_cast<const MultiField&>(bB);
+  MultiField& temp = dynamic_cast<MultiField&>(tempB);
+  
+  
+  const int xLen = x.getLength();
+  //#pragma omp parallel for
+  for(int i=0; i<xLen; i++)
+  {
+      const Index rowIndex = x.getArrayIndex(i);
+      if (hasMatrix(rowIndex,rowIndex))
+      {
+          const Matrix& mII = getMatrix(rowIndex,rowIndex);
+          mII.iluSolve(x[rowIndex],b[rowIndex],temp);
+      }
+  }
+}
+
+
 void 
 MultiFieldMatrix::solveBoundary(IContainer& xB, const IContainer& bB, IContainer& tempB) const
 {

@@ -79,6 +79,8 @@ public:
 
   virtual void  Jacobi(IContainer& xB, const IContainer& bB, IContainer& tempB) const;
 
+  virtual void  iluSolve(IContainer& xB, const IContainer& bB, IContainer& tempB) const;
+
   virtual void solveBoundary(IContainer& xB, const IContainer& bB, IContainer& temp) const;
 
   virtual void

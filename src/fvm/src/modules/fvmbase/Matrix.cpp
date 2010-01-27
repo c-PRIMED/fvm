@@ -62,6 +62,12 @@ void Matrix::Jacobi(IContainer&, const IContainer&,
   throw CException("Jacobi not implemented");
 }
 
+void Matrix::iluSolve(IContainer&, const IContainer&,
+                       const IContainer&) const
+{
+  throw CException("iluSolve not implemented");
+}
+
 void Matrix::solveBoundary(IContainer& xB, IContainer& bB,
                            IContainer& residual) const
 {

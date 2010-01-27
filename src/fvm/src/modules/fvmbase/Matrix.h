@@ -27,6 +27,8 @@ public:
                          IContainer& residual) const;
   virtual void Jacobi(IContainer& xnew, const IContainer& xold,
                          const IContainer& b) const;
+  virtual void iluSolve(IContainer& xB, const IContainer& bB,
+                        const IContainer& residual) const;
   virtual void solveBoundary(IContainer& xB, IContainer& bB,
                              IContainer& residual) const;
   virtual void computeResidual(const IContainer& xB, const IContainer& bB,

@@ -36,9 +36,13 @@ public:
   typedef T_Diag Diag;
   typedef T_OffDiag OffDiag;
   typedef Array<Diag> DiagArray;
+  typedef Array<int> IntArray;
+  
   typedef Array<OffDiag> OffDiagArray;
   typedef Array<X> XArray;
-  typedef shared_ptr< Array<int> >     ArrayIntPtr;
+  typedef shared_ptr< Array<int> >  IntArrayPtr;
+  typedef shared_ptr< Array<Diag> > DiagArrayPtr;
+  
   typedef shared_ptr< Array<double> >  ArrayDblePtr;
   /**
    * Embedded class used for easy (ie. no search) access to matrix
@@ -243,6 +247,19 @@ public:
         }
         xnew[nr] = -sum/_diag[nr];
     }
+  }
+
+  virtual void iluSolve(IContainer& xB, const IContainer& bB, const IContainer&) const
+  {
+    XArray& x = dynamic_cast<XArray&>(xB);
+    shared_ptr<XArray> y = dynamic_pointer_cast<XArray>(x.newClone());
+    const XArray& b = dynamic_cast<const XArray&>(bB);
+
+    if (!_iluConnPtr)
+      compute_ILU0();
+
+    lowerSolve(*y,b);
+    upperSolve(x,*y);
   }
   
   /**
@@ -723,8 +740,182 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
   {
     _isBoundary[nr] = true;
   }
-  
+
+
 private:
+
+  // computes the level 0 (i.e. with no additional non zero entries)
+  // incomplete LU factorization
+  void compute_ILU0() const
+  {
+    const int nRows = _conn.getRowSite().getSelfCount();
+
+    // create connectivity matrix for the ILU factored matrix; for ILU
+    // 0 the only difference from this CRMatrix's connectivity is that
+    // the diagonal is explicitly included
+    //
+    
+    _iluConnPtr = shared_ptr<CRConnectivity>
+      (new CRConnectivity(_conn.getRowSite(),_conn.getColSite()));
+    CRConnectivity& iluConn = *_iluConnPtr;
+
+    iluConn.initCount();
+
+    for(int nr=0; nr<nRows; nr++)
+    {
+        // add one for diagonal
+        iluConn.addCount(nr,1);
+        for(int nb=_row[nr]; nb<_row[nr+1]; nb++)
+        {
+            // only include neighbours in this matrix
+            if (_col[nb] < nRows)
+              iluConn.addCount(nr,1);
+        }
+    }
+
+    iluConn.finishCount();
+
+    const int nnz = iluConn.getCol().getLength();
+    _iluCoeffsPtr = DiagArrayPtr(new DiagArray(nnz));
+    _iluDiagIndexPtr = IntArrayPtr(new IntArray(nRows));
+
+    DiagArray& iluCoeffs = *_iluCoeffsPtr;
+    IntArray& iluDiagIndex = *_iluDiagIndexPtr;
+    
+    // now we can fill the iluCoeffs with this matrix's coeffs
+    for(int nr=0; nr<nRows; nr++)
+    {
+        // lower coeffs first
+        for(int nb=_row[nr]; nb<_row[nr+1]; nb++)
+        {
+            const int j = _col[nb];
+            if (j < nRows && j < nr)
+            {
+                const int pos = iluConn.add(nr,j);
+                iluCoeffs[pos] = _offDiag[nb];
+            }
+
+        }
+
+        // add diagonal next
+        const int pos = iluConn.add(nr,nr);
+        iluCoeffs[pos] = _diag[nr];
+        iluDiagIndex[nr] = pos;
+
+        // finally the upper coeffs 
+        for(int nb=_row[nr]; nb<_row[nr+1]; nb++)
+        {
+            const int j = _col[nb];
+            if (j < nRows && j > nr)
+            {
+                const int pos = iluConn.add(nr,j);
+                iluCoeffs[pos] = _offDiag[nb];
+            }
+
+        }
+    }
+
+    // finalize the iluConnectivity
+    iluConn.finishAdd();
+
+    // ilu decomposition
+
+    const IntArray& iluRow = iluConn.getRow();
+    const IntArray& iluCol = iluConn.getCol();
+    
+    
+    //work array iw(n) and diagonal pointer uptr
+    Array<int> iw(nRows);
+    Array<int> uptr(nRows);
+    iw = 0;
+    uptr = 0;
+
+    //main loop
+    for (int k = 0; k < nRows; k++ )
+    {
+        const int j1 = iluRow[k];
+        const int j2 = iluRow[k+1];
+        for (int j = j1; j <j2; j++ )
+          iw[ iluCol[j] ] = j;
+	  
+        int j = j1;
+        do
+        {
+            int jrow = iluCol[j];
+            if ( jrow < k )
+            {
+                const Diag t1 = iluCoeffs[j] * iluCoeffs[ uptr[jrow] ];
+                iluCoeffs[j] = t1;
+                //perform linear combination
+                for (int jj = uptr[jrow]+1; jj < iluRow[jrow+1]; jj++ )
+                {
+                    int jw = iw[  iluCol[jj] ];
+                    if ( jw != 0 )
+		         iluCoeffs[jw] -= t1 * iluCoeffs[jj];
+                }
+                j++;
+            }
+            else
+            {
+	        uptr[k] = j;
+		break;
+            }
+        }
+        while( j < j2 );
+
+        //inverting diagonal
+        iluCoeffs[j]  = 1.0 / iluCoeffs[j];	     
+        //zeroing iw
+        for ( int i = j1; i < j2; i++ )
+          iw[ iluCol[i] ] = 0;
+    }  	    
+  }
+  
+  
+  //Solve L y = b. This assumes that the factorization has already
+  //been performed
+  void lowerSolve( XArray& y,  const XArray& b) const
+  {
+    const IntArray& iluRow = _iluConnPtr->getRow();
+    const IntArray& iluCol = _iluConnPtr->getCol();
+    const IntArray& iluDiagIndex = *_iluDiagIndexPtr;
+    const DiagArray& iluCoeffs = *_iluCoeffsPtr;
+
+    const int nRows = _conn.getRowSite().getSelfCount();
+
+    for (int j = 0; j < nRows; j++)
+    {
+        X yj = b[j];
+        for ( int k = iluRow[j]; k < iluDiagIndex[j]; k++ )
+        {
+            yj -= iluCoeffs[k] * y[ iluCol[k] ];
+        }
+        y[j] = yj;
+    }
+  }
+  
+  //solve U x = y
+  void upperSolve( XArray& x,  const XArray& y ) const
+  {
+    const IntArray& iluRow = _iluConnPtr->getRow();
+    const IntArray& iluCol = _iluConnPtr->getCol();
+    const IntArray& iluDiagIndex = *_iluDiagIndexPtr;
+    const DiagArray& iluCoeffs = *_iluCoeffsPtr;
+    
+    const int nRows = _conn.getRowSite().getSelfCount();
+
+    for ( int j = nRows-1; j >= 0; j-- )
+    {
+        X xj = y[j];
+        for ( int k =  iluDiagIndex[j]+1; k <iluRow[j+1]; k++ )
+        {
+            xj -= iluCoeffs[k] * x[ iluCol[k] ];
+        }
+        x[j] = iluCoeffs[ iluDiagIndex[j] ]*xj;
+    }
+  }
+  
+
   const CRConnectivity& _conn;
   const Array<int>& _row;
   const Array<int>& _col;
@@ -732,6 +923,20 @@ private:
   Array<OffDiag> _offDiag;
   PairWiseAssemblerMap _pairWiseAssemblers;
   Array<bool> _isBoundary;
+
+  // connectivity for the ILU factorization. This connectivity
+  // explicitly includes diagonal and is also ordered such that for a
+  // particular row the lower triangle entries are first, followed by
+  // the diagonal and then the upper triangle entries. The _iluDiagIndexPtr
+  // array is used to keep the index of the diagonal location
+  mutable shared_ptr<CRConnectivity> _iluConnPtr;
+
+  mutable IntArrayPtr _iluDiagIndexPtr;
+
+  // ilu coeffs
+  mutable DiagArrayPtr _iluCoeffsPtr;
+
+ 
 };
 
 
