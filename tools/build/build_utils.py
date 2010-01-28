@@ -309,7 +309,7 @@ def write_env(bld, cwd, cname):
     if modules:
         for m in modules.split():
             f.write('module load %s\n' % m)
-        print >> f, "setenv LD_LIBRARY_PATH " + bld.libdir + ":$LD_LIBRARY_PATH"
+    print >> f, "setenv LD_LIBRARY_PATH " + bld.libdir + ":$LD_LIBRARY_PATH"
     try:
         if os.environ['PYTHONPATH']:
             print >> f, "setenv PYTHONPATH " + os.environ['PYTHONPATH']
