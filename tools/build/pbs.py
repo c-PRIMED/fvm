@@ -97,9 +97,13 @@ def qsub(bp, cname):
 
 
     for filename in ['run_tests.pbs.e%s' % job, 'run_tests.pbs.o%s' % job]:
-        st = os.stat(filename)
-        if st.st_size:
-            os.system('cat %s' % filename)
+        try:
+            st = os.stat(filename)
+            if st.st_size:
+                os.system('cat %s' % filename)
+        except:
+            pass
+
         
 
     

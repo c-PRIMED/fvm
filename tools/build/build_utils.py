@@ -38,17 +38,17 @@ def set_options(options):
         clear_colors()
     opt_verbose = options.verbose or options.debug
     opt_debug = options.debug
-    opt_jobs = options.jobs
+    if options.jobs:
+        opt_jobs = options.jobs
+    else:
+        import multiprocessing
+        opt_jobs = multiprocessing.cpu_count()
 
 # number of jobs for make -j argument
 def jobs(pkg):
     if config(pkg, 'jobs'):
         return config(pkg, 'jobs')
-    if config('ALL', 'jobs'):
-        return config('ALL', 'jobs')
-    if opt_jobs:
-        return opt_jobs
-    return 1
+    return opt_jobs
 
 def _reset_types():
     global g_type
@@ -287,7 +287,7 @@ def copytree(src, dst, ctype):
             os.symlink(srcname, dstname)
 
 def set_python_path(dir):
-    py = os.popen("/bin/bash -c 'which python 2>&1'").readline()
+    py = find_executable('python')
     ver = os.popen("/bin/bash -c 'python -V 2>&1'").readline()
     a, b = re.compile(r'Python ([^.]*).([^.\n]*)').findall(ver)[0]
     libpath = os.path.join(dir, 'lib')
@@ -339,6 +339,33 @@ def write_env(bld, cwd, cname):
     print >> f, "export MEMOSA_CONFNAME=%s" % cname
     f.close()
     return env_name
+
+def find_executable(executable, path=None):
+    """Try to find 'executable' in the directories listed in 'path' (a
+    string listing directories separated by 'os.pathsep'; defaults to
+    os.environ['PATH']).  Returns the complete filename or None if not
+    found
+    """
+    if path is None:
+        path = os.environ['PATH']
+    paths = path.split(os.pathsep)
+    extlist = ['']
+    if sys.platform == 'win32':
+        pathext = os.environ['PATHEXT'].lower().split(os.pathsep)
+        (base, ext) = os.path.splitext(executable)
+        if ext.lower() not in pathext:
+            extlist = pathext
+    for ext in extlist:
+        execname = executable + ext
+        if os.path.isfile(execname):
+            return execname
+        else:
+            for p in paths:
+                f = os.path.join(p, execname)
+                if os.path.isfile(f):
+                    return f
+    else:
+        return None
 
 if __name__ == '__main__':
     for c in colors:

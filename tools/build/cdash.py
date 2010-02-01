@@ -198,7 +198,7 @@ def site_str(BuildName, buildtype):
     Hostname = socket.gethostname()
     Generator = "make.py"
     Is64Bits = 0
-    if OSPlatform == 'i686': Is64Bits = 1
+    if OSPlatform == 'x86_64': Is64Bits = 1
     NumberOfPhysicalCPU = 0
 
     for line in open('/proc/cpuinfo', 'r'):
@@ -217,11 +217,16 @@ def site_str(BuildName, buildtype):
         elif line.startswith('cpu MHz'):
             ProcessorClockFrequency = int(float(line.split(':')[1].strip()))
 
+    TotalPhysicalMemory = 0
+    for line in open('/proc/meminfo', 'r'):
+        if line.startswith('MemTotal:'):
+            TotalPhysicalMemory = int(line.split(':')[1].strip().split()[0])/1024
+
     for v in ("BuildName", "BuildStamp", "Name", "Generator", "OSName", \
                   "Hostname", "OSRelease", "OSVersion", "OSPlatform", \
                   "VendorString", "VendorID", "FamilyID", "ModelID", \
                   "ProcessorCacheSize", "NumberOfPhysicalCPU", "Is64Bits", \
-                  "ProcessorClockFrequency") :
+                  "ProcessorClockFrequency", "TotalPhysicalMemory") :
         ss += "\t%s=\"%s\"\n" % (v, eval(v))
     return ss
 

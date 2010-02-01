@@ -1,7 +1,7 @@
 from build_packages import *
 
 class MEMOSA(BuildPkg):
-    requires=['mpi4py', 'hdf5']
+    requires=['mpi4py', 'hdf5', 'scipy', 'matplotlib']
     copy_sources = 1    
     name = "MEMOSA"
     def _build(self):
@@ -13,5 +13,5 @@ class MEMOSA(BuildPkg):
         os.chdir(self.sdir)
         self.sys_log("install bin/* %s" % self.bindir)
         self.sys_log("install -d %s" % os.path.join(self.libdir, 'memosa'))
-        self.sys_log("install lib/* %s" % os.path.join(self.libdir, 'memosa'))
+        self.sys_log("install --mode=644 lib/* %s" % os.path.join(self.libdir, 'memosa'))
         return 0
