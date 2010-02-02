@@ -885,7 +885,7 @@ private:
 
     for (int j = 0; j < nRows; j++)
     {
-        X yj = b[j];
+        X yj = -b[j];
         for ( int k = iluRow[j]; k < iluDiagIndex[j]; k++ )
         {
             yj -= iluCoeffs[k] * y[ iluCol[k] ];

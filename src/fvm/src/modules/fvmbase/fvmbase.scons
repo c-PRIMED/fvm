@@ -31,7 +31,8 @@ srcBase = ['CException.cpp',
 	   'FVMParticles.cpp',
 	   'StorageSiteMerger.cpp',
            'LinearSystemMerger.cpp',
-           'MeshAssembler.cpp'
+           'MeshAssembler.cpp',
+           'ILU0Solver.cpp'
            ]
 
 env.createSharedLibrary('fvmbase',srcBase,['rlog'])
