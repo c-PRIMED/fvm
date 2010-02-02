@@ -10,7 +10,7 @@ class MPM(BuildPkg):
     # just copy the sources we need
     def copy_srcs(self):
         os.makedirs(self.bdir)
-        shutil.copy2(os.path.join(self.sdir,'Makefile'), self.bdir)
+        shutil.copy2(os.path.join(self.sdir, 'Makefile'), self.bdir)
         for dirname in ['config', 'F95', 'py']:
             src = os.path.join(self.sdir, dirname)
             dst = os.path.join(self.bdir, dirname)
@@ -18,7 +18,7 @@ class MPM(BuildPkg):
 
     def _configure(self):
         pass
-        e = config(self.name,'configname')
+        e = config(self.name, 'configname')
         bfile = os.path.join(self.sdir, "config", e)
         if os.path.isfile(bfile):
             os.chdir(os.path.join(self.sdir, "config"))

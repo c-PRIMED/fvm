@@ -1,7 +1,7 @@
 from build_packages import *
 
 class MEMOSA(BuildPkg):
-    requires=['mpi4py', 'hdf5', 'scipy', 'matplotlib']
+    requires = ['mpi4py', 'hdf5', 'scipy', 'matplotlib']
     copy_sources = 1    
     name = "MEMOSA"
     def _build(self):
