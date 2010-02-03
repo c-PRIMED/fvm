@@ -41,8 +41,11 @@ def set_options(options):
     if options.jobs:
         opt_jobs = options.jobs
     else:
-        import multiprocessing
-        opt_jobs = multiprocessing.cpu_count()
+        try:
+            import multiprocessing
+            opt_jobs = multiprocessing.cpu_count()
+        except ImportError:
+            opt_jobs = 1
 
 # number of jobs for make -j argument
 def jobs(pkg):
