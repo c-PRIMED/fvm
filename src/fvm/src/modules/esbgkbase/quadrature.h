@@ -14,45 +14,37 @@ template<class T>
  *    either constant or 3/8th rule in theta and phi angles.
  */
 
-class quadrature 
+class Quadrature 
 {
  public:
   /**
    * A constructor.
    * A constructor for the discrete ordinate in velocity space based on cartesian-type and spherical-type coordinates.
    */ 
-  typedef Array<T> dArray;
-  typedef Vector<T,3> Vectord3;
-  //typedef Array<Vectord3> Vectord3Array;
-  dArray* absci1Ptr; 
-  dArray* absci2Ptr;
-  dArray* absci3Ptr;
-  dArray* wts1Ptr;
-  dArray* wts2Ptr; 
-  dArray* wts3Ptr;
-  /**
+  typedef Array<T> TArray;
+ 
+   /**
    *  Cx pointer. 
    *  Pointer to discrete velocity in x-direction.
    */
-  dArray* cxPtr;  
+  TArray* cxPtr;  
   /**
    * Cy pointer.  
    * Pointer to discrete velocity in y-direction.
    */ 
-  dArray* cyPtr; 
+  TArray* cyPtr; 
   /**
    * Cz pointer.  
    * Pointer to discrete velocity in z-direction.
    */  
-  dArray* czPtr;   
+  TArray* czPtr;   
   /**
    * dcxyz pointer. 
    * Pointer to weights associated with each direction in velocity space.
    */ 
-  dArray* dcxyzPtr; 
-
-
-  // bool printCx;
+  TArray* dcxyzPtr; 
+  int getDirCount() const {return N123;}
+   // bool printCx;
   /**
    * cartesian-type member taking in 5 argumetns
    * @param N1 -Number of ordinates in x-velocity. 
@@ -61,29 +53,29 @@ class quadrature
    * @param clim -cut-off range in velocity/sqrt(T2/2). 
    * @param T2 -Lowest non-dimensional temperature used to set the limit on discrete velocities in each direction . 
  */
-quadrature(int N1,  int N2,  int N3, double clim,  double T2)
+Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
     {
-      absci1Ptr=new dArray(N1);
-      dArray & absci1= *absci1Ptr;
-      absci2Ptr=new dArray(N2);
-      dArray & absci2= *absci2Ptr;
-      absci3Ptr=new dArray(N3);
-      dArray & absci3= *absci3Ptr; 
-      wts1Ptr=new dArray(N1);
-      dArray & wts1= *wts1Ptr;
-      wts2Ptr=new dArray(N2);
-      dArray & wts2= *wts2Ptr; 
-      wts3Ptr=new dArray(N3);
-      dArray & wts3= *wts3Ptr;
+      absci1Ptr=new TArray(N1);
+      TArray & absci1= *absci1Ptr;
+      absci2Ptr=new TArray(N2);
+      TArray & absci2= *absci2Ptr;
+      absci3Ptr=new TArray(N3);
+      TArray & absci3= *absci3Ptr; 
+      wts1Ptr=new TArray(N1);
+      TArray & wts1= *wts1Ptr;
+      wts2Ptr=new TArray(N2);
+      TArray & wts2= *wts2Ptr; 
+      wts3Ptr=new TArray(N3);
+      TArray & wts3= *wts3Ptr;
       /**
        * integer N123
        * total number of velocity directions.
        */
-      int N123=N1*N2*N3;
-      cxPtr= new dArray(N123); cyPtr= new dArray(N123); czPtr= new dArray(N123);
-      dcxyzPtr= new dArray(N123);
-      dArray & cx= *cxPtr;dArray & cy= *cyPtr;dArray & cz= *czPtr;
-      dArray & dcxyz= *dcxyzPtr;
+      N123=N1*N2*N3;
+      cxPtr= new TArray(N123); cyPtr= new TArray(N123); czPtr= new TArray(N123);
+      dcxyzPtr= new TArray(N123);
+      TArray & cx= *cxPtr;TArray & cy= *cyPtr;TArray & cz= *czPtr;
+      TArray & dcxyz= *dcxyzPtr;
       //Array<Vector<double,3>> * cxyz;// Cxyz Vector pointer.  /* Pointer to discrete velocity in xyz-directions. cxyz= (cx,cy,cz)*/
       T cxmin,cxmax,cymin,cymax,czmin,czmax;
       T dcx,dcy,dcz;
@@ -99,19 +91,18 @@ quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       for  (int j3=1;j3<N3;j3++){
 	absci3[j3]=absci3[j3-1]+dcz;
 	wts3[j3]=dcz;
-	//cout << j3 << " : "<< absci3[j3]<< endl;
+
       }
       for (int j2=1;j2<N2;j2++){
 	absci2[j2]=absci2[j2-1]+dcy;
 	wts2[j2]=dcy;
-	//cout << j2 << " : "<< absci2[j2]<< endl;
+
       }
      
       for  (int j1=1;j1<N1;j1++){
 	absci1[j1]=absci1[j1-1]+dcx;	
 	wts1[j1]=dcx;
-	//if (_options.printNormalizedResiduals){
-	//cout << j1 << " : "<< absci1[j1]<< endl; //}
+
       }
       
       int j;
@@ -140,7 +131,7 @@ quadrature(int N1,  int N2,  int N3, double clim,  double T2)
    * @param option_phi  =0 for constant; =1 for 3/8th rule discretization of polar angle(phi).
    * @param nphi_int  =number of ordinates in phi if option_phi =0; =number of coarse intervals for 3/8th rule if option_phi=1 (total no. of angles = 3*n_int+1)
  */
-  quadrature(int option_ur, int Nr, int option_theta, int n_int, int option_phi, int nphi_int)  
+  Quadrature(int option_ur, int Nr, int option_theta, int n_int, int option_phi, int nphi_int)  
        {
       int N1,N2,N3;
       if(option_ur ==0){
@@ -152,24 +143,24 @@ quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       if(option_phi ==0){
 	N3=nphi_int;}
       else{N3=3*nphi_int+1;}
-      absci1Ptr=new dArray(N1);
-      dArray & absci1= *absci1Ptr;
-      absci2Ptr=new dArray(N2);
-      dArray & absci2= *absci2Ptr;
-      absci3Ptr=new dArray(N3);
-      dArray & absci3= *absci3Ptr; 
-      wts1Ptr=new dArray(N1);
-      dArray & wts1= *wts1Ptr;
-      wts2Ptr=new dArray(N2);
-      dArray & wts2= *wts2Ptr; 
-      wts3Ptr=new dArray(N3);
-      dArray & wts3= *wts3Ptr;
+      absci1Ptr=new TArray(N1);
+      TArray & absci1= *absci1Ptr;
+      absci2Ptr=new TArray(N2);
+      TArray & absci2= *absci2Ptr;
+      absci3Ptr=new TArray(N3);
+      TArray & absci3= *absci3Ptr; 
+      wts1Ptr=new TArray(N1);
+      TArray & wts1= *wts1Ptr;
+      wts2Ptr=new TArray(N2);
+      TArray & wts2= *wts2Ptr; 
+      wts3Ptr=new TArray(N3);
+      TArray & wts3= *wts3Ptr;
 
-      int N123=N1*N2*N3;
-      cxPtr= new dArray(N123); cyPtr= new dArray(N123); czPtr= new dArray(N123);
-      dcxyzPtr= new dArray(N123);
-      dArray & cx= *cxPtr;dArray & cy= *cyPtr;dArray & cz= *czPtr;
-      dArray & dcxyz= *dcxyzPtr;
+      N123=N1*N2*N3;
+      cxPtr= new TArray(N123); cyPtr= new TArray(N123); czPtr= new TArray(N123);
+      dcxyzPtr= new TArray(N123);
+      TArray & cx= *cxPtr;TArray & cy= *cyPtr;TArray & cz= *czPtr;
+      TArray & dcxyz= *dcxyzPtr;
       switch(option_ur){
 	int j1;
       case 0:   // constant difference for Ur
@@ -341,15 +332,17 @@ quadrature(int N1,  int N2,  int N3, double clim,  double T2)
        
     }
   
-  /*quadrature(int& N1, int& N2, double& T2) :
-    _var1(N1),
-    _var2(N2),
-    _var3(T2)
-    {
-    logCtor();
-    }*/
-  
-  virtual ~quadrature() {}
+ 
+  virtual ~Quadrature() {}
+
+ private:
+  TArray* absci1Ptr; 
+  TArray* absci2Ptr;
+  TArray* absci3Ptr;
+  TArray* wts1Ptr;
+  TArray* wts2Ptr; 
+  TArray* wts3Ptr;
+  int N123;
 };
 
 
