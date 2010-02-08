@@ -26,6 +26,10 @@
 #include "GenericIBDiscretization.h"
 #include "StressTensor.h"
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 template<class T>
 class FlowModel<T>::Impl
 {
@@ -897,8 +901,8 @@ public:
             {
                 netFlux += fixedPressureContinuityBC(faces,mesh,matrix,x,b);
                 this->_useReferencePressure=false;
-            }
-            else
+            }	
+            else		
               throw CException(bc.bcType + " not implemented for FlowModel");
             
             MultiField::ArrayIndex mfIndex(&_flowFields.massFlux,&faces);
@@ -909,6 +913,11 @@ public:
         }
     }
 
+      //sum netflux globalally MPI::
+#ifdef FVM_PARALLEL
+      int count = 1;
+      MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &netFlux, count, MPI::DOUBLE, MPI::SUM);
+#endif
     //    cout << "net boundary flux = " << netFlux << endl;
     
     if (this->_useReferencePressure)
@@ -956,7 +965,17 @@ public:
         // when all the mass fluxes are specified the continuity
         // equation also has an extra degree of freedom. This sets the
         // first cell to have a zero correction to account for this.
-        setDirichlet(matrix,b);
+        
+        //this call is only for process 0
+#ifdef FVM_PARALLEL
+        if ( MPI::COMM_WORLD.Get_rank() == 0 ) 
+           setDirichlet(matrix,b);
+#endif
+
+#ifndef FVM_PARALLEL
+           setDirichlet(matrix,b);
+#endif
+
     }
   }
 
@@ -972,6 +991,13 @@ public:
         const TArray& pp = dynamic_cast<const TArray&>(ppField[pIndex]);
         
         _referencePP = pp[0];
+#ifdef FVM_PARALLEL
+        int root  = 0;
+        int count = 1;
+	MPI::COMM_WORLD.Bcast( &_referencePP, count, MPI::DOUBLE, root);			
+#endif
+       //broadcast this value (referencePP) to all 
+
     }
     else
       _referencePP = 0;
