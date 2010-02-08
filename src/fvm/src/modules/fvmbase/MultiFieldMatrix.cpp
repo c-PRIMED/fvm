@@ -234,6 +234,7 @@ MultiFieldMatrix::iluSolve(IContainer& xB, const IContainer& bB, IContainer& tem
           mII.iluSolve(x[rowIndex],b[rowIndex],temp);
       }
   }
+  x.sync();
 }
 
 
