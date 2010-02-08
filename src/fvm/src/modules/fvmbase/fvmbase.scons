@@ -32,6 +32,7 @@ srcBase = ['CException.cpp',
 	   'StorageSiteMerger.cpp',
            'LinearSystemMerger.cpp',
            'MeshAssembler.cpp',
+           'MeshDismantler.cpp',
            'ILU0Solver.cpp'
            ]
 

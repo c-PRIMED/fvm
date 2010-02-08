@@ -64,6 +64,7 @@ typedef Vector<double,3> VecD3;
 %include "Grid.i"
 %include "FVMParticles.i"
 %include "MeshAssembler.i"
+%include "MeshDismantler.i"
 %include "ILU0Solver.i"
 
 #ifdef FVM_PARALLEL
