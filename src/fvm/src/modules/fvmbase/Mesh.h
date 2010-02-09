@@ -172,6 +172,8 @@ public:
   const Array<int>& getIBFaceList() const;
 
   Array<int>& getCellColors() { return *_cellColor;}
+  const Array<int>& getCellColors() const { return *_cellColor;}
+
   bool isMergedMesh() const { return _isAssembleMesh;}
   int  getNumOfAssembleMesh() const { return _numOfAssembleMesh;}
  
