@@ -6,9 +6,14 @@
 #include "CRConnectivity.h"
 #include "MultiField.h"
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
+
 using namespace std;
 
-MeshDismantler::MeshDismantler( const MeshList& meshList ):_mesh( *meshList.at(0) )
+MeshDismantler::MeshDismantler( const MeshList& meshList ):_mesh( *meshList.at(0) ), _procID(0)
 {
    //assert condition for meshList size
     assert( meshList.size() == 1 ); 
@@ -26,6 +31,9 @@ MeshDismantler::~MeshDismantler()
 void
 MeshDismantler::init()
 {
+#ifdef FVM_PARALLEL
+   _procID = MPI::COMM_WORLD.Get_rank();
+#endif
    //number of meshes
    _nmesh = _mesh.getNumOfAssembleMesh();
    //giving mesh ids
@@ -45,6 +53,7 @@ MeshDismantler::init()
    setFaceNodes();
    setCoord();
    setMesh();
+   debug_print();
 }
 
 //setting storagesite for cells
@@ -66,7 +75,7 @@ MeshDismantler::setCellsSite()
 
    //now find newly emerged ghost cells between meshes  
    //loop over inner faces, if they have two different cell colors, add one ghost cell for each side;
-   const CRConnectivity& faceCells = _mesh.getAllFaceNodes();
+   const CRConnectivity& faceCells = _mesh.getAllFaceCells();
    const StorageSite& faceSite     = _mesh.getInteriorFaceGroup().site;
    for ( int n = 0; n < faceSite.getCount(); n++ ){
          int cell1 = faceCells(n,0);
@@ -77,7 +86,6 @@ MeshDismantler::setCellsSite()
             siteGhostCount[ color[cell2] ]++;
          }
    }
-
    //forming cellSites
     for ( int id = 0; id < _nmesh; id++ )
          _cellSite.push_back( StorageSitePtr( new StorageSite(siteSelfCount[id], siteGhostCount[id] ) ) );
@@ -92,7 +100,7 @@ MeshDismantler::setFacesSite()
    //loop over all faces, if cells connected to a face has the same color, just add that face to corresponding mesh.
    // if has different colors, that face is counted to add  both sharing meshes
    vector<int> faceCount(_nmesh,0);
-   const CRConnectivity& faceCells = _mesh.getAllFaceNodes();
+   const CRConnectivity& faceCells = _mesh.getAllFaceCells();
    const StorageSite& faceSite     = _mesh.getFaces();
    const Array<int>& color = _mesh.getCellColors();
    for ( int n = 0; n < faceSite.getCount(); n++ ){
@@ -113,7 +121,6 @@ MeshDismantler::setFacesSite()
 
 }
 
-
 //setting Storage site for nodes
 void 
 MeshDismantler::setNodesSite()
@@ -122,23 +129,31 @@ MeshDismantler::setNodesSite()
    //count inner nodes for assembly
    vector<int> nodeCount(_nmesh,0);
    const StorageSite&    nodeSite  = _mesh.getNodes();
-   const CRConnectivity& nodeCells = *_mesh.getCellNodes().getTranspose();
-   const Array<int>& color = _mesh.getCellColors();
-   for ( int n = 0; n < nodeSite.getCount(); n++ ){
-        int ncells = nodeCells.getCount(n);
-        //node can contribute to each mesh only once
-        set<int> colorIDs;
-        for ( int i = 0; i < ncells; i++ )
-            colorIDs.insert( color[nodeCells(n,i)] );
-        foreach ( const set<int>::value_type colorID, colorIDs )
-             nodeCount[colorID]++;
-        //clear content of colorIDs set for next usage
-        colorIDs.clear();
-   }
+   //storing glblNOdeIDs for each mesh
+   vector< vector<int> > globalNodeIDs(_nmesh);
+   for ( int id = 0; id < _nmesh; id++ )
+      globalNodeIDs[id].resize(nodeSite.getCount(),-1);
 
+
+   const StorageSite&    cellSite  = _mesh.getCells();
+   const CRConnectivity& cellNodes = _mesh.getCellNodes();
+   const Array<int>& color = _mesh.getCellColors();
+   //loop over only inner cells nodes
+   for ( int n = 0; n < cellSite.getSelfCount(); n++ ) {
+       int nnodes = cellNodes.getCount(n);
+       int colorID = color[n];
+       for ( int i = 0; i < nnodes; i++ ){
+           int glblNodeID = cellNodes(n,i);
+           //if it is not visited (=-1)
+           if ( globalNodeIDs[colorID][glblNodeID] == -1 ) {
+               globalNodeIDs[colorID][glblNodeID] = 1; //(=1) means visited
+               nodeCount[colorID]++;
+           }
+       }
+   }
+  //pushin in vector field
   for ( int id = 0; id < _nmesh; id++ )
      _nodeSite.push_back( StorageSitePtr( new StorageSite(nodeCount[id]) ) );
-
 
 }
 
@@ -403,7 +418,7 @@ MeshDismantler::setFaceNodes()
     faceNodesAddPartitionInterfaces( faceID );
     faceNodesAddMeshInterfaces     ( faceID );
     faceNodesAddBoundaryInterfaces ( faceID );
-
+    faceNodesFinishAdd();
 }
 
 //faceNodes finish count
@@ -555,27 +570,34 @@ MeshDismantler::faceNodesFinishAdd()
 void
 MeshDismantler::setNodesMapper()
 {
-    vector<int> nodeCount(_nmesh,0);
-    const StorageSite& nodeSite = _mesh.getNodes();
-    const CRConnectivity& nodeCells = *_mesh.getCellNodes().getTranspose();
-    const Array<int>& color = _mesh.getCellColors();
-    //allocating space
-    _globalToLocalNodes.resize( nodeSite.getCount() );
-    //lets visit all nodes
-    for ( int n = 0; n < nodeSite.getCount(); n++ ){
-         map<int,int>& nodeMap = _globalToLocalNodes[n];
-         int ncells = nodeCells.getCount(n);
-         set<int>  colorIDs;
-         //visit surrounding cells  for nth node
-         for ( int i = 0; i < ncells; i++ )
-             colorIDs.insert( color[ nodeCells(n,i)] );
-         //add this global node to nodeMap 
-         foreach ( const set<int>::value_type colorID, colorIDs ){
-            nodeMap[colorID] = nodeCount[colorID];
-            nodeCount[colorID]++;
-         }
-         colorIDs.clear();
-    }
+   //count inner nodes for assembly
+   vector<int> nodeCount(_nmesh,0);
+   const StorageSite&    nodeSite = _mesh.getNodes();
+   //allocate globalToLocaNodes
+   _globalToLocalNodes.resize( nodeSite.getCount() );
+   //allocating glblNOdeIDs for each mesh
+   vector< vector<int> > globalNodeIDs(_nmesh);
+   for ( int id = 0; id < _nmesh; id++ )
+      globalNodeIDs[id].resize(nodeSite.getCount(),-1);
+
+   const StorageSite&    cellSite  = _mesh.getCells();
+   const CRConnectivity& cellNodes = _mesh.getCellNodes();
+   const Array<int>& color = _mesh.getCellColors();
+   //loop over only inner cells nodes
+   for ( int n = 0; n < cellSite.getSelfCount(); n++ ) {
+       int nnodes = cellNodes.getCount(n);
+       int colorID = color[n];
+       for ( int i = 0; i < nnodes; i++ ){
+           int glblNodeID = cellNodes(n,i);
+           //if it is not visited (=-1)
+           if ( globalNodeIDs[colorID][glblNodeID] == -1 ) {
+               map<int,int>& nodeMap = _globalToLocalNodes[glblNodeID];
+               nodeMap[colorID] = nodeCount[colorID];
+               globalNodeIDs[colorID][glblNodeID] = 1;
+               nodeCount[colorID]++;
+           }
+       }
+   }
 
 }
 
@@ -649,7 +671,7 @@ MeshDismantler::createInteriorFaceGroup()
          for ( int i = 0; i < faceSite.getCount(); i++ ){
               int cell1  = faceCells(i,0); 
               int cell2  = faceCells(i,1);
-              if ( cell1 < cellSelfCount && cell2 < cellSelfCount )
+              if ( (cell1 < cellSelfCount) && (cell2 < cellSelfCount) )
                  nInteriorFace++;
          }
         _meshList.at(id)->createInteriorFaceGroup( nInteriorFace );
@@ -664,9 +686,9 @@ MeshDismantler::createInterFaceGroup()
          for ( unsigned int i = 0; i < _interfaceOffset[id].size(); i++ ){
              const int size   = _interfaceSize[id][i];
              const int offset = _interfaceOffset[id][i];
-             const int id     = _interfaceID[id][i];
+             const int interfaceID     = _interfaceID[id][i];
              if ( size > 0 )
-                _meshList.at(id)->createInterfaceGroup( size, offset, id);
+                _meshList.at(id)->createInterfaceGroup( size, offset, interfaceID);
          }
      }
 }
@@ -678,10 +700,10 @@ MeshDismantler::createBoundaryFaceGroup()
         for ( unsigned int i = 0; i < _boundaryOffset[id].size(); i++ ){
             const int size   = _boundarySize[id][i];
             const int offset = _boundaryOffset[id][i];
-            const int id     = _boundaryID[id][i];
+            const int boundaryID     = _boundaryID[id][i];
             const string& bType = _boundaryType[id][i];
             if ( size > 0 )
-                _meshList.at(id)->createBoundaryFaceGroup( size, offset, id, bType );
+                _meshList.at(id)->createBoundaryFaceGroup( size, offset, boundaryID, bType );
         }
     }
 }
@@ -712,12 +734,124 @@ MeshDismantler::createFaceCells()
 void  
 MeshDismantler::debug_print()
 {
-   
-  stringstream ss;
-  ss << "MeshDismantler_debug.dat";
-  ofstream  debug_file( (ss.str()).c_str() );
-  
+   debug_cell_site();
+   debug_face_site();
+   debug_node_site();
+   debug_cells_mapper();
+   debug_face_cells();
+   debug_nodes_mapper();
+   debug_face_nodes();
+}
 
-  debug_file.close();
 
+void
+MeshDismantler::debug_cell_site()
+{
+    debug_file_open("cellSite");
+    for ( int id = 0; id < _nmesh; id++ )
+        _debugFile <<"meshid = " << id <<  "   selfCount = " << _cellSite.at(id)->getSelfCount() << "   count = " << _cellSite.at(id)->getCount() << endl;
+    debug_file_close();
+}
+
+void
+MeshDismantler::debug_face_site()
+{
+    debug_file_open("faceSite");
+    for ( int id = 0; id < _nmesh; id++ )
+        _debugFile <<"meshid = " << id <<  "   count = " << _faceSite.at(id)->getCount() << endl;
+    debug_file_close();
+}
+
+void
+MeshDismantler::debug_node_site()
+{
+    debug_file_open("nodeSite");
+    for ( int id = 0; id < _nmesh; id++ )
+        _debugFile <<"meshid = " << id <<  "   count = " << _nodeSite.at(id)->getCount() << endl;
+    debug_file_close();
+}
+
+void
+MeshDismantler::debug_cells_mapper()
+{ 
+    debug_file_open("cellsMapper");
+    for ( unsigned int i = 0; i < _globalCellToMeshID.size(); i++ )
+        _debugFile << "glblID = " << i << "   meshID  = " << _globalCellToMeshID[i] << endl;
+    _debugFile << endl;
+    for ( unsigned int i = 0; i < _globalCellToLocal.size(); i++ )
+        _debugFile << "glblID = " << i << "   localID = " << _globalCellToLocal[i] << endl;
+    debug_file_close();
+
+}
+
+void
+MeshDismantler::debug_nodes_mapper()
+{ 
+    debug_file_open("nodesMapper");
+    for ( unsigned i = 0; i < _globalToLocalNodes.size(); i++ ){
+       const map<int,int>& nodeMap = _globalToLocalNodes[i];
+       foreach(const IntMap::value_type& mpos, nodeMap){
+           int colorID     = mpos.first;
+           int localNodeID = mpos.second;
+          _debugFile << "glblNodeID = " << i << "   meshID = " <<  colorID << "   localNodeID = " << localNodeID << endl;
+       }
+    }
+    debug_file_close();
+}
+
+void
+MeshDismantler::debug_face_cells()
+{
+    debug_file_open("faceCells");
+    for ( int id = 0; id < _nmesh; id++ ){
+        const StorageSite   & faceSite  = *_faceSite.at(id);
+        const CRConnectivity& faceCells = *_faceCells.at(id);
+        _debugFile << " meshID : " << id << endl;
+        for ( int n = 0; n < faceSite.getCount(); n++ ){
+            _debugFile << "faceCells(" << n << " ) = ";
+            for ( int i = 0; i < faceCells.getCount(n); i++ ){
+                _debugFile << faceCells(n,i) << "     ";
+            }
+            _debugFile << endl;
+        }
+    }
+    debug_file_close();
+
+}
+
+void
+MeshDismantler::debug_face_nodes()
+{
+    debug_file_open("faceNodes");
+    for ( int id = 0; id < _nmesh; id++ ){
+        const StorageSite   & faceSite  = *_faceSite.at(id);
+        const CRConnectivity& faceNodes = *_faceNodes.at(id);
+        _debugFile << " meshID : " << id << endl;
+        for ( int n = 0; n < faceSite.getCount(); n++ ){
+            _debugFile << "faceNodes(" << n << " ) = ";
+            for ( int i = 0; i < faceNodes.getCount(n); i++ ){
+                _debugFile << faceNodes(n,i) << "     ";
+            }
+            _debugFile << endl;
+        }
+    }
+    debug_file_close();
+
+}
+
+
+void
+MeshDismantler::debug_file_open( const string& fname_ )
+{  
+     stringstream ss;
+     ss << _procID;
+
+     string  fname = "MESHDISMANTLER_"+fname_+"_proc"+ss.str()+".dat";
+    _debugFile.open( fname.c_str() );
+}
+
+void
+MeshDismantler::debug_file_close()
+{
+    _debugFile.close();
 }

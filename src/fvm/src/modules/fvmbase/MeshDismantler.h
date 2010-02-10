@@ -7,6 +7,7 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <fstream>
 
 class MeshDismantler
 {
@@ -73,7 +74,21 @@ private:
    void  createCoords();
    void  createFaceNodes();
    void  createFaceCells();
-   
+
+   void  debug_file_open( const string& fname );
+   void  debug_file_close();
+
+    //debug files
+   void debug_cell_site();
+   void debug_face_site();
+   void debug_node_site();
+   void debug_cells_mapper();
+   void debug_face_cells();
+   void debug_nodes_mapper();
+   void debug_face_nodes();
+
+
+   //DATA MEMBERS:
    const Mesh& _mesh;  
 
    vector<StorageSitePtr> _cellSite;
@@ -105,6 +120,9 @@ private:
 
    int  _nInterfaceNodes;
    int  _interiorFaceSize;
+
+   ofstream   _debugFile;
+   int        _procID;
 
    int _nmesh;
    MeshList _meshList;  
