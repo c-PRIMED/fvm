@@ -1218,10 +1218,20 @@ public:
         MFRPtr mNormRatio((*mNorm)/(*_initialMomentumNorm));
 	MFRPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
         
+#ifdef FVM_PARALLEL
+    if ( MPI::COMM_WORLD.Get_rank() == 0 ) // only root process
         if (_options.printNormalizedResiduals)
           cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
         else
           cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;
+#endif
+
+#ifndef FVM_PARALLEL
+        if (_options.printNormalizedResiduals)
+          cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
+        else
+          cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;
+#endif
 
         _niters++;
         if ((*mNormRatio < _options.momentumTolerance) &&
