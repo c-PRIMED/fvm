@@ -37,7 +37,8 @@ public:
   T getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
   
   void printBCs();
-
+  void dumpMatrix(const string fileBase);
+  
   void advance(const int niter);
 private:
   shared_ptr<Impl> _impl;
