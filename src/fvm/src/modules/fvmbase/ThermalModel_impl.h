@@ -31,6 +31,8 @@ public:
   typedef Array<VectorT3> VectorT3Array;
   typedef Gradient<T> TGradType;
   typedef Array<Gradient<T> > TGradArray;
+  typedef CRMatrix<T,T,T> T_Matrix;
+  
   Impl(const GeomFields& geomFields,
        ThermalFields& thermalFields,
        const MeshList& meshes) :
@@ -86,22 +88,22 @@ public:
 	
 	//conductivity
         shared_ptr<TArray> condCell(new TArray(cells.getCount()));
-        *condCell = 1.0;
+        *condCell = T(1.0);
         _thermalFields.conductivity.addArray(cells,condCell);
 	
 	//source 
 	shared_ptr<TArray> sCell(new TArray(cells.getCount()));
-	*sCell = 0;
+	*sCell = T(0.);
 	_thermalFields.source.addArray(cells,sCell);
 
 	//create a zero field
 	shared_ptr<TArray> zeroCell(new TArray(cells.getCount()));
-	*zeroCell = 0.0;
+	*zeroCell = T(0.0);
 	_thermalFields.zero.addArray(cells,zeroCell);
 
 	//create a one field
 	shared_ptr<TArray> oneCell(new TArray(cells.getCount()));
-	*oneCell = 1.0;
+	*oneCell = T(1.0);
 	_thermalFields.one.addArray(cells,oneCell);
 
 	//initial temparature gradient array
@@ -392,6 +394,79 @@ public:
     }
   }
 
+#if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
+  
+  void dumpMatrix(const string fileBase)
+  {
+    LinearSystem ls;
+    initLinearization(ls);
+    
+    ls.initAssembly();
+    
+    linearize(ls);
+    
+    ls.initSolve();
+
+    MultiFieldMatrix& matrix = ls.getMatrix();
+    MultiField& b = ls.getB();
+
+    const Mesh& mesh = *_meshes[0];
+    const StorageSite& cells = mesh.getCells();
+    
+    MultiField::ArrayIndex tIndex(&_thermalFields.temperature,&cells);
+
+    T_Matrix& tMatrix =
+      dynamic_cast<T_Matrix&>(matrix.getMatrix(tIndex,tIndex));
+
+    TArray& tDiag = tMatrix.getDiag();
+    TArray& tCoeff = tMatrix.getOffDiag();
+
+    TArray& rCell = dynamic_cast<TArray&>(b[tIndex]);
+
+    const CRConnectivity& cr = tMatrix.getConnectivity();
+
+    const Array<int>& row = cr.getRow();
+    const Array<int>& col = cr.getCol();
+    
+    const int nCells = cells.getSelfCount();
+    int nCoeffs = nCells;
+
+    for(int i=0; i<nCells; i++)
+      for(int jp=row[i]; jp<row[i+1]; jp++)
+      {
+          const int j = col[jp];
+          if (j<nCells) nCoeffs++;
+      }
+    
+    string matFileName = fileBase + ".mat";
+    FILE *matFile = fopen(matFileName.c_str(),"wb");
+    
+    fprintf(matFile,"%%%%MatrixMarket matrix coordinate real general\n");
+    fprintf(matFile,"%d %d %d\n", nCells,nCells,nCoeffs);
+
+    for(int i=0; i<nCells; i++)
+    {
+        fprintf(matFile,"%d %d %lf\n", i+1, i+1, tDiag[i]);
+        for(int jp=row[i]; jp<row[i+1]; jp++)
+        {
+            const int j = col[jp];
+            if (j<nCells)
+              fprintf(matFile,"%d %d %lf\n", i+1, j+1, tCoeff[jp]);
+        }
+    }
+
+    fclose(matFile);
+
+    string rhsFileName = fileBase + ".rhs";
+    FILE *rhsFile = fopen(rhsFileName.c_str(),"wb");
+    
+    for(int i=0; i<nCells; i++)
+      fprintf(rhsFile,"%lf\n",-rCell[i]);
+
+    fclose(rhsFile);
+  }
+#endif
+  
   void computeIBFaceTemperature(const StorageSite& particles)
   {
     typedef CRMatrixTranspose<T,T,T> IMatrix;
@@ -501,6 +576,13 @@ void
 ThermalModel<T>::computeIBFaceTemperature(const StorageSite& particles)
 {
   _impl->computeIBFaceTemperature(particles);
+}
+
+template<class T>
+void
+ThermalModel<T>::dumpMatrix(const string fileBase)
+{
+  _impl->dumpMatrix(fileBase);
 }
 
 template<class T>
