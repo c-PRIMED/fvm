@@ -14,6 +14,10 @@ public:
 
 
   void syncLocal();
+
+  const string getName() const;
+
+  void clear();
   
   %extend
   {
