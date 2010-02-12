@@ -98,6 +98,14 @@ Field::removeArrays(const StorageSiteList& sites)
   }
 }
 
+void
+Field::clear()
+{
+  _arrays.clear();
+  _childSitesMap.clear();
+  _ghostArrays.clear();
+}
+
 ArrayBase& 
 Field::_create(const StorageSite& s)
 {

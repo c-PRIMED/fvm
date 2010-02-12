@@ -41,11 +41,13 @@ public:
   
   void syncLocal();
 
-  const string& getName() const {return _name;}
+  const string getName() const {return _name;}
   void  createSyncGatherArrays(const StorageSite& site);
   void  syncScatter(const StorageSite& site);
   void  syncGather(const StorageSite& site);
 
+  void clear();
+  
 private:
   Field(const Field&);
   int  get_request_size();
