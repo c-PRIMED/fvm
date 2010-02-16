@@ -1,6 +1,7 @@
 #include <iostream>
 #include "quadrature.h"
 #include "DistFunctFields.h"
+#include "KineticModel.h"
 using namespace std;
 
 int main(){

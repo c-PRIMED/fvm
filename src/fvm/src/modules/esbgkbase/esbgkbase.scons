@@ -8,6 +8,5 @@ env.createSharedLibrary('esbgkbase',src,['rlog','fvmbase'])
 
 
 deps += ['esbgkbase']
-env.createSwigModule('quad',sources=['quad.i'],deplibs=deps)
-
+env.createSwigModule('KineticModel',sources=['KineticModel.i'],deplibs=deps)
 env.createExe('testquadrature',src, deplibs=deps)

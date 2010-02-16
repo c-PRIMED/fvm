@@ -12,6 +12,7 @@ struct MacroParameters
   Field temperature;
   Field viscosity;
   Field density;
+ 
 };
 
 #endif
