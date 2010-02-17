@@ -124,6 +124,7 @@ public:
 	    }
 	    if(ratio == T(0.0))
 	      ratio = T(1.0);
+	    cout<<"\nThe sweep number is "<<i<<" and change is "<<changeInDisplacement<<" and ratio is "<<ratio<<"\n";
 	    if((changeInDisplacement<=_options.absTolerance)||(ratio<=_options.relativeTolerance))
 	    {
 		cout<<"\nThe sweep number is "<<i<<" and change is "<<changeInDisplacement<<"\n";
