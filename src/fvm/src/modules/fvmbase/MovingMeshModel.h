@@ -39,24 +39,26 @@ public:
           dynamic_cast<VectorT3Array&> (_geomFields.nodeDisplacement[nodes]);
 	VectorT3Array& nodeNormal = 
           dynamic_cast<VectorT3Array&> (_geomFields.boundaryNodeNormal[boundaryNodes]);          
-	shared_ptr<VectorT3Array> _previousNodeDisplacementPtr;
+	
         const CRConnectivity& cellNodes = mesh.getCellNodes();
 	shared_ptr<CRConnectivity> nodeCellsPtr = cellNodes.getTranspose();
 	shared_ptr<CRConnectivity> nodeNodesPtr = nodeCellsPtr->multiply(cellNodes,false);
 	CRConnectivity& nodeNodes = *nodeNodesPtr;
 	nodeDisplacement.zero();
         const T one(1.0);
-	const T zero(0.0);
 	const T underrelaxation = _options["underrelaxation"];
 	const T small(1e-10);
-	T changeInDisplacement(0.0);
-	T previousChangeInDisplacement(0.0);
+
+        
         for(int i=0;i<_options.nNodeDisplacementSweeps;i++)
 	{
-	    _previousNodeDisplacementPtr = shared_ptr<VectorT3Array>();
-	    _previousNodeDisplacementPtr = 
+
+            int nDirichlet =0;
+            T averageDirichletDisplacement(0.);
+
+	    shared_ptr<VectorT3Array> _previousNodeDisplacementPtr =
               dynamic_pointer_cast<VectorT3Array>(nodeDisplacement.newCopy());
-	    previousChangeInDisplacement = changeInDisplacement;
+
             for(int j=0;j<nNodes;j++)
 	    {
 	        VectorT3 dr(NumTypeTraits<VectorT3>::getZero());
@@ -87,6 +89,9 @@ public:
 		}
 		else if((*_displacementOptionsPtr)[j] == 1)
 		{
+                    averageDirichletDisplacement += mag((*_dirichletNodeDisplacementPtr)[j]);
+                    nDirichlet ++;
+                    
 		    nodeDisplacement[j] = (*_dirichletNodeDisplacementPtr)[j];
 		    nodeCoordinate[j] += nodeDisplacement[j] - (*(_previousNodeDisplacementPtr))[j];
 		}
@@ -94,8 +99,8 @@ public:
 		{
 		    T temp = dot(dr,nodeNormal[GlobalToLocal[j]]);
 		    nodeDisplacement[j] = dr - temp*nodeNormal[GlobalToLocal[j]];
-		    if(dot(nodeDisplacement[j],nodeNormal[GlobalToLocal[j]])!=zero)
-		      nodeDisplacement[j] = dr + temp*nodeNormal[GlobalToLocal[j]];
+		    //if(dot(nodeDisplacement[j],nodeNormal[GlobalToLocal[j]])!=zero)
+		    //  nodeDisplacement[j] = dr + temp*nodeNormal[GlobalToLocal[j]];
 		    nodeDisplacement[j] = (*(_previousNodeDisplacementPtr))[j] +
                       underrelaxation*(nodeDisplacement[j]-(*(_previousNodeDisplacementPtr))[j]);
 		    nodeCoordinate[j] += nodeDisplacement[j] - (*(_previousNodeDisplacementPtr))[j];
@@ -108,37 +113,40 @@ public:
 		    nodeCoordinate[j] += nodeDisplacement[j] - (*(_previousNodeDisplacementPtr))[j];
 		}
 	    }
-	    changeInDisplacement = T(0.0);
-            T temp(0.0); 
-	    T ratio(0.0);
+
+            if (nDirichlet > 0)
+              averageDirichletDisplacement /= nDirichlet;
+            else
+              averageDirichletDisplacement = T(1.);
+            
+            T maxChangeInDisplacement = T(0.0);
 	    for(int j=0;j<nNodes;j++)
 	    {
-	        changeInDisplacement += T(1.0)*(mag(nodeDisplacement[j]-(*(_previousNodeDisplacementPtr))[j]));
-		if (mag((*(_previousNodeDisplacementPtr))[j])!=T(0.0))
-		{
-		   temp = (mag(nodeDisplacement[j]-(*(_previousNodeDisplacementPtr))[j]))
-                     /(mag((*(_previousNodeDisplacementPtr))[j]));
-		   if(ratio<temp)
-		     ratio = temp;
-		}
+	        const T changeInDisplacement = (mag(nodeDisplacement[j]-
+                                              (*(_previousNodeDisplacementPtr))[j]));
+                if (maxChangeInDisplacement < changeInDisplacement)
+                  maxChangeInDisplacement = changeInDisplacement;
 	    }
-	    if(ratio == T(0.0))
-	      ratio = T(1.0);
-	    cout<<"\nThe sweep number is "<<i<<" and change is "<<changeInDisplacement<<" and ratio is "<<ratio<<"\n";
-	    if((changeInDisplacement<=_options.absTolerance)||(ratio<=_options.relativeTolerance))
+
+            T maxChangeRelative = maxChangeInDisplacement / averageDirichletDisplacement;
+            cout<<"\nsweep  "<<i<<" max change is "<< maxChangeInDisplacement
+                <<" and ratio is "<< maxChangeRelative<<"\n";
+	    if((maxChangeInDisplacement<=_options.absTolerance)||
+               (maxChangeRelative<=_options.relativeTolerance))
 	    {
-		cout<<"\nThe sweep number is "<<i<<" and change is "<<changeInDisplacement<<"\n";
+		
 		return;
 	    }
 	}
     }   	
   }
  
-  MovingMeshModel(const MeshList& meshes, GeomFields& geomFields, FlowFields& flowFields) :
+  MovingMeshModel(const MeshList& meshes, GeomFields& geomFields,
+                  FlowFields& flowFields) :
     Model(meshes),
-    _meshes(meshes),
     _geomFields(geomFields),
     _flowFields(flowFields),
+    _meshes(meshes),
     _displacementOptionsPtr(0),
     _dirichletNodeDisplacementPtr(0)
   {
