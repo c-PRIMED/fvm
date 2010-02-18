@@ -17,3 +17,6 @@ def set_atype(t):
         import fvm.exporters_atyped_tangent_double as exporters
     else:
         raise AtypeException
+
+def dump_hdf5(name, v, desc=''):
+    print 'HDF5:%s:5FDH' % repr({'name': name, 'desc': desc, 'value':v})
