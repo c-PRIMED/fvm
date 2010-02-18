@@ -49,8 +49,8 @@ class Build:
                     except NameError:
                         loaded = False
                     if not loaded:
-                        temp = __import__(m, globals(), locals(), [m])
-                        exec('global %s; %s=temp.%s; self.%s=%s' % (m, m, m, m, m))
+                        _temp = __import__(m, globals(), locals(), [m])
+                        exec('global %s; %s=_temp.%s; self.%s=%s' % (m, m, m, m, m))
                 
         # create package class instances        
         self.all_packages = []
