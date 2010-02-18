@@ -19,7 +19,7 @@ class BuildPkg(Build):
     #     0 - no copy. Build directory is separate from sources.
     #     1 - copy with symlinks
     #     2 - full copy
-    # For tarballs, copy_sources of nonzero means source and build directories are not the same.    
+    # For tarballs, copy_sources of nonzero means source and build directories are not the same.
     copy_sources = 0
 
     def __init__(self, bld, sdir):
@@ -97,7 +97,7 @@ class BuildPkg(Build):
     def build(self):
         # Configure
         self.state = 'configure'
-        self.bld.database[self.name] = 0 # mark this package as not built        
+        self.bld.database[self.name] = 0 # mark this package as not built
         self.logfile = os.path.join(self.logdir, self.name + "-conf.log")
         remove_file(self.logfile)
         pmess("CONF", self.name, self.bdir)
@@ -129,15 +129,15 @@ class BuildPkg(Build):
         self.bld.database[self.name] = self.build_start_time
         self.bld.database[self.name + '-status'] = self.status()
         debug('database[%s] = %s' % (self.name, self.build_start_time))
-        debug('database[%s] = %s' % (self.name + '-status', self.bld.database[self.name + '-status']))        
+        debug('database[%s] = %s' % (self.name + '-status', self.bld.database[self.name + '-status']))
         run_commands(self.name, 'after')
 
-    def test(self):
+    def test(self, tst):
         self.state = 'testing'
         self.logfile = os.path.join(self.logdir, self.name + "-test.xml")
         remove_file(self.logfile)
         pmess("TEST", self.name, self.blddir)
-        ok, errs = self._test()
+        ok, errs = self._test(tst)
         if errs:
             cprint('YELLOW', "%s OK, %s FAIL" % (ok, errs))
         else:
@@ -168,7 +168,7 @@ class BuildPkg(Build):
 
     def status(self):
         return 'normal'
-    
+
     # subclasses must redefine these
     def _configure(self):
         pass
@@ -178,6 +178,6 @@ class BuildPkg(Build):
         pass
     def _install(self):
         pass
-    def _test(self):
-        return testing.do_tests(self.name, self.sdir, self.logfile)
+    def _test(self, tst):
+        return testing.do_tests(tst, self.name, self.sdir, self.logfile)
 

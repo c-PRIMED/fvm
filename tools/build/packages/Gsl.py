@@ -9,7 +9,7 @@ class Gsl(BuildPkg):
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
         return self.sys_log("make install")
-    def _test(self):
+    def _test(self, tst):
         ok = errs = 0
         os.chdir(self.bdir)
         logfile = self.logfile.replace('xml','txt')
@@ -33,4 +33,6 @@ class Gsl(BuildPkg):
         f = open(self.logfile,'w')
         f.write(ostr)
         f.close()
+        tst.errs += errs
+        tst.ok += ok
         return ok, errs
