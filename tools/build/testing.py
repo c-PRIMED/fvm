@@ -14,7 +14,7 @@ from build_utils import *
 from subprocess import Popen, PIPE, STDOUT
 
 
-class Test():
+class Test:
     def __init__(self):
         self.errs = self.ok = 0
         self.unit_errs = self.unit_ok = 0
