@@ -17,12 +17,13 @@ public:
     typedef   shared_ptr< Array<int> >     ArrayIntPtr;
     typedef   map<int,ArrayIntPtr>         ArrayIntPtrMap;
     typedef   map<int, int>                IntMap;
+    typedef   map<int, vector<int> >       IntVecMap;
     typedef   shared_ptr< StorageSite >  StorageSitePtr; 
     typedef   shared_ptr< CRConnectivity > CRConnectivityPtr;
     //typedef   shared_ptr< Array<int> >     ArrayIntPtr;
     typedef   shared_ptr< Array<Mesh::VecD3> >   ArrayVecD3Ptr;
     typedef   vector< map<int, set<int> > >      VecMap;
-    
+    typedef   map<int, multimap<int,int> >      NestedMap;
 
 
    MeshDismantler( const MeshList& meshList );
@@ -74,6 +75,12 @@ private:
    void  createCoords();
    void  createFaceNodes();
    void  createFaceCells();
+   void  setMappers();
+   void  partitionInterfaceMappers();
+   void  meshInterfaceMappers();
+   void  getScatterArrays(const Array<int>& scatterArray, IntVecMap& scatterArrayLocal,  const int neighMeshID );
+   void  getGatherArrays (const Array<int>& gatherArray , IntVecMap& gatherArrayLocal ,  const int neighMeshID );
+
 
    void  debug_file_open( const string& fname );
    void  debug_file_close();
@@ -86,10 +93,12 @@ private:
    void debug_face_cells();
    void debug_nodes_mapper();
    void debug_face_nodes();
-
+   void debug_scatter_mappers();
+   void debug_gather_mappers();
 
    //DATA MEMBERS:
    const Mesh& _mesh;  
+   CRConnectivityPtr  _cellFaces;
 
    vector<StorageSitePtr> _cellSite;
    vector<StorageSitePtr> _faceSite;
@@ -102,6 +111,7 @@ private:
 
    vector < map<int,int> >  _globalToLocalNodes; 
    map<int, ArrayIntPtr >   _localNodeToGlobal; 
+   vector< map<int,int> >   _globalToLocalFaces; //for each mesh (vector) and only for partition and mesh interfaces
    
    vector< multimap<int,int> > _faceIdentifierList;
 

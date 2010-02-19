@@ -2,9 +2,11 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <utility>
 #include "MeshDismantler.h"
 #include "CRConnectivity.h"
 #include "MultiField.h"
+
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
@@ -31,6 +33,8 @@ MeshDismantler::~MeshDismantler()
 void
 MeshDismantler::init()
 {
+   
+  _cellFaces = _mesh.getAllFaceCells().getTranspose();
 #ifdef FVM_PARALLEL
    _procID = MPI::COMM_WORLD.Get_rank();
 #endif
@@ -53,6 +57,7 @@ MeshDismantler::init()
    setFaceNodes();
    setCoord();
    setMesh();
+   setMappers();
    debug_print();
 }
 
@@ -241,6 +246,7 @@ MeshDismantler::faceCellsAddInteriorFaces( vector<int>& faceID )
 void
 MeshDismantler::faceCellsAddPartitionInterfaces( vector<int>& faceID, vector<int>& localCellID )
 {
+     _globalToLocalFaces.resize( _nmesh );
      //add partition interfaces
      int cellSelfCount  = _mesh.getCells().getSelfCount();
      int interfaceCount = _mesh.getInterfaceGroupCount();
@@ -249,6 +255,7 @@ MeshDismantler::faceCellsAddPartitionInterfaces( vector<int>& faceID, vector<int
      //loop over partition faces (
      for ( int i = 0; i < interfaceCount; i++ ){
          const StorageSite& interiorFaceSite = interfaceGroupList[i]->site;
+         int interfaceID = interfaceGroupList[i]->id;
          int offset = interiorFaceSite.getOffset(); //where to begin face
          int nBeg = offset;
          int nEnd = nBeg + interiorFaceSite.getCount();
@@ -266,12 +273,16 @@ MeshDismantler::faceCellsAddPartitionInterfaces( vector<int>& faceID, vector<int
              if ( cell1 < cellSelfCount ){
                  int meshID = _globalCellToMeshID[ cell1 ];
                 _faceCells.at( meshID )->add( faceID[meshID], _globalCellToLocal[cell1] );
-                _faceCells.at( meshID )->add( faceID[meshID], localCellID[meshID]++     );
+                _faceCells.at( meshID )->add( faceID[meshID], localCellID[meshID]       );
+                 _globalToLocalFaces[meshID][n] = faceID[meshID];
+                 localCellID[meshID]++;
                  faceID[meshID]++;
              } else {
                  int meshID = _globalCellToMeshID[ cell2 ];
                 _faceCells.at( meshID )->add( faceID[meshID], _globalCellToLocal[cell2] );
-                _faceCells.at( meshID )->add( faceID[meshID], localCellID[meshID]++     );
+                _faceCells.at( meshID )->add( faceID[meshID], localCellID[meshID]     );
+                 _globalToLocalFaces[meshID][n] = faceID[meshID];
+                 localCellID[meshID]++;
                  faceID[meshID]++;
              }
          }
@@ -302,7 +313,6 @@ MeshDismantler::faceCellsAddMeshInterfaces(vector<int>& faceID, vector<int>& loc
            countMeshInterface[meshID1]++;
            countMeshInterface[meshID2]++;
         }
-
      }
 
       //allocate memory 
@@ -338,14 +348,18 @@ MeshDismantler::faceCellsAddMeshInterfaces(vector<int>& faceID, vector<int>& loc
                    int cell1  = faceCells(glblFaceID,0);
                    int cell2  = faceCells(glblFaceID,1);
                    int meshID1 = _globalCellToMeshID[cell1];
-                   //int meshID2 = _globalCellToMeshID[cell2];
+                   int meshID2 = _globalCellToMeshID[cell2];
                    if ( id == meshID1 ){
                      _faceCells.at(id)->add( faceID[id], _globalCellToLocal[cell1]  );
-                     _faceCells.at(id)->add( faceID[id],  localCellID[id]++);
+                     _faceCells.at(id)->add( faceID[id],  localCellID[id]);
+                     _globalToLocalFaces[id][glblFaceID] = faceID[id];
+                     localCellID[id]++;
                      faceID[id]++;
                    } else {
                      _faceCells.at(id)->add( faceID[id], _globalCellToLocal[cell2]  );
-                     _faceCells.at(id)->add( faceID[id],  localCellID[id]++);
+                     _faceCells.at(id)->add( faceID[id],  localCellID[id] );
+                     _globalToLocalFaces[id][glblFaceID] = faceID[id];
+                     localCellID[id]++;
                      faceID[id]++;
                    }
                }
@@ -707,7 +721,6 @@ MeshDismantler::createBoundaryFaceGroup()
         }
     }
 }
-
 //setting coords
 void
 MeshDismantler::createCoords()
@@ -729,6 +742,166 @@ MeshDismantler::createFaceCells()
     for ( int id = 0; id < _nmesh; id++ )
         _meshList.at(id)->setFaceCells( _faceCells.at(id) );
 }
+//fill scatter and gather maps
+void
+MeshDismantler::setMappers()
+{
+      partitionInterfaceMappers();
+      meshInterfaceMappers();
+
+}
+
+//partition interface mappers
+void
+MeshDismantler::partitionInterfaceMappers()
+{
+    //scatter map filling, get first single mesh mappers
+     const StorageSite::ScatterMap scatterMap = _mesh.getCells().getScatterMap();
+     const StorageSite::GatherMap  gatherMap  = _mesh.getCells().getGatherMap ();
+     //local mesh scatter (they have same storagesite, so, they can be used for gatherMap)
+     foreach ( const StorageSite::ScatterMap::value_type& pos, scatterMap ){
+           const StorageSite& site  =  *pos.first;
+           const Array<int>&  scatterArray = *pos.second;
+           const Array<int>&  gatherArray  = *gatherMap.find(pos.first)->second;
+           const int neighMeshID  =  site.getGatherProcID();
+           IntVecMap   scatterArrayMap;
+           IntVecMap   gatherArrayMap;
+           getScatterArrays( scatterArray, scatterArrayMap, neighMeshID);
+           getGatherArrays ( gatherArray , gatherArrayMap , neighMeshID);
+           //getScatterGatherArrays( scatterArray, scatterArrayMap, gatherArrayMap, neighMeshID);
+           foreach ( const IntVecMap::value_type& pos, scatterArrayMap ){
+               const int meshID = pos.first;
+               const int size   = int(pos.second.size());
+               //reference ot mappers to fill in
+               StorageSite::ScatterMap& scatterMapLocal = _meshList.at(meshID)->getCells().getScatterMap();
+               StorageSite::GatherMap& gatherMapLocal   = _meshList.at(meshID)->getCells().getGatherMap();
+               //storagesite (used for both scatter and gathersites)
+               shared_ptr<StorageSite> siteScatterLocal( new StorageSite(size) );
+
+               //copy scatterArray to Array<int> 
+               int scatterSize =  int(scatterArrayMap[meshID].size());
+               ArrayIntPtr scatterArrayLocal( new Array<int>( scatterSize ) );
+               for ( int i = 0; i < scatterSize; i++ ) 
+                    (*scatterArrayLocal)[i] = scatterArrayMap[meshID][i];
+               //copy gatherArray to Array<int>
+               int gatherSize =  int(gatherArrayMap[meshID].size());
+               ArrayIntPtr gatherArrayLocal( new Array<int>( gatherSize ) );
+               for ( int i = 0; i < gatherSize; i++ ) 
+                    (*gatherArrayLocal)[i] = gatherArrayMap[meshID][i];
+
+               //setting scatterID and gatherID
+               siteScatterLocal->setScatterProcID( site.getScatterProcID() );
+               siteScatterLocal->setGatherProcID ( site.getGatherProcID()  );
+               //filling Mesh::mappers
+               _meshList.at(meshID)->createGhostCellSiteScatter( site.getGatherProcID(),  siteScatterLocal );
+               _meshList.at(meshID)->createGhostCellSiteGather ( site.getGatherProcID(),  siteScatterLocal );
+               scatterMapLocal[ siteScatterLocal.get() ] = scatterArrayLocal;
+               gatherMapLocal [ siteScatterLocal.get() ] = gatherArrayLocal;
+
+           }
+     }
+
+
+}
+
+
+void
+MeshDismantler::getScatterArrays(const Array<int>& scatterArray, IntVecMap& scatterArrayLocal,  const int neighMeshID )
+{
+    // get counts for each mesh
+    vector<int> sizeScatter(_nmesh,0);
+    for ( int i = 0; i < scatterArray.getLength(); i++ ) {
+        const int meshID = _globalCellToMeshID[ scatterArray[i] ];
+        sizeScatter[meshID]++;
+    }
+   //calculate scatterArrayLocal's size
+    for (  int n = 0; n < _nmesh; n++ )
+        if ( sizeScatter[n] > 0 )
+            scatterArrayLocal[n].resize( sizeScatter[n], 0);
+
+    //reset count for reusage
+    vector<int> countScatter(_nmesh,0);
+   //loop over cells
+   for ( int i = 0; i < scatterArray.getLength(); i++ ) {
+        const int  meshID = _globalCellToMeshID[ scatterArray[i] ];
+        const int  cellID = _globalCellToLocal [ scatterArray[i] ];
+        scatterArrayLocal[meshID][countScatter[meshID]++] = cellID;
+    }  
+
+}
+
+
+void
+MeshDismantler::getGatherArrays(const Array<int>& gatherArray, IntVecMap& gatherArrayLocal,  const int neighMeshID )
+{
+    // get counts for each mesh
+    const Array<int>& colors = _mesh.getCellColors();
+    vector<int> sizeGather(_nmesh,0);
+    for ( int i = 0; i < gatherArray.getLength(); i++ ) {
+        const int meshID = colors[ gatherArray[i] ];
+        sizeGather[meshID]++;
+    }
+
+   //calculate gatherArrayLocal's size
+    for (  int n = 0; n < _nmesh; n++ )
+        if ( sizeGather[n] > 0 )
+             gatherArrayLocal[n].resize( sizeGather[n], 0 );
+ 
+    //reset count for reusage
+    vector<int> countGather(_nmesh,0);
+   //loop over cells
+   for ( int i = 0; i < gatherArray.getLength(); i++ ) {
+        const int glblFaceID  = (*_cellFaces)(gatherArray[i],0);
+        const int  meshID = colors[ gatherArray[i] ];
+        const int localFaceID = _globalToLocalFaces[meshID][glblFaceID];
+        const int  cellID = (*_faceCells[meshID])(localFaceID,1); // 0 inner , 1 ghost cells
+        gatherArrayLocal[meshID][countGather[meshID]++] = cellID;
+    }  
+
+}
+
+
+
+
+
+//mesh interfaces
+void
+MeshDismantler::meshInterfaceMappers()
+{
+     //loop over meshes
+     for ( int id = 0 ; id < _nmesh ; id++ ){
+          const multimap<int,int>& faceIdentifier  = _faceIdentifierList[id];
+          StorageSite::GatherMap & gatherMapLocal  = _meshList.at(id)->getCells().getGatherMap();
+          //loop over all meshinterfaces  (key = all other meshes)
+          for ( int key = 0; key < _nmesh; key++ ){ 
+               //filling scatter (on this mesh) and gather Array (on other mesh)
+               int nface = faceIdentifier.count(key);
+               if ( nface > 0 ){
+                   StorageSite::ScatterMap& scatterMapLocal = _meshList.at(key)->getCells().getScatterMap(); 
+                   ArrayIntPtr scatterArrayLocal( new Array<int>( nface ) ); //for other side mesh
+                   ArrayIntPtr gatherArrayLocal ( new Array<int>( nface ) ); //for this side mesh
+                   multimap<int,int>::const_iterator it;
+                   int indx = 0;
+                   for ( it = faceIdentifier.equal_range(key).first; it != faceIdentifier.equal_range(key).second; it++ ){
+                       //fill this mesh gather
+                       const int glblFaceID  = it->second;
+                       int localFaceID = _globalToLocalFaces[id][glblFaceID];
+                       const int gatherCellID = (*_faceCells[id])(localFaceID,1);
+                       (*gatherArrayLocal)[indx] = gatherCellID;
+                       //now other mesh to fill scatter arrays
+                       localFaceID = _globalToLocalFaces[key][glblFaceID];
+                       const int scatterCellID = (*_faceCells[key])(localFaceID,0);
+                       (*scatterArrayLocal)[indx] = scatterCellID;
+                       indx++;
+                   }
+                   gatherMapLocal.insert ( make_pair(_cellSite.at(key).get(), gatherArrayLocal ) ); //gather this side mesh, so we key with other site StorageSite*
+                   scatterMapLocal.insert( make_pair(_cellSite.at(id).get() , scatterArrayLocal) ); //scatter other side mesh, so we key with this site StorageSite*
+               }
+          }
+     }
+
+
+}
 
 
 void  
@@ -741,6 +914,8 @@ MeshDismantler::debug_print()
    debug_face_cells();
    debug_nodes_mapper();
    debug_face_nodes();
+   debug_scatter_mappers();
+   debug_gather_mappers();
 }
 
 
@@ -836,7 +1011,77 @@ MeshDismantler::debug_face_nodes()
         }
     }
     debug_file_close();
+}
 
+void
+MeshDismantler::debug_scatter_mappers()
+{
+    debug_file_open("scatterMappers");
+    //creating mappers between cell storage site to mesh id
+    map< const StorageSite*, int > siteMeshMapper; //key  = storage site, value = mesh ID of cellSite
+    for ( int id = 0; id < _nmesh; id++ )
+        siteMeshMapper[_cellSite[id].get()] = id;
+
+
+    for ( int id = 0; id < _nmesh; id++ ){
+        _debugFile << "meshID : " << id << endl;
+        const StorageSite::ScatterMap&  scatterMap = _meshList.at(id)->getCells().getScatterMap();
+        foreach ( const StorageSite::ScatterMap::value_type& pos, scatterMap ){
+              const StorageSite& scatterSite = *pos.first;
+              const Array<int>& scatterArray = *pos.second;
+              if ( scatterSite.getGatherProcID() != -1 ){  //this means partition face
+                  const int neighID = scatterSite.getGatherProcID();
+                  _debugFile << "   procID = " << _procID << "  neighID = " << neighID << " : " << endl;
+                  for ( int i = 0; i < scatterArray.getLength(); i++ ){
+                       _debugFile << "      scatterArray[" << i << "] = " << scatterArray[i]  << endl;
+                   }
+
+               } else { //this means mesh interface
+                   int neighMeshID = siteMeshMapper[ pos.first ];
+                   _debugFile << "   meshID = " << id << "   otherside MeshID = " << neighMeshID <<  " : " << endl;
+                    for ( int i = 0; i < scatterArray.getLength(); i++ ){
+                       _debugFile << "      scatterArray[" << i << "] = " << scatterArray[i]  << endl;
+                    }
+               }
+
+        }
+     }
+     debug_file_close();
+}
+void
+
+MeshDismantler::debug_gather_mappers()
+{
+    debug_file_open("gatherMappers");
+    //creating mappers between cell storage site to mesh id
+    map< const StorageSite*, int > siteMeshMapper; //key  = storage site, value = mesh ID of cellSite
+    for ( int id = 0; id < _nmesh; id++ )
+        siteMeshMapper[_cellSite[id].get()] = id;
+
+    for ( int id = 0; id < _nmesh; id++ ){
+        _debugFile << "meshID : " << id << endl;
+        const StorageSite::GatherMap&   gatherMap  = _meshList.at(id)->getCells().getGatherMap();
+        foreach ( const StorageSite::GatherMap::value_type& pos, gatherMap ){
+              const StorageSite& gatherSite = *pos.first;
+              const Array<int>& gatherArray = *pos.second;
+              if ( gatherSite.getGatherProcID() != -1 ){  //this means partition face
+                  const int neighID = gatherSite.getGatherProcID();
+                  _debugFile << "   procID = " << _procID << "  neighID = " << neighID << " : " << endl;
+                  for ( int i = 0; i < gatherArray.getLength(); i++ ){
+                       _debugFile << "      gatherArray [" << i << "] = " << gatherArray[i] << endl;
+                   }
+
+               } else { //this means mesh interface
+                   int neighMeshID = siteMeshMapper[ pos.first ];
+                   _debugFile << "   meshID = " << id << "   otherside MeshID = " << neighMeshID <<  " : " << endl;
+                    for ( int i = 0; i < gatherArray.getLength(); i++ ){
+                       _debugFile <<   "      gatherArray [" << i << "] = " << gatherArray[i] << endl;
+                    }
+               }
+
+        }
+     }
+     debug_file_close();
 }
 
 

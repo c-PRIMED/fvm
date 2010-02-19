@@ -832,7 +832,7 @@ PartMesh::elem_connectivity()
           for ( int n = 0; n < _ncon.at(id)*mesh_nlocal; n++)
              _elmWght.at(id)[n] = 1;
        } else {
-          _wghtFlag.at(id) = int( WEIGTHS_ONLY_VERTICES ); //No Weights : default value
+          _wghtFlag.at(id) = int( WEIGTHS_ONLY_VERTICES ); 
            const Array<int>& cellColors = _meshList.at(id)->getCellColors();
            int indx = 0 ;
            for ( int n =0; n < mesh_nlocal; n++ ){
@@ -1046,7 +1046,6 @@ PartMesh::exchange_part_elems()
         delete [] col_local;
         delete [] elem_local;
 
-      
        }  // for::partID
 
        delete [] countsRow ;
@@ -1122,12 +1121,44 @@ PartMesh::mesh_setup()
        _meshListLocal.at(id)->setCoordinates( _coord.at(id)            );
        _meshListLocal.at(id)->setFaceNodes  ( _faceNodesOrdered.at(id) );
        _meshListLocal.at(id)->setFaceCells  ( _faceCellsOrdered.at(id) );
-
+        if (  _meshList.at(id)->isMergedMesh() )
+            setMeshColors();
 
     }
 
+
 }
 
+//if it is merged, we want to fill color array in Mesh class for further usage
+void
+PartMesh::setMeshColors()
+{
+    //get number of meshes assembled from meshList
+    int nmesh = _meshList.at(0)->getNumOfAssembleMesh();
+    //assing nmesh and make Mesh::_isAssembledMesh == true
+    _meshListLocal.at(0)->setNumOfAssembleMesh( nmesh );
+    _meshListLocal.at(0)->createCellColor();
+    //get cellsite storagesite
+    const StorageSite& cellSite = _meshListLocal.at(0)->getCells();
+    Array<int>&   colorGlbl  = _meshList.at(0)->getCellColors();
+    Array<int>&   colorLocal = _meshListLocal.at(0)->getCellColors();
+    const  map<int,int>&  localToGlobalMappers = _localToGlobalMappers.at(0);
+    //loop first over inner cells to color them
+    for ( int i = 0; i <  cellSite.getSelfCount(); i++ ){
+        int glblID = localToGlobalMappers.find(i)->second;
+        colorLocal[i] = colorGlbl[ glblID ];
+    }
+    //coloring other cells (boundary+ghostcells)
+    //we check across cell's color, they should have the same color.
+    const CRConnectivity& cellCells = _meshListLocal.at(0)->getCellCells();
+    for ( int i = cellSite.getSelfCount(); i < cellSite.getCount(); i++ ){
+       int acrossCellID = cellCells(i,0);
+       colorLocal[i] = colorLocal[ acrossCellID ];
+    }
+
+
+
+}
 
 //construct CRConnectivity faceParts
 void
@@ -2022,6 +2053,9 @@ PartMesh::mesh_tecplot()
 
      mesh_file << "title = \" tecplot file for process Mesh \" "  << endl;
      mesh_file << "variables = \"x\",  \"y\", \"z\", \"cell_type\" " << endl;
+#if 0
+     mesh_file << "variables = \"x\",  \"y\", \"z\", \"cell_type\", \"color\"  " << endl;
+#endif
 
      stringstream zone_info;
 
@@ -2077,8 +2111,18 @@ PartMesh::mesh_tecplot()
           if (  n % 10 == 0 ) mesh_file << endl;
 
        }
-
+    mesh_file << endl;
+#if  0
       mesh_file << endl;
+      //mesh color is only 
+      const Array<int>& color = mesh.getCellColors();
+      for ( int n = 0; n < tot_elems; n++ ){
+          mesh_file <<  color[n] <<  "      ";
+          if ( n % 10 == 0 ) mesh_file << endl;
+      }
+#endif
+
+      
       mesh_file << endl;
      //connectivity
     for (int n = 0; n < tot_elems; n++){

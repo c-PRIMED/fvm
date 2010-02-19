@@ -98,6 +98,7 @@ private:
    void fence_window();
    int  get_window_displ( int id, int neigh_mesh_id );
    void construct_mesh( int id );
+   void setMeshColors();
 
    void mesh_xdmf_header();    
    void mesh_file();
@@ -182,7 +183,7 @@ private:
    vector< map<int,int> > _interfaceOffsets;
    vector< vector<int> > _cellToOrderedCell;
    vector< multimap<int,int> > _globalToLocalMappers; 
-   vector< multimap<int,int> > _localToGlobalMappers;
+   vector< map<int,int> > _localToGlobalMappers;
 
   vector< ArrayIntPtr > _localToGlobalMap;
 
