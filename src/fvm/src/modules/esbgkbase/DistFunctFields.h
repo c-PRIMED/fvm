@@ -52,9 +52,10 @@ class DistFunctFields
        * total number of velocity directions.
        */
       const int N123 = quad.getDirCount(); 
-      const TArray& cx = dynamic_cast<const TArray&>(quad.cxPtr[cells]);
-      const TArray& cy = dynamic_cast<const TArray&>(quad.cyPtr[cells]);
-      const TArray& cz = dynamic_cast<const TArray&>(quad.czPtr[cells]);
+     const TArray& cx = dynamic_cast<const TArray&>(*quad.cxPtr);
+
+     const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
+     const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
 
       /*
       TArray* distfunAPtr;   
@@ -72,19 +73,46 @@ class DistFunctFields
             
       for(int j=0;j<N123;j++){
        	Field& fnd= *dsf[j]; 
-	const TArray& fc = dynamic_cast<const TArray&>(fnd[cells]);
+	TArray& fc = dynamic_cast<TArray&>(fnd[cells]);
 	for(int c=0; c<nCells;c++)
 	  {
 	    fc[c]=density[c]/pow((pi*temperature[c]),1.5)*
-	      exp(-(pow((cx[j]-v[c][0]),2.0)+pow((cy[j]-v[c][1]),2.0)+
+	     exp(-(pow((cx[j]-v[c][0]),2.0)+pow((cy[j]-v[c][1]),2.0)+
 		    pow((cz[j]-v[c][2]),2.0))/temperature[c]);
 	  } 
-	//DistfunPtr[j]->f
+
       }
     }
   
   
- 
+  DistFunctFields(const Mesh& mesh, const Quadrature<T>& quad) 
+    {
+      
+      const StorageSite& cells = mesh.getCells();
+      const int nCells = cells.getSelfCount();
+      double pi(3.14159);
+
+     /**
+       * integer N123
+       * total number of velocity directions.
+       */
+      const int N123 = quad.getDirCount(); 
+     const TArray& cx = dynamic_cast<const TArray&>(*quad.cxPtr);
+
+     const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
+     const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
+      
+     for(int j=0;j<N123;j++){
+       	Field& fnd= *dsf[j]; 
+	TArray& fc = dynamic_cast<TArray&>(fnd[cells]);
+	for(int c=0; c<nCells;c++)
+	  {
+	    fc[c]=1./pow(pi*1.0,1.5)*exp(-(pow((cx[j]-1.0),2.0)+pow((cy[j]-1.0),2.0)+
+		   pow((cz[j]-0.),2.0))/1.0);
+	  } 
+
+      }
+    }
   
 /*
   void Maxwellian(const Mesh& mesh, const Field& density, const Field& velocity, const Field& temperature, const Quadrature& quad)

@@ -8,11 +8,11 @@
 #include "KineticModel.h"
   %}
 
-%import "quadrature.h"
+
 %import "DistFunctFields.h"
 %import "MacroParameters.h"
 %import "KineticModel.h"
 
-%template(Quadrature) Quadrature<double>;
-%template(KineticModel) KineticModel<double>;
-%template(DistFunctFields) DistFunctFields<double>;
+
+%template(KineticModelD) KineticModel<double>;
+%template(vdfField) DistFunctFields<double>;

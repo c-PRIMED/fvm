@@ -5,4 +5,4 @@
 %}
 
 %import "quadrature.h"
-%template(Quadrature) Quadrature<double>;
+%template(QuadratureD) Quadrature<double>;
