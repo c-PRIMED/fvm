@@ -111,8 +111,8 @@ public:
     }
     else
     {
-        if (_useCentralDifference)
-          for(int f=0; f<nFaces; f++)
+      if (_useCentralDifference){
+	for(int f=0; f<nFaces; f++)
           {
               const int c0 = faceCells(f,0);
               const int c1 = faceCells(f,1);
@@ -156,7 +156,8 @@ public:
                   }
               }
           }
-        else
+       }
+       else
           for(int f=0; f<nFaces; f++)
           {
               const int c0 = faceCells(f,0);

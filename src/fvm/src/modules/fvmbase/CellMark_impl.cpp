@@ -30,7 +30,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
           dynamic_cast<const VecD3Array&> (geomFields.coordinate[faces]);
    
    
-
+    const int writeOption = 1;
     /***************************************************************************************/
     //---build up Octree for cell centroid---//
     
@@ -169,7 +169,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
 
     if (option == 2){
-      const double radius = 1.0;
+      const double radius = 2.5;
       for(int p=0; p<nMPM; p++){
 	const VecD3 MPM_point = (*MPM_Points)[p];
 	vector<int> cellIndexList;
@@ -218,6 +218,21 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     }
 
 	  
+if (writeOption ==1)
+  {
+    FILE *fp;
+    string fileName20=fileBase+"particles.dat";
+    char* file20;
+    file20=&fileName20[0];
+    
+    fp=fopen(file20,"w");
+    for (int c=0; c<nMPM; c++){
+      if((*particleTypes)[c]==1){
+	fprintf(fp, "%i\t%e\t%e\t%e\n", c, (*MPM_Points)[c][0],(*MPM_Points)[c][1],(*MPM_Points)[c][2]);
+      }
+    }
+  } 
+
     /************************************************************************************/
     //---create the CRconnectivity for solid and cells---//
 
@@ -230,7 +245,8 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     const CRConnectivity& particleCells = mesh.getConnectivity(particles, cells); 
     
-
+if (writeOption ==1)
+  {
     FILE *fp;
     string fileName14=fileBase+"particletocells.dat";
     char* file14;
@@ -248,7 +264,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
       }
     } 
       fclose(fp);
-   
+  } 
     /************************************************************************************/
     //---create the CRconnectivity for cells and solid---//
 
@@ -259,7 +275,11 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
     mesh.setConnectivity(cells, particles, cellParticlesCR);
 
     const CRConnectivity& cellParticles = mesh.getConnectivity(cells, particles);
-   
+
+
+if (writeOption ==1)
+  {   
+    FILE *fp;
     string fileName13=fileBase+"celltoparticles.dat";
     char* file13;
     file13=&fileName13[0];
@@ -279,7 +299,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
       }
     } 
     fclose(fp);
-  
+  }
   
    
 
@@ -288,7 +308,8 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
     //test mark cell
     
-    reportCellMark (mesh, nCells, cellCentroid, fileBase);
+    if (writeOption ==1)
+      reportCellMark (mesh, nCells, cellCentroid, fileBase);
 
  
 
@@ -300,6 +321,9 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
    
     const Array<int>& ibFaceList = mesh.getIBFaceList();
 
+if (writeOption ==1)
+  {
+    FILE *fp;
     string fileName15=fileBase+"ibfaces.dat";
     char* file15;
     file15=&fileName15[0];
@@ -311,7 +335,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
       fprintf(fp,"%i\t%e\t%e\t%e\n", fID, faceCentroid[fID][0],faceCentroid[fID][1],faceCentroid[fID][2]);
     }
     fclose(fp);
-
+  }
     /*********check ibFaces***********************/
     checkIBFaces(ibFaceList, faceArea, faceCells, mesh);
 
@@ -339,7 +363,9 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
 
      const CRConnectivity& ibFaceCells = mesh.getConnectivity(ibFaces, cells);
 
-     
+if (writeOption ==1)
+  {   
+    FILE *fp;
      string fileName11=fileBase+"ibfacetoparticle.dat";
      char* file11;
      file11=&fileName11[0];
@@ -382,7 +408,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
       }
      }
      fclose(fp);
-   
+  }
     
  
 }

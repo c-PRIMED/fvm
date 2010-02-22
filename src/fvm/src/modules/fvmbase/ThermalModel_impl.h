@@ -248,7 +248,7 @@ public:
 	  (_meshes,_geomFields,_thermalFields.temperature));
       
     discretizations.push_back(ibm);
-
+    
     Linearizer linearizer;
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
@@ -303,6 +303,11 @@ public:
             {
                 const T specifiedFlux(bc["specifiedHeatFlux"]);
                 gbc.applyNeumannBC(specifiedFlux);
+            }
+	    else if ((bc.bcType == "Symmetry"))
+            {
+                T zeroFlux(NumTypeTraits<T>::getZero());
+                gbc.applyNeumannBC(zeroFlux);
             }
             else
               throw CException(bc.bcType + " not implemented for ThermalModel");

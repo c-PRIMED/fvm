@@ -16,13 +16,15 @@ using namespace std;
 %include "GeomFields.h"
 %include "FlowFields.h"
 %include "ThermalFields.h"
-
+%include "ElectricFields.h"
 %include "atype.i"
 %include "Model.i"
 
 %include "MeshMetricsCalculator.i"
 
 %include "ThermalModel.i"
+
+%include "ElectricModel.i"
 
 %include "FlowModel.i"
 
@@ -36,3 +38,4 @@ typedef Vector<Tangent,3> VecTangent3;
 %template(VecTangent3) Vector<Tangent,3>;
 
 #endif
+

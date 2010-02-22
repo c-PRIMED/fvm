@@ -93,6 +93,9 @@ class   Octree
   
 
   void Impl(const Mesh& mesh, const GeomFields& geomFields);
+
+  void Create(const Mesh& mesh, const GeomFields& geomFields, const int faceGroupID);
+
   //void Impl(const int nCells, shared_ptr<VectorT3Array> cellCentroid); 
 //virtual const   bool            traverse(callback proc, void *data) const;
 

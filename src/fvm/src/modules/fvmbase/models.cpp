@@ -10,6 +10,9 @@ template class matrix<ATYPE>;
 #include "ThermalModel_impl.h"
 template class ThermalModel<ATYPE>;
 
+#include "ElectricModel.h"
+#include "ElectricModel_impl.h"
+template class ElectricModel<ATYPE>;
 
 #include "FlowModel.h"
 #include "FlowModel_impl.h"

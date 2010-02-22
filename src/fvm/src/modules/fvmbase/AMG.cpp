@@ -132,6 +132,7 @@ AMG::createCoarseLevels( )
       shared_ptr<LinearSystem>
         coarseLS(fineLS.createCoarse(coarseGroupSize,weightRatioThreshold));
 
+
      int isContinue =  int( fineLS.getMatrix().getLocalSize() != coarseLS->getMatrix().getLocalSize() );
 #ifdef FVM_PARALLEL     
      _commTarget.Allreduce(MPI::IN_PLACE, &isContinue, 1, MPI::INT, MPI::SUM);
@@ -143,6 +144,7 @@ AMG::createCoarseLevels( )
      _coarseLinearSystems.push_back(coarseLS);
        
       int min_size = coarseLS->getMatrix().getMinSize( _commTarget );
+
 
       if ( verbosity > 1 && MPI::COMM_WORLD.Get_rank() == 0 )
         cout << " proc_id = " << MPI::COMM_WORLD.Get_rank() << "  Created coarse level " << n << " of size "

@@ -44,6 +44,8 @@ public:
    void Impl(const Mesh& mesh, const GeomFields& geomFields);
  //  void Impl(const int nCells, shared_ptr<VecD3Array> cellCentroid);
 
+   void Create(const Mesh& mesh, const GeomFields& geomFields, const int faceGroupID);
+
    const int               getNode(const double x, const double y, const double z);
 
    const int               getNode(const VecD3 coordinate);

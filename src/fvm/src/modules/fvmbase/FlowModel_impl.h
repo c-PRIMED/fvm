@@ -16,8 +16,6 @@
 #include "DiffusionDiscretization.h"
 #include "ConvectionDiscretization.h"
 #include "TimeDerivativeDiscretization.h"
-#include "IbmDiscretization.h"
-
 #include "Underrelaxer.h"
 #include "MomentumPressureGradientDiscretization.h"
 #include "AMG.h"

@@ -70,6 +70,7 @@ public:
   int getFaceGroupCount() const;
   int getBoundaryGroupCount() const;
   int getInterfaceGroupCount() const;
+  int getID() const;
   shared_ptr<Array<int> > createAndGetBNglobalToLocal() const;
   const ArrayBase& getBNglobalToLocal() const;
   const StorageSite& getBoundaryNodes()const;

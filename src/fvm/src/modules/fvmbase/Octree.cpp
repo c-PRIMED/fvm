@@ -585,3 +585,44 @@ void Octree::Impl(const Mesh& mesh, const GeomFields& geomFields)
     Octree::build(points, count, threshold, maxDepth, bounds, currentDepth);
 
 }
+
+
+void Octree::Create(const Mesh& mesh, const GeomFields& geomFields, const int faceGroupID)
+
+{
+    //---build up Octree for a specific face group---//
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      {
+	const FaceGroup& fg = *fgPtr;
+	if (fg.id == faceGroupID) 
+	  {
+	  const StorageSite& faces = fg.site;
+	  const int nFaces = faces.getCount();
+	  const VectorT3Array& faceCentroid = dynamic_cast<const VectorT3Array& > (geomFields.coordinate[faces]);
+
+	  Point *points = new Point [nFaces];
+	  
+	  for(int i=0; i<nFaces; i++){
+	    points[i].coordinate=(faceCentroid)[i];
+	    points[i].cellIndex=i;
+	    points[i].code=0;
+	  }   
+  
+	  //Octree build up parameters
+
+	  const int threshold=1;
+	  const int maxDepth=20;
+	  const int count=nFaces;
+	  int currentDepth=0;
+   
+	  //calculate entire domain bounds
+	  
+	  Bounds bounds=Octree::calcCubicBounds(points, count);
+
+	  //build Octree
+	  Octree::build(points, count, threshold, maxDepth, bounds, currentDepth);
+	  }
+      }
+      
+}
