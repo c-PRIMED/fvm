@@ -51,6 +51,7 @@ MeshDismantler::init()
    setCellsSite();
    setFacesSite();
    setNodesSite();
+   setSites();
    setCellsMapper();
    setFaceCells();
    setNodesMapper();
@@ -211,12 +212,14 @@ MeshDismantler::faceCellsInit( vector<int>& localCellID )
 
      //init count and finishCount;
      for ( int id = 0; id < _nmesh; id++ ){
-        _faceCells.push_back( CRConnectivityPtr( new CRConnectivity( *_faceSite.at(id), *_cellSite.at(id)) ) );
+         const StorageSite& faceSite = _meshList.at(id)->getFaces();
+         const StorageSite& cellSite = _meshList.at(id)->getCells();
+        _faceCells.push_back( CRConnectivityPtr( new CRConnectivity( faceSite, cellSite ) ) );
         _faceCells.at(id)->initCount();
 
         //addCount, each face share only two cells
         const int cellCount = 2;
-        for ( int i = 0; i < _faceSite.at(id)->getCount(); i++ )
+        for ( int i = 0; i < faceSite.getCount(); i++ )
            _faceCells.at(id)->addCount(i, cellCount); // face has always two cells
         //finish count
         _faceCells.at(id)->finishCount();
@@ -440,17 +443,88 @@ void
 MeshDismantler::faceNodesInit()
 {
    //init count and finishCount;
-   const int nodeCount = _mesh.getAllFaceNodes().getRow()[1] - _mesh.getAllFaceNodes().getRow()[0];
    for ( int id = 0; id < _nmesh; id++ ){
-       _faceNodes.push_back( CRConnectivityPtr( new CRConnectivity( *_faceSite.at(id), *_nodeSite.at(id)) ) );
+        const StorageSite&  faceSite = _meshList.at(id)->getFaces();
+        const StorageSite&  nodeSite = _meshList.at(id)->getNodes();
+       _faceNodes.push_back( CRConnectivityPtr( new CRConnectivity( faceSite, nodeSite ) ) );
        _faceNodes.at(id)->initCount();
-
-       //addCount, each face share only 
-       for ( int i = 0; i < _faceSite.at(id)->getCount(); i++ )
-          _faceNodes.at(id)->addCount(i, nodeCount); 
-       //finish count
-       _faceNodes.at(id)->finishCount();
    }
+
+
+     //first add interior faces addCounts
+     vector<int> faceIndx(_nmesh,0);
+     const CRConnectivity& faceCells = _mesh.getAllFaceCells();
+     const CRConnectivity& faceNodes = _mesh.getAllFaceNodes();
+     const FaceGroup& interiorFaceGroup = _mesh.getInteriorFaceGroup();
+     const StorageSite& interiorFaceSite = interiorFaceGroup.site;
+     for ( int n = 0; n < interiorFaceSite.getCount(); n++ ){
+        int cell1 = faceCells(n,0);
+        int cell2 = faceCells(n,1);
+        int meshID1 = _globalCellToMeshID[cell1];
+        int meshID2 = _globalCellToMeshID[cell2];
+        if ( meshID1 == meshID2 ){ //it means this face interior face
+            const int nodeCount = faceNodes.getCount(n);
+            _faceNodes.at( meshID1 )->addCount( faceIndx[meshID1]++, nodeCount );
+        }
+     }
+
+     //add partition interfaces to addCount
+     const int interfaceCount = _mesh.getInterfaceGroupCount();
+     const FaceGroupList& interfaceGroupList = _mesh.getInterfaceGroups();
+     //loop over partition faces (
+     for ( int i = 0; i < interfaceCount; i++ ){
+         const StorageSite& interiorFaceSite = interfaceGroupList[i]->site;
+         int offset = interiorFaceSite.getOffset(); //where to begin face
+         int nBeg = offset;
+         int nEnd = nBeg + interiorFaceSite.getCount();
+         //loop over faces
+         for ( int n = nBeg; n < nEnd; n++ ){
+              //loop over nodes 
+              const int cell1 = faceCells(n,0);
+              const int meshID = _globalCellToMeshID[ cell1 ];
+              const int nodeCount = faceNodes.getCount(n);
+             _faceNodes.at( meshID )->addCount( faceIndx[meshID]++, nodeCount );
+         }
+     }
+
+      //loop over mesh interfaces to addCounts
+     //all interior face to search mesh interface
+     for ( int n = 0; n < interiorFaceSite.getCount(); n++ ){
+        int cell1 = faceCells(n,0);
+        int cell2 = faceCells(n,1);
+        int meshID1 = _globalCellToMeshID[cell1];
+        int meshID2 = _globalCellToMeshID[cell2];
+        if ( meshID1 != meshID2 ){ //it means this face  is mesh interface
+           //face in meshID1
+           const int nodeCount = faceCells.getCount(n);
+           _faceNodes.at ( meshID1 )->addCount( faceIndx[meshID1]++, nodeCount ); 
+           //face in meshID2
+           _faceNodes.at ( meshID2 )->addCount( faceIndx[meshID2]++, nodeCount ); 
+         }
+      }
+
+     //loop over boundary faces to addCount
+     const int boundaryCount  = _mesh.getBoundaryGroupCount();
+     const FaceGroupList& boundaryGroupList = _mesh.getBoundaryFaceGroups();
+     //loop  boundary faces to addCount
+     for ( int i = 0; i < boundaryCount; i++ ){
+         const StorageSite& boundaryFaceSite = boundaryGroupList[i]->site;
+         const int offset = boundaryFaceSite.getOffset(); //where to begin face
+         const int nBeg = offset;
+         const int nEnd = nBeg + boundaryFaceSite.getCount();
+         for ( int n = nBeg; n < nEnd; n++ ){
+             const int cell1 = faceCells(n,0);
+             const int meshID = _globalCellToMeshID[ cell1 ];
+             const int nodeCount = faceNodes.getCount(n);
+             _faceNodes.at( meshID )->addCount( faceIndx[meshID]++, nodeCount );
+         } 
+     }
+
+
+    //finish count
+    for ( int id = 0; id < _nmesh; id++ )
+       _faceNodes.at(id)->finishCount();
+ 
 }
 //faceNodes add for interior faces
 void
@@ -461,13 +535,13 @@ MeshDismantler::faceNodesAddInteriorFaces( vector<int>& faceID )
      const CRConnectivity& faceNodes = _mesh.getAllFaceNodes();
      const FaceGroup& interiorFaceGroup = _mesh.getInteriorFaceGroup();
      const StorageSite& interiorFaceSite = interiorFaceGroup.site;
-     const int nodeCount = _mesh.getAllFaceNodes().getRow()[1] - _mesh.getAllFaceNodes().getRow()[0];
      for ( int n = 0; n < interiorFaceSite.getCount(); n++ ){
         int cell1 = faceCells(n,0);
         int cell2 = faceCells(n,1);
         int meshID1 = _globalCellToMeshID[cell1];
         int meshID2 = _globalCellToMeshID[cell2];
         if ( meshID1 == meshID2 ){ //it means this face interior face
+           const int nodeCount = faceCells.getCount(n);
            for ( int i = 0; i < nodeCount; i++ ){
                int glbNodeID = faceNodes(n,i);
                int lclNodeID = _globalToLocalNodes[glbNodeID][meshID1]; //gives local id 
@@ -486,7 +560,6 @@ MeshDismantler::faceNodesAddPartitionInterfaces( vector<int>& faceID )
      const CRConnectivity& faceCells = _mesh.getAllFaceCells();
      const CRConnectivity& faceNodes = _mesh.getAllFaceNodes();
      const FaceGroupList& interfaceGroupList = _mesh.getInterfaceGroups();
-     const int nodeCount = _mesh.getAllFaceNodes().getRow()[1] - _mesh.getAllFaceNodes().getRow()[0];
      //loop over partition faces (
      for ( int i = 0; i < interfaceCount; i++ ){
          const StorageSite& interiorFaceSite = interfaceGroupList[i]->site;
@@ -498,6 +571,7 @@ MeshDismantler::faceNodesAddPartitionInterfaces( vector<int>& faceID )
               //loop over nodes 
               int cell1 = faceCells(n,0);
               int meshID = _globalCellToMeshID[ cell1 ];
+              const int nodeCount = faceCells.getCount(n);
               for ( int j = 0; j < nodeCount; j++ ){
                   int glbNodeID = faceNodes(n,j);
                   int lclNodeID = _globalToLocalNodes[glbNodeID][meshID]; //gives local id 
@@ -517,7 +591,6 @@ MeshDismantler::faceNodesAddMeshInterfaces(vector<int>& faceID)
      const CRConnectivity& faceNodes = _mesh.getAllFaceNodes();
      const FaceGroup& interiorFaceGroup = _mesh.getInteriorFaceGroup();
      const StorageSite& interiorFaceSite = interiorFaceGroup.site;
-     const int nodeCount = _mesh.getAllFaceNodes().getRow()[1] - _mesh.getAllFaceNodes().getRow()[0];
      //all interior face to search mesh interface
      for ( int n = 0; n < interiorFaceSite.getCount(); n++ ){
         int cell1 = faceCells(n,0);
@@ -525,19 +598,17 @@ MeshDismantler::faceNodesAddMeshInterfaces(vector<int>& faceID)
         int meshID1 = _globalCellToMeshID[cell1];
         int meshID2 = _globalCellToMeshID[cell2];
         if ( meshID1 != meshID2 ){ //it means this face  is mesh interface
-           //face in meshID1
+           const int nodeCount = faceCells.getCount(n);
            for ( int i = 0; i < nodeCount; i++ ){
+               //face in meshID1
                 int glblNodeID = faceNodes(n,i);
                 int lclNodeID = _globalToLocalNodes[glblNodeID][meshID1]; //gives local id 
                _faceNodes.at ( meshID1 )->add( faceID[meshID1], lclNodeID );
-           }
-           faceID[meshID1]++;
-           //face in meshID2
-           for ( int i = 0; i < nodeCount; i++ ){
-                int glblNodeID = faceNodes(n,i);
-                int lclNodeID = _globalToLocalNodes[glblNodeID][meshID2]; //gives local id 
+                //face in meshID2
+                lclNodeID = _globalToLocalNodes[glblNodeID][meshID2]; //gives local id 
                _faceNodes.at ( meshID2 )->add( faceID[meshID2], lclNodeID );
            }
+           faceID[meshID1]++;
            faceID[meshID2]++;
        }
     }
@@ -551,7 +622,6 @@ MeshDismantler::faceNodesAddBoundaryInterfaces( vector<int>& faceID )
      const CRConnectivity& faceCells = _mesh.getAllFaceCells(); 
      const CRConnectivity& faceNodes = _mesh.getAllFaceNodes();
      const FaceGroupList& boundaryGroupList = _mesh.getBoundaryFaceGroups();
-     const int nodeCount = _mesh.getAllFaceNodes().getRow()[1] - _mesh.getAllFaceNodes().getRow()[0];
      //loop over partition faces (
      for ( int i = 0; i < boundaryCount; i++ ){
          const StorageSite& boundaryFaceSite = boundaryGroupList[i]->site;
@@ -561,6 +631,7 @@ MeshDismantler::faceNodesAddBoundaryInterfaces( vector<int>& faceID )
          for ( int n = nBeg; n < nEnd; n++ ){
              int cell1 = faceCells(n,0);
              int meshID = _globalCellToMeshID[ cell1 ];
+              const int nodeCount = faceCells.getCount(n);
              for ( int j = 0; j < nodeCount; j++ ){
                 int glbNodeID = faceNodes(n,j);
                 int lclNodeID = _globalToLocalNodes[glbNodeID][meshID]; //gives local id 
@@ -641,8 +712,6 @@ MeshDismantler::setCoord()
 void
 MeshDismantler::setMesh()
 {
-    //set sites
-    setSites();
     //interior face group
     createInteriorFaceGroup();
     //interface group
@@ -872,12 +941,14 @@ MeshDismantler::meshInterfaceMappers()
      for ( int id = 0 ; id < _nmesh ; id++ ){
           const multimap<int,int>& faceIdentifier  = _faceIdentifierList[id];
           StorageSite::GatherMap & gatherMapLocal  = _meshList.at(id)->getCells().getGatherMap();
+          const StorageSite* thisSite = &_meshList.at(id)->getCells();
           //loop over all meshinterfaces  (key = all other meshes)
           for ( int key = 0; key < _nmesh; key++ ){ 
                //filling scatter (on this mesh) and gather Array (on other mesh)
                int nface = faceIdentifier.count(key);
                if ( nface > 0 ){
                    StorageSite::ScatterMap& scatterMapLocal = _meshList.at(key)->getCells().getScatterMap(); 
+                   const StorageSite* otherSite = &_meshList.at(key)->getCells();
                    ArrayIntPtr scatterArrayLocal( new Array<int>( nface ) ); //for other side mesh
                    ArrayIntPtr gatherArrayLocal ( new Array<int>( nface ) ); //for this side mesh
                    multimap<int,int>::const_iterator it;
@@ -894,8 +965,8 @@ MeshDismantler::meshInterfaceMappers()
                        (*scatterArrayLocal)[indx] = scatterCellID;
                        indx++;
                    }
-                   gatherMapLocal.insert ( make_pair(_cellSite.at(key).get(), gatherArrayLocal ) ); //gather this side mesh, so we key with other site StorageSite*
-                   scatterMapLocal.insert( make_pair(_cellSite.at(id).get() , scatterArrayLocal) ); //scatter other side mesh, so we key with this site StorageSite*
+                   gatherMapLocal.insert ( make_pair(otherSite, gatherArrayLocal ) ); //gather this side mesh, so we key with other site StorageSite*
+                   scatterMapLocal.insert( make_pair(thisSite , scatterArrayLocal) ); //scatter other side mesh, so we key with this site StorageSite*
                }
           }
      }
@@ -1020,7 +1091,7 @@ MeshDismantler::debug_scatter_mappers()
     //creating mappers between cell storage site to mesh id
     map< const StorageSite*, int > siteMeshMapper; //key  = storage site, value = mesh ID of cellSite
     for ( int id = 0; id < _nmesh; id++ )
-        siteMeshMapper[_cellSite[id].get()] = id;
+        siteMeshMapper[&_meshList.at(id)->getCells()] = id;
 
 
     for ( int id = 0; id < _nmesh; id++ ){
@@ -1056,10 +1127,10 @@ MeshDismantler::debug_gather_mappers()
     //creating mappers between cell storage site to mesh id
     map< const StorageSite*, int > siteMeshMapper; //key  = storage site, value = mesh ID of cellSite
     for ( int id = 0; id < _nmesh; id++ )
-        siteMeshMapper[_cellSite[id].get()] = id;
+        siteMeshMapper[&_meshList.at(id)->getCells()] = id;
 
     for ( int id = 0; id < _nmesh; id++ ){
-        _debugFile << "meshID : " << id << endl;
+        _debugFile << "meshID : " << id  <<  endl;
         const StorageSite::GatherMap&   gatherMap  = _meshList.at(id)->getCells().getGatherMap();
         foreach ( const StorageSite::GatherMap::value_type& pos, gatherMap ){
               const StorageSite& gatherSite = *pos.first;
