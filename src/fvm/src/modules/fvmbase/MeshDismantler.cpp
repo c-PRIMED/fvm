@@ -599,13 +599,16 @@ MeshDismantler::faceNodesAddMeshInterfaces(vector<int>& faceID)
         int meshID2 = _globalCellToMeshID[cell2];
         if ( meshID1 != meshID2 ){ //it means this face  is mesh interface
            const int nodeCount = faceCells.getCount(n);
+           //face in meshID1
            for ( int i = 0; i < nodeCount; i++ ){
-               //face in meshID1
                 int glblNodeID = faceNodes(n,i);
                 int lclNodeID = _globalToLocalNodes[glblNodeID][meshID1]; //gives local id 
                _faceNodes.at ( meshID1 )->add( faceID[meshID1], lclNodeID );
-                //face in meshID2
-                lclNodeID = _globalToLocalNodes[glblNodeID][meshID2]; //gives local id 
+           }
+           //face in meshID2 (consistent with global faceNodes connectivity)
+            for ( int i = nodeCount-1; i >= 0; i-- ){
+                int glblNodeID = faceNodes(n,i);
+                int lclNodeID = _globalToLocalNodes[glblNodeID][meshID2]; //gives local id 
                _faceNodes.at ( meshID2 )->add( faceID[meshID2], lclNodeID );
            }
            faceID[meshID1]++;
