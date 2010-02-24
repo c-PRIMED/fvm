@@ -24,14 +24,14 @@ class KineticModel
    * by taking moments of distribution function using quadrature points and weights from quadrature.h
    */
   TDistFF* dsfPtr;
-  MacroParameters& macroPr;
+
   KineticModel(const Mesh& mesh,const Quadrature<T>& quad)
     {
       //_mesh(mesh),
       //_quad(quad),
       //const DistFunctFields<T>& distfunfields,
       //dsfPtr=new TDistFF(const Mesh &mesh, const Quadrature<T>& quad);   
-    dsfPtr = new TDistFF(const Mesh &mesh, const Quadrature<T>& quad);   
+    dsfPtr = new TDistFF(mesh, quad);   
     }
   
  T ComputeMacroparameters(const Mesh& mesh, MacroParameters& macroPr, 
