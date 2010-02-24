@@ -4,6 +4,7 @@ class Netcdf(BuildPkg):
     def _configure(self):
         return self.sys_log("%s/configure --with-pic -prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        return self.sys_log("make -j%s" % jobs(self.name))
+        # make -j4 sometimes failed
+        return self.sys_log("make")
     def _install(self):
         return self.sys_log("make install")
