@@ -5,6 +5,7 @@
 #include "Model.h"
 #include "Array.h"
 #include "Vector.h"
+#include "Mesh.h"
 #include "quadrature.h"
 #include "DistFunctFields.h"
 #include "MacroParameters.h"
@@ -24,89 +25,124 @@ class KineticModel
    * by taking moments of distribution function using quadrature points and weights from quadrature.h
    */
   TDistFF* dsfPtr;
-
-  KineticModel(const Mesh& mesh,const Quadrature<T>& quad)
+ //MacroParameters& macroPr;
+  KineticModel(const Mesh& mesh, FlowFields& ffields,const Quadrature<T>& quad)
     {
-      //_mesh(mesh),
-      //_quad(quad),
-      //const DistFunctFields<T>& distfunfields,
-      //dsfPtr=new TDistFF(const Mesh &mesh, const Quadrature<T>& quad);   
-    dsfPtr = new TDistFF(mesh, quad);   
+      
+      //dsfPtr=new TDistFF(mesh,macroPr,quad);   
+    dsfPtr = new TDistFF(mesh, quad);      
+    ComputeMacroparameters(mesh,ffields,quad,*dsfPtr);
     }
   
- T ComputeMacroparameters(const Mesh& mesh, MacroParameters& macroPr, 
-			      const Quadrature<T>& quad, const DistFunctFields<T>& dsff) 
-  {
-    const StorageSite& cells = mesh.getCells();
-    const int nCells = cells.getSelfCount();
-    // double pi(3.14159);
-    
-     TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);
-     TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
-     VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
-    TArray& pressure = dynamic_cast<TArray&>(macroPr.pressure[cells]);
-    const int N123 = quad.getDirCount(); 
-    const TArray& cx = dynamic_cast<const TArray&>(*quad.cxPtr);
-    const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
-    const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
-    const TArray& dcxyz= dynamic_cast<const TArray&>(*quad.dcxyzPtr);
-    
-    
-    //initialize density,velocity,temperature to zero    
-    for(int c=0; c<nCells;c++)
-      {
-	density[c] =0.0;
-	v[c][0]=0.0;
-	v[c][1]=0.0;
-	v[c][2]=0.0;
-	temperature[c]=0.0;
-	
-      }	
-    //const stdVectorField& dsf1 = dynamic_cast<const stdVectorField*>(dsf);
-    //loop through directions
-    for(int j=0;j<N123;j++){
-      //Field& fnd= *dsf[j]; TArray& fc = dynamic_cast<TArray&>(fnd[cells]); used in DistFunctFields.h
-       Field& fnd = *dsff.dsf[j];
-      //Field& fnd =*dsf.dsf[j];
-      const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
-      //loop through cells
-      for(int c=0; c<nCells;c++)
-	{
-	  density[c] =density[c]+f[c]*dcxyz[j];
-	  v[c][0]=v[c][0]+(cx[j]*f[c])*dcxyz[j];
-	  v[c][1]=v[c][1]+(cy[j]*f[c])*dcxyz[j];
-	  v[c][2]=v[c][2]+(cz[j]*f[c])*dcxyz[j];
-	  temperature[c]=temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
-					 +pow(cz[j],2.0))*f[c]*dcxyz[j];
-	  
-	}	
-      
-    }
-    for(int c=0; c<nCells;c++){
-     
-      v[c][0]=v[c][0]/density[c];
-      v[c][1]=v[c][1]/density[c];
-      v[c][2]=v[c][2]/density[c];
-      temperature[c]=temperature[c]-(pow(v[c][0],2.0)
-				     +pow(v[c][1],2.0)
-				     +pow(v[c][2],2.0))*density[c];
-      temperature[c]=temperature[c]/(1.5*density[c]);  
-      pressure[c]=density[c]*temperature[c];
-      //viscosity[c]=muref*pow(temperature[c]/Tmuref,mu_w); // viscosity power law
-      
-      //loc2=loc2+(pow(cx[j]-v[c][0],2.0)+pow(cy[j]-v[c][1],2.0)+pow(cz[j]-v[c][2],2.0))*f[j]*dcxyz[j];
-      //loc3=loc3+pow(cx[j]-v[c][0]],2.0)*f[j]*dcxyz[j];
+ void ComputeMacroparameters(const Mesh& mesh, FlowFields& macroPr,
+			     const Quadrature<T>& quad,const DistFunctFields<T>& dsff)
+ {
+   const StorageSite& cells = mesh.getCells();
+   const int nCells = cells.getSelfCount(); 
+   
+   TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);  
+   VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
+   const int N123 = quad.getDirCount(); 
+   
+   const TArray& cx = dynamic_cast<const TArray&>(*quad.cxPtr);
+   const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
+   const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
+   const TArray& dcxyz= dynamic_cast<const TArray&>(*quad.dcxyzPtr);
+   
+   //initialize density,velocity  
+   for(int c=0; c<nCells;c++)
+     {
+       density[c] =1.0/N123;
+       v[c][0]=1.0;
+       v[c][1]=1.0;
+       v[c][2]=0.0;	
+     }	
 
+   for(int j=0;j<N123;j++){  //loop through directions
+     Field& fnd = *dsff.dsf[j];
+     const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
      
-    }
+     for(int c=0; c<nCells;c++){  //loop through cells
+       	 density[c] =density[c]+f[c]*dcxyz[j];
+	 v[c][0]=v[c][0]+(cx[j]*f[c])*dcxyz[j];
+	 v[c][1]=v[c][1]+(cy[j]*f[c])*dcxyz[j];
+	 v[c][2]=v[c][2]+(cz[j]*f[c])*dcxyz[j];
+       }	
+   }
+   
+   for(int c=0; c<nCells;c++){
+     v[c][0]=v[c][0]/density[c];
+     v[c][1]=v[c][1]/density[c];
+     v[c][2]=v[c][2]/density[c];   
+     }
+   
+ }
+ 
+ T ComputeMacroparameters(const Mesh& mesh, MacroParameters& macroPr, 
+			  const Quadrature<T>& quad, const DistFunctFields<T>& dsff) 
+ {
+   const StorageSite& cells = mesh.getCells();
+   const int nCells = cells.getSelfCount();
+   
+   
+   TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);
+   TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
+   VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
+   TArray& pressure = dynamic_cast<TArray&>(macroPr.pressure[cells]);
+   const int N123 = quad.getDirCount(); 
+   const TArray& cx = dynamic_cast<const TArray&>(*quad.cxPtr);
+   const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
+   const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
+   const TArray& dcxyz= dynamic_cast<const TArray&>(*quad.dcxyzPtr);
+   
+   
+   //initialize density,velocity,temperature to zero    
+   for(int c=0; c<nCells;c++)
+     {
+       density[c] =0.0;
+       v[c][0]=0.0;
+       v[c][1]=0.0;
+       v[c][2]=0.0;
+       temperature[c]=0.0;
+       
+     }	
+ 
+   for(int j=0;j<N123;j++){
     
-    
-  }
-  
-  /*
-   * Collision frequency
-   *
-   *
+     Field& fnd = *dsff.dsf[j];
+     const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
+     
+     for(int c=0; c<nCells;c++){
+	 density[c] =density[c]+f[c]*dcxyz[j];
+	 v[c][0]=v[c][0]+(cx[j]*f[c])*dcxyz[j];
+	 v[c][1]=v[c][1]+(cy[j]*f[c])*dcxyz[j];
+	 v[c][2]=v[c][2]+(cz[j]*f[c])*dcxyz[j];
+	 temperature[c]=temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
+					+pow(cz[j],2.0))*f[c]*dcxyz[j];
+     }	
+   }
+   for(int c=0; c<nCells;c++){
+     v[c][0]=v[c][0]/density[c];
+     v[c][1]=v[c][1]/density[c];
+     v[c][2]=v[c][2]/density[c];
+     temperature[c]=temperature[c]-(pow(v[c][0],2.0)
+				    +pow(v[c][1],2.0)
+				    +pow(v[c][2],2.0))*density[c];
+     temperature[c]=temperature[c]/(1.5*density[c]);  
+     pressure[c]=density[c]*temperature[c];
+     //viscosity[c]=muref*pow(temperature[c]/Tmuref,mu_w); // viscosity power law
+     
+     //loc2=loc2+(pow(cx[j]-v[c][0],2.0)+pow(cy[j]-v[c][1],2.0)+pow(cz[j]-v[c][2],2.0))*f[j]*dcxyz[j];
+     //loc3=loc3+pow(cx[j]-v[c][0]],2.0)*f[j]*dcxyz[j];
+   }
+   
+   
+ }
+ 
+ /*
+  * Collision frequency
+  *
+  *
   void ComputeCollisionfrequency(const Mesh& mesh,MacroParameters& macroPr)  {
     const StorageSite& cells = mesh.getCells();
     const int nCells = cells.getSelfCount();

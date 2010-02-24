@@ -6,6 +6,7 @@
 #include "Vector.h"
 #include "Mesh.h"
 #include "MacroParameters.h"
+#include "FlowFields.h"
 #include <math.h>
 
 template <class T>
@@ -37,7 +38,9 @@ class DistFunctFields
    * @param macroPr - Fields of macroparameters such as density, temperature, velocity, pressure, viscosity
    * @param quad - velocity quadrature with abscissa and weights
    */
- DistFunctFields(const Mesh& mesh,const MacroParameters& macroPr, const Quadrature<T>& quad) 
+ 
+  
+DistFunctFields(const Mesh& mesh,const MacroParameters& macroPr, const Quadrature<T>& quad) 
     {
       
       const StorageSite& cells = mesh.getCells();
@@ -57,19 +60,11 @@ class DistFunctFields
      const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
      const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
 
-      /*
+     /*
       TArray* distfunAPtr;   
       distfunAPtr=new TArray(nCells);
       TArray & distfunA= *distfunAPtr;  
-      for(int j=0;j<N123;j++){
-     	for(int c=0; c<nCells;c++)
-	  {
-	    distfunA[c]=density[c]/pow((pi*temperature[c]),1.5)*
-	      exp(-(pow((cx[j]-v[c][0]),2.0)+pow((cy[j]-v[c][1]),2.0)+
-		    pow((cz[j]-v[c][2]),2.0))/temperature[c]);
-	  } 
-      }
-      */
+     */      
             
       for(int j=0;j<N123;j++){
        	Field& fnd= *dsf[j]; 
@@ -83,8 +78,7 @@ class DistFunctFields
 
       }
     }
-  
-  
+
   DistFunctFields(const Mesh& mesh, const Quadrature<T>& quad) 
     {
       
@@ -114,28 +108,7 @@ class DistFunctFields
       }
     }
   
-/*
-  void Maxwellian(const Mesh& mesh, const Field& density, const Field& velocity, const Field& temperature, const Quadrature& quad)
-  {
-    const StorageSite& cells = mesh.getCells();
-    const int nCells = cells.getSelfCount();
-    const int N123 = quad.getDirCount();
-    double pi(3.14159);
-    
-    const TArray& density = dynamic_cast<const TArray&>(density[cells]);
-    const TArray& temperature = dynamic_cast<const TArray&>(temperature[cells]);
-    const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(velocity[cells]);
-    //const TArray& cx = dynamic_cast<const TArray&>(quad.cxPtr[cells]);
-    //const TArray& cy = dynamic_cast<const TArray&>(quad.cyPtr[cells]);
-    _cx(quad.cxPtr);
-    int j= direction;
-    for(int c=0; c<nCells;c++)
-      {
-	distfun[c]=density[c]/pow((pi*temperature[c]),1.5);
-	   //exp(-(pow((cx[j]-v[c][0]),2.0)+pow((cy[j]-v[c][1]),2.0)+pow((cz[j]-v[c][2]),2.0))/temperature[c]);      
-      } 
-  }
-  */ 
+
 };
  
 

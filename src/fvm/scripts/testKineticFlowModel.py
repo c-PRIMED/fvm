@@ -90,9 +90,10 @@ import fvm.KineticModel as esbgk
 #import fvm.MacroParameters as macropr
 #import fvm.DistFunctFields as f
 
+
 #cartesian
-quad1=quad.Quadrature(10,12,14,5.5,1.0) 
-esbgk1=KineticModel.DistFunctFields(meshes,quad1)
+quad1=quad.QuadratureD(10,12,14,5.5,1.0) 
+esbgk1=esbgk.KineticModelD(meshes[0],flowFields,quad1)
 
 foptions = fmodel.getOptions()
 fmodel.init()
