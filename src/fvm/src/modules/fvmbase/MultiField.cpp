@@ -113,6 +113,11 @@ MultiField::zero()
 {
   for(int i=0; i<_length; i++)
     _arrays[i]->zero();
+
+  foreach(GhostArrayMap::value_type& pos, _ghostArrays)
+  {
+      pos.second->zero();
+  }
 }
 
 void
