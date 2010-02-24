@@ -249,6 +249,8 @@ AMG::solve(LinearSystem & ls)
 
   }
 
+  _finestLinearSystem->getDelta().sync();
+  
   return rNorm0;
 }
 
