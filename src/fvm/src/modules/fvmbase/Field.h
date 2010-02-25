@@ -52,7 +52,6 @@ private:
   Field(const Field&);
   int  get_request_size();
 
-
   //ArrayBase& getGhostArray(const StorageSite&);
   
   const string _name;
@@ -62,8 +61,7 @@ private:
   ChildSitesMap _childSitesMap;
 
   ArrayBase& _create(const StorageSite& site);
-  int  MPI_FIELD_TAG;
-
+  
 };
 
 #endif

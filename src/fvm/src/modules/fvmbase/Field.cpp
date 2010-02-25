@@ -18,8 +18,7 @@ using namespace std;
 Field::Field(const string& name):
   IContainer(),
   _name(name),
-  _arrays(),
-  MPI_FIELD_TAG(1900)
+  _arrays()
 {
   logCtor();
 }  
@@ -199,11 +198,10 @@ Field::createSyncGatherArrays(const StorageSite& site)
       const StorageSite& oSite = *mpos.first;
       EntryIndex e(&oSite, &site);
       const Array<int>& toIndices = *(mpos.second);
-
       if (_ghostArrays.find(e) == _ghostArrays.end())
       {
           _ghostArrays[e] = thisArray.newSizedClone(toIndices.getLength());
-      }
+      }	
   }
 }
 
@@ -211,21 +209,20 @@ void
 Field::syncScatter(const StorageSite& site)
 {
   const ArrayBase& thisArray = operator[](site);
-      
+      	
   const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
   
   foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
   {
       const StorageSite& oSite = *mpos.first;
-      EntryIndex e(&site, &oSite);
+      EntryIndex e(&site, &oSite);	
       const Array<int>& fromIndices = *(mpos.second);
       if (_ghostArrays.find(e) == _ghostArrays.end()){
         _ghostArrays[e] = thisArray.newSizedClone( fromIndices.getLength() );
       }
 
-      ArrayBase& ghostArray = *_ghostArrays[e];
+      ArrayBase& ghostArray = *_ghostArrays[e];	
       thisArray.scatter(ghostArray,fromIndices);
-
 
   }
 }
@@ -240,7 +237,6 @@ Field::syncGather(const StorageSite& site)
   foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
   {
       const StorageSite& oSite = *mpos.first;
-
       const Array<int>& toIndices = *(mpos.second);
       EntryIndex e(&oSite, &site);
 
@@ -259,39 +255,37 @@ Field::syncGather(const StorageSite& site)
 
 void
 Field::syncLocal()
-{
-
+{  
    // scatter first (prepare ship packages)
    foreach(ArrayMap::value_type& pos, _arrays)
       syncScatter(*pos.first);
 
-  //gather arrays  are allocated (once)
-//   if ( !_syncGatherArrays )
-      foreach(ArrayMap::value_type& pos, _arrays)
-         createSyncGatherArrays(*pos.first);
+   foreach(ArrayMap::value_type& pos, _arrays)
+      createSyncGatherArrays(*pos.first);
 
 #ifdef FVM_PARALLEL
    //SENDING
    MPI::Request   request_send[ get_request_size() ];
    MPI::Request   request_recv[ get_request_size() ];
+   int indxSend = 0;
+   int indxRecv = 0;
    foreach(ArrayMap::value_type& pos, _arrays){
       const StorageSite& site = *pos.first;
       const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
-      int indx = 0;
       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
           const StorageSite&  oSite = *mpos.first;
           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
              EntryIndex e(&site,&oSite);
              ArrayBase& sendArray = *_ghostArrays[e];
              int to_where  = oSite.getGatherProcID();
-             if ( to_where != -1 )
-                request_send[indx++] =  
-                     MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, MPI_FIELD_TAG );
+             if ( to_where != -1 ){
+                int mpi_tag = oSite.getTag()+1900;
+                request_send[indxSend++] =  
+                     MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+             }
       }
       //RECIEVING
-
       //getting values from other meshes to fill g
-      indx = 0;
       const StorageSite::GatherMap& gatherMap = site.getGatherMap();
       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
          const StorageSite&  oSite = *mpos.first;
@@ -299,18 +293,20 @@ Field::syncLocal()
          EntryIndex e(&oSite,&site);
          ArrayBase& recvArray = *_ghostArrays[e];
          int from_where       = oSite.getGatherProcID();
-         if ( from_where != -1 )
-             request_recv[indx++] =  
-                    MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where,MPI_FIELD_TAG );
-      }
-
+         if ( from_where != -1 ){
+             int mpi_tag = oSite.getTag()+1900;
+             request_recv[indxRecv++] =  
+                    MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+         }
+       }
    }
 
    int count_recv = get_request_size();
    MPI::Request::Waitall( count_recv, request_recv );
 
-#endif
 
+
+#endif
 
   // gather 
   foreach(ArrayMap::value_type& pos, _arrays)
@@ -321,13 +317,14 @@ Field::syncLocal()
 int
 Field::get_request_size()
 {
-   int indx = 0;
+   int indx =  0;
    foreach(ArrayMap::value_type& pos, _arrays){
       const StorageSite& site = *pos.first;
       const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
           const StorageSite&  oSite = *mpos.first;
           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+          if ( oSite.getGatherProcID() != -1 )
              indx++;
       }
    }

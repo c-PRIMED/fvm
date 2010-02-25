@@ -838,8 +838,8 @@ MeshDismantler::partitionInterfaceMappers()
            const int neighMeshID  =  site.getGatherProcID();
            IntVecMap   scatterArrayMap;
            IntVecMap   gatherArrayMap;
-           getScatterArrays( scatterArray, scatterArrayMap, neighMeshID);
-           getGatherArrays ( gatherArray , gatherArrayMap , neighMeshID);
+           getScatterArrays( scatterArray, scatterArrayMap, neighMeshID );
+           getGatherArrays ( gatherArray , gatherArrayMap , neighMeshID );
            //getScatterGatherArrays( scatterArray, scatterArrayMap, gatherArrayMap, neighMeshID);
            foreach ( const IntVecMap::value_type& pos, scatterArrayMap ){
                const int meshID = pos.first;
@@ -864,6 +864,7 @@ MeshDismantler::partitionInterfaceMappers()
                //setting scatterID and gatherID
                siteScatterLocal->setScatterProcID( site.getScatterProcID() );
                siteScatterLocal->setGatherProcID ( site.getGatherProcID()  );
+               siteScatterLocal->setTag( meshID );
                //filling Mesh::mappers
                _meshList.at(meshID)->createGhostCellSiteScatter( site.getGatherProcID(),  siteScatterLocal );
                _meshList.at(meshID)->createGhostCellSiteGather ( site.getGatherProcID(),  siteScatterLocal );
@@ -1131,6 +1132,10 @@ MeshDismantler::debug_gather_mappers()
     map< const StorageSite*, int > siteMeshMapper; //key  = storage site, value = mesh ID of cellSite
     for ( int id = 0; id < _nmesh; id++ )
         siteMeshMapper[&_meshList.at(id)->getCells()] = id;
+
+    if ( MPI::COMM_WORLD.Get_rank() == 2 )
+         for ( int id = 0; id < _nmesh; id++ )
+             cout << " cellSIte = " << &_meshList.at(id)->getCells() << " meshID = " <<  siteMeshMapper[&_meshList.at(id)->getCells()] << endl;
 
     for ( int id = 0; id < _nmesh; id++ ){
         _debugFile << "meshID : " << id  <<  endl;

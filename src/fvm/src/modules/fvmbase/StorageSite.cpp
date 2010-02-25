@@ -9,7 +9,8 @@ StorageSite::StorageSite(const int selfCount, const int nGhost,
   _offset(offset),
   _parent(parent),
   _scatterProcID(-1),
-  _gatherProcID(-1)
+  _gatherProcID(-1),
+  _tag(-1)
 {
   logCtorVerbose("of size %d", _count);
 }

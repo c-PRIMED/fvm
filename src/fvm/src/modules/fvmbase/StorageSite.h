@@ -36,6 +36,7 @@ public:
   
   void setScatterProcID( int proc_id ) { _scatterProcID = proc_id; }
   void setGatherProcID(  int proc_id ) { _gatherProcID  = proc_id; }
+  void setTag( int tag) { _tag = tag; }
 
   const MappersMap& getMappers() const {throw;}
   MappersMap& getMappers() {throw;}
@@ -48,7 +49,7 @@ public:
 
   int getScatterProcID() const { return _scatterProcID;}
   int getGatherProcID()  const { return _gatherProcID; }
-
+  int getTag()           const { return _tag; }
 
   const StorageSite* const getParent() const {return _parent;}
   int getOffset() const {return _offset;}
@@ -67,6 +68,7 @@ private:
 
   int   _scatterProcID;
   int   _gatherProcID;
+  int   _tag;
 
 };
 

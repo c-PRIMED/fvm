@@ -203,9 +203,13 @@ public:
 
   virtual void print(ostream& os) const 
   {
-    if (_length == 1)
+    if (_length > 0)
     {
-      os <<_data[0];
+       for ( int i = 0; i < _length; i++ )
+         if ( i < _length-1)
+            os <<_data[i] << endl;
+         else 
+            os <<_data[i];
     }
     else
       throw CException("invalid array for print");          

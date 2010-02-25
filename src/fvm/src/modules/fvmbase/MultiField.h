@@ -80,9 +80,7 @@ private:
   ArrayIndexList _arrayIndices;
   ArrayMap _arrayMap;
   GhostArrayMap _ghostArrays;
-  vector<int> MPI_MULTIFIELD_TAG;
   bool _syncGatherArrays;
-  bool _isTagged;
 };
 
 #endif

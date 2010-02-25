@@ -984,19 +984,29 @@ void
 MeshMetricsCalculator<T>::init()
 {
   const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++){
+      const Mesh& mesh = *_meshes[n];
+      calculateNodeCoordinates(mesh);
+  }
+
   for (int n=0; n<numMeshes; n++)
   {
       const Mesh& mesh = *_meshes[n];
-      calculateNodeCoordinates(mesh);
       calculateFaceAreas(mesh);
       calculateFaceAreaMag(mesh);
       calculateFaceCentroids(mesh);
+   }
+    for (int n=0; n<numMeshes; n++){
+      const Mesh& mesh = *_meshes[n];
       calculateCellCentroids(mesh);
-      calculateCellVolumes(mesh);
-  }
+    }
+   _coordField.syncLocal();
 
-  _volumeField.syncLocal();
-  _coordField.syncLocal();
+    for (int n=0; n<numMeshes; n++){
+      const Mesh& mesh = *_meshes[n];
+      calculateCellVolumes(mesh);
+   }
+   _volumeField.syncLocal();
 }
 //***********************************************************************//
 
