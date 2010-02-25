@@ -304,6 +304,11 @@ public:
                 const T specifiedFlux(bc["specifiedHeatFlux"]);
                 gbc.applyNeumannBC(specifiedFlux);
             }
+            else if ((bc.bcType == "Symmetry"))
+            {
+                 T zeroFlux(NumTypeTraits<T>::getZero());
+                 gbc.applyNeumannBC(zeroFlux);
+            }
             else
               throw CException(bc.bcType + " not implemented for ThermalModel");
         }
@@ -453,7 +458,7 @@ for ( unsigned int id = 0; id < _meshes.size(); id++ ){
         for(int jp=row[i]; jp<row[i+1]; jp++)
         {
             const int j = col[jp];
-            //if (j<nCells)
+            if (j<nCells)
               fprintf(matFile,"%d %d %lf\n", i+1, j+1, tCoeff[jp]);
         }
     }
