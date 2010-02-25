@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include <sstream>
 
 #include "NumType.h"
 #include "Array.h"
@@ -20,7 +21,6 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "SourceDiscretization.h"
-
 
 template<class T>
 class ThermalModel<T>::Impl
@@ -248,7 +248,7 @@ public:
 	  (_meshes,_geomFields,_thermalFields.temperature));
       
     discretizations.push_back(ibm);
-    
+
     Linearizer linearizer;
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
@@ -303,11 +303,6 @@ public:
             {
                 const T specifiedFlux(bc["specifiedHeatFlux"]);
                 gbc.applyNeumannBC(specifiedFlux);
-            }
-	    else if ((bc.bcType == "Symmetry"))
-            {
-                T zeroFlux(NumTypeTraits<T>::getZero());
-                gbc.applyNeumannBC(zeroFlux);
             }
             else
               throw CException(bc.bcType + " not implemented for ThermalModel");
@@ -414,8 +409,8 @@ public:
 
     MultiFieldMatrix& matrix = ls.getMatrix();
     MultiField& b = ls.getB();
-
-    const Mesh& mesh = *_meshes[0];
+for ( unsigned int id = 0; id < _meshes.size(); id++ ){
+    const Mesh& mesh = *_meshes[id];
     const StorageSite& cells = mesh.getCells();
     
     MultiField::ArrayIndex tIndex(&_thermalFields.temperature,&cells);
@@ -442,8 +437,11 @@ public:
           const int j = col[jp];
           if (j<nCells) nCoeffs++;
       }
-    
-    string matFileName = fileBase + ".mat";
+    stringstream ss;
+    ss << id;
+    string matFileName = fileBase + "_mesh" + ss.str() +  ".mat";
+
+
     FILE *matFile = fopen(matFileName.c_str(),"wb");
     
     fprintf(matFile,"%%%%MatrixMarket matrix coordinate real general\n");
@@ -455,7 +453,7 @@ public:
         for(int jp=row[i]; jp<row[i+1]; jp++)
         {
             const int j = col[jp];
-            if (j<nCells)
+            //if (j<nCells)
               fprintf(matFile,"%d %d %lf\n", i+1, j+1, tCoeff[jp]);
         }
     }
@@ -469,7 +467,9 @@ public:
       fprintf(rhsFile,"%lf\n",-rCell[i]);
 
     fclose(rhsFile);
+
   }
+}
 #endif
   
   void computeIBFaceTemperature(const StorageSite& particles)
