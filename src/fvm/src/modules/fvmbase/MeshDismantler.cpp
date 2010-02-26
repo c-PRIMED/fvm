@@ -1127,16 +1127,12 @@ void
 
 MeshDismantler::debug_gather_mappers()
 {
-#ifdef FVM_PARALLEL
     debug_file_open("gatherMappers");
     //creating mappers between cell storage site to mesh id
     map< const StorageSite*, int > siteMeshMapper; //key  = storage site, value = mesh ID of cellSite
     for ( int id = 0; id < _nmesh; id++ )
         siteMeshMapper[&_meshList.at(id)->getCells()] = id;
 
-    if ( MPI::COMM_WORLD.Get_rank() == 2 )
-         for ( int id = 0; id < _nmesh; id++ )
-             cout << " cellSIte = " << &_meshList.at(id)->getCells() << " meshID = " <<  siteMeshMapper[&_meshList.at(id)->getCells()] << endl;
 
     for ( int id = 0; id < _nmesh; id++ ){
         _debugFile << "meshID : " << id  <<  endl;
@@ -1162,7 +1158,6 @@ MeshDismantler::debug_gather_mappers()
         }
      }
     debug_file_close();
-#endif
 }
 
 
