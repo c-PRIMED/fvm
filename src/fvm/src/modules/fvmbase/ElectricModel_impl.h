@@ -491,7 +491,7 @@ public:
 	  _electricFields.potential,
 	  _electricFields.total_charge
 	));
-    //discretizations.push_back(sd);
+    discretizations.push_back(sd);
 
     if(_options.ibm){
       shared_ptr<Discretization>

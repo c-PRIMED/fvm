@@ -78,7 +78,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
     if (this->electrostaticsLinearSolver == 0)
     {
         LinearSolver* ls(new  AMG());
-        ls->relativeTolerance = 1e-1;
+        ls->relativeTolerance = 1e-3;
         ls->nMaxIterations = 20;
         ls->verbosity=0;
         this->electrostaticsLinearSolver = ls;
@@ -91,7 +91,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
     if (this->chargetransportLinearSolver == 0)
     {
         LinearSolver* ls(new  AMG());
-        ls->relativeTolerance = 1e-1;
+        ls->relativeTolerance = 1e-3;
         ls->nMaxIterations = 20;
         ls->verbosity=0;
         this->chargetransportLinearSolver = ls;

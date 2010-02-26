@@ -131,8 +131,8 @@ public:
           faceDiffusivity = diffCell[c0];
         else
           faceDiffusivity = harmonicAverage(diffCell[c0],diffCell[c1]);
-        
-        const T_Scalar diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
+	
+	const T_Scalar diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
         const T_Scalar diffCoeff = faceDiffusivity*diffMetric;
         const VectorT3 secondaryCoeff = faceDiffusivity*(faceArea[f]-ds*diffMetric);
         
