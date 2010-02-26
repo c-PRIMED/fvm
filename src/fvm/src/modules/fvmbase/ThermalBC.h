@@ -13,6 +13,15 @@ struct ThermalBC : public FloatVarDict<T>
   string bcType;
 };
 
+template<class T>
+struct ThermalVC : public FloatVarDict<T>
+{
+  ThermalVC()
+  {
+      this->defineVar("thermalConductivity",T(1.0));
+  }
+  string vcType;
+};
 
 template<class T>
 struct ThermalModelOptions : public FloatVarDict<T>

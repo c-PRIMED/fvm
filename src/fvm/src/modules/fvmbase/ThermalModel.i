@@ -13,6 +13,12 @@ struct ThermalBC : public FloatVarDict<T>
 }; 
 
 template <class T>
+struct ThermalVC : public FloatVarDict<T>
+{
+  string vcType;
+}; 
+
+template <class T>
 struct ThermalModelOptions : public FloatVarDict<T>
 {
   double relativeTolerance;
@@ -22,11 +28,14 @@ struct ThermalModelOptions : public FloatVarDict<T>
 }; 
 
 
-%template(ThermalBCA) ThermalBC<ATYPE_STR>;
-%template(ThermalBCList) std::vector<ThermalBC<ATYPE_STR>* >;
-%template(ThermalBCsMap) std::map<int,ThermalBC<ATYPE_STR>* >;
+%template(ThermalBCA) ThermalBC< ATYPE_STR >;
+%template(ThermalVCA) ThermalVC< ATYPE_STR >;
+%template(ThermalBCList) std::vector<ThermalBC< ATYPE_STR >* >;
+%template(ThermalBCsMap) std::map<int,ThermalBC< ATYPE_STR >* >;
+%template(ThermalVCList) std::vector<ThermalVC< ATYPE_STR >* >;
+%template(ThermalVCsMap) std::map<int,ThermalVC< ATYPE_STR >* >;
 
-%template(ThermalModelOptionsA) ThermalModelOptions<ATYPE_STR>;
+%template(ThermalModelOptionsA) ThermalModelOptions< ATYPE_STR >;
 
 
 %import "Model.i"
@@ -34,5 +43,5 @@ struct ThermalModelOptions : public FloatVarDict<T>
 %include "ThermalModel.h"
 
 
-%template(ThermalModelA) ThermalModel<ATYPE_STR>;
+%template(ThermalModelA) ThermalModel< ATYPE_STR >;
 

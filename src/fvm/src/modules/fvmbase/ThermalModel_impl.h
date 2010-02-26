@@ -55,6 +55,10 @@ public:
             ThermalBC<T> *bc(new ThermalBC<T>());
             
             _bcMap[fg.id] = bc;
+            ThermalVC<T> *vc(new ThermalVC<T>());
+            vc->vcType = "flow";
+            _vcMap[mesh.getID()] = vc;
+
             if ((fg.groupType == "wall") ||
                 (fg.groupType == "symmetry"))
             {
@@ -80,7 +84,8 @@ public:
         const Mesh& mesh = *_meshes[n];
 
         const StorageSite& cells = mesh.getCells();
-	
+        const ThermalVC<T>& vc = *_vcMap[mesh.getID()];
+
 	//temperature
         shared_ptr<TArray> tCell(new TArray(cells.getCount()));
         *tCell = _options["initialTemperature"];
@@ -88,7 +93,7 @@ public:
 	
 	//conductivity
         shared_ptr<TArray> condCell(new TArray(cells.getCount()));
-        *condCell = T(1.0);
+        *condCell = vc["thermalConductivity"];
         _thermalFields.conductivity.addArray(cells,condCell);
 	
 	//source 
@@ -144,12 +149,13 @@ public:
 	
 	
     }
-
+    _thermalFields.conductivity.syncLocal();
     _niters  =0;
     _initialNorm = MFRPtr();
   }
   
   ThermalBCMap& getBCMap() {return _bcMap;}
+  ThermalVCMap& getVCMap() {return _vcMap;}
 
   ThermalBC<T>& getBC(const int id) {return *_bcMap[id];}
 
@@ -523,6 +529,7 @@ private:
   ThermalFields& _thermalFields;
 
   ThermalBCMap _bcMap;
+  ThermalVCMap _vcMap;
   ThermalModelOptions<T> _options;
   GradientModel<T> _temperatureGradientModel;
   
@@ -557,6 +564,10 @@ ThermalModel<T>::init()
 template<class T>
 typename ThermalModel<T>::ThermalBCMap&
 ThermalModel<T>::getBCMap() {return _impl->getBCMap();}
+
+template<class T>
+typename ThermalModel<T>::ThermalVCMap&
+ThermalModel<T>::getVCMap() {return _impl->getVCMap();}
 
 template<class T>
 ThermalBC<T>&

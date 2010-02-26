@@ -17,6 +17,7 @@ class ThermalModel : public Model
 public:
 
   typedef std::map<int,ThermalBC<T>*> ThermalBCMap;
+  typedef std::map<int,ThermalVC<T>*> ThermalVCMap;
   class Impl;
   
   
@@ -28,6 +29,8 @@ public:
   virtual void init();
   
   ThermalBCMap& getBCMap();
+  ThermalVCMap& getVCMap();
+  
   ThermalBC<T>& getBC(const int id);
 
   ThermalModelOptions<T>& getOptions();
@@ -37,8 +40,9 @@ public:
   T getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
   
   void printBCs();
+#if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
   void dumpMatrix(const string fileBase);
-  
+#endif
   void advance(const int niter);
 private:
   shared_ptr<Impl> _impl;
