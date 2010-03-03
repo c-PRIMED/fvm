@@ -63,7 +63,6 @@ public:
   //  void computeIBandSolidVelocity(const StorageSite& particles);
   //LinearSolver& getMomentumSolver();
   //LinearSolver& getContinuitySolver();
-  LinearSolver& getDeformationSolver();
 
 private:
   shared_ptr<Impl> _impl;
