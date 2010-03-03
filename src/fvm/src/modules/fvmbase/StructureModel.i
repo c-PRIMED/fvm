@@ -47,5 +47,5 @@ struct StructureModelOptions : public FloatVarDict<T>
 %include "StructureModel.h"
 
 
-//%template(StructureModelA) StructureModel<ATYPE_STR>;
+%template(StructureModelA) StructureModel<ATYPE_STR>;
 
