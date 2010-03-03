@@ -1014,14 +1014,6 @@ StructureModel<T>::advanceCoupled(const int niter)
 }
 */
 
-#if 0
-template<class T>
-LinearSolver&
-StructureModel<T>::getDeformationSolver()
-{
-  return _impl->getDeformationSolver();
-}
-#endif
 
 template<class T>
 void
