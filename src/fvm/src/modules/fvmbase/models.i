@@ -17,6 +17,7 @@ using namespace std;
 %include "FlowFields.h"
 %include "ThermalFields.h"
 %include "ElectricFields.h"
+%include "StructureFields.h"
 %include "atype.i"
 %include "Model.i"
 
@@ -29,6 +30,8 @@ using namespace std;
 %include "FlowModel.i"
 
 %include "IdealGasDensityModel.i"
+
+%include "StructureModel.i"
 
 %include "MovingMeshModel.i"
 

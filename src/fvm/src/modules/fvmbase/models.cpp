@@ -28,3 +28,8 @@ template class IdealGasDensityModel<ATYPE>;
 
 template class MovingMeshModel<ATYPE>;
 
+#include "StructureModel.h"
+#include "StructureModel_impl.h"
+
+template class StructureModel<ATYPE>;
+
