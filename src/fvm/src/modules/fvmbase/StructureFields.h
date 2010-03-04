@@ -12,7 +12,7 @@ struct StructureFields
   Field deformationGradient;
   Field deformationFlux;
   Field eta;
-  Field lambda;
+  Field eta1;
   Field density;
   Field deformationN1;
   Field deformationN2;
