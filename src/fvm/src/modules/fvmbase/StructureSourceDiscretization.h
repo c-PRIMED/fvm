@@ -27,13 +27,13 @@ public:
 				const GeomFields& geomFields,
 				Field& varField,
 				const Field& etaField,
-				const Field& lambdaField,
+				const Field& eta1Field,
 				const Field& varGradientField)  :
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
     _etaField(etaField),
-    _lambdaField(lambdaField),
+    _eta1Field(eta1Field),
     _varGradientField(varGradientField)
    {}
 
@@ -61,8 +61,8 @@ public:
     const TArray& etaCell =
       dynamic_cast<const TArray&>(_etaField[cells]);
 
-    const TArray& lambdaCell =
-      dynamic_cast<const TArray&>(_lambdaField[cells]);
+    const TArray& eta1Cell =
+      dynamic_cast<const TArray&>(_eta1Field[cells]);
 
     const int nFaces = faces.getCount();
 
@@ -77,22 +77,22 @@ public:
         T vol1 = cellVolume[c1];
 
         T faceEta(1.0);
-	T faceLambda(1.0);
+	T faceEta1(1.0);
 
         if (vol0 == 0.)
        	{
             faceEta = etaCell[c1];
-	    faceLambda = lambdaCell[c1];
+	    faceEta1 = eta1Cell[c1];
 	}
         else if (vol1 == 0.)
 	{
             faceEta = etaCell[c0];
-	    faceLambda = lambdaCell[c0];
+	    faceEta1 = eta1Cell[c0];
 	}
         else
 	{
             faceEta = harmonicAverage(etaCell[c0],etaCell[c1]);
-	    faceLambda = harmonicAverage(lambdaCell[c0],lambdaCell[c1]);
+	    faceEta1 = harmonicAverage(eta1Cell[c0],eta1Cell[c1]);
 	}
 
         const VGradType gradF = (vGradCell[c0]*vol0+vGradCell[c1]*vol1)/(vol0+vol1);
@@ -101,7 +101,7 @@ public:
 	                     ((gradF[0])[0]*(faceArea[f])[0]
 			     +(gradF[0])[1]*(faceArea[f])[1]
 			     +(gradF[0])[2]*(faceArea[f])[2])
-	           +faceLambda*
+	           +faceEta1*
 	                     ((gradF[0])[0]
 			     +(gradF[1])[1]
 			     +(gradF[2])[2])*(faceArea[f])[0];
@@ -109,7 +109,7 @@ public:
 	                     ((gradF[1])[0]*(faceArea[f])[0]
 			     +(gradF[1])[1]*(faceArea[f])[1]
 			     +(gradF[1])[2]*(faceArea[f])[2])
-	           +faceLambda*
+	           +faceEta1*
 	                     ((gradF[0])[0]
 	                     +(gradF[1])[1]
 	                     +(gradF[2])[2])*(faceArea[f])[1];
@@ -117,7 +117,7 @@ public:
 	                     ((gradF[2])[0]*(faceArea[f])[0]
 			     +(gradF[2])[1]*(faceArea[f])[1]
 			     +(gradF[2])[2]*(faceArea[f])[2])
-                   +faceLambda*
+                   +faceEta1*
 	                     ((gradF[0])[0]
 	                     +(gradF[1])[1]
 	                     +(gradF[2])[2])*(faceArea[f])[2];
@@ -131,7 +131,7 @@ private:
   const GeomFields& _geomFields;
   Field& _varField;
   const Field& _etaField;
-  const Field& _lambdaField;
+  const Field& _eta1Field;
   const Field& _varGradientField;
 };
 

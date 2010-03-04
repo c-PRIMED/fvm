@@ -149,9 +149,9 @@ public:
         *etaCell = vc["eta"];
         _structureFields.eta.addArray(cells,etaCell);
 
-        shared_ptr<TArray> lambdaCell(new TArray(cells.getCount()));
-        *lambdaCell = vc["lambda"];
-        _structureFields.lambda.addArray(cells,lambdaCell);
+        shared_ptr<TArray> eta1Cell(new TArray(cells.getCount()));
+        *eta1Cell = vc["eta1"];
+        _structureFields.eta1.addArray(cells,eta1Cell);
 
         // compute values of deformation flux
 
@@ -275,7 +275,7 @@ public:
          (_meshes,_geomFields,
           _structureFields.deformation,
           _structureFields.eta,
-	  _structureFields.lambda,
+	  _structureFields.eta1,
           _structureFields.deformationGradient));
   
     shared_ptr<Discretization>
@@ -798,7 +798,7 @@ public:
       dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
     */
     const TArray& eta = dynamic_cast<const TArray&>(_structureFields.eta[cells]);
-    const TArray& lambda = dynamic_cast<const TArray&>(_structureFields.lambda[cells]);
+    const TArray& eta1 = dynamic_cast<const TArray&>(_structureFields.eta1[cells]);
 
     boost::shared_ptr<StressTensorArray> stressTensorPtr( new StressTensorArray(nCells));
     StressTensorArray& stressTensor = *stressTensorPtr;
@@ -814,11 +814,11 @@ public:
             wgPlusTranspose[i][j] += wg[j][i];
         
         stressTensor[n][0] = wgPlusTranspose[0][0]*eta[c]+
-	  (wg[0][0]+wg[1][1]+wg[2][2])*lambda[c];
+	  (wg[0][0]+wg[1][1]+wg[2][2])*eta1[c];
         stressTensor[n][1] = wgPlusTranspose[1][1]*eta[c]+
-	  (wg[0][0]+wg[1][1]+wg[2][2])*lambda[c]; 
+	  (wg[0][0]+wg[1][1]+wg[2][2])*eta1[c]; 
         stressTensor[n][2] = wgPlusTranspose[2][2]*eta[c]+
-	  (wg[0][0]+wg[1][1]+wg[2][2])*lambda[c];
+	  (wg[0][0]+wg[1][1]+wg[2][2])*eta1[c];
         stressTensor[n][3] = wgPlusTranspose[0][1]*eta[c];
         stressTensor[n][4] = wgPlusTranspose[1][2]*eta[c];
         stressTensor[n][5] = wgPlusTranspose[2][0]*eta[c];
