@@ -93,7 +93,7 @@ import fvm.KineticModel as esbgk
 
 #cartesian
 quad1=quad.QuadratureD(10,12,14,5.5,1.0) 
-esbgk1=esbgk.KineticModelD(meshes[0],flowFields,quad1)
+esbgk1=esbgk.KineticModelD(meshes,flowFields,quad1)
 
 foptions = fmodel.getOptions()
 fmodel.init()

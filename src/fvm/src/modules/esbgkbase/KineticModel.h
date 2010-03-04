@@ -24,19 +24,24 @@ class KineticModel
    * Calculation of macro-parameters density, temperature, components of velocity, pressure
    * by taking moments of distribution function using quadrature points and weights from quadrature.h
    */
-  TDistFF* dsfPtr;
+  // TDistFF* dsfPtr;
  //MacroParameters& macroPr;
-  KineticModel(const Mesh& mesh, FlowFields& ffields,const Quadrature<T>& quad)
-    {
-      
+ KineticModel(const MeshList& meshes, FlowFields& ffields,const Quadrature<T>& quad):
+  _meshes(meshes),
+    _quadrature(quad),
+  _dsfPtr(_meshes,_quadrature)
+    {     
       //dsfPtr=new TDistFF(mesh,macroPr,quad);   
-    dsfPtr = new TDistFF(mesh, quad);      
-    ComputeMacroparameters(mesh,ffields,quad,*dsfPtr);
+      //dsfPtr = new TDistFF(_meshes, quad);      
+    ComputeMacroparameters(_meshes,ffields,_quadrature,_dsfPtr);
     }
   
- void ComputeMacroparameters(const Mesh& mesh, FlowFields& macroPr,
+ void ComputeMacroparameters(const MeshList& meshes, FlowFields& macroPr,
 			     const Quadrature<T>& quad,const DistFunctFields<T>& dsff)
- {
+ {  const int numMeshes =meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+        const Mesh& mesh = *meshes[n];
    const StorageSite& cells = mesh.getCells();
    const int nCells = cells.getSelfCount(); 
    
@@ -77,10 +82,13 @@ class KineticModel
      }
    
  }
- 
- T ComputeMacroparameters(const Mesh& mesh, MacroParameters& macroPr, 
+ }
+ T ComputeMacroparameters(const MeshList& meshes, MacroParameters& macroPr, 
 			  const Quadrature<T>& quad, const DistFunctFields<T>& dsff) 
- {
+ {  const int numMeshes = meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+        const Mesh& mesh = *meshes[n];
    const StorageSite& cells = mesh.getCells();
    const int nCells = cells.getSelfCount();
    
@@ -137,6 +145,7 @@ class KineticModel
    }
    
    
+      }
  }
  
  /*
@@ -184,6 +193,9 @@ class KineticModel
   
  private:
   //shared_ptr<Impl> _impl;
+  const MeshList& _meshes;
+  DistFunctFields<T> _dsfPtr; 
+  const Quadrature<T>& _quadrature;
 };
 
 #endif

@@ -1,7 +1,7 @@
 Import('env')
 
-src = ['testquadrature.cpp',
-       ]
+#src = ['KineticModels.cpp',
+src=[ ]
 deps=['fvmbase','importers','exporters', 'rlog']
 
 env.createSharedLibrary('esbgkbase',src,['rlog','fvmbase'])
@@ -10,5 +10,5 @@ deps += ['esbgkbase']
 env.createSwigModule('Quadrature',sources=['Quadrature.i'],deplibs=deps)
 env.createSwigModule('KineticModel',sources=['KineticModel.i'],deplibs=deps)
 
-env.createExe('testquadrature',src, deplibs=deps)
+#env.createExe('testquadrature',src, deplibs=deps)
 

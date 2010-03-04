@@ -40,9 +40,13 @@ class DistFunctFields
    */
  
   
-DistFunctFields(const Mesh& mesh,const MacroParameters& macroPr, const Quadrature<T>& quad) 
+ DistFunctFields(const MeshList& meshes,const MacroParameters& macroPr, const Quadrature<T>& quad):
+  _meshes(meshes) 
     {
-      
+        const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+        const Mesh& mesh = *_meshes[n];
       const StorageSite& cells = mesh.getCells();
       const int nCells = cells.getSelfCount();
       double pi(3.14159);
@@ -78,10 +82,14 @@ DistFunctFields(const Mesh& mesh,const MacroParameters& macroPr, const Quadratur
 
       }
     }
-
-  DistFunctFields(const Mesh& mesh, const Quadrature<T>& quad) 
-    {
-      
+    }
+ DistFunctFields(const MeshList& meshes, const Quadrature<T>& quad):
+  _meshes(meshes)    
+{
+        const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+        const Mesh& mesh = *_meshes[n];
       const StorageSite& cells = mesh.getCells();
       const int nCells = cells.getSelfCount();
       double pi(3.14159);
@@ -107,8 +115,10 @@ DistFunctFields(const Mesh& mesh,const MacroParameters& macroPr, const Quadratur
 
       }
     }
-  
+    }
 
+ private:
+  const MeshList _meshes;
 };
  
 
