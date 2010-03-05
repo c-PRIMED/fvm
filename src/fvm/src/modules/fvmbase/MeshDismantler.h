@@ -24,7 +24,9 @@ public:
     typedef   shared_ptr< Array<Mesh::VecD3> >   ArrayVecD3Ptr;
     typedef   vector< map<int, set<int> > >      VecMap;
     typedef   map<int, multimap<int,int> >      NestedMap;
-
+    typedef   pair<int,int>                   EntryIndex;
+    typedef   map<EntryIndex,int>             EntryMap;
+    typedef   map<EntryIndex, vector<int> >   EntryVecMap;
 
    MeshDismantler( const MeshList& meshList );
    ~MeshDismantler();
@@ -78,8 +80,8 @@ private:
    void  setMappers();
    void  partitionInterfaceMappers();
    void  meshInterfaceMappers();
-   void  getScatterArrays(const Array<int>& scatterArray, IntVecMap& scatterArrayLocal,  const int neighMeshID );
-   void  getGatherArrays (const Array<int>& gatherArray , IntVecMap& gatherArrayLocal ,  const int neighMeshID );
+   void  getScatterArrays(const Array<int>& scatterArray, EntryVecMap& scatterArrayLocal, const StorageSite& site );
+   void  getGatherArrays (const Array<int>& gatherArray , EntryVecMap& gatherArrayLocal , const StorageSite& site );
 
 
    void  debug_file_open( const string& fname );

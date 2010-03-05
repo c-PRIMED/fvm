@@ -36,7 +36,7 @@ public:
   
   void setScatterProcID( int proc_id ) { _scatterProcID = proc_id; }
   void setGatherProcID(  int proc_id ) { _gatherProcID  = proc_id; }
-  void setTag( int tag) { _tag = tag; }
+  void setTag( int tag) { _tag = tag;}
 
   const MappersMap& getMappers() const {throw;}
   MappersMap& getMappers() {throw;}

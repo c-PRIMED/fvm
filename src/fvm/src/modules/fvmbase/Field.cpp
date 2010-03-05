@@ -279,7 +279,7 @@ Field::syncLocal()
              ArrayBase& sendArray = *_ghostArrays[e];
              int to_where  = oSite.getGatherProcID();
              if ( to_where != -1 ){
-                int mpi_tag = oSite.getTag()+1900;
+                int mpi_tag = oSite.getTag();
                 request_send[indxSend++] =  
                      MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
              }
@@ -294,7 +294,7 @@ Field::syncLocal()
          ArrayBase& recvArray = *_ghostArrays[e];
          int from_where       = oSite.getGatherProcID();
          if ( from_where != -1 ){
-             int mpi_tag = oSite.getTag()+1900;
+             int mpi_tag = oSite.getTag();
              request_recv[indxRecv++] =  
                     MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
          }
@@ -303,8 +303,6 @@ Field::syncLocal()
 
    int count_recv = get_request_size();
    MPI::Request::Waitall( count_recv, request_recv );
-
-
 
 #endif
 

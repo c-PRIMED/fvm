@@ -31,6 +31,7 @@ struct FaceGroup
   const string groupType;
 };
 
+
 typedef shared_ptr<FaceGroup> FaceGroupPtr; 
 typedef vector<FaceGroupPtr> FaceGroupList;  
 
@@ -42,7 +43,8 @@ public:
   
   typedef pair<const StorageSite*, const StorageSite*> SSPair;
   typedef map<SSPair,shared_ptr<CRConnectivity> > ConnectivityMap;
-  typedef map< int, shared_ptr<StorageSite> > GhostCellSiteMap;
+  typedef pair<int,int>    PartIDMeshIDPair; //other Partition ID, other MeshID (always)
+  typedef map< PartIDMeshIDPair, shared_ptr<StorageSite> > GhostCellSiteMap;
 
   enum
     {
@@ -79,14 +81,14 @@ public:
   const StorageSite& getNodes()   const {return _nodes;}
   const StorageSite& getIBFaces() const {return _ibFaces;}
 
-  const StorageSite* getGhostCellSiteScatter( int id )
-  { return _ghostCellSiteScatterMap[id].get(); }
+  const StorageSite* getGhostCellSiteScatter(  const PartIDMeshIDPair& id ) const
+  { return _ghostCellSiteScatterMap.find(id)->second.get(); }
 
   const GhostCellSiteMap& getGhostCellSiteScatterMap() const
   { return _ghostCellSiteScatterMap; }
 
-  const StorageSite* getGhostCellSiteGather( int id )
-  { return _ghostCellSiteGatherMap[id].get(); }
+  const StorageSite* getGhostCellSiteGather( const PartIDMeshIDPair& id ) const
+  { return _ghostCellSiteGatherMap.find(id)->second.get(); }
 
   const GhostCellSiteMap& getGhostCellSiteGatherMap() const
   { return _ghostCellSiteGatherMap; }
@@ -174,6 +176,9 @@ public:
   Array<int>& getCellColors() { return *_cellColor;}
   const Array<int>& getCellColors() const { return *_cellColor;}
 
+  Array<int>& getCellColorsOther() { return *_cellColorOther;}
+  const Array<int>& getCellColorsOther() const { return *_cellColorOther;}
+
   bool isMergedMesh() const { return _isAssembleMesh;}
   int  getNumOfAssembleMesh() const { return _numOfAssembleMesh;}
  
@@ -181,8 +186,8 @@ public:
 
   void setIBFaces(shared_ptr<Array<int> > faceList) {_ibFaceList = faceList;}
 
-  void createGhostCellSiteScatter( int id, shared_ptr<StorageSite> site ); 
-  void createGhostCellSiteGather ( int id, shared_ptr<StorageSite> site ); 
+  void createGhostCellSiteScatter( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
+  void createGhostCellSiteGather ( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
   void createCellColor();
 
 protected:
@@ -208,6 +213,7 @@ protected:
   mutable shared_ptr<Array<int> > _ibFaceList;
 
   shared_ptr< Array<int> > _cellColor;
+  shared_ptr< Array<int> > _cellColorOther;
   int  _numOfAssembleMesh;
   bool _isAssembleMesh;
 

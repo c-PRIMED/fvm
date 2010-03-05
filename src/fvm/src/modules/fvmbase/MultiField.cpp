@@ -421,7 +421,7 @@ MultiField::sync()
              ArrayBase& sendArray = *_ghostArrays[eIndex];
              int to_where  = oSite.getGatherProcID();
              if ( to_where != -1 ){
-                int mpi_tag = oSite.getTag()+3900;
+                int mpi_tag = oSite.getTag();
                 request_send[sendIndx++] =  
                        MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
              }
@@ -437,11 +437,12 @@ MultiField::sync()
              ArrayBase& recvArray = *_ghostArrays[eIndex];
              int from_where  = oSite.getGatherProcID();
              if ( from_where != -1 ){
-                 int mpi_tag = oSite.getTag()+3900;
+                 int mpi_tag = oSite.getTag();
                  request_recv[recvIndx++] =  
                        MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
              }
       }
+
    }
 
    int count_recv = get_request_size();

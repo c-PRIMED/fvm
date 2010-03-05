@@ -663,7 +663,6 @@ MeshAssembler::setMeshCellColor()
 
     Array<int>& cellColor = _mesh.at(0)->getCellColors();
     //first interior faces of local meshes
-    int face = 0;
     for ( unsigned int n = 0; n < _meshList.size(); n++ ){
        const Mesh& mesh = *(_meshList[n]);
        const CRConnectivity& faceCells = mesh.getAllFaceCells();
@@ -802,7 +801,7 @@ MeshAssembler::debug_print()
   }
   //localNodeToGlobal
   debug_file << " localNodeToGlobal " << endl;
-  for (  int n = 0; n < _meshList.size(); n++ ){
+  for ( unsigned int n = 0; n < _meshList.size(); n++ ){
       const Array<int>&  localToGlobal = *_localNodeToGlobal[n];
       for ( int i = 0; i < localToGlobal.getLength(); i++ )
          debug_file << " localToGlobal[" << i << "] = " << localToGlobal[i] << endl;

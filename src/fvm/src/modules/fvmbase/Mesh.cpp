@@ -323,24 +323,30 @@ Mesh::addIBFace(const int i, const int c)
 }
 
 void 
-Mesh::createGhostCellSiteScatter( int id, shared_ptr<StorageSite> site )
+Mesh::createGhostCellSiteScatter(  const PartIDMeshIDPair& id, shared_ptr<StorageSite> site )
 {
-  _ghostCellSiteScatterMap.insert( pair<int, shared_ptr<StorageSite> >( id, site ) );
+  _ghostCellSiteScatterMap.insert( pair<PartIDMeshIDPair, shared_ptr<StorageSite> >( id, site ) );
 
 }
 
 void 
-Mesh::createGhostCellSiteGather( int id, shared_ptr<StorageSite> site )
+Mesh::createGhostCellSiteGather( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site )
 {
-  _ghostCellSiteGatherMap.insert( pair<int, shared_ptr<StorageSite> >( id, site ) );
+  _ghostCellSiteGatherMap.insert( pair<PartIDMeshIDPair, shared_ptr<StorageSite> >( id, site ) );
 
 }
 //this 
 void 
 Mesh::createCellColor()
 {
-   _cellColor = shared_ptr< Array<int> > ( new Array<int>( _cells.getCount() ) );
+    //cellColor color ghost cells respect to self-inner cells
+   _cellColor      = shared_ptr< Array<int> > ( new Array<int>( _cells.getCount() ) );
+    //cellColorOther color ghost cells in respect to other partition,
+    //if partition interface has aligned with mesh interface this will be different than _cellColor
+   _cellColorOther = shared_ptr< Array<int> > ( new Array<int>( _cells.getCount() ) );
+
    *_cellColor = -1;
+   *_cellColorOther = -1;
    _isAssembleMesh = true;
 }
 

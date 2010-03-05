@@ -61,7 +61,6 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
 {
 
   shared_ptr<LinearSystem> coarseLS(new LinearSystem());
-
   /**
    * we create only one entry in coarseIndex for each
    * StorageSite even if the site is present in multiple fine
@@ -85,7 +84,6 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
           if (sitesCoarsenedWithField.find(site) == sitesCoarsenedWithField.end())
           {
               sitesCoarsenedWithField[site] = fieldIndex;
-
               shared_ptr<Array<int> > cIndex(new Array<int>(site->getCount()));
               _coarseIndex.addArray(ai,cIndex);
 
@@ -106,8 +104,10 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
 
   _coarseIndex.sync();
 
+
 _matrix.syncGhostCoarsening(_coarseIndex);
-  
+
+
   // we can now create the coarse sites for each fine site
   foreach(MultiField::ArrayIndex k,arrayIndices)
   {
@@ -120,7 +120,6 @@ _matrix.syncGhostCoarsening(_coarseIndex);
             shared_ptr<StorageSite>(new StorageSite(selfSize,ghostSize));
       }
   }
-
 
   // set the mappers in the newly created coarse sites
   foreach(MultiField::ArrayIndex k,arrayIndices)
@@ -139,6 +138,7 @@ _matrix.syncGhostCoarsening(_coarseIndex);
               const StorageSite& fineOSite = *pos.first;
               MultiField::ArrayIndex kO(k.first,&fineOSite);
 
+  
 #ifdef FVM_PARALLEL
               // the ghost site will not have its corresponding coarse
               // site created yet so we create it here
@@ -148,6 +148,7 @@ _matrix.syncGhostCoarsening(_coarseIndex);
                     (new StorageSite(-1));
                   ghostSite->setGatherProcID ( fineOSite.getGatherProcID() );
                   ghostSite->setScatterProcID( fineOSite.getScatterProcID() );
+                  ghostSite->setTag( fineOSite.getTag() );
                   _matrix._coarseSites[kO] = ghostSite;
               }
 #endif
@@ -158,15 +159,18 @@ _matrix.syncGhostCoarsening(_coarseIndex);
 
           const StorageSite::GatherMap& fineGatherMap = fineSite.getGatherMap();
           StorageSite::GatherMap& coarseGatherMap = coarseSite.getGatherMap();
-
           foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMap)
           {
               const StorageSite& fineOSite = *pos.first;
               MultiField::ArrayIndex kO(k.first,&fineOSite);
               const StorageSite& coarseOSite = *_matrix._coarseSites[kO];
               MultiFieldMatrix::SSPair sskey(&fineSite,&fineOSite);
+
+
               coarseGatherMap[&coarseOSite] = _matrix._coarseGatherMaps[sskey];
           }
+
+ 	
       }
   }
 

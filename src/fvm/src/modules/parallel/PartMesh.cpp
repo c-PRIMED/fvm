@@ -24,6 +24,7 @@
 #include "Vector.h"
 #include "OneToOneIndexMap.h"
 #include <parmetis.h>
+#include <utility>
 
 
 
@@ -32,6 +33,7 @@ _meshList(mesh_list), _nPart(nPart), _eType(eType), _options(0)
 {
    if ( !MPI::Is_initialized() )  MPI::Init();
    init();
+   assert( _meshList.size() == 1 );
 }
 
 
@@ -1112,17 +1114,22 @@ PartMesh::mesh_setup()
             siteGather->setGatherProcID ( interfaceID );
             siteScatter->setScatterProcID( _procID );
             siteScatter->setGatherProcID ( interfaceID );
+            int packed_info = (std::max(_procID,interfaceID) << 16 ) | ( std::min(_procID,interfaceID) );
+            siteScatter->setTag( packed_info );	
 
-           _meshListLocal.at(id)->createGhostCellSiteScatter( interfaceID,  siteScatter );
-           _meshListLocal.at(id)->createGhostCellSiteGather( interfaceID,  siteScatter  );
+
+            Mesh::PartIDMeshIDPair  pairID = make_pair<int,int>(interfaceID, id);
+           _meshListLocal.at(id)->createGhostCellSiteScatter( pairID, siteScatter );
+           _meshListLocal.at(id)->createGhostCellSiteGather ( pairID, siteScatter );
 
          }
 
        _meshListLocal.at(id)->setCoordinates( _coord.at(id)            );
        _meshListLocal.at(id)->setFaceNodes  ( _faceNodesOrdered.at(id) );
        _meshListLocal.at(id)->setFaceCells  ( _faceCellsOrdered.at(id) );
-        if (  _meshList.at(id)->isMergedMesh() )
+        if (  _meshList.at(id)->isMergedMesh() ){
             setMeshColors();
+        }
 
     }
 
@@ -1140,8 +1147,9 @@ PartMesh::setMeshColors()
     _meshListLocal.at(0)->createCellColor();
     //get cellsite storagesite
     const StorageSite& cellSite = _meshListLocal.at(0)->getCells();
-    Array<int>&   colorGlbl  = _meshList.at(0)->getCellColors();
-    Array<int>&   colorLocal = _meshListLocal.at(0)->getCellColors();
+    Array<int>&   colorGlbl     = _meshList.at(0)->getCellColors();
+    Array<int>&   colorLocal      = _meshListLocal.at(0)->getCellColors();
+    Array<int>&   colorOtherLocal = _meshListLocal.at(0)->getCellColorsOther();
     const  map<int,int>&  localToGlobalMappers = _localToGlobalMappers.at(0);
     //loop first over inner cells to color them
     for ( int i = 0; i <  cellSite.getSelfCount(); i++ ){
@@ -1152,10 +1160,15 @@ PartMesh::setMeshColors()
     //we check across cell's color, they should have the same color.
     const CRConnectivity& cellCells = _meshListLocal.at(0)->getCellCells();
     for ( int i = cellSite.getSelfCount(); i < cellSite.getCount(); i++ ){
-       int acrossCellID = cellCells(i,0);
+       int acrossCellID = cellCells(i,0); //ghost or boundary has only one cell connected 
        colorLocal[i] = colorLocal[ acrossCellID ];
     }
 
+    //colorOtherLocal loop first over inner cells to color them
+    for ( int i = 0; i <  cellSite.getCount(); i++ ){
+        int glblID = localToGlobalMappers.find(i)->second;
+        colorOtherLocal[i] = colorGlbl[ glblID ];
+    }
 
 
 }
@@ -1924,9 +1937,9 @@ PartMesh::mappers()
                int elem_id = (*_toIndices.at(id).at(interfaceIndx))[i];
                 (*_fromIndices.at(id).at(interfaceIndx))[i] = _meshListLocal.at(id)->getCellCells()(elem_id,0);
           }
-
-          cellScatterMap[ _meshListLocal.at(id)->getGhostCellSiteScatter( neighMeshID ) ] = _fromIndices.at(id).at(interfaceIndx);
-          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSiteGather ( neighMeshID ) ] = _toIndices.at(id).at(interfaceIndx);
+          Mesh::PartIDMeshIDPair pairID = make_pair<int,int>(neighMeshID,0);
+          cellScatterMap[ _meshListLocal.at(id)->getGhostCellSiteScatter( pairID ) ] = _fromIndices.at(id).at(interfaceIndx);
+          cellGatherMap [ _meshListLocal.at(id)->getGhostCellSiteGather ( pairID ) ] = _toIndices.at(id).at(interfaceIndx);
  
           interfaceIndx++;
 
@@ -2014,11 +2027,11 @@ PartMesh::mesh_file()
            Mesh::GhostCellSiteMap::const_iterator it_ghostScatter;
             //loop over interfaces
            for ( it_ghostScatter = ghostCellSiteScatterMap.begin(); it_ghostScatter != ghostCellSiteScatterMap.end(); it_ghostScatter++ ){
+               const Mesh::PartIDMeshIDPair pairID = it_ghostScatter->first;
+               int neighID = pairID.first;
 
-               int neighID = it_ghostScatter->first;
-
-               const StorageSite& siteScatter =  *( ghostCellSiteScatterMap.find( neighID )->second );
-               const StorageSite& siteGather  =  *( ghostCellSiteGatherMap.find ( neighID )->second );
+               const StorageSite& siteScatter =  *( ghostCellSiteScatterMap.find( pairID )->second );
+               const StorageSite& siteGather  =  *( ghostCellSiteGatherMap.find ( pairID )->second );
 
 
                const Array<int>&  scatterArray =  *(cellScatterMap.find( &siteScatter )->second);
