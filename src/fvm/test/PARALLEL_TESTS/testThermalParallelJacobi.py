@@ -346,10 +346,10 @@ if 6 in bcMap:
    bc6.setVar('specifiedTemperature',0)
 
 ## set viscosity and density, this is done per mesh since each mesh has its own VC object
-#vcMap = tmodel.getVCMap()
-#for vc in vcMap.values():
-#    vc.setVar('density',1.0)
-#    vc.setVar('thermalConductivity',1.0)
+vcMap = tmodel.getVCMap()
+for vc in vcMap.values():
+#    vc.setVar('density',1.0)  
+    vc.setVar('thermalConductivity',1.0)
 
 
 tSolver = fvmbaseExt.AMG()

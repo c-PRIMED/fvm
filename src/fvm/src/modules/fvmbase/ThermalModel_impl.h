@@ -48,6 +48,9 @@ public:
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
+        ThermalVC<T> *vc(new ThermalVC<T>());
+        vc->vcType = "flow";
+       _vcMap[mesh.getID()] = vc;
         
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
         {
@@ -55,9 +58,6 @@ public:
             ThermalBC<T> *bc(new ThermalBC<T>());
             
             _bcMap[fg.id] = bc;
-            ThermalVC<T> *vc(new ThermalVC<T>());
-            vc->vcType = "flow";
-            _vcMap[mesh.getID()] = vc;
 
             if ((fg.groupType == "wall") ||
                 (fg.groupType == "symmetry"))
