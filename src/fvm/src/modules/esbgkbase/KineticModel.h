@@ -194,8 +194,8 @@ class KineticModel
  private:
   //shared_ptr<Impl> _impl;
   const MeshList& _meshes;
-  DistFunctFields<T> _dsfPtr; 
   const Quadrature<T>& _quadrature;
+  DistFunctFields<T> _dsfPtr; 
 };
 
 #endif
