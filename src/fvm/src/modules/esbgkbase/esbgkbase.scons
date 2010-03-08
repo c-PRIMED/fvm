@@ -7,7 +7,7 @@ deps=['fvmbase','importers','exporters', 'rlog']
 
 #deps += ['esbgkbase']
 
-env.createATypedSwigModule('esbgk',sources=['esbgk.i'],deplibs=deps)
+env.createATypedSwigModule('esbgk_atyped',sources=['esbgk.i'],deplibs=deps)
 
 #env.createExe('testquadrature',src, deplibs=deps)
 
