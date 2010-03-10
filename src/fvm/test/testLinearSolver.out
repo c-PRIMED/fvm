@@ -7,5 +7,5 @@ finished reading
  proc_id = 0  Created coarse level 2 of size 20
  proc_id = 0  Created coarse level 3 of size 8
  proc_id = 0  Created coarse level 4 of size 3
-0: [test : 6981.57]procID = 0
-40: procID = 0[test : 5.32223e-05]
+0: [test : 6981.57]
+40: [test : 5.32223e-05]
