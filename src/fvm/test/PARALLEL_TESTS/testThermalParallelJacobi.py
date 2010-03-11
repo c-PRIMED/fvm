@@ -299,7 +299,7 @@ part_mesh.setNumFlag(0);
 #actions
 part_mesh.partition()
 part_mesh.mesh()
-part_mesh.mesh_debug()
+#part_mesh.mesh_debug()
 meshes = part_mesh.meshList()
 if options.time:
     part_mesh_end[0] = MPI.Wtime()
@@ -380,6 +380,6 @@ if options.time:
     if MPI.COMM_WORLD.Get_rank() == 0:
         dumpMPITimeProfile(part_mesh_maxtime, part_mesh_mintime, solver_maxtime, solver_mintime)
 
-dumpTecplotFile( nmesh, meshes, options.type)
+#dumpTecplotFile( nmesh, meshes, options.type)
 if options.xdmf:
     dumpXdmfFile( nmesh, meshes, options.type)
