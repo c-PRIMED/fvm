@@ -1,5 +1,26 @@
-MULTIPLE_MESHES2_QUAD    ./test.py    --script testThermalMultipleMeshes2.py --type=quad --in ../c2s_1600.cas            --golden QUAD_MESH2  --outdir TESTDIR
-MULTIPLE_MESHES4_QUAD    ./test.py    --script testThermalMultipleMeshes4.py --type=quad --in ../quad_multiple_mesh4.cas --golden QUAD_MESH4  --outdir TESTDIR
+MULTIPLE_MESHES2_QUAD_PROCS1_JACOBISOLVER    ./ptest.py  --np 1   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc1    --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS2_JACOBISOLVER    ./ptest.py  --np 2   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc2    --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS3_JACOBISOLVER    ./ptest.py  --np 3   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc3    --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS4_JACOBISOLVER    ./ptest.py  --np 4   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc4    --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS5_JACOBISOLVER    ./ptest.py  --np 5   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc5    --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS11_JACOBISOLVER   ./ptest.py  --np 11  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc11   --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS23_JACOBISOLVER   ./ptest.py  --np 23  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc23   --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS37_JACOBISOLVER   ./ptest.py  --np 37  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc37   --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS73_JACOBISOLVER   ./ptest.py  --np 73  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc73   --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS96_JACOBISOLVER   ./ptest.py  --np 96  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc96   --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS97_JACOBISOLVER   ./ptest.py  --np 97  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc97   --outdir TESTDIR 
+MULTIPLE_MESHES2_QUAD_PROCS123_JACOBISOLVER  ./ptest.py  --np 123 --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc123  --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS1_JACOBISOLVER    ./ptest.py  --np 1   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc1    --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS2_JACOBISOLVER    ./ptest.py  --np 2   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc2    --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS3_JACOBISOLVER    ./ptest.py  --np 3   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc3    --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS4_JACOBISOLVER    ./ptest.py  --np 4   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc4    --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS5_JACOBISOLVER    ./ptest.py  --np 5   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc5    --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS11_JACOBISOLVER   ./ptest.py  --np 11  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc11   --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS23_JACOBISOLVER   ./ptest.py  --np 23  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc23   --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS37_JACOBISOLVER   ./ptest.py  --np 37  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc37   --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS73_JACOBISOLVER   ./ptest.py  --np 73  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc73   --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS96_JACOBISOLVER   ./ptest.py  --np 96  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc96   --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS123_JACOBISOLVER  ./ptest.py  --np 123 --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc123  --outdir TESTDIR 
 
 
 
