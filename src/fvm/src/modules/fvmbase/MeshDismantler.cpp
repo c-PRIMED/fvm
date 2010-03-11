@@ -59,7 +59,7 @@ MeshDismantler::init()
    setCoord();
    setMesh();
    setMappers();
-   debug_print();
+   //debug_print();
 }
 
 //setting storagesite for cells
