@@ -27,6 +27,7 @@ public:
     typedef   pair<int,int>                   EntryIndex;
     typedef   map<EntryIndex,int>             EntryMap;
     typedef   map<EntryIndex, vector<int> >   EntryVecMap;
+    typedef   map<int, const StorageSite* >   IntStorageSiteMap;
 
    MeshDismantler( const MeshList& meshList );
    ~MeshDismantler();
@@ -34,7 +35,18 @@ public:
   //return single mesh, for sake of compatibality we return as meshList
    const MeshList&  meshList() const { return _meshList;}
 
+   //debug files
    void  debug_print();
+   void debug_cell_site();
+   void debug_face_site();
+   void debug_node_site();
+   void debug_cells_mapper();
+   void debug_face_cells();
+   void debug_nodes_mapper();
+   void debug_face_nodes();
+   void debug_scatter_mappers();
+   void debug_gather_mappers();
+
 
    //get methods
 
@@ -86,17 +98,6 @@ private:
 
    void  debug_file_open( const string& fname );
    void  debug_file_close();
-
-    //debug files
-   void debug_cell_site();
-   void debug_face_site();
-   void debug_node_site();
-   void debug_cells_mapper();
-   void debug_face_cells();
-   void debug_nodes_mapper();
-   void debug_face_nodes();
-   void debug_scatter_mappers();
-   void debug_gather_mappers();
 
    //DATA MEMBERS:
    const Mesh& _mesh;  

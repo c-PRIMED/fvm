@@ -14,8 +14,7 @@ MultiField::MultiField():
   _length(0),
   _arrays(),
   _arrayIndices(),
-  _arrayMap(),
-  _syncGatherArrays( false )
+  _arrayMap()
 {
   logCtor();
 }

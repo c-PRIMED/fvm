@@ -861,7 +861,7 @@ MeshDismantler::partitionInterfaceMappers()
               //reference ot mappers to fill in
               StorageSite::ScatterMap& scatterMapLocal = _meshList.at(meshID)->getCells().getScatterMap();
               StorageSite::GatherMap& gatherMapLocal   = _meshList.at(meshID)->getCells().getGatherMap();
-              //storagesite (used for both scatter and gathersites)
+              //storagesite (used for both scatter and gathersites), pass parent (getCells())
               shared_ptr<StorageSite> siteScatterLocal( new StorageSite(size) );
 
               //copy scatterArray to Array<int> 
@@ -1111,29 +1111,77 @@ MeshDismantler::debug_scatter_mappers()
     for ( int id = 0; id < _nmesh; id++ )
         siteMeshMapper[&_meshList.at(id)->getCells()] = id;
 
-
+    //first make sure consistent order for scatterMap since map order with key which is pointer
+    //first mesh interface (increasing order) then partition interface (increasing order)
+    vector< const StorageSite* > scatterSiteVec;
+    map <int, int> packIDToMeshID;
+    vector< int > scatterSiteVecID;
+    IntStorageSiteMap   orderedMeshInterface;
     for ( int id = 0; id < _nmesh; id++ ){
-        _debugFile << "meshID : " << id << endl;
         const StorageSite::ScatterMap&  scatterMap = _meshList.at(id)->getCells().getScatterMap();
         foreach ( const StorageSite::ScatterMap::value_type& pos, scatterMap ){
-              const StorageSite& scatterSite = *pos.first;
-              const Array<int>& scatterArray = *pos.second;
-              if ( scatterSite.getGatherProcID() != -1 ){  //this means partition face
-                  const int neighID = scatterSite.getGatherProcID();
-                  _debugFile << "   procID = " << _procID << "  neighID = " << neighID <<  " Tag = " << scatterSite.getTag() << " : " << endl;
-                  for ( int i = 0; i < scatterArray.getLength(); i++ ){
-                       _debugFile << "      scatterArray[" << i << "] = " << scatterArray[i]  << endl;
-                   }
-
-               } else { //this means mesh interface
-                   int neighMeshID = siteMeshMapper[ pos.first ];
-                   _debugFile << "   meshID = " << id << "   otherside MeshID = " << neighMeshID <<  " : " << endl;
-                    for ( int i = 0; i < scatterArray.getLength(); i++ ){
-                       _debugFile << "      scatterArray[" << i << "] = " << scatterArray[i]  << endl;
-                    }
-               }
-
+            const StorageSite& scatterSite = *pos.first;
+            if ( scatterSite.getGatherProcID() == -1 ){  //this means mesh interface
+                int neighMeshID = siteMeshMapper[ pos.first ];
+                const int packed_info = ( (id  << 16)  | neighMeshID );
+                orderedMeshInterface.insert( make_pair<int, const StorageSite*>(packed_info, pos.first) );
+                packIDToMeshID.insert( make_pair<int,int>(packed_info,id) );
+            }
         }
+    }
+
+   //fill scatterSiteVec, map data structure already ordered them
+   foreach ( const IntStorageSiteMap::value_type& pos, orderedMeshInterface ){
+          scatterSiteVec.push_back( pos.second );
+          const int meshID = packIDToMeshID[pos.first];
+          scatterSiteVecID.push_back( meshID );
+  }
+   //clear for usage in partition interface
+    packIDToMeshID.clear();
+    //order partition interface (map will reorder)
+    IntStorageSiteMap orderedPartInterface;
+    for ( int id = 0; id < _nmesh; id++ ){
+        const StorageSite::ScatterMap&  scatterMap = _meshList.at(id)->getCells().getScatterMap();
+        foreach ( const StorageSite::ScatterMap::value_type& pos, scatterMap ){
+            const StorageSite& scatterSite = *pos.first;
+            if ( scatterSite.getGatherProcID() != -1 ){  //this means partition face
+                const int neighID = scatterSite.getGatherProcID();
+                const int tag     = scatterSite.getTag();
+                const int packed_info = ( (id << 31)  | (neighID  << 24) | tag );
+                orderedPartInterface.insert( make_pair<int, const StorageSite*>(packed_info, pos.first) );
+                packIDToMeshID.insert( make_pair<int,int>(packed_info,id) );
+            }
+        }
+     }
+
+    //fill scatterSiteVec, map data structure already 
+    foreach ( const IntStorageSiteMap::value_type& pos, orderedPartInterface ){
+          scatterSiteVec.push_back( pos.second );
+          const int meshID = packIDToMeshID[pos.first];
+          scatterSiteVecID.push_back( meshID );
+    }
+
+     int indx = 0;
+     foreach( const vector<const StorageSite*>::value_type& pos, scatterSiteVec){
+          if ( pos->getGatherProcID() != -1 ){  //this means partition face
+               const int id = scatterSiteVecID[indx++];
+               const StorageSite::ScatterMap&  scatterMap = _meshList.at(id)->getCells().getScatterMap();
+               const Array<int>& scatterArray = *(scatterMap.find(pos)->second);
+               const int neighID = pos->getGatherProcID();
+               _debugFile << " meshID = " << id << "   procID = " << _procID << "  neighProcID = " << neighID <<  " Tag = " << pos->getTag() << " : " << endl;
+               for ( int i = 0; i < scatterArray.getLength(); i++ ){
+                    _debugFile << "      scatterArray[" << i << "] = " << scatterArray[i]  << endl;
+                }
+           } else { //this means mesh interface
+               const int id = scatterSiteVecID[indx++];
+               const StorageSite::ScatterMap&  scatterMap = _meshList.at(id)->getCells().getScatterMap();
+               const Array<int>& scatterArray = *(scatterMap.find(pos)->second);
+               int neighMeshID = siteMeshMapper[pos];
+               _debugFile << "   meshID = " << id << "   otherside MeshID = " << neighMeshID <<  " : " << endl;
+               for ( int i = 0; i < scatterArray.getLength(); i++ ){
+                   _debugFile << "      scatterArray[" << i << "] = " << scatterArray[i]  << endl;
+               }
+            }
      }
      debug_file_close();
 }
@@ -1141,35 +1189,84 @@ void
 
 MeshDismantler::debug_gather_mappers()
 {
+
     debug_file_open("gatherMappers");
     //creating mappers between cell storage site to mesh id
     map< const StorageSite*, int > siteMeshMapper; //key  = storage site, value = mesh ID of cellSite
     for ( int id = 0; id < _nmesh; id++ )
         siteMeshMapper[&_meshList.at(id)->getCells()] = id;
 
-
+    //first make sure consistent order for gatherMap since map order with key which is pointer
+    //first mesh interface (increasing order) then partition interface (increasing order)
+    vector< const StorageSite* > gatherSiteVec;
+    map <int, int> packIDToMeshID;
+    vector< int > gatherSiteVecID;
+    IntStorageSiteMap   orderedMeshInterface;
     for ( int id = 0; id < _nmesh; id++ ){
-        _debugFile << "meshID : " << id  <<  endl;
-        const StorageSite::GatherMap&   gatherMap  = _meshList.at(id)->getCells().getGatherMap();
+        const StorageSite::GatherMap&  gatherMap = _meshList.at(id)->getCells().getGatherMap();
         foreach ( const StorageSite::GatherMap::value_type& pos, gatherMap ){
-              const StorageSite& gatherSite = *pos.first;
-              const Array<int>& gatherArray = *pos.second;
-              if ( gatherSite.getGatherProcID() != -1 ){  //this means partition face
-                  const int neighID = gatherSite.getGatherProcID();
-                  _debugFile << "   procID = " << _procID << "  neighID = " << neighID << " Tag = " << gatherSite.getTag() <<  " : " << endl;
-                  for ( int i = 0; i < gatherArray.getLength(); i++ ){
-                       _debugFile << "      gatherArray [" << i << "] = " << gatherArray[i] << endl;
-                   }
-
-               } else { //this means mesh interface
-                   int neighMeshID = siteMeshMapper[ pos.first ];
-                   _debugFile << "   meshID = " << id << "   otherside MeshID = " << neighMeshID <<  " : " << endl;
-                    for ( int i = 0; i < gatherArray.getLength(); i++ ){
-                       _debugFile <<   "      gatherArray [" << i << "] = " << gatherArray[i] << endl;
-                    }
-               }
-
+            const StorageSite& gatherSite = *pos.first;
+            if ( gatherSite.getGatherProcID() == -1 ){  //this means mesh interface
+                int neighMeshID = siteMeshMapper[ pos.first ];
+                const int packed_info = ( (id  << 16)  | neighMeshID );
+                orderedMeshInterface.insert( make_pair<int, const StorageSite*>(packed_info, pos.first) );
+                packIDToMeshID.insert( make_pair<int,int>(packed_info,id) );
+            }
         }
+    }
+
+   //fill gatherSiteVec, map data structure already ordered them
+   foreach ( const IntStorageSiteMap::value_type& pos, orderedMeshInterface ){
+          gatherSiteVec.push_back( pos.second );
+          const int meshID = packIDToMeshID[pos.first];
+          gatherSiteVecID.push_back( meshID );
+  }
+   //clear for usage in partition interface
+    packIDToMeshID.clear();
+    //order partition interface (map will reorder)
+    IntStorageSiteMap orderedPartInterface;
+    for ( int id = 0; id < _nmesh; id++ ){
+        const StorageSite::GatherMap&  gatherMap = _meshList.at(id)->getCells().getGatherMap();
+        foreach ( const StorageSite::GatherMap::value_type& pos, gatherMap ){
+            const StorageSite& gatherSite = *pos.first;
+            if ( gatherSite.getGatherProcID() != -1 ){  //this means partition face
+                const int neighID = gatherSite.getGatherProcID();
+                const int tag     = gatherSite.getTag();
+                const int packed_info = ( (id << 31)  | (neighID  << 24) | tag );
+                orderedPartInterface.insert( make_pair<int, const StorageSite*>(packed_info, pos.first) );
+                packIDToMeshID.insert( make_pair<int,int>(packed_info,id) );
+            }
+        }
+     }
+
+    //fill scatterSiteVec, map data structure already 
+    foreach ( const IntStorageSiteMap::value_type& pos, orderedPartInterface ){
+          gatherSiteVec.push_back( pos.second );
+          const int meshID = packIDToMeshID[pos.first];
+          gatherSiteVecID.push_back( meshID );
+    }
+
+     int indx = 0;
+     foreach( const vector<const StorageSite*>::value_type& pos, gatherSiteVec){
+          if ( pos->getGatherProcID() != -1 ){  //this means partition face
+               const int id = gatherSiteVecID[indx++];
+               const StorageSite::GatherMap&  gatherMap = _meshList.at(id)->getCells().getGatherMap();
+               const Array<int>& gatherArray = *(gatherMap.find(pos)->second);
+               const int neighID = pos->getGatherProcID();
+               _debugFile << " meshID = " << id << "   procID = " << _procID << "  neighProcID = " << neighID <<  " Tag = " << pos->getTag() << " : " << endl;
+               for ( int i = 0; i < gatherArray.getLength(); i++ ){
+                    _debugFile << "      gatherArray[" << i << "] = " << gatherArray[i]  << endl;
+                }
+           } else { //this means mesh interface
+               const int id = gatherSiteVecID[indx++];
+               const StorageSite::GatherMap&  gatherMap = _meshList.at(id)->getCells().getGatherMap();
+               const Array<int>& gatherArray = *(gatherMap.find(pos)->second);
+               int neighMeshID = siteMeshMapper[pos];
+               _debugFile << "   meshID = " << id << "   otherside MeshID = " << neighMeshID <<  " : " << endl;
+               for ( int i = 0; i < gatherArray.getLength(); i++ ){
+                   _debugFile << "      gatherArray[" << i << "] = " << gatherArray[i]  << endl;
+               }
+            }
      }
     debug_file_close();
 }

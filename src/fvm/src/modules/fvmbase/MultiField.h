@@ -80,7 +80,6 @@ private:
   ArrayIndexList _arrayIndices;
   ArrayMap _arrayMap;
   GhostArrayMap _ghostArrays;
-  bool _syncGatherArrays;
 };
 
 #endif
