@@ -102,7 +102,7 @@ part_meshes = part_mesh.meshList()
 
 #dismantling mesh
 multi_mesher = fvmbaseExt.MeshDismantler( part_meshes )
-meshes = multi_mesher.debug_face_nodes()
+meshes = multi_mesher.debug_scatter_mappers()
 meshes = multi_mesher.meshList()
 #tecplotMesh.dumpTecplotMesh(2, meshes, options.type)
 

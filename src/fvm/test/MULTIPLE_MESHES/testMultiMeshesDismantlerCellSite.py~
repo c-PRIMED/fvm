@@ -102,7 +102,7 @@ part_meshes = part_mesh.meshList()
 
 #dismantling mesh
 multi_mesher = fvmbaseExt.MeshDismantler( part_meshes )
-meshes = multi_mesher.debug_print()
+meshes = multi_mesher.debug_cell_site()
 meshes = multi_mesher.meshList()
 #tecplotMesh.dumpTecplotMesh(2, meshes, options.type)
 

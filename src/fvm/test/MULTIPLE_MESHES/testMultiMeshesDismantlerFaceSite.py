@@ -11,7 +11,9 @@ options are:
 import fvm.fvmbaseExt as fvmbaseExt
 import fvm
 fvm.set_atype('double')
-import  importers, fvmparallel, time
+import  fvm.importers as importers
+import  fvm.fvmparallel as fvmparallel
+import time
 
 from numpy import *
 from mpi4py  import MPI
