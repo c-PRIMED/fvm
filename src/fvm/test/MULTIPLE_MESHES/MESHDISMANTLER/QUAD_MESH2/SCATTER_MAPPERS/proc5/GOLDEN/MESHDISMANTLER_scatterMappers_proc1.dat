@@ -1,0 +1,66 @@
+   meshID = 0   otherside MeshID = 1 : 
+      scatterArray[0] = 51
+      scatterArray[1] = 47
+      scatterArray[2] = 46
+      scatterArray[3] = 52
+      scatterArray[4] = 95
+      scatterArray[5] = 115
+      scatterArray[6] = 114
+      scatterArray[7] = 121
+   meshID = 1   otherside MeshID = 0 : 
+      scatterArray[0] = 18
+      scatterArray[1] = 15
+      scatterArray[2] = 16
+      scatterArray[3] = 17
+      scatterArray[4] = 17
+      scatterArray[5] = 12
+      scatterArray[6] = 13
+      scatterArray[7] = 14
+ meshID = 1   procID = 1  neighProcID = 0 Tag = 65537 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 2
+      scatterArray[2] = 9
+      scatterArray[3] = 10
+      scatterArray[4] = 18
+      scatterArray[5] = 0
+ meshID = 1   procID = 1  neighProcID = 2 Tag = 65537 : 
+      scatterArray[0] = 0
+ meshID = 1   procID = 1  neighProcID = 3 Tag = 65537 : 
+      scatterArray[0] = 7
+      scatterArray[1] = 14
+      scatterArray[2] = 4
+      scatterArray[3] = 4
+      scatterArray[4] = 1
+ meshID = 0   procID = 1  neighProcID = 0 Tag = 0 : 
+      scatterArray[0] = 12
+      scatterArray[1] = 13
+      scatterArray[2] = 14
+      scatterArray[3] = 11
+      scatterArray[4] = 24
+      scatterArray[5] = 32
+      scatterArray[6] = 33
+      scatterArray[7] = 15
+      scatterArray[8] = 51
+      scatterArray[9] = 49
+      scatterArray[10] = 50
+      scatterArray[11] = 25
+ meshID = 0   procID = 1  neighProcID = 3 Tag = 0 : 
+      scatterArray[0] = 121
+      scatterArray[1] = 118
+      scatterArray[2] = 118
+      scatterArray[3] = 124
+      scatterArray[4] = 122
+      scatterArray[5] = 124
+      scatterArray[6] = 125
+      scatterArray[7] = 185
+      scatterArray[8] = 184
+      scatterArray[9] = 187
+      scatterArray[10] = 188
+      scatterArray[11] = 249
+      scatterArray[12] = 248
+      scatterArray[13] = 255
+      scatterArray[14] = 255
+      scatterArray[15] = 300
+      scatterArray[16] = 298
+      scatterArray[17] = 301
+      scatterArray[18] = 252

@@ -1,0 +1,64 @@
+ meshID = 1   procID = 2  neighProcID = 0 Tag = 65537 : 
+      gatherArray[0] = 17
+      gatherArray[1] = 18
+      gatherArray[2] = 19
+      gatherArray[3] = 20
+      gatherArray[4] = 21
+      gatherArray[5] = 22
+      gatherArray[6] = 23
+ meshID = 3   procID = 2  neighProcID = 0 Tag = 196611 : 
+      gatherArray[0] = 17
+      gatherArray[1] = 18
+      gatherArray[2] = 19
+ meshID = 1   procID = 2  neighProcID = 1 Tag = 65537 : 
+      gatherArray[0] = 24
+      gatherArray[1] = 25
+      gatherArray[2] = 26
+      gatherArray[3] = 27
+      gatherArray[4] = 28
+      gatherArray[5] = 29
+      gatherArray[6] = 30
+ meshID = 3   procID = 2  neighProcID = 1 Tag = 196611 : 
+      gatherArray[0] = 20
+      gatherArray[1] = 21
+      gatherArray[2] = 22
+      gatherArray[3] = 23
+      gatherArray[4] = 24
+      gatherArray[5] = 25
+ meshID = 1   procID = 2  neighProcID = 3 Tag = 65537 : 
+      gatherArray[0] = 31
+ meshID = 1   procID = 2  neighProcID = 4 Tag = 65537 : 
+      gatherArray[0] = 32
+ meshID = 0   procID = 2  neighProcID = 0 Tag = 0 : 
+      gatherArray[0] = 17
+      gatherArray[1] = 18
+      gatherArray[2] = 19
+      gatherArray[3] = 20
+      gatherArray[4] = 21
+ meshID = 2   procID = 2  neighProcID = 0 Tag = 131074 : 
+      gatherArray[0] = 17
+      gatherArray[1] = 18
+      gatherArray[2] = 19
+      gatherArray[3] = 20
+ meshID = 0   procID = 2  neighProcID = 1 Tag = 0 : 
+      gatherArray[0] = 22
+      gatherArray[1] = 23
+      gatherArray[2] = 24
+      gatherArray[3] = 25
+      gatherArray[4] = 26
+ meshID = 2   procID = 2  neighProcID = 1 Tag = 131074 : 
+      gatherArray[0] = 21
+      gatherArray[1] = 22
+      gatherArray[2] = 23
+      gatherArray[3] = 24
+      gatherArray[4] = 25
+      gatherArray[5] = 26
+ meshID = 0   procID = 2  neighProcID = 7 Tag = 0 : 
+      gatherArray[0] = 27
+      gatherArray[1] = 28
+      gatherArray[2] = 29
+ meshID = 2   procID = 2  neighProcID = 8 Tag = 131074 : 
+      gatherArray[0] = 27
+      gatherArray[1] = 28
+      gatherArray[2] = 29
+      gatherArray[3] = 30

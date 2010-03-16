@@ -27,8 +27,8 @@ def cleanup(ec):
 
 def check_mesh(options):
     for np in range(0,options.np):
-       check_file = os.path.join(options.outdir, 'mesh_proc%s.dat' % np)
-       reference_file = os.path.join(options.golden, 'mesh_proc%s.dat' % np)
+       check_file = os.path.join(options.outdir, 'mesh_PROC%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'mesh_PROC%s.dat' % np)
        if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
          print "mesh files didn't match GOLDEN/* !!!!!!!!!!!!!"
          return  -1
@@ -36,50 +36,111 @@ def check_mesh(options):
     print "mesh files are ok"
     return 0
 
-def check_parmetis(options):
-    for np in range(0,options.np):
-       check_file = os.path.join(options.outdir, 'proc%s_debug_print.dat' % np)
-       reference_file = os.path.join(options.golden, 'proc%s_debug_print.dat' % np)
-       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
-         print "parmetis files didn't match GOLDEN/* !!!!!!!!!!!!!"
-         return  -1
-    print "parmetis files are ok"
-    return 0
 
-def check_mapping(options):
+def check_cell_site(options):
     for np in range(0,options.np):
-       check_file = os.path.join(options.outdir, 'mesh_proc%s_info.dat' % np)
-       reference_file = os.path.join(options.golden, 'mesh_proc%s_info.dat' % np)
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_cellSite_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_cellSite_proc%s.dat' % np)
        if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
-         print "mapping files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         print "cell site files didn't match GOLDEN/* !!!!!!!!!!!!!"
          return  -1
          break;
-    print "mapping files are ok"
+    print "cell site files are ok"
     return 0
 
-def check_thermal_solver(options):
-    for np in range(0,options.np):
-       check_file = os.path.join(options.outdir, 'temp_proc%s.dat' % np)
-       reference_file = os.path.join(options.golden, 'temp_proc%s.dat' % np)
-       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
-         print "temp files didn't match GOLDEN/* !!!!!!!!!!!!!"
-         return  -1
-         break;
-    print "temp files are ok"
-    return 0
 
-def check_storage_site_merger(options):
-    for np in range(0,options.np):
-       check_file = os.path.join(options.outdir, 'proc%s_storage_site_merger.dat' % np)
-       reference_file = os.path.join(options.golden, 'proc%s_storage_site_merger.dat' % np)
-       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
-         print "site merger files didn't match GOLDEN/* !!!!!!!!!!!!!"
-         return  -1
-         break;
-    print "site merger files are ok"
-    return 0
     
-    
+def check_face_site(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_faceSite_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_faceSite_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "face site files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "face site files are ok"
+    return 0
+
+def check_node_site(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_nodeSite_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_nodeSite_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "node site files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "node site files are ok"
+    return 0
+
+def check_cells_mapper(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_cellsMapper_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_cellsMapper_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "cells mapper files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "cells mapper files are ok"
+    return 0
+
+def check_face_cells(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_faceCells_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_faceCells_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "face cells files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "face cells files are ok"
+    return 0
+
+
+def check_nodes_mapper(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_nodesMapper_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_nodesMapper_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "nodes mapper files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "nodes mapper files are ok"
+    return 0
+
+def check_face_nodes(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_faceNodes_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_faceNodes_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "face nodes files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "face nodes files are ok"
+    return 0
+
+def check_scatter_mappers(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_scatterMappers_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_scatterMappers_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "scatter mappers files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "scatter mappers files are ok"
+    return 0
+
+def check_gather_mappers(options):
+    for np in range(0,options.np):
+       check_file = os.path.join(options.outdir, 'MESHDISMANTLER_gatherMappers_proc%s.dat' % np)
+       reference_file = os.path.join(options.golden, 'MESHDISMANTLER_gatherMappers_proc%s.dat' % np)
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "gather mappers files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "gather mappers files are ok"
+    return 0
+
+
+
 def check_convergence(options):
     check_file     = os.path.join(options.outdir, 'convergence.dat')
     reference_file = os.path.join(options.golden, 'convergence.dat')
@@ -89,15 +150,22 @@ def check_convergence(options):
       # break;
     print "convergence history files are ok"
     return 0
-  
+    
+
 
 def main():
     funcs = {
-        'testPartMesh.py' : [check_parmetis, check_mesh, check_mapping],
-        'testThermalParallel.py' : [check_thermal_solver], 
-        'testMerger.py'                  : [check_storage_site_merger],
-        'testThermalParallelJacobi.py':[check_convergence]
-        }
+        'testThermalParallelJacobi.py':[check_convergence],
+        'testMultiMeshesDismantlerCellSite.py'      :[check_cell_site],
+        'testMultiMeshesDismantlerFaceSite.py'      :[check_face_site],
+        'testMultiMeshesDismantlerNodeSite.py'      :[check_node_site],
+        'testMultiMeshesDismantlerCellsMapper.py'   :[check_cells_mapper],
+        'testMultiMeshesDismantlerFaceCells.py'     :[check_face_cells],
+        'testMultiMeshesDismantlerNodesMapper.py'   :[check_nodes_mapper],
+        'testMultiMeshesDismantlerFaceNodes.py'     :[check_face_nodes],
+        'testMultiMeshesDismantlerScatterMappers.py':[check_scatter_mappers],
+        'testMultiMeshesDismantlerGatherMappers.py' :[check_gather_mappers]
+    }
     parser = OptionParser()
     parser.set_defaults(np=1,outdir='',type='tri')
     parser.add_option("--in", dest='infile', help="Input file (required).")

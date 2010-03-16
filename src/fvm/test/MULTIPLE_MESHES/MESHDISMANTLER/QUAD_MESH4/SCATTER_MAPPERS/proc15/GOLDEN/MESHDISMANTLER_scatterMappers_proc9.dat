@@ -1,0 +1,66 @@
+   meshID = 0   otherside MeshID = 1 : 
+      scatterArray[0] = 16
+      scatterArray[1] = 11
+      scatterArray[2] = 9
+   meshID = 1   otherside MeshID = 0 : 
+      scatterArray[0] = 12
+      scatterArray[1] = 6
+      scatterArray[2] = 4
+   meshID = 2   otherside MeshID = 3 : 
+      scatterArray[0] = 5
+      scatterArray[1] = 3
+      scatterArray[2] = 1
+      scatterArray[3] = 0
+   meshID = 3   otherside MeshID = 2 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 1
+      scatterArray[2] = 3
+      scatterArray[3] = 5
+ meshID = 1   procID = 9  neighProcID = 7 Tag = 65537 : 
+      scatterArray[0] = 1
+      scatterArray[1] = 3
+      scatterArray[2] = 11
+      scatterArray[3] = 16
+ meshID = 3   procID = 9  neighProcID = 8 Tag = 196611 : 
+      scatterArray[0] = 14
+      scatterArray[1] = 15
+      scatterArray[2] = 16
+      scatterArray[3] = 16
+ meshID = 1   procID = 9  neighProcID = 10 Tag = 65537 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 1
+      scatterArray[2] = 4
+      scatterArray[3] = 5
+      scatterArray[4] = 0
+      scatterArray[5] = 7
+ meshID = 3   procID = 9  neighProcID = 10 Tag = 196611 : 
+      scatterArray[0] = 5
+      scatterArray[1] = 7
+      scatterArray[2] = 11
+      scatterArray[3] = 11
+      scatterArray[4] = 14
+ meshID = 0   procID = 9  neighProcID = 7 Tag = 0 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 2
+      scatterArray[2] = 4
+      scatterArray[3] = 12
+ meshID = 2   procID = 9  neighProcID = 7 Tag = 131074 : 
+      scatterArray[0] = 16
+ meshID = 2   procID = 9  neighProcID = 8 Tag = 131074 : 
+      scatterArray[0] = 12
+      scatterArray[1] = 13
+      scatterArray[2] = 14
+      scatterArray[3] = 15
+ meshID = 0   procID = 9  neighProcID = 10 Tag = 0 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 1
+      scatterArray[2] = 1
+      scatterArray[3] = 5
+      scatterArray[4] = 7
+      scatterArray[5] = 9
+ meshID = 2   procID = 9  neighProcID = 10 Tag = 131074 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 2
+      scatterArray[2] = 8
+      scatterArray[3] = 16
+      scatterArray[4] = 16

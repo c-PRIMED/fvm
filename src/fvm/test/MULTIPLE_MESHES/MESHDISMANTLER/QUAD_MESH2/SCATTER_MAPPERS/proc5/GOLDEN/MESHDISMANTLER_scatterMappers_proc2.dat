@@ -1,0 +1,79 @@
+   meshID = 0   otherside MeshID = 1 : 
+      scatterArray[0] = 278
+      scatterArray[1] = 273
+      scatterArray[2] = 272
+      scatterArray[3] = 285
+      scatterArray[4] = 284
+      scatterArray[5] = 279
+   meshID = 1   otherside MeshID = 0 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 8
+      scatterArray[2] = 9
+      scatterArray[3] = 17
+      scatterArray[4] = 18
+      scatterArray[5] = 1
+ meshID = 1   procID = 2  neighProcID = 0 Tag = 65537 : 
+      scatterArray[0] = 11
+      scatterArray[1] = 7
+      scatterArray[2] = 9
+ meshID = 1   procID = 2  neighProcID = 1 Tag = 65537 : 
+      scatterArray[0] = 12
+ meshID = 1   procID = 2  neighProcID = 3 Tag = 65537 : 
+      scatterArray[0] = 14
+      scatterArray[1] = 13
+      scatterArray[2] = 12
+ meshID = 1   procID = 2  neighProcID = 4 Tag = 65537 : 
+      scatterArray[0] = 14
+      scatterArray[1] = 16
+      scatterArray[2] = 10
+      scatterArray[3] = 16
+      scatterArray[4] = 15
+      scatterArray[5] = 17
+      scatterArray[6] = 17
+ meshID = 0   procID = 2  neighProcID = 0 Tag = 0 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 2
+      scatterArray[2] = 114
+      scatterArray[3] = 4
+      scatterArray[4] = 6
+      scatterArray[5] = 112
+      scatterArray[6] = 114
+      scatterArray[7] = 119
+      scatterArray[8] = 111
+      scatterArray[9] = 119
+      scatterArray[10] = 118
+      scatterArray[11] = 118
+      scatterArray[12] = 230
+      scatterArray[13] = 229
+      scatterArray[14] = 222
+      scatterArray[15] = 135
+      scatterArray[16] = 272
+      scatterArray[17] = 270
+      scatterArray[18] = 280
+      scatterArray[19] = 231
+ meshID = 0   procID = 2  neighProcID = 4 Tag = 0 : 
+      scatterArray[0] = 214
+      scatterArray[1] = 213
+      scatterArray[2] = 212
+      scatterArray[3] = 255
+      scatterArray[4] = 259
+      scatterArray[5] = 258
+      scatterArray[6] = 264
+      scatterArray[7] = 263
+      scatterArray[8] = 269
+      scatterArray[9] = 269
+      scatterArray[10] = 268
+      scatterArray[11] = 267
+      scatterArray[12] = 256
+      scatterArray[13] = 194
+      scatterArray[14] = 196
+      scatterArray[15] = 199
+      scatterArray[16] = 200
+      scatterArray[17] = 215
+      scatterArray[18] = 215
+      scatterArray[19] = 288
+      scatterArray[20] = 285
+      scatterArray[21] = 283
+      scatterArray[22] = 289
+      scatterArray[23] = 289
+      scatterArray[24] = 260

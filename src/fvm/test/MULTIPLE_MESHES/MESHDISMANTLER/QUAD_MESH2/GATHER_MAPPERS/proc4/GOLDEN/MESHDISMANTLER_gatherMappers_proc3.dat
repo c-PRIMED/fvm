@@ -1,0 +1,70 @@
+   meshID = 0   otherside MeshID = 1 : 
+      gatherArray[0] = 410
+      gatherArray[1] = 411
+      gatherArray[2] = 412
+      gatherArray[3] = 413
+      gatherArray[4] = 414
+      gatherArray[5] = 415
+      gatherArray[6] = 416
+      gatherArray[7] = 417
+      gatherArray[8] = 418
+   meshID = 1   otherside MeshID = 0 : 
+      gatherArray[0] = 35
+      gatherArray[1] = 36
+      gatherArray[2] = 37
+      gatherArray[3] = 38
+      gatherArray[4] = 39
+      gatherArray[5] = 40
+      gatherArray[6] = 41
+      gatherArray[7] = 42
+      gatherArray[8] = 43
+ meshID = 1   procID = 3  neighProcID = 1 Tag = 65537 : 
+      gatherArray[0] = 24
+      gatherArray[1] = 25
+      gatherArray[2] = 26
+      gatherArray[3] = 27
+      gatherArray[4] = 28
+      gatherArray[5] = 29
+ meshID = 1   procID = 3  neighProcID = 2 Tag = 65536 : 
+      gatherArray[0] = 34
+ meshID = 1   procID = 3  neighProcID = 2 Tag = 65537 : 
+      gatherArray[0] = 30
+      gatherArray[1] = 31
+      gatherArray[2] = 32
+      gatherArray[3] = 33
+ meshID = 0   procID = 3  neighProcID = 1 Tag = 0 : 
+      gatherArray[0] = 376
+      gatherArray[1] = 377
+      gatherArray[2] = 378
+      gatherArray[3] = 379
+      gatherArray[4] = 380
+      gatherArray[5] = 381
+      gatherArray[6] = 382
+      gatherArray[7] = 383
+      gatherArray[8] = 384
+      gatherArray[9] = 385
+      gatherArray[10] = 386
+      gatherArray[11] = 387
+      gatherArray[12] = 388
+      gatherArray[13] = 389
+      gatherArray[14] = 390
+      gatherArray[15] = 391
+ meshID = 0   procID = 3  neighProcID = 2 Tag = 0 : 
+      gatherArray[0] = 392
+      gatherArray[1] = 393
+      gatherArray[2] = 394
+      gatherArray[3] = 395
+      gatherArray[4] = 396
+      gatherArray[5] = 397
+      gatherArray[6] = 398
+      gatherArray[7] = 399
+      gatherArray[8] = 400
+      gatherArray[9] = 401
+      gatherArray[10] = 402
+      gatherArray[11] = 403
+      gatherArray[12] = 404
+      gatherArray[13] = 405
+      gatherArray[14] = 406
+      gatherArray[15] = 407
+      gatherArray[16] = 408
+      gatherArray[17] = 409

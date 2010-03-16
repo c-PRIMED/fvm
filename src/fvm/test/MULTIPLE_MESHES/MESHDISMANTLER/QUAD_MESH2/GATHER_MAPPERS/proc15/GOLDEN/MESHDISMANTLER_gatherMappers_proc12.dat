@@ -1,0 +1,57 @@
+ meshID = 1   procID = 12  neighProcID = 0 Tag = 65537 : 
+      gatherArray[0] = 7
+      gatherArray[1] = 8
+ meshID = 1   procID = 12  neighProcID = 4 Tag = 65537 : 
+      gatherArray[0] = 9
+ meshID = 1   procID = 12  neighProcID = 9 Tag = 65537 : 
+      gatherArray[0] = 10
+      gatherArray[1] = 11
+ meshID = 1   procID = 12  neighProcID = 11 Tag = 65537 : 
+      gatherArray[0] = 12
+      gatherArray[1] = 13
+      gatherArray[2] = 14
+ meshID = 1   procID = 12  neighProcID = 13 Tag = 65537 : 
+      gatherArray[0] = 15
+ meshID = 1   procID = 12  neighProcID = 14 Tag = 65537 : 
+      gatherArray[0] = 16
+      gatherArray[1] = 17
+      gatherArray[2] = 18
+ meshID = 0   procID = 12  neighProcID = 7 Tag = 0 : 
+      gatherArray[0] = 103
+      gatherArray[1] = 104
+      gatherArray[2] = 105
+      gatherArray[3] = 106
+ meshID = 0   procID = 12  neighProcID = 8 Tag = 0 : 
+      gatherArray[0] = 107
+      gatherArray[1] = 108
+      gatherArray[2] = 109
+      gatherArray[3] = 110
+      gatherArray[4] = 111
+      gatherArray[5] = 112
+      gatherArray[6] = 113
+      gatherArray[7] = 114
+      gatherArray[8] = 115
+      gatherArray[9] = 116
+      gatherArray[10] = 117
+      gatherArray[11] = 118
+      gatherArray[12] = 119
+ meshID = 0   procID = 12  neighProcID = 11 Tag = 0 : 
+      gatherArray[0] = 120
+      gatherArray[1] = 121
+      gatherArray[2] = 122
+      gatherArray[3] = 123
+      gatherArray[4] = 124
+      gatherArray[5] = 125
+      gatherArray[6] = 126
+      gatherArray[7] = 127
+      gatherArray[8] = 128
+      gatherArray[9] = 129
+ meshID = 0   procID = 12  neighProcID = 14 Tag = 0 : 
+      gatherArray[0] = 130
+      gatherArray[1] = 131
+      gatherArray[2] = 132
+      gatherArray[3] = 133
+      gatherArray[4] = 134
+      gatherArray[5] = 135
+      gatherArray[6] = 136
+      gatherArray[7] = 137

@@ -1,0 +1,44 @@
+ meshID = 1   procID = 0  neighProcID = 1 Tag = 65537 : 
+      scatterArray[0] = 5
+      scatterArray[1] = 4
+      scatterArray[2] = 0
+      scatterArray[3] = 5
+ meshID = 1   procID = 0  neighProcID = 2 Tag = 65537 : 
+      scatterArray[0] = 4
+      scatterArray[1] = 3
+ meshID = 1   procID = 0  neighProcID = 4 Tag = 65537 : 
+      scatterArray[0] = 2
+      scatterArray[1] = 2
+      scatterArray[2] = 3
+      scatterArray[3] = 1
+ meshID = 1   procID = 0  neighProcID = 12 Tag = 65537 : 
+      scatterArray[0] = 1
+      scatterArray[1] = 5
+ meshID = 0   procID = 0  neighProcID = 1 Tag = 0 : 
+      scatterArray[0] = 92
+      scatterArray[1] = 90
+      scatterArray[2] = 93
+      scatterArray[3] = 94
+      scatterArray[4] = 97
+      scatterArray[5] = 95
+      scatterArray[6] = 98
+      scatterArray[7] = 91
+      scatterArray[8] = 99
+      scatterArray[9] = 96
+ meshID = 0   procID = 0  neighProcID = 2 Tag = 0 : 
+      scatterArray[0] = 9
+      scatterArray[1] = 7
+      scatterArray[2] = 23
+      scatterArray[3] = 22
+      scatterArray[4] = 94
+      scatterArray[5] = 38
+      scatterArray[6] = 40
+      scatterArray[7] = 42
+      scatterArray[8] = 43
+ meshID = 0   procID = 0  neighProcID = 13 Tag = 0 : 
+      scatterArray[0] = 84
+      scatterArray[1] = 86
+      scatterArray[2] = 85
+      scatterArray[3] = 87
+      scatterArray[4] = 99
+      scatterArray[5] = 88

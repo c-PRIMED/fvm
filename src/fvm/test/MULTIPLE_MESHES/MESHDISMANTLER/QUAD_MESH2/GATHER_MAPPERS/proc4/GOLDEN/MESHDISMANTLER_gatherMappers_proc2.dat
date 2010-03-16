@@ -1,0 +1,68 @@
+   meshID = 0   otherside MeshID = 1 : 
+      gatherArray[0] = 407
+      gatherArray[1] = 408
+      gatherArray[2] = 409
+      gatherArray[3] = 410
+      gatherArray[4] = 411
+      gatherArray[5] = 412
+      gatherArray[6] = 413
+      gatherArray[7] = 414
+      gatherArray[8] = 415
+      gatherArray[9] = 416
+   meshID = 1   otherside MeshID = 0 : 
+      gatherArray[0] = 34
+      gatherArray[1] = 35
+      gatherArray[2] = 36
+      gatherArray[3] = 37
+      gatherArray[4] = 38
+      gatherArray[5] = 39
+      gatherArray[6] = 40
+      gatherArray[7] = 41
+      gatherArray[8] = 42
+      gatherArray[9] = 43
+ meshID = 1   procID = 2  neighProcID = 0 Tag = 65537 : 
+      gatherArray[0] = 24
+      gatherArray[1] = 25
+      gatherArray[2] = 26
+      gatherArray[3] = 27
+      gatherArray[4] = 28
+      gatherArray[5] = 29
+ meshID = 1   procID = 2  neighProcID = 3 Tag = 65537 : 
+      gatherArray[0] = 30
+      gatherArray[1] = 31
+      gatherArray[2] = 32
+      gatherArray[3] = 33
+ meshID = 0   procID = 2  neighProcID = 0 Tag = 0 : 
+      gatherArray[0] = 376
+      gatherArray[1] = 377
+      gatherArray[2] = 378
+      gatherArray[3] = 379
+      gatherArray[4] = 380
+      gatherArray[5] = 381
+      gatherArray[6] = 382
+      gatherArray[7] = 383
+      gatherArray[8] = 384
+      gatherArray[9] = 385
+      gatherArray[10] = 386
+      gatherArray[11] = 387
+ meshID = 0   procID = 2  neighProcID = 3 Tag = 0 : 
+      gatherArray[0] = 388
+      gatherArray[1] = 389
+      gatherArray[2] = 390
+      gatherArray[3] = 391
+      gatherArray[4] = 392
+      gatherArray[5] = 393
+      gatherArray[6] = 394
+      gatherArray[7] = 395
+      gatherArray[8] = 396
+      gatherArray[9] = 397
+      gatherArray[10] = 398
+      gatherArray[11] = 399
+      gatherArray[12] = 400
+      gatherArray[13] = 401
+      gatherArray[14] = 402
+      gatherArray[15] = 403
+      gatherArray[16] = 404
+      gatherArray[17] = 405
+ meshID = 0   procID = 2  neighProcID = 3 Tag = 65536 : 
+      gatherArray[0] = 406

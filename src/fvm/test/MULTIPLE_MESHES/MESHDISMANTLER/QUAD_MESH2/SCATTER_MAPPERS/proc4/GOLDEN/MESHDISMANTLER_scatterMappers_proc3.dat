@@ -1,0 +1,70 @@
+   meshID = 0   otherside MeshID = 1 : 
+      scatterArray[0] = 242
+      scatterArray[1] = 252
+      scatterArray[2] = 247
+      scatterArray[3] = 246
+      scatterArray[4] = 243
+      scatterArray[5] = 326
+      scatterArray[6] = 322
+      scatterArray[7] = 321
+      scatterArray[8] = 273
+   meshID = 1   otherside MeshID = 0 : 
+      scatterArray[0] = 0
+      scatterArray[1] = 23
+      scatterArray[2] = 21
+      scatterArray[3] = 22
+      scatterArray[4] = 1
+      scatterArray[5] = 19
+      scatterArray[6] = 17
+      scatterArray[7] = 18
+      scatterArray[8] = 23
+ meshID = 1   procID = 3  neighProcID = 1 Tag = 65537 : 
+      scatterArray[0] = 9
+      scatterArray[1] = 11
+      scatterArray[2] = 19
+      scatterArray[3] = 15
+      scatterArray[4] = 14
+      scatterArray[5] = 10
+ meshID = 1   procID = 3  neighProcID = 2 Tag = 65536 : 
+      scatterArray[0] = 7
+ meshID = 1   procID = 3  neighProcID = 2 Tag = 65537 : 
+      scatterArray[0] = 5
+      scatterArray[1] = 7
+      scatterArray[2] = 4
+      scatterArray[3] = 11
+ meshID = 0   procID = 3  neighProcID = 1 Tag = 0 : 
+      scatterArray[0] = 324
+      scatterArray[1] = 326
+      scatterArray[2] = 332
+      scatterArray[3] = 325
+      scatterArray[4] = 341
+      scatterArray[5] = 345
+      scatterArray[6] = 344
+      scatterArray[7] = 333
+      scatterArray[8] = 353
+      scatterArray[9] = 357
+      scatterArray[10] = 356
+      scatterArray[11] = 342
+      scatterArray[12] = 366
+      scatterArray[13] = 365
+      scatterArray[14] = 364
+      scatterArray[15] = 354
+ meshID = 0   procID = 3  neighProcID = 2 Tag = 0 : 
+      scatterArray[0] = 3
+      scatterArray[1] = 1
+      scatterArray[2] = 4
+      scatterArray[3] = 17
+      scatterArray[4] = 92
+      scatterArray[5] = 91
+      scatterArray[6] = 84
+      scatterArray[7] = 18
+      scatterArray[8] = 179
+      scatterArray[9] = 180
+      scatterArray[10] = 177
+      scatterArray[11] = 179
+      scatterArray[12] = 93
+      scatterArray[13] = 256
+      scatterArray[14] = 242
+      scatterArray[15] = 242
+      scatterArray[16] = 178
+      scatterArray[17] = 255
