@@ -139,6 +139,72 @@ def check_gather_mappers(options):
     print "gather mappers files are ok"
     return 0
 
+def assembler_check_face_cells(options):
+    for np in range(0,options.np):
+       check_file     = os.path.join(options.outdir, 'MESHASSEMBLER_faceCells.dat')
+       reference_file = os.path.join(options.golden, 'MESHASSEMBLER_faceCells.dat')
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "face cells files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "face cells files are ok"
+    return 0
+
+def assembler_check_globalCellToMeshID(options):
+    for np in range(0,options.np):
+       check_file     = os.path.join(options.outdir, 'MESHASSEMBLER_globalCellToMeshID.dat')
+       reference_file = os.path.join(options.golden, 'MESHASSEMBLER_globalCellToMeshID.dat')
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "global cell to meshid files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "global cell to meshid files are ok"
+    return 0
+
+
+def assembler_check_localNodeToGlobal(options):
+    for np in range(0,options.np):
+       check_file     = os.path.join(options.outdir, 'MESHASSEMBLER_localNodeToGlobal.dat')
+       reference_file = os.path.join(options.golden, 'MESHASSEMBLER_localNodeToGlobal.dat')
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "local node to global files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "local node to global files are ok"
+    return 0
+
+def assembler_check_localToGlobal(options):
+    for np in range(0,options.np):
+       check_file     = os.path.join(options.outdir, 'MESHASSEMBLER_localToGlobal.dat')
+       reference_file = os.path.join(options.golden, 'MESHASSEMBLER_localToGlobal.dat')
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "local to global files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "local to global files are ok"
+    return 0
+
+def assembler_check_sites(options):
+    for np in range(0,options.np):
+       check_file     = os.path.join(options.outdir, 'MESHASSEMBLER_sites.dat')
+       reference_file = os.path.join(options.golden, 'MESHASSEMBLER_sites.dat')
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "site files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "site files are ok"
+    return 0
+
+def assembler_check_syncLocalToGlobal(options):
+    for np in range(0,options.np):
+       check_file     = os.path.join(options.outdir, 'MESHASSEMBLER_syncLocalToGlobal.dat')
+       reference_file = os.path.join(options.golden, 'MESHASSEMBLER_syncLocalToGlobal.dat')
+       if numfile_compare.check_files(check_file, reference_file, 1.0e-5):
+         print "syncLocalToGlobal files didn't match GOLDEN/* !!!!!!!!!!!!!"
+         return  -1
+         break;
+    print "syncLocalToGlobal files are ok"
+    return 0
 
 
 def check_convergence(options):
@@ -164,7 +230,13 @@ def main():
         'testMultiMeshesDismantlerNodesMapper.py'   :[check_nodes_mapper],
         'testMultiMeshesDismantlerFaceNodes.py'     :[check_face_nodes],
         'testMultiMeshesDismantlerScatterMappers.py':[check_scatter_mappers],
-        'testMultiMeshesDismantlerGatherMappers.py' :[check_gather_mappers]
+        'testMultiMeshesDismantlerGatherMappers.py' :[check_gather_mappers],
+        'testMeshAssemblerFaceCells.py'             :[assembler_check_face_cells],
+        'testMeshAssemblerGlobalCellToMeshID.py'    :[assembler_check_globalCellToMeshID],
+        'testMeshAssemblerLocalNodeToGlobal.py'     :[assembler_check_localNodeToGlobal],
+        'testMeshAssemblerLocalToGlobal.py'         :[assembler_check_localToGlobal],
+        'testMeshAssemblerSites.py'                 :[assembler_check_sites],
+        'testMeshAssemblerSyncLocalToGlobal.py'     :[assembler_check_syncLocalToGlobal]
     }
     parser = OptionParser()
     parser.set_defaults(np=1,outdir='',type='tri')

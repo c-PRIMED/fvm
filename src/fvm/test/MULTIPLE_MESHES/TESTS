@@ -129,6 +129,22 @@ MULTIPLE_MESHES4_QUAD_P3_GATHERS ./ptest.py  --np 3  --script testMultiMeshesDis
 MULTIPLE_MESHES4_QUAD_P4_GATHERS ./ptest.py --np 4  --script testMultiMeshesDismantlerGatherMappers.py --type=quad --in ../quad_multiple_mesh4.cas   --golden MESHDISMANTLER/QUAD_MESH4/GATHER_MAPPERS/proc4    --outdir TESTDIR 
 MULTIPLE_MESHES4_QUAD_P5_GATHERS  ./ptest.py  --np 5  --script testMultiMeshesDismantlerGatherMappers.py --type=quad --in ../quad_multiple_mesh4.cas  --golden MESHDISMANTLER/QUAD_MESH4/GATHER_MAPPERS/proc5    --outdir TESTDIR 
 MULTIPLE_MESHES4_QUAD_P15_GATHERS  ./ptest.py  --np 15 --script testMultiMeshesDismantlerGatherMappers.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHDISMANTLER/QUAD_MESH4/GATHER_MAPPERS/proc15   --outdir TESTDIR 
+MESHASSEMBLER_MESHES2_FACECELLS              ./ptest.py  --np 1 --script testMeshAssemblerFaceCells.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/FACE_CELLS           --outdir TESTDIR
+MESHASSEMBLER_MESHES4_FACECELLS              ./ptest.py  --np 1 --script testMeshAssemblerFaceCells.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/FACE_CELLS           --outdir TESTDIR
+MESHASSEMBLER_MESHES2_GLOBALCELL_TO_MEHSID   ./ptest.py  --np 1 --script testMeshAssemblerGlobalCellToMeshID.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/GLOBALCELL_TO_MEHSID --outdir TESTDIR
+MESHASSEMBLER_MESHES4_GLOBALCELL_TO_MEHSID   ./ptest.py  --np 1 --script testMeshAssemblerGlobalCellToMeshID.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/GLOBALCELL_TO_MEHSID --outdir TESTDIR
+MESHASSEMBLER_MESHES2_LOCALNODE_TO_GLOBAL    ./ptest.py  --np 1 --script  testMeshAssemblerLocalNodeToGlobal.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/LOCALNODE_TO_GLOBAL --outdir TESTDIR
+MESHASSEMBLER_MESHES4_LOCALNODE_TO_GLOBAL    ./ptest.py  --np 1 --script  testMeshAssemblerLocalNodeToGlobal.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/LOCALNODE_TO_GLOBAL --outdir TESTDIR
+MESHASSEMBLER_MESHES2_LOCAL_TO_GLOBAL        ./ptest.py  --np 1 --script  testMeshAssemblerLocalToGlobal.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/LOCAL_TO_GLOBAL --outdir TESTDIR
+MESHASSEMBLER_MESHES4_LOCAL_TO_GLOBAL        ./ptest.py  --np 1 --script  testMeshAssemblerLocalToGlobal.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/LOCAL_TO_GLOBAL --outdir TESTDIR
+MESHASSEMBLER_MESHES2_SITES                  ./ptest.py  --np 1 --script  testMeshAssemblerSites.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/SITES --outdir TESTDIR
+MESHASSEMBLER_MESHES4_SITES                  ./ptest.py  --np 1 --script  testMeshAssemblerSites.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/SITES --outdir TESTDIR
+MESHASSEMBLER_MESHES2_SYNC_LOCAL_TO_GLOBAL   ./ptest.py  --np 1 --script  testMeshAssemblerSyncLocalToGlobal.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/SYNC_LOCAL_TO_GLOBAL  --outdir TESTDIR
+MESHASSEMBLER_MESHES4_SYNC_LOCAL_TO_GLOBAL   ./ptest.py  --np 1 --script  testMeshAssemblerSyncLocalToGlobal.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/SYNC_LOCAL_TO_GLOBAL --outdir TESTDIR
+
+
+
+
 
 
 
