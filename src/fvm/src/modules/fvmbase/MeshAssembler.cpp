@@ -699,117 +699,120 @@ MeshAssembler::setMeshCellColor()
 }
 
 
+void 
+MeshAssembler::debug_sites()
+{
+  debug_file_open("sites");
+  _debugFile << " cells.getSelfCount() = " << _cellSite->getSelfCount() << " cells.selfCount() = " << _cellSite->getCount() << endl;
+  _debugFile << " faces.getSelfCount() = " << _faceSite->getSelfCount() << " faces.selfCount() = " << _faceSite->getCount() << endl;
+  _debugFile << " nodes.getSelfCount() = " << _nodeSite->getSelfCount() << " nodes.selfCount() = " << _nodeSite->getCount() << endl;
+  debug_file_close();
+}
+
+
+void
+MeshAssembler::debug_localToGlobal_mappers()
+{
+   debug_file_open("localToGlobal");
+  //mapLocalToGlobal
+   for ( unsigned int n = 0; n < _meshList.size(); n++ ){
+      _debugFile << " mesh = " << n << endl;
+      const Array<int>& localToGlobal = *_localCellToGlobal[n];
+      for ( int i = 0; i < localToGlobal.getLength(); i++ )
+          _debugFile  << " localCellToGlobal[" << i << "] = " << localToGlobal[i] << endl;
+      _debugFile << endl;
+   }
+   debug_file_close();
+}
+
+void 
+MeshAssembler::debug_globalCellToMeshID_mappers()
+{
+   debug_file_open("globalCellToMeshID");
+   //globalCellToMeshID
+   for (  unsigned int i = 0; i < _globalCellToMeshID.size(); i++ )
+      _debugFile  << " globalCellToMeshID[" << i << "] = " << _globalCellToMeshID[i] << endl;
+  
+   _debugFile << endl;
+   //globalCellToLocal
+   for ( unsigned int i = 0; i < _globalCellToLocal.size(); i++ )
+      _debugFile  << " globalCellToLocal[" << i << "] = " << _globalCellToLocal[i] << endl;
+    
+   debug_file_close();
+}
+
+
+void
+MeshAssembler::debug_sync_localToGlobal_mappers()
+{
+  debug_file_open("syncLocalToGlobal");
+  //printing things
+  _debugFile << " localCellToGlobal after sync() opeartion " << endl;
+  for ( unsigned int n = 0; n < _meshList.size(); n++ ){
+     const Array<int>&  localToGlobal = *_localCellToGlobal[n];
+     _debugFile << " mesh = " << n << endl;
+     for ( int i = 0; i < localToGlobal.getLength(); i++ )
+         _debugFile << " localToGlobal[" << i << "] = " << localToGlobal[i] << endl;
+     _debugFile << endl;
+  }
+  debug_file_close();
+}
+
+
+void
+MeshAssembler::debug_faceCells()
+{
+  debug_file_open("faceCells");
+  //faceCells
+  _debugFile << " faceCells Connectivity " << endl;
+  for ( int i = 0; i < _faceSite->getCount(); i++ ) { 
+      int ncells = _faceCells->getCount(i);
+      for ( int j = 0; j < ncells; j++ ){
+         _debugFile << " faceCells(" << i << "," << j << ") = " << (*_faceCells)(i,j);
+      }
+      _debugFile << endl;
+  }
+  debug_file_close();
+}
+
+void
+MeshAssembler::debug_localNodeToGlobal()
+{
+  debug_file_open("localNodeToGlobal");
+  //localNodeToGlobal
+  _debugFile << " localNodeToGlobal " << endl;
+  for ( unsigned int n = 0; n < _meshList.size(); n++ ){
+      const Array<int>&  localToGlobal = *_localNodeToGlobal[n];
+      for ( int i = 0; i < localToGlobal.getLength(); i++ )
+         _debugFile << " localToGlobal[" << i << "] = " << localToGlobal[i] << endl;
+      _debugFile << endl;
+  }
+  debug_file_close();
+}
 
 void  
 MeshAssembler::debug_print()
 {
-   
-  stringstream ss;
-  ss << "meshAssembler_debug.dat";
-  ofstream  debug_file( (ss.str()).c_str() );
-  
-  for ( unsigned int i = 0; i < _meshList.size(); i++ ){
-     debug_file <<  " mesh  = " << i << ", id  = " << _meshList[i]->getID() << endl;
-     debug_file <<  " mesh  = " << i << ", dim = " << _meshList[i]->getDimension() << endl;
-  }
+    debug_sites();
+    debug_localToGlobal_mappers();
+    debug_globalCellToMeshID_mappers();
+    debug_sync_localToGlobal_mappers();
+    debug_faceCells();
+    debug_localNodeToGlobal();
 
-  debug_file << endl;
-
-  for ( unsigned int i = 0; i < _meshList.size(); i++ ){
-      const StorageSite& cells = _meshList[i]->getCells();
-      debug_file << " cells.getSelfCount()  = " << cells.getSelfCount() << " cells.getCount() = " << cells.getCount() << endl;
-  }
-
-  debug_file << endl;
-  //writing mapping
-  for ( unsigned int i = 0; i < _meshList.size(); i++ ){
-       const StorageSite& cells = _meshList[i]->getCells();
-       const StorageSite::ScatterMap& scatterMap = cells.getScatterMap();
-       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
-          const Array<int>& fromIndices = *(mpos.second);
-          debug_file << " fromIndices.getLength() = " << fromIndices.getLength() << endl;
-          debug_file << " scatterArray " << endl;
-          for ( int n  = 0; n < fromIndices.getLength(); n++)
-             debug_file << "      fromIndices[" << n << "] = " << fromIndices[n] << endl;
-       }
-   }
-   debug_file << endl;
-
-    //dumping _interfaceNodesSet
- //loop over meshes
-   for ( unsigned int n = 0; n < _meshList.size(); n++ ){
-      const Mesh& mesh = *(_meshList.at(n));     
-      const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();
-      debug_file << " Mesh =  " << n << endl;
-      //looop over  interfaces
-      for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
-           int id = faceGroupList[i]->id;
-           set<int>&  nodes   = _interfaceNodesSet[n][id];
-           debug_file << "         face : " << id << endl;
-           foreach ( const set<int>::value_type node, nodes )
-                debug_file <<  "           " << node << endl;
-      }
-   }
-   debug_file << endl;
-
-   debug_file << " cells.getSelfCount() = " << _cellSite->getSelfCount() << " cells.selfCount() = " << _cellSite->getCount() << endl;
-   debug_file << endl; 
-   debug_file << " faces.getSelfCount() = " << _faceSite->getSelfCount() << " faces.selfCount() = " << _faceSite->getCount() << endl;
-   debug_file << endl; 
-   debug_file << " nodes.getSelfCount() = " << _nodeSite->getSelfCount() << " nodes.selfCount() = " << _nodeSite->getCount() << endl;
-   debug_file << endl; 
-  //mapLocalToGlobal
-   for ( unsigned int n = 0; n < _meshList.size(); n++ ){
-      debug_file << " mesh = " << n << endl;
-      const Array<int>& localToGlobal = *_localCellToGlobal[n];
-      for ( int i = 0; i < localToGlobal.getLength(); i++ )
-          debug_file  << " localCellToGlobal[" << i << "] = " << localToGlobal[i] << endl;
-      debug_file << endl;
-   }
-   debug_file << endl;
-   //globalCellToMeshID
-   for (  unsigned int i = 0; i < _globalCellToMeshID.size(); i++ )
-      debug_file  << " globalCellToMeshID[" << i << "] = " << _globalCellToMeshID[i] << endl;
-  
-   debug_file << endl;
-   //globalCellToLocal
-   for ( unsigned int i = 0; i < _globalCellToLocal.size(); i++ )
-      debug_file  << " globalCellToLocal[" << i << "] = " << _globalCellToLocal[i] << endl;
-    
-   debug_file << endl;
+}
 
 
-  //printing things
-  debug_file << " localCellToGlobal after sync() opeartion " << endl;
-  for ( unsigned int n = 0; n < _meshList.size(); n++ ){
-     const Array<int>&  localToGlobal = *_localCellToGlobal[n];
-     debug_file << " mesh = " << n << endl;
-     for ( int i = 0; i < localToGlobal.getLength(); i++ )
-         debug_file << " localToGlobal[" << i << "] = " << localToGlobal[i] << endl;
-     debug_file << endl;
-  }
-  debug_file << endl;
 
-  //faceCells
-  debug_file << " faceCells Connectivity " << endl;
-  for ( int i = 0; i < _faceSite->getCount(); i++ ) { 
-      int ncells = _faceCells->getCount(i);
-      for ( int j = 0; j < ncells; j++ ){
-         debug_file << " faceCells(" << i << "," << j << ") = " << (*_faceCells)(i,j);
-      }
-      debug_file << endl;
-  }
-  //localNodeToGlobal
-  debug_file << " localNodeToGlobal " << endl;
-  for ( unsigned int n = 0; n < _meshList.size(); n++ ){
-      const Array<int>&  localToGlobal = *_localNodeToGlobal[n];
-      for ( int i = 0; i < localToGlobal.getLength(); i++ )
-         debug_file << " localToGlobal[" << i << "] = " << localToGlobal[i] << endl;
-      debug_file << endl;
-  }
-  debug_file << endl;
+void
+MeshAssembler::debug_file_open( const string& fname_ )
+{  
+     string  fname = "MESHASSEMBLER_"+fname_+".dat";
+    _debugFile.open( fname.c_str() );
+}
 
-
-  debug_file.close();
-
+void
+MeshAssembler::debug_file_close()
+{
+    _debugFile.close();
 }

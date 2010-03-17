@@ -6,6 +6,7 @@
 #include "Vector.h"
 #include <vector>
 #include <set>
+#include <fstream>
 
 class MeshAssembler
 {
@@ -29,6 +30,12 @@ public:
    const MeshList&  meshList() const { return _mesh;}
 
    void  debug_print();
+   void  debug_sites();
+   void  debug_localToGlobal_mappers();
+   void  debug_globalCellToMeshID_mappers();
+   void  debug_sync_localToGlobal_mappers();
+   void  debug_faceCells();
+   void  debug_localNodeToGlobal();
 
    //get methods
 
@@ -59,7 +66,9 @@ private:
    int  getInterfaceNodesDuplicatedCount();
    int  getInterfaceNodesCount();
 
-   
+   void  debug_file_open( const string& fname );
+   void  debug_file_close();
+
    const MeshList _meshList;
 
    StorageSitePtr _cellSite;
@@ -80,6 +89,8 @@ private:
    CRConnectivityPtr   _faceCells;
    CRConnectivityPtr   _faceNodes;
    ArrayVecD3Ptr       _coord;
+
+   ofstream   _debugFile;
 
    int  _nInterfaceNodes;
    int   _interiorFaceSize;
