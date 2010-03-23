@@ -2,32 +2,29 @@
 
 import sys
 import pdb
-sys.setdlopenflags(0x100|0x2)
 
-import fvmbaseExt
-import importers
+import fvm
+import fvm.fvmbaseExt as fvmbaseExt
+fvm.set_atype('double')
+import fvm.importers as importers
+import fvm.exporters_atyped_double as exporters
+
+
+
 import math
 from FluidStructure import *
 
 atype = 'double'
 #atype = 'tangent'
 
-if atype == 'double':
-    import models_atyped_double as models
-    import exporters_atyped_double as exporters
-elif atype == 'tangent':
-    import models_atyped_tangent_double as models
-    import exporters_atyped_tangent_double as exporters
-
-
 from FluentCase import FluentCase
 
 #fvmbaseExt.enableDebug("cdtor")
 
 fileBase = None
-numIterationsPerStep = 100
+numIterationsPerStep = 2
 #mpm number of steps shoul numTimeSteps-1
-numTimeSteps = 501
+numTimeSteps = 11
 fileBase = "/home/yildirim/memosa/src/fvm/test/"
 
 vFile = open(fileBase + "velocity-fullbeam-test.out","w")
@@ -52,7 +49,7 @@ def advance(fmodel,niter):
     
 frequency = 114415.0
 #timeStep = 1.0/(frequency*100) *1.0e+3
-timeStep = 5.0e-08 
+timeStep = 2.0e-02
 globalTime=0
 
 def advanceUnsteady(fmodel, meshes, globalTime, nTimeSteps,  mpm_fvm):    
@@ -62,6 +59,7 @@ def advanceUnsteady(fmodel, meshes, globalTime, nTimeSteps,  mpm_fvm):
         print "ntimesteps = ", str(i)
         globalTime += timeStep 
         mpm_fvm.waitMPM() #idle until MPM done
+        print " fvm waiting........."
         mpm_fvm.acceptMPM( timeStep, globalTime ) 
         #v = 0.001*math.cos(2.0*math.pi * frequency * globalTime)
 	fvmbaseExt.CellMark_Impl(mesh0, geomFields, fileBase, octree, solid, option)	
@@ -99,7 +97,8 @@ if __name__ == '__main__' and fileBase is None:
     fileBase = sys.argv[1]
 
 
-reader = FluentCase(fileBase+"3D_cantilever_Pressure_83593_viscosity1000000times.cas")
+reader = FluentCase(fileBase+"fvm_coupling_hexa10x4x4_120x40x40.cas")
+print "reading %s", fileBase+"fvm_coupling_hexa10x4x4_120x40x40.cas"
 
 #import debug
 reader.read();
@@ -112,17 +111,14 @@ mesh0 = meshes[0]
 import time
 t0 = time.time()
 
-geomFields =  models.GeomFields('geom')
-metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
+geomFields =  fvm.models.GeomFields('geom')
+metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 
 metricsCalculator.init()
 
-if atype == 'tangent':
-    metricsCalculator.setTangentCoords(0,7,1)
+flowFields =  fvm.models.FlowFields('flow')
 
-flowFields =  models.FlowFields('flow')
-
-fmodel = models.FlowModelA(geomFields,flowFields,meshes)
+fmodel = fvm.models.FlowModelA(geomFields,flowFields,meshes)
 
 reader.importFlowBCs(fmodel)
 #fmodel.printBCs()
