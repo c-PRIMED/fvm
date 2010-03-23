@@ -1,5 +1,5 @@
 #1 /usr/bin/env python
-import fvmbaseExt
+import fvm.fvmbaseExt as fvmbaseExt
 from numpy import *
 from mpi4py import MPI
 from array import array
@@ -79,13 +79,6 @@ class MPMCoupling:
             self.idleFVM[0] = 1       
             while ( self.idleFVM[0] == 1 ):
                 self.FVM_COMM_MPM.Recv( [self.idleFVM, MPI.INT], source=0, tag=self.recvIdleFVM_TAG )
-                if ( self.idleFVM[0] == 1 ):             
-                    self.FVM_COMM_MPM.Send( [self.totParticlesFVM, MPI.INT], dest=0, tag=self.totParticlesSendTAG )
-                    self.FVM_COMM_MPM.Send( [self.dtFVM  , MPI.DOUBLE], dest=0, tag=self.dtSendTAG                )
-                    self.FVM_COMM_MPM.Send( [self.timeFVM, MPI.DOUBLE], dest=0, tag=self.timeSendTAG              )
-                    self.FVM_COMM_MPM.Send( [self.particlesCoord, MPI.DOUBLE], dest=0, tag=self.coordSendTAG      )
-                    self.FVM_COMM_MPM.Send( [self.stress, MPI.DOUBLE], dest = 0, tag = self.stressSendTAG         )
-                    self.FVM_COMM_MPM.Send( [self.particlesVolume, MPI.DOUBLE], dest=0, tag=self.volumeSendTAG    )
 
      def updateMPM(self, dt, time, nsweep):
         
@@ -178,8 +171,21 @@ class MPMCoupling:
      def getNparticles( self):
          return int(self.nparticles[0])
  
+  def   dump_coord_fluid(self, nparticles, px ):
+        fx = open('px_fluid.dat','w')
+        fx.write( str(nparticles))
+        fx.write("\n")
+        for n in range(0,nparticles):
+            fx.write(str(px[n,0]) )
+            fx.write("     ")
+            fx.write(str(px[n,1]) )
+            fx.write("     ")
+            fx.write(str(px[n,2]) )
+            fx.write("\n")
+        fx.close()
+
      def   dump_coord_vel(self, nparticles, px, pv):
-        fx = open('px.dat','w')
+        fx = open('px_solid.dat','w')
         fx.write(str(nparticles))
         fx.write("\n")
         for n in range(0,nparticles):
@@ -191,7 +197,7 @@ class MPMCoupling:
             fx.write("\n")
         fx.close()
 
-        fv = open('pv.dat','w')
+        fv = open('pv_solid.dat','w')
         fv.write(str(nparticles))
         fv.write("\n")
         for n in range(0,nparticles):
