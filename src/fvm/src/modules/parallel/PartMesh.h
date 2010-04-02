@@ -62,6 +62,10 @@ public:
     void setWeightType( int weight_type );
     void setNumFlag( int num_flag);
 
+    //clean up memory 
+    void cleanup();
+    void isCleanup(bool clean_up) { _cleanup = clean_up; cout << " cleanup  = " << _cleanup << endl; }
+
 private:
 
    PartMesh( const PartMesh& part_mesh ); //dont allow copy constructor
@@ -100,9 +104,15 @@ private:
    void construct_mesh( int id );
    void setMeshColors();
 
-   void mesh_xdmf_header();    
+   void mesh_xdmf_header();
    void mesh_file();
    void mesh_tecplot();
+
+
+   void cleanup_follow_exchange_part_elems();
+   void cleanup_follow_faceCells_faceNodes();
+   void cleanup_follow_mappers();
+
 
    const MeshList _meshList;
    vector<int> _nPart;
@@ -151,9 +161,6 @@ private:
 
    vector< const CRConnectivity* >  _faceCellsGlobal;      //global mesh
    vector< const CRConnectivity* >  _faceNodesGlobal;      //global mesh
-   vector< const CRConnectivity* >  _cellNodesGlobal;      //global mesh
-   vector< const CRConnectivity* >  _cellCellsGlobal;      //global mesh
-
 
    vector< CRConnectivityPtr >  _faceCells; //belongs to this partition
    vector< CRConnectivityPtr >  _faceNodes; //belongs to this partition
@@ -202,7 +209,7 @@ private:
 
    MPI::Win  _winGlobal;
    MPI::Win  _winLocal;
-
+   bool  _cleanup;
    vector< Mesh* >  _meshListLocal;  //all is for you
 };
 

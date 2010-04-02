@@ -40,6 +40,7 @@ _meshList(mesh_list), _nPart(nPart), _eType(eType), _options(0)
 PartMesh::~PartMesh()
 {
 
+    MPI::COMM_WORLD.Barrier();
     //releae memory of vector elements dynamically allocated memory
     vector< Array<int>* > ::iterator it_array;
     for ( it_array = _elemDist.begin(); it_array != _elemDist.end(); it_array++)
@@ -48,18 +49,29 @@ PartMesh::~PartMesh()
     for ( it_array = _globalIndx.begin(); it_array != _globalIndx.end(); it_array++)
        delete *it_array;
 
-    vector< int* > ::iterator it_int;
-    for ( it_int = _ePtr.begin(); it_int != _ePtr.end(); it_int++)
-       delete [] *it_int;
+   if ( !_cleanup ){
+      vector< int* > ::iterator it_int;
+      for ( it_int = _ePtr.begin(); it_int != _ePtr.end(); it_int++)
+          delete [] *it_int;
 
-    for ( it_int = _eInd.begin(); it_int != _eInd.end(); it_int++)
-       delete [] *it_int;
+       for ( it_int = _eInd.begin(); it_int != _eInd.end(); it_int++)
+          delete [] *it_int;
+	
+       for ( it_int = _eElm.begin(); it_int != _eElm.end(); it_int++)
+          delete [] *it_int;
+	
+       for ( it_int = _elmWght.begin(); it_int != _elmWght.end(); it_int++)
+          delete [] *it_int;
 
-    for ( it_int = _eElm.begin(); it_int != _eElm.end(); it_int++)
-       delete [] *it_int;
+       for ( it_int = _row.begin(); it_int != _row.end(); it_int++)
+          delete [] *it_int;
 
-    for ( it_int = _elmWght.begin(); it_int != _elmWght.end(); it_int++)
-       delete [] *it_int;
+       for ( it_int = _col.begin(); it_int != _col.end(); it_int++)
+          delete [] *it_int;
+
+       for ( it_int  = _elem.begin(); it_int != _elem.end(); it_int++)
+          delete [] *it_int;
+   }
 
     vector< float* > ::iterator it_float;
     for ( it_float = _tpwgts.begin(); it_float != _tpwgts.end(); it_float++)
@@ -67,19 +79,11 @@ PartMesh::~PartMesh()
 
     for ( it_float = _ubvec.begin(); it_float != _ubvec.end(); it_float++)
        delete [] *it_float;
-
+    vector< int* > ::iterator it_int;
     for ( it_int = _part.begin(); it_int != _part.end(); it_int++)
        delete [] *it_int;
 
-    for ( it_int = _row.begin(); it_int != _row.end(); it_int++)
-       delete [] *it_int;
-
-    for ( it_int = _col.begin(); it_int != _col.end(); it_int++)
-       delete [] *it_int;
-
-   for ( it_int  = _elem.begin(); it_int != _elem.end(); it_int++)
-       delete [] *it_int;
-
+ 
    for ( it_int  = _elemWithGhosts.begin(); it_int != _elemWithGhosts.end(); it_int++)
        delete [] *it_int;
 
@@ -730,6 +734,7 @@ PartMesh::init()
    _windowSize.resize( _nmesh );
    _fromIndices.resize( _nmesh );
    _toIndices.resize( _nmesh );
+   _cleanup = false;
 
     for ( int id = 0; id < _nmesh; id++){
         StorageSite& site = _meshList[id]->getCells();
@@ -936,6 +941,7 @@ PartMesh::map_part_elms()
       }
   
    }
+
 }
 
 void 
@@ -1060,6 +1066,10 @@ PartMesh::exchange_part_elems()
 
    shift_sum_row();
 
+   //clean up 
+   if ( _cleanup )
+      cleanup_follow_exchange_part_elems();
+
 }
 
 
@@ -1080,6 +1090,32 @@ PartMesh::shift_sum_row()
 
 }
 
+void 
+PartMesh::cleanup_follow_exchange_part_elems()
+{
+    //dont release memory until all process reach this point
+    MPI::COMM_WORLD.Barrier();
+    vector< int* > ::iterator it_int;
+    for ( it_int = _ePtr.begin(); it_int != _ePtr.end(); it_int++)
+       delete [] *it_int;
+
+    for ( it_int = _eInd.begin(); it_int != _eInd.end(); it_int++)
+       delete [] *it_int;
+
+    for ( it_int = _eElm.begin(); it_int != _eElm.end(); it_int++)
+       delete [] *it_int;
+
+    for ( it_int = _elmWght.begin(); it_int != _elmWght.end(); it_int++)
+       delete [] *it_int;
+
+    for ( it_int = _row.begin(); it_int != _row.end(); it_int++)
+       delete [] *it_int;
+
+    for ( it_int = _col.begin(); it_int != _col.end(); it_int++)
+       delete [] *it_int;
+
+
+}
 
 
 void 
@@ -1181,8 +1217,6 @@ PartMesh::CRConnectivity_faceParts()
      for ( int id = 0; id < _nmesh; id++){
           _faceCellsGlobal.push_back( &_meshList.at(id)->getAllFaceCells() );
           _faceNodesGlobal.push_back( &_meshList.at(id)->getAllFaceNodes() );
-          _cellNodesGlobal.push_back( &_meshList.at(id)->getCellNodes()    );
-          _cellCellsGlobal.push_back( &_meshList.at(id)->getCellCells()    );
 
           _faceParts.push_back( _faceCellsGlobal.at(id)->multiply( *_cellParts.at(id), false) );
           _partFaces.push_back( _faceParts.at(id)->getTranspose() );
@@ -1401,6 +1435,21 @@ PartMesh::faceCells_faceNodes()
        _cellNodes.push_back( (_faceCells.at(id)->getTranspose())->multiply(*_faceNodes.at(id), false) );
 
     }
+
+    if ( _cleanup )
+       cleanup_follow_faceCells_faceNodes();
+
+}
+
+void
+PartMesh::cleanup_follow_faceCells_faceNodes()
+{
+    MPI::COMM_WORLD.Barrier();
+   _faceCellsGlobal.clear();
+   _faceNodesGlobal.clear();
+    vector< int* > ::iterator it_int;
+    for ( it_int  = _elem.begin(); it_int != _elem.end(); it_int++)
+       delete [] *it_int;
 
 
 }
@@ -1947,8 +1996,20 @@ PartMesh::mappers()
 
     }
 
+    if ( _cleanup )
+       cleanup_follow_mappers();
+
 }
 
+
+void 
+PartMesh::cleanup_follow_mappers()
+{
+    MPI::COMM_WORLD.Barrier();
+   _localToGlobalMappers.clear();
+   _localToGlobalMap.clear();
+   _globalToLocalMappers.clear();
+}
 
 int
 PartMesh::get_window_displ( int id, int neigh_mesh_id )

@@ -29,7 +29,7 @@ public:
     void mesh_debug();
     void debug_print();
     void mesh_xdmfplot();
-
+    void isCleanup(bool clean_up);
     // set property methods
     void setWeightType(PartMesh::WTYPE weight_type);
     void setNumFlag(PartMesh::NUMFLAG num_flag);
