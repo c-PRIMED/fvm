@@ -66,12 +66,12 @@ public:
 
     const int nFaces = faces.getCount();
 
-    VectorT3 source(NumTypeTraits<VectorT3>::getZero());
-
     for(int f=0; f<nFaces; f++)
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
+
+	const VectorT3& Af = faceArea[f];
 
         T vol0 = cellVolume[c0];
         T vol1 = cellVolume[c1];
@@ -94,33 +94,35 @@ public:
             faceEta = harmonicAverage(etaCell[c0],etaCell[c1]);
 	    faceEta1 = harmonicAverage(eta1Cell[c0],eta1Cell[c1]);
 	}
+	
+	const VGradType gradF = (vGradCell[c0]*vol0+vGradCell[c1]*vol1)/(vol0+vol1);
 
-        const VGradType gradF = (vGradCell[c0]*vol0+vGradCell[c1]*vol1)/(vol0+vol1);
+	VectorT3 source(NumTypeTraits<VectorT3>::getZero());
 
 	source[0] = faceEta*
-	                     ((gradF[0])[0]*(faceArea[f])[0]
-			     +(gradF[0])[1]*(faceArea[f])[1]
-			     +(gradF[0])[2]*(faceArea[f])[2])
+	                     (gradF[0][0]*Af[0]
+			     +gradF[0][1]*Af[1]
+			     +gradF[0][2]*Af[2])
 	           +faceEta1*
-	                     ((gradF[0])[0]
-			     +(gradF[1])[1]
-			     +(gradF[2])[2])*(faceArea[f])[0];
+	                     (gradF[0][0]
+			     +gradF[1][1]
+			     +gradF[2][2])*Af[0];
 	source[1] = faceEta*
-	                     ((gradF[1])[0]*(faceArea[f])[0]
-			     +(gradF[1])[1]*(faceArea[f])[1]
-			     +(gradF[1])[2]*(faceArea[f])[2])
+	                     (gradF[1][0]*Af[0]
+			     +gradF[1][1]*Af[1]
+			     +gradF[1][2]*Af[2])
 	           +faceEta1*
-	                     ((gradF[0])[0]
-	                     +(gradF[1])[1]
-	                     +(gradF[2])[2])*(faceArea[f])[1];
+	                     (gradF[0][0]
+	                     +gradF[1][1]
+	                     +gradF[2][2])*Af[1];
 	source[2] = faceEta*
-	                     ((gradF[2])[0]*(faceArea[f])[0]
-			     +(gradF[2])[1]*(faceArea[f])[1]
-			     +(gradF[2])[2]*(faceArea[f])[2])
-                   +faceEta1*
-	                     ((gradF[0])[0]
-	                     +(gradF[1])[1]
-	                     +(gradF[2])[2])*(faceArea[f])[2];
+	                     (gradF[2][0]*Af[0]
+			     +gradF[2][1]*Af[1]
+			     +gradF[2][2]*Af[2])
+	           +faceEta1*
+	                     (gradF[0][0]
+	                     +gradF[1][1]
+	                     +gradF[2][2])*Af[2];
 	rCell[c0] += source;
 	rCell[c1] -= source;
     }
