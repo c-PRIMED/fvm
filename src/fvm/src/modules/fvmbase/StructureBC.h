@@ -1,5 +1,6 @@
 #include "misc.h"
 #include "FloatVarDict.h"
+#include "TractionVal.h"
 #include "AMG.h"
 
 template<class T>
@@ -10,9 +11,18 @@ struct StructureBC : public FloatVarDict<T>
       this->defineVar("specifiedXDeformation",T(0.0));
       this->defineVar("specifiedYDeformation",T(0.0));
       this->defineVar("specifiedZDeformation",T(0.0));
-      this->defineVar("specifiedXTraction",T(0.0));
-      this->defineVar("specifiedYTraction",T(0.0));
-      this->defineVar("specifiedZTraction",T(0.0));
+      this->defineVar("specifiedXXTraction",T(0.0));
+      this->defineVar("specifiedXYTraction",T(0.0));
+      this->defineVar("specifiedXZTraction",T(0.0));
+      this->defineVar("specifiedYXTraction",T(0.0));
+      this->defineVar("specifiedYYTraction",T(0.0));
+      this->defineVar("specifiedYZTraction",T(0.0));
+      this->defineVar("specifiedZXTraction",T(0.0));
+      this->defineVar("specifiedZYTraction",T(0.0));
+      this->defineVar("specifiedZZTraction",T(0.0));
+      this->defineVar("specifiedXForce",T(0.0));
+      this->defineVar("specifiedYForce",T(0.0));
+      this->defineVar("specifiedZForce",T(0.0));
   }
   string bcType;
 };
