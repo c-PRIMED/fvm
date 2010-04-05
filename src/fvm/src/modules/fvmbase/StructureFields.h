@@ -16,6 +16,7 @@ struct StructureFields
   Field density;
   Field deformationN1;
   Field deformationN2;
+  Field tractionX;
 };
 
 #endif

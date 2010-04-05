@@ -14,12 +14,9 @@
 #include "Vector.h"
 #include "VectorTranspose.h"
 #include "DiffusionDiscretization.h"
-//#include "ConvectionDiscretization.h"
 #include "TimeDerivativeStructureDiscretization.h"
-//#include "IbmDiscretization.h"
 #include "StructureSourceDiscretization.h"
 #include "Underrelaxer.h"
-//#include "MomentumPressureGradientDiscretization.h"
 #include "AMG.h"
 #include "Linearizer.h"
 #include "GradientModel.h"
@@ -97,11 +94,14 @@ public:
 		    bc->bcType = "Symmetry";
 		}
                 else if ((fg.groupType == "velocity-inlet") ||
-                         (fg.groupType == "pressure-inlet") ||
-			 (fg.groupType == "pressure-outlet"))
+                         (fg.groupType == "pressure-inlet")) 
                 {
                     bc->bcType = "SpecifiedDeformation";
                 }
+                else if (fg.groupType == "pressure-outlet") 
+		{
+                    bc->bcType = "SpecifiedForce";
+		}
                 else
                   throw CException("StructuralModel: unknown face group type "
                                    + fg.groupType);
@@ -261,7 +261,6 @@ public:
   void linearizeDeformation(LinearSystem& ls)
   {
     _deformationGradientModel.compute();
-    
     DiscrList discretizations;
     shared_ptr<Discretization>
       dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,T>
@@ -269,7 +268,7 @@ public:
           _structureFields.deformation,
           _structureFields.eta,
           _structureFields.deformationGradient));
-
+            
     shared_ptr<Discretization>
       sd(new StructureSourceDiscretization<T>
          (_meshes,_geomFields,
@@ -277,16 +276,16 @@ public:
           _structureFields.eta,
 	  _structureFields.eta1,
           _structureFields.deformationGradient));
-  
+      
     shared_ptr<Discretization>
       ud(new Underrelaxer<VectorT3,DiagTensorT3,T>
          (_meshes,_structureFields.deformation,
           _options["deformationURF"]));
-
-    discretizations.push_back(dd);
-    discretizations.push_back(sd);
-    discretizations.push_back(ud);
     
+    discretizations.push_back(dd);
+    //    discretizations.push_back(sd);
+    //    discretizations.push_back(ud);
+    /*    
     if (_options.transient)
     {
         shared_ptr<Discretization>
@@ -300,20 +299,18 @@ public:
         
         discretizations.push_back(td);
     }
-    
-    /*
+ 
     shared_ptr<Discretization>
       ibm(new GenericIBDiscretization<VectorT3,DiagTensorT3,T>
-             (_meshes,_geomFields,_flowFields.velocity));
+	  (_meshes,_geomFields,_structureFields.deformation));
       
     discretizations.push_back(ibm);
     */
-
     Linearizer linearizer;
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
                          ls.getX(), ls.getB());
-
+    bool allNeumann = true;
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
@@ -324,7 +321,8 @@ public:
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
             const int nFaces = faces.getCount();
-
+	    const TArray& faceAreaMag = 
+	      dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
             const StructureBC<T>& bc = *_bcMap[fg.id];
             
 
@@ -333,71 +331,64 @@ public:
                                                     _structureFields.deformation,
                                                     _structureFields.deformationFlux,
                                                     ls.getMatrix(), ls.getX(), ls.getB());
-
-	    //            const TArray& massFlux = dynamic_cast<const TArray&>(_flowFields.massFlux[faces]);
-            //            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-    
-            FloatValEvaluator<VectorT3>
-              bDeformation(bc.getVal("specifiedXDeformation"),
-			   bc.getVal("specifiedYDeformation"),
-			   bc.getVal("specifiedZDeformation"),
-			   faces);
-            FloatValEvaluator<VectorT3>
-              bTraction(bc.getVal("specifiedXTraction"),
-                        bc.getVal("specifiedYTraction"),
-                        bc.getVal("specifiedZTraction"),
-                        faces);
-
-            if (bc.bcType == "SpecifiedDeformation")
+	    
+	    if (bc.bcType == "SpecifiedDeformation")
             {
+	        FloatValEvaluator<VectorT3>
+		  bDeformation(bc.getVal("specifiedXDeformation"),
+			       bc.getVal("specifiedYDeformation"),
+			       bc.getVal("specifiedZDeformation"),
+			       faces);
                 gbc.applyDirichletBC(bDeformation);
+		allNeumann = false;
             }
-	    /*
-            else if (bc.bcType == "SlipJump")
-            {
-                slipJumpMomentumBC(faces,mesh,
-                                   gbc,
-                                   bc["accomodationCoefficient"],
-                                   bVelocity);
-            }
-            else if ((bc.bcType == "VelocityBoundary") ||
-                     (bc.bcType == "PressureBoundary"))
-            {
-                for(int f=0; f<nFaces; f++)
-                {
-                    if (massFlux[f] > 0.)
-                    {
-                        gbc.applyExtrapolationBC(f);
-                    }
-                    else
-                    {
-		        gbc.applyDirichletBC(f,bVelocity[f]);
-
-                    }
-                }
-                if (bc.bcType == "PressureBoundary")
-                {
-                    fixedPressureMomentumBC(faces,mesh,
-                                            ls.getMatrix(), ls.getX(), ls.getB());
-                }
-            }
-	    */
             else if (bc.bcType == "Symmetry")
             {
-                VectorT3 zeroFlux(NumTypeTraits<VectorT3>::getZero());
+	        VectorT3 zeroFlux(NumTypeTraits<VectorT3>::getZero());
                 gbc.applyNeumannBC(zeroFlux);
-            }
+	    }
             else if (bc.bcType == "SpecifiedTraction")
             {
-	        gbc.applyNeumannBC(bTraction);
-            }
+	        TractionValEvaluator<T>
+		  bTraction(bc.getVal("specifiedXXTraction"),
+			    bc.getVal("specifiedXYTraction"),
+			    bc.getVal("specifiedXZTraction"),
+			    bc.getVal("specifiedYXTraction"),
+			    bc.getVal("specifiedYYTraction"),
+			    bc.getVal("specifiedYZTraction"),
+			    bc.getVal("specifiedZXTraction"),
+			    bc.getVal("specifiedZYTraction"),
+			    bc.getVal("specifiedZZTraction"),
+			    _geomFields,
+			    faces);
+	        for(int f=0; f<nFaces; f++)
+                {
+                    
+		    gbc.applyNeumannBC(f,bTraction[f]);
+        
+		}
+	    }
+            else if (bc.bcType == "SpecifiedForce")
+	    {
+	        FloatValEvaluator<VectorT3>
+		  bForce(bc.getVal("specifiedXForce"),
+			 bc.getVal("specifiedYForce"),
+			 bc.getVal("specifiedZForce"),
+			 faces);
+                for(int f=0; f<nFaces; f++)
+		{
+
+                    gbc.applyNeumannBC(f,bForce[f]/faceAreaMag[f]);
+
+		}
+	    }
             else
               throw CException(bc.bcType + " not implemented for StructureModel");
         }
 
         foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
         {
-            const FaceGroup& fg = *fgPtr;
+	    const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
             GenericBCS<VectorT3,DiagTensorT3,T> gbc(faces,mesh,
                                                     _geomFields,
@@ -406,112 +397,71 @@ public:
                                                     ls.getMatrix(), ls.getX(), ls.getB());
 
             gbc.applyInterfaceBC();
-        }
-
+	}
     }
+                
+    if(allNeumann)
+    {
+        const Mesh& mesh = *_meshes[0];
+	const StorageSite& cells = mesh.getCells();
+	MultiField& b = ls.getB();
+	MultiFieldMatrix& matrix = ls.getMatrix();
+	MultiField::ArrayIndex wIndex(&_structureFields.deformation,&cells);
+	VectorT3Array& rCell = dynamic_cast<VectorT3Array&>(b[wIndex]);
+	VVMatrix& vvMatrix =
+	  dynamic_cast<VVMatrix&>(matrix.getMatrix(wIndex,wIndex));
+	rCell[0] = 0;
+        vvMatrix.setDirichlet(0);
+    }
+    
   }
 
 
   MFRPtr solveDeformation()
   {
     LinearSystem ls;
-
     initDeformationLinearization(ls);
-        
     ls.initAssembly();
-    
     linearizeDeformation(ls);
-
     ls.initSolve();    
-
+    
     //AMG solver(ls);
     MFRPtr rNorm = _options.getDeformationLinearSolver().solve(ls);
-
     if (!_initialDeformationNorm) _initialDeformationNorm = rNorm;
         
     _options.getDeformationLinearSolver().cleanup();
-    
     ls.postSolve();
-    ls.updateSolution();
-
+    //ls.updateSolution();
+    postStructureSolve(ls);
     return rNorm;
   }
 
-
-  /*
-  void interfaceContinuityBC(const Mesh& mesh,
-                             const StorageSite& faces,
-                             MultiFieldMatrix& matrix,
-                             MultiField& rField)
+  void postStructureSolve(LinearSystem& ls)
   {
-    const StorageSite& cells = mesh.getCells();
-    MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+    MultiField& sField = ls.getDelta();
 
-    TArray& rCell = dynamic_cast<TArray&>(rField[pIndex]);
-    
-    const int nFaces = faces.getCount();
-
-    for(int f=0; f<nFaces; f++)
+    const int numMeshes = _meshes.size();
+    for(int n=0;n<numMeshes;n++)
     {
-        int c0 = faceCells(f,0);
-        int c1 = faceCells(f,1);
-        // either c0 or c1 could be the exterior cell
-        if (c1 >= cells.getSelfCount())
-        {
-            rCell[c1] = 0;
-        }
-        else
-        {
-            rCell[c0] = 0;
-        }
+        const Mesh& mesh = *_meshes[n];
+
+	const StorageSite& cells = mesh.getCells();
+
+	MultiField::ArrayIndex sIndex(&_structureFields.deformation,&cells);
+	VectorT3Array& w = dynamic_cast<VectorT3Array&>
+	  (_structureFields.deformation[cells]);
+        const VectorT3Array& ww = dynamic_cast<const VectorT3Array&>
+          (sField[sIndex]);
+	const T deformationURF(_options["deformationURF"]);
+
+	const int nCells = cells.getCount();
+	for(int c=0;c<nCells;c++)
+	{
+	    w[c] += deformationURF*ww[c];
+	}
     }
   }
 
-
-  // set the first cell of the first mesh to be a Dirichlet point
-  void setDirichlet(MultiFieldMatrix& mfmatrix,
-                    MultiField& rField)
-  {
-    const Mesh& mesh = *_meshes[0];
-    
-    const StorageSite& cells = mesh.getCells();
-    
-    MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
-    MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-
-    PPMatrix& ppMatrix =
-      dynamic_cast<PPMatrix&>(mfmatrix.getMatrix(pIndex,pIndex));
-
-    PPDiagArray& ppDiag = ppMatrix.getDiag();
-    PPDiagArray& ppCoeff = ppMatrix.getOffDiag();
-
-    TArray& rCell = dynamic_cast<TArray&>(rField[pIndex]);
-
-    const CRConnectivity& cr = ppMatrix.getConnectivity();
-
-    const Array<int>& row = cr.getRow();
-
-    ppDiag[0] = -1.;
-    rCell[0]=0.;
-    for(int nb=row[0]; nb<row[1]; nb++)
-      ppCoeff[nb] = 0;
-    
-    if (mfmatrix.hasMatrix(pIndex,vIndex))
-    {
-        PVMatrix& pvMatrix =
-          dynamic_cast<PVMatrix&>(mfmatrix.getMatrix(pIndex,vIndex));
-        
-        PVDiagArray& pvDiag = pvMatrix.getDiag();
-        PVDiagArray& pvCoeff = pvMatrix.getOffDiag();
-
-        pvDiag[0] = NumTypeTraits<VectorT3>::getZero();
-        for(int nb=row[0]; nb<row[1]; nb++)
-          pvCoeff[nb] = NumTypeTraits<VectorT3>::getZero();
-    }
-  }
-  
-  */
   bool advance(const int niter)
   {
 
@@ -538,92 +488,6 @@ public:
     return false;
   }
 
-  /*
-  bool advanceCoupled(const int niter)
-  {
-    const int numMeshes = _meshes.size();
-    for(int n=0; n<niter; n++)
-    { 
-        LinearSystem ls;
-
-        ls.setCoarseningField(_flowFields.pressure);
-        initMomentumLinearization(ls);
-        initContinuityLinearization(ls);
-        
-        for (int n=0; n<numMeshes; n++)
-        {
-            const Mesh& mesh = *_meshes[n];
-            
-            const StorageSite& cells = mesh.getCells();
-            MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-            MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
-            
-            const CRConnectivity& cellCells = mesh.getCellCells();
-            
-            shared_ptr<Matrix> mvp(new VPMatrix(cellCells));
-            ls.getMatrix().addMatrix(vIndex,pIndex,mvp);
-
-            shared_ptr<Matrix> mpv(new PVMatrix(cellCells));
-            ls.getMatrix().addMatrix(pIndex,vIndex,mpv);
-        }
-
-        ls.initAssembly();
-
-        linearizeMomentum(ls);
-
-        // save current velocity for use in continuity discretization
-        _previousVelocity = dynamic_pointer_cast<Field>(_flowFields.velocity.newCopy());
-        
-        // save the momentum ap coeffficients for use in continuity discretization
-        _momApField = shared_ptr<Field>(new Field("momAp"));
-        for (int n=0; n<numMeshes; n++)
-        {
-            const Mesh& mesh = *_meshes[n];
-            
-            const StorageSite& cells = mesh.getCells();
-            MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-            const VVMatrix& vvMatrix =
-              dynamic_cast<const VVMatrix&>(ls.getMatrix().getMatrix(vIndex,vIndex));
-            const VVDiagArray& momAp = vvMatrix.getDiag();
-            _momApField->addArray(cells,dynamic_pointer_cast<ArrayBase>(momAp.newCopy()));
-        }
-        
-        linearizeContinuity(ls);
-        
-        ls.initSolve();
-
-        MFRPtr rNorm = _options.coupledLinearSolver->solve(ls);
-
-        if (!_initialCoupledNorm) _initialCoupledNorm = rNorm;
-        
-        ls.postSolve();
-
-        postContinuitySolve(ls);
-        
-        _options.coupledLinearSolver->cleanup();
-    
-        if (_niters < 5)
-          _initialCoupledNorm->setMax(*rNorm);
-        
-        MFRPtr normRatio((*rNorm)/(*_initialCoupledNorm));
-        
-        if (_options.printNormalizedResiduals)
-          cout << _niters << ": " << *normRatio <<  endl;
-        else
-          cout << _niters << ": " << *rNorm <<  endl;
-
-        _niters++;
-
-        _momApField = shared_ptr<Field>();
-
-        if (*normRatio < _options.momentumTolerance)
-          return true;
-    }
-    return false;
-  }
-
-  
-  */
   void printBCs()
   {
     foreach(typename StructureBCMap::value_type& pos, _bcMap)
@@ -825,6 +689,42 @@ public:
     }
 
     return stressTensorPtr;
+  }
+    
+  void getTractionX(const Mesh& mesh)
+  {
+      const StorageSite& cells = mesh.getCells();
+
+      const int nCells = cells.getSelfCount();
+
+      shared_ptr<VectorT3Array> tractionXPtr(new VectorT3Array(nCells));
+      tractionXPtr->zero();
+      _structureFields.tractionX.addArray(cells,tractionXPtr);
+      VectorT3Array& tractionX = *tractionXPtr;
+
+      _deformationGradientModel.compute();
+
+      const VGradArray& wGrad =
+        dynamic_cast<const VGradArray&>(_structureFields.deformationGradient[cells]);
+
+      const TArray& eta = dynamic_cast<const TArray&>(_structureFields.eta[cells]);
+      const TArray& eta1 = dynamic_cast<const TArray&>(_structureFields.eta1[cells]);
+      
+      for(int n=0; n<nCells; n++)
+      {
+	  const VGradType& wg = wGrad[n];
+	  VGradType wgPlusTranspose = wGrad[n];
+	  /*	  	    
+	  for(int i=0;i<3;i++)
+	    for(int j=0;j<3;j++)
+	      wgPlusTranspose[i][j] += wg[j][i];
+	  */
+	  tractionX[n][0] = wgPlusTranspose[0][0]*eta[n];//+
+	  //	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
+	  tractionX[n][1] = wgPlusTranspose[1][0]*eta[n];
+	  tractionX[n][2] = wgPlusTranspose[1][1]*eta[n];//+
+	  //	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
+      }
   }
 
   /*
@@ -1072,6 +972,13 @@ Vector<T,3>
 StructureModel<T>::getDeformationDerivativeIntegral(const Mesh& mesh)
 {
  return  _impl->getDeformationDerivativeIntegral(mesh);
+}
+
+template<class T>
+void
+StructureModel<T>::getTractionX(const Mesh& mesh)
+{
+  return  _impl->getTractionX(mesh);
 }
 
 /*
