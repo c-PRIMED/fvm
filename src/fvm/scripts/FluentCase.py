@@ -252,7 +252,10 @@ class FluentCase(importers.FluentReader):
         options.setVar('initialYVelocity', self.getVar('y-velocity/default'))
         options.setVar('initialZVelocity', self.getVar('z-velocity/default'))
         options.setVar('initialPressure', self.getVar('pressure/default'))
-        options.setVar('initialTemperature', self.getVar('temperature/default'))
+        if 'initialTemperature' in options.getKeys():
+            options.setVar('initialTemperature',
+                           self.getVar('temperature/default'))
+
         options.setVar('momentumURF', self.getVar('mom/relax'))
         options.setVar('pressureURF', self.getVar('pressure/relax'))
                        
