@@ -1,5 +1,5 @@
 import string
-from mpi4py import MPI
+#from mpi4py import MPI
 
 def dumpTecplotFile(nmesh, meshes, flowFields ):
   #cell sites
@@ -31,26 +31,35 @@ def dumpTecplotFile(nmesh, meshes, flowFields ):
   velFields = []
   for n in range(0,nmesh):
      velFields.append( flowFields.velocity[cellSites[n]].asNumPyArray() )
-
+  densityFields = []
+  
+  for n in range(0,nmesh):
+    densityFields.append( flowFields.density[cellSites[n]].asNumPyArray() )
+  
+  pressureFields = []
+  for n in range(0,nmesh):
+    pressureFields.append( flowFields.pressure[cellSites[n]].asNumPyArray() )
   coords = []
   for n in range(0,nmesh):
      coords.append( meshes[n].getNodeCoordinates().asNumPyArray() )
      
-     
-  file_name = "cavity" +  str( MPI.COMM_WORLD.Get_rank() ) + ".dat"
-  f = open(file_name, 'w')
+  file_name = "quadrature_nmesh" + ".plt"
+  f = open(file_name, 'w')   
+  #file_name = "cavity" +  str( MPI.COMM_WORLD.Get_rank() ) + ".dat"
+  #f = open(file_name, 'w')
 
   f.write("Title = \" tecplot file for 2D Cavity problem \" \n")
-  f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\" \n")
+  f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\" ,\"density\",\"pressure \",\n")
   for n in range(0,nmesh):
      title_name = "nmesh" + str(n)
      ncell  = cellSites[n].getSelfCount()
      nnode  = nodeSites[n].getCount()
      zone_name = "Zone T = " + "\"" + title_name +  "\"" +      \
                  " N = " + str( nodeSites[n].getCount() ) +     \
-		 " E = " + str( ncell ) +  \
-		 " DATAPACKING = BLOCK, VARLOCATION = ([4-6]=CELLCENTERED), " + \
-		 " ZONETYPE=FETRIANGLE \n"
+		 " E = " + str( ncell ) +  "\n"
+     f.write(zone_name)
+     zone_name= " DATAPACKING = BLOCK, VARLOCATION = ([4-8]=CELLCENTERED), " + \
+		 " ZONETYPE=FEQUADRILATERAL \n"
      f.write( zone_name )
      #write x
      for i in range(0,nnode):
@@ -92,19 +101,24 @@ def dumpTecplotFile(nmesh, meshes, flowFields ):
         f.write( str(velFields[n][i][2]) + "    ")
 	if ( i % 5  == 4 ):
 	    f.write("\n")
-     f.write("\n")	    
+     f.write("\n")
+     for i in range(0,ncell):
+        f.write( str(densityFields[n][i]) + "    ")
+	if ( i % 5  == 4 ):
+	    f.write("\n")
+     f.write("\n")	
+     for i in range(0,ncell):
+        f.write( str(pressureFields[n][i]) + "    ")
+	if ( i % 5  == 4 ):
+	    f.write("\n")
+     f.write("\n")	
+	    
      #connectivity
      for i in range(0,ncell):
         nnodes_per_cell = cellNodes[n].getCount(i)
         for node in range(0,nnodes_per_cell):
 	    f.write( str(cellNodes[n](i,node)+1) + "     ")
-        f.write("\n")
-
-     	    
-	    
-     f.write("\n")	  
-     
-	
-  
+        f.write("\n")	    
+     f.write("\n")  
      f.close()
 

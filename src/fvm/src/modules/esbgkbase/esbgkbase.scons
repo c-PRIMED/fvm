@@ -1,11 +1,11 @@
 Import('env')
 
-src = ['KineticModels.cpp']
+src = ['MacroFields.cpp']
 deps=['fvmbase','importers','exporters', 'rlog']
 
-#env.createATypedSharedLibrary('esbgkbase',src,['rlog','fvmbase'])
+env.createSharedLibrary('esbgkbase',src,['rlog','fvmbase'])
 
-#deps += ['esbgkbase']
+deps += ['esbgkbase']
 
 env.createATypedSwigModule('esbgk_atyped',sources=['esbgk.i'],deplibs=deps)
 

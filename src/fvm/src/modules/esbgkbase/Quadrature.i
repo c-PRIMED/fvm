@@ -1,7 +1,7 @@
 %{
 /* include C++ header files necessary to compile the interface */
-#include "quadrature.h"
+#include "Quadrature.h"
 %}
 
-%import "quadrature.h"
+%import "Quadrature.h"
 %template(QuadratureD) Quadrature<double>;

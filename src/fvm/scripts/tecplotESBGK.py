@@ -1,6 +1,6 @@
 import string
 
-def esbgkTecplotFile(meshes, flowFields ):
+def esbgkTecplotFile(meshes, macroFields ):
   #cell sites
   cellSites = []
   n=0
@@ -24,17 +24,23 @@ def esbgkTecplotFile(meshes, flowFields ):
   cellNodes.append( meshes[n].getCellNodes() )
 
   velFields = []
-  velFields.append( flowFields.velocity[cellSites[n]].asNumPyArray() )
+  velFields.append( macroFields.velocity[cellSites[n]].asNumPyArray() )
 
   densityFields=[]
-  densityFields.append(flowFields.density[cellSites[n]].asNumPyArray())
+  densityFields.append(macroFields.density[cellSites[n]].asNumPyArray())
  
   pressureFields=[]
-  pressureFields.append(flowFields.pressure[cellSites[n]].asNumPyArray())
+  pressureFields.append(macroFields.pressure[cellSites[n]].asNumPyArray())
   
   viscosityFields=[]
-  viscosityFields.append(flowFields.viscosity[cellSites[n]].asNumPyArray())
+  viscosityFields.append(macroFields.viscosity[cellSites[n]].asNumPyArray())
+   
+  temperatureFields=[]
+  temperatureFields.append(macroFields.temperature[cellSites[n]].asNumPyArray())
   
+  collisionFrequencyFields=[]
+  collisionFrequencyFields.append(macroFields.collisionFrequency[cellSites[n]].asNumPyArray())
+
   coords = []
   coords.append( meshes[n].getNodeCoordinates().asNumPyArray() )
      
@@ -43,14 +49,15 @@ def esbgkTecplotFile(meshes, flowFields ):
   f = open(file_name, 'w')
 
   f.write("Title = \" tecplot out file\" \n")
-  f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\" \n")
+  f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\n")
+  #f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\n")
   title_name = "nmesh" + str(n)
   ncell  = cellSites[n].getSelfCount()
   nnode  = nodeSites[n].getCount()
   zone_name = "Zone T = " + "\"" + title_name +  "\"" +      \
                  " N = " + str( nodeSites[n].getCount() ) +     \
 		 " E = " + str( ncell ) +  \
-		 " DATAPACKING = BLOCK, VARLOCATION = ([4-9]=CELLCENTERED), " + \
+		 " DATAPACKING = BLOCK, VARLOCATION = ([4-11]=CELLCENTERED), " + \
 		 " ZONETYPE=FEQUADRILATERAL \n"
   f.write( zone_name )
   #write x
@@ -109,6 +116,19 @@ def esbgkTecplotFile(meshes, flowFields ):
   #write viscosity
   for i in range(0,ncell):
       f.write( str(viscosityFields[n][i]) + "    ")
+      if ( i % 5  == 4 ):
+          f.write("\n")
+  f.write("\n")	 
+#write temperature
+  for i in range(0,ncell):
+      f.write( str(temperatureFields[n][i]) + "    ")
+      if ( i % 5  == 4 ):
+          f.write("\n")
+  f.write("\n")	 
+
+#write collisionFrequency
+  for i in range(0,ncell):
+      f.write( str(collisionFrequencyFields[n][i]) + "    ")
       if ( i % 5  == 4 ):
           f.write("\n")
   f.write("\n")	 

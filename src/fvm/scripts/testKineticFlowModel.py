@@ -8,6 +8,7 @@ import fvm.importers as importers
 import time
 from numpy import *
 import tecplotESBGK
+import tecplot
 
 fvm.set_atype('double')
 
@@ -61,6 +62,7 @@ metricsCalculator.init()
 #!!!!!!!!!!!!!!!!source code (metricsMeshCalcultaro)::init(), volumeField.synLocal, coordField.syncLocal() turned off
 
 flowFields =  fvm.models.FlowFields('flow')
+
 fmodel = fvm.models.FlowModelA(geomFields,flowFields,meshes)
 
 ## set bc for top to be a wall with x velocity
@@ -84,19 +86,27 @@ contSolver = fvmbaseExt.AMG()
 # to test quadrature
 
 
-import fvm.Quadrature as quad
-import fvm.KineticModel as esbgk
+import fvm.esbgk_atyped_double as esbgk
 
 #import fvm.MacroParameters as macropr
 #import fvm.DistFunctFields as f
 
-
-#cartesian
-quad1=quad.QuadratureD(10,12,14,5.5,1.0) 
-esbgk1=esbgk.KineticModelD(meshes,flowFields,quad1)
-
 foptions = fmodel.getOptions()
 fmodel.init()
+
+#kineticmodel=fvm.models.KineticModelA(meshes,flowFields,macroFields,quad)
+#kineticmodel.init()
+
+#cartesian
+#import ddd
+quad0=esbgk.QuadratureD(10,10,10,5.5,1.0) #cartesian
+quad1=esbgk.QuadratureD(0,16,0,32,0,16) #spherical
+quad2=esbgk.QuadratureD(16,16,1,8,1,4) #gauss-hermit quadrature and 3/8th rule
+
+macroFields=esbgk.MacroFields('flow')
+esbgk1=esbgk.KineticModelD(meshes,flowFields,macroFields,quad2)
+
+#esbgk1.init()
 
 cellSite = meshes[0].getCells()
 velField = flowFields.velocity[ cellSite ].asNumPyArray() 
@@ -104,5 +114,5 @@ velField = flowFields.velocity[ cellSite ].asNumPyArray()
 
 #import debug
 #fmodel.advance(100)
-tecplotESBGK.esbgkTecplotFile(meshes, flowFields)
-
+tecplotESBGK.esbgkTecplotFile(meshes,macroFields)
+tecplot.dumpTecplotFile(1,meshes,macroFields)

@@ -4,6 +4,7 @@
 #include <math.h>
 #include "Array.h"
 #include "Vector.h"
+#include <stdio.h>
 
 template<class T>
 /**
@@ -72,6 +73,9 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
        * total number of velocity directions.
        */
       N123=N1*N2*N3;
+    
+
+
       cxPtr= new TArray(N123); cyPtr= new TArray(N123); czPtr= new TArray(N123);
       dcxyzPtr= new TArray(N123);
       TArray & cx= *cxPtr;TArray & cy= *cyPtr;TArray & cz= *czPtr;
@@ -91,20 +95,22 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       for  (int j3=1;j3<N3;j3++){
 	absci3[j3]=absci3[j3-1]+dcz;
 	wts3[j3]=dcz;
-
+	printf("%4.2f", absci3[j3]);
       }
+      printf("\n");
       for (int j2=1;j2<N2;j2++){
 	absci2[j2]=absci2[j2-1]+dcy;
 	wts2[j2]=dcy;
-
+	printf("%4.2f", absci2[j2]);
       }
-     
+      printf("\n");
       for  (int j1=1;j1<N1;j1++){
 	absci1[j1]=absci1[j1-1]+dcx;	
 	wts1[j1]=dcx;
-
+	printf("%4.2f", absci1[j1]);
       }
-      
+      printf("\n");
+     
       int j;
       j=0;
       for(int j3=0;j3<N3;j3++){
@@ -113,12 +119,20 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	    cx[j]=absci1[j1];	
 	    cy[j]=absci2[j2];
 	    cz[j]=absci3[j3];
-	    dcxyz[j]=wts1[j1]*wts2[j2]*wts3[j3];
+	    dcxyz[j]=wts1[j1]*wts2[j2]*wts3[j3];	
+	 
 	    j++;
 	  }
 	}
       }
-      
+
+      /*
+      FILE * pFile;
+      pFile = fopen ("cxyz.txt","w");
+      for(int j=0;j<N123;j++){	  
+	fprintf(pFile,"%12.6f %12.6f %12.6f %12.6f \n", cx[j],cy[j],cz[j],dcxyz[j]);}
+      fclose (pFile);
+      */
     }
 
 /**
@@ -329,7 +343,13 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	 }
        }
        // for (int j=10;j<21;j++){cout << j <<" : "<<cx[j] << " , " << dcxyz[j] <<endl; };cout<<endl;
-       
+       /* 
+      FILE * pFile;
+      pFile = fopen ("cxyz.txt","w");
+      for(int j=0;j<N123;j++){	  
+	fprintf(pFile,"%12.6f %12.6f %12.6f %12.6f \n", cx[j],cy[j],cz[j],dcxyz[j]);}
+      fclose (pFile);
+       */
     }
   
  

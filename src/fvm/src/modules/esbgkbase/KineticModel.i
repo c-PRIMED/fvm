@@ -1,8 +1,8 @@
 %{
 /* include C++ header files necessary to compile the interface */
 
-#include "quadrature.h"
-#include "MacroParameters.h"
+#include "Quadrature.h"
+#include "MacroFields.h"
 #include "DistFunctFields.h"
 #include "KineticModel.h"
   %}
@@ -10,7 +10,7 @@
 %import "Mesh.i"
 
 %import "DistFunctFields.h"
-%import "MacroParameters.h"
+%import "MacroFields.h"
 %import "KineticModel.h"
 
 
