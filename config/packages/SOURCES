@@ -22,3 +22,7 @@ MEMOSA   src/MEMOSA
 Hdf5	 pkgs/hdf5-1.8.4.tar.bz2
 Matplotlib	pkgs/matplotlib-0.99.1.1.tar.gz
 Scipy		pkgs/scipy-0.7.1.tar.gz
+Pygsl	pkgs/pygsl-0.9.5.tar.gz
+Gsl		pkgs/gsl-1.14.tar.gz
+Pytables pkgs/tables-2.1.2.tar.gz
+Vitables pkgs/ViTables-2.0.tar.gz

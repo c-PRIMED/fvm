@@ -25,7 +25,8 @@ class Hdf5(BuildPkg):
                     pass
                 if f:
                     verbose(2,'Found HDF5 headers.')
-                    do_env('HDF5_DIR=%s' % path)
+                    if path != '/usr':
+                        do_env('HDF5_DIR=%s' % path)
                     return f
         return f
 

@@ -1,7 +1,7 @@
 """
 build utility functions.
 """
-import sys, os, shutil, re
+import sys, os, shutil, re, subprocess
 from config import config
 
 # define some exceptions
@@ -297,6 +297,12 @@ def set_python_path(dir):
     pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a, b), 'site-packages')
     pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a, b), 'site-packages')
     pypath = pypath1 + ':' + pypath2
+    
+    for p in [pypath1, pypath2]:
+        try:
+            os.makedirs(p)
+        except OSError:
+            pass
     if os.path.dirname(py) == os.path.join(dir, 'bin'):
         os.environ['PYTHONPATH'] = libpath
     else:
