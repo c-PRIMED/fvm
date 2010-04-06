@@ -71,11 +71,13 @@ public:
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
         const VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
-        assembler.getCoeff01(f)=ds;
-        assembler.getCoeff10(f)=-ds;
+        const T_Scalar dsMag = mag(ds);
+        assembler.getCoeff01(f)=ds/dsMag;
+        assembler.getCoeff10(f)=-ds/dsMag;
     }
 
     const Array<int>& row = cellCells.getRow();
+    const Array<int>& col = cellCells.getCol();
     
     for(int nc=0; nc<cellCount; nc++)
     {
@@ -109,10 +111,12 @@ public:
             {
                 // make a copy
                 VectorT3 ds(coeffs[inb]);
+                const int j = col[inb];
+                const T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);
                 
-                coeffs[inb][0] = Kxx*ds[0] + Kxy*ds[1] + Kxz*ds[2];
-                coeffs[inb][1] = Kxy*ds[0] + Kyy*ds[1] + Kyz*ds[2];
-                coeffs[inb][2] = Kxz*ds[0] + Kyz*ds[1] + Kzz*ds[2];
+                coeffs[inb][0] = (Kxx*ds[0] + Kxy*ds[1] + Kxz*ds[2])/dsMag;
+                coeffs[inb][1] = (Kxy*ds[0] + Kyy*ds[1] + Kyz*ds[2])/dsMag;
+                coeffs[inb][2] = (Kxz*ds[0] + Kyz*ds[1] + Kzz*ds[2])/dsMag;
             }
         }
         else
@@ -178,11 +182,13 @@ public:
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
         const VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
-        assembler.getCoeff01(f)=ds;
-        assembler.getCoeff10(f)=-ds;
+        const T_Scalar dsMag = mag(ds);
+        assembler.getCoeff01(f)=ds/dsMag;
+        assembler.getCoeff10(f)=-ds/dsMag;
     }
 
     const Array<int>& row = cellCells.getRow();
+    const Array<int>& col = cellCells.getCol();
     
     for(int nc=0; nc<cellCount; nc++)
     {
@@ -209,9 +215,12 @@ public:
             {
                 // make a copy
                 VectorT3 ds(coeffs[inb]);
+
+                const int j = col[inb];
+                const T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);
                 
-                coeffs[inb][0] = Kxx*ds[0] + Kxy*ds[1];
-                coeffs[inb][1] = Kxy*ds[0] + Kyy*ds[1];
+                coeffs[inb][0] = (Kxx*ds[0] + Kxy*ds[1])/dsMag;
+                coeffs[inb][1] = (Kxy*ds[0] + Kyy*ds[1])/dsMag;
                 coeffs[inb][2] = 0;
             }
         }
