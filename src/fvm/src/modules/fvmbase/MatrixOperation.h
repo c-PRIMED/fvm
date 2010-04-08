@@ -321,7 +321,7 @@ double detMatrix6x6 (T matrix[6][6], int size)
    double s = 1.0;
    double det = 0.0;
    double b[6][6];
-   int i,j,m,n,c;
+   int m,n;
    if(size==1){
      det = matrix[0][0];
      return det;
@@ -424,7 +424,7 @@ double detMatrix10x10 (T matrix[10][10], int size)
    double s = 1.0;
    double det = 0.0;
    double b[10][10];
-   int i,j,m,n,c;
+   int m,n;
    if(size==1){
      det = matrix[0][0];
      return det;
