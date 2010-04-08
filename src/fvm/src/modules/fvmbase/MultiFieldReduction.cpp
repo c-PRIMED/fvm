@@ -33,6 +33,20 @@ MultiFieldReduction::operator[](const Field& i)
   throw CException(e.str());
 }
 
+shared_ptr<ArrayBase>
+MultiFieldReduction::getArrayPtr(const Field& i)
+{
+  ArrayMap::const_iterator pos = _arrays.find(&i);
+  if (pos != _arrays.end())
+  {
+      return pos->second;
+  }
+
+  ostringstream e;
+  e << "MultiFieldReduction::operator[] No array found";
+  throw CException(e.str());
+}
+
 const ArrayBase&
 MultiFieldReduction::operator[](const Field& i) const
 {

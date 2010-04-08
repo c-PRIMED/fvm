@@ -22,6 +22,8 @@ public:
   void addArray(const Field& aIndex, shared_ptr<ArrayBase> a);
   bool hasArray(const Field& aIndex) const;
 
+  shared_ptr<ArrayBase> getArrayPtr(const Field&);
+  
   void reduceSum();
 
   bool operator<(const double tolerance) const;
