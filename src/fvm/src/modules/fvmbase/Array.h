@@ -15,7 +15,7 @@ public:
   typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
   typedef typename NumTypeTraits<T>::T_BuiltIn T_BuiltIn;
   
-  Array(const int length) :
+  explicit Array(const int length) :
     ArrayBase(),
     _length(length),
     _data(new T[length]),
