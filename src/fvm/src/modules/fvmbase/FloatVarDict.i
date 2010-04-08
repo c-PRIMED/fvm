@@ -8,7 +8,7 @@ private:
   FloatVal();
 };
 
-%template(FloatValA) FloatVal<ATYPE_STR>;
+%template(FloatValA) FloatVal< ATYPE_STR >;
 
 %include "atype.i"
 
@@ -20,16 +20,29 @@ public:
   %extend {
     void setVar(std::string varName, T val)
     {
-      FloatVarDict<T>::iterator pos(self->find(varName));
+      FloatVarDict< T >::iterator pos(self->find(varName));
       if (pos != self->end())
         pos->second.constant = val;
       else
         throw CException("uknown var" + varName);
     }
 
+    std::vector<std::string>
+      getKeys()
+    {
+        std::vector<string> keys;
+        for(FloatVarDict< T >::iterator pos(self->begin());
+            pos != self->end();
+            ++pos)
+        {
+            keys.push_back(pos->first);
+        }
+        return keys;
+    }
+    
     void __setitem__(std::string varName, T val)
     {
-      FloatVarDict<T>::iterator pos(self->find(varName));
+      FloatVarDict< T >::iterator pos(self->find(varName));
       if (pos != self->end())
       {
           pos->second.constant = val;
@@ -42,7 +55,21 @@ public:
 #ifdef USING_ATYPE_TANGENT
     void __setitem__(std::string varName, double val)
     {
-      FloatVarDict<T>::iterator pos(self->find(varName));
+      FloatVarDict< T >::iterator pos(self->find(varName));
+      if (pos != self->end())
+      {
+          pos->second.constant = T(val);
+          pos->second.field = 0;
+      }
+      else
+        throw CException("uknown var" + varName);
+    }
+#endif
+    
+#ifdef USING_ATYPE_PC
+    void __setitem__(std::string varName, double val)
+    {
+      FloatVarDict< T >::iterator pos(self->find(varName));
       if (pos != self->end())
       {
           pos->second.constant = T(val);
@@ -55,7 +82,7 @@ public:
     
     void __setitem__(std::string varName, Field* field)
     {
-      FloatVarDict<T>::iterator pos(self->find(varName));
+      FloatVarDict< T >::iterator pos(self->find(varName));
       if (pos != self->end())
         pos->second.field = field;
       else
@@ -64,15 +91,15 @@ public:
 
     T getVar(std::string varName)
     {
-      FloatVarDict<T>::iterator pos(self->find(varName));
+      FloatVarDict< T >::iterator pos(self->find(varName));
       if (pos != self->end())
         return pos->second.constant;
       throw CException("uknown var" + varName);
     }
 
-    FloatVal<T> __getitem__(std::string varName)
+    FloatVal< T > __getitem__(std::string varName)
     {
-      FloatVarDict<T>::iterator pos(self->find(varName));
+      FloatVarDict< T >::iterator pos(self->find(varName));
       if (pos != self->end())
         return pos->second;
       throw CException("uknown var" + varName);
@@ -82,4 +109,4 @@ public:
 };
 
 //%template(mapA) std::map<string,ATYPE_STR>;
-%template(FloatVarDictA) FloatVarDict<ATYPE_STR>;
+%template(FloatVarDictA) FloatVarDict< ATYPE_STR >;

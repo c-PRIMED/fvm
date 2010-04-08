@@ -14,6 +14,22 @@ public:
   typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
   typedef typename NumTypeTraits<T>::T_BuiltIn T_BuiltIn;
 
+  DiagonalTensor()
+  {}
+
+  DiagonalTensor(const DiagonalTensor& o)
+  {
+    for(int i=0; i<N; i++)
+      _data[i] = o._data[i];
+  }
+
+  DiagonalTensor(const T& o)
+  {
+    for(int i=0; i<N; i++)
+      _data[i] = o;
+  }
+
+  
   static string getTypeName()
   {
     return "DiagonalTensor<" + NumTypeTraits<T>::getTypeName() +
@@ -284,6 +300,15 @@ Vector<T,N>
 operator/(const Vector<T,N>& a, const DiagonalTensor<T,N>& b) 
 {
   Vector<T,N> r;
+  for(int i=0; i<N; i++) r[i] = a[i]/b[i];
+  return r;
+}
+
+template<class T, int N>
+DiagonalTensor<T,N>
+operator/(const DiagonalTensor<T,N>& a, const DiagonalTensor<T,N>& b) 
+{
+  DiagonalTensor<T,N> r;
   for(int i=0; i<N; i++) r[i] = a[i]/b[i];
   return r;
 }

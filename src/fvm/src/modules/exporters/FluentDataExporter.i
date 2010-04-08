@@ -26,7 +26,7 @@ public:
                         const int fluentFieldId);
 };
 
-%template(FluentDataExporterA) FluentDataExporter<ATYPE_STR>;
+%template(FluentDataExporterA) FluentDataExporter< ATYPE_STR >;
 
 %include "NcDataWriter.i"
 

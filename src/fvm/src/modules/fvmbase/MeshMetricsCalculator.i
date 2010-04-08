@@ -24,5 +24,5 @@ public:
 };
 
 
-%template(MeshMetricsCalculatorA) MeshMetricsCalculator<ATYPE_STR>;
+%template(MeshMetricsCalculatorA) MeshMetricsCalculator< ATYPE_STR >;
 

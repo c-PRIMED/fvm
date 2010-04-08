@@ -19,11 +19,11 @@ struct MovingMeshModelOptions : public FloatVarDict<T>
 
 //%template(Vector3) Vector<ATYPE_STR,3>;
 
-%template(MovingMeshModelOptionsA) MovingMeshModelOptions<ATYPE_STR>;
+%template(MovingMeshModelOptionsA) MovingMeshModelOptions< ATYPE_STR >;
 
 
 %include "MovingMeshModel.h"
 
 
-%template(MovingMeshModelA) MovingMeshModel<ATYPE_STR>;
+%template(MovingMeshModelA) MovingMeshModel< ATYPE_STR >;
 

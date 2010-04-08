@@ -10,3 +10,13 @@ Model::Model(const MeshList& meshes) :
 Model::~Model()
 {}
 
+map<string,shared_ptr<ArrayBase> >&
+Model::getPersistenceData()
+{
+  return _persistenceData;
+}
+
+void
+Model::restart()
+{}
+ 

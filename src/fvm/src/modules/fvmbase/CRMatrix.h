@@ -830,6 +830,8 @@ private:
     iw = 0;
     uptr = 0;
 
+    const Diag unity(NumTypeTraits<Diag>::getUnity());
+    
     //main loop
     for (int k = 0; k < nRows; k++ )
     {
@@ -864,7 +866,7 @@ private:
         while( j < j2 );
 
         //inverting diagonal
-        iluCoeffs[j]  = 1.0 / iluCoeffs[j];	     
+        iluCoeffs[j]  = unity / iluCoeffs[j];	     
         //zeroing iw
         for ( int i = j1; i < j2; i++ )
           iw[ iluCol[i] ] = 0;

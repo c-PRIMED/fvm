@@ -43,6 +43,12 @@ class FloatVarDict : public map<string, FloatVal<T> >
 public:
 
   typedef map<string,FloatVal<T> > T_Parent;
+
+  bool hasVar(const string varName) const
+  {
+    typename T_Parent::const_iterator pos = this->find(varName);
+    return pos != this->end();
+  }
   
   T operator[](const string varName) const
   {
