@@ -37,20 +37,20 @@ struct FlowModelOptions : public FloatVarDict<T>
 
 //%template(Vector3) Vector<ATYPE_STR,3>;
 
-%template(FlowBCA) FlowBC<ATYPE_STR>;
-%template(FlowBCList) std::vector<FlowBC<ATYPE_STR>* >;
-%template(FlowBCsMap) std::map<int,FlowBC<ATYPE_STR>* >;
+%template(FlowBCA) FlowBC< ATYPE_STR >;
+%template(FlowBCList) std::vector<FlowBC< ATYPE_STR >* >;
+%template(FlowBCsMap) std::map<int,FlowBC< ATYPE_STR >* >;
 
-%template(FlowVCA) FlowVC<ATYPE_STR>;
-%template(FlowVCList) std::vector<FlowVC<ATYPE_STR>* >;
-%template(FlowVCsMap) std::map<int,FlowVC<ATYPE_STR>* >;
+%template(FlowVCA) FlowVC< ATYPE_STR >;
+%template(FlowVCList) std::vector<FlowVC< ATYPE_STR >* >;
+%template(FlowVCsMap) std::map<int,FlowVC< ATYPE_STR >* >;
 
-%template(FlowModelOptionsA) FlowModelOptions<ATYPE_STR>;
+%template(FlowModelOptionsA) FlowModelOptions< ATYPE_STR >;
 
 
 
 %include "FlowModel.h"
 
 
-%template(FlowModelA) FlowModel<ATYPE_STR>;
+%template(FlowModelA) FlowModel< ATYPE_STR >;
 

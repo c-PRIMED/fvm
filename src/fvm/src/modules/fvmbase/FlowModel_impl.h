@@ -373,8 +373,71 @@ public:
 
   }
 
+  map<string,shared_ptr<ArrayBase> >&
+  getPersistenceData()
+  {
+    _persistenceData.clear();
+    
+    Array<int>* niterArray = new Array<int>(1);
+    (*niterArray)[0] = _niters;
+    _persistenceData["niters"]=shared_ptr<ArrayBase>(niterArray);
+    
+    if (_initialMomentumNorm)
+    {
+        _persistenceData["initialMomentumNorm"] =
+          _initialMomentumNorm->getArrayPtr(_flowFields.velocity);
+    }
+    else
+    {
+        Array<Vector<T,3> >* xArray = new Array<Vector<T,3> >(1);
+        xArray->zero();
+        _persistenceData["initialMomentumNorm"]=shared_ptr<ArrayBase>(xArray);
+        
+    }
+    
+    if (_initialContinuityNorm)
+    {
+        _persistenceData["initialContinuityNorm"] =
+          _initialContinuityNorm->getArrayPtr(_flowFields.pressure);
+    }
+    else
+    {
+        Array<T>* xArray = new Array<T>(1);
+        xArray->zero();
+        _persistenceData["initialContinuityNorm"]=shared_ptr<ArrayBase>(xArray);
+    }
+    return _persistenceData;
+  }
 
- void computeIBandSolidVelocity(const StorageSite& particles)
+  void restart()
+  {
+    if (_persistenceData.find("niters") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase> rp = _persistenceData["niters"];
+        ArrayBase& r = *rp;
+        Array<int>& niterArray = dynamic_cast<Array<int>& >(r);
+        _niters = niterArray[0];
+    }
+
+    if (_persistenceData.find("initialMomentumNorm") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase>  r = _persistenceData["initialMomentumNorm"];
+        _initialMomentumNorm = MFRPtr(new MultiFieldReduction());
+        _initialMomentumNorm->addArray(_flowFields.velocity,r);
+    }
+
+    if (_persistenceData.find("initialContinuityNorm") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase>  r = _persistenceData["initialContinuityNorm"];
+        _initialContinuityNorm = MFRPtr(new MultiFieldReduction());
+        _initialContinuityNorm->addArray(_flowFields.pressure,r);
+    }
+    
+    computeContinuityResidual();
+    
+  }
+  
+  void computeIBandSolidVelocity(const StorageSite& particles)
   {
     typedef CRMatrixTranspose<T,T,T> IMatrix;
     typedef CRMatrixTranspose<T,VectorT3,VectorT3> IMatrixV3;
@@ -447,7 +510,7 @@ public:
 
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,VectorT3>(faceCells));
+            shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT3,VectorT3>(faceCells));
             ls.getMatrix().addMatrix(fIndex,vIndex,mft);
 
             shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
@@ -464,7 +527,7 @@ public:
 
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,VectorT3>(faceCells));
+            shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT3,VectorT3>(faceCells));
             ls.getMatrix().addMatrix(fIndex,vIndex,mft);
 
             shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
@@ -551,7 +614,9 @@ public:
                                                     _geomFields,
                                                     _flowFields.velocity,
                                                     _flowFields.momentumFlux,
-                                                    ls.getMatrix(), ls.getX(), ls.getB());
+                                                    ls.getMatrix(),
+                                                    ls.getX(),
+                                                    ls.getB());
 
             const TArray& massFlux = dynamic_cast<const TArray&>(_flowFields.massFlux[faces]);
             //            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
@@ -595,8 +660,7 @@ public:
             }
             else if ((bc.bcType == "Symmetry"))
             {
-                VectorT3 zeroFlux(NumTypeTraits<VectorT3>::getZero());
-                gbc.applyNeumannBC(zeroFlux);
+                gbc.applySymmetryBC();
             }
             else
               throw CException(bc.bcType + " not implemented for FlowModel");
@@ -1322,7 +1386,7 @@ public:
     return false;
   }
   
-#ifndef USING_ATYPE_TANGENT
+#if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
   
   void dumpContinuityMatrix(const string fileBase)
   {
@@ -1718,6 +1782,7 @@ private:
   T _referencePP;
   //AMG _momSolver;
   //AMG _continuitySolver;
+  map<string,shared_ptr<ArrayBase> > _persistenceData;
 };
 
 template<class T>
@@ -1888,8 +1953,24 @@ FlowModel<T>::getStressTensor(const Mesh& mesh, const ArrayBase& cellIds)
   return _impl->getStressTensor(mesh, cellIds);
 }
 
+template<class T>
+map<string,shared_ptr<ArrayBase> >&
+FlowModel<T>::getPersistenceData()
+{
+  return _impl->getPersistenceData();
+}
 
-#ifndef USING_ATYPE_TANGENT
+template<class T>
+void
+FlowModel<T>::restart()
+{
+  _impl->restart();
+}
+  
+
+
+
+#if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
 template<class T>  
 void
 FlowModel<T>::dumpContinuityMatrix(const string fileBase)

@@ -29,6 +29,11 @@ public:
 
   virtual void init();
   
+  virtual map<string,shared_ptr<ArrayBase> >&
+  getPersistenceData();
+
+  virtual void restart();
+  
   FlowBCMap& getBCMap();
   FlowVCMap& getVCMap();
 
@@ -64,7 +69,7 @@ public:
   //LinearSolver& getMomentumSolver();
   //LinearSolver& getContinuitySolver();
 
-#ifndef USING_ATYPE_TANGENT
+#if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
   
   void dumpContinuityMatrix(const string fileBase);
   

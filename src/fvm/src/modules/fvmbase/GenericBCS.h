@@ -15,7 +15,7 @@
 #include "DiagonalMatrix.h"
 
 template<class X, class Diag, class OffDiag>
-class GenericBCS
+class BaseGenericBCS
 {
 public:
 
@@ -27,7 +27,7 @@ public:
   typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
   typedef typename CCMatrix::PairWiseAssembler CCAssembler;
 
-  typedef FluxJacobianMatrix<OffDiag,X> FMatrix;
+  typedef FluxJacobianMatrix<Diag,X> FMatrix;
   typedef DiagonalMatrix<Diag,X> BBMatrix;
 
   typedef Array<Diag> DiagArray;
@@ -37,7 +37,7 @@ public:
   typedef Array<VectorT3> VectorT3Array;
 
   
-  GenericBCS(const StorageSite& faces,
+  BaseGenericBCS(const StorageSite& faces,
              const Mesh& mesh,
              const GeomFields& geomFields,
              Field& varField,
@@ -62,7 +62,9 @@ public:
     _flux(dynamic_cast<XArray&>(xField[_fluxIndex])),
     _rFlux(dynamic_cast<XArray&>(rField[_fluxIndex])),
     _areaMagField(geomFields.areaMag),
-    _faceAreaMag(dynamic_cast<const TArray&>(_areaMagField[_faces]))
+    _faceAreaMag(dynamic_cast<const TArray&>(_areaMagField[_faces])),
+    _areaField(geomFields.area),
+    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces]))
   {}
   
   void applyDirichletBC(int f, const X& bValue) const
@@ -171,7 +173,7 @@ public:
     for(int i=0; i<_faces.getCount(); i++)
       applyNeumannBC(i,bFlux[i]);
   }
-  
+
   // boundary value = cell value, flux as defined by interior discretization
   
   void applyExtrapolationBC(const int f) const
@@ -300,7 +302,7 @@ public:
         applyExtrapolationBC(f);
   }
   
-private:
+protected:
   const StorageSite& _faces;
   const StorageSite& _cells;
   const Array<int>& _ibType;
@@ -320,6 +322,121 @@ private:
   XArray& _rFlux;
   const Field& _areaMagField;
   const TArray& _faceAreaMag;
+  const Field& _areaField;
+  const VectorT3Array& _faceArea;
+};
+
+
+template<class X, class Diag, class OffDiag>
+class GenericBCS : public BaseGenericBCS<X,Diag,OffDiag>
+{
+public:
+
+  typedef BaseGenericBCS<X,Diag,OffDiag> T_Parent;
+  
+  GenericBCS(const StorageSite& faces,
+             const Mesh& mesh,
+             const GeomFields& geomFields,
+             Field& varField,
+             Field& fluxField,
+             MultiFieldMatrix& matrix,
+             MultiField& xField, MultiField& rField) :
+    T_Parent(faces,mesh,geomFields,varField,fluxField,matrix,xField,rField)
+  {}
+  
+
+  // see the specialization for Vectors below
+  void applySymmetryBC() const
+  {
+    X zeroFlux(NumTypeTraits<X>::getZero());
+    for(int i=0; i<this->_faces.getCount(); i++)
+      this->applyNeumannBC(i,zeroFlux);
+  }
+  
+};
+
+template<class T, int N>
+class GenericBCS< Vector<T,N>, DiagonalTensor<T,N>, T> 
+  : public BaseGenericBCS<Vector<T,N>, DiagonalTensor<T,N>, T>
+{
+public:
+  typedef BaseGenericBCS<Vector<T,N>, DiagonalTensor<T,N>, T> T_Parent;
+  typedef Vector<T,N> X;
+  typedef DiagonalTensor<T,N> Diag;
+  typedef T OffDiag;
+
+  typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
+
+  typedef Array<T_Scalar> TArray;
+  typedef Vector<T_Scalar,3> VectorT3;
+  
+  typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
+  typedef typename CCMatrix::PairWiseAssembler CCAssembler;
+
+  typedef FluxJacobianMatrix<OffDiag,X> FMatrix;
+  typedef DiagonalMatrix<Diag,X> BBMatrix;
+
+  typedef Array<Diag> DiagArray;
+  typedef Array<OffDiag> OffDiagArray;
+  
+  typedef Array<X> XArray;
+  typedef Array<VectorT3> VectorT3Array;
+
+
+  GenericBCS(const StorageSite& faces,
+             const Mesh& mesh,
+             const GeomFields& geomFields,
+             Field& varField,
+             Field& fluxField,
+             MultiFieldMatrix& matrix,
+             MultiField& xField, MultiField& rField) :
+    T_Parent(faces,mesh,geomFields,varField,fluxField,matrix,xField,rField)
+  {}
+  
+  
+  void applySymmetryBC() const
+  {
+    for(int f=0; f<this->_faces.getCount(); f++)
+    {
+        const int c0 = this->_faceCells(f,0);
+        const int c1 = this->_faceCells(f,1);
+        
+        // the current value of flux and its Jacobians
+        const X fluxB = -this->_r[c1];
+        const OffDiag dFluxdXC0 = -this->_assembler.getCoeff10(f);
+        const Diag dFluxdXC1 = -this->_dRdXDiag[c1];
+
+        const VectorT3 en = this->_faceArea[f]/this->_faceAreaMag[f];
+        const T xC0_dotn = dot(this->_x[c0],en);
+        const X xB = this->_x[c0] - xC0_dotn * en;
+
+        Diag dxBdxC0;
+        dxBdxC0[0] =  1.0 - en[0]*en[0];
+        dxBdxC0[1] =  1.0 - en[1]*en[1];
+        dxBdxC0[2] =  1.0 - en[2]*en[2];
+        
+        
+        const X xc0mxB = this->_x[c0]-xB;
+        
+        // eliminate boundary dependency from cell equation
+        this->_dRdXDiag[c0] += dFluxdXC1*dxBdxC0;
+        this->_r[c0] += dFluxdXC1*xc0mxB;
+        this->_assembler.getCoeff01(f) = 0;
+        
+        // boundary value equation
+        this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
+        this->_assembler.getCoeff10(f) = dxBdxC0[0];
+        this->_r[c1] = xc0mxB;
+        this->_dRdX.setBoundary(c1);
+        
+        //setup the equation for the boundary flux correction
+        this->_dFluxdX.setCoeffL(f,dFluxdXC0);
+        this->_dFluxdX.setCoeffR(f,dFluxdXC1); 
+        this->_flux[f] = fluxB;
+        this->_rFlux[f] = T_Scalar(0);
+        this->_dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+    }
+  }
 };
 
 
