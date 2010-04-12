@@ -87,7 +87,7 @@ public:
     
     const X dXC1 = bValue - _x[c1];
     const X dFlux = dFluxdXC1*dXC1;
-    const X dRC0 = dXC1*dRC0dXC1;
+    const X dRC0 = dRC0dXC1*dXC1;
     _r[c0] += dRC0;
     
     _assembler.getCoeff01(f) = OffDiag(0);
@@ -140,7 +140,7 @@ public:
     
     const X dFlux = specifiedFlux*_faceAreaMag[f] - fluxB;
 
-    _r[c0] += dFlux/dFluxdXC1*dRC0dXC1;
+    _r[c0] += dFlux/(dFluxdXC1*dRC0dXC1);
     
     // this removes the dependence of flux on the cell value
     _dRdXDiag[c0] -= dFluxdXC0/dFluxdXC1*dRC0dXC1;
@@ -416,23 +416,205 @@ public:
         dxBdxC0[2] =  1.0 - en[2]*en[2];
         
         
-        const X xc0mxB = this->_x[c0]-xB;
+        const X xc1mxB = this->_x[c1]-xB;
+        this->_x[c1] = xB;
         
         // eliminate boundary dependency from cell equation
         this->_dRdXDiag[c0] += dFluxdXC1*dxBdxC0;
-        this->_r[c0] += dFluxdXC1*xc0mxB;
+        this->_r[c0] -= dFluxdXC1*xc1mxB;
         this->_assembler.getCoeff01(f) = 0;
         
         // boundary value equation
         this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
         this->_assembler.getCoeff10(f) = dxBdxC0[0];
-        this->_r[c1] = xc0mxB;
+        this->_r[c1] = 0;//xc0mxB;
         this->_dRdX.setBoundary(c1);
         
         //setup the equation for the boundary flux correction
-        this->_dFluxdX.setCoeffL(f,dFluxdXC0);
-        this->_dFluxdX.setCoeffR(f,dFluxdXC1); 
-        this->_flux[f] = fluxB;
+        //this->_dFluxdX.setCoeffL(f,dFluxdXC0);
+        //this->_dFluxdX.setCoeffR(f,dFluxdXC1); 
+        this->_flux[f] = fluxB - dFluxdXC1*xc1mxB;
+        this->_rFlux[f] = T_Scalar(0);
+        this->_dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+    }
+  }
+};
+
+
+template<class T, int N>
+class GenericBCS< Vector<T,N>, DiagonalTensor<T,N>, DiagonalTensor<T,N> > 
+  : public BaseGenericBCS<Vector<T,N>, DiagonalTensor<T,N>, DiagonalTensor<T,N> >
+{
+public:
+  typedef BaseGenericBCS<Vector<T,N>, DiagonalTensor<T,N>, DiagonalTensor<T,N> > T_Parent;
+  typedef Vector<T,N> X;
+  typedef DiagonalTensor<T,N> Diag;
+  typedef DiagonalTensor<T,N> OffDiag;
+
+  typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
+
+  typedef Array<T_Scalar> TArray;
+  typedef Vector<T_Scalar,3> VectorT3;
+  
+  typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
+  typedef typename CCMatrix::PairWiseAssembler CCAssembler;
+
+  typedef FluxJacobianMatrix<OffDiag,X> FMatrix;
+  typedef DiagonalMatrix<Diag,X> BBMatrix;
+
+  typedef Array<Diag> DiagArray;
+  typedef Array<OffDiag> OffDiagArray;
+  
+  typedef Array<X> XArray;
+  typedef Array<VectorT3> VectorT3Array;
+
+
+  GenericBCS(const StorageSite& faces,
+             const Mesh& mesh,
+             const GeomFields& geomFields,
+             Field& varField,
+             Field& fluxField,
+             MultiFieldMatrix& matrix,
+             MultiField& xField, MultiField& rField) :
+    T_Parent(faces,mesh,geomFields,varField,fluxField,matrix,xField,rField)
+  {}
+  
+  
+  void applySymmetryBC() const
+  {
+    for(int f=0; f<this->_faces.getCount(); f++)
+    {
+        const int c0 = this->_faceCells(f,0);
+        const int c1 = this->_faceCells(f,1);
+        
+        // the current value of flux and its Jacobians
+        const X fluxB = -this->_r[c1];
+        const OffDiag dFluxdXC0 = -this->_assembler.getCoeff10(f);
+        const Diag dFluxdXC1 = -this->_dRdXDiag[c1];
+
+        const VectorT3 en = this->_faceArea[f]/this->_faceAreaMag[f];
+        const T xC0_dotn = dot(this->_x[c0],en);
+        const X xB = this->_x[c0] - xC0_dotn * en;
+
+        Diag dxBdxC0;
+        dxBdxC0[0] =  1.0 - en[0]*en[0];
+        dxBdxC0[1] =  1.0 - en[1]*en[1];
+        dxBdxC0[2] =  1.0 - en[2]*en[2];
+        
+        
+        const X xc1mxB = this->_x[c1]-xB;
+        this->_x[c1] = xB;
+        
+        // eliminate boundary dependency from cell equation
+        this->_dRdXDiag[c0] += dFluxdXC1*dxBdxC0;
+        this->_r[c0] += dFluxdXC1*xc1mxB;
+        this->_assembler.getCoeff01(f) = 0;
+        
+        // boundary value equation
+        this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
+        this->_assembler.getCoeff10(f) = dxBdxC0;
+        this->_r[c1] = 0;//xc0mxB;
+        this->_dRdX.setBoundary(c1);
+        
+        //setup the equation for the boundary flux correction
+        //this->_dFluxdX.setCoeffL(f,dFluxdXC0);
+        //this->_dFluxdX.setCoeffR(f,dFluxdXC1); 
+        this->_flux[f] = fluxB - dFluxdXC1*xc1mxB;
+        this->_rFlux[f] = T_Scalar(0);
+        this->_dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+    }
+  }
+};
+
+#include "SquareTensor.h"
+
+template<class T, int N>
+class GenericBCS< Vector<T,N>, SquareTensor<T,N>, SquareTensor<T,N> > 
+  : public BaseGenericBCS<Vector<T,N>, SquareTensor<T,N>, SquareTensor<T,N> >
+{
+public:
+  typedef BaseGenericBCS<Vector<T,N>, SquareTensor<T,N>, SquareTensor<T,N> > T_Parent;
+  typedef Vector<T,N> X;
+  typedef SquareTensor<T,N> Diag;
+  typedef SquareTensor<T,N> OffDiag;
+
+  typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
+
+  typedef Array<T_Scalar> TArray;
+  typedef Vector<T_Scalar,3> VectorT3;
+  
+  typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
+  typedef typename CCMatrix::PairWiseAssembler CCAssembler;
+
+  typedef FluxJacobianMatrix<OffDiag,X> FMatrix;
+  typedef DiagonalMatrix<Diag,X> BBMatrix;
+
+  typedef Array<Diag> DiagArray;
+  typedef Array<OffDiag> OffDiagArray;
+  
+  typedef Array<X> XArray;
+  typedef Array<VectorT3> VectorT3Array;
+
+
+  GenericBCS(const StorageSite& faces,
+             const Mesh& mesh,
+             const GeomFields& geomFields,
+             Field& varField,
+             Field& fluxField,
+             MultiFieldMatrix& matrix,
+             MultiField& xField, MultiField& rField) :
+    T_Parent(faces,mesh,geomFields,varField,fluxField,matrix,xField,rField)
+  {}
+  
+  
+  void applySymmetryBC() const
+  {
+    for(int f=0; f<this->_faces.getCount(); f++)
+    {
+        const int c0 = this->_faceCells(f,0);
+        const int c1 = this->_faceCells(f,1);
+        
+        // the current value of flux and its Jacobians
+        const X fluxB = -this->_r[c1];
+        const OffDiag dFluxdXC0 = -this->_assembler.getCoeff10(f);
+        const Diag dFluxdXC1 = -this->_dRdXDiag[c1];
+
+        const VectorT3 en = this->_faceArea[f]/this->_faceAreaMag[f];
+        const T xC0_dotn = dot(this->_x[c0],en);
+        const X xB = this->_x[c0] - xC0_dotn * en;
+
+        Diag dxBdxC0(Diag::getZero());
+        dxBdxC0(0,0) =  1.0 - en[0]*en[0];
+        dxBdxC0(0,1) =  - en[0]*en[1];
+        dxBdxC0(0,2) =  - en[0]*en[2];
+
+        dxBdxC0(1,0) =  - en[1]*en[0];
+        dxBdxC0(1,1) =  1.0 - en[1]*en[1];
+        dxBdxC0(1,2) =  - en[1]*en[2];
+
+        dxBdxC0(2,0) =  - en[2]*en[0];
+        dxBdxC0(2,1) =  - en[2]*en[1];
+        dxBdxC0(2,2) =  1.0 - en[2]*en[2];
+        
+        
+        const X xc1mxB = this->_x[c1]-xB;
+        this->_x[c1] = xB;
+        
+        // eliminate boundary dependency from cell equation
+        this->_dRdXDiag[c0] += dFluxdXC1*dxBdxC0;
+        this->_r[c0] += dFluxdXC1*xc1mxB;
+        this->_assembler.getCoeff01(f) = 0;
+        
+        // boundary value equation
+        this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
+        this->_assembler.getCoeff10(f) = dxBdxC0;
+        this->_r[c1] = 0;//xc0mxB;
+        this->_dRdX.setBoundary(c1);
+        
+        //setup the equation for the boundary flux correction
+        //this->_dFluxdX.setCoeffL(f,dFluxdXC0);
+        //this->_dFluxdX.setCoeffR(f,dFluxdXC1); 
+        this->_flux[f] = fluxB - dFluxdXC1*xc1mxB;
         this->_rFlux[f] = T_Scalar(0);
         this->_dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
     }
