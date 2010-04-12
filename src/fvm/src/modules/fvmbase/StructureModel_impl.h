@@ -22,6 +22,7 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "StressTensor.h"
+#include "SquareTensor.h"
 
 template<class T>
 class StructureModel<T>::Impl
@@ -32,31 +33,16 @@ public:
   typedef VectorTranspose<T,3> VectorT3T;
 
   typedef Array<VectorT3> VectorT3Array;
-  typedef DiagonalTensor<T,3> DiagTensorT3;
+  //typedef DiagonalTensor<T,3> DiagTensorT3;
+  //typedef SquareTensor<T,3>  SquareTensorT3;
+  typedef SquareTensor<T,3>  DiagTensorT3;
 
-  typedef CRMatrix<DiagTensorT3,T,VectorT3> VVMatrix;
+  typedef CRMatrix<DiagTensorT3,DiagTensorT3,VectorT3> VVMatrix;
   typedef typename VVMatrix::DiagArray VVDiagArray;
-  
-  typedef CRMatrix<T,T,T> PPMatrix;
-  typedef typename PPMatrix::DiagArray PPDiagArray;
-  typedef typename PPMatrix::PairWiseAssembler PPAssembler;
-
-  typedef CRMatrixRect<VectorT3T,VectorT3,T> PVMatrix;
-  typedef typename PVMatrix::DiagArray PVDiagArray;
-  typedef typename PVMatrix::PairWiseAssembler PVAssembler;
-
-  typedef CRMatrixRect<VectorT3,T,VectorT3> VPMatrix;
-  typedef typename VPMatrix::DiagArray VPDiagArray;
-  typedef typename VPMatrix::PairWiseAssembler VPAssembler;
 
 
   typedef Gradient<VectorT3> VGradType;
   typedef Array<Gradient<VectorT3> > VGradArray;
-
-  typedef Gradient<T> PGradType;
-  typedef Array<PGradType> PGradArray;
-
-  typedef FluxJacobianMatrix<T,T> FMatrix;
   
   Impl(const GeomFields& geomFields,
        StructureFields& structureFields,
@@ -218,7 +204,7 @@ public:
 
         const CRConnectivity& cellCells = mesh.getCellCells();
         
-        shared_ptr<Matrix> m(new CRMatrix<DiagTensorT3,T,VectorT3>(cellCells));
+        shared_ptr<Matrix> m(new CRMatrix<DiagTensorT3,DiagTensorT3,VectorT3>(cellCells));
 
         ls.getMatrix().addMatrix(wIndex,wIndex,m);
 
@@ -232,7 +218,7 @@ public:
 
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,VectorT3>(faceCells));
+            shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT3,VectorT3>(faceCells));
             ls.getMatrix().addMatrix(dIndex,wIndex,mft);
 
             shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
@@ -249,7 +235,7 @@ public:
 
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,VectorT3>(faceCells));
+            shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT3,VectorT3>(faceCells));
             ls.getMatrix().addMatrix(dIndex,wIndex,mft);
 
             shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
@@ -263,7 +249,7 @@ public:
     _deformationGradientModel.compute();
     DiscrList discretizations;
     shared_ptr<Discretization>
-      dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,T>
+      dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,DiagTensorT3>
          (_meshes,_geomFields,
           _structureFields.deformation,
           _structureFields.eta,
@@ -278,12 +264,12 @@ public:
           _structureFields.deformationGradient));
       
     shared_ptr<Discretization>
-      ud(new Underrelaxer<VectorT3,DiagTensorT3,T>
+      ud(new Underrelaxer<VectorT3,DiagTensorT3,DiagTensorT3>
          (_meshes,_structureFields.deformation,
           _options["deformationURF"]));
     
     discretizations.push_back(dd);
-    //    discretizations.push_back(sd);
+    discretizations.push_back(sd);
     //    discretizations.push_back(ud);
     /*    
     if (_options.transient)
@@ -326,7 +312,7 @@ public:
             const StructureBC<T>& bc = *_bcMap[fg.id];
             
 
-            GenericBCS<VectorT3,DiagTensorT3,T> gbc(faces,mesh,
+            GenericBCS<VectorT3,DiagTensorT3,DiagTensorT3> gbc(faces,mesh,
                                                     _geomFields,
                                                     _structureFields.deformation,
                                                     _structureFields.deformationFlux,
@@ -344,8 +330,9 @@ public:
             }
             else if (bc.bcType == "Symmetry")
             {
-	        VectorT3 zeroFlux(NumTypeTraits<VectorT3>::getZero());
-                gbc.applyNeumannBC(zeroFlux);
+	        //VectorT3 zeroFlux(NumTypeTraits<VectorT3>::getZero());
+                gbc.applySymmetryBC();
+                allNeumann = false;
 	    }
             else if (bc.bcType == "SpecifiedTraction")
             {
@@ -390,7 +377,7 @@ public:
         {
 	    const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
-            GenericBCS<VectorT3,DiagTensorT3,T> gbc(faces,mesh,
+            GenericBCS<VectorT3,DiagTensorT3,DiagTensorT3> gbc(faces,mesh,
                                                     _geomFields,
                                                     _structureFields.deformation,
                                                     _structureFields.deformationFlux,
@@ -408,9 +395,12 @@ public:
 	MultiFieldMatrix& matrix = ls.getMatrix();
 	MultiField::ArrayIndex wIndex(&_structureFields.deformation,&cells);
 	VectorT3Array& rCell = dynamic_cast<VectorT3Array&>(b[wIndex]);
+	VectorT3Array& w = dynamic_cast<VectorT3Array&>
+	  (_structureFields.deformation[cells]);
 	VVMatrix& vvMatrix =
 	  dynamic_cast<VVMatrix&>(matrix.getMatrix(wIndex,wIndex));
 	rCell[0] = 0;
+        w[0] = 0;
         vvMatrix.setDirichlet(0);
     }
     
@@ -714,16 +704,16 @@ public:
       {
 	  const VGradType& wg = wGrad[n];
 	  VGradType wgPlusTranspose = wGrad[n];
-	  /*	  	    
+	  	  	    
 	  for(int i=0;i<3;i++)
 	    for(int j=0;j<3;j++)
 	      wgPlusTranspose[i][j] += wg[j][i];
-	  */
-	  tractionX[n][0] = wgPlusTranspose[0][0]*eta[n];//+
-	  //	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
+	  
+	  tractionX[n][0] = wgPlusTranspose[0][0]*eta[n]+
+	 	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
 	  tractionX[n][1] = wgPlusTranspose[1][0]*eta[n];
-	  tractionX[n][2] = wgPlusTranspose[1][1]*eta[n];//+
-	  //	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
+	  tractionX[n][2] = wgPlusTranspose[1][1]*eta[n]+
+	  	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
       }
   }
 
