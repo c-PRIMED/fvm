@@ -140,7 +140,7 @@ public:
     
     const X dFlux = specifiedFlux*_faceAreaMag[f] - fluxB;
 
-    _r[c0] += dFlux/(dFluxdXC1*dRC0dXC1);
+    _r[c0] += dRC0dXC1*(dFlux/dFluxdXC1);
     
     // this removes the dependence of flux on the cell value
     _dRdXDiag[c0] -= dFluxdXC0/dFluxdXC1*dRC0dXC1;
