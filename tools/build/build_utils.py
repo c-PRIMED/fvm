@@ -303,10 +303,14 @@ def set_python_path(dir):
             os.makedirs(p)
         except OSError:
             pass
-    if os.path.dirname(py) == os.path.join(dir, 'bin'):
-        os.environ['PYTHONPATH'] = libpath
+    if 'PYTHONPATH' in os.environ:
+        os.environ['PYTHONPATH'] += ':'
     else:
-        os.environ['PYTHONPATH'] = libpath + ':' + pypath
+        os.environ['PYTHONPATH'] = ''
+    if os.path.dirname(py) == os.path.join(dir, 'bin'):
+        os.environ['PYTHONPATH'] += libpath
+    else:
+        os.environ['PYTHONPATH'] += libpath + ':' + pypath
     os.environ['PYTHONPATH'] += ':' + os.path.join(dir, 'bin')
     return pypath1
 
