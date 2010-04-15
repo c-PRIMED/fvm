@@ -5,7 +5,7 @@ class Python(BuildPkg):
         py = find_executable('python')
         ver = subprocess.Popen('python -V', shell=True, stderr=subprocess.PIPE).stderr.read()        
         a, b = re.compile(r'Python ([^.]*).([^.\n]*)').findall(ver)[0]
-        if int(a) == 2 and int(b) >= 4:
+        if int(a) == 2 and int(b) >= 5:
             self.use_installed = True
             return 'installed'
         self.use_installed = False
