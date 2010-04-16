@@ -16,6 +16,20 @@
 #include "MacroFields.h"
 #include "FlowFields.h"
 
+#include "KineticBC.h"
+#include "TimeDerivativeDiscretization_Kmodel.h"
+
+#include "Linearizer.h"
+
+#include "CRConnectivity.h"
+#include "LinearSystem.h"
+#include "MultiFieldMatrix.h"
+#include "CRMatrix.h"
+#include "FluxJacobianMatrix.h"
+#include "DiagonalMatrix.h"
+
+
+
 template<class T>
 class KineticModel : public Model
 {
@@ -34,14 +48,15 @@ class KineticModel : public Model
    */
   //MacroFields& macroFields;
   
- KineticModel(const MeshList& meshes, FlowFields& ffields,MacroFields& macroFields, const Quadrature<T>& quad):
+ KineticModel(const MeshList& meshes, const GeomFields& geomFields, FlowFields& ffields,MacroFields& macroFields, const Quadrature<T>& quad):
   //KineticModel(const MeshList& meshes, FlowFields& ffields, const Quadrature<T>& quad):
   
-Model(meshes),
-  _meshes(meshes),
+  Model(meshes),
+    _meshes(meshes), 
+    _geomFields(geomFields),
     _quadrature(quad),
     _macroFields(macroFields),
-  _dsfPtr(_meshes,_quadrature)
+    _dsfPtr(_meshes,_quadrature)
     {     
       //dsfPtr=new TDistFF(mesh,macroPr,quad);   
       //dsfPtr = new TDistFF(_meshes, quad);     
@@ -205,7 +220,8 @@ return _bcMap;
  {
 return _vcMap;
 }
-FlowModelOptions<T>& 
+
+KineticModelOptions<T>& 
 getOptions() 
 {
 return _options;
@@ -305,21 +321,139 @@ void init()
 	    }
 	}
     }
-  
+ 
+ 
+ void initKineticModelLinearization(LinearSystem& ls)
+ {
+   const int numMeshes = _meshes.size();
+   for (int n=0; n<numMeshes; n++)
+     {
+       const Mesh& mesh = *_meshes[n];
+       const StorageSite& cells = mesh.getCells();
+       
+       const int direction(0); //for(int direction=0;direction<N123;direction++){
+       Field& fnd = *_dsfPtr.dsf[direction];
+       //const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
+       
+       MultiField::ArrayIndex vIndex(&fnd,&cells); //dsf is in 1 direction
+       
+       ls.getX().addArray(vIndex,fnd.getArrayPtr(cells));
+       
+       const CRConnectivity& cellCells = mesh.getCellCells();
+       
+       shared_ptr<Matrix> m(new CRMatrix<T,T,T>(cellCells)); //diagonal off diagonal, phi DiagTensorT3,T,VectorT3 for mometum in fvmbase 
+       
+       ls.getMatrix().addMatrix(vIndex,vIndex,m);
+     }
+ } 
+ /*
+ 
+ void linearizeKineticModel(LinearSystem& ls)
+ {
+   // _velocityGradientModel.compute();
+   DiscrList discretizations;
+   
+   //shared_ptr<Discretization> cd(new ConvectionDiscretization_Kmodel<VectorT3,DiagTensorT3,T> (_meshes,_geomFields,
+   //     _flowFields.velocity, _flowFields.massFlux,_flowFields.continuityResidual, _flowFields.velocityGradient));
+   
+   //shared_ptr<Discretization> ud(new Underrelaxer<VectorT3,DiagTensorT3,T>
+   //     (_meshes,_flowFields.velocity, _options["momentumURF"]));
+   
+   //discretizations.push_back(cd);
+   //discretizations.push_back(ud);
+   
+   if (_options.transient)
+     {
+       const int direction(0);  
+       Field& fnd = *_dsfPtr.dsf[direction];
+            
+       //const T_Scalar timestepKM(0.001);
+       shared_ptr<Discretization>
+       td(new TimeDerivativeDiscretization_Kmodel<T,T,T>
+       (_meshes,_geomFields,
+	 fnd,fnd,fnd,
+	//_dsfPtr,dsfPtr,_dsfPtr,
+       direction,
+       //timestepKM));
+       _options["timeStep"],
+       _options["NonDimLength"]));
+       
+       discretizations.push_back(td);
+       
+     }
+   
+   Linearizer linearizer;
+   
+   linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
+			ls.getX(), ls.getB());
+ }
+ 
+ /*
+   
+   MFRPtr solveMomentum()
+   {
+   LinearSystem ls;
+   
+   initKineticModelLinearization(ls);
+   
+   ls.initAssembly();
+   
+   linearizeMomentum(ls);
+   
+   ls.initSolve();
+   
+   
+   // save current velocity for use in continuity discretization
+   _previousVelocity = dynamic_pointer_cast<Field>(_flowFields.velocity.newCopy());
+   
+   //AMG solver(ls);
+   MFRPtr rNorm = _options.getMomentumLinearSolver().solve(ls);
+   
+   if (!_initialMomentumNorm) _initialMomentumNorm = rNorm;
+   
+   _options.getMomentumLinearSolver().cleanup();
+   
+   ls.postSolve();
+   ls.updateSolution();
+   
+   // save the momentum ap coeffficients for use in continuity discretization
+   _momApField = shared_ptr<Field>(new Field("momAp"));
+   const int numMeshes = _meshes.size();
+   for (int n=0; n<numMeshes; n++)
+     {
+       const Mesh& mesh = *_meshes[n];
+       
+       const StorageSite& cells = mesh.getCells();
+       MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
+       const VVMatrix& vvMatrix =
+	 dynamic_cast<const VVMatrix&>(ls.getMatrix().getMatrix(vIndex,vIndex));
+       const VVDiagArray& momAp = vvMatrix.getDiag();
+       _momApField->addArray(cells,dynamic_pointer_cast<ArrayBase>(momAp.newCopy()));
+     }
+   _momApField->syncLocal();
+   return rNorm;
+ }
+ 
+
+*/
+
+
 
  private:
   //shared_ptr<Impl> _impl;
   const MeshList& _meshes;
+  const GeomFields& _geomFields;
   const Quadrature<T>& _quadrature;
  
   MacroFields& _macroFields;
   DistFunctFields<T> _dsfPtr; 
+  //DistFunctFields<T> _dsfPtr1;
+  //DistFunctFields<T> _dsfPtr2;
   FlowBCMap _bcMap;
   FlowVCMap _vcMap;
 
-  FlowModelOptions<T> _options;
+  KineticModelOptions<T> _options;
 
 };
 
 #endif
-  
