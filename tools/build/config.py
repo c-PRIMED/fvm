@@ -51,6 +51,11 @@ section = ''
 def set_section(sec):
     global section
     section = sec
+    if sec == 'ALL':
+        print 50 * '-'
+        print "WARNING: 'ALL' section is deprecated. Please see"
+        print "https://memshub.org/infrastructure/memosa/wiki/Configuration"
+        print 50 * '-'        
     return True
 
 def set_value(val):
@@ -71,7 +76,14 @@ def set_value(val):
     if eq < 0:
         return False
     lval = val[:eq]
-    rval = val[eq+1:]           
+    rval = val[eq+1:]
+    if lval == 'modules':
+        print 50 * '-'        
+        print "ERROR: 'modules' config variables has been removed. Modules"
+        print "should all be loaded in the 'before' section. Please see"
+        print "https://memshub.org/infrastructure/memosa/wiki/Configuration"
+        print 50 * '-'          
+        return False
     try: 
         _config[section][lval] = rval
     except KeyError: 
