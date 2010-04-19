@@ -91,9 +91,15 @@ def main():
         usage()
 
     build_utils.set_options(options)
-
     if options.all:
         os.system("/bin/rm -rf %s" % os.path.join(cwd, "build-%s" % cname))
+
+    cmd = config.config('ALL', 'before')
+    if cmd and not '_MEMOSA_MAKE' in os.environ:
+        cmd = ';'.join(cmd)        
+        os.environ['_MEMOSA_MAKE'] = '1'
+        os.system('%s;%s' %(cmd, ' '.join(sys.argv)))
+        sys.exit(0)
 
     bld = Build(cname, sdir, make_path)
     
@@ -102,7 +108,6 @@ def main():
         for p in bld.packages:
             p.clean()
 
-    build_utils.run_commands('ALL', 'before')
     build_utils.fix_path('PATH', bld.bindir, 1, 0)
     build_utils.fix_path('LD_LIBRARY_PATH', bld.libdir, 1, 0)
     os.environ['MEMOSA_HOME'] = bld.blddir

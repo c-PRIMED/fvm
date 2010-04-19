@@ -48,13 +48,9 @@ def qsub(bp, cname):
     f.write('source env.sh\n')
     
     # Load Modules
-    modules = config.config('Testing', 'modules')
-    if modules:
-        for m in modules.split():
-            f.write('module load %s\n' % m)            
-
-    # Execute optional command
-    f.write(config.config('Testing', 'before') + '\n')
+    cmds = config.config('ALL', 'before')
+    for c in cmds:
+        f.write('%s\n' % c)            
 
     make = os.path.join(bp.topdir,'make.py')
     f.write('%s --test %s\n' % (make, cname))

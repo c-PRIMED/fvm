@@ -55,11 +55,18 @@ def set_section(sec):
 
 def set_value(val):
     global section
-    # print "SET %s %s" %(section, val)
+    #print "SET %s %s" %(section, val)
     if section == '':
         print "Error: No section set."
         return False
 
+    if section == 'before':
+        try: 
+            _config['ALL']['before'].append(val)
+        except KeyError: 
+            _config['ALL'] = {'before':[val]}
+        return True
+    
     eq = val.find('=')
     if eq < 0:
         return False

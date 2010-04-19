@@ -7,10 +7,8 @@ Testing:
 	ncpus=8
 	modules=openmpi-1.4.1-gcc64/4.4.0
 
-
 lammps:
-	Build=True
-	modules=openmpi-1.4.1-gcc64/4.4.0
+	Build=1
 	build=openmpi
 
 fvm:
@@ -28,30 +26,24 @@ fvm:
 	# compiler. 'intelc' or 'gcc'
 	# default is gcc
 	compiler=gcc
-	modules=openmpi-1.4.1-gcc64/4.4.0
 
 MPM:
 	Build=1
-	modules=atlas openmpi-1.4.1-gcc64/4.4.0
 	configname=gnu-linux
 
-
-mpi4py:
-	modules=openmpi-1.4.1-gcc64/4.4.0
+hdf5:
+	env[CC]=gcc
+	env[CXX]=g++
+	env[FC]=gfortran
 
 netcdf:
-	Build=1
-	env[F90]=gfortran
+	env[FC]=gfortran
 	env[CC]=gcc
-
-parmetis:
-	modules=openmpi-1.4.1-gcc64/4.4.0
 
 MEMOSA:
 	Build=1
 	
-ALL:
-	modules=gcc/4.4.0
-	before=module load python hdf5-1.8.3/gcc-4.4.0
-	env[HDF5_DIR]=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
+before:
+	module load python hdf5-1.8.3/gcc-4.4.0 atlas
+	HDF5_DIR=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
 

@@ -168,6 +168,8 @@ def do_env(c, unload=False):
             myenv[a].append(os.environ[a])
             if b == '':
                 del os.environ[a]
+            else:
+                os.environ[a] = b                
         elif b:
             os.environ[a] = b
 

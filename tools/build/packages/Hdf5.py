@@ -52,6 +52,10 @@ class Hdf5(BuildPkg):
 
     def _configure(self):
         # Do we really need to build HDF5 or can we use the installed one?
+        print os.environ['CC']
+        print os.environ['CXX']
+        print os.environ['FC']
+        
         x = config.config(self.name, 'Build')
         if x != '' and eval(x):
             verbose(2, "HDF5 MUST BUILD")
