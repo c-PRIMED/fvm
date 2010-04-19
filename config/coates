@@ -45,5 +45,5 @@ MEMOSA:
 	
 before:
 	module load python hdf5-1.8.3/gcc-4.4.0 atlas
-	HDF5_DIR=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
+	export HDF5_DIR=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
 
