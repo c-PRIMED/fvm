@@ -5,7 +5,6 @@ Testing:
 	walltime=4:00:00
 	nodes=4
 	ncpus=8
-	modules=openmpi-1.4.1-gcc64/4.4.0
 
 lammps:
 	Build=1
