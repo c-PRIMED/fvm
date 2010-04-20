@@ -301,9 +301,9 @@ Field::syncLocal()
        }
    }
 
-   int count_recv = get_request_size();
-   MPI::Request::Waitall( count_recv, request_recv );
-
+   int count  = get_request_size();
+   MPI::Request::Waitall( count, request_recv );
+   MPI::Request::Waitall( count, request_send );
 #endif
 
   // gather 
