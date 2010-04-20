@@ -175,6 +175,41 @@ class DistFunctFields
     }
   }
   */
+  void initMaxwellian(const MacroFields& macroPr, DistFunctFields<T>& dsfPtr)
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getSelfCount();
+	double pi(3.14159);
+	
+	const TArray& density = dynamic_cast<const TArray&>(macroPr.density[cells]);
+	const TArray& temperature = dynamic_cast<const TArray&>(macroPr.temperature[cells]);
+	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(macroPr.velocity[cells]);
+	
+	const TArray& cx = dynamic_cast<const TArray&>(*_quad.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quad.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quad.czPtr);
+	const int numFields= _quad.getDirCount(); 
+	
+	for(int j=0;j< numFields;j++){
+	  Field& fnd = *dsfPtr.dsf[j];
+	  TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	  for(int c=0; c<nCells;c++){
+	    f[c]=density[c]/pow((pi*temperature[c]),1.5)*
+	      exp(-(pow((cx[j]-v[c][0]),2.0)+pow((cy[j]-v[c][1]),2.0)+
+		    pow((cz[j]-v[c][2]),2.0))/temperature[c]);
+	  } 
+	  
+	}
+      }
+  }
+  
+  
+  
+  
  private:
   const MeshList _meshes;
   const Quadrature<T> _quad;

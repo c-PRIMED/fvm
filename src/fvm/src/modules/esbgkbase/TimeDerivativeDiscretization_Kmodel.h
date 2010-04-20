@@ -32,7 +32,7 @@ public:
 				     //const  DistFunctFields<X>& dsff,
 				     //const  DistFunctFields<X>& dsffN1,
 				     //const  DistFunctFields<X>& dsffN2,
-				     const int direction,
+				     // const int direction,
 				     const T_Scalar dT,
 				     const T_Scalar nonDimLength):
 				   
@@ -42,22 +42,22 @@ public:
     _varN1Field(varN1Field),
     _varN2Field(varN2Field),
     //_dsff(dsff), _dsffN1(dsffN1), _dsffN2(dsffN2),
+    //_direction(direction),
     _dT(dT),
     _nonDimLength(nonDimLength)
   {}
   
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
-                  MultiField& xField, MultiField& rField, int direction)
+                  MultiField& xField, MultiField& rField)
   {    
     const StorageSite& cells = mesh.getCells();
 
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
-    //// Field& fnd = *_dsff.dsf[direction]; 
-    //Field& _varField =  *_dsff.dsf[direction];  
-    //Field& _varFieldN1 =  *_dsff.dsfN1[direction]; 
-    //Field& _varFieldN2 =  *_dsff.dsfN2[direction]; 
-    //// const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
+    // Field& _varField =  *_dsff.dsf[_direction];  
+    //Field& _varN1Field =  *_dsffN1.dsf[_direction]; 
+    //Field& _varN2Field =  *_dsffN2.dsf[_direction]; 
+  
     
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
@@ -105,12 +105,13 @@ public:
   }
 private:
   const GeomFields& _geomFields;
-   const Field& _varField;
+  const Field& _varField;
   const Field& _varN1Field;
   const Field& _varN2Field;
-  //const DistFunctFields& _dsff;  
-  //const DistFunctFields& _dsffN1;  
-  //const DistFunctFields& _dsffN2; 
+  //const DistFunctFields<X>& _dsff;  
+  //const DistFunctFields<X>& _dsffN1;  
+  //const DistFunctFields<X>& _dsffN2; 
+  //const int _direction;
   const T_Scalar _dT;
   const T_Scalar _nonDimLength;
 };

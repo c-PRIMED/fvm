@@ -52,11 +52,17 @@ struct KineticModelOptions : public FloatVarDict<T>
     this->timeDiscretizationOrder=1;
     this->KineticLinearSolver = 0;
      
+    this->relativeTolerance=1e-8;
+    this->absoluteTolerance=1e-16;
   }
   
   bool printNormalizedResiduals;
   double Tolerance;
   bool transient;
+  
+  double relativeTolerance;
+  double absoluteTolerance;
+
   int timeDiscretizationOrder;
   LinearSolver *KineticLinearSolver;
  

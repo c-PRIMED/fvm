@@ -104,9 +104,12 @@ quad1=esbgk.QuadratureD(0,16,0,32,0,16) #spherical
 quad2=esbgk.QuadratureD(16,16,1,8,1,4) #gauss-hermit quadrature and 3/8th rule
 
 macroFields=esbgk.MacroFields('flow')
-esbgk1=esbgk.KineticModelD(meshes,flowFields,macroFields,quad2)
+esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
 
-#esbgk1.init()
+#dsff=esbgk.DistFunctFields(
+macroFields0=esbgk.MacroFields('flow')
+#esbgk.KineticModelD.InitializeMacroparameters(meshes,macroFields0,quad0)
+#esbgk.init()
 
 cellSite = meshes[0].getCells()
 velField = flowFields.velocity[ cellSite ].asNumPyArray() 
@@ -114,5 +117,5 @@ velField = flowFields.velocity[ cellSite ].asNumPyArray()
 
 #import debug
 #fmodel.advance(100)
-tecplotESBGK.esbgkTecplotFile(meshes,macroFields)
-tecplot.dumpTecplotFile(1,meshes,macroFields)
+tecplotESBGK.esbgkTecplotFile(meshes,macroFields0)
+tecplot.dumpTecplotFile(1,meshes,macroFields0)

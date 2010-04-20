@@ -379,6 +379,69 @@ inverse(const SquareTensor<T,3>& a)
   return inv;
   
 }
+
+/*
+template<class T>
+SquareTensor<T,10>
+  ludcmp(const SquareTensor<T,10>a, Vector<T,10> indx, double d){
+  const int n(10);
+  const int NMAX(500);
+  const double TINY(1.0e-20);
+  int i,imax,j,k;
+  double aamax,dum,sum,;
+  Array<T> vv;  // vv stores the implicit scaling of each row.
+  d=1.0;
+  for( i=0;i<n;i++){ 
+    aamax=0.0;
+    for (j=0;j<n;j++){    
+      if (abs(a(i,j)) > aamax) {aamax=abs(a(i,j)); }
+    }
+    if (aamax == 0.) {break; }  //’singular matrix in ludcmp’ 
+    vv(i)=1./aamax ;
+    
+  }
+  
+  for( j=0;j<n;j++)  {
+    for( i=0;i<j;i++){
+      sum=a(i,j);
+      for(k=0;k<i;k++){
+	sum=sum-a(i,k)*a(k,j);
+      }
+      a(i,j)=sum;
+    }
+    aamax=0.; 
+    for(i=j;i<n;i++){ 
+      sum=a(i,j); 
+      for(k=0;k<j;k++){       
+	sum=sum-a(i,k)*a(k,j);
+      }
+      a(i,j)=sum;
+      dum=vv(i)*abs(sum); 
+      if (dum >= aamax){imax=i;aamax=dum;}
+    }
+    if (j ~= imax){ //Do we need to interchange rows?    
+      for(k=0;k<n;k++){ //Yes, do so...
+	dum=a(imax,k);
+	a(imax,k)=a(j,k);
+	a(j,k)=dum;
+      }
+      d=-d; //...and change the parity of d.
+      vv(imax)=vv(j); //! Also interchange the scale factor.
+    }
+    indx(j)=imax;
+    if(a(j,j) == 0.){a(j,j)=TINY;}
+    //If the pivot element is zero the matrix is singular (at least to the precision of the algorithm).
+    // For some applications on singular matrices, it is desirable to substitute TINY for zero. 
+    if(j.~= n){ //Now, finally, divide by the pivot element. 
+      dum=1./a(j,j); 
+      for( i=j+1;i<n;i++) {a(i,j)=a(i,j)*dum;}
+    }
+  } //Go back for the next column in the reduction. 
+  
+  
+}
+*/
+
   
 #endif
 

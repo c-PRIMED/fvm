@@ -18,6 +18,7 @@
 
 #include "KineticBC.h"
 #include "TimeDerivativeDiscretization_Kmodel.h"
+#include "CollisionTermDiscretization.h"
 
 #include "Linearizer.h"
 
@@ -48,7 +49,7 @@ class KineticModel : public Model
    */
   //MacroFields& macroFields;
   
- KineticModel(const MeshList& meshes, const GeomFields& geomFields, FlowFields& ffields,MacroFields& macroFields, const Quadrature<T>& quad):
+ KineticModel(const MeshList& meshes, const GeomFields& geomFields, MacroFields& macroFields, const Quadrature<T>& quad):
   //KineticModel(const MeshList& meshes, FlowFields& ffields, const Quadrature<T>& quad):
   
   Model(meshes),
@@ -56,7 +57,8 @@ class KineticModel : public Model
     _geomFields(geomFields),
     _quadrature(quad),
     _macroFields(macroFields),
-    _dsfPtr(_meshes,_quadrature)
+    _dsfPtr(_meshes,_quadrature),
+    _dsfEqPtr(_meshes,_quadrature)
     {     
       //dsfPtr=new TDistFF(mesh,macroPr,quad);   
       //dsfPtr = new TDistFF(_meshes, quad);     
@@ -77,113 +79,112 @@ class KineticModel : public Model
       ComputeCollisionfrequency(_meshes, _macroFields); //calculate viscosity, collisionFrequency
     }
   
-
   
- void InitializeMacroparameters(const MeshList& meshes, MacroFields& macroPr,
-			     const Quadrature<T>& quad,const DistFunctFields<T>& dsff)
- {  const int numMeshes =meshes.size();
+  
+  void InitializeMacroparameters(const MeshList& meshes, MacroFields& macroPr,const Quadrature<T>& quad)
+  {  const int numMeshes =meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
         const Mesh& mesh = *meshes[n];
-   const StorageSite& cells = mesh.getCells();
-   const int nCells = cells.getSelfCount(); 
-   
-   TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);  
-   VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
-   TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
-   TArray& pressure = dynamic_cast<TArray&>(macroPr.pressure[cells]);
- 
-   //initialize density,velocity  
-   for(int c=0; c<nCells;c++)
-     {
-       density[c] =10.0;
-       v[c][0]=10.0;
-       v[c][1]=10.0;
-       v[c][2]=0.0;
-       temperature[c]=5.0;
-       pressure[c]=temperature[c]*density[c];
-     }	
-   }
- }
- 
- void ComputeMacroparameters(const MeshList& meshes, MacroFields& macroPr, 
-			  const Quadrature<T>& quad, const DistFunctFields<T>& dsff) 
- {  
-   //FILE * pFile;
-   //pFile = fopen("distfun_mf.txt","w");
-   const int numMeshes = meshes.size();
-   for (int n=0; n<numMeshes; n++)
-     {
-     
-       const Mesh& mesh = *meshes[n];
-       const StorageSite& cells = mesh.getCells();
-       const int nCells = cells.getSelfCount();
-       
-       
-       TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);
-       TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
-       VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
-       TArray& pressure = dynamic_cast<TArray&>(macroPr.pressure[cells]);
-       const int N123 = quad.getDirCount(); 
-      
-       const TArray& cx = dynamic_cast<const TArray&>(*quad.cxPtr);
-       const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
-       const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
-       const TArray& dcxyz= dynamic_cast<const TArray&>(*quad.dcxyzPtr);
-       
-       
-       //initialize density,velocity,temperature to zero    
-       for(int c=0; c<nCells;c++)
-	 {
-	   density[c]=0.0;
-	   v[c][0]=0.0;
-	   v[c][1]=0.0;
-	   v[c][2]=0.0;
-	   temperature[c]=0.0;   
-	 }	
-       
-       for(int j=0;j<N123;j++){
-	 
-	 Field& fnd = *dsff.dsf[j];
-	 const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
-	 //fprintf(pFile,"%12.6f %E %E \n",dcxyz[j],f[0],density[0]+dcxyz[j]*f[0]);
-
-	 for(int c=0; c<nCells;c++){
-	   density[c] = density[c]+dcxyz[j]*f[c];
-	   	   v[c][0]= v[c][0]+(cx[j]*f[c])*dcxyz[j];
-	   	   v[c][1]= v[c][1]+(cy[j]*f[c])*dcxyz[j];
-	   	   v[c][2]= v[c][2]+(cz[j]*f[c])*dcxyz[j];
-		   temperature[c]= temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
-	   				  +pow(cz[j],2.0))*f[c]*dcxyz[j];
-		  
-	 }
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getSelfCount(); 
 	
+	TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);  
+	VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
+	TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
+	TArray& pressure = dynamic_cast<TArray&>(macroPr.pressure[cells]);
+	
+	//initialize density,velocity  
+	for(int c=0; c<nCells;c++)
+	  {
+	    density[c] =10.0;
+	    v[c][0]=10.0;
+	    v[c][1]=10.0;
+	    v[c][2]=0.0;
+	    temperature[c]=5.0;
+	    pressure[c]=temperature[c]*density[c];
+	  }	
+      }
+  }
+  
+  void ComputeMacroparameters(const MeshList& meshes, MacroFields& macroPr, 
+			      const Quadrature<T>& quad, const DistFunctFields<T>& dsff) 
+  {  
+    //FILE * pFile;
+    //pFile = fopen("distfun_mf.txt","w");
+    const int numMeshes = meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	
+	const Mesh& mesh = *meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getSelfCount();
+	
+	
+	TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);
+	TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
+	VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
+	TArray& pressure = dynamic_cast<TArray&>(macroPr.pressure[cells]);
+	const int N123 = quad.getDirCount(); 
+	
+	const TArray& cx = dynamic_cast<const TArray&>(*quad.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
+	const TArray& dcxyz= dynamic_cast<const TArray&>(*quad.dcxyzPtr);
+	
+	
+	//initialize density,velocity,temperature to zero    
+	for(int c=0; c<nCells;c++)
+	  {
+	    density[c]=0.0;
+	    v[c][0]=0.0;
+	    v[c][1]=0.0;
+	    v[c][2]=0.0;
+	    temperature[c]=0.0;   
+	  }	
+	
+	for(int j=0;j<N123;j++){
+	  
+	  Field& fnd = *dsff.dsf[j];
+	  const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
+	  //fprintf(pFile,"%12.6f %E %E \n",dcxyz[j],f[0],density[0]+dcxyz[j]*f[0]);
+	  
+	  for(int c=0; c<nCells;c++){
+	    density[c] = density[c]+dcxyz[j]*f[c];
+	    v[c][0]= v[c][0]+(cx[j]*f[c])*dcxyz[j];
+	    v[c][1]= v[c][1]+(cy[j]*f[c])*dcxyz[j];
+	    v[c][2]= v[c][2]+(cz[j]*f[c])*dcxyz[j];
+	    temperature[c]= temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
+					    +pow(cz[j],2.0))*f[c]*dcxyz[j];
+	    
+	  }
+	  
+	}
+	
+	for(int c=0; c<nCells;c++){
+	  v[c][0]=v[c][0]/density[c];
+	  v[c][1]=v[c][1]/density[c];
+	  v[c][2]=v[c][2]/density[c];
+	  temperature[c]=temperature[c]-(pow(v[c][0],2.0)
+					 +pow(v[c][1],2.0)
+					 +pow(v[c][2],2.0))*density[c];
+	  temperature[c]=temperature[c]/(1.5*density[c]);  
+	  pressure[c]=density[c]*temperature[c];
+	  //viscosity[c]=muref*pow(temperature[c]/Tmuref,mu_w); // viscosity power law
+	  
+	  
        }
-      
-       for(int c=0; c<nCells;c++){
-	 v[c][0]=v[c][0]/density[c];
-	 v[c][1]=v[c][1]/density[c];
-	 v[c][2]=v[c][2]/density[c];
-	 temperature[c]=temperature[c]-(pow(v[c][0],2.0)
-					+pow(v[c][1],2.0)
-					+pow(v[c][2],2.0))*density[c];
-	 temperature[c]=temperature[c]/(1.5*density[c]);  
-	 pressure[c]=density[c]*temperature[c];
-	 //viscosity[c]=muref*pow(temperature[c]/Tmuref,mu_w); // viscosity power law
-	 
-	 
-       }
-       
-       
-     }
-   //fclose(pFile);
- }
- 
- /*
-  * Collision frequency
-  *
-  *
-  */
+	
+	
+      }
+    //fclose(pFile);
+  }
+  
+  /*
+   * Collision frequency
+   *
+   *
+   */
   void ComputeCollisionfrequency(const MeshList& meshes, MacroFields& macroPr)  {
     const int numMeshes = meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -211,23 +212,23 @@ class KineticModel : public Model
       }
   }
   
-
-FlowBCMap& getBCMap() 
-{
-return _bcMap;
-}
- FlowVCMap& getVCMap()
- {
+  
+  FlowBCMap& getBCMap() 
+    {
+      return _bcMap;
+    }
+  FlowVCMap& getVCMap()
+    {
 return _vcMap;
-}
-
-KineticModelOptions<T>& 
-getOptions() 
-{
-return _options;
-}
-
-void init()
+    }
+  
+  KineticModelOptions<T>& 
+    getOptions() 
+    {
+      return _options;
+    }
+  
+  void init()
   {
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -237,7 +238,7 @@ void init()
         const FlowVC<T>& vc = *_vcMap[mesh.getID()];
         
         const StorageSite& cells = mesh.getCells();
-
+	
         shared_ptr<VectorT3Array> vCell(new VectorT3Array(cells.getCount()));
 
         VectorT3 initialVelocity;
@@ -270,68 +271,69 @@ void init()
 	_macroFields.collisionFrequency.addArray(cells,collFreqCell);
 
       }
+    _niters  =0;
+    _initialKmodelNorm = MFRPtr();
   
   }
   
-
   
- void SetBoundaryConditions()
-    {
-      const int numMeshes = _meshes.size();
-      for (int n=0; n<numMeshes; n++)
-	{
-	  const Mesh& mesh = *_meshes[n];
-	  
-	  FlowVC<T> *vc(new FlowVC<T>());
-	  vc->vcType = "flow";
-	  _vcMap[mesh.getID()] = vc;
-	  foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-	    {
-	      const FaceGroup& fg = *fgPtr;
-	      if (_bcMap.find(fg.id) == _bcMap.end())
-		{
-		  FlowBC<T> *bc(new FlowBC<T>());
-		  
-		  _bcMap[fg.id] = bc;
-		  if ((fg.groupType == "wall"))
-		    {
+  
+  void SetBoundaryConditions()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	
+	FlowVC<T> *vc(new FlowVC<T>());
+	vc->vcType = "flow";
+	_vcMap[mesh.getID()] = vc;
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr;
+	    if (_bcMap.find(fg.id) == _bcMap.end())
+	      {
+		FlowBC<T> *bc(new FlowBC<T>());
+		
+		_bcMap[fg.id] = bc;
+		if ((fg.groupType == "wall"))
+		  {
 		      bc->bcType = "WallBC";
+		  }
+		else if ((fg.groupType == "velocity-inlet"))
+		  {
+		    bc->bcType = "WallBC";
+		  }
+		else if ((fg.groupType == "pressure-inlet") ||
+			 (fg.groupType == "pressure-outlet"))
+		  {
+		    bc->bcType = "PressureBC";
+		  }
+		else if ((fg.groupType == "symmetry"))
+		  {
+		    bc->bcType = "SymmetryBC";
 		    }
-		  else if ((fg.groupType == "velocity-inlet"))
-		    {
-		      bc->bcType = "WallBC";
-		    }
-		  else if ((fg.groupType == "pressure-inlet") ||
-			   (fg.groupType == "pressure-outlet"))
-		    {
-		      bc->bcType = "PressureBC";
-		    }
-		  else if ((fg.groupType == "symmetry"))
-		    {
-		      bc->bcType = "SymmetryBC";
-		    }
-		  else if((fg.groupType =="copy "))
-		    {
+		else if((fg.groupType =="copy "))
+		  {
 		      bc->bcType = "CopyBC";
-		    }
-		  else
-		    throw CException("FlowModel: unknown face group type "
+		  }
+		else
+		  throw CException("FlowModel: unknown face group type "
 				     + fg.groupType);
-		}
-	    }
-	}
-    }
- 
- 
- void initKineticModelLinearization(LinearSystem& ls)
- {
+	      }
+	  }
+      }
+  }
+  
+  
+  void initKineticModelLinearization(LinearSystem& ls, int direction)
+  {
    const int numMeshes = _meshes.size();
    for (int n=0; n<numMeshes; n++)
      {
        const Mesh& mesh = *_meshes[n];
        const StorageSite& cells = mesh.getCells();
        
-       const int direction(0); //for(int direction=0;direction<N123;direction++){
        Field& fnd = *_dsfPtr.dsf[direction];
        //const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
        
@@ -345,100 +347,92 @@ void init()
        
        ls.getMatrix().addMatrix(vIndex,vIndex,m);
      }
- } 
- /*
- 
- void linearizeKineticModel(LinearSystem& ls)
- {
-   // _velocityGradientModel.compute();
-   DiscrList discretizations;
+  } 
+  
+  
+  void linearizeKineticModel(LinearSystem& ls, int direction)
+  {
+    // _velocityGradientModel.compute();
+    DiscrList discretizations;
+    
+    //shared_ptr<Discretization> cd(new ConvectionDiscretization_Kmodel<VectorT3,DiagTensorT3,T> (_meshes,_geomFields,
+    //     _flowFields.velocity, _flowFields.massFlux,_flowFields.continuityResidual, _flowFields.velocityGradient));
+    //discretizations.push_back(cd);
+    //shared_ptr<Discretization> ud(new Underrelaxer<VectorT3,DiagTensorT3,T>
+    //     (_meshes,_flowFields.velocity, _options["momentumURF"]));
+    //discretizations.push_back(ud);
+    
+    Field& fnd = *_dsfPtr.dsf[direction]; 
+    Field& feq = *_dsfEqPtr.dsf[direction]; 
+    shared_ptr<Discretization>
+      sd(new CollisionTermDiscretization<T,T,T>
+	 (_meshes, _geomFields, 
+	  fnd,feq,
+	  _macroFields.collisionFrequency));
+    discretizations.push_back(sd);
+    
+    if (_options.transient)
+      {
+	// const int direction(0);  
+	Field& fnd = *_dsfPtr.dsf[direction];            
+	
+	shared_ptr<Discretization>
+	  td(new TimeDerivativeDiscretization_Kmodel<T,T,T>
+	     (_meshes,_geomFields,
+	      fnd,fnd,fnd,
+	      //_dsfPtr,dsfPtr,_dsfPtr,
+	      //direction,
+	      _options["timeStep"],
+	      _options["NonDimLength"]));
+	
+	discretizations.push_back(td);
+	
+      }
    
-   //shared_ptr<Discretization> cd(new ConvectionDiscretization_Kmodel<VectorT3,DiagTensorT3,T> (_meshes,_geomFields,
-   //     _flowFields.velocity, _flowFields.massFlux,_flowFields.continuityResidual, _flowFields.velocityGradient));
-   
-   //shared_ptr<Discretization> ud(new Underrelaxer<VectorT3,DiagTensorT3,T>
-   //     (_meshes,_flowFields.velocity, _options["momentumURF"]));
-   
-   //discretizations.push_back(cd);
-   //discretizations.push_back(ud);
-   
-   if (_options.transient)
-     {
-       const int direction(0);  
-       Field& fnd = *_dsfPtr.dsf[direction];
-            
-       //const T_Scalar timestepKM(0.001);
-       shared_ptr<Discretization>
-       td(new TimeDerivativeDiscretization_Kmodel<T,T,T>
-       (_meshes,_geomFields,
-	 fnd,fnd,fnd,
-	//_dsfPtr,dsfPtr,_dsfPtr,
-       direction,
-       //timestepKM));
-       _options["timeStep"],
-       _options["NonDimLength"]));
-       
-       discretizations.push_back(td);
-       
-     }
-   
-   Linearizer linearizer;
-   
-   linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
-			ls.getX(), ls.getB());
- }
- 
- /*
-   
-   MFRPtr solveMomentum()
-   {
-   LinearSystem ls;
-   
-   initKineticModelLinearization(ls);
-   
-   ls.initAssembly();
-   
-   linearizeMomentum(ls);
-   
-   ls.initSolve();
-   
-   
-   // save current velocity for use in continuity discretization
-   _previousVelocity = dynamic_pointer_cast<Field>(_flowFields.velocity.newCopy());
-   
-   //AMG solver(ls);
-   MFRPtr rNorm = _options.getMomentumLinearSolver().solve(ls);
-   
-   if (!_initialMomentumNorm) _initialMomentumNorm = rNorm;
-   
-   _options.getMomentumLinearSolver().cleanup();
-   
-   ls.postSolve();
-   ls.updateSolution();
-   
-   // save the momentum ap coeffficients for use in continuity discretization
-   _momApField = shared_ptr<Field>(new Field("momAp"));
-   const int numMeshes = _meshes.size();
-   for (int n=0; n<numMeshes; n++)
-     {
-       const Mesh& mesh = *_meshes[n];
-       
-       const StorageSite& cells = mesh.getCells();
-       MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
-       const VVMatrix& vvMatrix =
-	 dynamic_cast<const VVMatrix&>(ls.getMatrix().getMatrix(vIndex,vIndex));
-       const VVDiagArray& momAp = vvMatrix.getDiag();
-       _momApField->addArray(cells,dynamic_pointer_cast<ArrayBase>(momAp.newCopy()));
-     }
-   _momApField->syncLocal();
-   return rNorm;
- }
- 
+    Linearizer linearizer;
+    
+    linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
+			 ls.getX(), ls.getB());
+  }
+  
+  
+  
+  void advance(const int niter)
+  {
+    for(int n=0; n<niter; n++)  
+      {
+	const int N123 =_quadrature.getDirCount();
 
-*/
-
-
-
+	
+	for(int direction=0; direction<N123;direction++)
+	  {
+	    LinearSystem ls;
+	    initKineticModelLinearization(ls, direction);
+	    ls.initAssembly();
+	    linearizeKineticModel(ls,direction);
+	    ls.initSolve();
+	
+	    MFRPtr rNorm(_options.getKineticLinearSolver().solve(ls));
+	    
+	  }
+	/*
+	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm; 
+	MFRPtr normRatio((*rNorm)/(*_initialKModelNorm));
+	      cout << _niters << ": " << *rNorm << endl;   
+	      _options.getKineticLinearSolver().cleanup();
+	      
+	      // ls.postSolve();
+	      //ls.updateSolution();
+	      _niters++;
+	      if (*rNorm < _options.absoluteTolerance ||
+	      *normRatio < _options.relativeTolerance)
+	      break;
+	*/	    
+	  
+      }
+  }
+  
+  
  private:
   //shared_ptr<Impl> _impl;
   const MeshList& _meshes;
@@ -446,14 +440,19 @@ void init()
   const Quadrature<T>& _quadrature;
  
   MacroFields& _macroFields;
-  DistFunctFields<T> _dsfPtr; 
+  DistFunctFields<T> _dsfPtr;  
+  DistFunctFields<T> _dsfEqPtr;
   //DistFunctFields<T> _dsfPtr1;
   //DistFunctFields<T> _dsfPtr2;
   FlowBCMap _bcMap;
   FlowVCMap _vcMap;
 
   KineticModelOptions<T> _options;
+  int _niters;
 
+  MFRPtr _initialKmodelNorm;
+  shared_ptr<Field> _previousVelocity;
+  shared_ptr<Field> _KmodelApField;
 };
 
 #endif
