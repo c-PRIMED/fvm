@@ -1,5 +1,9 @@
 #include "Mesh.h"
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "NumType.h"
 #include "Array.h"
 #include "Field.h"
@@ -23,10 +27,6 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "StressTensor.h"
-
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 
 template<class T>
 class FlowModel<T>::Impl

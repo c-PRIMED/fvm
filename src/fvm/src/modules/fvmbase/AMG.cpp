@@ -1,12 +1,11 @@
-#include "AMG.h"
-#include "LinearSystemMerger.h"
-#include "CRConnectivity.h"
-#include <set>
-
 #ifdef FVM_PARALLEL
 #include <mpi.h>
 #endif
 
+#include "AMG.h"
+#include "LinearSystemMerger.h"
+#include "CRConnectivity.h"
+#include <set>
 int AMG::amg_indx = 0;
 
 AMG::AMG() :

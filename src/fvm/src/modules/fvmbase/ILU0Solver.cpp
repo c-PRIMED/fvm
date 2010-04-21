@@ -1,11 +1,12 @@
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "ILU0Solver.h"
 #include "LinearSystemMerger.h"
 #include "CRConnectivity.h"
 #include <set>
 
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 
 ILU0Solver::ILU0Solver()
 {

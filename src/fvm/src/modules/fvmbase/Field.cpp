@@ -1,13 +1,13 @@
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "Field.h"
 #include "ArrayBase.h"
 #include "StorageSite.h"
 #include "Array.h"
 #include "OneToOneIndexMap.h"
 #include <iostream>
-
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 
 
 #include <vector>

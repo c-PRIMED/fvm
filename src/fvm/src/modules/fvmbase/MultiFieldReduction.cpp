@@ -1,10 +1,10 @@
-#include "MultiFieldReduction.h"
-#include "Array.h"
-#include "OneToOneIndexMap.h"
-
 #ifdef FVM_PARALLEL
 #include <mpi.h>
 #endif
+
+#include "MultiFieldReduction.h"
+#include "Array.h"
+#include "OneToOneIndexMap.h"
 
 #include <iostream>
 

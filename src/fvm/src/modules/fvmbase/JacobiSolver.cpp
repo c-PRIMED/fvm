@@ -1,11 +1,12 @@
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "JacobiSolver.h"
 #include "LinearSystemMerger.h"
 #include "CRConnectivity.h"
 #include <set>
 
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 
 JacobiSolver::JacobiSolver()
 {

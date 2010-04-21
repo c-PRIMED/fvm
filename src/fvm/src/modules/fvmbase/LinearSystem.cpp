@@ -1,10 +1,10 @@
-#include "LinearSystem.h"
-#include "Array.h"
-#include "Field.h"
-
 #ifdef FVM_PARALLEL
 #include <mpi.h>
 #endif
+
+#include "LinearSystem.h"
+#include "Array.h"
+#include "Field.h"
 
 LinearSystem::LinearSystem() :
   _x(new MultiField()),

@@ -1,13 +1,14 @@
 #ifndef _MULTIFIELDMATRIX_H_
 #define _MULTIFIELDMATRIX_H_
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "Matrix.h"
 #include "MultiField.h"
 #include <set>
 
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 //UnorderedSet doesn't duplicate and  sort elements
 class UnorderedSet
 {

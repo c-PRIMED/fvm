@@ -10,9 +10,8 @@
 //
 //
 #ifdef FVM_PARALLEL
-
-#include <iostream>
 #include <mpi.h>
+#include <iostream>
 #include <cassert>
 #include "MPMCoupling.h"
 #include "CRConnectivity.h"

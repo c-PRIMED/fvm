@@ -2,11 +2,11 @@
 #define _LINEARSYSTEMMERGER_H_
 #ifdef FVM_PARALLEL
 
+#include <mpi.h>
 #include "LinearSystem.h"
 #include <cassert>
 #include <set>
 #include <map>
-#include <mpi.h>
 
 // variable name convection
 //XXXLocal = this variable is unique to that process and only make sense in its process

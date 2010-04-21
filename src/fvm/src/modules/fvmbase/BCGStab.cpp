@@ -1,9 +1,9 @@
-#include "BCGStab.h"
-
 #ifdef  FVM_PARALLEL
 #include <mpi.h>
 #endif
 
+
+#include "BCGStab.h"
 BCGStab::BCGStab() :
   preconditioner(0)
 {}

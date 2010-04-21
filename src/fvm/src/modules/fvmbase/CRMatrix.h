@@ -1,15 +1,15 @@
 #ifndef _CRMATRIX_H_
 #define _CRMATRIX_H_
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "Matrix.h"
 #include "CRConnectivity.h"
 #include "Array.h"
 #include "StorageSite.h"
 #include "LinearSystemMerger.h"
-
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 
 #include <set>
 

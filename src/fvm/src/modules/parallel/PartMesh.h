@@ -11,14 +11,13 @@
 //
 #ifndef PARTMESH_H
 #define PARTMESH_H
-
+#include <mpi.h>
 #include <vector>
 #include <map>
 #include <string>
 #include "Mesh.h"
 #include "Array.h"
 #include "Vector.h"
-#include <mpi.h>
 #include<set>
 using namespace std;
 

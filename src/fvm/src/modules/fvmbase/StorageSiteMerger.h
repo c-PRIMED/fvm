@@ -2,10 +2,10 @@
 #define _STORAGESITEMERGER_H_
 #ifdef FVM_PARALLEL
 
+#include <mpi.h>
 #include "StorageSite.h"
 #include <cassert>
 #include <set>
-#include <mpi.h>
 
 class StorageSiteMerger
 {

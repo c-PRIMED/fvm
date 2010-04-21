@@ -13,12 +13,12 @@
 #define MPMCoupling_H
 #ifdef FVM_PARALLEL
 
+#include <mpi.h>
 #include "Mesh.h"
 #include "Array.h"
 #include <vector>
 #include <set>
 
-#include <mpi.h>
 #include "MPM_Particles.h"
 #include "Field.h"
 /**

@@ -1,3 +1,8 @@
+
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,9 +13,6 @@
 #include "MultiField.h"
 
 
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 
 
 using namespace std;
