@@ -59,8 +59,8 @@ public:
     
     for(int c=0; c<nCells; c++)
     {
-      rCell[c ] += cellVolume[c]/nue[c]*(source[c]-x[c]);
-      diag[c]-=cellVolume[c]/nue[c];
+      rCell[c ] -= cellVolume[c]*nue[c]*(x[c]-source[c]);
+      diag[c]-=cellVolume[c]*nue[c];
     }
   }
     

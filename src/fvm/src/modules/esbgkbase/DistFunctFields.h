@@ -175,7 +175,7 @@ class DistFunctFields
     }
   }
   */
-  void initMaxwellian(const MacroFields& macroPr, DistFunctFields<T>& dsfPtr)
+  void initializeMaxwellian(const MacroFields& macroPr, DistFunctFields<T>& dsfPtr)
   {
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)

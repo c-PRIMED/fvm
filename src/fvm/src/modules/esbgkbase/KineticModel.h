@@ -75,24 +75,24 @@ class KineticModel : public Model
       init(); 
       SetBoundaryConditions();
       //ComputeMacroparameters(_meshes,ffields,_quadrature,_dsfPtr);
-      ComputeMacroparameters(_meshes,_macroFields,_quadrature,_dsfPtr); //calculate density,velocity,temperature
-      ComputeCollisionfrequency(_meshes, _macroFields); //calculate viscosity, collisionFrequency
+      ComputeMacroparameters(); //calculate density,velocity,temperature
+      ComputeCollisionfrequency(); //calculate viscosity, collisionFrequency
     }
   
   
   
-  void InitializeMacroparameters(const MeshList& meshes, MacroFields& macroPr,const Quadrature<T>& quad)
-  {  const int numMeshes =meshes.size();
+  void InitializeMacroparameters()
+  {  const int numMeshes =_meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
-        const Mesh& mesh = *meshes[n];
+        const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getSelfCount(); 
 	
-	TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);  
-	VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
-	TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
-	TArray& pressure = dynamic_cast<TArray&>(macroPr.pressure[cells]);
+	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);  
+	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
+	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
+	TArray& pressure = dynamic_cast<TArray&>(_macroFields.pressure[cells]);
 	
 	//initialize density,velocity  
 	for(int c=0; c<nCells;c++)
@@ -107,30 +107,29 @@ class KineticModel : public Model
       }
   }
   
-  void ComputeMacroparameters(const MeshList& meshes, MacroFields& macroPr, 
-			      const Quadrature<T>& quad, const DistFunctFields<T>& dsff) 
+  void ComputeMacroparameters() 
   {  
     //FILE * pFile;
     //pFile = fopen("distfun_mf.txt","w");
-    const int numMeshes = meshes.size();
+    const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
 	
-	const Mesh& mesh = *meshes[n];
+	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getSelfCount();
 	
 	
-	TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);
-	TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
-	VectorT3Array& v = dynamic_cast<VectorT3Array&>(macroPr.velocity[cells]);
-	TArray& pressure = dynamic_cast<TArray&>(macroPr.pressure[cells]);
-	const int N123 = quad.getDirCount(); 
+	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
+	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
+	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
+	TArray& pressure = dynamic_cast<TArray&>(_macroFields.pressure[cells]);
+	const int N123 = _quadrature.getDirCount(); 
 	
-	const TArray& cx = dynamic_cast<const TArray&>(*quad.cxPtr);
-	const TArray& cy = dynamic_cast<const TArray&>(*quad.cyPtr);
-	const TArray& cz = dynamic_cast<const TArray&>(*quad.czPtr);
-	const TArray& dcxyz= dynamic_cast<const TArray&>(*quad.dcxyzPtr);
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const TArray& dcxyz= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
 	
 	
 	//initialize density,velocity,temperature to zero    
@@ -145,7 +144,7 @@ class KineticModel : public Model
 	
 	for(int j=0;j<N123;j++){
 	  
-	  Field& fnd = *dsff.dsf[j];
+	  Field& fnd = *_dsfPtr.dsf[j];
 	  const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
 	  //fprintf(pFile,"%12.6f %E %E \n",dcxyz[j],f[0],density[0]+dcxyz[j]*f[0]);
 	  
@@ -170,9 +169,6 @@ class KineticModel : public Model
 					 +pow(v[c][2],2.0))*density[c];
 	  temperature[c]=temperature[c]/(1.5*density[c]);  
 	  pressure[c]=density[c]*temperature[c];
-	  //viscosity[c]=muref*pow(temperature[c]/Tmuref,mu_w); // viscosity power law
-	  
-	  
        }
 	
 	
@@ -185,8 +181,8 @@ class KineticModel : public Model
    *
    *
    */
-  void ComputeCollisionfrequency(const MeshList& meshes, MacroFields& macroPr)  {
-    const int numMeshes = meshes.size();
+  void ComputeCollisionfrequency()  {
+    const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
 	double Tmuref=273.15;
@@ -195,15 +191,15 @@ class KineticModel : public Model
 	double R=8314.0/40.0;
 	double nondim_length=1.0;
 	double mu0=rho_init*R*T_init*nondim_length/pow(2*R*T_init,0.5);  
-	const Mesh& mesh = *meshes[n];
+	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getSelfCount();
 	
-	TArray& density = dynamic_cast<TArray&>(macroPr.density[cells]);
-	TArray& viscosity = dynamic_cast<TArray&>(macroPr.viscosity[cells]);
-	TArray& temperature = dynamic_cast<TArray&>(macroPr.temperature[cells]);
+	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
+	TArray& viscosity = dynamic_cast<TArray&>(_macroFields.viscosity[cells]);
+	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
 
-	TArray& collisionFrequency = dynamic_cast<TArray&>(macroPr.collisionFrequency[cells]);
+	TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
 	for(int c=0; c<nCells;c++)
 	  {
 	    viscosity[c]=muref*pow(temperature[c]/Tmuref,mu_w); // viscosity power law
@@ -413,16 +409,18 @@ return _vcMap;
 	    ls.initSolve();
 	
 	    MFRPtr rNorm(_options.getKineticLinearSolver().solve(ls));
-	    
+	     ls.postSolve();
+	     ls.updateSolution();
 	  }
-	/*
+	//_macroFields.
+	//_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
+	  	/*
 	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm; 
 	MFRPtr normRatio((*rNorm)/(*_initialKModelNorm));
 	      cout << _niters << ": " << *rNorm << endl;   
 	      _options.getKineticLinearSolver().cleanup();
 	      
-	      // ls.postSolve();
-	      //ls.updateSolution();
+	      //
 	      _niters++;
 	      if (*rNorm < _options.absoluteTolerance ||
 	      *normRatio < _options.relativeTolerance)
