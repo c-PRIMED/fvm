@@ -49,7 +49,7 @@ public:
     
     for(int c=0; c<nCells; c++)
     {
-        rCell[c ] += cellVolume[c]*source[c];
+        rCell[c] += cellVolume[c]*source[c];
     }
   }
     

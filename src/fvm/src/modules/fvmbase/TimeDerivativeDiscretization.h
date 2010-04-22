@@ -125,7 +125,7 @@ public:
             {
                 const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
                 rCell[c] -= rhoVbydT*(x[c]- xN1[c]);
-                diag[c] -= rhoVbydT;
+		diag[c] -= rhoVbydT;
 	    }
 	}
     }

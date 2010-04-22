@@ -12,6 +12,7 @@ using namespace std;
 %import "Mesh.i"
 %import "LinearSolver.i"
 %import "Vector.i"
+%import "TwobyTwoTensor.i"
 
 %include "GeomFields.h"
 %include "FlowFields.h"

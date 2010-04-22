@@ -301,6 +301,24 @@ public:
       else
         applyExtrapolationBC(f);
   }
+
+  void applyNonzeroDiagBC() const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+      applyNonzeroDiagBC(i);
+  }
+
+  void applyNonzeroDiagBC(int f) const
+  {
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1);
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;    
+   
+    _dRdXDiag[c1][0] = T_Scalar(-1.0);   
+  }
+
   
 protected:
   const StorageSite& _faces;

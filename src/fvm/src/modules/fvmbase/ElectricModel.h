@@ -1,5 +1,5 @@
-#ifndef _ElectricMODEL_H_
-#define _ElectricMODEL_H_
+#ifndef _ELECTRICMODEL_H_
+#define _ELECTRICMODEL_H_
 
 #include "Model.h"
 #include "GeomFields.h"
@@ -9,6 +9,7 @@
 #include "Octree.h"
 #include "Array.h"
 #include "Vector.h"
+#include "PhysicsConstant.h"
 
 template<class T>
 class ElectricModel : public Model
@@ -20,13 +21,14 @@ public:
 
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
+  typedef Vector<double, 3> VectorD3;
   typedef Array<VectorT3> VectorT3Array;
 
   class Impl;
   
   
   ElectricModel(const GeomFields& geomFields,
-               ElectricFields& ElectricFields, const MeshList& meshes);
+               ElectricFields& electricFields, const MeshList& meshes);
   
   virtual ~ElectricModel();
 
@@ -39,6 +41,8 @@ public:
   ElectricVC<T>& getVC(const int id);
 
   ElectricModelOptions<T>& getOptions();
+
+  ElectricModelConstants<T>& getConstants();
   
   //computeIBFacePotential(const StorageSite& particles);
     
@@ -47,6 +51,21 @@ public:
   bool advance(const int niter);
 
   void updateTime();
+
+  void calculateEquilibriumParameters();
+
+  void  dielectricOneDimModelPrep(const int nXCol, const int nYCol, const int nGrid,
+				  const VectorD3 corner1_1, 
+				  const VectorD3 corner1_2, 
+				  const VectorD3 corner1_3,
+				  const VectorD3 corner1_4,
+				  const VectorD3 corner2_1, 
+				  const VectorD3 corner2_2, 
+				  const VectorD3 corner2_3,
+				  const VectorD3 corner2_4);
+  
+
+ 
 
 /*
   const int findClosestPoint(const VectorT3 point, Octree& O);
