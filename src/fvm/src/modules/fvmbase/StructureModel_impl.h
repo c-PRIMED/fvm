@@ -369,6 +369,20 @@ public:
 
 		}
 	    }
+            else if (bc.bcType == "SpecifiedDistForce")
+	    {
+                FloatValEvaluator<VectorT3>
+                  bDistForce(bc.getVal("specifiedXDistForce"),
+			     bc.getVal("specifiedYDistForce"),
+			     bc.getVal("specifiedZDistForce"),
+			     faces);
+                for(int f=0; f<nFaces; f++)
+		{
+		    
+                    gbc.applyNeumannBC(f,bDistForce[f]);
+
+		}
+	    }
             else
               throw CException(bc.bcType + " not implemented for StructureModel");
         }

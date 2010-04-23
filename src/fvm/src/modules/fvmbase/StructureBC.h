@@ -23,6 +23,9 @@ struct StructureBC : public FloatVarDict<T>
       this->defineVar("specifiedXForce",T(0.0));
       this->defineVar("specifiedYForce",T(0.0));
       this->defineVar("specifiedZForce",T(0.0));
+      this->defineVar("specifiedXDistForce",T(0.0));
+      this->defineVar("specifiedYDistForce",T(0.0));
+      this->defineVar("specifiedZDistForce",T(0.0));
   }
   string bcType;
 };
