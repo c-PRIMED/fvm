@@ -80,7 +80,7 @@ class KineticModel : public Model
     }
   
   
-  
+ 
   void InitializeMacroparameters()
   {  const int numMeshes =_meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -399,7 +399,7 @@ return _vcMap;
       {
 	const int N123 =_quadrature.getDirCount();
 
-	
+	MFRPtr rNorm;
 	for(int direction=0; direction<N123;direction++)
 	  {
 	    LinearSystem ls;
@@ -407,13 +407,19 @@ return _vcMap;
 	    ls.initAssembly();
 	    linearizeKineticModel(ls,direction);
 	    ls.initSolve();
-	
-	    MFRPtr rNorm(_options.getKineticLinearSolver().solve(ls));
+	    
+	    
+	    MFRPtr iNorm(_options.getKineticLinearSolver().solve(ls));
+	    //if (rNorm)
+	    //  *rNorm += *iNorm;
+	    //else
+	    //  rNorm = iNorm;
 	     ls.postSolve();
 	     ls.updateSolution();
 	  }
-	//_macroFields.
-	//_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
+	
+	ComputeMacroparameters();
+	_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
 	  	/*
 	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm; 
 	MFRPtr normRatio((*rNorm)/(*_initialKModelNorm));

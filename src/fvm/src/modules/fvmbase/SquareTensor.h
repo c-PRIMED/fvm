@@ -383,8 +383,7 @@ inverse(const SquareTensor<T,3>& a)
 /*
 template<class T>
 SquareTensor<T,10>
-  ludcmp(const SquareTensor<T,10>a, Vector<T,10> indx, double d){
-  const int n(10);
+  ludcmp(const SquareTensor<T,10>a, int n, Vector<T,10> indx, double d){
   const int NMAX(500);
   const double TINY(1.0e-20);
   int i,imax,j,k;
@@ -440,8 +439,39 @@ SquareTensor<T,10>
   
   
 }
-*/
 
+
+void lubksb(const SquareTensor<T,10>a, int n, Array<T,10> indx, Array<T,10> b)
+{
+  Array<Int>& indx;
+  REAL a(n,n),b(n);
+  int i,ii,j,ll;
+  double sum;
+  ii=0;
+  for(i=0;i<n;i++){
+    ll=indx(i);
+    sum=b(ll);
+    b(ll)=b(i);
+    if (ii.ne.0){
+      for(j=ii;j<i;j++){
+	sum=sum-a(i,j)*b(j);
+      }
+    }
+    else if (sum ~= 0.){ 
+      ii=i;    //A nonzero element was encountered, so from now on we will
+    }          //to do the sums in the loop above.
+    b(i)=sum;
+  }
+  for( i=n-1;i>=0;i--)
+    {//backsubstitution, equation (2.3.7).
+    sum=b(i);
+    for(j=i+1;j<n;j++){
+      sum=sum-a(i,j)*b(j);
+    }
+    b(i)=sum/a(i,i); //Store a component of the solution vector X.
+  }
+}
+*/
   
 #endif
 

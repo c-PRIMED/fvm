@@ -107,9 +107,17 @@ macroFields=esbgk.MacroFields('flow')
 esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
 
 #dsff=esbgk.DistFunctFields(
-macroFields0=esbgk.MacroFields('flow')
-#esbgk.KineticModelD.InitializeMacroparameters(meshes,macroFields0,quad0)
-#esbgk.init()
+#esbgk.KineticModelD.InitializeMacroparameters()
+esbgk1.InitializeMacroparameters()
+esbgk1.advance(1)
+
+#numIterations=1
+#def advance(niter):
+#    for i in range(0,niter):
+#        esbgk1.advance(1)
+#       
+#advance(numIterations)        
+
 
 cellSite = meshes[0].getCells()
 velField = flowFields.velocity[ cellSite ].asNumPyArray() 
@@ -117,5 +125,5 @@ velField = flowFields.velocity[ cellSite ].asNumPyArray()
 
 #import debug
 #fmodel.advance(100)
-tecplotESBGK.esbgkTecplotFile(meshes,macroFields0)
-tecplot.dumpTecplotFile(1,meshes,macroFields0)
+tecplotESBGK.esbgkTecplotFile(meshes,macroFields)
+tecplot.dumpTecplotFile(1,meshes,macroFields)

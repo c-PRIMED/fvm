@@ -16,8 +16,6 @@ using namespace std;
 %import "LinearSolver.i"
 %import "Vector.i"
 
-
-
 %include "Quadrature.i"
 %include "MacroFields.h"
 %include "KineticModel.i"
