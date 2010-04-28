@@ -45,6 +45,9 @@ class Quadrature
    */ 
   TArray* dcxyzPtr; 
   int getDirCount() const {return N123;}
+  int getNVCount()const {return _NV;}
+   int getNthetaCount()const {return _Ntheta;}
+ int getNphiCount()const {return _Nphi;}
    // bool printCx;
   /**
    * cartesian-type member taking in 5 argumetns
@@ -73,7 +76,7 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
        * total number of velocity directions.
        */
       N123=N1*N2*N3;
-    
+      _NV=N1;_Ntheta=N2;_Nphi=N3;
 
 
       cxPtr= new TArray(N123); cyPtr= new TArray(N123); czPtr= new TArray(N123);
@@ -113,9 +116,9 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
      
       int j;
       j=0;
-      for(int j3=0;j3<N3;j3++){
+      for(int j1=0;j1<N1;j1++){
 	for (int j2=0;j2<N2;j2++){
-	  for (int j1=0;j1<N1;j1++){
+	  for (int j3=0;j3<N3;j3++){
 	    cx[j]=absci1[j1];	
 	    cy[j]=absci2[j2];
 	    cz[j]=absci3[j3];
@@ -157,6 +160,7 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       if(option_phi ==0){
 	N3=nphi_int;}
       else{N3=3*nphi_int+1;}
+      _NV=N1;_Ntheta=N2;_Nphi=N3;
       absci1Ptr=new TArray(N1);
       TArray & absci1= *absci1Ptr;
       absci2Ptr=new TArray(N2);
@@ -305,7 +309,7 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	  double pi=3.14159;
 	  double dh3=pi/(N3-1); //number of intervals < number of ordinates
 	  for (int j3=0;j3<N3;j3++){
-	    absci3[j3]= dh3*j3;
+	    absci3[j3]= dh3*(j3);
 	    wts3[j3]=dh3*sin(absci3[j3]);
 	  }
 	}break;
@@ -363,6 +367,9 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
   TArray* wts2Ptr; 
   TArray* wts3Ptr;
   int N123;
+  int _NV;
+  int _Ntheta;
+  int _Nphi;
 };
 
 

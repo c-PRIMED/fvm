@@ -1,6 +1,6 @@
 import string
 
-def esbgkTecplotFile(meshes, macroFields ):
+def esbgkTecplotFile(meshes, macroFields,filename ):
   #cell sites
   cellSites = []
   n=0
@@ -45,8 +45,8 @@ def esbgkTecplotFile(meshes, macroFields ):
   coords.append( meshes[n].getNodeCoordinates().asNumPyArray() )
      
      
-  file_name = "quadrature" + ".plt"
-  f = open(file_name, 'w')
+  #filename = "quadrature" + ".plt"
+  f = open(filename, 'w')
 
   f.write("Title = \" tecplot out file\" \n")
   f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\n")

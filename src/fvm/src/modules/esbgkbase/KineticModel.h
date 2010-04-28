@@ -53,7 +53,7 @@ class KineticModel : public Model
   //KineticModel(const MeshList& meshes, FlowFields& ffields, const Quadrature<T>& quad):
   
   Model(meshes),
-    _meshes(meshes), 
+   
     _geomFields(geomFields),
     _quadrature(quad),
     _macroFields(macroFields),
@@ -77,6 +77,9 @@ class KineticModel : public Model
       //ComputeMacroparameters(_meshes,ffields,_quadrature,_dsfPtr);
       ComputeMacroparameters(); //calculate density,velocity,temperature
       ComputeCollisionfrequency(); //calculate viscosity, collisionFrequency
+      // char * filename="f0.plt";
+      //OutputCxyz();
+      //x();
     }
   
   
@@ -208,6 +211,63 @@ class KineticModel : public Model
       }
   }
   
+  void initializeMaxwellianEq()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getSelfCount();
+	double pi(3.14159);
+	
+	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
+	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
+	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
+	
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const int numFields= _quadrature.getDirCount(); 
+	
+	for(int j=0;j< numFields;j++){
+	  Field& fnd = *_dsfEqPtr.dsf[j];
+	  TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	  for(int c=0; c<nCells;c++){
+	    f[c]=density[c]/pow((pi*temperature[c]),1.5)*
+	      exp(-(pow((cx[j]-v[c][0]),2.0)+pow((cy[j]-v[c][1]),2.0)+
+		    pow((cz[j]-v[c][2]),2.0))/temperature[c]);
+	  } 
+	  
+	}
+      }
+  }
+
+  void weightedMaxwellian(double weight1,double vel1,double vel2)
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getSelfCount();
+	double pi(3.14159);
+	
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const int numFields= _quadrature.getDirCount(); 
+	
+	for(int j=0;j< numFields;j++){
+	  Field& fnd = *_dsfPtr.dsf[j];
+	  TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	  for(int c=0; c<nCells;c++){
+	    f[c]=weight1*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-vel1),2.0)+pow((cy[j]-0.0),2.0)+pow((cz[j]-0.0),2.0))/1.0)
+	      +(1-weight1)*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-vel2),2.0)+pow((cy[j]-0.0),2.0)+pow((cz[j]-0.0),2.0))/1.0);
+	  }
+	}
+      }
+  }
   
   FlowBCMap& getBCMap() 
     {
@@ -419,7 +479,9 @@ return _vcMap;
 	  }
 	
 	ComputeMacroparameters();
-	_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
+	ComputeCollisionfrequency();	
+	//	_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
+	initializeMaxwellianEq();
 	  	/*
 	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm; 
 	MFRPtr normRatio((*rNorm)/(*_initialKModelNorm));
@@ -434,12 +496,78 @@ return _vcMap;
 	*/	    
 	  
       }
+    //char * filename="f.txt";
+    //itoa(n,filename,10);
+    //_dsfPtr.OutputDsf(_dsfPtr,filename);
   }
   
+void OutputDsfBLOCK() //, const char* filename)
+  {
+    FILE * pFile;
+    pFile = fopen("f0.txt","w"); 
+    int N1=_quadrature.getNVCount();
+    int N2=_quadrature.getNthetaCount();
+    int N3=_quadrature.getNphiCount();
+    fprintf(pFile,"%s \n", "VARIABLES= 'cx', 'cy', 'cz', 'f','fgam',");
+    fprintf(pFile, "%s %i %s %i %s %i %s \n","ZONE I=", N3,",J=",N2,"K=",N1,
+    	    ",F=BLOCK, VARLOCATION=(NODAL,NODAL,NODAL,NODAL,NODAL)");
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++){
+      const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+      const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+      const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+      const int numFields= _quadrature.getDirCount(); 	
+      for(int j=0;j< numFields;j++){fprintf(pFile,"%E \n",cx[j]);}
+      for(int j=0;j< numFields;j++){fprintf(pFile,"%E \n",cy[j]);}
+      for(int j=0;j< numFields;j++){fprintf(pFile,"%E \n",cz[j]);}
+      
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& cells = mesh.getCells();
+      for(int j=0;j< numFields;j++){
+	Field& fnd = *_dsfPtr.dsf[j];
+	TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	fprintf(pFile,"%E\n",f[0]);
+      } 
+      for(int j=0;j< numFields;j++){
+	Field& fEqnd = *_dsfEqPtr.dsf[j];
+	TArray& fEq = dynamic_cast< TArray&>(fEqnd[cells]);
+	fprintf(pFile,"%E\n",fEq[0]);
+      }
+    }
+  }
+ void OutputDsfPOINT() //, const char* filename)
+  {
+    FILE * pFile;
+    pFile = fopen("cxyz0.plt","w");  
+    int N1=_quadrature.getNVCount();
+    int N2=_quadrature.getNthetaCount();
+    int N3=_quadrature.getNphiCount();
+    fprintf(pFile,"%s \n", "VARIABLES= 'cx', 'cy', 'cz', 'f',");
+    fprintf(pFile, "%s %i %s %i %s %i \n","ZONE I=", N3,",J=",N2,"K=",N1);
+    fprintf(pFile,"%s\n","F=POINT");
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++){
+      const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+      const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+      const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+      const int numFields= _quadrature.getDirCount(); 	
+      
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& cells = mesh.getCells();
+      for(int j=0;j< numFields;j++){
+	Field& fnd = *_dsfPtr.dsf[j];
+	TArray& f = dynamic_cast< TArray&>(fnd[cells]);	
+	Field& fEqnd = *_dsfEqPtr.dsf[j];
+	TArray& fEq = dynamic_cast< TArray&>(fEqnd[cells]);
+	fprintf(pFile,"%E %E %E %E %E\n",cx[j],cy[j],cz[j],f[0],fEq[0]);
+      }
+    }
+  }
+
   
  private:
   //shared_ptr<Impl> _impl;
-  const MeshList& _meshes;
+ // const MeshList& _meshes;
   const GeomFields& _geomFields;
   const Quadrature<T>& _quadrature;
  

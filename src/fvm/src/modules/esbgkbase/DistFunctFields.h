@@ -47,13 +47,13 @@ class DistFunctFields
   
  DistFunctFields(const MeshList& meshes,const MacroFields& macroPr, const Quadrature<T>& quad):
   _meshes(meshes),
-    _quad(quad) 
+    _quadrature(quad) 
     {
       /**
        * integer N123
        * total number of velocity directions.
        */
-      const int numFields = _quad.getDirCount();
+      const int numFields = _quadrature.getDirCount();
       for(int n=0; n<numFields; n++)
 	{
 	  stringstream ss;
@@ -74,9 +74,9 @@ class DistFunctFields
 	  const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(macroPr.velocity[cells]);
 	  
 	  
-	  const TArray& cx = dynamic_cast<const TArray&>(*_quad.cxPtr);
-	  const TArray& cy = dynamic_cast<const TArray&>(*_quad.cyPtr);
-	  const TArray& cz = dynamic_cast<const TArray&>(*_quad.czPtr);
+	  const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	  const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	  const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
 	  
 	  /*
 	    TArray* distfunAPtr;   
@@ -105,7 +105,7 @@ class DistFunctFields
   
  DistFunctFields(const MeshList& meshes, const Quadrature<T>& quad):
   _meshes(meshes),
-    _quad(quad)
+    _quadrature(quad)
     {
       FILE * pFile;
       pFile=fopen("distfun.txt","w");
@@ -113,7 +113,7 @@ class DistFunctFields
        * integer N123
        * total number of velocity directions.
        */
-      const int numFields = _quad.getDirCount(); 
+      const int numFields = _quadrature.getDirCount(); 
       for(int j=0; j<numFields; j++)
 	{
 	  stringstream ss;
@@ -129,10 +129,10 @@ class DistFunctFields
 	  const int nCells = cells.getSelfCount();
 	  double pi(3.14159);
 	  
-	  const TArray& cx = dynamic_cast<const TArray&>(*_quad.cxPtr);
-	  const TArray& cy = dynamic_cast<const TArray&>(*_quad.cyPtr);
-	  const TArray& cz = dynamic_cast<const TArray&>(*_quad.czPtr);
-	  const TArray& dcxyz = dynamic_cast<const TArray&>(*_quad.dcxyzPtr);
+	  const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	  const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	  const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	  const TArray& dcxyz = dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
 	  for(int j=0;j<numFields;j++){
 	    Field& fnd= *dsf[j]; 
 	    shared_ptr<TArray> fcPtr(new TArray(nCells));
@@ -152,29 +152,7 @@ class DistFunctFields
 	}
     }
 
-  /* 
- void init()
-  { std::vector<Field*> dsf(new std::vector<Field*>(_quad.getDirCount()));
-    for(int j=0;j<N123;j++){
-      // Field& fnd;
-      const int numMeshes = _meshes.size();
-      for (int n=0; n<numMeshes; n++)
-	{
-	  const Mesh& mesh = *_meshes[n];
-	  FlowVC<T> *vc(new FlowVC<T>());
-	  vc->vcType = "flow";
-	  _vcMap[mesh.getID()] = vc;
-	  const FlowVC<T>& vc = *_vcMap[mesh.getID()];
-	  
-	  const StorageSite& cells = mesh.getCells();
-	  const StorageSite& faces = mesh.getFaces();
-	  shared_ptr<TArray> rhoCell(new TArray(cells.getCount()));
-	  *rhoCell = vc["density"];
-	  _macroFields.density.addArray(cells,rhoCell);
-	}
-    }
-  }
-  */
+
   void initializeMaxwellian(const MacroFields& macroPr, DistFunctFields<T>& dsfPtr)
   {
     const int numMeshes = _meshes.size();
@@ -189,10 +167,10 @@ class DistFunctFields
 	const TArray& temperature = dynamic_cast<const TArray&>(macroPr.temperature[cells]);
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(macroPr.velocity[cells]);
 	
-	const TArray& cx = dynamic_cast<const TArray&>(*_quad.cxPtr);
-	const TArray& cy = dynamic_cast<const TArray&>(*_quad.cyPtr);
-	const TArray& cz = dynamic_cast<const TArray&>(*_quad.czPtr);
-	const int numFields= _quad.getDirCount(); 
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const int numFields= _quadrature.getDirCount(); 
 	
 	for(int j=0;j< numFields;j++){
 	  Field& fnd = *dsfPtr.dsf[j];
@@ -206,13 +184,65 @@ class DistFunctFields
 	}
       }
   }
+  void weightedMaxwellian(DistFunctFields<T>& dsfPtr)
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getSelfCount();
+	double pi(3.14159);
+	
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const int numFields= _quadrature.getDirCount(); 
+	
+	for(int j=0;j< numFields;j++){
+	  Field& fnd = *dsfPtr.dsf[j];
+	  TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	  for(int c=0; c<nCells;c++){
+	    f[c]=0.5*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-4.0),2.0)+pow((cy[j]-0.0),2.0)+pow((cz[j]-0.0),2.0))/1.0)
+	      +0.5*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-4.0),2.0)+pow((cy[j]-0.0),2.0)+pow((cz[j]-0.0),2.0))/1.0);
+	  }
+	}
+      }
+  }
   
+  void OutputDistributionFunction(DistFunctFields<T>& dsfPtr) //, const char* filename)
+  {
+    FILE * pFile;
+    pFile = fopen("outputf0.plt","w");  
+    int N1=_quadrature.getNVCount();
+    int N2=_quadrature.getNthetaCount();
+    int N3=_quadrature.getNphiCount();
+    fprintf(pFile,"%s \n", "VARIABLES= 'cx', 'cy', 'cz', 'f',");
+    fprintf(pFile, "%s %i %s %i %s %i \n","ZONE I=", N3,",J=",N2,"K=",N1);
+    fprintf(pFile,"%s\n","F=POINT");
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++){
+      const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+      const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+      const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+      const int numFields= _quadrature.getDirCount(); 	
+      
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& cells = mesh.getCells();
+      for(int j=0;j< numFields;j++){
+	Field& fnd = *dsfPtr.dsf[j];
+	TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	fprintf(pFile,"%E %E %E %E\n",cx[j],cy[j],cz[j],f[0]);
+      }
+    }
+  }
+
   
   
   
  private:
   const MeshList _meshes;
-  const Quadrature<T> _quad;
+  const Quadrature<T> _quadrature;
   //FlowBCMap _bcMap;
   //FlowVCMap _vcMap;
 };
