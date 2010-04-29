@@ -38,6 +38,7 @@ struct FluentCellZone : public FluentZone
 
   Mesh *mesh;
   GhostCellMapsMap ghostCellMaps;
+  shared_ptr<Array<int> > globalToLocalNodeMap;
 };
 
 struct FluentFacePairs
@@ -123,6 +124,9 @@ protected:
 
   shared_ptr<OneToOneIndexMap>
   getGhostCellMap(const FluentCellZone& cz, const Array<int>& indices);
+
+  shared_ptr<OneToOneIndexMap>
+  getCommonNodeMap(const FluentCellZone& cz0, const FluentCellZone& cz1);
 
   Mesh* createMesh(const int cellZoneID);
 

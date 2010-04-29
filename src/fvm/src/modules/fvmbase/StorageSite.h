@@ -15,9 +15,9 @@ class StorageSite
 public:
 
 
-  typedef map<const StorageSite*, shared_ptr<OneToOneIndexMap> > MappersMap;
   typedef map<  const StorageSite*, shared_ptr< Array<int> >  > ScatterMap;
   typedef map<  const StorageSite*, shared_ptr< Array<int> >  > GatherMap;
+  typedef map<  const StorageSite*, shared_ptr< Array<int> >  > CommonMap;
 
   StorageSite(const int selfCount, const int nGhost=0,
               const int offset=0, const StorageSite* parent=0);
@@ -38,13 +38,14 @@ public:
   void setGatherProcID(  int proc_id ) { _gatherProcID  = proc_id; }
   void setTag( int tag) { _tag = tag;}
 
-  const MappersMap& getMappers() const {throw;}
-  MappersMap& getMappers() {throw;}
 
   const ScatterMap&  getScatterMap() const  { return _scatterMap;}
   const  GatherMap&   getGatherMap() const  { return  _gatherMap;}
+  const CommonMap &  getCommonMap () const { return _commonMap; }
+
   ScatterMap&  getScatterMap()  { return _scatterMap;}
   GatherMap &  getGatherMap ()  { return _gatherMap; }
+  CommonMap &  getCommonMap ()  { return _commonMap; }
 
 
   int getScatterProcID() const { return _scatterProcID;}
@@ -54,7 +55,6 @@ public:
   const StorageSite* const getParent() const {return _parent;}
   int getOffset() const {return _offset;}
 
-  //void  scatterGatherMaps( );
 
 private:
   StorageSite(const StorageSite&);
@@ -62,10 +62,11 @@ private:
   int _selfCount;
   const int _offset;
   const StorageSite* const _parent;
-  //MappersMap _mappers;
+
   ScatterMap         _scatterMap;
   GatherMap          _gatherMap;
-
+  CommonMap          _commonMap;
+  
   int   _scatterProcID;
   int   _gatherProcID;
   int   _tag;

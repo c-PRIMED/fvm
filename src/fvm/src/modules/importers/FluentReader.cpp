@@ -784,11 +784,14 @@ FluentReader::createMesh(const int cellZoneID)
 
   const int nTotalCells = numMeshCells+numGhostCells+numBoundaryCells;
   Array<int> allCellList(nTotalCells);
+  Array<int> interiorCellList(numMeshCells);
   
   int nc=0;
   for(int i=cz.iBeg; i<=cz.iEnd; i++)
   {
       allCellList[nc]=i;
+      interiorCellList[nc]=i;
+      
       globalToLocalCellMap[i]=nc++;
   }
   
@@ -811,7 +814,7 @@ FluentReader::createMesh(const int cellZoneID)
   shared_ptr<CRConnectivity>
     czAllCellNodes(getCellNodes().getLocalizedSubset(mesh->getCells(),
                                                      tempNodesSite,
-                                                     allCellList));
+                                                     interiorCellList));
   shared_ptr<Array<Vec3> > coords =
     _coords.getSubset(czAllCellNodes->getLocalToGlobalMap());
 
@@ -827,7 +830,8 @@ FluentReader::createMesh(const int cellZoneID)
   mesh->setFaceCells(mFaceCells);
   
   cz.mesh = mesh;
-
+  cz.globalToLocalNodeMap = czAllCellNodes->getGlobalToLocalMapPtr();
+  
   foreach(const CellZonesMap::value_type& pos, _cellZones)
   {
       const FluentCellZone& ocz = *(pos.second);
@@ -858,6 +862,9 @@ FluentReader::getMeshList()
       const FluentCellZone& cz = *(pos.second);
       Mesh *mesh = cz.mesh;
       StorageSite& thisSite = mesh->getCells();
+
+      StorageSite& thisNodes = mesh->getNodes();
+      
       foreach(const GhostCellMapsMap::value_type& pos2, cz.ghostCellMaps)
       {
           const FluentCellZone& ocz = *_cellZones[pos2.first];
@@ -866,6 +873,14 @@ FluentReader::getMeshList()
           StorageSite& oSite = omesh->getCells();
           thisSite.getGatherMap()[&oSite] = mappers->_toIndices;
           oSite.getScatterMap()[&thisSite] = mappers->_fromIndices;
+
+          StorageSite& oNodes = omesh->getNodes();
+
+          shared_ptr<OneToOneIndexMap> nodeMap = getCommonNodeMap(cz,ocz);
+          if (nodeMap)
+          {
+              thisNodes.getCommonMap()[&oNodes] = nodeMap->_toIndices;
+          }
       }
   }
   return meshes;
@@ -901,6 +916,50 @@ FluentReader::getGhostCellMap(const FluentCellZone& cz, const Array<int>& indice
           to[thisZoneCells] = ii;
           from[thisZoneCells] = c-iBeg;
           thisZoneCells++;
+      }
+  }
+
+  shared_ptr<OneToOneIndexMap> imap(new OneToOneIndexMap(fromPtr,toPtr));
+  return imap;
+}
+
+shared_ptr<OneToOneIndexMap>
+FluentReader::getCommonNodeMap(const FluentCellZone& cz0, const FluentCellZone& cz1)
+{
+  const Array<int>& gToLocal0 = *(cz0.globalToLocalNodeMap);
+  const Array<int>& gToLocal1 = *(cz1.globalToLocalNodeMap);
+
+  int nCommon=0;
+
+  const int nNodes = gToLocal0.getLength();
+
+  for(int n=0; n<nNodes; n++)
+  {
+      const int l0 = gToLocal0[n];
+      const int l1 = gToLocal1[n];
+      if ((l0  != -1) && (l1 != -1))
+        nCommon++;
+  }
+  
+
+  if (nCommon == 0) return shared_ptr<OneToOneIndexMap>();
+  
+  shared_ptr<Array<int> >fromPtr(new Array<int>(nCommon));
+  shared_ptr<Array<int> >toPtr(new Array<int>(nCommon));
+
+  Array<int>& from = *fromPtr;
+  Array<int>& to = *toPtr;
+
+  nCommon = 0;
+  for(int n=0; n<nNodes; n++)
+  {
+      const int l0 = gToLocal0[n];
+      const int l1 = gToLocal1[n];
+      if ((l0  != -1) && (l1 != -1))
+      {
+          to[nCommon] = l0;
+          from[nCommon] = l1;
+          nCommon++;
       }
   }
 
