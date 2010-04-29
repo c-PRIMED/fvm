@@ -256,21 +256,16 @@ public:
           _structureFields.deformationGradient));
             
     shared_ptr<Discretization>
-      sd(new StructureSourceDiscretization<T>
+      sd(new StructureSourceDiscretization<T,DiagTensorT3,DiagTensorT3>
          (_meshes,_geomFields,
           _structureFields.deformation,
           _structureFields.eta,
 	  _structureFields.eta1,
           _structureFields.deformationGradient));
       
-    shared_ptr<Discretization>
-      ud(new Underrelaxer<VectorT3,DiagTensorT3,DiagTensorT3>
-         (_meshes,_structureFields.deformation,
-          _options["deformationURF"]));
-    
-    discretizations.push_back(dd);
+    //    discretizations.push_back(dd);
     discretizations.push_back(sd);
-    //    discretizations.push_back(ud);
+
     /*    
     if (_options.transient)
     {
@@ -413,11 +408,23 @@ public:
 	  (_structureFields.deformation[cells]);
 	VVMatrix& vvMatrix =
 	  dynamic_cast<VVMatrix&>(matrix.getMatrix(wIndex,wIndex));
-	rCell[0] = 0;
-        w[0] = 0;
+	rCell[0] = T(0);
+        w[0] = T(0);
         vvMatrix.setDirichlet(0);
     }
+
+    shared_ptr<Discretization>
+      ud(new Underrelaxer<VectorT3,DiagTensorT3,DiagTensorT3>
+         (_meshes,_structureFields.deformation,
+          _options["deformationURF"]));
     
+    DiscrList discretizations2;
+    discretizations2.push_back(ud);
+
+    linearizer.linearize(discretizations2,_meshes,ls.getMatrix(),
+                         ls.getX(), ls.getB());
+
+
   }
 
 
@@ -461,7 +468,7 @@ public:
 	const int nCells = cells.getCount();
 	for(int c=0;c<nCells;c++)
 	{
-	    w[c] += deformationURF*ww[c];
+	    w[c] += ww[c];
 	}
     }
   }
