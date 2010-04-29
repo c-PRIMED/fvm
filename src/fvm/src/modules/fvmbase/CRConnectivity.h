@@ -152,6 +152,9 @@ public:
   const Array<int>& getGlobalToLocalMap() const {return *_globalToLocalMap;}
   const Array<int>& getLocalToGlobalMap() const {return *_localToGlobalMap;}
   
+  shared_ptr<Array<int> > getGlobalToLocalMapPtr() {return _globalToLocalMap;}
+  shared_ptr<Array<int> > getLocalToGlobalMapPtr() {return _localToGlobalMap;}
+
   const PairToColMapping&
   getPairToColMapping(const CRConnectivity& pairs) const;
   
