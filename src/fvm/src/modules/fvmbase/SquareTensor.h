@@ -77,7 +77,7 @@ public:
   {
     for(int i=0; i<N; i++)
       for(int j=0; j<N; j++)
-        (*this)(i,i) = (i==j) ? s : 0;
+        (*this)(i,i) = (i==j) ? s : T(0.);
     return *this;
   }
   
@@ -194,7 +194,7 @@ public:
 
   static SquareTensor getNegativeUnity()
   {
-    SquareTensor n(0);
+    SquareTensor n(getZero());
     for(int i=0; i<N; i++)
       n(i,i) = NumTypeTraits<T>::getNegativeUnity();
     
@@ -203,7 +203,7 @@ public:
 
   static SquareTensor getUnity()
   {
-    SquareTensor n(0);
+    SquareTensor n(getZero());
     for(int i=0; i<N; i++)
       n(i,i) = NumTypeTraits<T>::getUnity();
     

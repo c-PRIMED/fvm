@@ -599,12 +599,15 @@ ThermalModel<T>::computeIBFaceTemperature(const StorageSite& particles)
   _impl->computeIBFaceTemperature(particles);
 }
 
+#if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
+
 template<class T>
 void
 ThermalModel<T>::dumpMatrix(const string fileBase)
 {
   _impl->dumpMatrix(fileBase);
 }
+#endif
 
 template<class T>
 T
