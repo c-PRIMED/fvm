@@ -320,10 +320,9 @@ def write_env(bld, cwd, cname):
     # write out env.csh for people who haven't yet learned bash
     env_name = os.path.join(cwd, 'env.csh')
     f = open(env_name, 'w')
-    modules = config('Testing', 'modules')
-    if modules:
-        for m in modules.split():
-            f.write('module load %s\n' % m)
+    for cmd in config('ALL', 'before'):    
+        f.write('%s\n' % cmd)
+        
     print >> f, "setenv LD_LIBRARY_PATH " + bld.libdir + ":$LD_LIBRARY_PATH"
     try:
         if os.environ['PYTHONPATH']:
@@ -338,11 +337,9 @@ def write_env(bld, cwd, cname):
     # write out env.sh
     env_name = os.path.join(cwd, 'env.sh')
     f = open(env_name, 'w')
-    modules = config('Testing', 'modules')
-    if modules:
-        for m in modules.split():
-            f.write('module load %s\n' % m)
-
+    for cmd in config('ALL', 'before'):    
+        f.write('%s\n' % cmd)
+    
     print >> f, "export LD_LIBRARY_PATH=" + bld.libdir + ":$LD_LIBRARY_PATH"
     try:
         if os.environ['PYTHONPATH']:
