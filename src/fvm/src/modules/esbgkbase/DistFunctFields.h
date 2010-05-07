@@ -126,7 +126,7 @@ class DistFunctFields
 	{
 	  const Mesh& mesh = *_meshes[n];
 	  const StorageSite& cells = mesh.getCells();
-	  const int nCells = cells.getSelfCount();
+	  const int nCells = cells.getCount();
 	  double pi(3.14159);
 	  
 	  const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
@@ -143,7 +143,7 @@ class DistFunctFields
 	    //TArray& fc = *fcPtr;
 	    
 	    for(int c=0; c<nCells;c++){
-	      fc[c]=1./pow(pi*1.0,1.5)*exp(-(pow((cx[j]-1.0),2.0)+pow((cy[j]-0.5),2.0)+					       pow((cz[j]-0.),2.0))/1.0);
+	      fc[c]=1./pow(pi*1.0,1.5)*exp(-(pow((cx[j]-1.0),2.0)+pow((cy[j]-0.0),2.0)+					       pow((cz[j]-0.0),2.0))/1.0);
 	
 	      } 
 	    fprintf(pFile,"%12.6f %12.6f %12.6f %12.6f %E \n",cx[j],cy[j],cz[j],dcxyz[j],fc[0]);

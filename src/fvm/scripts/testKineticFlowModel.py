@@ -104,6 +104,7 @@ quad1=esbgk.QuadratureD(2,2,0,12,0,5) #spherical
 quad2=esbgk.QuadratureD(16,16,1,8,1,4) #gauss-hermit quadrature and 3/8th rule
 
 macroFields=esbgk.MacroFields('flow')
+
 esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
 
 #esbgk.KineticModelD.OutputDsfPOINT(esbgk1)
@@ -112,15 +113,18 @@ esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
 # initialize macroparameters to different values
 #esbgk1.InitializeMacroparameters()
 
+#import ddd
+
 esbgk1.weightedMaxwellian(0.25,4.0,1.0) #initial distribution
+#esbgk1.OutputDsfBLOCK()
 esbgk1.ComputeMacroparameters() 
 
-esbgk1.initializeMaxwellianEq() #equilibrium dist function
+#esbgk1.initializeMaxwellianEq() #equilibrium dist function
 
 #esbgk1.dsfPtr.OutputDistributionFunction(dsfPtr)
 
 esbgk1.advance(1)
-
+esbgk1.OutputDsfBLOCK()
 #numIterations=1
 #def advance(niter):
 #    for i in range(0,niter):
@@ -128,7 +132,7 @@ esbgk1.advance(1)
 #       
 #advance(numIterations)        
 
-
+"""
 cellSite = meshes[0].getCells()
 velField = macroFields.velocity[ cellSite ].asNumPyArray() 
 print  macroFields.velocity[ cellSite ].asNumPyArray()
@@ -139,4 +143,4 @@ print  macroFields.density[ cellSite ].asNumPyArray()
 filename="macro1.plt"
 tecplotESBGK.esbgkTecplotFile(meshes,macroFields,filename)
 #tecplot.dumpTecplotFile(1,meshes,macroFields)
-
+"""

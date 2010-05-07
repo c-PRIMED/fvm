@@ -21,7 +21,6 @@
 #include "CollisionTermDiscretization.h"
 
 #include "Linearizer.h"
-
 #include "CRConnectivity.h"
 #include "LinearSystem.h"
 #include "MultiFieldMatrix.h"
@@ -74,12 +73,13 @@ class KineticModel : public Model
 	}
       init(); 
       SetBoundaryConditions();
-      //ComputeMacroparameters(_meshes,ffields,_quadrature,_dsfPtr);
+      weightedMaxwellian(0.25,4.0,1.0);
+
       ComputeMacroparameters(); //calculate density,velocity,temperature
       ComputeCollisionfrequency(); //calculate viscosity, collisionFrequency
-      // char * filename="f0.plt";
-      //OutputCxyz();
-      //x();
+      initializeMaxwellianEq();
+	// char * filename="f0.plt";
+	//advance(1);
     }
   
   
@@ -90,7 +90,7 @@ class KineticModel : public Model
       {
         const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount(); 
+	const int nCells = cells.getCount(); 
 	
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);  
 	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
@@ -120,7 +120,7 @@ class KineticModel : public Model
 	
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	
 	
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
@@ -196,7 +196,7 @@ class KineticModel : public Model
 	double mu0=rho_init*R*T_init*nondim_length/pow(2*R*T_init,0.5);  
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
 	TArray& viscosity = dynamic_cast<TArray&>(_macroFields.viscosity[cells]);
@@ -218,7 +218,7 @@ class KineticModel : public Model
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	double pi(3.14159);
 	
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
@@ -250,7 +250,7 @@ class KineticModel : public Model
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	double pi(3.14159);
 	
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
@@ -476,12 +476,13 @@ return _vcMap;
 	    //  rNorm = iNorm;
 	     ls.postSolve();
 	     ls.updateSolution();
+	     _options.getKineticLinearSolver().cleanup();
 	  }
 	
 	ComputeMacroparameters();
-	ComputeCollisionfrequency();	
+		ComputeCollisionfrequency();	
 	//	_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
-	initializeMaxwellianEq();
+	//	initializeMaxwellianEq();
 	  	/*
 	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm; 
 	MFRPtr normRatio((*rNorm)/(*_initialKModelNorm));
@@ -504,11 +505,11 @@ return _vcMap;
 void OutputDsfBLOCK() //, const char* filename)
   {
     FILE * pFile;
-    pFile = fopen("f0.txt","w"); 
+    pFile = fopen("f0BLOCK.plt","w"); 
     int N1=_quadrature.getNVCount();
     int N2=_quadrature.getNthetaCount();
     int N3=_quadrature.getNphiCount();
-    fprintf(pFile,"%s \n", "VARIABLES= 'cx', 'cy', 'cz', 'f','fgam',");
+    fprintf(pFile,"%s \n", "VARIABLES= cx, cy, cz, f,fEq,");
     fprintf(pFile, "%s %i %s %i %s %i %s \n","ZONE I=", N3,",J=",N2,"K=",N1,
     	    ",F=BLOCK, VARLOCATION=(NODAL,NODAL,NODAL,NODAL,NODAL)");
     const int numMeshes = _meshes.size();
@@ -542,7 +543,7 @@ void OutputDsfBLOCK() //, const char* filename)
     int N1=_quadrature.getNVCount();
     int N2=_quadrature.getNthetaCount();
     int N3=_quadrature.getNphiCount();
-    fprintf(pFile,"%s \n", "VARIABLES= 'cx', 'cy', 'cz', 'f',");
+    fprintf(pFile,"%s \n", "VARIABLES= cx, cy, cz, f,");
     fprintf(pFile, "%s %i %s %i %s %i \n","ZONE I=", N3,",J=",N2,"K=",N1);
     fprintf(pFile,"%s\n","F=POINT");
     const int numMeshes = _meshes.size();
@@ -567,7 +568,7 @@ void OutputDsfBLOCK() //, const char* filename)
   
  private:
   //shared_ptr<Impl> _impl;
- // const MeshList& _meshes;
+ 
   const GeomFields& _geomFields;
   const Quadrature<T>& _quadrature;
  
