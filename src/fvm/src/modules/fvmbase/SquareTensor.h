@@ -30,7 +30,7 @@ public:
   {
     for(int i=0; i<N; i++)
       for(int j=0; j<N; j++)
-        (*this)(i,i) = (i==j) ? s : 0;
+        (*this)(i,j) = (i==j) ? s : 0;
   }
   
   
@@ -50,11 +50,11 @@ public:
   }
   
   //  T& operator[](int n) {return _data[n];}
-  T& operator()(int i, int j) {return _data[j*N+i];}
+  T& operator()(int i, int j) {return _data[i*N+j];}
   
   //const T& operator[](int n) const {return _data[n];}
   
-  const T& operator()(int i, int j) const {return _data[j*N+i];}
+  const T& operator()(int i, int j) const {return _data[i*N+j];}
     
   void printFromC(ostream &os) const
   {
@@ -77,7 +77,7 @@ public:
   {
     for(int i=0; i<N; i++)
       for(int j=0; j<N; j++)
-        (*this)(i,i) = (i==j) ? s : T(0.);
+        (*this)(i,j) = (i==j) ? s : T(0.);
     return *this;
   }
   
