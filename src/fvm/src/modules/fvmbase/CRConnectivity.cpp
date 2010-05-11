@@ -94,6 +94,8 @@ CRConnectivity::getTranspose() const
 shared_ptr<CRConnectivity>
 CRConnectivity::multiply(const CRConnectivity& b, const bool implicitDiagonal) const
 {
+  const bool isSquared = (&b == this);
+  
   if (_colDim != b._rowDim)
     cerr << "invalid connectivity multiplication" << endl;
 
@@ -124,6 +126,18 @@ CRConnectivity::multiply(const CRConnectivity& b, const bool implicitDiagonal) c
       {
           const int ja = myCol[ir];
 
+          if (isSquared)
+          {
+              if (!marker[ja])
+              {
+                  marker[ja] = true;
+                  if (ja  != i || !implicitDiagonal)
+                    pr.addCount(i,1);
+                  marked[nMarked++] = ja;
+              }
+              
+          }
+          
           for (int rb = bRow[ja]; rb<bRow[ja+1];  rb++)
           {
               const int jb = bCol[rb];
@@ -151,7 +165,17 @@ CRConnectivity::multiply(const CRConnectivity& b, const bool implicitDiagonal) c
       for(int ir = myRow[i]; ir<myRow[i+1]; ir++)
       {
           const int ja = myCol[ir];
-
+          if (isSquared)
+          {
+              if (!marker[ja])
+              {
+                  marker[ja] = true;
+                  if (ja  != i || !implicitDiagonal)
+                    pr.add(i,ja);
+                  marked[nMarked++] = ja;
+              }
+          }
+          
           for (int rb = bRow[ja]; rb<bRow[ja+1];  rb++)
           {
               const int jb = bCol[rb];
