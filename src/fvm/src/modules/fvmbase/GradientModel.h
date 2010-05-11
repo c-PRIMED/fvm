@@ -31,9 +31,10 @@ public:
 
   typedef GradientMatrix<T_Scalar> GradMatrixType;
   typedef typename GradMatrixType::PairWiseAssembler GradientMatrixAssembler;
-    
+
+  static
   shared_ptr<GradMatrixType>
-  getLeastSquaresGradientMatrix3D(const Mesh& mesh) const
+  getLeastSquaresGradientMatrix3D(const Mesh& mesh, const GeomFields& geomFields)
   {
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getFaces();
@@ -51,13 +52,13 @@ public:
     VectorT3Array& coeffs = gM.getCoeffs();
     
     const VectorT3Array& cellCentroid =
-      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+      dynamic_cast<const VectorT3Array&>(geomFields.coordinate[cells]);
 
     const VectorT3Array& faceArea =
-      dynamic_cast<const VectorT3Array& >(_geomFields.area[faces]);
+      dynamic_cast<const VectorT3Array& >(geomFields.area[faces]);
 
     const TArray& cellVolume =
-      dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+      dynamic_cast<const TArray&>(geomFields.volume[cells]);
 
     const T_Scalar epsilon(1e-6);
     
@@ -141,9 +142,10 @@ public:
 
     return gMPtr;
   }
-  
+
+  static
   shared_ptr<GradMatrixType>
-  getLeastSquaresGradientMatrix2D(const Mesh& mesh) const
+  getLeastSquaresGradientMatrix2D(const Mesh& mesh, const GeomFields& geomFields)
   {
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getFaces();
@@ -161,16 +163,16 @@ public:
     VectorT3Array& coeffs = gM.getCoeffs();
     
     const VectorT3Array& cellCentroid =
-      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+      dynamic_cast<const VectorT3Array&>(geomFields.coordinate[cells]);
 
     const VectorT3Array& faceArea =
-      dynamic_cast<const VectorT3Array& >(_geomFields.area[faces]);
+      dynamic_cast<const VectorT3Array& >(geomFields.area[faces]);
 
     const TArray& cellVolume =
-      dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+      dynamic_cast<const TArray&>(geomFields.volume[cells]);
 
 
-    const T_Scalar epsilon(1e-6);
+    const T_Scalar epsilon(1e-26);
     
     coeffs.zero();
 
@@ -262,17 +264,18 @@ public:
   virtual ~GradientModel()
   {}
 
-  const GradMatrixType& getGradientMatrix(const Mesh& mesh)
+  static const GradMatrixType&
+  getGradientMatrix(const Mesh& mesh, const GeomFields& geomFields)
   {
     if (_gradientMatricesMap.find(&mesh) == _gradientMatricesMap.end())
     {
         if (mesh.getDimension() == 2)
         {
-            _gradientMatricesMap[&mesh] = getLeastSquaresGradientMatrix2D(mesh);
+            _gradientMatricesMap[&mesh] = getLeastSquaresGradientMatrix2D(mesh,geomFields);
         }
         else
         {
-            _gradientMatricesMap[&mesh] = getLeastSquaresGradientMatrix3D(mesh);
+            _gradientMatricesMap[&mesh] = getLeastSquaresGradientMatrix3D(mesh,geomFields);
         }
     }
     return *_gradientMatricesMap[&mesh];
@@ -289,7 +292,7 @@ public:
 
         const StorageSite& cells = mesh.getCells();
 
-        const GradMatrixType& gradMatrix = getGradientMatrix(mesh);
+        const GradMatrixType& gradMatrix = getGradientMatrix(mesh,_geomFields);
 
         const XArray& var = dynamic_cast<const XArray&>(_varField[cells]);
         shared_ptr<GradArray> gradPtr = gradMatrix.getGradient(var);

@@ -117,7 +117,7 @@ public:
           dynamic_cast<VPMatrix&>(mfmatrix.getMatrix(vIndex,pIndex));
 
         const GradientMatrix<X>& gradMatrix =
-          _pressureGradientModel.getGradientMatrix(mesh);
+          _pressureGradientModel.getGradientMatrix(mesh, _geomFields);
 
         const Array<VPCoeff>& gradMatrixCoeffs = gradMatrix.getCoeffs();
         Array<VPCoeff>& vpDiag = vpMatrix.getDiag();
