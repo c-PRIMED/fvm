@@ -90,12 +90,12 @@ public:
     const X dRC0 = dRC0dXC1*dXC1;
     _r[c0] += dRC0;
     
-    _assembler.getCoeff01(f) = OffDiag(0);
+    _assembler.getCoeff01(f) = NumTypeTraits<OffDiag>::getZero();
 
     // set the boundary value and make its correction equation an
     // identity
     _x[c1] = bValue;
-    _assembler.getCoeff10(f) = OffDiag(0);
+    _assembler.getCoeff10(f) = NumTypeTraits<OffDiag>::getZero();
     _r[c1] = NumTypeTraits<X>::getZero();
     _dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
 
@@ -139,19 +139,10 @@ public:
     // coeff to the boundary cell and remove it from the ap coeff
     
     const X dFlux = specifiedFlux*_faceAreaMag[f] - fluxB;
-
-    _r[c0] += dRC0dXC1*(dFlux/dFluxdXC1);
-    
-    // this removes the dependence of flux on the cell value
-    _dRdXDiag[c0] -= dFluxdXC0/dFluxdXC1*dRC0dXC1;
-        
-    // this removes the dependence of flux on boundary value
-    _assembler.getCoeff01(f) =0;
-
     // setup the equation for the boundary value; the coefficients
     // are already computed so just need to set the rhs
     _r[c1] = dFlux;
-        
+
     // mark this row as a "boundary" row so that we will update it
     // after the overall system is solved
     _dRdX.setBoundary(c1);
@@ -366,9 +357,39 @@ public:
   // see the specialization for Vectors below
   void applySymmetryBC() const
   {
-    X zeroFlux(NumTypeTraits<X>::getZero());
-    for(int i=0; i<this->_faces.getCount(); i++)
-      this->applyNeumannBC(i,zeroFlux);
+    for(int f=0; f<this->_faces.getCount(); f++)
+    {
+        const int c0 = this->_faceCells(f,0);
+        const int c1 = this->_faceCells(f,1);
+        
+        // the current value of flux and its Jacobians
+        const X fluxB = -this->_r[c1];
+        const OffDiag dFluxdXC0 = -this->_assembler.getCoeff10(f);
+        const Diag dFluxdXC1 = -this->_dRdXDiag[c1];
+
+        const X xB = this->_x[c0];
+
+        
+        const X xc1mxB = this->_x[c1]-xB;
+        this->_x[c1] = xB;
+        
+        // eliminate boundary dependency from cell equation
+        this->_dRdXDiag[c0] += dFluxdXC1;
+        this->_r[c0] -= dFluxdXC1*xc1mxB;
+        this->_assembler.getCoeff01(f) = 0;
+        
+        // boundary value equation
+        this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
+        this->_assembler.getCoeff10(f) = NumTypeTraits<Diag>::getUnity();
+        this->_r[c1] = X(0);//xc0mxB;
+        this->_dRdX.setBoundary(c1);
+        
+        //setup the equation for the boundary flux correction
+
+        this->_flux[f] = X(0);
+        this->_rFlux[f] = X(0);
+        this->_dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+    }
   }
   
 };
@@ -445,7 +466,7 @@ public:
         // boundary value equation
         this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
         this->_assembler.getCoeff10(f) = dxBdxC0[0];
-        this->_r[c1] = 0;//xc0mxB;
+        this->_r[c1] = T(0);//xc0mxB;
         this->_dRdX.setBoundary(c1);
         
         //setup the equation for the boundary flux correction
@@ -621,12 +642,12 @@ public:
         // eliminate boundary dependency from cell equation
         this->_dRdXDiag[c0] += dFluxdXC1*dxBdxC0;
         this->_r[c0] += dFluxdXC1*xc1mxB;
-        this->_assembler.getCoeff01(f) = 0;
+        this->_assembler.getCoeff01(f) = NumTypeTraits<OffDiag>::getZero();
         
         // boundary value equation
         this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
         this->_assembler.getCoeff10(f) = dxBdxC0;
-        this->_r[c1] = 0;//xc0mxB;
+        this->_r[c1] = NumTypeTraits<X>::getZero();//xc0mxB;
         this->_dRdX.setBoundary(c1);
         
         //setup the equation for the boundary flux correction
