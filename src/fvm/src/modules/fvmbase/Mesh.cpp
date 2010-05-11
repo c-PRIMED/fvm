@@ -10,15 +10,15 @@ Mesh::Mesh(const int dimension, const int id):
   _cells(0),
   _faces(0),
   _nodes(0),
-  _boundaryNodes(0),
   _ibFaces(0),
-  _boundaryNodeGlobalToLocalPtr(),
+  _boundaryNodes(0),
   _interiorFaceGroup(),
   _faceGroups(),
   _boundaryGroups(),
   _interfaceGroups(),
   _connectivityMap(),
   _coordinates(),
+  _boundaryNodeGlobalToLocalPtr(),
   _ibType(),
   _ibFaceList(),
   _numOfAssembleMesh(1),
@@ -246,7 +246,16 @@ Mesh::getCellCells() const
   return *cellCells;
 }
 
-
+const CRConnectivity&
+Mesh::getCellCells2() const
+{
+  if (!_cellCells2)
+  {
+      const CRConnectivity& cellCells = getCellCells();
+      _cellCells2 = cellCells.multiply(cellCells, true);
+  }
+  return *_cellCells2;
+}
 
 void
 Mesh::setFaceNodes(shared_ptr<CRConnectivity> faceNodes)

@@ -114,6 +114,7 @@ public:
   const CRConnectivity& getFaceNodes(const StorageSite& site) const;
   const CRConnectivity& getCellFaces() const;
   const CRConnectivity& getCellCells() const;
+  const CRConnectivity& getCellCells2() const;
 
   
   const FaceGroup& getInteriorFaceGroup() const {return *_interiorFaceGroup;}
@@ -226,6 +227,7 @@ protected:
  
   //mutable Array<int> *_cellTypes;
   //mutable Array<int> *_cellTypeCount;
+  mutable shared_ptr<CRConnectivity> _cellCells2;
 };
 
 typedef vector<Mesh*> MeshList;
