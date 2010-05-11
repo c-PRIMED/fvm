@@ -11,6 +11,7 @@
 #include "CRConnectivity.h"
 #include "CRMatrixRect.h"
 #include "Vector.h"
+#include "GradientModel.h"
 
 template<class T, class Diag, class OffDiag>
 class StructureSourceDiscretization : public Discretization
@@ -27,18 +28,23 @@ public:
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef typename CCMatrix::PairWiseAssembler CCAssembler;
 
+  typedef GradientModel<VectorT3> VGradModelType;
+  typedef typename VGradModelType::GradMatrixType VGradMatrix;
+  
   StructureSourceDiscretization(const MeshList& meshes,
 				const GeomFields& geomFields,
 				Field& varField,
 				const Field& muField,
 				const Field& lambdaField,
-				const Field& varGradientField)  :
+				const Field& varGradientField,
+                                bool fullLinearization=true)  :
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
     _muField(muField),
     _lambdaField(lambdaField),
-    _varGradientField(varGradientField)
+    _varGradientField(varGradientField),
+    _fullLinearization(fullLinearization)
    {}
 
                           
@@ -87,6 +93,14 @@ public:
 
     const int nFaces = faces.getCount();
 
+    const VGradMatrix& vgMatrix = VGradModelType::getGradientMatrix(mesh,_geomFields);
+    const CRConnectivity& vgConn = vgMatrix.getConnectivity();
+    const Array<int>& vgmRow = vgConn.getRow();
+    const Array<int>& vgmCol = vgConn.getCol();
+    const VectorT3Array& vgmCoeffs = vgMatrix.getCoeffs();
+
+    const int nInteriorCells = cells.getSelfCount();
+    
     for(int f=0; f<nFaces; f++)
     {
         const int c0 = faceCells(f,0);
@@ -98,8 +112,22 @@ public:
         T vol0 = cellVolume[c0];
         T vol1 = cellVolume[c1];
 
+        T wt0 = vol0/(vol0+vol1);
+        T wt1 = vol1/(vol0+vol1);
+
+        if (c1 >= nInteriorCells)
+        {
+            wt0 = T(1.0);
+            wt1 = T(0.);
+        }
+        
         T faceMu(1.0);
 	T faceLambda(1.0);
+
+        Diag& a00 = diag[c0];
+        Diag& a11 = diag[c1];
+        OffDiag& a01 = assembler.getCoeff01(f);
+        OffDiag& a10 = assembler.getCoeff10(f);
 
         if (vol0 == 0.)
        	{
@@ -116,13 +144,19 @@ public:
             faceMu = harmonicAverage(muCell[c0],muCell[c1]);
 	    faceLambda = harmonicAverage(lambdaCell[c0],lambdaCell[c1]);
 	}
-	
-	const VGradType gradF = (vGradCell[c0]*vol0+vGradCell[c1]*vol1)/(vol0+vol1);
+
+        faceMu = muCell[c0]*wt0 + muCell[c1]*wt1;
+        faceLambda = lambdaCell[c0]*wt0 + lambdaCell[c1]*wt1;
+        
+	const VGradType gradF = (vGradCell[c0]*wt0 + vGradCell[c1]*wt1);
 
 	VectorT3 source(NumTypeTraits<VectorT3>::getZero());
         const T divU = (gradF[0][0] + gradF[1][1] + gradF[2][2]);
-        
-        // mu*grad U ^ T + lambda * div U I 
+
+        const T diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
+        const VectorT3 secondaryCoeff = faceMu*(faceArea[f]-ds*diffMetric);
+
+        // mu*grad U ^ T + lambda * div U I
 	source[0] = faceMu*(gradF[0][0]*Af[0] + gradF[0][1]*Af[1] + gradF[0][2]*Af[2])
           + faceLambda*divU*Af[0];
         
@@ -132,16 +166,94 @@ public:
 	source[2] = faceMu*(gradF[2][0]*Af[0] + gradF[2][1]*Af[1] + gradF[2][2]*Af[2])
           + faceLambda*divU*Af[2];
 
+        
+        VectorT3 s0(NumTypeTraits<VectorT3>::getZero());
+        VectorT3 s1(NumTypeTraits<VectorT3>::getZero());
+        if (_fullLinearization)
+        {
+            
+            for(int nnb = vgmRow[c0]; nnb<vgmRow[c0+1]; nnb++)
+            {
+                const int nb = vgmCol[nnb];
+                
+                const VectorT3& g_nb = vgmCoeffs[nnb];
 
+                Diag coeff;
+
+                for(int i=0; i<3; i++)
+                {
+                    for(int j=0; j<3; j++)
+                    {
+                        coeff(i,j) = wt0*(faceMu*Af[j]*g_nb[i] 
+                                          + faceLambda*Af[i]*g_nb[j]
+                                          );
+                    }
+
+                    for(int k=0; k<3; k++)
+                      coeff(i,i) += wt0*secondaryCoeff[k]*g_nb[k];
+                }
+                
+                OffDiag& a0_nb = matrix.getCoeff(c0,nb);
+
+                a0_nb += coeff;
+                a00 -= coeff;
+                a10 += coeff;
+                
+                if (c1 != nb)
+                {
+                    OffDiag& a1_nb = matrix.getCoeff(c1,nb);
+                    a1_nb -= coeff;
+                }
+                else
+                  a11 -= coeff;
+            }
+
+
+            for(int nnb = vgmRow[c1]; nnb<vgmRow[c1+1]; nnb++)
+            {
+                const int nb = vgmCol[nnb];
+                const VectorT3& g_nb = vgmCoeffs[nnb];
+
+                Diag coeff;
+                
+                for(int i=0; i<3; i++)
+                {
+                    for(int j=0; j<3; j++)
+                    {
+                        coeff(i,j) = wt1*(faceMu*Af[j]*g_nb[i] 
+                                          + faceLambda*Af[i]*g_nb[j]
+                                          );
+                    }
+
+                    for(int k=0; k<3; k++)
+                      coeff(i,i) += wt1*secondaryCoeff[k]*g_nb[k];
+                }
+
+                
+                OffDiag& a1_nb = matrix.getCoeff(c1,nb);
+                a1_nb -= coeff;
+                a11 += coeff;
+                a01 -= coeff;
+                
+                if (c0 != nb)
+                {
+                    OffDiag& a0_nb = matrix.getCoeff(c0,nb);
+
+                    a0_nb += coeff;
+                }
+                else
+                  a00 += coeff;
+                
+            }
+        }
+        
         // mu*gradU, primary part
         
-        const T diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
 
         source += faceMu*diffMetric*(xCell[c1]-xCell[c0]);
 
         // mu*gradU, secondart part
 
-        const VectorT3 secondaryCoeff = faceMu*(faceArea[f]-ds*diffMetric);
 
         source += gradF*secondaryCoeff;
 
@@ -150,20 +262,17 @@ public:
 	rCell[c1] -= source;
 
         // for Jacobian, use 2*mu + lambda as the diffusivity
-        const T faceDiffusivity = T(2.0) * faceMu + faceLambda;
+        const T faceDiffusivity = faceMu;
         const T diffCoeff = faceDiffusivity*diffMetric;
 
-        OffDiag& a01 = assembler.getCoeff01(f);
-        OffDiag& a10 = assembler.getCoeff10(f);
         
         a01 +=diffCoeff;
         a10 +=diffCoeff;
 
-        Diag& a00 = diag[c0];
-        Diag& a11 = diag[c1];
         
         a00 -= diffCoeff;
         a11 -= diffCoeff;
+
     }
   }
     
@@ -174,6 +283,7 @@ private:
   const Field& _muField;
   const Field& _lambdaField;
   const Field& _varGradientField;
+  const bool _fullLinearization;
 };
 
 #endif

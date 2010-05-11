@@ -24,6 +24,150 @@
 #include "StressTensor.h"
 #include "SquareTensor.h"
 
+
+template<class X, class Diag, class OffDiag>
+class StructureBCS
+{
+public:
+
+  typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
+
+  typedef Array<T_Scalar> TArray;
+  typedef Vector<T_Scalar,3> VectorT3;
+  
+  typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
+  typedef typename CCMatrix::PairWiseAssembler CCAssembler;
+
+  typedef FluxJacobianMatrix<Diag,X> FMatrix;
+  typedef DiagonalMatrix<Diag,X> BBMatrix;
+
+  typedef Array<Diag> DiagArray;
+  typedef Array<OffDiag> OffDiagArray;
+  
+  typedef Array<X> XArray;
+  typedef Array<VectorT3> VectorT3Array;
+
+  
+  StructureBCS(const StorageSite& faces,
+             const Mesh& mesh,
+             const GeomFields& geomFields,
+             Field& varField,
+             MultiFieldMatrix& matrix,
+             MultiField& xField, MultiField& rField) :
+    _faces(faces),
+    _cells(mesh.getCells()),
+    _ibType(mesh.getIBType()),
+    _faceCells(mesh.getFaceCells(_faces)),
+    _varField(varField),
+    _xIndex(&_varField,&_cells),
+    _dRdX(dynamic_cast<CCMatrix&>(matrix.getMatrix(_xIndex,_xIndex))),
+    _assembler(_dRdX.getPairWiseAssembler(_faceCells)),
+    _dRdXDiag(_dRdX.getDiag()),
+    _x(dynamic_cast<XArray&>(xField[_xIndex])),
+    _r(dynamic_cast<XArray&>(rField[_xIndex])),
+    _areaMagField(geomFields.areaMag),
+    _faceAreaMag(dynamic_cast<const TArray&>(_areaMagField[_faces])),
+    _areaField(geomFields.area),
+    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces]))
+  {}
+  
+  void applyDirichletBC(int f, const X& bValue) const
+  {
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1);
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    
+    const X dXC1 = bValue - _x[c1];
+    _dRdX.eliminateDirichlet(c1,_r,dXC1);
+    _x[c1] = bValue;
+    _r[c1] = NumTypeTraits<X>::getZero();
+    _dRdX.setDirichlet(c1);
+  }
+
+  void applyDirichletBC(const X& bValue) const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+      applyDirichletBC(i,bValue);
+  }
+  
+  void applyDirichletBC(const FloatValEvaluator<X>& bValue) const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+      applyDirichletBC(i,bValue[i]);
+  }
+  
+  void applyNeumannBC(const int f,
+                      const X& specifiedFlux) const
+  {
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1);
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    // the current value of flux and its Jacobians
+    const X fluxB = -_r[c1];
+    const X dFlux = specifiedFlux*_faceAreaMag[f] - fluxB;
+
+    // setup the equation for the boundary value; the coefficients
+    // are already computed so just need to set the rhs
+    _r[c1] = dFlux;
+
+    // _dRdX.eliminate(c1,_r);
+    // mark this row as a "boundary" row so that we will update it
+    // after the overall system is solved
+    _dRdX.setBoundary(c1);
+  }
+
+
+  void applyNeumannBC(const X& bFlux) const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+      applyNeumannBC(i,bFlux);
+  }
+  
+  void applyNeumannBC(const FloatValEvaluator<X>& bFlux) const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+      applyNeumannBC(i,bFlux[i]);
+  }
+
+  void applyInterfaceBC(const int f) const
+  {
+    throw;
+  }
+
+  void applyInterfaceBC() const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+      applyInterfaceBC(i);
+  }
+
+  void applySymmetryBC() const
+  {
+    throw;
+  }
+
+  
+protected:
+  const StorageSite& _faces;
+  const StorageSite& _cells;
+  const Array<int>& _ibType;
+  const CRConnectivity& _faceCells;
+  const Field& _varField;
+  const MultiField::ArrayIndex _xIndex;
+  CCMatrix& _dRdX;
+  CCAssembler& _assembler;
+  DiagArray& _dRdXDiag;
+  XArray& _x;
+  XArray& _r;
+  const Field& _areaMagField;
+  const TArray& _faceAreaMag;
+  const Field& _areaField;
+  const VectorT3Array& _faceArea;
+};
+
 template<class T>
 class StructureModel<T>::Impl
 {
@@ -202,45 +346,12 @@ public:
 
         ls.getX().addArray(wIndex,_structureFields.deformation.getArrayPtr(cells));
 
-        const CRConnectivity& cellCells = mesh.getCellCells();
+        const CRConnectivity& cellCells2 = mesh.getCellCells2();
         
-        shared_ptr<Matrix> m(new CRMatrix<DiagTensorT3,DiagTensorT3,VectorT3>(cellCells));
+        shared_ptr<Matrix> m(new CRMatrix<DiagTensorT3,DiagTensorT3,VectorT3>(cellCells2));
 
         ls.getMatrix().addMatrix(wIndex,wIndex,m);
 
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-        {
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
-
-            MultiField::ArrayIndex dIndex(&_structureFields.deformationFlux,&faces);
-            ls.getX().addArray(dIndex,_structureFields.deformationFlux.getArrayPtr(faces));
-
-            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT3,VectorT3>(faceCells));
-            ls.getMatrix().addMatrix(dIndex,wIndex,mft);
-
-            shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
-            ls.getMatrix().addMatrix(dIndex,dIndex,mff);
-        }
-        
-        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
-        {
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
-
-            MultiField::ArrayIndex dIndex(&_structureFields.deformationFlux,&faces);
-            ls.getX().addArray(dIndex,_structureFields.deformationFlux.getArrayPtr(faces));
-
-            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT3,VectorT3>(faceCells));
-            ls.getMatrix().addMatrix(dIndex,wIndex,mft);
-
-            shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
-            ls.getMatrix().addMatrix(dIndex,dIndex,mff);
-        }
     }
   }
 
@@ -248,12 +359,6 @@ public:
   {
     _deformationGradientModel.compute();
     DiscrList discretizations;
-    shared_ptr<Discretization>
-      dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,DiagTensorT3>
-         (_meshes,_geomFields,
-          _structureFields.deformation,
-          _structureFields.eta,
-          _structureFields.deformationGradient));
             
     shared_ptr<Discretization>
       sd(new StructureSourceDiscretization<T,DiagTensorT3,DiagTensorT3>
@@ -307,10 +412,9 @@ public:
             const StructureBC<T>& bc = *_bcMap[fg.id];
             
 
-            GenericBCS<VectorT3,DiagTensorT3,DiagTensorT3> gbc(faces,mesh,
+            StructureBCS<VectorT3,DiagTensorT3,DiagTensorT3> gbc(faces,mesh,
                                                     _geomFields,
                                                     _structureFields.deformation,
-                                                    _structureFields.deformationFlux,
                                                     ls.getMatrix(), ls.getX(), ls.getB());
 	    
 	    if (bc.bcType == "SpecifiedDeformation")
@@ -325,7 +429,6 @@ public:
             }
             else if (bc.bcType == "Symmetry")
             {
-	        //VectorT3 zeroFlux(NumTypeTraits<VectorT3>::getZero());
                 gbc.applySymmetryBC();
                 allNeumann = false;
 	    }
@@ -413,6 +516,7 @@ public:
         vvMatrix.setDirichlet(0);
     }
 
+#if 0
     shared_ptr<Discretization>
       ud(new Underrelaxer<VectorT3,DiagTensorT3,DiagTensorT3>
          (_meshes,_structureFields.deformation,
@@ -423,7 +527,7 @@ public:
 
     linearizer.linearize(discretizations2,_meshes,ls.getMatrix(),
                          ls.getX(), ls.getB());
-
+#endif
 
   }
 
@@ -442,8 +546,8 @@ public:
         
     _options.getDeformationLinearSolver().cleanup();
     ls.postSolve();
-    //ls.updateSolution();
-    postStructureSolve(ls);
+    ls.updateSolution();
+    //postStructureSolve(ls);
     return rNorm;
   }
 
