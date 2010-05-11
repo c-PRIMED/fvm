@@ -47,6 +47,8 @@ LinearSystem::initSolve()
   {
       if (!_matrix.hasMatrix(i,i) || _matrix.getMatrix(i,i).isInvertible())
         indicesToRemove.push_back(i);
+      else
+        _matrix.getMatrix(i,i).eliminateBoundaryEquations((*_b)[i]);
   }
 
   _xAux = _x->extract(indicesToRemove);
