@@ -322,6 +322,11 @@ operator/(const T s, const DiagonalTensor<T,N>& a)
   return r;
 }
 
+template<class T, int N>
+T DiagToOffDiag(const DiagonalTensor<T,N>& x)
+{
+  return x[0];
+}
 
 #endif
 

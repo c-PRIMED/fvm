@@ -13,6 +13,16 @@
 
 #include <set>
 
+// used to handle cases where OffDiag and Diag are not the same type
+// and we need to assign the latter to the former. Specialized as
+// required in DiagonalTensor etc.
+template<class X>
+X DiagToOffDiag(const X& x)
+{
+  return x;
+}
+
+
 /**
  * Sparse matrix stored using a compressed row format. The sparsity
  * pattern is provided by a CRConnectivity object that is required at
@@ -697,6 +707,16 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
   
   virtual const CRConnectivity& getConnectivity() const {return _conn;}
 
+  OffDiag& getCoeff(const int i,  const int j)
+  {
+    for (int nnb = _row[i]; nnb<_row[i+1]; nnb++)
+    {
+        if (_col[nnb] == j)
+          return _offDiag[nnb];
+    }
+    throw CException("invalid indices");
+  }
+  
   Array<Diag>& getDiag() {return _diag;}
   Array<OffDiag>& getOffDiag() {return _offDiag;}
 
@@ -735,12 +755,81 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
     _diag[nr] = NumTypeTraits<Diag>::getNegativeUnity();
     _isBoundary[nr] = true;
   }
+
+  // eliminate row j from the linear system. This only works for
+  // boundary rows because of the special connectivity pattern. We
+  // also assume that the connectivity is symmetric. The rhs b is required. 
+  
+  void eliminateRow(const int j, Array<X>& b )
+  {
+    const Diag& a_jj = _diag[j];
+
+    // loop over neighbours of j to determine the rows that will change
+    for (int nb = _row[j]; nb<_row[j+1]; nb++)
+    {
+        const int i = _col[nb];
+        OffDiag& a_ij = getCoeff(i,j);
+
+        // for the ith row we need to find the indices k for which the
+        // entries will change. we do this by again going through
+        // neighbors of j
+        
+        for (int nb2 = _row[j]; nb2<_row[j+1]; nb2++)
+        {
+            const int k = _col[nb2];
+            const OffDiag& a_jk = _offDiag[nb2];
+            
+            if (i!=k)
+            {
+                OffDiag& a_ik = getCoeff(i,k);
+                a_ik -= DiagToOffDiag(a_ij*(a_jk/a_jj));
+            }
+            else
+              _diag[i] -= a_ij*(a_jk/a_jj);
+        }
+       
+        b[i] -= a_ij*(b[j]/a_jj);
+
+        a_ij = NumTypeTraits<OffDiag>::getZero();
+
+    }
+  }
+
+
+  // eliminate a_ij coefficients because of a dirichlet row j, the rhs
+  // b as well as the delta_j values are required
+  void eliminateDirichlet(const int j, Array<X>& b, const X& delta_j )
+  {
+    for (int nb = _row[j]; nb<_row[j+1]; nb++)
+    {
+        const int i = _col[nb];
+        OffDiag& a_ij = getCoeff(i,j);
+       
+        b[i] += a_ij*delta_j;
+
+        a_ij = NumTypeTraits<OffDiag>::getZero();
+
+    }
+  }
   
   void setBoundary(const int nr)
   {
     _isBoundary[nr] = true;
   }
 
+  // eliminate the boundary equations from the interior ones. This is
+  // called by initSolve() of LinearSystem. Subsequent linear solver
+  // methods operate only on the interior equations.
+  virtual void eliminateBoundaryEquations(IContainer& bB)
+  {
+    XArray& b = dynamic_cast<XArray&>(bB);
+    const int nRowsInterior = _conn.getRowSite().getSelfCount();
+    const int nRowsExtra = _conn.getRowSite().getCount();
+
+    for(int nr=nRowsInterior; nr<nRowsExtra; nr++)
+      if (_isBoundary[nr])
+        eliminateRow(nr,b);
+  }
 
 private:
 
