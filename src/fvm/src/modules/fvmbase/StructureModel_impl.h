@@ -146,8 +146,43 @@ public:
 
   void applySymmetryBC() const
   {
-    throw;
+    for(int f=0; f<this->_faces.getCount(); f++)
+    {
+        const int c0 = this->_faceCells(f,0);
+        const int c1 = this->_faceCells(f,1);
+        
+
+        const VectorT3 en = this->_faceArea[f]/this->_faceAreaMag[f];
+        const T_Scalar xC0_dotn = dot(this->_x[c0],en);
+        const X xB = this->_x[c0] - xC0_dotn * en;
+
+        Diag dxBdxC0(Diag::getZero());
+        dxBdxC0(0,0) =  1.0 - en[0]*en[0];
+        dxBdxC0(0,1) =  - en[0]*en[1];
+        dxBdxC0(0,2) =  - en[0]*en[2];
+
+        dxBdxC0(1,0) =  - en[1]*en[0];
+        dxBdxC0(1,1) =  1.0 - en[1]*en[1];
+        dxBdxC0(1,2) =  - en[1]*en[2];
+
+        dxBdxC0(2,0) =  - en[2]*en[0];
+        dxBdxC0(2,1) =  - en[2]*en[1];
+        dxBdxC0(2,2) =  1.0 - en[2]*en[2];
+        
+        
+        const X xc1mxB = xB-this->_x[c1];
+        
+        // boundary value equation
+        // set all neighbour coeffs to zero first and ap to  -1
+        this->_dRdX.setDirichlet(c1);
+
+        // dependance on c0
+        this->_assembler.getCoeff10(f) = dxBdxC0;
+        this->_r[c1] = xc1mxB;
+
+    }
   }
+
 
   
 protected:
