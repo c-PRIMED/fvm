@@ -405,12 +405,12 @@ public:
       
     //    discretizations.push_back(dd);
     discretizations.push_back(sd);
-
-    /*    
+    
     if (_options.transient)
     {
         shared_ptr<Discretization>
-          td(new TimeDerivativeStructureDiscretization<VectorT3,DiagTensorT3,T>
+          td(new TimeDerivativeStructureDiscretization
+	     <VectorT3,DiagTensorT3,DiagTensorT3>
              (_meshes,_geomFields,
               _structureFields.deformation,
               _structureFields.deformationN1,
@@ -421,6 +421,7 @@ public:
         discretizations.push_back(td);
     }
  
+    /*
     shared_ptr<Discretization>
       ibm(new GenericIBDiscretization<VectorT3,DiagTensorT3,T>
 	  (_meshes,_geomFields,_structureFields.deformation));
