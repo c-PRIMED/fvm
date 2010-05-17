@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
    string file_name( argv[1] );
    FluentReader* fluent_reader = new FluentReader( file_name );
-
+   cout << " arg 1= " << argv[1] << endl;
    fluent_reader->readMesh();
 
    MeshList mesh_list = fluent_reader->getMeshList();
@@ -47,38 +47,38 @@ int main(int argc, char *argv[])
    vector<int> etype( mesh_list.size(), 1);
 
   //constructer to PartMesh
-   PartMesh part_mesh(mesh_list, npart, etype );
+   PartMesh*  part_mesh = new PartMesh(mesh_list, npart, etype );
 
   //set properties of Partition
-   part_mesh.setWeightType(0);
-   part_mesh.setNumFlag(0);
+   part_mesh->setWeightType(0);
+   part_mesh->setNumFlag(0);
 
   //actions
-   part_mesh.partition();
+   part_mesh->fiedler_order("permutation26.txt");
 
-   part_mesh.mesh();
-   part_mesh.mesh_debug();
+   part_mesh->partition();
 
+   part_mesh->mesh();
+   
    delete fluent_reader;
-   stringstream ss;
-     ss << "test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
-     NcDataWriter  nc_writer( part_mesh.meshList(), ss.str() );
-     nc_writer.record();
 
-     NcDataReader  nc_reader( ss.str() );
+//    stringstream ss;
+//    ss << "test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
+//    NcDataWriter  nc_writer( part_mesh.meshList(), ss.str() );
+//    nc_writer.record();
 // 
-     stringstream ss_test;
-     ss_test << "test_test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
-     //cout <<  ss_test.str() << endl;
-       MeshList meshes = nc_reader.getMeshList();
-       NcDataWriter  nc_writer_test( meshes, ss_test.str() );
-       nc_writer_test.record();
-       NcDataReader::destroyMeshList( meshes );
+//    NcDataReader  nc_reader( ss.str() );
+//    stringstream ss_test;
+//    ss_test << "test_test_" << MPI::COMM_WORLD.Get_rank() << ".cdf";
+//    MeshList meshes = nc_reader.getMeshList();
+//    
+//    NcDataWriter  nc_writer_test( meshes, ss_test.str() );
+//    nc_writer_test.record();
+//    NcDataReader::destroyMeshList( meshes );
 
-   //cout << " procID(FVM) = " << MPI::COMM_WORLD.Get_rank() << endl;
-
+   delete part_mesh;
    MPI::Finalize();
-   return 0;
+
 }
 
 
