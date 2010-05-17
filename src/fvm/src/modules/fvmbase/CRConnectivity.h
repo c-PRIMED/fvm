@@ -72,6 +72,8 @@ public:
   shared_ptr<CRConnectivity>
   getSubset(const StorageSite& site,const Array<int>& indices) const;
 
+  void reorder( const Array<int>& indices );
+  
   shared_ptr<CRConnectivity>
   getLocalizedSubset(const StorageSite& newRowSite,
                      StorageSite& newColSite,
@@ -81,6 +83,11 @@ public:
   getLocalizedSubsetOfFaceCells(const StorageSite& newRowSite,  StorageSite& newColSite,
                                 const Array<int>& indices, const CRConnectivity& faceCells, 
                                 const CRConnectivity& cellCells) const;
+  //this is more robust method  
+  shared_ptr<CRConnectivity>
+  getLocalizedSubsetOfFaceCells(const StorageSite& newRowSite,  StorageSite& newColSite,
+                                const Array<int>& indices, const CRConnectivity& cellParts, const int partID) const;
+
 
   void
   localize(const Array<int>& globalToLocal,const StorageSite& newColSite);

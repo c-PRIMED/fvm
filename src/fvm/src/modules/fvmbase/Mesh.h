@@ -116,6 +116,7 @@ public:
   const CRConnectivity& getCellCells() const;
   const CRConnectivity& getCellCells2() const;
 
+  CRConnectivity& getAllFaceCells();
   
   const FaceGroup& getInteriorFaceGroup() const {return *_interiorFaceGroup;}
   

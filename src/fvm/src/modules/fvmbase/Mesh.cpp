@@ -231,6 +231,17 @@ Mesh::getCellFaces() const
   return *cellFaces;
 }
 
+CRConnectivity&
+Mesh::getAllFaceCells()
+{
+  SSPair key(&_faces,&_cells);
+  ConnectivityMap::const_iterator pos = _connectivityMap.find(key);
+  if (pos != _connectivityMap.end())
+    return *pos->second;
+  throw CException("face cells not defined");
+}
+
+
 const CRConnectivity&
 Mesh::getCellCells() const
 {

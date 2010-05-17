@@ -50,8 +50,8 @@ void CRConnectivity::finishCount()
     row[i+1] += row[i];
   
   const int colSize = row[_rowDim-1];
-//cout << "_rowDim = " << _rowDim << " colSize = " << colSize << endl;
-  for(int i=_rowDim; i>0; i--)
+
+    for(int i=_rowDim; i>0; i--)
     row[i] = row[i-1];
   row[0] = 0;
   
@@ -377,6 +377,173 @@ CRConnectivity::getLocalizedSubsetOfFaceCells( const StorageSite& newRowSite,  S
 }
 
 
+//this is  specialized subset for PartMesh class, V type faceCells siutation for interface ghost cells sharing common global cell  result
+//in wrong number of local element counts and mapping (Gazi). This is more robust version then
+//above implementation
+shared_ptr<CRConnectivity>
+CRConnectivity::getLocalizedSubsetOfFaceCells( const StorageSite& newRowSite,  StorageSite& newColSite,
+                                               const Array<int>& indices,  const CRConnectivity& cellParts, const int partID ) const
+{
+  const Array<int>& myRow = *_row;
+  const Array<int>& myCol = *_col;
+ 
+  map<int, int>  localToGlobalMap;
+  map<int, vector<int> > faceToLocalCellsMap;
+
+  const StorageSite& rowSite = cellParts.getRowSite();
+  const int cellSelfCount = rowSite.getSelfCount();
+  const int cellCount     = rowSite.getCount();
+  shared_ptr<Array<int> > globalToLocalPtr(new Array<int>(cellCount));
+  Array<int>& globalToLocal = *globalToLocalPtr;
+
+  globalToLocal = -1;
+ 
+  int nLocal=0;
+//loop over faces (sub)
+  for(int ii=0;ii<indices.getLength();ii++)
+  {
+      bool inner_face  = true;
+      const int i = indices[ii];
+      //check if it is interface, pick one cell partition id, then compare connected cells if they are anot equal
+      const int compID =  cellParts( myCol[myRow[i]], 0 );
+      for(int ip=myRow[i];ip<myRow[i+1]; ip++){
+          const int j = myCol[ip];
+          if ( cellParts(j,0) != compID ) //interface if it is true
+             inner_face = false;
+      }
+
+      //first check if it is boundary cell, then it is boundary interface
+      for(int ip=myRow[i];ip<myRow[i+1]; ip++){
+          const int j = myCol[ip];
+          if ( j  >= cellSelfCount ) //either interface or boundary 
+             inner_face = false;
+      }
+
+      vector<int> localConn ( myRow[i+1] - myRow[i], -1 );
+      //looping over cell around faces
+      if ( inner_face ){ //if it is a inner element
+          int indx = 0;
+          for(int ip=myRow[i];ip<myRow[i+1]; ip++)
+          {
+             const int j = myCol[ip];
+             if( globalToLocal[j] == -1  ){
+                localToGlobalMap.insert( pair<int,int>(nLocal, j) ); 
+                localConn.at(indx)  = nLocal;
+                globalToLocal[j] = nLocal++;
+             } else {
+                localConn.at(indx) = globalToLocal[j];
+             }
+             indx++;
+         } 
+      }
+      if ( inner_face ){ 
+         faceToLocalCellsMap[ii]  = localConn;
+      }
+  }
+
+
+  //now there might be cells which is inner cell but surrounded by all boundary/interfaces faces, we have to renumber it before ghost cells
+  for(int ii=0;ii<indices.getLength();ii++){
+      const int i = indices[ii];
+      for(int ip=myRow[i];ip<myRow[i+1]; ip++){
+          const int j = myCol[ip];
+          // these cells should be inner cell (j<..), never visited (glb..=-1), and staying in current partition (cellParts... == partID)
+          if ( j  < cellSelfCount && globalToLocal[j] == -1 &&  cellParts(j,0) == partID ){
+             localToGlobalMap.insert( pair<int,int>(nLocal, j) ); 
+             globalToLocal[j] = nLocal++;
+          }
+      }
+  }
+
+
+  //outer faces (interface  + boundary)
+  for(int ii=0;ii<indices.getLength();ii++)
+  {
+      bool outer_face = false;
+      const int i = indices[ii];
+      //check if it is interface, pick one cell partition id, then compare connected cells if they are anot equal
+      const int compID =  cellParts( myCol[myRow[i]], 0 );
+      for(int ip=myRow[i];ip<myRow[i+1]; ip++){
+          const int j = myCol[ip];
+          if ( cellParts(j,0) != compID ) //either interface or boundary 
+             outer_face = true;
+      }
+
+      //first check if it is boundary cell, then it is boundary interface
+      for(int ip=myRow[i];ip<myRow[i+1]; ip++){
+          const int j = myCol[ip];
+          if ( j  >= cellSelfCount ) //either interface or boundary 
+             outer_face = true;
+      }
+      vector<int> localConn ( myRow[i+1] - myRow[i], -1 );
+      if ( outer_face ){ //if it is a boundary or interface cells          
+         int indx = 0;
+         for(int ip=myRow[i];ip<myRow[i+1]; ip++){
+             const int j = myCol[ip];
+             if ( globalToLocal[j] == -1 ){
+               localToGlobalMap.insert( pair<int,int>(nLocal, j) );
+               localConn.at(indx) = nLocal++;
+             } else { 
+               localConn.at(indx) = globalToLocal[j];
+             }
+             indx++;
+         }
+      }
+
+      if ( outer_face ){ 
+         faceToLocalCellsMap[ii]  = localConn;
+      }
+
+  }
+
+  shared_ptr<Array<int> > localToGlobalPtr(new Array<int>(nLocal));
+
+  Array<int>& localToGlobal = *localToGlobalPtr;
+
+  newColSite.setCount(nLocal);
+  shared_ptr<CRConnectivity> subPtr(new CRConnectivity(newRowSite,newColSite));
+  CRConnectivity& sub = *subPtr;
+  
+  sub.initCount();
+
+  for(int ii=0;ii<indices.getLength();ii++)
+  {
+      const int i = indices[ii];
+      sub.addCount(ii,getCount(i));
+  }
+
+  sub.finishCount();
+  
+
+  map<int,int>::const_iterator it;
+  for ( it = localToGlobalMap.begin(); it != localToGlobalMap.end(); it++ ){
+     int local_id  = it->first;
+     int global_id = it->second;
+     localToGlobal[ local_id ] =  global_id;
+   }
+
+ for(int ii=0;ii<indices.getLength();ii++)
+  {
+      const int i = indices[ii];
+      int indx = 0;
+      for(int ip=myRow[i];ip<myRow[i+1]; ip++)
+      {
+          const int jLocal = faceToLocalCellsMap[ii].at(indx);
+          sub.add(ii,jLocal);
+          indx++;
+      }
+  }
+
+  sub.finishAdd();
+  sub._globalToLocalMap=globalToLocalPtr;
+  sub._localToGlobalMap=localToGlobalPtr;
+  return subPtr;
+}
+
+
+
+
+
 shared_ptr<CRConnectivity>
 CRConnectivity::getLocalizedSubset(const StorageSite& newRowSite,
                                    StorageSite& newColSite,
@@ -443,6 +610,15 @@ CRConnectivity::getLocalizedSubset(const StorageSite& newRowSite,
 }
 
 
+void
+CRConnectivity::reorder( const Array<int>& indices ) 
+{
+  const Array<int>& myRow = *_row;
+  Array<int>& myCol       = *_col;
+
+  for ( int i = 0; i < myCol.getLength(); i++ )
+       myCol[i]   = indices[ myCol[i] ];
+}
 
 
 void
