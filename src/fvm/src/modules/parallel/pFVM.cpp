@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
    part_mesh->setNumFlag(0);
 
   //actions
-   part_mesh->fiedler_order("permutation26.txt");
+//   part_mesh->fiedler_order("permutation26.txt");
 
    part_mesh->partition();
 
