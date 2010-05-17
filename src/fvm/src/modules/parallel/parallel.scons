@@ -2,14 +2,15 @@ Import('env')
 
 src = [
     'PartMesh.cpp',
-    ]
+    'MeshPartitioner.cpp',
+     ]
 
 deps = ['rlog', 'fvmbase',  'openmpi']
 env.createSharedLibrary('fvmparallel',src, deps)
 
 deps += ['fvmparallel']
 
-env.createSwigModule('fvmparallel',sources=['PartMesh.i'],deplibs=deps)
+env.createSwigModule('fvmparallel',sources=['Partitioner.i'],deplibs=deps)
                      
 deps += ['importers', 'exporters']
 

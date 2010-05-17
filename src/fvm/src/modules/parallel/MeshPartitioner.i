@@ -1,15 +1,16 @@
 %{
-#include "PartMesh.h"
+#include "MeshPartitioner.h"
 #include "mpi.h"
 %}
 
 %include "std_vector.i"
+%include "std_string.i"
 %import "Mesh.i"
 using namespace std;
 %template(IntVector) vector<int>;
 
 
-class PartMesh{
+class MeshPartitioner{
 
 public:
 
@@ -19,19 +20,19 @@ public:
     enum NUMFLAG{ C_STYLE = 0, FORTRAN_STYLE = 1 };
     enum CELLTYPE{ INTERIOR = 1, GHOST_BOUNDARY_CELL = 2, GHOST_INTERFACE_CELL};
 
-    PartMesh(const MeshList& mesh_list, vector<int> npart,
+    MeshPartitioner(const  MeshList& mesh_list, vector<int> npart,
              vector<int> eType);
     void partition();
+    void fiedler_order( const string& fname );
     void mesh();
     const MeshList&  meshList();
     void dumpTecplot();
-    void mesh_debug();
-    void debug_print();
     void mesh_xdmfplot();
     void isCleanup(bool clean_up);
+    void isDebug(bool debug);
     // set property methods
-    void setWeightType(PartMesh::WTYPE weight_type);
-    void setNumFlag(PartMesh::NUMFLAG num_flag);
+    void setWeightType(MeshPartitioner::WTYPE weight_type);
+    void setNumFlag(MeshPartitioner::NUMFLAG num_flag);
  
 };
 
