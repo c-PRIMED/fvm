@@ -9,8 +9,59 @@
 
 #include "NumType.h"
 #include "GradientMatrix.h"
+#include "SquareTensor.h"
 
 #include "Mesh.h"
+
+
+template<class T>
+void
+reflectGradient(Gradient<T>& gr, const Gradient<T>& g0, const Vector<T,3>& en)
+{
+  const T g0_dot_en_x2 = T(2.0)*(g0*en);
+  for(int i=0; i<3; i++)
+    gr[i] = g0[i] - g0_dot_en_x2*en[i];
+}
+
+template<class T>
+void
+reflectGradient(Gradient<Vector<T,2> >& gr,
+                const Gradient<Vector<T,2> >& g0, const Vector<T,3>& en)
+{
+  const Vector<T,2> g0_dot_en_x2 = T(2.0)*(g0*en);
+  for(int i=0; i<3; i++)
+  {
+      gr[i][0] = g0[i][0] - g0_dot_en_x2[0]*en[i];
+      gr[i][1] = g0[i][1] - g0_dot_en_x2[1]*en[i];
+  }
+}
+
+template<class T>
+void
+reflectGradient(Gradient<Vector<T,3> >& gr,
+                const Gradient<Vector<T,3> >& g0, const Vector<T,3>& en)
+{
+  SquareTensor<T,3> R, GT0;
+  
+  for(int i=0;i<3;i++)
+    for(int j=0; j<3; j++)
+    {
+        if (i==j)
+          R(i,j) = 1.0 - 2*en[i]*en[j];
+        else
+          R(i,j) = - 2*en[i]*en[j];
+
+        GT0(i,j) = g0[j][i];
+    }
+
+  SquareTensor<T,3> GTR(R*GT0*R);
+  
+  for(int i=0;i<3;i++)
+    for(int j=0; j<3; j++)
+    {
+        gr[j][i]  = GTR(i,j);
+    }
+}
 
 
 template<class X>
@@ -308,12 +359,29 @@ public:
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
             const int faceCount = faces.getCount();
             
-            for(int f=0; f<faceCount; f++)
+            if (fg.groupType == "symmetry")
             {
-                const int c0 = faceCells(f,0);
-                const int c1 = faceCells(f,1);
-                
-                (*gradPtr)[c1] = (*gradPtr)[c0];
+                const VectorT3Array& faceArea =
+                  dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+                const TArray& faceAreaMag =
+                  dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
+                for(int f=0; f<faceCount; f++)
+                {
+                    const int c0 = faceCells(f,0);
+                    const int c1 = faceCells(f,1);
+                    const VectorT3 en = faceArea[f]/faceAreaMag[f];
+                    reflectGradient((*gradPtr)[c1], (*gradPtr)[c0], en);
+                }
+            }
+            else
+            {
+                for(int f=0; f<faceCount; f++)
+                {
+                    const int c0 = faceCells(f,0);
+                    const int c1 = faceCells(f,1);
+                    
+                    (*gradPtr)[c1] = (*gradPtr)[c0];
+                }
             }
         }
 
