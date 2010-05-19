@@ -159,13 +159,35 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
       const StorageSite& faces = fg.site;
       const VectorT3Array& faceCentroid =
         dynamic_cast<const VectorT3Array&>(_coordField[faces]);
+      const VectorT3Array& faceArea =
+        dynamic_cast<const VectorT3Array&>(_areaField[faces]);
+      const TArray& faceAreaMag =
+        dynamic_cast<const TArray&>(_areaMagField[faces]);
       const CRConnectivity& faceCells = mesh.getFaceCells(faces);
       const int faceCount = faces.getCount();
           
-      for(int f=0; f<faceCount; f++)
+      if (fg.groupType == "symmetry")
       {
-          const int c1 = faceCells(f,1);
-          cellCentroid[c1] = faceCentroid[f];
+          for(int f=0; f<faceCount; f++)
+          {
+              const int c0 = faceCells(f,0);
+              const int c1 = faceCells(f,1);
+              const VectorT3 en = faceArea[f]/faceAreaMag[f];
+              const VectorT3 dr0(faceCentroid[f]-cellCentroid[c0]);
+              
+              const T dr0_dotn = dot(dr0,en);
+              const VectorT3 dr1 = dr0 - 2.*dr0_dotn*en;
+              cellCentroid[c1] = cellCentroid[c0]+dr0-dr1;
+          }
+          
+      }
+      else
+      {
+          for(int f=0; f<faceCount; f++)
+          {
+              const int c1 = faceCells(f,1);
+              cellCentroid[c1] = faceCentroid[f];
+          }
       }
   }
   _coordField.addArray(cells,ccPtr);

@@ -47,12 +47,39 @@ public:
     _fullLinearization(fullLinearization)
    {}
 
-                          
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
                   MultiField& xField, MultiField& rField)
   {
+    const StorageSite& iFaces = mesh.getInteriorFaceGroup().site;
+    
+    discretizeFaces(mesh, iFaces, mfmatrix, xField, rField, false, false);
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        const StorageSite& faces = fg.site;
+        discretizeFaces(mesh, faces, mfmatrix, xField, rField, false, false);
+    }
+        
+    // boundaries
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        const StorageSite& faces = fg.site;
+        discretizeFaces(mesh, faces, mfmatrix, xField, rField,
+                        true,
+                        fg.groupType=="symmetry");
+    }
+  }
+
+                          
+  void discretizeFaces(const Mesh& mesh, const StorageSite& faces,
+                       MultiFieldMatrix& mfmatrix,
+                       MultiField& xField, MultiField& rField,
+                       const bool isBoundary, const bool isSymmetry)
+  {
     const StorageSite& cells = mesh.getCells();
-    const StorageSite& faces = mesh.getFaces();
+
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
 
     const VectorT3Array& faceArea =
@@ -71,7 +98,7 @@ public:
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
-    const CRConnectivity& faceCells = mesh.getAllFaceCells();
+    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
     VectorT3Array& rCell = dynamic_cast<VectorT3Array&>(rField[cVarIndex]);
     const VectorT3Array& xCell = dynamic_cast<const VectorT3Array&>(xField[cVarIndex]);
@@ -107,6 +134,8 @@ public:
         const int c1 = faceCells(f,1);
 
 	const VectorT3& Af = faceArea[f];
+        const VectorT3 en = Af/faceAreaMag[f];
+        
         VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
 
         T vol0 = cellVolume[c0];
@@ -115,8 +144,8 @@ public:
         T wt0 = vol0/(vol0+vol1);
         T wt1 = vol1/(vol0+vol1);
 
-        if (c1 >= nInteriorCells)
-        {
+        if (isBoundary && !isSymmetry)
+        {  
             wt0 = T(1.0);
             wt1 = T(0.);
         }
@@ -176,8 +205,14 @@ public:
             {
                 const int nb = vgmCol[nnb];
                 
-                const VectorT3& g_nb = vgmCoeffs[nnb];
-
+                VectorT3 g_nb = vgmCoeffs[nnb];
+#if 1
+                if (isSymmetry)
+                {
+                    const T gnb_dot_nx2 = T(2.0)*dot(en,g_nb);
+                    g_nb = gnb_dot_nx2*en;
+                }
+#endif
                 Diag coeff;
 
                 for(int i=0; i<3; i++)
@@ -192,7 +227,25 @@ public:
                     for(int k=0; k<3; k++)
                       coeff(i,i) += wt0*secondaryCoeff[k]*g_nb[k];
                 }
-                
+#if 0
+                if (isSymmetry)
+                {
+                    SquareTensor<T,3> R;
+                    
+                    for(int i=0;i<3;i++)
+                      for(int j=0; j<3; j++)
+                      {
+                          if (i==j)
+                            R(i,j) = 1.0 - 2*en[i]*en[j];
+                          else
+                            R(i,j) = - 2*en[i]*en[j];
+                      }
+
+                    Diag coeff1(R*coeff*R);
+                    coeff += coeff1;
+                      
+                }
+#endif
                 OffDiag& a0_nb = matrix.getCoeff(c0,nb);
 
                 a0_nb += coeff;
@@ -209,41 +262,44 @@ public:
             }
 
 
-            for(int nnb = vgmRow[c1]; nnb<vgmRow[c1+1]; nnb++)
+            if (!isBoundary)
             {
-                const int nb = vgmCol[nnb];
-                const VectorT3& g_nb = vgmCoeffs[nnb];
-
-                Diag coeff;
-                
-                for(int i=0; i<3; i++)
+                for(int nnb = vgmRow[c1]; nnb<vgmRow[c1+1]; nnb++)
                 {
-                    for(int j=0; j<3; j++)
+                    const int nb = vgmCol[nnb];
+                    const VectorT3& g_nb = vgmCoeffs[nnb];
+                    
+                    Diag coeff;
+                    
+                    for(int i=0; i<3; i++)
                     {
-                        coeff(i,j) = wt1*(faceMu*Af[j]*g_nb[i] 
-                                          + faceLambda*Af[i]*g_nb[j]
-                                          );
+                        for(int j=0; j<3; j++)
+                        {
+                            coeff(i,j) = wt1*(faceMu*Af[j]*g_nb[i] 
+                                              + faceLambda*Af[i]*g_nb[j]
+                                              );
+                        }
+                        
+                        for(int k=0; k<3; k++)
+                          coeff(i,i) += wt1*secondaryCoeff[k]*g_nb[k];
                     }
-
-                    for(int k=0; k<3; k++)
-                      coeff(i,i) += wt1*secondaryCoeff[k]*g_nb[k];
+                    
+                    
+                    OffDiag& a1_nb = matrix.getCoeff(c1,nb);
+                    a1_nb -= coeff;
+                    a11 += coeff;
+                    a01 -= coeff;
+                    
+                    if (c0 != nb)
+                    {
+                        OffDiag& a0_nb = matrix.getCoeff(c0,nb);
+                        
+                        a0_nb += coeff;
+                    }
+                    else
+                      a00 += coeff;
+                    
                 }
-
-                
-                OffDiag& a1_nb = matrix.getCoeff(c1,nb);
-                a1_nb -= coeff;
-                a11 += coeff;
-                a01 -= coeff;
-                
-                if (c0 != nb)
-                {
-                    OffDiag& a0_nb = matrix.getCoeff(c0,nb);
-
-                    a0_nb += coeff;
-                }
-                else
-                  a00 += coeff;
-                
             }
         }
         
