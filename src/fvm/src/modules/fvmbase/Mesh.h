@@ -28,7 +28,7 @@ struct FaceGroup
   
   const StorageSite site;
   const int id;
-  const string groupType;
+  string groupType;
 };
 
 

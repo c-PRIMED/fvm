@@ -30,7 +30,7 @@ private:
 struct FaceGroup
 {
   const int id;
-  const string groupType;
+  string groupType;
   const StorageSite site;
 private:
   FaceGroup();
