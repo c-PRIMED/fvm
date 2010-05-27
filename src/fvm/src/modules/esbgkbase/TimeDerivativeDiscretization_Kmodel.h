@@ -29,10 +29,6 @@ public:
  TimeDerivativeDiscretization_Kmodel(const MeshList& meshes,
 				     const GeomFields& geomFields,
 				     Field& varField,Field& varN1Field,Field& varN2Field,
-				     //const  DistFunctFields<X>& dsff,
-				     //const  DistFunctFields<X>& dsffN1,
-				     //const  DistFunctFields<X>& dsffN2,
-				     // const int direction,
 				     const T_Scalar dT,
 				     const T_Scalar nonDimLength):
 				   
@@ -41,8 +37,6 @@ public:
     _varField(varField),
     _varN1Field(varN1Field),
     _varN2Field(varN2Field),
-    //_dsff(dsff), _dsffN1(dsffN1), _dsffN2(dsffN2),
-    //_direction(direction),
     _dT(dT),
     _nonDimLength(nonDimLength)
   {}
@@ -52,7 +46,11 @@ public:
   {    
     const StorageSite& cells = mesh.getCells();
 
-    const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+    //const TArray& dsff = 
+    //  dynamic_cast<const TArray&>(_dsff[cells]);
+
+    const TArray& cellVolume = 
+      dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
     // Field& _varField =  *_dsff.dsf[_direction];  
     //Field& _varN1Field =  *_dsffN1.dsf[_direction]; 
@@ -60,7 +58,8 @@ public:
   
     
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
-    CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
+    CCMatrix& matrix = 
+      dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
 
     DiagArray& diag = matrix.getDiag();
 

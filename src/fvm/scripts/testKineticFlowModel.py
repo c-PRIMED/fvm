@@ -18,7 +18,7 @@ from FluentCase import FluentCase
 
 fileBase = None
 numIterations = 10
-fileBase = "/home/aerosun/a/schigull/FVM-trial/src/fvm/test/testKineticFlowModel"
+fileBase = "/home/aerosun/a/vayyaswa/FVM-trial/src/fvm/test/testKineticFlowModel"
 def usage():
     print "Usage: %s filebase [outfilename]" % sys.argv[0]
     print "Where filebase.cas is a Fluent case file."
@@ -92,7 +92,10 @@ import fvm.esbgk_atyped_double as esbgk
 #import fvm.DistFunctFields as f
 
 foptions = fmodel.getOptions()
+foptions['timeStep'] = 1E-6
+foptions.transient = True
 fmodel.init()
+
 
 #kineticmodel=fvm.models.KineticModelA(meshes,flowFields,macroFields,quad)
 #kineticmodel.init()
@@ -117,20 +120,23 @@ esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
 
 esbgk1.weightedMaxwellian(0.25,4.0,1.0) #initial distribution
 #esbgk1.OutputDsfBLOCK()
-esbgk1.ComputeMacroparameters() 
+esbgk1.ComputeMacroparameters()
+
+print macroFields.collisionFrequency 
 
 #esbgk1.initializeMaxwellianEq() #equilibrium dist function
 
 #esbgk1.dsfPtr.OutputDistributionFunction(dsfPtr)
 
-esbgk1.advance(1)
+#esbgk1.advance(1)
+#esbgk1.OutputDsfBLOCK()
+numIterations=1
+def advance(niter):
+    for i in range(0,niter):
+        esbgk1.advance(1)
+       
+advance(numIterations)        
 esbgk1.OutputDsfBLOCK()
-#numIterations=1
-#def advance(niter):
-#    for i in range(0,niter):
-#        esbgk1.advance(1)
-#       
-#advance(numIterations)        
 
 """
 cellSite = meshes[0].getCells()

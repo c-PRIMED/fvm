@@ -19,6 +19,7 @@
 #include "KineticBC.h"
 #include "TimeDerivativeDiscretization_Kmodel.h"
 #include "CollisionTermDiscretization.h"
+#include "ConvectionDiscretization_Kmodel.h"
 
 #include "Linearizer.h"
 #include "CRConnectivity.h"
@@ -210,7 +211,8 @@ class KineticModel : public Model
 	  }
       }
   }
-  
+      
+
   void initializeMaxwellianEq()
   {
     const int numMeshes = _meshes.size();
@@ -420,13 +422,32 @@ return _vcMap;
     
     Field& fnd = *_dsfPtr.dsf[direction]; 
     Field& feq = *_dsfEqPtr.dsf[direction]; 
+
+    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+
+    //const double cx1 = dynamic_cast<const double>(cx[direction]);
+    //const double cy1 = dynamic_cast<const double>(cy[direction]);
+    //const double cz1 = dynamic_cast<const double>(cz[direction]);
+
     shared_ptr<Discretization>
       sd(new CollisionTermDiscretization<T,T,T>
 	 (_meshes, _geomFields, 
 	  fnd,feq,
 	  _macroFields.collisionFrequency));
     discretizations.push_back(sd);
-    
+
+    /*    shared_ptr<Discretization> 
+      cd(new ConvectionDiscretization_Kmodel<T,T,T> 
+	 (_meshes,
+	  _geomFields,
+	  fnd,
+	  cx[direction],
+	  cy[direction],
+ 	  cz[direction]));
+    discretizations.push_back(cd);
+    */
     if (_options.transient)
       {
 	// const int direction(0);  
