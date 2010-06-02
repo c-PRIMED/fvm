@@ -92,8 +92,8 @@ import fvm.esbgk_atyped_double as esbgk
 #import fvm.DistFunctFields as f
 
 foptions = fmodel.getOptions()
-foptions['timeStep'] = 1E-6
-foptions.transient = True
+foptions['timeStep'] = 1E-8
+#foptions.transient = True
 fmodel.init()
 
 
@@ -118,11 +118,15 @@ esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
 
 #import ddd
 
+
 esbgk1.weightedMaxwellian(0.25,4.0,1.0) #initial distribution
 #esbgk1.OutputDsfBLOCK()
 esbgk1.ComputeMacroparameters()
 
-print macroFields.collisionFrequency 
+cellSite = meshes[0].getCells()
+collisionFrequencyField =  macroFields.collisionFrequency[cellSite].asNumPyArray()
+print 'len = ',len(collisionFrequencyField)
+print collisionFrequencyField[0],collisionFrequencyField[1],collisionFrequencyField[2]
 
 #esbgk1.initializeMaxwellianEq() #equilibrium dist function
 
