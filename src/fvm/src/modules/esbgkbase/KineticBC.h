@@ -40,7 +40,7 @@ struct KineticModelOptions : public FloatVarDict<T>
     this->defineVar("momentumURF",T(0.7));
     this->defineVar("velocityURF",T(1.0));
     this->defineVar("pressureURF",T(0.3));
-    this->defineVar("timeStep",T(0.0001)); 
+    this->defineVar("timeStep",T(1E-6)); 
     this->defineVar("nonDimLength",T(1.0));
     this->defineVar("operatingPressure",T(101325.0));
     this->defineVar("operatingTemperature",T(300.0));
@@ -48,7 +48,7 @@ struct KineticModelOptions : public FloatVarDict<T>
 
     this->Tolerance=1e-4;
     this->printNormalizedResiduals = true;
-    this->transient = false;
+    this->transient = true;
     this->timeDiscretizationOrder=1;
     this->KineticLinearSolver = 0;
      

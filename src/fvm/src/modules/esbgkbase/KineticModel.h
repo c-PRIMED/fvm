@@ -58,6 +58,8 @@ class KineticModel : public Model
     _quadrature(quad),
     _macroFields(macroFields),
     _dsfPtr(_meshes,_quadrature),
+    _dsfPtr1(_meshes,_quadrature),
+    _dsfPtr2(_meshes,_quadrature),
     _dsfEqPtr(_meshes,_quadrature)
     {     
       //dsfPtr=new TDistFF(mesh,macroPr,quad);   
@@ -267,6 +269,20 @@ class KineticModel : public Model
 	    f[c]=weight1*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-vel1),2.0)+pow((cy[j]-0.0),2.0)+pow((cz[j]-0.0),2.0))/1.0)
 	      +(1-weight1)*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-vel2),2.0)+pow((cy[j]-0.0),2.0)+pow((cz[j]-0.0),2.0))/1.0);
 	  }
+	  if (_options.transient)
+	    {
+	      Field& fnd1 = *_dsfPtr1.dsf[j];
+	      TArray& f1 = dynamic_cast< TArray&>(fnd1[cells]);
+	      for (int c=0;c<nCells;c++)
+		f1[c] = f[c];
+	      if (_options.timeDiscretizationOrder > 1)
+		{
+		  Field& fnd2 = *_dsfPtr2.dsf[j];
+		  TArray& f2 = dynamic_cast< TArray&>(fnd2[cells]);
+		  for (int c=0;c<nCells;c++)
+		    f2[c] = f[c];
+		}
+	    }
 	}
       }
   }
@@ -452,15 +468,15 @@ return _vcMap;
       {
 	// const int direction(0);  
 	Field& fnd = *_dsfPtr.dsf[direction];            
-	
+	Field& fnd1 = *_dsfPtr1.dsf[direction];
+	Field& fnd2 = *_dsfPtr2.dsf[direction];
+
 	shared_ptr<Discretization>
 	  td(new TimeDerivativeDiscretization_Kmodel<T,T,T>
 	     (_meshes,_geomFields,
-	      fnd,fnd,fnd,
-	      //_dsfPtr,dsfPtr,_dsfPtr,
-	      //direction,
+	      fnd,fnd1,fnd2,
 	      _options["timeStep"],
-	      _options["NonDimLength"]));
+	      _options["nonDimLength"]));
 	
 	discretizations.push_back(td);
 	
@@ -472,6 +488,32 @@ return _vcMap;
 			 ls.getX(), ls.getB());
   }
   
+  void updateTime()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0;n<numMeshes;n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+
+	const StorageSite& cells = mesh.getCells();
+	const int numFields= _quadrature.getDirCount(); 
+
+	for (int direction = 0; direction < numFields; direction++)
+	  {
+	    Field& fnd = *_dsfPtr.dsf[direction];
+	    Field& fndN1 = *_dsfPtr1.dsf[direction];
+	    TArray& f = dynamic_cast<TArray&>(fnd[cells]);
+	    TArray& fN1 = dynamic_cast<TArray&>(fndN1[cells]);
+	    if (_options.timeDiscretizationOrder > 1)
+	      {
+		Field& fndN2 = *_dsfPtr2.dsf[direction];
+		TArray& fN2 = dynamic_cast<TArray&>(fndN2[cells]);
+		fN2 = fN1; 
+	      }
+	    fN1 = f;
+	  }
+      }
+  }	  
   
   
   void advance(const int niter)
@@ -596,8 +638,8 @@ void OutputDsfBLOCK() //, const char* filename)
   MacroFields& _macroFields;
   DistFunctFields<T> _dsfPtr;  
   DistFunctFields<T> _dsfEqPtr;
-  //DistFunctFields<T> _dsfPtr1;
-  //DistFunctFields<T> _dsfPtr2;
+  DistFunctFields<T> _dsfPtr1;
+  DistFunctFields<T> _dsfPtr2;
   FlowBCMap _bcMap;
   FlowVCMap _vcMap;
 

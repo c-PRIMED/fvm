@@ -62,6 +62,7 @@ public:
       rCell[c ] -= cellVolume[c]*nue[c]*(x[c]-source[c]);
       diag[c]-=cellVolume[c]*nue[c];
     }
+    cout << "diag[0] = " << diag[0]    
   }
     
 

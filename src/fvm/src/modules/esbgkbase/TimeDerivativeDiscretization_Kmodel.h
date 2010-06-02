@@ -2,6 +2,7 @@
 #ifndef _TIMEDERIVATIVEDISCRETIZATION_KMODEL_H_
 #define _TIMEDERIVATIVEDISCRETIZATION_KMODEL_H_
 
+#include <stdio.h>
 #include <math.h>
 #include "CRMatrix.h"
 #include "Field.h"
