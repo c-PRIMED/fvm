@@ -92,7 +92,7 @@ import fvm.esbgk_atyped_double as esbgk
 #import fvm.DistFunctFields as f
 
 foptions = fmodel.getOptions()
-foptions['timeStep'] = 1E-8
+foptions['timeStep'] = 1E-4
 #foptions.transient = True
 fmodel.init()
 
@@ -134,10 +134,12 @@ print collisionFrequencyField[0],collisionFrequencyField[1],collisionFrequencyFi
 
 #esbgk1.advance(1)
 #esbgk1.OutputDsfBLOCK()
-numIterations=1
+numIterations=5
 def advance(niter):
     for i in range(0,niter):
         esbgk1.advance(1)
+        esbgk1.updateTime()
+        print 'iteration = ',i
        
 advance(numIterations)        
 esbgk1.OutputDsfBLOCK()

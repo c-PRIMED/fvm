@@ -59,10 +59,11 @@ public:
     
     for(int c=0; c<nCells; c++)
     {
-      rCell[c ] -= cellVolume[c]*nue[c]*(x[c]-source[c]);
+      rCell[c] -= cellVolume[c]*nue[c]*(x[c]-source[c]);
       diag[c]-=cellVolume[c]*nue[c];
+      
     }
-    cout << "diag[0] = " << diag[0];
+    
   }
     
 
