@@ -36,6 +36,8 @@ using namespace std;
 
 %include "MovingMeshModel.i"
 
+%include "StructureDeformationModel.i"
+
 #ifdef USING_ATYPE_TANGENT
 
 typedef Vector<Tangent,3> VecTangent3;

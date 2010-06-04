@@ -33,3 +33,7 @@ template class MovingMeshModel<ATYPE>;
 
 template class StructureModel<ATYPE>;
 
+
+#include "StructureDeformationModel.h"
+template class StructureDeformationModel<ATYPE>;
+
