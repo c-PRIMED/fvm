@@ -1,3 +1,6 @@
+#ifndef _KINETICBC_H_
+#define _KINETICBC_H_
+
 #include "misc.h"
 #include "FloatVarDict.h"
 #include "AMG.h"
@@ -40,7 +43,7 @@ struct KineticModelOptions : public FloatVarDict<T>
     this->defineVar("momentumURF",T(0.7));
     this->defineVar("velocityURF",T(1.0));
     this->defineVar("pressureURF",T(0.3));
-    this->defineVar("timeStep",T(1E-4)); 
+    this->defineVar("timeStep",T(5E-5)); 
     this->defineVar("nonDimLength",T(1.0));
     this->defineVar("operatingPressure",T(101325.0));
     this->defineVar("operatingTemperature",T(300.0));
@@ -83,3 +86,4 @@ struct KineticModelOptions : public FloatVarDict<T>
 
 };
 
+#endif

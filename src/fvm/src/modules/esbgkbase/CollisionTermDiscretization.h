@@ -16,7 +16,7 @@ class CollisionTermDiscretization : public Discretization
 {
 public:
 
-  typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
+   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
 
   typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
   typedef typename CCMatrix::DiagArray DiagArray;
@@ -57,11 +57,11 @@ public:
     const XArray& nue = dynamic_cast<const XArray&>(_collisionFrequency[cells]);
     const int nCells = cells.getSelfCount();
     
+    //cout << nue[0] << " " << nue[100] << " " << nue[50] << endl ;
     for(int c=0; c<nCells; c++)
     {
       rCell[c] -= cellVolume[c]*nue[c]*(x[c]-source[c]);
-      diag[c]-=cellVolume[c]*nue[c];
-      
+      diag[c]-=cellVolume[c]*nue[c]; 
     }
     
   }

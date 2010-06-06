@@ -31,7 +31,8 @@ public:
 				     const GeomFields& geomFields,
 				     Field& varField,Field& varN1Field,Field& varN2Field,
 				     const T_Scalar dT,
-				     const T_Scalar nonDimLength):
+				     const T_Scalar nonDimLength,
+				     const int Order):
 				   
   Discretization(meshes),
     _geomFields(geomFields),
@@ -39,7 +40,8 @@ public:
     _varN1Field(varN1Field),
     _varN2Field(varN2Field),
     _dT(dT),
-    _nonDimLength(nonDimLength)
+    _nonDimLength(nonDimLength),
+    _Order(Order)
   {}
   
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -72,8 +74,8 @@ public:
     
     const int nCells = cells.getSelfCount();
 
-
-    if (_varN2Field.hasArray(cells))
+    //cout << "cellVolume" << cellVolume[0] << endl ;
+    if (_Order > 1)
       {
         // second order
         const XArray& xN2 = dynamic_cast<const XArray&>(_varN2Field[cells]);
@@ -90,6 +92,7 @@ public:
 			       + pointFive*xN2[c]);
 	    diag[c] -= fbydT*onePointFive;
 	  }
+	//cout << "Second diag[0] = " << diag[0] << endl ;
       }
     
     else
@@ -100,6 +103,7 @@ public:
 	    rCell[c] -= fbydT*(x[c]- xN1[c]);
 	    diag[c] -= fbydT;
 	  }
+      	//cout << "First diag[0] = " << diag[0] << endl ;
       }
     
   }
@@ -114,6 +118,7 @@ private:
   //const int _direction;
   const T_Scalar _dT;
   const T_Scalar _nonDimLength;
+  const int _Order;
 };
 
 #endif

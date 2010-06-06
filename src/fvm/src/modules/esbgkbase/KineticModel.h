@@ -20,6 +20,7 @@
 #include "TimeDerivativeDiscretization_Kmodel.h"
 #include "CollisionTermDiscretization.h"
 #include "ConvectionDiscretization_Kmodel.h"
+#include "KineticBoundaryConditions.h"
 
 #include "Linearizer.h"
 #include "CRConnectivity.h"
@@ -166,6 +167,8 @@ class KineticModel : public Model
 	  
 	}
 	
+
+	cout << "T" << temperature[0] << endl;
 	for(int c=0; c<nCells;c++){
 	  v[c][0]=v[c][0]/density[c];
 	  v[c][1]=v[c][1]/density[c];
@@ -175,8 +178,8 @@ class KineticModel : public Model
 					 +pow(v[c][2],2.0))*density[c];
 	  temperature[c]=temperature[c]/(1.5*density[c]);  
 	  pressure[c]=density[c]*temperature[c];
-       }
-	
+	}
+	cout << "T" << temperature[0] << endl;
 	
       }
     //fclose(pFile);
@@ -234,6 +237,10 @@ class KineticModel : public Model
 	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
 	const int numFields= _quadrature.getDirCount(); 
 	
+	cout << "temperature [0] = " << temperature[0] << endl;
+	cout << "v [0][0] = " << v[0][0] << endl;
+	cout << "v [0][1] = " << v[0][1] << endl;
+	cout << "v [0][2] = " << v[0][2] << endl;
 	for(int j=0;j< numFields;j++){
 	  Field& fnd = *_dsfEqPtr.dsf[j];
 	  TArray& f = dynamic_cast< TArray&>(fnd[cells]);
@@ -255,7 +262,7 @@ class KineticModel : public Model
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
-	double pi(3.14159);
+	double pi(acos(-1.0));
 	
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
@@ -275,6 +282,7 @@ class KineticModel : public Model
 	      TArray& f1 = dynamic_cast< TArray&>(fnd1[cells]);
 	      for (int c=0;c<nCells;c++)
 		f1[c] = f[c];
+              //cout << "discretization order " << _options.timeDiscretizationOrder << endl ;
 	      if (_options.timeDiscretizationOrder > 1)
 		{
 		  Field& fnd2 = *_dsfPtr2.dsf[j];
@@ -471,12 +479,14 @@ return _vcMap;
 	Field& fnd1 = *_dsfPtr1.dsf[direction];
 	Field& fnd2 = *_dsfPtr2.dsf[direction];
 
+        
 	shared_ptr<Discretization>
 	  td(new TimeDerivativeDiscretization_Kmodel<T,T,T>
 	     (_meshes,_geomFields,
 	      fnd,fnd1,fnd2,
 	      _options["timeStep"],
-	      _options["nonDimLength"]));
+	      _options["nonDimLength"],
+	      _options.timeDiscretizationOrder));
 	
 	discretizations.push_back(td);
 	
@@ -542,8 +552,8 @@ return _vcMap;
 	     _options.getKineticLinearSolver().cleanup();
 	  }
 	
-	ComputeMacroparameters();
-		ComputeCollisionfrequency();	
+	//ComputeMacroparameters();
+	//ComputeCollisionfrequency();	
 	//	_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
 	//	initializeMaxwellianEq();
 	  	/*
@@ -565,15 +575,15 @@ return _vcMap;
     //_dsfPtr.OutputDsf(_dsfPtr,filename);
   }
   
-void OutputDsfBLOCK() //, const char* filename)
+void OutputDsfBLOCK(const char* filename)
   {
     FILE * pFile;
-    pFile = fopen("f0BLOCK.plt","w"); 
+    pFile = fopen(filename,"w"); 
     int N1=_quadrature.getNVCount();
     int N2=_quadrature.getNthetaCount();
     int N3=_quadrature.getNphiCount();
     fprintf(pFile,"%s \n", "VARIABLES= cx, cy, cz, f,fEq,");
-    fprintf(pFile, "%s %i %s %i %s %i %s \n","ZONE I=", N3,",J=",N2,"K=",N1,
+    fprintf(pFile, "%s %i %s %i %s %i %s \n","ZONE I=", N3,",J=",N2,",K=",N1,
     	    ",F=BLOCK, VARLOCATION=(NODAL,NODAL,NODAL,NODAL,NODAL)");
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++){
@@ -598,6 +608,7 @@ void OutputDsfBLOCK() //, const char* filename)
 	fprintf(pFile,"%E\n",fEq[0]);
       }
     }
+    fclose(pFile);
   }
  void OutputDsfPOINT() //, const char* filename)
   {
@@ -637,9 +648,9 @@ void OutputDsfBLOCK() //, const char* filename)
  
   MacroFields& _macroFields;
   DistFunctFields<T> _dsfPtr;  
-  DistFunctFields<T> _dsfEqPtr;
   DistFunctFields<T> _dsfPtr1;
   DistFunctFields<T> _dsfPtr2;
+  DistFunctFields<T> _dsfEqPtr;
   FlowBCMap _bcMap;
   FlowVCMap _vcMap;
 

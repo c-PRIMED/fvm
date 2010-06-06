@@ -91,13 +91,13 @@ import fvm.esbgk_atyped_double as esbgk
 #import fvm.MacroParameters as macropr
 #import fvm.DistFunctFields as f
 
-foptions = fmodel.getOptions()
-foptions['timeStep'] = 1E-4
+#foptions = fmodel.getOptions()
+#foptions['timeStep'] = 1E-6
 #foptions.transient = True
-fmodel.init()
+#fmodel.init()
 
 
-#kineticmodel=fvm.models.KineticModelA(meshes,flowFields,macroFields,quad)
+#kineticmodel=fvm.models.KineticModelD(meshes,flowFields,macroFields,quad)
 #kineticmodel.init()
 
 #cartesian
@@ -109,6 +109,10 @@ quad2=esbgk.QuadratureD(16,16,1,8,1,4) #gauss-hermit quadrature and 3/8th rule
 macroFields=esbgk.MacroFields('flow')
 
 esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
+#esbgk1options = esbgk1.getOptions()
+#print esbgk1options['timeStep']
+
+#print options
 
 #esbgk.KineticModelD.OutputDsfPOINT(esbgk1)
 #esbgk1.OutputDsfPOINT()
@@ -119,14 +123,14 @@ esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
 #import ddd
 
 
-esbgk1.weightedMaxwellian(0.25,4.0,1.0) #initial distribution
+#esbgk1.weightedMaxwellian(0.25,4.0,1.0) #initial distribution
 #esbgk1.OutputDsfBLOCK()
-esbgk1.ComputeMacroparameters()
+#esbgk1.ComputeMacroparameters()
 
 cellSite = meshes[0].getCells()
-collisionFrequencyField =  macroFields.collisionFrequency[cellSite].asNumPyArray()
-print 'len = ',len(collisionFrequencyField)
-print collisionFrequencyField[0],collisionFrequencyField[1],collisionFrequencyField[2]
+densityField =  macroFields.density[cellSite].asNumPyArray()
+print 'len = ',len(densityField)
+print densityField[0],densityField[1],densityField[2]
 
 #esbgk1.initializeMaxwellianEq() #equilibrium dist function
 
@@ -134,15 +138,20 @@ print collisionFrequencyField[0],collisionFrequencyField[1],collisionFrequencyFi
 
 #esbgk1.advance(1)
 #esbgk1.OutputDsfBLOCK()
-numIterations=5
+numIterations=50
+output_interval = 2
 def advance(niter):
     for i in range(0,niter):
         esbgk1.advance(1)
         esbgk1.updateTime()
-        print 'iteration = ',i
+        print 'timestep = ',i+1
+        if ((i+1)%output_interval == 0) :
+            filename = "output"+str(i+1)+".plt"
+            esbgk1.OutputDsfBLOCK(filename)
+
        
 advance(numIterations)        
-esbgk1.OutputDsfBLOCK()
+esbgk1.OutputDsfBLOCK("final.plt")
 
 """
 cellSite = meshes[0].getCells()
