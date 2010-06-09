@@ -115,6 +115,7 @@ public:
   const CRConnectivity& getCellFaces() const;
   const CRConnectivity& getCellCells() const;
   const CRConnectivity& getCellCells2() const;
+  const CRConnectivity& getFaceCells2() const;
 
   CRConnectivity& getAllFaceCells();
   
@@ -129,6 +130,9 @@ public:
 
   const FaceGroupList& getInterfaceGroups() const
   {return _interfaceGroups;}
+  
+  const FaceGroupList& getAllFaceGroups() const
+  {return _faceGroups;}
   
 #if 0
   const FaceGroup&
@@ -229,6 +233,7 @@ protected:
   //mutable Array<int> *_cellTypes;
   //mutable Array<int> *_cellTypeCount;
   mutable shared_ptr<CRConnectivity> _cellCells2;
+  mutable shared_ptr<CRConnectivity> _faceCells2;
 };
 
 typedef vector<Mesh*> MeshList;
