@@ -105,6 +105,14 @@ public:
         v.push_back(fg.get());
       return v;
     }
+    std::vector<FaceGroup*> getAllFaceGroups()
+    {
+      std::vector<FaceGroup*> v;
+      const FaceGroupList& fgs = self->getAllFaceGroups();
+      foreach(FaceGroupPtr fg, fgs)
+        v.push_back(fg.get());
+      return v;
+    }
   }
   //  const FaceGroup&  getFaceGroup(const int i) const;
   
