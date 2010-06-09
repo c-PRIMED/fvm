@@ -141,6 +141,8 @@ class MPMCoupling:
                 #self.dtMPM = self.dtMPM / 1000.0 #from "msec" to "second" conversion
                 self.FVM_COMM_MPM.Bcast([self.timeMPM, MPI.DOUBLE], root=0)
                 #self.timeMPM = self.timeMPM / 1000.0 #from "msec" to "second" conversion
+
+
                 #gettin nlocalfaces from MPM ( len(nlocalfaces) = remote_comm_world.size() )
                 self.FVM_COMM_MPM.Allgather([None,MPI.INT],[self.nfaces,MPI.INT])
                 #count (assumming 4 nodes per faces)
@@ -157,9 +159,11 @@ class MPMCoupling:
                 #getting facenodes
                 tt = self.faceNodesMPM.asNumPyArray()
                 self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.INT],[tt,count, displ,MPI.INT])
+
+
                 #getting boundary node counts
                 self.FVM_COMM_MPM.Allgather([None,MPI.INT],[self.nBndryNodes,MPI.INT])
-                #grid 
+                #count 
                 count = self.nBndryNodes * 3
                 #displ
                 displ[0] = 0
@@ -168,7 +172,20 @@ class MPMCoupling:
 		#creating buffer for boundary node coords
                 self.BndryNodeCoords =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nBndryNodes.sum() )
                 self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.BndryNodeCoords.asNumPyArray(),count, displ,MPI.DOUBLE]) 
-                print self.BndryNodeCoords.asNumPyArray()
+
+
+                #count
+                count = self.nfaces * 3 
+                #displ
+                displ = zeros( len(count), dtype='i')
+                #filling displ
+                displ[0] = 0
+                for i in range(1,len(count)):
+                   displ[i] = displ[i-1] + count[i-1]
+                #creating fvm array 
+                self.FaceCentroidVels =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nfaces.sum() )
+                self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.FaceCentroidVels.asNumPyArray(),count, displ,MPI.DOUBLE]) 
+                print self.FaceCentroidVels.asNumPyArray()                 
                 #get number of particles first
                 #self.px    = self.geomField.coordinate[self.mesh.getCells()].newSizedClone( nparticles )
                 #self.pv    = self.geomField.coordinate[self.mesh.getCells()].newSizedClone( nparticles )
