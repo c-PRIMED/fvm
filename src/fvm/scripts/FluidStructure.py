@@ -65,12 +65,12 @@ class MPMCoupling:
          self.fvmParticles = fvmbaseExt.FVMParticles( self.meshList );
          self.totParticlesFVM = zeros(1,int32);
          
+         self.remoteSize   = self.FVM_COMM_MPM.Get_remote_size()
+         self.nfaces       = zeros( self.remoteSize, dtype='i' )
+         self.nBndryNodes  = zeros( self.remoteSize, dtype='i' )
+
      def dim(self):
          return self.ndim;
-
-     def totalParticles(self):
-         self.FVM_COMM_MPM.Recv([self.nparticles, MPI.INT], source=0, tag=self.recvNparticle_TAG )
-         return self.nparticles
 
      #this method is similiar to updateMPM to send same time step information over and over again
      #until MPM code says enough, hopefully will be obsolete soon. It needs to be called after updateMPM
@@ -78,7 +78,7 @@ class MPMCoupling:
             #update fluid particles particles 
             self.idleFVM[0] = 1       
             while ( self.idleFVM[0] == 1 ):
-                self.FVM_COMM_MPM.Recv( [self.idleFVM, MPI.INT], source=0, tag=self.recvIdleFVM_TAG )
+                self.FVM_COMM_MPM.Bcast([self.idleFVM, MPI.INT], root=0)
 
      def updateMPM(self, dt, time, nsweep):
         
@@ -128,26 +128,55 @@ class MPMCoupling:
              self.FVM_COMM_MPM.Send( [self.stress, MPI.DOUBLE], dest = 0, tag = self.stressSendTAG );
              self.FVM_COMM_MPM.Send( [self.particlesVolume, MPI.DOUBLE], dest=0, tag=self.volumeSendTAG );
 
-     def acceptMPM(self, dt, time ):
+     def acceptMPM( self, dt, time ):
          epsilon = 0.00000000000001
          ratio_fvm_mpm = dt / max( self.dtMPM[0], epsilon )
+         print "ratio_fvm_mpm = %s, time-timeMPM  = %s at rank = %s "%(ratio_fvm_mpm, fabs( time - self.timeMPM[0]),MPI.COMM_WORLD.Get_rank() )
          if (  (fabs( time - self.timeMPM[0] ) <= epsilon ) or time <= epsilon or ratio_fvm_mpm > 1.0  ):
-            self.FVM_COMM_MPM.Recv([self.isContinue, MPI.INT], source=0, tag =  self.recvIsContinue_TAG )
+            self.FVM_COMM_MPM.Bcast([self.isContinue, MPI.INT], root=0)
+            print "rank = %s, isContinue = %s "%(self.procID, self.isContinue)
             if ( self.isContinue == 1 ):
+                #MPM time step
+                self.FVM_COMM_MPM.Bcast([self.dtMPM, MPI.DOUBLE], root=0)
+                #self.dtMPM = self.dtMPM / 1000.0 #from "msec" to "second" conversion
+                self.FVM_COMM_MPM.Bcast([self.timeMPM, MPI.DOUBLE], root=0)
+                #self.timeMPM = self.timeMPM / 1000.0 #from "msec" to "second" conversion
+                #gettin nlocalfaces from MPM ( len(nlocalfaces) = remote_comm_world.size() )
+                self.FVM_COMM_MPM.Allgather([None,MPI.INT],[self.nfaces,MPI.INT])
+                #count (assumming 4 nodes per faces)
+                count = self.nfaces * 4
+                #displ
+                displ = zeros( len(count), dtype='i')
+                #filling displ
+                displ[0] = 0
+                for i in range(1,len(count)):
+                   displ[i] = displ[i-1] + count[i-1]
+                #creating fvm array 
+                self.faceNodesMPM = fvmbaseExt.newIntArray( self.nfaces.sum() * 4 )              
+                self.faceNodesMPM.asNumPyArray()[:] = 0
+                #getting facenodes
+                tt = self.faceNodesMPM.asNumPyArray()
+                self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.INT],[tt,count, displ,MPI.INT])
+                #getting boundary node counts
+                self.FVM_COMM_MPM.Allgather([None,MPI.INT],[self.nBndryNodes,MPI.INT])
+                #grid 
+                count = self.nBndryNodes * 3
+                #displ
+                displ[0] = 0
+                for i in range(1,len(count)):
+		    displ[i] = displ[i-1] + count[i-1]
+		#creating buffer for boundary node coords
+                self.BndryNodeCoords =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nBndryNodes.sum() )
+                self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.BndryNodeCoords.asNumPyArray(),count, displ,MPI.DOUBLE]) 
+                print self.BndryNodeCoords.asNumPyArray()
                 #get number of particles first
-                nparticles = int( self.totalParticles() )
-                self.px    = self.geomField.coordinate[self.mesh.getCells()].newSizedClone( nparticles )
-                self.pv    = self.geomField.coordinate[self.mesh.getCells()].newSizedClone( nparticles )
-                self.pType = fvmbaseExt.newIntArray( nparticles )
-                self.pType.asNumPyArray()[:] = 1
-                self.FVM_COMM_MPM.Recv([self.dtMPM, MPI.DOUBLE], source=0, tag=self.recvDT_TAG )
-                self.dtMPM = self.dtMPM / 1000.0 #from "msec" to "second" conversion
-                self.FVM_COMM_MPM.Recv([self.timeMPM, MPI.DOUBLE], source=0, tag=self.recvTime_TAG )
-                self.timeMPM = self.timeMPM / 1000.0 #from "msec" to "second" conversion
-
-                self.FVM_COMM_MPM.Recv([self.px.asNumPyArray(), MPI.DOUBLE], source=0, tag=self.recvParticlesPos_TAG)
-                self.px.asNumPyArray()[:,:] = self.px.asNumPyArray()[:,:] / 1000.0    #conversion from 'm' to 'mm'
-                self.FVM_COMM_MPM.Recv([self.pv.asNumPyArray(), MPI.DOUBLE], source=0, tag=self.recvParticlesVel_TAG)
+                #self.px    = self.geomField.coordinate[self.mesh.getCells()].newSizedClone( nparticles )
+                #self.pv    = self.geomField.coordinate[self.mesh.getCells()].newSizedClone( nparticles )
+                #self.pType = fvmbaseExt.newIntArray( nparticles )
+                #self.pType.asNumPyArray()[:] = 1
+                #self.FVM_COMM_MPM.Recv([self.px.asNumPyArray(), MPI.DOUBLE], source=0, tag=self.recvParticlesPos_TAG)
+                #self.px.asNumPyArray()[:,:] = self.px.asNumPyArray()[:,:] / 1000.0    #conversion from 'm' to 'mm'
+                #self.FVM_COMM_MPM.Recv([self.pv.asNumPyArray(), MPI.DOUBLE], source=0, tag=self.recvParticlesVel_TAG)
                 #pv doesn't need conversion since mm/msec = m/s
                 #print "px (FVM) = ", self.px.asNumPyArray()[791,0:3]
                 #print "pv (FVM) = ", self.pv.asNumPyArray()[791,0:3]
@@ -158,6 +187,7 @@ class MPMCoupling:
                 self.solid.setCoordinates( self.px )
                 self.solid.setVelocities ( self.pv )
                 self.solid.setTypes( self.pType )
+ 
               
      def  particleSite(self):
          return self.particles 
@@ -171,7 +201,7 @@ class MPMCoupling:
      def getNparticles( self):
          return int(self.nparticles[0])
  
-  def   dump_coord_fluid(self, nparticles, px ):
+     def   dump_coord_fluid(self, nparticles, px ):
         fx = open('px_fluid.dat','w')
         fx.write( str(nparticles))
         fx.write("\n")
