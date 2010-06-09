@@ -268,6 +268,19 @@ Mesh::getCellCells2() const
   return *_cellCells2;
 }
 
+const CRConnectivity&
+Mesh::getFaceCells2() const
+{
+  if (!_faceCells2)
+  {
+      const CRConnectivity& cellCells = getCellCells();
+      const CRConnectivity& faceCells = getAllFaceCells();
+      _faceCells2 = faceCells.multiply(cellCells, false);
+  }
+  return *_faceCells2;
+}
+
+
 void
 Mesh::setFaceNodes(shared_ptr<CRConnectivity> faceNodes)
 {
