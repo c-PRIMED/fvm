@@ -26,6 +26,8 @@ struct GeomFields
   Field faceVel;
   Field nodeDisplacement;
   Field boundaryNodeNormal;
+  Field dirichletNodeDisplacement;
+  Field displacementOptions;
   // this file gets directly included in a swig ineterface definition
   // file hence protect the following
 #ifndef SWIG

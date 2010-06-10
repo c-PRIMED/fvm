@@ -14,6 +14,8 @@ GeomFields::GeomFields(const string baseName) :
   gridFlux(baseName+"gridFlux"),
   faceVel(baseName+"faceVel"),
   nodeDisplacement(baseName+"nodeDisplacement"),
-  boundaryNodeNormal(baseName+"boundaryNodeNormal")
+  boundaryNodeNormal(baseName+"boundaryNodeNormal"),
+  dirichletNodeDisplacement(baseName+"dirichletNodeDisplacement"),
+  displacementOptions(baseName+"displacementOptions")
 {}
 

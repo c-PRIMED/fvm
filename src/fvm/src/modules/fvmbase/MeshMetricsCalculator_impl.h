@@ -261,26 +261,6 @@ MeshMetricsCalculator<T>::calculateFaceAreas(const Mesh& mesh)
   _areaField.addArray(faces,faPtr);
 }
 
-
-template<class T>
-void
-MeshMetricsCalculator<T>::createNodeDisplacement()
-{
-  const int numMeshes = _meshes.size();
-  for (int n=0; n<numMeshes; n++)
-  {
-      const Mesh& mesh = *_meshes[n];
-      const StorageSite& nodes = mesh.getNodes();
-      const int count = nodes.getCount();
-      shared_ptr<VectorT3Array> nodeDisplacementPtr(new VectorT3Array(count));
-      VectorT3Array& nDisplacement = *nodeDisplacementPtr;
-      nDisplacement.zero();
-      _nodeDisplacement.addArray(nodes,nodeDisplacementPtr);
-  }
-  _nodeDisplacement.syncLocal();
-}
-
-
 template<class T>
 void
 MeshMetricsCalculator<T>::calculateBoundaryNodeNormal()

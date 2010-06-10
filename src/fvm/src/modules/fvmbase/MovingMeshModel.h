@@ -37,8 +37,12 @@ public:
           dynamic_cast<VectorT3Array&> (_geomFields.coordinate[nodes]);
 	VectorT3Array& nodeDisplacement = 
           dynamic_cast<VectorT3Array&> (_geomFields.nodeDisplacement[nodes]);
+        VectorT3Array& dirichletNodeDisplacement =
+          dynamic_cast<VectorT3Array&> (_geomFields.dirichletNodeDisplacement[nodes]);
 	VectorT3Array& nodeNormal = 
           dynamic_cast<VectorT3Array&> (_geomFields.boundaryNodeNormal[boundaryNodes]);          
+	const Array<int>& displacementOptions =
+	  dynamic_cast<Array<int>& > (_geomFields.displacementOptions[nodes]);
 	
         const CRConnectivity& cellNodes = mesh.getCellNodes();
 	shared_ptr<CRConnectivity> nodeCellsPtr = cellNodes.getTranspose();
@@ -48,7 +52,6 @@ public:
         const T one(1.0);
 	const T underrelaxation = _options["underrelaxation"];
 	const T small(1e-10);
-
         
         for(int i=0;i<_options.nNodeDisplacementSweeps;i++)
 	{
@@ -82,20 +85,20 @@ public:
 		    }
 		}
 		dr = dr/weight;
-		if((*_displacementOptionsPtr)[j] == 0)
+		if(displacementOptions[j] == 0)
 		{
 		    nodeDisplacement[j] = T(0.0);
 		    nodeCoordinate[j] += nodeDisplacement[j] - (*(_previousNodeDisplacementPtr))[j];
 		}
-		else if((*_displacementOptionsPtr)[j] == 1)
+		else if(displacementOptions[j] == 1)
 		{
-                    averageDirichletDisplacement += mag((*_dirichletNodeDisplacementPtr)[j]);
+                    averageDirichletDisplacement += mag((dirichletNodeDisplacement)[j]);
                     nDirichlet ++;
                     
-		    nodeDisplacement[j] = (*_dirichletNodeDisplacementPtr)[j];
+		    nodeDisplacement[j] = (dirichletNodeDisplacement)[j];
 		    nodeCoordinate[j] += nodeDisplacement[j] - (*(_previousNodeDisplacementPtr))[j];
 		}
-		else if((*_displacementOptionsPtr)[j] == 2)
+		else if(displacementOptions[j] == 2)
 		{
 		    T temp = dot(dr,nodeNormal[GlobalToLocal[j]]);
 		    nodeDisplacement[j] = dr - temp*nodeNormal[GlobalToLocal[j]];
@@ -105,7 +108,7 @@ public:
                       underrelaxation*(nodeDisplacement[j]-(*(_previousNodeDisplacementPtr))[j]);
 		    nodeCoordinate[j] += nodeDisplacement[j] - (*(_previousNodeDisplacementPtr))[j];
 		}
-		else if((*_displacementOptionsPtr)[j] == 3)
+		else if(displacementOptions[j] == 3)
 		{
 		    nodeDisplacement[j] = dr;
 		    nodeDisplacement[j] = (*(_previousNodeDisplacementPtr))[j] +
@@ -146,9 +149,7 @@ public:
     Model(meshes),
     _geomFields(geomFields),
     _flowFields(flowFields),
-    _meshes(meshes),
-    _displacementOptionsPtr(0),
-    _dirichletNodeDisplacementPtr(0)
+    _meshes(meshes)
   {
     logCtor();
   }
@@ -156,39 +157,6 @@ public:
   virtual ~MovingMeshModel() {}
   
   MovingMeshModelOptions<T>& getOptions() {return _options;}
-
-  ArrayBase& getDisplacementOptions()
-  {
-      // assumes number of meshes is 1
-      const int numMeshes = _meshes.size();
-      for(int n=0;n<numMeshes;n++)
-      {
-          const Mesh& mesh = *_meshes[n];
-	  const StorageSite& nodes = mesh.getNodes();
-	  const int nNodes = nodes.getCount();
-	  if(!_displacementOptionsPtr)
-	    _displacementOptionsPtr = new Array<int>(nNodes);
-	  *_displacementOptionsPtr = 3;
-      }
-      return *_displacementOptionsPtr;
-  }
-  
-
-  ArrayBase& setNodeDisplacement()
-  {
-      // assumes number of meshes is 1
-      const int numMeshes = _meshes.size();
-      for(int n=0;n<numMeshes;n++)
-      {
-	  const Mesh& mesh = *_meshes[n];
-	  const StorageSite& nodes = mesh.getNodes();
-	  const int nNodes = nodes.getCount();
-	  if(!_dirichletNodeDisplacementPtr)
-	    _dirichletNodeDisplacementPtr = new VectorT3Array(nNodes);
-	  (*_dirichletNodeDisplacementPtr).zero();
-      }
-      return *_dirichletNodeDisplacementPtr;
-  }
 
   void volChange()
   {
@@ -360,6 +328,17 @@ public:
             dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
 	  _geomFields.areaN1.addArray(faces,
 	    dynamic_pointer_cast<ArrayBase>(faceArea.newCopy()));
+          shared_ptr<Array<int> > displacementOptions(new Array<int>(nodes.getCount()));
+          *displacementOptions = 3;
+          _geomFields.displacementOptions.addArray(nodes,displacementOptions);
+          shared_ptr<VectorT3Array> dirichletNodeDisplacement
+	    (new VectorT3Array(nodes.getCount()));
+          dirichletNodeDisplacement->zero();
+          _geomFields.dirichletNodeDisplacement.addArray(nodes,dirichletNodeDisplacement);
+          shared_ptr<VectorT3Array> nodeDisplacement
+            (new VectorT3Array(nodes.getCount()));
+          nodeDisplacement->zero();
+          _geomFields.nodeDisplacement.addArray(nodes,nodeDisplacement);
           if (_options.timeDiscretizationOrder > 1)
 	  {
 	      _geomFields.volumeN2.addArray(cells,
@@ -375,8 +354,6 @@ private:
   FlowFields& _flowFields;
   const MeshList _meshes;
   MovingMeshModelOptions<T> _options;
-  Array<int>* _displacementOptionsPtr;
-  VectorT3Array* _dirichletNodeDisplacementPtr;
 };
 
 

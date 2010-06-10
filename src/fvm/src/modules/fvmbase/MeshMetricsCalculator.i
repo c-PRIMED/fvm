@@ -12,7 +12,6 @@ class MeshMetricsCalculator : public Model
 public:
   MeshMetricsCalculator(GeomFields& geomFields, const MeshList& meshes);
   virtual void init();
-  void createNodeDisplacement();
   void calculateBoundaryNodeNormal();
   void recalculate();
   void computeIBInterpolationMatrices(const StorageSite& particles);
