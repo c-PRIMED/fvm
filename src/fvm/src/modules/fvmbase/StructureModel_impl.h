@@ -325,6 +325,7 @@ public:
         // compute values of deformation flux
 
         // store deformation flux at interfaces
+	/*
         foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
@@ -333,6 +334,8 @@ public:
             deformationFlux->zero();
             _structureFields.deformationFlux.addArray(faces,deformationFlux);
 	}
+	*/
+
 	// store deformation flux at boundary faces
         foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 	{

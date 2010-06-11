@@ -352,37 +352,39 @@ public:
 
         // copy boundary values from adjacent cells
        
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
             const int faceCount = faces.getCount();
-            
-            if (fg.groupType == "symmetry")
-            {
-                const VectorT3Array& faceArea =
-                  dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-                const TArray& faceAreaMag =
-                  dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
-                for(int f=0; f<faceCount; f++)
-                {
-                    const int c0 = faceCells(f,0);
-                    const int c1 = faceCells(f,1);
-                    const VectorT3 en = faceArea[f]/faceAreaMag[f];
-                    reflectGradient((*gradPtr)[c1], (*gradPtr)[c0], en);
-                }
-            }
-            else
-            {
-                for(int f=0; f<faceCount; f++)
-                {
-                    const int c0 = faceCells(f,0);
-                    const int c1 = faceCells(f,1);
-                    
-                    (*gradPtr)[c1] = (*gradPtr)[c0];
-                }
-            }
+	    if (fg.groupType!="interior")
+	    {
+	        if (fg.groupType == "symmetry")
+		{
+		    const VectorT3Array& faceArea =
+		      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+		    const TArray& faceAreaMag =
+		      dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
+		    for(int f=0; f<faceCount; f++)
+		    {
+		        const int c0 = faceCells(f,0);
+			const int c1 = faceCells(f,1);
+			const VectorT3 en = faceArea[f]/faceAreaMag[f];
+			reflectGradient((*gradPtr)[c1], (*gradPtr)[c0], en);
+		    }
+		}
+		else
+		{
+		    for(int f=0; f<faceCount; f++)
+		    {
+		        const int c0 = faceCells(f,0);
+			const int c1 = faceCells(f,1);
+			
+			(*gradPtr)[c1] = (*gradPtr)[c0];
+		    }
+		}
+	    }
         }
 
     }

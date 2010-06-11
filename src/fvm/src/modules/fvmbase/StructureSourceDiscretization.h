@@ -54,21 +54,26 @@ public:
     
     discretizeFaces(mesh, iFaces, mfmatrix, xField, rField, false, false);
 
+    /*
     foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
     {
         const FaceGroup& fg = *fgPtr;
         const StorageSite& faces = fg.site;
         discretizeFaces(mesh, faces, mfmatrix, xField, rField, false, false);
     }
+    */
         
     // boundaries
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
     {
         const FaceGroup& fg = *fgPtr;
         const StorageSite& faces = fg.site;
-        discretizeFaces(mesh, faces, mfmatrix, xField, rField,
-                        true,
-                        fg.groupType=="symmetry");
+	if (fg.groupType!="interior")
+	{
+	    discretizeFaces(mesh, faces, mfmatrix, xField, rField,
+			    true,
+			    fg.groupType=="symmetry");
+	}
     }
   }
 
