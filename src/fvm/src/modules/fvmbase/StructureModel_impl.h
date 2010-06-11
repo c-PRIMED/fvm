@@ -242,10 +242,10 @@ public:
         StructureVC<T> *vc(new StructureVC<T>());
         vc->vcType = "structure";
         _vcMap[mesh.getID()] = vc;
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
-            if (_bcMap.find(fg.id) == _bcMap.end())
+            if ((_bcMap.find(fg.id) == _bcMap.end())&&(fg.groupType != "interior"))
             {
                 StructureBC<T> *bc(new StructureBC<T>());
                 
@@ -254,6 +254,10 @@ public:
                 {
                     bc->bcType = "SpecifiedTraction";
                 }
+                else if (fg.groupType == "interface")
+		  {
+                    bc->bcType = "SpecifiedTraction";
+		  }
 		else if (fg.groupType == "symmetry")
 		{
 		    bc->bcType = "Symmetry";
@@ -330,13 +334,16 @@ public:
             _structureFields.deformationFlux.addArray(faces,deformationFlux);
 	}
 	// store deformation flux at boundary faces
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 	{
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
             shared_ptr<VectorT3Array> deformationFlux(new VectorT3Array(faces.getCount()));
             deformationFlux->zero();
-            _structureFields.deformationFlux.addArray(faces,deformationFlux);
+	    if (fg.groupType != "interior")
+	    {
+	        _structureFields.deformationFlux.addArray(faces,deformationFlux);
+	    }
 	}
 
     }
@@ -438,9 +445,11 @@ public:
     {
         const Mesh& mesh = *_meshes[n];
 
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
+	    if (fg.groupType != "interior")
+	    {
             const StorageSite& faces = fg.site;
             const int nFaces = faces.getCount();
 	    const TArray& faceAreaMag = 
@@ -519,8 +528,9 @@ public:
 	    }
             else
               throw CException(bc.bcType + " not implemented for StructureModel");
+	    }
         }
-
+	/*
         foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
         {
 	    const FaceGroup& fg = *fgPtr;
@@ -533,6 +543,7 @@ public:
 
             gbc.applyInterfaceBC();
 	}
+	*/
     }
                 
     if(allNeumann)
