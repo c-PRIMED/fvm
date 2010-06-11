@@ -19,10 +19,7 @@ class StructureDeformationModel : public Model
 public:
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
-  typedef Array<VectorT3> VectorT3Array;
-  typedef map<const StorageSite*, shared_ptr<ArrayBase> > ArrayMap;
-  typedef pair<const StorageSite*, const StorageSite*> EntryIndex;
-  
+  typedef Array<VectorT3> VectorT3Array;  
  
   StructureDeformationModel(GeomFields& geomFields,StructureFields& structureFields, 
 			    const MeshList& meshes) :
@@ -35,7 +32,7 @@ public:
   }
                         
   virtual ~StructureDeformationModel() {}
-
+  
   void calculateNodeDisplacement()
   {
       const int numMeshes = _meshes.size();
@@ -55,9 +52,8 @@ public:
           const VectorT3Array& cellDisplacement =
             dynamic_cast<const VectorT3Array&>(_structureFields.deformation[cells]);
           VectorT3Array& nodeDisplacement =
-            dynamic_cast<VectorT3Array&>(_structureFields.nodeDisplacement[nodes]);
+            dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
 	  const T one(1.0);
-	  const T small(1e-10);
 
 
 	  for(int j=0;j<nNodes;j++)
@@ -68,16 +64,8 @@ public:
               {
 		  const int num = nodeCells(j,k);
 		  const VectorT3 ds = cellCentroid[num]-nodeCoordinate[j];
-		  if(mag(ds)!=T(0.0))
-		  {
-		      dr += cellDisplacement[num]/mag(ds);
-			  weight += one/mag(ds);
-		  }
-		  else
-		  {
-		      dr += nodeDisplacement[num]/small;
-		      weight += one/small;
-		  }
+		  dr += cellDisplacement[num]/mag(ds);
+		  weight += one/mag(ds);
 	      }
 	      dr = dr/weight;
 	      nodeDisplacement[j] = dr;
@@ -98,13 +86,13 @@ public:
 	  VectorT3Array& nodeCoordN1 =
             dynamic_cast<VectorT3Array&>(_geomFields.coordinateN1[nodes]);
           VectorT3Array& nodeDisplacement =
-            dynamic_cast<VectorT3Array&>(_structureFields.nodeDisplacement[nodes]);
+            dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
 	  nodeCoordN1 = nodeCoord;
 	  for (int i=0;i<nNodes;i++)
 	      nodeCoord[i] = nodeCoord[i] + nodeDisplacement[i];
       }
   }
-  
+    
   const ArrayBase& getCommon(const StorageSite& site)
   {
     
@@ -119,7 +107,7 @@ public:
 	return fromIndices;
     }
   }
-  
+    
   void init() 
   {
       const int numMeshes = _meshes.size();
@@ -133,10 +121,10 @@ public:
 	    dynamic_pointer_cast<ArrayBase>(nodeCoord.newCopy()));
           shared_ptr<VectorT3Array> nodeDisplacement(new VectorT3Array(nodes.getCount()));
           nodeDisplacement->zero();
-          _structureFields.nodeDisplacement.addArray(nodes,nodeDisplacement);
+          _geomFields.nodeDisplacement.addArray(nodes,nodeDisplacement);
       }
   }
-
+  
 private:
   GeomFields& _geomFields;
   StructureFields& _structureFields;
