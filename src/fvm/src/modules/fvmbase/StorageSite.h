@@ -47,7 +47,8 @@ public:
   GatherMap &  getGatherMap ()  { return _gatherMap; }
   CommonMap &  getCommonMap ()  { return _commonMap; }
 
-
+  void clearGatherScatterMaps();
+  
   int getScatterProcID() const { return _scatterProcID;}
   int getGatherProcID()  const { return _gatherProcID; }
   int getTag()           const { return _tag; }

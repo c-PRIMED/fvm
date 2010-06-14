@@ -312,12 +312,23 @@ Mesh::setIBTypeForCell(const int c, const int type)
 int
 Mesh::getIBTypeForCell(const int c) const
 {
-  Array<int>& ibType = getOrCreateIBType();
+  const Array<int>& ibType = getOrCreateIBType();
   return ibType[c];
 }
 
-Array<int>&
+const Array<int>&
 Mesh::getOrCreateIBType() const
+{
+  if (!_ibType)
+  {
+      _ibType = shared_ptr<Array<int> >(new Array<int>(_cells.getCount()));
+      *_ibType = IBTYPE_FLUID;
+  }
+  return *_ibType;
+}
+
+Array<int>&
+Mesh::getOrCreateIBType()
 {
   if (!_ibType)
   {

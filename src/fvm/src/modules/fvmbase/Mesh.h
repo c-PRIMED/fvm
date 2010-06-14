@@ -64,7 +64,8 @@ public:
       IBTYPE_FLUID,
       IBTYPE_BOUNDARY,
       IBTYPE_SOLID,
-      IBTYPE_REALBOUNDARY
+      IBTYPE_REALBOUNDARY,
+      IBTYPE_UNKNOWN
     };
   
   Mesh(const int dimension, const int id);
@@ -163,7 +164,7 @@ public:
   const StorageSite& getBoundaryNodes() const;  
 
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
-  ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
+  //  ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
 
   const Array<int>& getIBType() const;
 
@@ -196,6 +197,8 @@ public:
   void createGhostCellSiteGather ( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
   void createCellColor();
 
+  Array<int>& getOrCreateIBType();
+
 protected:
   const int _dimension;
   const int _id;
@@ -223,7 +226,7 @@ protected:
   int  _numOfAssembleMesh;
   bool _isAssembleMesh;
 
-  Array<int>& getOrCreateIBType() const;
+  const Array<int>& getOrCreateIBType() const;
 
 
   GhostCellSiteMap   _ghostCellSiteScatterMap;

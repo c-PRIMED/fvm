@@ -21,3 +21,9 @@ StorageSite::~StorageSite()
 }
 
 
+void
+StorageSite::clearGatherScatterMaps()
+{
+  _gatherMap.clear();
+  _scatterMap.clear();
+}

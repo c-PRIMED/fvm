@@ -21,7 +21,7 @@ public:
   int getSelfCount() const;
   const ScatterMap&  getScatterMap() const;
   const GatherMap&   getGatherMap()  const;
-  
+  void clearGatherScatterMaps();
   
 private:
   StorageSite();
@@ -75,7 +75,7 @@ public:
   const ArrayBase& getBNglobalToLocal() const;
   const StorageSite& getBoundaryNodes()const;
   
-  ArrayBase* getNodeCoordinates();
+  const ArrayBase& getNodeCoordinates() const;
 
   const CRConnectivity& getConnectivity(const StorageSite& from,
                                         const StorageSite& to) const;
