@@ -5,8 +5,7 @@ from mpi4py import MPI
 from array import array
 from time import *
 import math
-
-
+import time as timing
 
 class MPMCoupling:
 
@@ -141,12 +140,10 @@ class MPMCoupling:
                 #self.dtMPM = self.dtMPM / 1000.0 #from "msec" to "second" conversion
                 self.FVM_COMM_MPM.Bcast([self.timeMPM, MPI.DOUBLE], root=0)
                 #self.timeMPM = self.timeMPM / 1000.0 #from "msec" to "second" conversion
-
-
                 #gettin nlocalfaces from MPM ( len(nlocalfaces) = remote_comm_world.size() )
                 self.FVM_COMM_MPM.Allgather([None,MPI.INT],[self.nfaces,MPI.INT])
-                #count (assumming 4 nodes per faces)
-                count = self.nfaces * 4
+                #count
+                count = self.nfaces * 4 * 3 # each face has four nodes and three coordinates
                 #displ
                 displ = zeros( len(count), dtype='i')
                 #filling displ
@@ -154,24 +151,37 @@ class MPMCoupling:
                 for i in range(1,len(count)):
                    displ[i] = displ[i-1] + count[i-1]
                 #creating fvm array 
-                self.faceNodesMPM = fvmbaseExt.newIntArray( self.nfaces.sum() * 4 )              
-                self.faceNodesMPM.asNumPyArray()[:] = 0
+                self.faceNodesCoord =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nfaces.sum()*4 )
+                self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.faceNodesCoord.asNumPyArray(),count, displ,MPI.DOUBLE]) 
+                print "faceNodes coord = ", self.faceNodesCoord.asNumPyArray()                 
+                #
+                #count (assumming 4 nodes per faces)
+                #count = self.nfaces * 4
+                #displ
+                #displ = zeros( len(count), dtype='i')
+                #filling displ
+                #displ[0] = 0
+                #for i in range(1,len(count)):
+                #   displ[i] = displ[i-1] + count[i-1]
+                #creating fvm array 
+                #self.faceNodesMPM = fvmbaseExt.newIntArray( self.nfaces.sum() * 4 )              
+                #self.faceNodesMPM.asNumPyArray()[:] = 0
                 #getting facenodes
-                tt = self.faceNodesMPM.asNumPyArray()
-                self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.INT],[tt,count, displ,MPI.INT])
+                #tt = self.faceNodesMPM.asNumPyArray()
+                #self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.INT],[tt,count, displ,MPI.INT])
 
 
                 #getting boundary node counts
-                self.FVM_COMM_MPM.Allgather([None,MPI.INT],[self.nBndryNodes,MPI.INT])
+                #self.FVM_COMM_MPM.Allgather([None,MPI.INT],[self.nBndryNodes,MPI.INT])
                 #count 
-                count = self.nBndryNodes * 3
+                #count = self.nBndryNodes * 3
                 #displ
-                displ[0] = 0
-                for i in range(1,len(count)):
-		    displ[i] = displ[i-1] + count[i-1]
+                #displ[0] = 0
+                #for i in range(1,len(count)):
+		#    displ[i] = displ[i-1] + count[i-1]
 		#creating buffer for boundary node coords
-                self.BndryNodeCoords =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nBndryNodes.sum() )
-                self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.BndryNodeCoords.asNumPyArray(),count, displ,MPI.DOUBLE]) 
+                #self.BndryNodeCoords =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nBndryNodes.sum() )
+                #self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.BndryNodeCoords.asNumPyArray(),count, displ,MPI.DOUBLE]) 
 
 
                 #count
@@ -185,7 +195,7 @@ class MPMCoupling:
                 #creating fvm array 
                 self.FaceCentroidVels =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nfaces.sum() )
                 self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.FaceCentroidVels.asNumPyArray(),count, displ,MPI.DOUBLE]) 
-                print self.FaceCentroidVels.asNumPyArray()                 
+                print "faceCentroid vels = ", self.FaceCentroidVels.asNumPyArray()                 
                 #get number of particles first
                 #self.px    = self.geomField.coordinate[self.mesh.getCells()].newSizedClone( nparticles )
                 #self.pv    = self.geomField.coordinate[self.mesh.getCells()].newSizedClone( nparticles )
@@ -197,15 +207,17 @@ class MPMCoupling:
                 #pv doesn't need conversion since mm/msec = m/s
                 #print "px (FVM) = ", self.px.asNumPyArray()[791,0:3]
                 #print "pv (FVM) = ", self.pv.asNumPyArray()[791,0:3]
-                self.dump_coord_vel( self.nparticles, self.px.asNumPyArray(), self.pv.asNumPyArray() )
-                self.particles = self.solid.getParticles( int(self.nparticles) )
-                self.geomField.coordinate[self.particles] = self.px
-                self.flowField.velocity[self.particles]   = self.pv 
-                self.solid.setCoordinates( self.px )
-                self.solid.setVelocities ( self.pv )
-                self.solid.setTypes( self.pType )
- 
-              
+                #self.dump_coord_vel( self.nparticles, self.px.asNumPyArray(), self.pv.asNumPyArray() )
+                #self.particles = self.solid.getParticles( int(self.nparticles) )
+                #self.geomField.coordinate[self.particles] = self.px
+                #self.flowField.velocity[self.particles]   = self.pv 
+                #self.solid.setCoordinates( self.px )
+                #self.solid.setVelocities ( self.pv )
+                #self.solid.setTypes( self.pType )
+		if  MPI.COMM_WORLD.Get_rank() == 0:
+		    self.dump_faces(self.faceNodesCoord.asNumPyArray(), self.FaceCentroidVels.asNumPyArray())
+                MPI.COMM_WORLD.Barrier()
+
      def  particleSite(self):
          return self.particles 
 
@@ -217,7 +229,52 @@ class MPMCoupling:
      
      def getNparticles( self):
          return int(self.nparticles[0])
- 
+
+     def dump_faces( self, faceNodesCoord, faceVel ):
+        f = open('faces.dat','w')
+	f.write("Title = \" MPM Faces \" \n")
+        f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\" \n")
+	totFaces = self.nfaces.sum()
+	f.write("#totfaces = %d\n"%(totFaces))
+	indx = 0
+	#loop over faces
+	for n in range(0,totFaces):     
+	   indx = 4 * n
+	   nnode = 4 
+	   title_name = str(n)
+	   f.write("Zone T = \"%s\", N = %s E = %s DATAPACKING = BLOCK, VARLOCATION = ([4-6]=CELLCENTERED),  ZONETYPE=FEQUADRILATERAL\n" %  (title_name,  4, 1))   
+	   #write x
+	   #loop over nodes
+	   for i in range(0,nnode):
+               f.write(str(faceNodesCoord[indx+i][0])+"    ")
+           f.write("\n")
+
+	   #write y
+	   #loop over nodes
+	   for i in range(0,nnode):
+               f.write(str(faceNodesCoord[indx+i][1])+"    ")
+           f.write("\n")
+
+	   #write z
+	   #loop over nodes
+	   for i in range(0,nnode):
+               f.write(str(faceNodesCoord[indx+i][2])+"    ")
+           f.write("\n")
+  
+           #write velX
+           f.write( str(faceVel[n][0]) + "    ")
+           #write velY
+           f.write( str(faceVel[n][1]) + "    ")
+           #write velZ
+           f.write( str(faceVel[n][2]) + "    ")
+           f.write("\n")
+           #connectivity
+           for i in range(0,nnode):
+               f.write( str(i+1) + "     ")
+           f.write("\n")
+
+        f.close()   
+	 
      def   dump_coord_fluid(self, nparticles, px ):
         fx = open('px_fluid.dat','w')
         fx.write( str(nparticles))
@@ -230,7 +287,7 @@ class MPMCoupling:
             fx.write(str(px[n,2]) )
             fx.write("\n")
         fx.close()
-
+     
      def   dump_coord_vel(self, nparticles, px, pv):
         fx = open('px_solid.dat','w')
         fx.write(str(nparticles))
