@@ -46,6 +46,7 @@ class Mesh
 {
 public:
 
+
   typedef map<int, boost::shared_ptr<StorageSite> > GhostCellSiteMap;
 
   enum
@@ -54,6 +55,9 @@ public:
       IBTYPE_SOLID,
       IBTYPE_BOUNDARY
     };
+
+  Mesh(const int dimension, const int id, shared_ptr< Array<VecD3> > faceNodesCoord ); 
+
   int getIBTypeForCell(const int c) const;
   
   void setIBTypeForCell(const int c, const int type);
