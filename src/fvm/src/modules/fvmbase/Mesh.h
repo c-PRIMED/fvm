@@ -69,7 +69,7 @@ public:
     };
   
   Mesh(const int dimension, const int id);
-  Mesh(const int dimension, const int id, shared_ptr<Array<VecD3> > faceNodesCoord ); 
+  Mesh(const int dimension, const int id, const Array<VecD3>&  faceNodesCoord ); 
   
   ~Mesh();
 

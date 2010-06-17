@@ -27,7 +27,7 @@ Mesh::Mesh(const int dimension, const int id):
   logCtor();
 }
 
-Mesh::Mesh(const int dimension, const int id, shared_ptr< Array<VecD3> >  faceNodesCoord):
+  Mesh::Mesh( const int dimension, const int id, const Array<VecD3>&  faceNodesCoord ): 
   _dimension(dimension),
   _id(id),
   _cells(0),
@@ -48,7 +48,7 @@ Mesh::Mesh(const int dimension, const int id, shared_ptr< Array<VecD3> >  faceNo
   _isAssembleMesh(false)
 {
    int faceNodeCount = 4;
-   int totNodes      = faceNodesCoord->getLength(); // counting duplicate nodes as well
+   int totNodes      = faceNodesCoord.getLength(); // counting duplicate nodes as well
    int totFaces      = totNodes / faceNodeCount;
    //check if this is corect integer division
    assert( (faceNodeCount*totFaces) == totNodes );
@@ -59,8 +59,12 @@ Mesh::Mesh(const int dimension, const int id, shared_ptr< Array<VecD3> >  faceNo
    nodeSite.setCount( totNodes );
    //interior face group (we have only one interface for this
    createInteriorFaceGroup(1);
+
    //setting coordinates
-   setCoordinates( faceNodesCoord );
+   shared_ptr< Array<VecD3> > coord( new Array< VecD3 > ( totNodes ) );
+   *coord = faceNodesCoord;
+   setCoordinates( coord );
+
    //faceNodes constructor
    shared_ptr<CRConnectivity> faceNodes( new CRConnectivity(faceSite, nodeSite) );
    //addCount
@@ -79,6 +83,7 @@ Mesh::Mesh(const int dimension, const int id, shared_ptr< Array<VecD3> >  faceNo
    }
    //finish add
    faceNodes->finishAdd();
+
    //setting faceNodes
    SSPair key(&faceSite,&nodeSite);
   _connectivityMap[key] = faceNodes;

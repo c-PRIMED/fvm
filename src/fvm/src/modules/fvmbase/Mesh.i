@@ -55,9 +55,15 @@ public:
       IBTYPE_SOLID,
       IBTYPE_BOUNDARY
     };
-
-  Mesh(const int dimension, const int id, shared_ptr< Array<VecD3> > faceNodesCoord ); 
-
+%extend{
+  Mesh(const int dimension, const int id, const ArrayBase&  faceNodesCoord ) 
+  {
+     typedef Vector<double,3> Vec3D;
+     typedef Array<Vec3D> Vec3DArray;
+     const Vec3DArray& points(dynamic_cast<const Vec3DArray&>(faceNodesCoord));
+     return new Mesh( dimension, id, points );
+  }
+}
   int getIBTypeForCell(const int c) const;
   
   void setIBTypeForCell(const int c, const int type);
