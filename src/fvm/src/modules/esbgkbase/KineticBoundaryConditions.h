@@ -74,7 +74,7 @@ class KineticBoundaryConditions
     _direction(direction)
       {}
 
-  void applyWallBC(int f,const X& WallVelocity,const X& WallTemperature) const
+  void applyDiffuseWallBC(int f,const X& WallVelocity,const X& WallTemperature) const
   {
 
     const double pi(acos(0.0)); 
@@ -155,9 +155,85 @@ class KineticBoundaryConditions
   
   }
 
-  //  void applySpecularBC(int f) const
-  //{
-  //}
+  void applyDiffuseWallBC(const FloatValEvaluator<X>& bVelocity,const FloatValEvaluator<X>& bTemperature) const
+  {
+    for (int i=0; i<_faces.getCount();i++)
+      applyDiffuseWallBC(i,bVelocity[i],bTemperature[i]);
+  }
+
+  void applySpecularWallBC(int f) const
+  {
+    
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,0);
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    
+    // For the cell c0, loop over all directions
+    // check for c.n sign and compute the incident molecules
+    // velocity direction if the current direction is the reflected 
+    // molecules direction
+    const int numDirections = _quadrature.getDirCount();
+    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+
+    // Find incident molecule directions
+    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+    const X  c_dot_en = cx[_direction]*en[0]+cy[_direction]*en[1]+cz[_direction]*en[2];
+    const X cx_incident = cx[_direction] - 2.0*c_dot_en*en[0];
+    const X cy_incident = cy[_direction] - 2.0*c_dot_en*en[1];
+    const X cz_incident = cz[_direction] - 2.0*c_dot_en*en[2];
+
+    // Find incident molecule indices
+    // Right now only for the case of uniform cartesian velocity grid
+    // A search has to be performed to generalize it to the non-uniform
+    // velocity grids where dcx, dcy, dcz are not constant
+    const int N1 = _quadrature.getNVCount();
+    const int N2 = _quadrature.getNthetaCount();
+    const int N3 = _quadrature.getNphiCount();
+    
+    const X dcx = (cx[N1-1]-cx[0])/N1;
+    const X dcy = (cy[N1-1]-cy[0])/N2;
+    const X dcz = (cz[N1-1]-cz[0])/N3;
+
+    const int i_incident = (cx[_direction]-cx[0])/dcx;
+    const int j_incident = (cy[_direction]-cy[0])/dcy;
+    const int k_incident = (cz[_direction]-cz[0])/dcz;
+    const int direction_incident = k_incident+N3*j_incident+N3*N2+i_incident;
+
+    // The value of 'f' in the incident direction will serve
+    // as the boundary value for the current(reflected) direction
+    Field& fnd = *_dsfPtr.dsf[direction_incident];
+    const TArray& dsf = dynamic_cast<const TArray&>(fnd[_cells]);
+    const X& fwall = dsf[c0];
+   
+    // From here the code is same as the Diffuse Wall Boundary Condition
+    // with fwall being the incident distribution function instead of 
+    // Maxwellian at wall temperature and number density
+
+    // the current value of flux and its Jacobians
+    const X fluxB = -_r[c1];
+    const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
+    const Diag dFluxdXC1 = -_dRdXDiag[c1];
+    const OffDiag dRC0dXC1 = _assembler.getCoeff01(f);
+
+    // since we know the boundary value, compute the boundary
+    // x correction and it's contribution to the residual for c0;
+    // we can then eliminate the coefficient to the boundary cell
+
+    const X dXC1 = fwall - _x[c1];
+    const X dFlux = dFluxdXC1*dXC1;
+    const X dRC0 = dRC0dXC1*dXC1;
+    _r[c0] += dRC0;
+  }
+
+  void applySpecularWallBC() const
+  {
+    for (int i=0; i<_faces.getCount();i++)
+      applySpecularWallBC(i);
+  }
 
  protected:
   const StorageSite& _faces;

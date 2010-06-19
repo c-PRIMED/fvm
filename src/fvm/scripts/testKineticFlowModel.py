@@ -9,6 +9,7 @@ import time
 from numpy import *
 import tecplotESBGK
 import tecplot
+import string
 
 fvm.set_atype('double')
 
@@ -129,8 +130,10 @@ esbgk1=esbgk.KineticModelD(meshes,geomFields,macroFields,quad0)
 
 cellSite = meshes[0].getCells()
 densityField =  macroFields.density[cellSite].asNumPyArray()
+collisionFrequencyField = macroFields.collisionFrequency[cellSite].asNumPyArray()
 print 'len = ',len(densityField)
 print densityField[0],densityField[1],densityField[2]
+print collisionFrequencyField[0],collisionFrequencyField[1],collisionFrequencyField[2]
 
 #esbgk1.initializeMaxwellianEq() #equilibrium dist function
 
@@ -139,14 +142,14 @@ print densityField[0],densityField[1],densityField[2]
 #esbgk1.advance(1)
 #esbgk1.OutputDsfBLOCK()
 numIterations=50
-output_interval = 2
+output_interval = 1
 def advance(niter):
     for i in range(0,niter):
         esbgk1.advance(1)
         esbgk1.updateTime()
         print 'timestep = ',i+1
         if ((i+1)%output_interval == 0) :
-            filename = "output"+str(i+1)+".plt"
+            filename = string.zfill(str(i+1),5)+"output.plt"
             esbgk1.OutputDsfBLOCK(filename)
 
        

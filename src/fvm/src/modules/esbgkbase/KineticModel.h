@@ -42,8 +42,8 @@ class KineticModel : public Model
   typedef  std::vector<Field*> stdVectorField;
   typedef  DistFunctFields<T> TDistFF;
   
-  typedef std::map<int,FlowBC<T>*> FlowBCMap;
-  typedef std::map<int,FlowVC<T>*> FlowVCMap;
+  typedef std::map<int,KineticBC<T>*> KineticBCMap;
+  typedef std::map<int,KineticVC<T>*> KineticVCMap;
   /**
    * Calculation of macro-parameters density, temperature, components of velocity, pressure
    * by taking moments of distribution function using quadrature points and weights from quadrature.h
@@ -71,7 +71,7 @@ class KineticModel : public Model
 	{
 	  const Mesh& mesh = *_meshes[n];
 	  
-	  FlowVC<T> *vc(new FlowVC<T>());
+	  KineticVC<T> *vc(new KineticVC<T>());
 	  vc->vcType = "flow";
 	  _vcMap[mesh.getID()] = vc;
 	}
@@ -295,11 +295,11 @@ class KineticModel : public Model
       }
   }
   
-  FlowBCMap& getBCMap() 
+  KineticBCMap& getBCMap() 
     {
       return _bcMap;
     }
-  FlowVCMap& getVCMap()
+  KineticVCMap& getVCMap()
     {
 return _vcMap;
     }
@@ -317,7 +317,7 @@ return _vcMap;
       {
         const Mesh& mesh = *_meshes[n];
 	
-        const FlowVC<T>& vc = *_vcMap[mesh.getID()];
+        const KineticVC<T>& vc = *_vcMap[mesh.getID()];
         
         const StorageSite& cells = mesh.getCells();
 	
@@ -367,7 +367,7 @@ return _vcMap;
       {
 	const Mesh& mesh = *_meshes[n];
 	
-	FlowVC<T> *vc(new FlowVC<T>());
+	KineticVC<T> *vc(new KineticVC<T>());
 	vc->vcType = "flow";
 	_vcMap[mesh.getID()] = vc;
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
@@ -375,7 +375,7 @@ return _vcMap;
 	    const FaceGroup& fg = *fgPtr;
 	    if (_bcMap.find(fg.id) == _bcMap.end())
 	      {
-		FlowBC<T> *bc(new FlowBC<T>());
+		KineticBC<T> *bc(new KineticBC<T>());
 		
 		_bcMap[fg.id] = bc;
 		if ((fg.groupType == "wall"))
@@ -400,7 +400,7 @@ return _vcMap;
 		      bc->bcType = "CopyBC";
 		  }
 		else
-		  throw CException("FlowModel: unknown face group type "
+		  throw CException("KineticModel: unknown face group type "
 				     + fg.groupType);
 	      }
 	  }
@@ -462,7 +462,7 @@ return _vcMap;
 	  _macroFields.collisionFrequency));
     discretizations.push_back(sd);
 
-    /*    shared_ptr<Discretization> 
+    shared_ptr<Discretization> 
       cd(new ConvectionDiscretization_Kmodel<T,T,T> 
 	 (_meshes,
 	  _geomFields,
@@ -471,7 +471,7 @@ return _vcMap;
 	  cy[direction],
  	  cz[direction]));
     discretizations.push_back(cd);
-    */
+    
     if (_options.transient)
       {
 	// const int direction(0);  
@@ -496,6 +496,49 @@ return _vcMap;
     
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
 			 ls.getX(), ls.getB());
+
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr;
+	    const StorageSite& faces = fg.site;
+	    const int nFaces = faces.getCount();
+
+	    const KineticBC<T>& bc = *_bcMap[fg.id];
+
+	    //KineticBoundaryConditions<T,T,T> kbc(faces,
+		//				 mesh,
+		//				 _geomFields,
+		//				 _quadrature,
+		//				 _dsfPtr,
+		//				 ls.getMatrix(),
+		//				 ls.getX(),
+		//				 ls.getB());
+					 
+	    FloatValEvaluator<VectorT3>
+	      bVelocity(bc.getVal("specifiedXVelocity"),
+			bc.getVal("specifiedYVelocity"),
+			bc.getVal("specifiedZVelocity"),
+			faces);
+	    FloatValEvaluator<T>
+	      bTemperature(bc.getVal("specifiedTemperature"),
+			   faces);
+
+	    //if (bc.bcType == "Diffuse Wall")
+	    //  {
+		
+	//	kbc.applyDiffuseWallBC(bVelocity,bTemperature);
+	  //    }
+	    //else if (bc.bcType == "Specular Wall")
+	     // {
+	//	kbc.applySpecularWallBC();
+	  //    }
+	  }
+	  }
   }
   
   void updateTime()
@@ -651,8 +694,8 @@ void OutputDsfBLOCK(const char* filename)
   DistFunctFields<T> _dsfPtr1;
   DistFunctFields<T> _dsfPtr2;
   DistFunctFields<T> _dsfEqPtr;
-  FlowBCMap _bcMap;
-  FlowVCMap _vcMap;
+  KineticBCMap _bcMap;
+  KineticVCMap _vcMap;
 
   KineticModelOptions<T> _options;
   int _niters;
