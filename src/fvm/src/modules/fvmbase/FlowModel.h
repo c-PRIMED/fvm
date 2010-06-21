@@ -65,6 +65,7 @@ public:
   void printMassFluxIntegrals();
   
   void computeIBFaceVelocity(const StorageSite& particles);
+  void computeSolidSurfaceStress(const StorageSite& particles);
   void computeIBandSolidVelocity(const StorageSite& particles);
   //LinearSolver& getMomentumSolver();
   //LinearSolver& getContinuitySolver();
