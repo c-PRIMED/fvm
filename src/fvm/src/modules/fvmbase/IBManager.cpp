@@ -9,6 +9,7 @@ IBManager::IBManager(GeomFields& geomFields,
                      const MeshList& fluidMeshes):
   fluidNeighborsPerIBFace(2),
   solidNeighborsPerIBFace(4),
+  fluidNeighborsPerSolidFace(4),
   _geomFields(geomFields),
   _solidBoundaryMesh(solidBoundaryMesh),
   _fluidMeshes(fluidMeshes)
@@ -16,10 +17,7 @@ IBManager::IBManager(GeomFields& geomFields,
 
 void IBManager::update()
 {
-  MeshList sMeshes;
-  sMeshes.push_back(&_solidBoundaryMesh);
-
-  AABB sMeshesAABB(sMeshes);
+  AABB sMeshesAABB(_solidBoundaryMesh);
 
   const StorageSite& solidMeshFaces = _solidBoundaryMesh.getFaces();
   
@@ -51,7 +49,7 @@ void IBManager::update()
       }
 
       createIBInterpolationStencil(fluidMesh,fluidCellsTree,solidMeshKSearchTree);
-      //      createFluidToSolidInterpolationMatrices(mesh,fluidCellsTree);
+      createSolidInterpolationStencil(fluidMesh,fluidCellsTree);
                                               
   }
 }
@@ -354,4 +352,70 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   mesh.setConnectivity(ibFaces,cells,ibFaceToCells);
   mesh.setConnectivity(ibFaces,solidMeshFaces,ibFaceToSolid);
   
+}
+
+
+void
+IBManager::createSolidInterpolationStencil(Mesh& mesh,
+                                           KSearchTree& fluidCellsTree)
+                                           
+{
+  const StorageSite& cells = mesh.getCells();
+  const StorageSite& solidMeshFaces = _solidBoundaryMesh.getFaces();
+
+  const int nSolidFaces = solidMeshFaces.getCount();
+  
+  const Vec3DArray& cellCentroid =
+    dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
+
+  const Vec3DArray& solidFaceCentroid =
+    dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
+
+
+  Array<int> fluidNeighbors(fluidNeighborsPerSolidFace);
+
+  AABB meshAABB(mesh);
+
+  shared_ptr<CRConnectivity> solidFacesToCells
+    (new CRConnectivity(solidMeshFaces,cells));
+  
+  solidFacesToCells->initCount();
+
+  Array<bool> inThisMesh(nSolidFaces);
+  
+  for(int f=0; f<nSolidFaces; f++)
+  {
+      const Vec3D& xf = solidFaceCentroid[f];
+      fluidCellsTree.findNeighbors(xf, fluidNeighborsPerSolidFace,
+                                   fluidNeighbors);
+
+      // check if the line joining face to nearest cell intersects the
+      // mesh boundaries
+      
+      const Vec3D& xc = cellCentroid[fluidNeighbors[0]];
+      if (!meshAABB.hasIntersectionWithSegment(xf,xc))
+      {
+          solidFacesToCells->addCount(f,fluidNeighborsPerSolidFace);
+          inThisMesh[f] = true;
+      }
+      else
+        inThisMesh[f] = false;
+  }
+
+  solidFacesToCells->finishCount();
+
+  for(int f=0; f<nSolidFaces; f++)
+  {
+      if (inThisMesh[f])
+      {
+          const Vec3D& xf = solidFaceCentroid[f];
+          fluidCellsTree.findNeighbors(xf, fluidNeighborsPerSolidFace,
+                                       fluidNeighbors);
+          for(int n=0; n<fluidNeighborsPerSolidFace; n++)
+            solidFacesToCells->add(f,fluidNeighbors[n]);
+      }
+  }
+  
+  solidFacesToCells->finishAdd();
+  mesh.setConnectivity(solidMeshFaces,cells,solidFacesToCells);
 }

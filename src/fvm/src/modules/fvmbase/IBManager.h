@@ -21,13 +21,18 @@ public:
   void update();
 
   int fluidNeighborsPerIBFace;
+  int fluidNeighborsPerSolidFace;
   int solidNeighborsPerIBFace;
+  
 private:
 
   void markIB(Mesh& fluidMesh, AABB& sMeshesAABB);
   void createIBInterpolationStencil(Mesh& mesh,
                                     KSearchTree& fluidCellsTree,
                                     KSearchTree& solidFacesTree);
+  void createSolidInterpolationStencil(Mesh& mesh,
+                                       KSearchTree& fluidCellsTree);
+                                       
   GeomFields& _geomFields;
   Mesh& _solidBoundaryMesh;
   const MeshList _fluidMeshes;
