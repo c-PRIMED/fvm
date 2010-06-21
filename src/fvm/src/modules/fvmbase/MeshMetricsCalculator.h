@@ -35,6 +35,7 @@ public:
   void recalculate();
 
   void computeIBInterpolationMatrices(const StorageSite& particles);
+  void computeSolidInterpolationMatrices(const StorageSite& particles);
 
   void computeIBandSolidInterpolationMatrices(const StorageSite& particles);
 
@@ -68,6 +69,8 @@ private:
 
   void computeIBInterpolationMatrices(const Mesh& mesh,
                                       const StorageSite& particles);
+  void computeSolidInterpolationMatrices(const Mesh& mesh,
+                                         const StorageSite& particles);
   void computeIBandSolidInterpolationMatrices(const Mesh& mesh,
                                       const StorageSite& particles);
   void computeGridInterpolationMatrices(const Mesh& mesh,

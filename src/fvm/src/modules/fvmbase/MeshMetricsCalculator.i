@@ -15,6 +15,7 @@ public:
   void calculateBoundaryNodeNormal();
   void recalculate();
   void computeIBInterpolationMatrices(const StorageSite& particles);
+  void computeSolidInterpolationMatrices(const StorageSite& particles);
   void computeIBandSolidInterpolationMatrices(const StorageSite& particles);
   void computeGridInterpolationMatrices(const StorageSite& grids, const StorageSite& faces );	
 #ifdef USING_ATYPE_TANGENT

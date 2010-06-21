@@ -967,6 +967,335 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 }
 
 template<class T>
+void
+MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
+(const Mesh& mesh,
+ const StorageSite& solidFaces)
+{
+  typedef CRMatrixTranspose<T,T,T> IMatrix;
+  
+  const StorageSite& cells = mesh.getCells();
+  const CRConnectivity& solidFacesToCells =
+    mesh.getConnectivity(solidFaces,cells);
+
+
+  const VectorT3Array& xCells =
+    dynamic_cast<const VectorT3Array&>(_coordField[cells]);
+
+  const VectorT3Array& xFaces =
+    dynamic_cast<const VectorT3Array&>(_coordField[solidFaces]);
+
+  const Array<int>& sFCRow = solidFacesToCells.getRow();
+  const Array<int>& sFCCol = solidFacesToCells.getCol();
+
+  const int nSolidFaces = solidFaces.getCount();
+
+  shared_ptr<IMatrix> cellToSolidFaces(new IMatrix(solidFacesToCells));
+
+  Array<T>& cellToSBCoeff = cellToSolidFaces->getCoeff();
+
+
+#if 1
+
+  /**********linear least square interpolation*********/
+  // X=x-xf  Y=y-yf  Z=Z-zf
+  //matrix M=[1 X1 Y1 Z1]
+  //         [1 X2 Y2 Z2]
+  //         ...........
+  //         [1 Xn Yn Zn]
+  //coefficient matrix A=[a, b, c, d]T
+  //velocity element v = M * A
+  //linear relation v = a + b*X + c*Y + d*Z
+  //to make least square
+  //matrix A = (M(T)*M)^(-1)*M(T)*v
+  //so, velocity at face is vface = a + b*Xf + c*Yf + d*Zf = a
+  //which is the first row of matrix A
+  //so, the weight function should be the first row of  (M(T)*M)^(-1)*M(T)
+  //note Q = M(T)*M  and Qinv = Q^(-1)
+  //the following code is to calculate it
+  //insteading of doing full matrix operation, only nessesary operation on entries are performed
+
+ 
+
+  for(int f=0; f<nSolidFaces; f++)
+  {
+      T wt(0);
+      int nnb(0);
+      //calculate Q (4x4)
+      T Q[4][4];
+      T Qinv[4][4];
+      
+      for(int i=0; i<4; i++)
+          for(int j=0; j<4; j++)
+            Q[i][j]=Qinv[i][j]=0;
+      
+      
+      for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+      {
+          const int c = sFCCol[nc];
+          VectorT3 dr(xCells[c]-xFaces[f]);
+
+	  Q[0][0] += 1.0;
+	  Q[0][1] += dr[0];
+	  Q[0][2] += dr[1];
+	  Q[0][3] += dr[2];
+	  Q[1][1] += dr[0]*dr[0];
+	  Q[1][2] += dr[0]*dr[1];
+	  Q[1][3] += dr[0]*dr[2];
+	  Q[2][2] += dr[1]*dr[1];
+	  Q[2][3] += dr[1]*dr[2];
+	  Q[3][3] += dr[2]*dr[2];          
+          nnb++;
+      }
+      
+      if (nnb < 4)
+	throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+
+      //symetric matrix
+      for(int i=0; i<4; i++)
+	for(int j=0; j<i; j++)
+	  Q[i][j]=Q[j][i];
+
+      //calculate the inverse of Q(4x4)
+     
+      matrix<T> matrix;
+      matrix.Inverse4x4(Q, Qinv);
+
+      
+      //calculate Qinv*M(T) get the first row element, put in coeffMatrix
+      for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+      {
+          const int c = sFCCol[nc];
+          VectorT3 dr(xCells[c]-xFaces[f]);
+	  wt = Qinv[0][0];
+	  for (int i=1; i<=3; i++)
+	    wt += Qinv[0][i]*dr[i-1];
+
+	  cellToSBCoeff[nc] = wt;
+	  //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
+      }
+  }
+#endif
+
+#if 0
+
+  /**********second order least square interpolation*********/
+  // X=x-xf  Y=y-yf  Z=Z-zf
+  //matrix M=[1 X1 Y1 Z1 X1*X1 Y1*Y1 Z1*Z1 X1*Y1 Y1*Z1 X1*Z1]
+  //         [1 X2 Y2 Z2 ...................................]
+  //         ...........
+  //         [1 Xn Yn Zn Xn*Xn Yn*Yn Zn*Zn Xn*Yn Yn*Zn Xn*Zn]
+  //coefficient matrix A=[a0, a1, a2, a3, a4, a5, a6, a7, a8, a9]T
+  //velocity element v = M * A
+  //linear relation v = a0 + a1*X + a2*Y + a3*Z + a4*X*X + a5*Y*Y + a6*Z*Z + a7*X*Y + a8*Y*Z + a9*X*Z
+  //to make least square
+  //matrix A = (M(T)*M)^(-1)*M(T)*v
+  //so, velocity at face is vface = a0
+  //which is the first row of matrix A
+  //so, the weight function should be the first row of  (M(T)*M)^(-1)*M(T)
+  //note Q = M(T)*M  and Qinv = Q^(-1)
+  //the following code is to calculate it
+  //insteading of doing full matrix operation, only nessesary operation on entries are performed
+
+ 
+
+  for(int f=0; f<nSolidFaces; f++)
+  {
+      T wt(0);
+      int nnb(0);
+      matrix<T> matrix;
+
+      if (mesh.getDimension()== 2)
+	{
+	  const int size = 6;
+	  //calculate Q (6x6)
+	  T Q[6][6], Qinv[6][6];
+	  for(int i=0; i<size; i++)
+	    for(int j=0; j<size; j++)
+	      Q[i][j]=Qinv[i][j]=0;
+          
+	  for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+          {
+	      const int c = sFCCol[nc];
+	      VectorT3 dr(xCells[c]-xFaces[f]);	  
+	      Q[0][0] += 1.0;
+	      Q[0][1] += dr[0];
+	      Q[0][2] += dr[1];
+	      Q[0][3] += dr[0]*dr[0];
+	      Q[0][4] += dr[1]*dr[1];
+	      Q[0][5] += dr[0]*dr[1];
+	           
+	      Q[1][1] += dr[0]*dr[0];
+	      Q[1][2] += dr[0]*dr[1];
+	      Q[1][3] += dr[0]*dr[0]*dr[0];
+	      Q[1][4] += dr[0]*dr[1]*dr[1];
+	      Q[1][5] += dr[0]*dr[0]*dr[1];
+	  
+	      Q[2][2] += dr[1]*dr[1];
+	      Q[2][3] += dr[1]*dr[0]*dr[0];
+	      Q[2][4] += dr[1]*dr[1]*dr[1];
+	      Q[2][5] += dr[1]*dr[0]*dr[1];
+	      
+	      Q[3][3] += dr[0]*dr[0]*dr[0]*dr[0];
+	      Q[3][4] += dr[0]*dr[0]*dr[1]*dr[1];
+	      Q[3][5] += dr[0]*dr[0]*dr[0]*dr[1];
+	 
+	      Q[4][4] += dr[1]*dr[1]*dr[1]*dr[1];
+	      Q[4][5] += dr[1]*dr[1]*dr[0]*dr[1];
+	 
+	      Q[5][5] += dr[0]*dr[1]*dr[0]*dr[1];
+	  
+	      nnb++;
+	    }
+
+	  if (nnb < size)
+	    throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+      
+	  //symetric matrix
+	  for(int i=0; i<size; i++)
+	    for(int j=0; j<i; j++)
+	      Q[i][j]=Q[j][i];
+
+           
+	  //calculate the inverse of Q(6x6)
+	  matrix.Inverse6x6(Q, Qinv);
+            
+	  //calculate Qinv*M(T) get the first row element, put in coeffMatrix
+	  for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+	    {
+	      const int c = ibFCCol[nc];
+	      VectorT3 dr(xCells[c]-xFaces[f]);
+	      wt = Qinv[0][0];
+	      wt += Qinv[0][1]*dr[0];
+	      wt += Qinv[0][2]*dr[1];
+	      wt += Qinv[0][3]*dr[0]*dr[0];
+	      wt += Qinv[0][4]*dr[1]*dr[1];
+	      wt += Qinv[0][5]*dr[0]*dr[1];
+	      cellToSBCoeff[nc] = wt;
+	      //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
+	    }
+	}
+      
+      else if (mesh.getDimension()== 3)
+      {
+	  //calculate Q (10x10)
+	  T Q[10][10], Qinv[10][10];
+     
+	  const int size = 10;
+
+	  for(int i=0; i<size; i++)
+	    for(int j=0; j<size; j++)
+	      Q[i][j]=Qinv[i][j]=0;
+          
+	  for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+	    {
+	      const int c = sFCCol[nc];
+	      VectorT3 dr(xCells[c]-xFaces[f]);	  
+	      Q[0][0] += 1.0;
+	      Q[0][1] += dr[0];
+	      Q[0][2] += dr[1];
+	      Q[0][3] += dr[2];
+	      Q[0][4] += dr[0]*dr[0];
+	      Q[0][5] += dr[1]*dr[1];
+	      Q[0][6] += dr[2]*dr[2];
+	      Q[0][7] += dr[0]*dr[1];
+	      Q[0][8] += dr[1]*dr[2];
+	      Q[0][9] += dr[0]*dr[2];
+	      
+	      Q[1][1] += dr[0]*dr[0];
+	      Q[1][2] += dr[0]*dr[1];
+	      Q[1][3] += dr[0]*dr[2];
+	      Q[1][4] += dr[0]*dr[0]*dr[0];
+	      Q[1][5] += dr[0]*dr[1]*dr[1];
+	      Q[1][6] += dr[0]*dr[2]*dr[2];
+	      Q[1][7] += dr[0]*dr[0]*dr[1];
+	      Q[1][8] += dr[0]*dr[1]*dr[2];
+	      Q[1][9] += dr[0]*dr[0]*dr[2];
+	      
+	      Q[2][2] += dr[1]*dr[1];
+	      Q[2][3] += dr[1]*dr[2];
+	      Q[2][4] += dr[1]*dr[0]*dr[0];
+	      Q[2][5] += dr[1]*dr[1]*dr[1];
+	      Q[2][6] += dr[1]*dr[2]*dr[2];
+	      Q[2][7] += dr[1]*dr[0]*dr[1];
+	      Q[2][8] += dr[1]*dr[1]*dr[2];
+	      Q[2][9] += dr[1]*dr[0]*dr[2];
+	      
+	      Q[3][3] += dr[2]*dr[2];     
+	      Q[3][4] += dr[2]*dr[0]*dr[0];
+	      Q[3][5] += dr[2]*dr[1]*dr[1];
+	      Q[3][6] += dr[2]*dr[2]*dr[2];
+	      Q[3][7] += dr[2]*dr[0]*dr[1];
+	      Q[3][8] += dr[2]*dr[1]*dr[2];
+	      Q[3][9] += dr[2]*dr[0]*dr[2];
+	      
+	      Q[4][4] += dr[0]*dr[0]*dr[0]*dr[0];
+	      Q[4][5] += dr[0]*dr[0]*dr[1]*dr[1];
+	      Q[4][6] += dr[0]*dr[0]*dr[2]*dr[2];
+	      Q[4][7] += dr[0]*dr[0]*dr[0]*dr[1];
+	      Q[4][8] += dr[0]*dr[0]*dr[1]*dr[2];
+	      Q[4][9] += dr[0]*dr[0]*dr[0]*dr[2];
+	      
+	      Q[5][5] += dr[1]*dr[1]*dr[1]*dr[1];
+	      Q[5][6] += dr[1]*dr[1]*dr[2]*dr[2];
+	      Q[5][7] += dr[1]*dr[1]*dr[0]*dr[1];
+	      Q[5][8] += dr[1]*dr[1]*dr[1]*dr[2];
+	      Q[5][9] += dr[1]*dr[1]*dr[0]*dr[2];
+	      
+	      Q[6][6] += dr[2]*dr[2]*dr[2]*dr[2];
+	      Q[6][7] += dr[2]*dr[2]*dr[0]*dr[1];
+	      Q[6][8] += dr[2]*dr[2]*dr[1]*dr[2];
+	      Q[6][9] += dr[2]*dr[2]*dr[0]*dr[2];
+	      
+	      Q[7][7] += dr[0]*dr[1]*dr[0]*dr[1];
+	      Q[7][8] += dr[0]*dr[1]*dr[1]*dr[2];
+	      Q[7][9] += dr[0]*dr[1]*dr[0]*dr[2];
+	      
+	      Q[8][8] += dr[1]*dr[2]*dr[1]*dr[2];
+	      Q[8][9] += dr[1]*dr[2]*dr[0]*dr[2];
+	      
+	      Q[9][9] += dr[0]*dr[2]*dr[0]*dr[2];
+	      
+	      nnb++;
+	    }
+	  if (nnb < size)
+	    throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+	  
+	  //symetric matrix
+	  for(int i=0; i<size; i++)
+	    for(int j=0; j<i; j++)
+	      Q[i][j]=Q[j][i];
+          
+	  //calculate the inverse of Q(10x10)
+	  matrix.InverseGauss(Q, Qinv);
+          
+          
+	  //calculate Qinv*M(T) get the first row element, put in coeffMatrix
+	  for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+	    {
+	      const int c = ibFCCol[nc];
+	      VectorT3 dr(xCells[c]-xFaces[f]);
+	      wt = Qinv[0][0];
+	      wt += Qinv[0][1]*dr[0];
+	      wt += Qinv[0][2]*dr[1];
+	      wt += Qinv[0][3]*dr[2];
+	      wt += Qinv[0][4]*dr[0]*dr[0];
+	      wt += Qinv[0][5]*dr[1]*dr[1];
+	      wt += Qinv[0][6]*dr[2]*dr[2];
+	      wt += Qinv[0][7]*dr[0]*dr[1];
+	      wt += Qinv[0][8]*dr[1]*dr[2];
+	      wt += Qinv[0][9]*dr[0]*dr[2];
+	      cellToSBCoeff[nc] = wt;
+	      //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
+	    }
+      }
+  }
+#endif
+  GeomFields::SSPair key1(&solidFaces,&cells);
+  this->_geomFields._interpolationMatrices[key1] = cellToSolidFaces;
+}
+
+template<class T>
 MeshMetricsCalculator<T>::MeshMetricsCalculator(GeomFields& geomFields,const MeshList& meshes) :
   Model(meshes),
   _geomFields(geomFields),
@@ -1302,6 +1631,18 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p)
   {
       const Mesh& mesh = *_meshes[n];
       computeIBInterpolationMatrices(mesh,p);
+  }
+}
+
+template<class T>
+void
+MeshMetricsCalculator<T>::computeSolidInterpolationMatrices(const StorageSite& p)
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      computeSolidInterpolationMatrices(mesh,p);
   }
 }
 
