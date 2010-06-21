@@ -19,6 +19,7 @@ struct FlowFields
   Field continuityResidual;
   Field velocityN1;
   Field velocityN2;
+  Field stress;
 };
 
 #endif

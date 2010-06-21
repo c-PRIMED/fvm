@@ -11,6 +11,7 @@ FlowFields::FlowFields(const string baseName) :
   density(baseName + ".density"),
   continuityResidual(baseName + ".continuityResidual"),
   velocityN1(baseName + ".velocityN1"),
-  velocityN2(baseName + ".velocityN2")
+  velocityN2(baseName + ".velocityN2"),
+  stress(baseName + ".stress")
 {}
 
