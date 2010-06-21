@@ -27,7 +27,7 @@ class AABB
 public:
   typedef Vector<double,3> Vec3D;
 
-  AABB(const MeshList& meshes);
+  AABB(const Mesh& mesh);
 
   /**
    * check whether a segment defined by the two points a and b has any
@@ -73,20 +73,17 @@ private:
   
   struct MyTriangle
   {
-    const Mesh& mesh;
     const int faceIndex;
     const int subFaceIndex;
     const Array<Vec3D>& coordArray;
     int vertices[3];
     
-    MyTriangle(const Mesh& mesh_,
-               const int faceIndex_,
+    MyTriangle(const int faceIndex_,
                const int subFaceIndex_,
                const Array<Vec3D>& coordArray_,
                const int v0_,
                const int v1_,
                const int v2_) :
-      mesh(mesh_),
       faceIndex(faceIndex_),
       subFaceIndex(subFaceIndex_),
       coordArray(coordArray_)
@@ -96,12 +93,10 @@ private:
       vertices[2] = v2_;
     }
 
-    MyTriangle(const Mesh& mesh_,
-               const int faceIndex_,
+    MyTriangle(const int faceIndex_,
                const Array<Vec3D>& coordArray_,
                const int v0_,
                const int v1_) :
-      mesh(mesh_),
       faceIndex(faceIndex_),
       subFaceIndex(0),
       coordArray(coordArray_)

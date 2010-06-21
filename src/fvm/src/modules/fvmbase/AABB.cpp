@@ -1,53 +1,47 @@
 #include "AABB.h"
 #include <stack>
 
-AABB::AABB(const MeshList& meshes)
+AABB::AABB(const Mesh& mesh)
 {
-  _is2D = false;
+  _is2D = mesh.getDimension() == 2;
   
-  const int numMeshes = meshes.size();
-  for (int n=0; n<numMeshes; n++)
+  const Array<Vector<double,3> >& meshCoords = mesh.getNodeCoordinates();
+  
+  
+  foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
   {
-      const Mesh& mesh = *meshes[n];
-      const Array<Vector<double,3> >& meshCoords = mesh.getNodeCoordinates();
-
-      _is2D = mesh.getDimension() == 2;
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
       
-      foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      const int nFaces = faces.getCount();
+      
+      for(int f=0; f<nFaces; f++)
       {
-          const FaceGroup& fg = *fgPtr;
-          const StorageSite& faces = fg.site;
-          const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
-
-          const int nFaces = faces.getCount();
-
-          for(int f=0; f<nFaces; f++)
+          if (_is2D)
           {
-              if (_is2D)
+              _triangles.push_back(new MyTriangle(f,meshCoords,
+                                                  faceNodes(f,0),
+                                                  faceNodes(f,1)));
+          }
+          else
+          {
+              _triangles.push_back(new MyTriangle(f,0,meshCoords,
+                                                  faceNodes(f,0),
+                                                  faceNodes(f,1),
+                                                  faceNodes(f,2)));
+              if (faceNodes.getCount(f) == 4)
               {
-                  _triangles.push_back(new MyTriangle(mesh,f,meshCoords,
-                                                      faceNodes(f,0),
-                                                      faceNodes(f,1)));
-              }
-              else
-              {
-                  _triangles.push_back(new MyTriangle(mesh,f,0,meshCoords,
-                                                      faceNodes(f,0),
-                                                      faceNodes(f,1),
-                                                      faceNodes(f,2)));
-                  if (faceNodes.getCount(f) == 4)
-                  {
-                      
-                      _triangles.push_back(new MyTriangle(mesh,f,1,meshCoords,
-                                                          faceNodes(f,2),
-                                                          faceNodes(f,3),
-                                                          faceNodes(f,0)));
-                  }
+                  
+                  _triangles.push_back(new MyTriangle(f,1,meshCoords,
+                                                      faceNodes(f,2),
+                                                      faceNodes(f,3),
+                                                      faceNodes(f,0)));
               }
           }
       }
   }
-
+  
   if (_is2D)
     _tree_2D = boost::shared_ptr<CGAL_Tree_2D>(new CGAL_Tree_2D(_triangles.begin(),
                                                                 _triangles.end()));
@@ -63,14 +57,15 @@ AABB::AABB(const MeshList& meshes)
 bool
 AABB::hasIntersectionWithSegment(AABB::Vec3D a, AABB::Vec3D b)
 {
-  K::Segment_3 query(K::Point_3(a[0], a[1], a[2]),
-                     K::Point_3(b[0], b[1], b[2]));
   if (_is2D)
   {
+      // can't do this check sine we are using 3d segments
       return false;
   }
   else
   {
+      K::Segment_3 query(K::Point_3(a[0], a[1], a[2]),
+                         K::Point_3(b[0], b[1], b[2]));
       return _tree->do_intersect(query); 
   }
 }
