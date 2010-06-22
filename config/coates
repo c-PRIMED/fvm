@@ -42,7 +42,10 @@ netcdf:
 MEMOSA:
 	Build=1
 	
+vitables:
+	Build=1
+
 before:
-	module load python hdf5-1.8.3/gcc-4.4.0 atlas
+	module load python hdf5-1.8.3/gcc-4.4.0 atlas CGAL
 	export HDF5_DIR=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
 
