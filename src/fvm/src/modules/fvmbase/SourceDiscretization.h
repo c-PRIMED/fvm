@@ -39,11 +39,11 @@ public:
 
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
-    const TArray& source = dynamic_cast<const TArray&>(_sourceField[cells]);
+    const XArray& source = dynamic_cast<const XArray&>(_sourceField[cells]);
 
     const MultiField::ArrayIndex cVarIndex(&_varField, &cells);
 
-    TArray& rCell = dynamic_cast<TArray&>(rField[cVarIndex]);   
+    XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);   
     
     const int nCells = cells.getSelfCount();
     
