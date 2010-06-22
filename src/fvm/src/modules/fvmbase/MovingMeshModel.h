@@ -242,17 +242,20 @@ public:
 
 
           // update boundary cells with adjacent interior cells values
-          foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+          foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 	  {
 	      const FaceGroup& fg = *fgPtr;
-              const StorageSite& bfaces = fg.site;
-              const CRConnectivity& bfaceCells = mesh.getFaceCells(bfaces);
-              const int faceCount = bfaces.getCount();
-              for(int f=0; f<faceCount; f++)
+	      if(fg.groupType != "interior")
 	      {
-		  const int c0 = bfaceCells(f,0);
-                  const int c1 = bfaceCells(f,1);
-                  volChangeDot[c1] = volChangeDot[c0];
+		  const StorageSite& bfaces = fg.site;
+		  const CRConnectivity& bfaceCells = mesh.getFaceCells(bfaces);
+		  const int faceCount = bfaces.getCount();
+		  for(int f=0; f<faceCount; f++)
+		  {
+		      const int c0 = bfaceCells(f,0);
+		      const int c1 = bfaceCells(f,1);
+		      volChangeDot[c1] = volChangeDot[c0];
+		  }
 	      }
 	  }
 	  for (int c=0;c<nCells;c++)

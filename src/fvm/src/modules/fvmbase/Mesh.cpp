@@ -140,21 +140,24 @@ Mesh::createAndGetBNglobalToLocal() const
       globalToLocal = -1;
       int BoundaryNodeCount=0;
       int nLocal=0;
-      foreach(const FaceGroupPtr fgPtr, getBoundaryFaceGroups())
+      foreach(const FaceGroupPtr fgPtr, getAllFaceGroups())
       {
 	  const FaceGroup& fg = *fgPtr;
-	  const StorageSite& BoundaryFaces = fg.site;
-	  const CRConnectivity& BoundaryFaceNodes = getFaceNodes(BoundaryFaces);
-	  const Array<int>& BFArray = BoundaryFaceNodes.getRow();
-	  const Array<int>& BNArray = BoundaryFaceNodes.getCol();
-	  const int nBFaces = BoundaryFaceNodes.getRowDim();
-	  for(int i=0;i<nBFaces;i++)
+	  if (fg.groupType != "interior")
 	  {
-	      for(int ip=BFArray[i];ip<BFArray[i+1];ip++)
+	      const StorageSite& BoundaryFaces = fg.site;
+	      const CRConnectivity& BoundaryFaceNodes = getFaceNodes(BoundaryFaces);
+	      const Array<int>& BFArray = BoundaryFaceNodes.getRow();
+	      const Array<int>& BNArray = BoundaryFaceNodes.getCol();
+	      const int nBFaces = BoundaryFaceNodes.getRowDim();
+	      for(int i=0;i<nBFaces;i++)
 	      {
-		  const int j = BNArray[ip];
-		  if (globalToLocal[j] == -1)
-		    globalToLocal[j] = nLocal++;
+		  for(int ip=BFArray[i];ip<BFArray[i+1];ip++)
+		  {
+		      const int j = BNArray[ip];
+		      if (globalToLocal[j] == -1)
+			globalToLocal[j] = nLocal++;
+		  }
 	      }
 	  }
       }
