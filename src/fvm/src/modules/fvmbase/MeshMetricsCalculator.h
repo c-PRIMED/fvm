@@ -34,6 +34,8 @@ public:
 
   void recalculate();
 
+  void recalculate_deform();
+
   void computeIBInterpolationMatrices(const StorageSite& particles);
   void computeSolidInterpolationMatrices(const StorageSite& particles);
 

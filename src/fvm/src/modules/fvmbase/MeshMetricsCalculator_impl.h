@@ -1360,6 +1360,39 @@ MeshMetricsCalculator<T>::recalculate()
 }
 //***********************************************************************//
 
+//***********************************************************************//
+
+template<class T>
+void
+MeshMetricsCalculator<T>::recalculate_deform()
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      calculateFaceAreas(mesh);
+      calculateFaceAreaMag(mesh);
+      calculateFaceCentroids(mesh);
+  }
+
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      calculateCellCentroids(mesh);
+  }
+
+  _coordField.syncLocal();
+
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      calculateCellVolumes(mesh);
+  }
+
+  _volumeField.syncLocal();
+}
+//***********************************************************************//
+
 
 template<class T>
 void
