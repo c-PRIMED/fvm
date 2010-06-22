@@ -16,6 +16,7 @@
 #include "DiffusionDiscretization.h"
 #include "TimeDerivativeStructureDiscretization.h"
 #include "StructureSourceDiscretization.h"
+#include "SourceDiscretization.h"
 #include "Underrelaxer.h"
 #include "AMG.h"
 #include "Linearizer.h"
@@ -71,43 +72,50 @@ public:
     _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces]))
   {}
   
-  void applyDirichletBC(int f, const X& bValue) const
+  X applyDirichletBC(int f, const X& bValue) const
   {
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
 
+    const X fluxB = -_r[c1];
     if (_ibType[c0] != Mesh::IBTYPE_FLUID)
-      return;
+      return fluxB;
     
     const X dXC1 = bValue - _x[c1];
+
     _dRdX.eliminateDirichlet(c1,_r,dXC1);
     _x[c1] = bValue;
     _r[c1] = NumTypeTraits<X>::getZero();
     _dRdX.setDirichlet(c1);
+    return fluxB;
   }
 
-  void applyDirichletBC(const X& bValue) const
+  X applyDirichletBC(const X& bValue) const
   {
+    X fluxB(NumTypeTraits<X>::getZero());
     for(int i=0; i<_faces.getCount(); i++)
-      applyDirichletBC(i,bValue);
+      fluxB += applyDirichletBC(i,bValue);
+    return fluxB;
   }
   
-  void applyDirichletBC(const FloatValEvaluator<X>& bValue) const
+  X applyDirichletBC(const FloatValEvaluator<X>& bValue) const
   {
+    X fluxB(NumTypeTraits<X>::getZero());
     for(int i=0; i<_faces.getCount(); i++)
-      applyDirichletBC(i,bValue[i]);
+      fluxB += applyDirichletBC(i,bValue[i]);
+    return fluxB;
   }
   
-  void applyNeumannBC(const int f,
+  X applyNeumannBC(const int f,
                       const X& specifiedFlux) const
   {
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
+    const X fluxB = -_r[c1];
 
     if (_ibType[c0] != Mesh::IBTYPE_FLUID)
-      return;
+      return fluxB;
     // the current value of flux and its Jacobians
-    const X fluxB = -_r[c1];
     const X dFlux = specifiedFlux*_faceAreaMag[f] - fluxB;
 
     // setup the equation for the boundary value; the coefficients
@@ -118,19 +126,25 @@ public:
     // mark this row as a "boundary" row so that we will update it
     // after the overall system is solved
     _dRdX.setBoundary(c1);
+    return fluxB;
   }
 
 
-  void applyNeumannBC(const X& bFlux) const
+  X applyNeumannBC(const X& bFlux) const
   {
+    X fluxB(NumTypeTraits<X>::getZero());
+    
     for(int i=0; i<_faces.getCount(); i++)
-      applyNeumannBC(i,bFlux);
+      fluxB += applyNeumannBC(i,bFlux);
+    return fluxB;
   }
   
-  void applyNeumannBC(const FloatValEvaluator<X>& bFlux) const
+  X applyNeumannBC(const FloatValEvaluator<X>& bFlux) const
   {
+    X fluxB(NumTypeTraits<X>::getZero());
     for(int i=0; i<_faces.getCount(); i++)
-      applyNeumannBC(i,bFlux[i]);
+      fluxB += applyNeumannBC(i,bFlux[i]);
+    return fluxB;
   }
 
   void applyInterfaceBC(const int f) const
@@ -413,8 +427,14 @@ public:
 	  _structureFields.eta1,
           _structureFields.deformationGradient));
       
-    //    discretizations.push_back(dd);
+    //    shared_ptr<Discretization>
+    //  bfd(new SourceDiscretization<VectorT3>
+    //     (_meshes,_geomFields,
+    //    _structureFields.deformation,
+    //    _structureFields.bodyForce));
+
     discretizations.push_back(sd);
+    //discretizations.push_back(bfd);
     
     if (_options.transient)
     {
@@ -465,6 +485,7 @@ public:
                                                     _structureFields.deformation,
                                                     ls.getMatrix(), ls.getX(), ls.getB());
 	    
+            VectorT3 fluxB(NumTypeTraits<VectorT3>::getZero());
 	    if (bc.bcType == "SpecifiedDeformation")
             {
 	        FloatValEvaluator<VectorT3>
@@ -472,7 +493,8 @@ public:
 			       bc.getVal("specifiedYDeformation"),
 			       bc.getVal("specifiedZDeformation"),
 			       faces);
-                gbc.applyDirichletBC(bDeformation);
+                fluxB = gbc.applyDirichletBC(bDeformation);
+                
 		allNeumann = false;
             }
             else if (bc.bcType == "Symmetry")
@@ -497,7 +519,7 @@ public:
 	        for(int f=0; f<nFaces; f++)
                 {
                     
-		    gbc.applyNeumannBC(f,bTraction[f]);
+		    fluxB += gbc.applyNeumannBC(f,bTraction[f]);
         
 		}
 	    }
@@ -511,7 +533,7 @@ public:
                 for(int f=0; f<nFaces; f++)
 		{
 
-                    gbc.applyNeumannBC(f,bForce[f]/faceAreaMag[f]);
+                    fluxB += gbc.applyNeumannBC(f,bForce[f]/faceAreaMag[f]);
 
 		}
 	    }
@@ -525,12 +547,13 @@ public:
                 for(int f=0; f<nFaces; f++)
 		{
 		    
-                    gbc.applyNeumannBC(f,bDistForce[f]);
+                    fluxB += gbc.applyNeumannBC(f,bDistForce[f]);
 
 		}
 	    }
             else
               throw CException(bc.bcType + " not implemented for StructureModel");
+            //cout << "force sum for " << fg.id  << " = " << fluxB << endl;  
 	    }
         }
 	/*
@@ -639,7 +662,7 @@ public:
             _initialDeformationNorm->setMax(*dNorm);
         }
         
-        MFRPtr dNormRatio((*dNorm)/(*_initialDeformationNorm));
+        MFRPtr dNormRatio(dNorm->normalize(*_initialDeformationNorm));
         
         if (_options.printNormalizedResiduals)
           cout << _niters << ": " << *dNormRatio <<  endl;
