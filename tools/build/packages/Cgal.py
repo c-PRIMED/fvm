@@ -38,8 +38,8 @@ class Cgal(BuildPkg):
                 if v:
                     v = v[0]
                     break
+            f.close()
         verbose(2, 'CGAL version=%s' % v)
-        f.close()
         return v
     
     def _configure(self):
