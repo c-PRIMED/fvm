@@ -169,11 +169,11 @@ AMG::createCoarseLevels( )
 #endif 
 
 #ifndef FVM_PARALLEL
+    if ( coarseLS->getMatrix().getSize() <= 3 )
+       break;
     if ( verbosity > 1 )
         cout << "Created coarse level " << n << " of size " << coarseLS->getMatrix().getSize() << endl;
     _coarseLinearSystems.push_back(coarseLS);
-    if ( coarseLS->getMatrix().getSize() <= 3 )
-       break;
 #endif
 
   }
@@ -227,7 +227,7 @@ AMG::solve(LinearSystem & ls)
                                    _finestLinearSystem->getB(),
                                    _finestLinearSystem->getResidual());
       MFRPtr rNorm(_finestLinearSystem->getResidual().getOneNorm());
-      MFRPtr normRatio((*rNorm)/(*rNorm0));
+      MFRPtr normRatio(rNorm->normalize(*rNorm0));
 
 #ifndef FVM_PARALLEL
     if (verbosity >0  )

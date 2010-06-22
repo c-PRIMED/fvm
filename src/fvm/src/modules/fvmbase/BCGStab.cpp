@@ -121,7 +121,7 @@ BCGStab::solve(LinearSystem & ls)
 
       rNorm = r->getOneNorm();
 
-      MFRPtr normRatio((*rNorm)/(*rNorm0));
+      MFRPtr normRatio(rNorm->normalize(*rNorm0));
 
 #ifndef FVM_PARALLEL
       if (verbosity >0)
