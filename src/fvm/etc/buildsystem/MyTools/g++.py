@@ -18,7 +18,7 @@ def generate(env):
 
     env['COMPILER'] = 'gcc-' + env['CXXVERSION']
 
-    env['CXXFLAGS'] = CLVar('-Wall -fno-strict-aliasing -Woverloaded-virtual -ftemplate-depth-200')
+    env['CXXFLAGS'] = CLVar('-Wall -fno-strict-aliasing -Woverloaded-virtual -ftemplate-depth-200 -frounding-math')
 
     if is64Bit():
         env.Append(CPPDEFINES=CLVar('OS_64BIT'))

@@ -33,19 +33,28 @@ srcBase = ['CException.cpp',
 	   'ElectricFields.cpp',
 	   'StorageSiteMerger.cpp',
            'LinearSystemMerger.cpp',
+           #'PC.cpp',
            'MeshAssembler.cpp',
 	   'MeshDismantler.cpp',
-           'ILU0Solver.cpp'
+           'ILU0Solver.cpp',
+           'AABB.cpp',
+           'KSearchTree.cpp',
+           'IBManager.cpp'
            ]
 
-env.createSharedLibrary('fvmbase',srcBase,['rlog'])
+env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal'])
 
 env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase'])
 
 
 env.createSwigModule('fvmbaseExt',sources=['baseExt.i'],
-                     deplibs=['fvmbase','rlog'])
+                     deplibs=['fvmbase','rlog', 'cgal'])
 
 env.createATypedSwigModule('models_atyped',sources=['models.i'],
                      deplibs=['models_atyped','fvmbase','rlog'])
 
+#env.createExe('testUQTK',['testUQTK.cpp'],
+#              deplibs=['fvmbase','uqtk'])
+
+#env.createExe('testOneDConduction',['testOneDConduction.cpp'],
+#              deplibs=['fvmbase','uqtk'])
