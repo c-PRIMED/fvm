@@ -54,7 +54,8 @@ public:
           VectorT3Array& nodeDisplacement =
             dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
 	  const T one(1.0);
-
+          _previousNodeDisplacementPtr =
+            dynamic_pointer_cast<VectorT3Array>(nodeDisplacement.newCopy());
 
 	  for(int j=0;j<nNodes;j++)
           {
@@ -89,7 +90,10 @@ public:
             dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
 	  nodeCoordN1 = nodeCoord;
 	  for (int i=0;i<nNodes;i++)
-	      nodeCoord[i] = nodeCoord[i] + nodeDisplacement[i];
+	  {
+	      nodeCoord[i] = nodeCoord[i] + 
+		nodeDisplacement[i]-(*_previousNodeDisplacementPtr)[i];
+	  }
       }
   }
     
@@ -129,6 +133,7 @@ private:
   GeomFields& _geomFields;
   StructureFields& _structureFields;
   const MeshList _meshes;
+  shared_ptr<VectorT3Array> _previousNodeDisplacementPtr; 
 };
 
 
