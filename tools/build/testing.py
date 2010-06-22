@@ -45,6 +45,10 @@ class Test:
             fails = re.compile(r'failures=(.*)\)').findall(res)
             if fails:
                 bad = int(fails[0])
+            else:
+                fails = re.compile(r'errors=(.*)\)').findall(res)
+                if fails:
+                    bad = int(fails[0])
             self.unit_ok += ok
             self.unit_errs += bad
         else:
