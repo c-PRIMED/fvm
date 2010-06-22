@@ -28,6 +28,7 @@ public:
 
   bool operator<(const double tolerance) const;
   shared_ptr<MultiFieldReduction> operator/(const MultiFieldReduction& o);
+  shared_ptr<MultiFieldReduction> normalize(const MultiFieldReduction& o);
   shared_ptr<MultiFieldReduction> operator*(const MultiFieldReduction& o);
   void setMax(const MultiFieldReduction& o);
 

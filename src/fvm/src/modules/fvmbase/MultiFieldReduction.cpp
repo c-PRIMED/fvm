@@ -113,6 +113,20 @@ MultiFieldReduction::operator/(const MultiFieldReduction& o)
   return r;
 }
 
+MFRPtr
+MultiFieldReduction::normalize(const MultiFieldReduction& o)
+{
+  MFRPtr r(new MultiFieldReduction());
+  
+  foreach(const ArrayMap::value_type& pos, _arrays)
+  {
+      shared_ptr<ArrayBase> aptr = dynamic_pointer_cast<ArrayBase>(pos.second->newCopy());
+      aptr->normalize(o[*pos.first]);
+      r->addArray(*pos.first,aptr);
+  }
+  return r;
+}
+
 void
 MultiFieldReduction::setMax(const MultiFieldReduction& o)
 {

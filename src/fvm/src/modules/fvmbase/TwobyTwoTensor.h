@@ -248,6 +248,12 @@ class TwobyTwoTensor
       NumTypeTraits<T>::safeDivide(x[i],y[i]);
   }
 
+  static void normalize(TwobyTwoTensor& x, const TwobyTwoTensor& y)
+  {
+    for(int i=0; i<N; i++)
+      NumTypeTraits<T>::normalize(x[i],y[i]);
+  }
+
   static void setMax(TwobyTwoTensor& x, const TwobyTwoTensor& y)
   {
     for(int i=0; i<N; i++)

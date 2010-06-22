@@ -49,6 +49,7 @@ struct   NumTypeTraits<bool>
   static void reduceSum(T_Scalar& sum, const This_T& x) {}
   
   static void safeDivide(bool& x, const bool& y) {}
+  static void normalize(bool& x, const bool& y) {}
   static void setMax(bool& x, const bool& y) {}
 };
 
@@ -76,6 +77,7 @@ struct   NumTypeTraits<int>
   static void reduceSum(T_Scalar& sum, const This_T& x) {sum+=x;}
 
   static void safeDivide(int& x, const int& y) {if (y!=0) x/=y;}
+  static void normalize(int& x, const int& y) {if (y!=0) x/=y;}
   static void setMax(int& x, const int& y) {if (y>x) x=y;}
   
 };
@@ -105,6 +107,7 @@ struct   NumTypeTraits<double>
 
   static void reduceSum(T_Scalar& sum, const This_T& x) {sum+=x;}
   static void safeDivide(double& x, const double& y) {if (y!=0) x/=y;}
+  static void normalize(double& x, const double& y) {if (y!=0) x/=y;}
   static void setMax(double& x, const double& y) {if (y>x) x=y;}
 
 };
@@ -133,6 +136,7 @@ struct NumTypeTraits<float>
   { sum += v0*v1;}
   static void reduceSum(T_Scalar& sum, const This_T& x) {sum+=x;}
   static void safeDivide(float& x, const float& y) {if (y!=0) x/=y;}
+  static void normalize(float& x, const float& y) {if (y!=0) x/=y;}
   static void setMax(float& x, const float& y) {if (y>x) x=y;}
 };
 

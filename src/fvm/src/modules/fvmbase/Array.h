@@ -173,6 +173,20 @@ public:
     return *this;
   }
 
+  virtual ArrayBase& normalize(const  ArrayBase& obase)
+  {
+    const Array& o = dynamic_cast<const Array& >(obase);
+    if (_length == 1 && o._length==1)
+    {
+        for(int i=0;i<_length;i++)
+          NumTypeTraits<T>::normalize(_data[i], o._data[i]);
+    }
+    else
+      throw CException("invalid array for normalize");          
+    return *this;
+  }
+
+
   virtual ArrayBase& operator*=(const ArrayBase& obase)
   {
     const Array& o = dynamic_cast<const Array& >(obase);

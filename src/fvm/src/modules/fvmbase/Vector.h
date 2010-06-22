@@ -201,11 +201,20 @@ public:
     for(int i=0; i<N; i++)
       NumTypeTraits<T>::safeDivide(x[i],y[i]);
   }
+
+  static void normalize(Vector& x, const Vector& y)
+  {
+    const T ymag = sqrt(y.mag2());
+    for(int i=0; i<N; i++)
+      NumTypeTraits<T>::safeDivide(x[i],ymag);
+  }
  
+
   static void setMax(Vector& x, const Vector& y)
   {
-    for(int i=0; i<N; i++)
-      NumTypeTraits<T>::setMax(x[i],y[i]);
+    if (x.mag2() < y.mag2())
+      for(int i=0; i<N; i++)
+        x[i]=y[i];
   }
  
 private:

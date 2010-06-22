@@ -154,6 +154,11 @@ public:
     Vector<T,N>::safeDivide(x._v,y._v);
   }
 
+  static void normalize(VectorTranspose& x, const VectorTranspose& y)
+  {
+    Vector<T,N>::normalize(x._v,y._v);
+  }
+
   static void setMax(VectorTranspose& x, const VectorTranspose& y)
   {
     Vector<T,N>::setMax(x._v,y._v);

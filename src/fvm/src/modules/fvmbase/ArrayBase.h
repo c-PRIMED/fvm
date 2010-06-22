@@ -47,6 +47,7 @@ public:
   virtual ArrayBase& operator*=(const ArrayBase& a) =0;
 
   virtual ArrayBase& safeDivide(const ArrayBase& a) =0;
+  virtual ArrayBase& normalize(const ArrayBase& a) =0;
 
   virtual bool operator<(const double tolerance) const=0;
   // set self's value to be a's value if the latter is higher. used

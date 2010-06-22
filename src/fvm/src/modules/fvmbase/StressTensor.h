@@ -174,6 +174,11 @@ public:
     throw;
   }
 
+  static void normalize(StressTensor& x, const StressTensor& y)
+  {
+    throw;
+  }
+
   static void setMax(StressTensor& x, const StressTensor& y)
   {
     throw;

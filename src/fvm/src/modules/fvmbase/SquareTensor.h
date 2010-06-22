@@ -235,6 +235,12 @@ public:
       NumTypeTraits<T>::safeDivide(x._data[i],y._data[i]);
   }
 
+  static void normalize(SquareTensor& x, const SquareTensor& y)
+  {
+    for(int i=0; i<NSQR; i++)
+      NumTypeTraits<T>::normalize(x._data[i],y._data[i]);
+  }
+
   static void setMax(SquareTensor& x, const SquareTensor& y)
   {
     for(int i=0; i<NSQR; i++)

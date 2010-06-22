@@ -280,6 +280,8 @@ public:
   static void reduceSum(PC& sum, const PC& x) {sum+=x;}
 
   static void safeDivide(PC& x, const PC& y) {if (y._data[0]!=0) x/=y;}
+  static void normalize(PC& x, const PC& y) {if (y._data[0]!=0) x/=y._data[0];}
+
   static void setMax(PC& x, const PC& y) {if (y._data[0]>x._data[0]) x._data[0]=y._data[0];}
 
 
