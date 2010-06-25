@@ -153,7 +153,7 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
     cellCentroid[c] /= weight[c];
 
   // boundary cells have the corresponding face's centroid
-  foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+  foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
   {   
       const FaceGroup& fg = *fgPtr;
       const StorageSite& faces = fg.site;
@@ -165,29 +165,32 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
         dynamic_cast<const TArray&>(_areaMagField[faces]);
       const CRConnectivity& faceCells = mesh.getFaceCells(faces);
       const int faceCount = faces.getCount();
-          
-      if (fg.groupType == "symmetry")
+
+      if (fg.groupType != "interior")
       {
-          for(int f=0; f<faceCount; f++)
-          {
-              const int c0 = faceCells(f,0);
-              const int c1 = faceCells(f,1);
-              const VectorT3 en = faceArea[f]/faceAreaMag[f];
-              const VectorT3 dr0(faceCentroid[f]-cellCentroid[c0]);
-              
-              const T dr0_dotn = dot(dr0,en);
-              const VectorT3 dr1 = dr0 - 2.*dr0_dotn*en;
-              cellCentroid[c1] = cellCentroid[c0]+dr0-dr1;
-          }
-          
-      }
-      else
-      {
-          for(int f=0; f<faceCount; f++)
-          {
-              const int c1 = faceCells(f,1);
-              cellCentroid[c1] = faceCentroid[f];
-          }
+	  if (fg.groupType == "symmetry")
+	  {
+	      for(int f=0; f<faceCount; f++)
+	      {
+		  const int c0 = faceCells(f,0);
+		  const int c1 = faceCells(f,1);
+		  const VectorT3 en = faceArea[f]/faceAreaMag[f];
+		  const VectorT3 dr0(faceCentroid[f]-cellCentroid[c0]);
+		  
+		  const T dr0_dotn = dot(dr0,en);
+		  const VectorT3 dr1 = dr0 - 2.*dr0_dotn*en;
+		  cellCentroid[c1] = cellCentroid[c0]+dr0-dr1;
+	      }
+	      
+	  }
+	  else
+	  {
+	      for(int f=0; f<faceCount; f++)
+	      {
+		  const int c1 = faceCells(f,1);
+		  cellCentroid[c1] = faceCentroid[f];
+	      }
+	  }
       }
   }
   _coordField.addArray(cells,ccPtr);
@@ -283,38 +286,41 @@ MeshMetricsCalculator<T>::calculateBoundaryNodeNormal()
       const T one(1.0);
       for(int i=0;i<nBoundaryNodes;i++)
         nodeMarked[i] = false;      
-      foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
       {
           const FaceGroup& fg = *fgPtr;
-	  const StorageSite& faces = fg.site;
-     	  const int nFaces = faces.getCount();
-	  const CRConnectivity& BoundaryFaceNodes = mesh.getFaceNodes(faces);
-	  const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_areaField[faces]);
-          const TArray& faceAreaMag = dynamic_cast<const TArray&>(_areaMagField[faces]);
-	  for(int i=0;i<nBoundaryNodes;i++)
-	    nodeMark[i] = false;	  
-	  for(int i=0;i<nFaces;i++)
+	  if (fg.groupType != "interior")
 	  {
-	      for(int j=0;j<BoundaryFaceNodes.getCount(i);j++)
+	      const StorageSite& faces = fg.site;
+	      const int nFaces = faces.getCount();
+	      const CRConnectivity& BoundaryFaceNodes = mesh.getFaceNodes(faces);
+	      const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_areaField[faces]);
+	      const TArray& faceAreaMag = dynamic_cast<const TArray&>(_areaMagField[faces]);
+	      for(int i=0;i<nBoundaryNodes;i++)
+		nodeMark[i] = false;	  
+	      for(int i=0;i<nFaces;i++)
 	      {
-	          const int num = BoundaryFaceNodes(i,j);
-                  if(!nodeMark[GlobalToLocal[num]])
-		    nodeMark[GlobalToLocal[num]] = true;		  
-		  if((nodeMark[GlobalToLocal[num]])&&(!(nodeMarked[GlobalToLocal[num]])))
+		  for(int j=0;j<BoundaryFaceNodes.getCount(i);j++)
 		  {
-		      nodeNormal[GlobalToLocal[num]] += faceArea[i]/faceAreaMag[i];
-		      number[GlobalToLocal[num]] += one;
+		      const int num = BoundaryFaceNodes(i,j);
+		      if(!nodeMark[GlobalToLocal[num]])
+			nodeMark[GlobalToLocal[num]] = true;		  
+		      if((nodeMark[GlobalToLocal[num]])&&(!(nodeMarked[GlobalToLocal[num]])))
+		      {
+			  nodeNormal[GlobalToLocal[num]] += faceArea[i]/faceAreaMag[i];
+			  number[GlobalToLocal[num]] += one;
+		      }
 		  }
 	      }
-	  }
-	  for(int i=0;i<nBoundaryNodes;i++)
-	  {
-	      if((nodeMark[i])&&(!nodeMarked[i]))
+	      for(int i=0;i<nBoundaryNodes;i++)
 	      {
-		  nodeNormal[i][0] = nodeNormal[i][0]/number[i];
-                  nodeNormal[i][1] = nodeNormal[i][1]/number[i];
-		  nodeNormal[i][2] = nodeNormal[i][2]/number[i];
-		  nodeMarked[i] = true;
+		  if((nodeMark[i])&&(!nodeMarked[i]))
+		  {
+		      nodeNormal[i][0] = nodeNormal[i][0]/number[i];
+		      nodeNormal[i][1] = nodeNormal[i][1]/number[i];
+		      nodeNormal[i][2] = nodeNormal[i][2]/number[i];
+		      nodeMarked[i] = true;
+		  }
 	      }
 	  }
       }
@@ -385,18 +391,21 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
 
 
   // update boundary cells with adjacent interior cells values
-  foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+  foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
   {
       const FaceGroup& fg = *fgPtr;
-      const StorageSite& faces = fg.site;
-      const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-      const int faceCount = faces.getCount();
-          
-      for(int f=0; f<faceCount; f++)
+      if (fg.groupType != "interior")
       {
-          const int c0 = faceCells(f,0);
-          const int c1 = faceCells(f,1);
-          cellVolume[c1] = cellVolume[c0];
+	  const StorageSite& faces = fg.site;
+	  const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+	  const int faceCount = faces.getCount();
+          
+	  for(int f=0; f<faceCount; f++)
+	  {
+	      const int c0 = faceCells(f,0);
+	      const int c1 = faceCells(f,1);
+	      cellVolume[c1] = cellVolume[c0];
+	  }
       }
   }
   _volumeField.addArray(cells,vPtr);
