@@ -30,6 +30,7 @@ public:
 					Field& varN1Field,
 					Field& varN2Field,
 					const Field& densityField,
+					const Field& volume0Field,
 					const T_Scalar dT) :
     Discretization(meshes),
     _geomFields(geomFields),
@@ -37,6 +38,7 @@ public:
     _varN1Field(varN1Field),
     _varN2Field(varN2Field),
     _densityField(densityField),
+    _volume0Field(volume0Field),
     _dT(dT)
   {}
   
@@ -52,6 +54,9 @@ public:
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
     
+    const TArray& cellVolume0 =
+      dynamic_cast<const TArray&>(_volume0Field[cells]);
+
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     CCMatrix& matrix =
       dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
@@ -94,7 +99,7 @@ public:
     {
         for(int c=0; c<nCells; c++)
 	{
-	    const T_Scalar rhoVbydT2 = density[c]*cellVolume[c]/_dT2;
+	    const T_Scalar rhoVbydT2 = density[c]*cellVolume0[c]/_dT2;
 	    rCell[c] -= rhoVbydT2*(x[c]- two*xN1[c]
 				  + xN2[c]);
 	    diag[c] -= rhoVbydT2;
@@ -106,7 +111,8 @@ private:
   const Field& _varField;
   const Field& _varN1Field;
   const Field& _varN2Field;
-  const Field& _densityField; 
+  const Field& _densityField;
+  const Field& _volume0Field;
   const T_Scalar _dT;
 };
 

@@ -19,6 +19,7 @@ struct StructureFields
   Field deformationN2;
   Field tractionX;
   Field bodyForce;
+  Field volume0;
 };
 
 #endif

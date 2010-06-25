@@ -317,6 +317,9 @@ public:
 
         if (_options.transient)
         {
+	    _structureFields.volume0.addArray(cells,
+					 dynamic_pointer_cast<ArrayBase>
+					 (_geomFields.volume[cells].newCopy()));
 	    _structureFields.deformationN1.addArray(cells,
                                             dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
             _structureFields.deformationN2.addArray(cells,
@@ -446,6 +449,7 @@ public:
               _structureFields.deformationN1,
               _structureFields.deformationN2,
               _structureFields.density,
+	      _structureFields.volume0,
               _options["timeStep"]));
         
         discretizations.push_back(td);
