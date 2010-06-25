@@ -320,8 +320,12 @@ def write_env(bld, cwd, cname):
     # write out env.csh for people who haven't yet learned bash
     env_name = os.path.join(cwd, 'env.csh')
     f = open(env_name, 'w')
-    for cmd in config('ALL', 'before'):    
-        f.write('%s\n' % cmd)
+    for cmd in config('ALL', 'before'):   
+        exp = re.findall(r'export (\S+)=(\S+)', cmd)
+        if exp:
+            f.write('setenv %s %s\n' % (exp[0][0], exp[0][1]))
+        else:
+            f.write('%s\n' % cmd)
         
     print >> f, "setenv LD_LIBRARY_PATH " + bld.libdir + ":$LD_LIBRARY_PATH"
     try:
@@ -337,7 +341,7 @@ def write_env(bld, cwd, cname):
     # write out env.sh
     env_name = os.path.join(cwd, 'env.sh')
     f = open(env_name, 'w')
-    for cmd in config('ALL', 'before'):    
+    for cmd in config('ALL', 'before'):
         f.write('%s\n' % cmd)
     
     print >> f, "export LD_LIBRARY_PATH=" + bld.libdir + ":$LD_LIBRARY_PATH"
