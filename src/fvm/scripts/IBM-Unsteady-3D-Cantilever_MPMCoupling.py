@@ -8,7 +8,7 @@ import fvm.fvmbaseExt as fvmbaseExt
 fvm.set_atype('double')
 import fvm.importers as importers
 import fvm.exporters_atyped_double as exporters
-
+from mpi4py import MPI
 
 
 import math
@@ -22,9 +22,9 @@ from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
 fileBase = None
-numIterationsPerStep = 2
+numIterationsPerStep = 20
 #mpm number of steps shoul numTimeSteps-1
-numTimeSteps = 11
+numTimeSteps = 2 
 fileBase = "/home/yildirim/memosa/src/fvm/test/"
 
 vFile = open(fileBase + "velocity-fullbeam-test.out","w")
@@ -58,30 +58,30 @@ def advanceUnsteady(fmodel, meshes, globalTime, nTimeSteps,  mpm_fvm):
     for i in range(0,nTimeSteps):
         print "ntimesteps = ", str(i)
         globalTime += timeStep 
-        mpm_fvm.waitMPM() #idle until MPM done
-        print " fvm waiting........."
-        mpm_fvm.acceptMPM( timeStep, globalTime ) 
+	mpm_fvm.couplingInit(timeStep)
+        mpm_fvm.acceptMPM( i ) 
+	print "KKKKKKKKKKKKKKKKKKKKKKKKABBBBBBBBBBBBBBBBBBUUULLLLLLLLLL EDILDI" 
         #v = 0.001*math.cos(2.0*math.pi * frequency * globalTime)
-	fvmbaseExt.CellMark_Impl(mesh0, geomFields, fileBase, octree, solid, option)	
+	###fvmbaseExt.CellMark_Impl(mesh0, geomFields, fileBase, octree, solid, option)	
 
-        metricsCalculator.computeIBInterpolationMatrices(mpm_fvm.particleSite())
+        ###metricsCalculator.computeIBInterpolationMatrices(mpm_fvm.particleSite())
 
-        metricsCalculator.computeIBandSolidInterpolationMatrices(mpm_fvm.particleSite())
+        ###metricsCalculator.computeIBandSolidInterpolationMatrices(mpm_fvm.particleSite())
              
-        fmodel.computeIBFaceVelocity(mpm_fvm.particleSite())
+        ###fmodel.computeIBFaceVelocity(mpm_fvm.particleSite())
 
-        fmodel.computeIBandSolidVelocity(mpm_fvm.particleSite())
+        ###fmodel.computeIBandSolidVelocity(mpm_fvm.particleSite())
 
         nsweep = int(2)
-        mpm_fvm.updateMPM( timeStep, globalTime, nsweep)
+        mpm_fvm.updateMPM( i )
 
-        advance(fmodel,numIterationsPerStep)
+        #advance(fmodel,numIterationsPerStep)
 
-        pI = fmodel.getPressureIntegralonIBFaces(mesh0)
+        #pI = fmodel.getPressureIntegralonIBFaces(mesh0)
         #mI = fmodel.getMomentumFluxIntegralonIBFaces(mesh0)
                
         #vFile.write("%e\t%e\n" % (globalTime,v))
-        pFile.write("%e\t%e\t%e\t%e\n" % (globalTime, pI[0], pI[1], pI[2]))
+        #pFile.write("%e\t%e\t%e\t%e\n" % (globalTime, pI[0], pI[1], pI[2]))
         #mFile.write("%e\t%e\t%e\t%e\n" % (globalTime, mI[0], mI[1], mI[2]))
         
         
@@ -97,8 +97,12 @@ if __name__ == '__main__' and fileBase is None:
     fileBase = sys.argv[1]
 
 
-reader = FluentCase(fileBase+"fvm_coupling_hexa10x4x4_120x40x40.cas")
-print "reading %s", fileBase+"fvm_coupling_hexa10x4x4_120x40x40.cas"
+filename = fileBase+"fvm_coupling_hexa10x4x4_80x32x32.cas"
+#filename = fileBase+"fvm_coupling_hexa10x4x4_120x48x48.cas"
+#filename = fileBase+"fvm_coupling_hexa10x4x4_160x64x64.cas"
+
+reader = FluentCase(filename)
+print "reading %s", filename
 
 #import debug
 reader.read();
