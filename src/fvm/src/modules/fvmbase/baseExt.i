@@ -54,6 +54,7 @@ typedef Vector<double,3> VecD3;
 typedef TwobyTwoTensor<double> TensorD2x2;
 %template(TensorD2x2) TwobyTwoTensor<double>;
 
+
 %include "Field.i"
 %include "CRConnectivity.i"
 %include "Mesh.i"
@@ -70,6 +71,9 @@ typedef TwobyTwoTensor<double> TensorD2x2;
 %include "MeshAssembler.i"
 %include "MeshDismantler.i"
 %include "ILU0Solver.i"
+%include "AABB.i"
+%include "KSearchTree.i"
+%include "IBManager.i"
 
 #ifdef FVM_PARALLEL
 
