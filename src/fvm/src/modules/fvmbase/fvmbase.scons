@@ -37,9 +37,11 @@ srcBase = ['CException.cpp',
            'MeshAssembler.cpp',
 	   'MeshDismantler.cpp',
            'ILU0Solver.cpp',
+	   'SpikeSolver.cpp',
            'AABB.cpp',
            'KSearchTree.cpp',
-           'IBManager.cpp'
+           'IBManager.cpp',
+	   'SpikeStorage.cpp'
            ]
 
 env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal'])
