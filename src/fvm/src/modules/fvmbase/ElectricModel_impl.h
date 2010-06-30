@@ -20,6 +20,7 @@
 #include "EmissionDiscretization.h"
 #include "CaptureDiscretization.h"
 #include "InjectionDiscretization.h"
+#include "TrapBandTunnelingDiscretization.h"
 #include "AMG.h"
 #include "Linearizer.h"
 #include "GradientModel.h"
@@ -407,7 +408,7 @@ public:
 	//update source term in electrostatics
 	TArray& totalcharge = dynamic_cast<TArray&>(_electricFields.total_charge[cells]);
 	for (int c=0; c<nCells; c++){
-	  // totalcharge[c] = - (charge[c][0] + charge[c][1]) * QE;
+	  totalcharge[c] = - (charge[c][0] + charge[c][1]) * QE;
 	}
     }
   }
@@ -717,20 +718,22 @@ public:
 	    _constants));
       discretizations.push_back(capt);
     }
-    /*  
-    if (_options.injection_enable){
+   
+   
+    if (_options.trapbandtunneling_enable){
       shared_ptr<Discretization>
-	inj(new InjectionDiscretization<VectorT2, Tensor2x2, Tensor2x2>
+	tbt(new TrapBandTunnelingDiscretization<VectorT2, Tensor2x2, Tensor2x2>
 	    (_meshes, _geomFields,
 	     _electricFields.charge,
+	     _electricFields.chargeN1,
 	     _electricFields.electric_field,
 	     _electricFields.conduction_band,
-	     _constants,
-	     _electricFields.transmission));
-      discretizations.push_back(inj);
+	     _constants));
+      discretizations.push_back(tbt);
+
     }
-    */
-   
+	    
+
     if (_options.diffusion_enable){
       shared_ptr<Discretization>
 	dd(new ElecDiffusionDiscretization<VectorT2, Tensor2x2,Tensor2x2>
@@ -787,52 +790,12 @@ public:
                                   _electricFields.charge,
                                   _electricFields.chargeFlux,
                                   ls.getMatrix(), ls.getX(), ls.getB());
-	    //make sure the boundary cell diag for NT is not zero
-	    gbc.applyNonzeroDiagBC();  
-            
-	    //apply symmetry bc on side walls
-	    if ((bc.bcType == "Symmetry"))
-            {
-	      VectorT2 zeroFlux;
-	      zeroFlux[0] = zeroFlux[1] = T(0);
-	      gbc.applyNeumannBC(zeroFlux);
-	    }
-	    
-	    
-	    //apply zero flux bc on substrate and membrane contacts
-	    else{
-	      VectorT2 zeroFlux;
-	      zeroFlux[0] = zeroFlux[1] = T(0);
-	      gbc.applyNeumannBC(zeroFlux);
-	    }
-	    
+	    //dielectric charging uses fixed zero dirichlet bc
+	    VectorT2 zero;
+	    gbc.applyNonzeroDiagBC();
+	    zero[0] = zero[1] = T(0);
+	    gbc.applyDirichletBC(zero);
 
-	    /*
-	    if (bc.bcType == "SpecifiedPotential")
-            {
-              VectorT2 bT;
-	      bT[0] = T(0);
-	      bT[1] = bc["specifiedCharge"];
-	      gbc.applyDirichletBC(bT);
-            }
-	    
-            else if (bc.bcType == "SpecifiedPotentialFlux")
-            {
-	      VectorT2 bT;
-	      bT[0] = T(0);
-	      bT[1] = bc["specifiedChargeFlux"];
-	      gbc.applyNeumannBC(bT);
-            }
-	    else if ((bc.bcType == "Symmetry"))
-            {
-	      VectorT2 zeroFlux;
-	      zeroFlux[0] = zeroFlux[1] = T(0);
-	      gbc.applyNeumannBC(zeroFlux);
-	      //gbc.applyDirichletBC(zeroFlux);
-	    }
-	    else
-              throw CException(bc.bcType + " not implemented for ElectricModel");
-	    */
 	  }
 
         foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
@@ -861,8 +824,7 @@ public:
     bool flag2 = false;
          
     if(_options.electrostatics_enable){
-      if(_niters < 5){
-      
+     
       for(int n=0; n<niter; n++)
 	{
 	  MFRPtr eNorm = solveElectroStatics();
@@ -883,7 +845,6 @@ public:
 	      break;
 	    }	  
 	}
-      }
     }
 
       
@@ -906,7 +867,7 @@ public:
 
 	  if (*cNormRatio < _options.chargetransportTolerance){
 	    flag2 = true;
-	    break;
+	    //break;
 	  }
 	}
 
