@@ -38,6 +38,7 @@ class TunnelingDiscretization : public Discretization
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef typename CCMatrix::OffDiagArray OffDiagArray;
   typedef Array<X> XArray;
+  typedef Array<Vector<T_Scalar, 3> > VectorT3Array;
 
   TunnelingDiscretization(const MeshList& meshes,
 			  const GeomFields& geomFields,
@@ -64,9 +65,13 @@ class TunnelingDiscretization : public Discretization
   {
     
     const StorageSite& cells = mesh.getCells();
+
+    const StorageSite& faces = mesh.getFaces();
     
     const int nCells = cells.getSelfCount();
     
+    const CRConnectivity& cellCells = mesh.getCellCells();
+
     const TArray& electron_totaltraps = dynamic_cast<const TArray&> (_totaltrapsField[cells]);
 
     const TArray& conduction_band = dynamic_cast<const TArray&> (_conductionbandField[cells]);
@@ -75,6 +80,12 @@ class TunnelingDiscretization : public Discretization
    
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+
+    const VectorT3Array& cellCentroid = 
+      dynamic_cast<const VectorT3Array& > (_geomFields.coordinate[cells]);
+    
+    const VectorT3Array& faceCentroid = 
+      dynamic_cast<const VectorT3Array& > (_geomFields.coordinate[faces]);
     
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     
@@ -95,7 +106,7 @@ class TunnelingDiscretization : public Discretization
     double fluxCoeff, fermilevel, scatterfactor;
 
     //const T_Scalar volt = getMembraneVoltage(currentTime);
-    const T_Scalar volt = 150;
+    const T_Scalar volt = 100;
 
     const T_Scalar& electron_effmass = _constants["electron_effmass"];
     const T_Scalar& temperature = _constants["OP_temperature"];
@@ -106,15 +117,19 @@ class TunnelingDiscretization : public Discretization
     const T_Scalar& dielectric_ionization = _constants["dielectric_ionization"];
 
     const T_Scalar alpha = 4.0 * PI * (electron_effmass*ME) / pow(H_SI, 3.0);
-
+    
+    const int subID = 5;
+    const int memID = 4;
+    const int nLevel = 100;
     //for the tunneling from substrate to traps and from traps to substrate, the same fermilevel is used
     //thus the same transmission can be used twice
     //the flux coeff is a little different
 
-    fermilevel = fermilevelsubstrate;
-
     
-    for (T_Scalar en = fermilevel-1.0; en <= fermilevel+1.0; en += energystep){
+    //======================================================================================================//
+    fermilevel = fermilevelsubstrate;   
+    
+    for (T_Scalar en = fermilevel-4.0; en <= fermilevel+4.0; en += energystep){
 
       const T_Scalar supplyfunction = ElectronSupplyFunction(en, fermilevel, temperature);
 
@@ -126,56 +141,88 @@ class TunnelingDiscretization : public Discretization
 
       const string flag = "substrate";
 
-      ElectronTransmissionCoefficient(en, transmission, conduction_band,
-      			      dielectric_ionization, electron_effmass, flag, _columnList);
-      
-
-      for(int c=0; c<nCells; c++){
-	/*
-	//debug transmission interpolation
-	T p = (cellCentriod[c][2] - 0.0) / 0.1e06 * 150.0;
-	T deltaX = 0.1e-6 / 20.0;
-	T cond = -(p + 3.0);
-	T factor = -2.0/HBAR * sqrt(2.0*electron_effmass*ME*QE);
-	T exponent = factor * sqrt(PositiveValueOf(cond - en)) * deltaX;
-	*/
-	transmission[c] = 1.0;
+      //ElectronTransmissionCoefficient(en, transmission, conduction_band,
+      //dielectric_ionization, electron_effmass, flag, _columnList);
+                 
+         //debug use: explicitly calculate transmission using 1D model
+      foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	{
+	  const FaceGroup& fg = *fgPtr;
+	  const StorageSite& faces = fg.site;
+	  const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+	  const CRConnectivity& allFaceCells = mesh.getAllFaceCells();
+	  const CRConnectivity& cellFaces = mesh.getCellFaces();
+	  if (fg.id == subID){
+	    for(int f=0; f<faces.getCount(); f++){
+	      int c0 = faceCells(f,0);
+	      int c1 = faceCells(f,1);
+	      transmission[c1] = 1.0;	     
+	      
+	      int low = c1;
+	      int me = c0;	      
+	      int high = c0;	       
+	      	     
+	      for(int l=0; l<nLevel; l++){	
+		//cout << cellCentroid[me] << endl;
+		//printf("%e\t%e\n", cellCentroid[low][2], transmission[low]);
+		T_Scalar delta = cellCentroid[me][2] - cellCentroid[low][2];
+		T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
+		T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
+		T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+		T_Scalar avg = (valueMe + valueLow) / 2.0;
+		T_Scalar exponent = factor * sqrt(avg) * delta;
+		transmission[me] = transmission[low] * exp(exponent);
+		high = high - 4;
+		low = me;
+		me = high;
+	      }
+	    }
+	  }
+	}
 	
+      
+      for(int c=0; c<nCells; c++){
+		
 	const T_Scalar stcap = electron_capture_cross * cellVolume[c]; 
 
 	const T_Scalar endiff = en - (conduction_band[c]-electron_trapdepth);
 	
-	//tunneling from substrate to traps
-	if (endiff < 0)
-	  scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
-	else scatterfactor = 1.0;
+	/*** tunneling from substrate to traps ***/
 
-	//cout << "scatter " << scatterfactor << endl;
+	if (en-conduction_band[c] < 0){
+	  if (endiff < 0)
+	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
+	  else scatterfactor = 1.0;
 
-	fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * fermifunction * scatterfactor * energystep * QE;
-
-	//r = coeff * (N-n) explicit; no diag;
-	//if implicit, the xN1 is needed, and a fraction factor
-
-	rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xN1Cell[c][0])); 
-		
-	//diag[c][0] += fluxCoeff;
-
-	//tunneling from traps to substrate
-	if (endiff > 0)
-	  scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
-	else scatterfactor = 1.0;
-
-	fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * (1-fermifunction) * scatterfactor * energystep * QE;
+	  fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * fermifunction * scatterfactor * energystep * QE;
+	  //rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xN1Cell[c][0])); 
+	  rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xCell[c][0])); 
+	  diag[c][0] -= fluxCoeff;
+	}
 	
-	//r = coeff * (-n) explicit; no diag;
-	//rCell[c][0] += (fluxCoeff * (- xN1Cell[c][0])); 
-
-	//diag[c][0] += fluxCoeff;
+	else{
+	  fluxCoeff = alpha * transmission[c] * supplyfunction * fermifunction * QE * energystep * cellVolume[c];
+	  rCell[c][1] += fluxCoeff;            // need to check;
+	}
+	
+  
+	/*** tunneling from traps to substrate ***/
+	  
+	if(en - conduction_band[c] < 0){
+	  if (endiff > 0)
+	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
+	  else scatterfactor = 1.0;
+	  
+	  fluxCoeff = alpha * stcap *  transmission[c] * supplyfunction * (1-fermifunction) * scatterfactor * energystep * QE;
+	  //rCell[c][0] += (fluxCoeff * (- xN1Cell[c][0])); 
+	  rCell[c][0] += (fluxCoeff * (- xCell[c][0])); 
+	  diag[c][0] -= fluxCoeff;
+	}
+	  
       }
     }
     
-    
+    //==========================================================================================================================//
      //for the tunneling from membrane to traps and from traps to membrane, the same fermilevel is used
     //thus the same transmission can be used twice
     //the flux coeff is a little different
@@ -190,43 +237,82 @@ class TunnelingDiscretization : public Discretization
 
       const string flag = "membrane";
 
-      ElectronTransmissionCoefficient(en, transmission, conduction_band,
-				      dielectric_ionization, electron_effmass, flag, _columnList);
-      
+      //ElectronTransmissionCoefficient(en, transmission, conduction_band,
+      //				      dielectric_ionization, electron_effmass, flag, _columnList);
+
+       //debug use: explicitly calculate transmission using 1D model
+      foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	{
+	  const FaceGroup& fg = *fgPtr;
+	  const StorageSite& faces = fg.site;
+	  const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+	  const CRConnectivity& allFaceCells = mesh.getAllFaceCells();
+	  const CRConnectivity& cellFaces = mesh.getCellFaces();
+	  if (fg.id == memID){
+	    for(int f=0; f<1; f++){
+	      int c0 = faceCells(f,0);
+	      int c1 = faceCells(f,1);
+	      transmission[c1] = 1.0;	     
+	      
+	      int low = c1;
+	      int me = c0;	      
+	      int high = c0;	      
+	      	     
+	      for(int l=0; l<nLevel; l++){		
+		//cout << "me is " << me << "  " << cellCentroid[me] << endl;
+		//printf("%e\t%e\n", cellCentroid[low][2], transmission[low]);
+		T_Scalar delta = cellCentroid[me][2] - cellCentroid[low][2];
+		T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
+		T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
+		T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+		T_Scalar avg = (valueMe + valueLow) / 2.0;
+		T_Scalar exponent = -factor * sqrt(avg) * delta;
+		transmission[me] = transmission[low] * exp(exponent);
+		high = high + 4;
+		low = me;
+		me = high;
+	      }
+	    }
+	  }
+	}
       for(int c=0; c<nCells; c++){
-	//transmission[c]=1.0;
-	
+
 	const T_Scalar stcap = electron_capture_cross * cellVolume[c];  
 
 	const T_Scalar endiff = en - (conduction_band[c]-electron_trapdepth);
 	
-	//tunneling from membrane to traps
+	// tunneling from membrane to traps 
 	
 	if (endiff < 0)
 	  scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
 	else scatterfactor = 1.0;
 
-	fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * fermifunction * scatterfactor * energystep * QE;
-	if (c==0) cout << fluxCoeff << endl;	
-	rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xN1Cell[c][0])); 
-
-	//diag[c] += fluxCoeff;
-
-	//tunneling from traps to membrane
-
-	if (endiff > 0)
-	  scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
-	else scatterfactor = 1.0;
-	
-	fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * (1-fermifunction) * scatterfactor * energystep * QE;
-
-	rCell[c][0] += (fluxCoeff * (-xN1Cell[c][0])); 
-
-	//diag[c][0] += fluxCoeff;
+	if (en-conduction_band[c] < 0){
+	  fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * fermifunction * scatterfactor * energystep * QE;
+	  //rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xN1Cell[c][0])); 
+	  rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xCell[c][0])); 
+	  diag[c][0] -= fluxCoeff;
+	 }
+	  
+	else{
+	  fluxCoeff = alpha * transmission[c] * supplyfunction * fermifunction * QE * energystep;
+	  rCell[c][1] += fluxCoeff;            // need to check;
 	}
+	
+	// tunneling from traps to membrane
+	if(en - conduction_band[c] < 0 ){
+	  if (endiff > 0)
+	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
+	  else scatterfactor = 1.0;
+	
+	  fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * (1-fermifunction) * scatterfactor * energystep * QE;
+	  //rCell[c][0] += (fluxCoeff * (-xCell[c][0])); 
+	  //diag[c][0] -= fluxCoeff;
+	}
+      }
     }
-  
-    */
+   
+   */
   }
  
  private:
