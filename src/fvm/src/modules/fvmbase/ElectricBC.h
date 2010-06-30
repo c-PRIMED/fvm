@@ -84,6 +84,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
     this->injection_enable = false;
     this->drift_enable = false;
     this->diffusion_enable = false;
+    this->trapbandtunneling_enable = false;
   }
   bool printNormalizedResiduals;
 
@@ -101,6 +102,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
   bool injection_enable;
   bool drift_enable;
   bool diffusion_enable;  
+  bool trapbandtunneling_enable;
 
   int timeDiscretizationOrder;
   LinearSolver *electrostaticsLinearSolver;
