@@ -88,12 +88,13 @@ class EmissionDiscretization : public Discretization
     T_Scalar beta = sqrt( QE / (PI * E0_SI * optical_dielectric_constant) );
 
     for(int c=0; c<nCells; c++){
-      //need to change to 3D for fabs(electric_field)
+      
       T_Scalar expt = (electron_trapdepth - beta * sqrt(mag(electric_field[c]))) * QE / (K_SI * temperature);
       T_Scalar fluxCoeff = cellVolume[c] * poole_frenkel_emission_frequency * exp(-expt);
       
-      rCell[c][0] += -(fluxCoeff * xN1Cell[c][0]);
-      rCell[c][1] += fluxCoeff * xN1Cell[c][0];
+      rCell[c][0] += -(fluxCoeff * xCell[c][0]);
+      diag[c][0] -= fluxCoeff;
+      rCell[c][1] += fluxCoeff * xCell[c][0];
     }
   }
 
