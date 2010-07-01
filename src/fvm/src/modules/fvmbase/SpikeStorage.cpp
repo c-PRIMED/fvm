@@ -34,8 +34,10 @@ SpikeStorage::init()
    _RSPK_INTERIOR.reserve(_bandwidth);
    _RSPK_GHOST.reserve   (_bandwidth);
    _RSPK_OFFD_PTR.reserve(_bandwidth);
+#ifdef FVM_PARALLEL
    _cellSelfCounts.resize( MPI::COMM_WORLD.Get_size() );
    _procID = MPI::COMM_WORLD.Get_rank();
+#endif
    //get size of cells from other process
    gatherCellSizes();
    //syn operation to get neighbour local indices to this ghost cells
