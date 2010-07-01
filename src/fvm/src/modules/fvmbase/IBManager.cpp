@@ -162,7 +162,7 @@ IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
           bool located = true;
           for (int nn=1; nn<nNodes; nn++)
           {
-              int s1 = sMeshesAABB.findOrientedSide(meshCoords[cellNodes(c,0)]);
+              int s1 = sMeshesAABB.findOrientedSide(meshCoords[cellNodes(c,nn)]);
               if (s1 !=0)
               {
                   // handle the possibility that the first node was on the AABB faces
@@ -175,55 +175,48 @@ IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
                   }
               }
           }
-          if (located && s0!=0)
+          if (located)
           {
               if (s0 == 1)
                 iBType = Mesh::IBTYPE_FLUID;
-              else
+              else if (s0 == -1)
                 iBType = Mesh::IBTYPE_SOLID;
-              break;
+              else
+                throw CException("found cell with all nodes on solid boundary");
           }
-      }
-  }
+          else
+            throw CException("found cell with intersections with solid boundary");
 
-  // now that we know the ib type of cell c we can set the type to be
-  // the same for all the unmarked cells we can recursively reach
-  // through the neighbours list.
-  
-  cellIBType[c] = iBType;
-
-  stack<int> cellsToCheck;
-  cellsToCheck.push(c);
-  
-  const CRConnectivity& cellCells = fluidMesh.getCellCells();
-
-  while(!cellsToCheck.empty())
-  {
-      c = cellsToCheck.top();
-      cellsToCheck.pop();
-      const int nNeighbors = cellCells.getCount(c);
-      for(int nn=0; nn<nNeighbors; nn++)
-      {
-          const int neighbor = cellCells(c,nn);
-          if (cellIBType[neighbor] == Mesh::IBTYPE_UNKNOWN)
+          // now that we know the ib type of cell c we can set the type to be
+          // the same for all the unmarked cells we can recursively reach
+          // through the neighbours list.
+          
+          cellIBType[c] = iBType;
+          
+          stack<int> cellsToCheck;
+          cellsToCheck.push(c);
+          
+          const CRConnectivity& cellCells = fluidMesh.getCellCells();
+          
+          while(!cellsToCheck.empty())
           {
-              cellIBType[neighbor] = iBType;
-              cellsToCheck.push(neighbor);
+              int c_nb = cellsToCheck.top();
+              cellsToCheck.pop();
+              const int nNeighbors = cellCells.getCount(c_nb);
+              for(int nn=0; nn<nNeighbors; nn++)
+              {
+                  const int neighbor = cellCells(c_nb,nn);
+                  if (cellIBType[neighbor] == Mesh::IBTYPE_UNKNOWN)
+                  {
+                      cellIBType[neighbor] = iBType;
+                      cellsToCheck.push(neighbor);
+                  }
+              }
+              
           }
       }
-
   }
-
-  // remaining cells are of the other ibType
-  if (iBType == Mesh::IBTYPE_FLUID)
-    iBType = Mesh::IBTYPE_SOLID;
-  else
-    iBType = Mesh::IBTYPE_FLUID;
-
-  for(int c=0; c<nCells; c++)
-    if (cellIBType[c] == Mesh::IBTYPE_UNKNOWN)
-      cellIBType[c] = iBType;
-
+  
   int nFluid=0;
   int nSolid=0;
   int nBoundary=0;
