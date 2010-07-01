@@ -52,8 +52,9 @@ SpikeStorage::gatherCellSizes()
 {
    const StorageSite& cellSite = _conn.getRowSite();
    _localCellSelfCount = cellSite.getSelfCount(); 
+#ifdef FVM_PARALLEL
    MPI::COMM_WORLD.Allgather(&_localCellSelfCount, 1, MPI::INT, &_cellSelfCounts[0], 1, MPI::INT);
-
+#endif
 }
 //sync operation to get cellIDs 
 void 
