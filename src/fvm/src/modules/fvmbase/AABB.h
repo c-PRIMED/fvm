@@ -146,8 +146,9 @@ private:
     
     Line2D getLine2D() const
     {
-      return Line2D(getVertex2D(0),
-                   getVertex2D(1));
+      // CGAL's line orientation is opposite ours in 2d
+      return Line2D(getVertex2D(1),
+                   getVertex2D(0));
     }
     
   };
