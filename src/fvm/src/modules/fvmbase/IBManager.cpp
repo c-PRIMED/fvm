@@ -143,13 +143,15 @@ IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
 
   // find one cell that is definitely inside or outside by brute force search
 
-  int c=0;
-  int iBType=Mesh::IBTYPE_UNKNOWN;
+  const CRConnectivity& cellCells = fluidMesh.getCellCells();
+
+         
   
-  for(c=0; c<nCells; c++)
+  for(int c=0; c<nCells; c++)
   {
       if (cellIBType[c] == Mesh::IBTYPE_UNKNOWN)
       {
+          int iBType=Mesh::IBTYPE_UNKNOWN;
           const int nNodes = cellNodes.getCount(c);
 
           // the side the first node is on. if all the other nodes of
@@ -182,11 +184,25 @@ IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
               else if (s0 == -1)
                 iBType = Mesh::IBTYPE_SOLID;
               else
-                throw CException("found cell with all nodes on solid boundary");
+              {
+                  cout << "cell id " << c << endl;
+                  for(int nn=0; nn<nNodes; nn++)
+                    cout << " node " << cellNodes(c,nn) << "("
+                         << meshCoords[cellNodes(c,nn)] << ")" << endl;
+                  
+                  throw CException("found cell with all nodes on solid boundary");
+              }
           }
           else
-            throw CException("found cell with intersections with solid boundary");
-
+          {
+              cout << "cell id " << c << endl;
+              for(int nn=0; nn<nNodes; nn++)
+                cout << " node " << cellNodes(c,nn) << "("
+                     << meshCoords[cellNodes(c,nn)] << ")" << endl;
+              
+              throw CException("found cell with intersections with solid boundary");
+          }
+          
           // now that we know the ib type of cell c we can set the type to be
           // the same for all the unmarked cells we can recursively reach
           // through the neighbours list.
@@ -196,8 +212,7 @@ IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
           stack<int> cellsToCheck;
           cellsToCheck.push(c);
           
-          const CRConnectivity& cellCells = fluidMesh.getCellCells();
-          
+           
           while(!cellsToCheck.empty())
           {
               int c_nb = cellsToCheck.top();
