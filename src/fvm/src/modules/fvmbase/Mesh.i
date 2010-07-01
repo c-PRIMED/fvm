@@ -52,8 +52,10 @@ public:
   enum
     {
       IBTYPE_FLUID,
+      IBTYPE_BOUNDARY,
       IBTYPE_SOLID,
-      IBTYPE_BOUNDARY
+      IBTYPE_REALBOUNDARY,
+      IBTYPE_UNKNOWN
     };
 %extend{
   Mesh(const int dimension, const int id, const ArrayBase&  faceNodesCoord ) 
