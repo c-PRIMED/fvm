@@ -3,6 +3,8 @@
 #include "CRConnectivity.h"
 #include "Cell.h"
 #include <cassert>
+#include "KSearchTree.h"
+
 
 Mesh::Mesh(const int dimension, const int id):
   _dimension(dimension),
@@ -402,3 +404,122 @@ Mesh::createCellColor()
    _isAssembleMesh = true;
 }
 
+void
+Mesh::findCommonNodes(Mesh& other)
+{
+  StorageSite& nodes = _nodes;
+  StorageSite& otherNodes = other._nodes;
+  const int nNodes = nodes.getCount();
+  const int nOtherNodes = otherNodes.getCount();
+
+  const Array<VecD3>& coords = getNodeCoordinates();
+  const Array<VecD3>& otherCoords = other.getNodeCoordinates();
+
+
+  KSearchTree bNodeTree;
+
+  // add all boundary nodes of this mesh to the tree
+  {
+      Array<bool> nodeMark(nNodes);
+      nodeMark = false;
+      foreach(const FaceGroupPtr fgPtr, getAllFaceGroups())
+      {
+          const FaceGroup& fg = *fgPtr;
+          const StorageSite& faces = fg.site;
+          if (fg.groupType!="interior")
+          {
+              const int nFaces = faces.getCount();
+              const CRConnectivity& faceNodes = getFaceNodes(faces);
+              for(int f=0; f<nFaces; f++)
+              {
+                  const int nFaceNodes = faceNodes.getCount(f);
+                  for(int nn=0; nn<nFaceNodes; nn++)
+                  {
+                      const int n=faceNodes(f,nn);
+                      if (!nodeMark[n])
+                      {
+                          nodeMark[n] = true;
+                          bNodeTree.insert(coords[n],n);
+                      }
+                  }
+              }
+          }
+      }
+  }
+  
+
+  // loop over all the boundary nodes of the other mesh to find possible common ones
+  Array<bool> nodeMark(nOtherNodes);
+
+  typedef map<int,int> CommonNodesMap;
+  CommonNodesMap commonNodesMap;
+
+  Array<int> closest(2);
+  
+  nodeMark = false;
+
+  const double epsilon(1e-6);
+  
+  foreach(const FaceGroupPtr fgPtr, other.getAllFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      if (fg.groupType!="interior")
+      {
+          const int nFaces = faces.getCount();
+          const CRConnectivity& faceNodes = other.getFaceNodes(faces);
+
+          for(int f=0; f<nFaces; f++)
+          {
+              const int nFaceNodes = faceNodes.getCount(f);
+              for(int nn=0; nn<nFaceNodes; nn++)
+              {
+                  const int n=faceNodes(f,nn);
+                  if (!nodeMark[n])
+                  {
+                      bNodeTree.findNeighbors(otherCoords[n],2,closest);
+                      
+                      double dist0 = mag(otherCoords[n] - coords[closest[0]]);
+                      
+                      // distance between the two closest point used as scale
+                      
+                      double distScale = mag(coords[closest[0]] - coords[closest[1]]);
+                      
+                      if (dist0 < distScale*epsilon)
+                      {
+                          // if another node has already been found as the
+                          // closest for this one we have something wrong
+                          if (commonNodesMap.find(closest[0]) != commonNodesMap.end())
+                          {
+                              throw CException("duplicate nodes on the mesh ?");
+                          }
+                          commonNodesMap.insert(make_pair(closest[0], n));
+                      }
+                      nodeMark[n] = true;
+                  }
+              }
+          }
+      }
+  }
+
+  const int nCommon = commonNodesMap.size();
+
+  if (nCommon == 0)
+    return;
+  cout << "found " << nCommon << " common nodes " << endl;
+  
+  shared_ptr<IntArray> myCommonNodes(new IntArray(nCommon));
+  shared_ptr<IntArray> otherCommonNodes(new IntArray(nCommon));
+
+  int nc=0;
+  foreach(CommonNodesMap::value_type& pos, commonNodesMap)
+  {
+      (*myCommonNodes)[nc] = pos.first;
+      (*otherCommonNodes)[nc] = pos.second;
+      nc++;
+  }
+  
+  nodes.getCommonMap()[&otherNodes] = myCommonNodes;
+  otherNodes.getCommonMap()[&nodes] = otherCommonNodes;
+  
+}

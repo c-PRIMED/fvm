@@ -40,6 +40,7 @@ class Mesh
 public:
 
   typedef Vector<double,3> VecD3;
+  typedef Array<int> IntArray;
   
   typedef pair<const StorageSite*, const StorageSite*> SSPair;
   typedef map<SSPair,shared_ptr<CRConnectivity> > ConnectivityMap;
@@ -179,6 +180,8 @@ public:
   void createGhostCellSiteGather ( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
   void createCellColor();
 
+  void findCommonNodes(Mesh& other);
+  
 protected:
   const int _dimension;
   const int _id;

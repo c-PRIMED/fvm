@@ -15,12 +15,15 @@ class StorageSite
 {
   typedef map< const StorageSite*, boost::shared_ptr< Array<int> > > ScatterMap;
   typedef map< const StorageSite*, boost::shared_ptr< Array<int> > > GatherMap;
+  typedef map< const StorageSite*, boost::shared_ptr< Array<int> > > CommonMap;
 
 public:
   int getCount() const;
   int getSelfCount() const;
   const ScatterMap&  getScatterMap() const;
   const GatherMap&   getGatherMap()  const;
+  const CommonMap&   getCommonMap()  const;
+  
   void clearGatherScatterMaps();
   
 private:
@@ -98,6 +101,7 @@ public:
   const CRConnectivity& getCellFaces() const;
   const CRConnectivity& getCellCells() const;
 					
+  void findCommonNodes(Mesh& otherMesh);
   
   // const GhostCellSiteMap& getGhostCellSiteMap() const;
   // const StorageSite* getGhostCellSite( int id );
