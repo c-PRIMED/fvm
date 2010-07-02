@@ -66,9 +66,6 @@ public:
      return new Mesh( dimension, id, points );
   }
 }
-  int getIBTypeForCell(const int c) const;
-  
-  void setIBTypeForCell(const int c, const int type);
 
   //VecD3 getCellCoordinate(const int c) const;
   const StorageSite& getCells() const;

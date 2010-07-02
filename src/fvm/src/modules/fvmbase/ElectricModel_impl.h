@@ -247,12 +247,12 @@ public:
 	
 	    //create a zero field
 	    shared_ptr<TArray> zeroCell(new TArray(cells.getCount()));
-	    *zeroCell = 0.0;
+	    *zeroCell = T(0.0);
 	    _electricFields.zero.addArray(cells,zeroCell);
 	    
 	    //create a one field
 	    shared_ptr<TArray> oneCell(new TArray(cells.getCount()));
-	    *oneCell = 1.0;
+	    *oneCell = T(1.0);
 	    _electricFields.one.addArray(cells,oneCell);
 
 	    //initial charge gradient array
@@ -1057,7 +1057,7 @@ public:
 	{ 	  
 	  // need to figure out what direction to use ???//
 	  T fermilevel = -substrate_workfunction+effefield*cellCentroid[c][2];  
-	  T energy = 0;
+	  T energy(0.);
 
 	  //fermi function is extremely sentitive to energy and fermilevel ???//
 

@@ -473,9 +473,11 @@ public:
 	//only modify the solid cell and IB cell velocity by interpolating of particles
 	VectorT3Array& cV =
 	  dynamic_cast<VectorT3Array&>(_flowFields.velocity[cells]);
+
+        const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
 		
 	for (int c = 0; c < nCells; c ++){
-	  const int cellType = mesh.getIBTypeForCell(c);
+            const int cellType = ibType[c];
 	  if (cellType == Mesh::IBTYPE_REALBOUNDARY){
 	    cV[c] = (*icV)[c];
 	  }
@@ -1005,8 +1007,8 @@ public:
         for (int n=0; n<numMeshes; n++)
         {
             const Mesh& mesh = *_meshes[n];
-            const Array<int>& ibType = mesh.getIBType();
             const StorageSite& cells = mesh.getCells();
+            const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
             const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
             for(int c=0; c<cells.getSelfCount(); c++)
               if (ibType[c] == Mesh::IBTYPE_FLUID)
@@ -1018,8 +1020,8 @@ public:
         for (int n=0; n<numMeshes; n++)
         {
             const Mesh& mesh = *_meshes[n];
-            const Array<int>& ibType = mesh.getIBType();
             const StorageSite& cells = mesh.getCells();
+            const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
             const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
             
             MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
@@ -1504,10 +1506,11 @@ public:
     VectorT3 r(VectorT3::getZero());
     const StorageSite& ibFaces = mesh.getIBFaces();
     const StorageSite& faces = mesh.getFaces();
+    const StorageSite& cells = mesh.getCells();
     const Array<int>& ibFaceIndices = mesh.getIBFaceList();
     const int nibf = ibFaces.getCount();
     const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-    const Array<int>& ibType = mesh.getIBType();
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
     const VectorT3Array& faceArea =
               dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
     const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
@@ -1702,7 +1705,7 @@ public:
         const TArray& mu =
           dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
         
-        const FlowVC<T>& vc = *_vcMap[mesh.getID()];
+        //const FlowVC<T>& vc = *_vcMap[mesh.getID()];
             
         const CRConnectivity& solidFacesToCells
           = mesh.getConnectivity(solidFaces,cells);

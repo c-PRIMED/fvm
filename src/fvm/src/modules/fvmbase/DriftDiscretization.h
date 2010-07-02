@@ -18,7 +18,9 @@ public:
   typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef typename CCMatrix::PairWiseAssembler CCAssembler;
+  typedef Array<int> IntArray;
   typedef Array<X> XArray;
+  
   typedef Array<T_Scalar> TArray;
   typedef Vector<T_Scalar,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
@@ -65,7 +67,8 @@ public:
 
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
 
-    const Array<int>& ibType = mesh.getIBType();
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+
     
     const int nFaces = faces.getCount();
     if (_geomFields.gridFlux.hasArray(faces))
@@ -174,8 +177,6 @@ public:
           }
     }
 
-    const int nCells = cells.getSelfCount();
-   
 
   }
 private:

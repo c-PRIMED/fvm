@@ -24,12 +24,12 @@ srcBase = ['CException.cpp',
            'StructureFields.cpp',
            'Discretization.cpp',
            'Linearizer.cpp',
-	   'CellMark_impl.cpp',
+	   #'CellMark_impl.cpp',
 	   'Octree.cpp',
-	   'CellMark.cpp',
+	   #'CellMark.cpp',
 	   'MPM_Particles.cpp',
 	   'Grid.cpp',
-	   'FVMParticles.cpp',
+	   #'FVMParticles.cpp',
 	   'ElectricFields.cpp',
 	   'StorageSiteMerger.cpp',
            'LinearSystemMerger.cpp',
@@ -45,6 +45,7 @@ srcBase = ['CException.cpp',
            ]
 
 env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal'])
+
 
 env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase'])
 

@@ -12,8 +12,18 @@
 #include "JacobiSolver.h"
 #include "ArrayBase.h"
 #include "Array.h"
+
+#include <signal.h>
+#include <fenv.h>
   
 rlog::StdioNode *stdLog;
+
+ void sigFPEHandler(int) throw (CException)
+{
+  // convert to our exception
+  throw CException("floating point exception");
+}
+
 %}
 
 
@@ -63,11 +73,10 @@ typedef TwobyTwoTensor<double> TensorD2x2;
 %include "BCGStab.i"
 %include "JacobiSolver.i"
 
-%include "CellMark.i"
-%include "MPM_Particles.i"
+
 %include "Octree.i"
 %include "Grid.i"
-%include "FVMParticles.i"
+
 %include "MeshAssembler.i"
 %include "MeshDismantler.i"
 %include "ILU0Solver.i"
@@ -87,7 +96,17 @@ typedef TwobyTwoTensor<double> TensorD2x2;
   {
           stdLog->subscribeTo(rlog::GetGlobalChannel(channel.c_str()));
   }
-
+  void enableFPETrapping()
+  {
+    feenableexcept
+      (
+       FE_DIVBYZERO
+       | FE_INVALID
+       | FE_OVERFLOW
+       );
+    
+    signal(SIGFPE, sigFPEHandler);
+  }
   boost::shared_ptr<ArrayBase> newIntArray(const int size)
   {
     return shared_ptr<ArrayBase>(new Array<int>(size));

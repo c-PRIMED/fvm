@@ -46,7 +46,7 @@ T discretizeMassFluxInterior(const Mesh& mesh,
   const T momURF(_options["momentumURF"]);
   const T OneMinusmomURF(T(1.0)-momURF);
     
-  const Array<int>& ibType = mesh.getIBType();
+  const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
 
   const StorageSite& ibFaces = mesh.getIBFaces();
     
@@ -208,7 +208,7 @@ void correctVelocityInterior(const Mesh& mesh,
   const TArray& rho = dynamic_cast<const TArray&>(_flowFields.density[cells]);
   const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
-  const Array<int>& ibType = mesh.getIBType();
+  const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
   const int nFaces = faces.getCount();
   for(int f=0; f<nFaces; f++)
   {
@@ -285,7 +285,7 @@ void updateFacePressureInterior(const Mesh& mesh,
   const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
   const int nFaces = faces.getCount();
-  const Array<int>& ibType = mesh.getIBType();
+  const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
   for(int f=0; f<nFaces; f++)
   {
       const int c0 = faceCells(f,0);

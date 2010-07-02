@@ -136,16 +136,6 @@ public:
   const FaceGroupList& getAllFaceGroups() const
   {return _faceGroups;}
   
-#if 0
-  const FaceGroup&
-  getFaceGroup(const int i) const {return *_faceGroups[i];}
-
-  const FaceGroup&
-  getBoundaryGroup(const int i) const {return *_boundaryGroups[i];}
-
-  const FaceGroup&
-  getInterfaceGroup(const int i) const {return *_interfaceGroups[i];}
-#endif
 
   const StorageSite& createInteriorFaceGroup(const int size);
   const StorageSite& createInterfaceGroup(const int size,const int offset, 
@@ -167,17 +157,9 @@ public:
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
   //  ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
 
-  const Array<int>& getIBType() const;
-
-  int getIBTypeForCell(const int c) const;
-  
-  void setIBTypeForCell(const int c, const int type);
   void setNumOfAssembleMesh( int nmesh ){ _numOfAssembleMesh = nmesh; }
 
   //VecD3 getCellCoordinate(const int c) const;
-
-
-  void addIBFace(const int i, const int c);
 
   const Array<int>& getIBFaceList() const;
 
@@ -190,15 +172,12 @@ public:
   bool isMergedMesh() const { return _isAssembleMesh;}
   int  getNumOfAssembleMesh() const { return _numOfAssembleMesh;}
  
-  void createIBFaceList(const int size) const;
 
   void setIBFaces(shared_ptr<Array<int> > faceList) {_ibFaceList = faceList;}
 
   void createGhostCellSiteScatter( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
   void createGhostCellSiteGather ( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
   void createCellColor();
-
-  Array<int>& getOrCreateIBType();
 
 protected:
   const int _dimension;
@@ -218,7 +197,6 @@ protected:
   mutable ConnectivityMap _connectivityMap;
   shared_ptr<Array<VecD3> > _coordinates;
   mutable shared_ptr<Array<int> > _boundaryNodeGlobalToLocalPtr;
-  mutable shared_ptr<Array<int> > _ibType;
 
   mutable shared_ptr<Array<int> > _ibFaceList;
 
@@ -226,9 +204,6 @@ protected:
   shared_ptr< Array<int> > _cellColorOther;
   int  _numOfAssembleMesh;
   bool _isAssembleMesh;
-
-  const Array<int>& getOrCreateIBType() const;
-
 
   GhostCellSiteMap   _ghostCellSiteScatterMap;
   GhostCellSiteMap   _ghostCellSiteGatherMap;

@@ -21,6 +21,7 @@ public:
 
   typedef Vector<T,3> VectorT3;
   typedef Array<T> TArray;
+  typedef Array<int> IntArray;
   typedef Array<VectorT3> VectorT3Array;
       
   MeshMetricsCalculator(GeomFields& geomFields, const MeshList& meshes);

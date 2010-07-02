@@ -22,6 +22,7 @@ public:
 
   typedef Gradient<X> XGrad;
   
+  typedef Array<int> IntArray;
   typedef Array<X> XArray;
   typedef Array<T_Scalar> TArray;
   typedef Vector<T_Scalar,3> VectorT3;
@@ -76,7 +77,7 @@ public:
 
     //const GradArray& xGradCell = dynamic_cast<GradArray>(_varGradientField[cells]);
 
-    const Array<int>& ibType = mesh.getIBType();
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
     
     const int nFaces = faces.getCount();
     if (_geomFields.gridFlux.hasArray(faces))

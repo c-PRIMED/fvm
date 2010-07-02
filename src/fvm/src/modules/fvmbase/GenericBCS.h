@@ -22,6 +22,8 @@ public:
   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
 
   typedef Array<T_Scalar> TArray;
+  typedef Array<int> IntArray;
+  
   typedef Vector<T_Scalar,3> VectorT3;
   
   typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
@@ -46,7 +48,7 @@ public:
              MultiField& xField, MultiField& rField) :
     _faces(faces),
     _cells(mesh.getCells()),
-    _ibType(mesh.getIBType()),
+    _ibType(dynamic_cast<const IntArray&>(geomFields.ibType[_cells])),
     _faceCells(mesh.getFaceCells(_faces)),
     _varField(varField),
     _fluxField(fluxField),
@@ -129,9 +131,6 @@ public:
       return;
     // the current value of flux and its Jacobians
     const X fluxB = -_r[c1];
-    const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
-    const Diag dFluxdXC1 = -_dRdXDiag[c1];
-    const OffDiag dRC0dXC1 = _assembler.getCoeff01(f);
         
         
     // since we know the boundary flux, compute the boundary flux
@@ -314,7 +313,7 @@ public:
 protected:
   const StorageSite& _faces;
   const StorageSite& _cells;
-  const Array<int>& _ibType;
+  const IntArray& _ibType;
   const CRConnectivity& _faceCells;
   const Field& _varField;
   const Field& _fluxField;

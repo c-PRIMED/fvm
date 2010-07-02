@@ -28,6 +28,7 @@ public:
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef typename CCMatrix::OffDiagArray OffDiagArray;
 
+  typedef Array<int> IntArray;
   typedef Array<X> XArray;
   typedef Array<T_Scalar> TArray;
   typedef Vector<T_Scalar,3> VectorT3;
@@ -66,7 +67,8 @@ public:
     const XArray& ibPhi =
       dynamic_cast<const XArray&>(_phiField[mesh.getIBFaces()]);
 
-    const Array<int>& ibType = mesh.getIBType();
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+
     const int nIBFaces = ibFaces.getCount();
 
     // used to keep track of the current ib face index

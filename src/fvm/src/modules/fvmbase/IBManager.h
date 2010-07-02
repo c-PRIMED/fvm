@@ -26,7 +26,9 @@ public:
   
 private:
 
-  void markIB(Mesh& fluidMesh, AABB& sMeshesAABB);
+  void markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB);
+  void markIBType(Mesh& fluidMesh, AABB& sMeshesAABB);
+  void createIBFaces(Mesh& fluidMesh);
   void createIBInterpolationStencil(Mesh& mesh,
                                     KSearchTree& fluidCellsTree,
                                     KSearchTree& solidFacesTree);

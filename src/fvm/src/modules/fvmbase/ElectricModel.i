@@ -57,7 +57,7 @@ struct ElectricModelConstants : public FloatVarDict<T>
 
 
 %template(ElectricModelOptionsA) ElectricModelOptions< ATYPE_STR >;
-%template(ElectricModelConstantsA) ElectricModelConstants<ATYPE_STR>;
+%template(ElectricModelConstantsA) ElectricModelConstants< ATYPE_STR >;
 
 %import "Model.i"
 

@@ -73,7 +73,6 @@ public:
   
   X applyDirichletBC(int f, const X& bValue) const
   {
-    const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
 
     const X fluxB = -_r[c1];

@@ -35,6 +35,7 @@ public:
   typedef typename CCMatrix::PairWiseAssembler CCAssembler;
 
   typedef Gradient<X> XGrad;
+  typedef Array<int> IntArray;
   
   typedef Array<X> XArray;
   typedef Array<T_Scalar> TArray;
@@ -93,7 +94,7 @@ public:
     const TArray& diffCell =
       dynamic_cast<const TArray&>(_diffusivityField[cells]);
 
-    const Array<int>& ibType = mesh.getIBType();
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
 
     const int nFaces = faces.getCount();
     for(int f=0; f<nFaces; f++)

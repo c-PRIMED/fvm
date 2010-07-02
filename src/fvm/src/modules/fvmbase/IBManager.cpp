@@ -31,12 +31,36 @@ void IBManager::update()
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
 
-      markIB(fluidMesh, sMeshesAABB);
+      markIntersections(fluidMesh, sMeshesAABB);
+  }
+
+  _geomFields.ibType.syncLocal();
+  
+  for (int n=0; n<numFluidMeshes; n++)
+  {
+      Mesh& fluidMesh = *_fluidMeshes[n];
+
+      markIBType(fluidMesh, sMeshesAABB);
+  }
+
+  _geomFields.ibType.syncLocal();
+  
+  for (int n=0; n<numFluidMeshes; n++)
+  {
+      Mesh& fluidMesh = *_fluidMeshes[n];
+
+      createIBFaces(fluidMesh);
+  }
+  
+  for (int n=0; n<numFluidMeshes; n++)
+  {
+      Mesh& fluidMesh = *_fluidMeshes[n];
 
       const StorageSite& cells = fluidMesh.getCells();
       const int numCells = cells.getSelfCount();
       
-      const Array<int>& cellIBType = fluidMesh.getOrCreateIBType();
+      IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+
       const Vec3DArray& cellCoords =
         dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
       
@@ -57,7 +81,7 @@ void IBManager::update()
 
 
 void
-IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
+IBManager::markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB)
 {
   const Array<Vector<double,3> >& meshCoords = fluidMesh.getNodeCoordinates();
   const StorageSite& faces = fluidMesh.getFaces();
@@ -66,13 +90,12 @@ IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
   const CRConnectivity& faceCells = fluidMesh.getAllFaceCells();
   const CRConnectivity& cellNodes = fluidMesh.getCellNodes();
 
-  Array<int>& cellIBType = fluidMesh.getOrCreateIBType();
+  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
   cellIBType = Mesh::IBTYPE_UNKNOWN;
   
   const int nFaces = faces.getCount();
-  const int nCells = cells.getCount();
-  
+
   int nIntersections = 0;
 
   const bool is2D = fluidMesh.getDimension() == 2;
@@ -140,7 +163,23 @@ IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
           }
       }
   }
+}
 
+void
+IBManager::markIBType(Mesh& fluidMesh, AABB& sMeshesAABB)
+{
+  const Array<Vector<double,3> >& meshCoords = fluidMesh.getNodeCoordinates();
+  const StorageSite& faces = fluidMesh.getFaces();
+  const StorageSite& cells = fluidMesh.getCells();
+  
+  const CRConnectivity& faceCells = fluidMesh.getAllFaceCells();
+  const CRConnectivity& cellNodes = fluidMesh.getCellNodes();
+
+  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+
+  const int nFaces = faces.getCount();
+  const int nCells = cells.getSelfCount();
+  
   // find one cell that is definitely inside or outside by brute force search
 
   const CRConnectivity& cellCells = fluidMesh.getCellCells();
@@ -251,6 +290,19 @@ IBManager::markIB(Mesh& fluidMesh, AABB& sMeshesAABB)
   cout << " found " << nFluid << " fluid, "
        << nSolid << " solid and "
        << nBoundary << " boundary cells " << endl;
+}
+
+void
+IBManager::createIBFaces(Mesh& fluidMesh)
+{
+  const StorageSite& faces = fluidMesh.getFaces();
+  const StorageSite& cells = fluidMesh.getCells();
+  
+  const CRConnectivity& faceCells = fluidMesh.getAllFaceCells();
+
+  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+
+  const int nFaces = faces.getCount();
 
   // find number of IBFaces
 
