@@ -57,7 +57,6 @@ public:
              MultiField& xField, MultiField& rField) :
     _faces(faces),
     _cells(mesh.getCells()),
-    _ibType(mesh.getIBType()),
     _faceCells(mesh.getFaceCells(_faces)),
     _varField(varField),
     _xIndex(&_varField,&_cells),
@@ -78,8 +77,6 @@ public:
     const int c1 = _faceCells(f,1);
 
     const X fluxB = -_r[c1];
-    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
-      return fluxB;
     
     const X dXC1 = bValue - _x[c1];
 
@@ -113,8 +110,6 @@ public:
     const int c1 = _faceCells(f,1);
     const X fluxB = -_r[c1];
 
-    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
-      return fluxB;
     // the current value of flux and its Jacobians
     const X dFlux = specifiedFlux*_faceAreaMag[f] - fluxB;
 
@@ -202,7 +197,6 @@ public:
 protected:
   const StorageSite& _faces;
   const StorageSite& _cells;
-  const Array<int>& _ibType;
   const CRConnectivity& _faceCells;
   const Field& _varField;
   const MultiField::ArrayIndex _xIndex;
@@ -693,92 +687,6 @@ public:
     }
   }
 
-  /*
-  VectorT3 getPressureIntegral(const Mesh& mesh, const int faceGroupId)
-  {
-    VectorT3 r(VectorT3::getZero());
-    bool found = false;
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-    {
-        const FaceGroup& fg = *fgPtr;
-        if (fg.id == faceGroupId)
-        {
-            const StorageSite& faces = fg.site;
-            const VectorT3Array& faceArea =
-              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-            const int nFaces = faces.getCount();
-            const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
-            for(int f=0; f<nFaces; f++)
-              r += faceArea[f]*facePressure[f];
-
-            found=true;
-        }
-    }
-    if (!found)
-      throw CException("getPressureIntegral: invalid faceGroupID");
-    return r;
-  }
-
-  VectorT3 getPressureIntegralonIBFaces(const Mesh& mesh)
-  {
-    VectorT3 r(VectorT3::getZero());
-    const StorageSite& ibFaces = mesh.getIBFaces();
-    const StorageSite& faces = mesh.getFaces();
-    const Array<int>& ibFaceIndices = mesh.getIBFaceList();
-    const int nibf = ibFaces.getCount();
-    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-    const Array<int>& ibType = mesh.getIBType();
-    const VectorT3Array& faceArea =
-              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-    const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
-
-    for ( int f = 0; f < nibf; f ++)
-    {
-        const int ibFaceIndex = ibFaceIndices[f];
-        const int c0 = faceCells(ibFaceIndex,0);
-
-        // need to check whether the face points in or out of the
-        // fluid cell and adjust sign of area accordingly
-        
-        if (ibType[c0] == Mesh::IBTYPE_FLUID)
-          r += faceArea[ibFaceIndex]*facePressure[ibFaceIndex];
-        else
-          r -= faceArea[ibFaceIndex]*facePressure[ibFaceIndex];
-    }
-    
-    if (nibf == 0)
-      throw CException("getPressureIntegralonIBFaces: no IBFaces found!");
-    return r;
-  }
-
-  VectorT3 getPVIntegral(const Field& velCoeffField,
-                         const Mesh& mesh, const int faceGroupId)
-  {
-    VectorT3 r(VectorT3::getZero());
-    bool found = false;
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-    {
-        const FaceGroup& fg = *fgPtr;
-        if (fg.id == faceGroupId)
-        {
-            const StorageSite& faces = fg.site;
-            const VectorT3Array& faceArea =
-              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-            const VectorT3Array& velCoeff =
-              dynamic_cast<const VectorT3Array&>(velCoeffField[faces]);
-            const int nFaces = faces.getCount();
-            const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
-            for(int f=0; f<nFaces; f++)
-              r += velCoeff[f]*(faceArea[f]*facePressure[f]);
-
-            found=true;
-        }
-    }
-  if (!found)
-    throw CException("getPVIntegral: invalid faceGroupID");
-    return r;
-  }  
-  */
 
   VectorT3 getDeformationFluxIntegral(const Mesh& mesh, const int faceGroupId)
   {
