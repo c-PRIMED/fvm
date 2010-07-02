@@ -20,6 +20,8 @@ class KineticBoundaryConditions
  public :
   
   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
+
+  typedef Array<int> IntArray;
   
   typedef Array<T_Scalar> TArray;
   typedef Vector<T_Scalar,3> VectorT3;
@@ -49,8 +51,8 @@ class KineticBoundaryConditions
 			    MultiField& rField,
 			    int direction) :
   _faces(faces),
-    _cells(mesh.getCells()),
-    _ibType(mesh.getIBType()),
+  _cells(mesh.getCells()),
+  _ibType(dynamic_cast<const IntArray&>(geomFields.ibType[_cells])),
     _quadrature(quadrature),
     _dsfPtr(dsfPtr),
     _faceCells(mesh.getFaceCells(_faces)),
