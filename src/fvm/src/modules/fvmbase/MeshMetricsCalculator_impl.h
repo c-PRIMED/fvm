@@ -119,8 +119,12 @@ void
 MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
 {
   const StorageSite& cells = mesh.getCells();
-      
+
+  
   const int cellCount = cells.getCount();
+  if (cellCount == 0)
+    return;
+  
   const int selfCellCount = cells.getSelfCount();
 
   shared_ptr<VectorT3Array> ccPtr(new VectorT3Array(cellCount));
@@ -358,6 +362,9 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
   const StorageSite& cells = mesh.getCells();
 
   const int cellCount = cells.getCount();
+  if (cellCount == 0)
+    return;
+      
   shared_ptr<TArray> vPtr(new TArray(cellCount));
   TArray& cellVolume = *vPtr;
       
