@@ -28,7 +28,8 @@ Mesh::Mesh(const int dimension, const int id):
   logCtor();
 }
 
-  Mesh::Mesh( const int dimension, const int id, const Array<VecD3>&  faceNodesCoord ): 
+Mesh::Mesh( const int dimension, const int id,
+            const Array<VecD3>&  faceNodesCoord ): 
   _dimension(dimension),
   _id(id),
   _cells(0),
@@ -47,47 +48,60 @@ Mesh::Mesh(const int dimension, const int id):
   _numOfAssembleMesh(1),
   _isAssembleMesh(false)
 {
-   int faceNodeCount = 4;
-   int totNodes      = faceNodesCoord.getLength(); // counting duplicate nodes as well
-   int totFaces      = totNodes / faceNodeCount;
-   //check if this is corect integer division
-   assert( (faceNodeCount*totFaces) == totNodes );
-   //set sites
-   StorageSite& faceSite = getFaces();
-   StorageSite& nodeSite = getNodes();
-   faceSite.setCount( totFaces );
-   nodeSite.setCount( totNodes );
-   //interior face group (we have only one interface for this
-   createInteriorFaceGroup(1);
+  int faceNodeCount = _dimension == 2 ? 2 :4;
+  int totNodes      = faceNodesCoord.getLength();
 
-   //setting coordinates
-   shared_ptr< Array<VecD3> > coord( new Array< VecD3 > ( totNodes ) );
-   *coord = faceNodesCoord;
-   setCoordinates( coord );
+  // counting duplicate nodes as well for 3d
+  int totFaces      = _dimension == 2 ? totNodes :totNodes / faceNodeCount;
 
-   //faceNodes constructor
-   shared_ptr<CRConnectivity> faceNodes( new CRConnectivity(faceSite, nodeSite) );
-   //addCount
-   for ( int i = 0; i < totFaces; i++ )
-        faceNodes->addCount(i, faceNodeCount); 
-   //finish count
-   faceNodes->finishCount();
-   //add operation 
-   int face     = 0;
-   int nodeIndx = 0;
-   for( int i = 0; i < totFaces; i++ ){
-      for( int j =0; j < faceNodeCount; j++ ){
-         faceNodes->add(face, nodeIndx++);
+  //check if this is corect integer division
+  if (_dimension == 3)
+    assert( (faceNodeCount*totFaces) == totNodes );
+  //set sites
+  StorageSite& faceSite = getFaces();
+  StorageSite& nodeSite = getNodes();
+  faceSite.setCount( totFaces );
+  nodeSite.setCount( totNodes );
+  //interior face group (we have only one interface for this
+  createBoundaryFaceGroup(totFaces,0,0,"wall");
+  
+  //setting coordinates
+  shared_ptr< Array<VecD3> > coord( new Array< VecD3 > ( totNodes ) );
+  *coord = faceNodesCoord;
+  setCoordinates( coord );
+  
+  //faceNodes constructor
+  shared_ptr<CRConnectivity> faceNodes( new CRConnectivity(faceSite,
+                                                           nodeSite) );
+
+  faceNodes->initCount();
+  //addCount
+  for ( int i = 0; i < totFaces; i++ )
+    faceNodes->addCount(i, faceNodeCount); 
+  //finish count
+  faceNodes->finishCount();
+  //add operation 
+  int face     = 0;
+  int nodeIndx = 0;
+  for( int i = 0; i < totFaces; i++ )
+  {
+      for( int j =0; j < faceNodeCount; j++ )
+      {
+          faceNodes->add(face, nodeIndx++);
+          if (_dimension == 2 && nodeIndx == totNodes)
+            nodeIndx  =0;
       }
+      if (_dimension == 2)
+        nodeIndx--;
       face++;
-   }
-   //finish add
-   faceNodes->finishAdd();
-
-   //setting faceNodes
-   SSPair key(&faceSite,&nodeSite);
+  }
+  //finish add
+  faceNodes->finishAdd();
+  
+  //setting faceNodes
+  SSPair key(&faceSite,&nodeSite);
   _connectivityMap[key] = faceNodes;
-
+  
   logCtor();
 }
 
