@@ -20,6 +20,7 @@ struct FlowFields
   Field velocityN1;
   Field velocityN2;
   Field stress;
+  Field force;
 };
 
 #endif

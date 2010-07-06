@@ -1674,23 +1674,24 @@ public:
   }
 
   void
-  computeSolidSurfaceStress(const StorageSite& solidFaces)
+  computeSolidSurfaceForce(const StorageSite& solidFaces)
   {
-    typedef Array<StressTensor<T> > StressTensorArray;
-    
     typedef CRMatrixTranspose<T,T,T> IMatrix;
 
     const int nSolidFaces = solidFaces.getCount();
 
     _velocityGradientModel.compute();
 
-    boost::shared_ptr<StressTensorArray>
-      stressTensorPtr( new StressTensorArray(nSolidFaces));
-    StressTensorArray& stressTensor = *stressTensorPtr;
+    boost::shared_ptr<VectorT3Array>
+      forcePtr( new VectorT3Array(nSolidFaces));
+    VectorT3Array& force = *forcePtr;
 
-    stressTensor.zero();
-    _flowFields.stress.addArray(solidFaces,stressTensorPtr);
-                                
+    force.zero();
+    _flowFields.force.addArray(solidFaces,forcePtr);
+
+    const VectorT3Array& solidFaceArea =
+      dynamic_cast<const VectorT3Array&>(_geomFields.area[solidFaces]);
+    
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
@@ -1722,6 +1723,7 @@ public:
         
         for(int f=0; f<nSolidFaces; f++)
         {
+            StressTensor<T> stress = NumTypeTraits<StressTensor<T> >::getZero();
             for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
             {
                 const int c = sFCCol[nc];
@@ -1733,13 +1735,19 @@ public:
                     vgPlusTranspose[i][j] += vg[j][i];
 
                 const T coeff = iCoeffs[nc];
-                stressTensor[f][0] += coeff*(vgPlusTranspose[0][0]*mu[c] - pCell[c]);
-                stressTensor[f][1] += coeff*(vgPlusTranspose[1][1]*mu[c] - pCell[c]);
-                stressTensor[f][2] += coeff*(vgPlusTranspose[2][2]*mu[c] - pCell[c]);
-                stressTensor[f][3] += coeff*(vgPlusTranspose[0][1]*mu[c]);
-                stressTensor[f][4] += coeff*(vgPlusTranspose[1][2]*mu[c]);
-                stressTensor[f][5] += coeff*(vgPlusTranspose[2][0]*mu[c]);
+               
+                stress[0] += coeff*(vgPlusTranspose[0][0]*mu[c] - pCell[c]);
+                stress[1] += coeff*(vgPlusTranspose[1][1]*mu[c] - pCell[c]);
+                stress[2] += coeff*(vgPlusTranspose[2][2]*mu[c] - pCell[c]);
+                stress[3] += coeff*(vgPlusTranspose[0][1]*mu[c]);
+                stress[4] += coeff*(vgPlusTranspose[1][2]*mu[c]);
+                stress[5] += coeff*(vgPlusTranspose[2][0]*mu[c]);
             }
+
+            const VectorT3& Af = solidFaceArea[f];
+            force[f][0] = Af[0]*stress[0] + Af[1]*stress[3] + Af[2]*stress[4];
+            force[f][1] = Af[0]*stress[3] + Af[1]*stress[1] + Af[2]*stress[5];
+            force[f][2] = Af[0]*stress[4] + Af[1]*stress[5] + Af[2]*stress[2];
         }
     }
   }
@@ -2021,9 +2029,9 @@ FlowModel<T>::computeIBFaceVelocity(const StorageSite& particles)
 
 template<class T>
 void
-FlowModel<T>::computeSolidSurfaceStress(const StorageSite& particles)
+FlowModel<T>::computeSolidSurfaceForce(const StorageSite& particles)
 {
-  return _impl->computeSolidSurfaceStress(particles);
+  return _impl->computeSolidSurfaceForce(particles);
 }
 
 
