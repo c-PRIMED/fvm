@@ -158,7 +158,7 @@ def do_env(c, unload=False):
             debug("Set %s back to %s" % (a, old))
         except:
             debug("Unset " + a)
-            if os.environ.has_key(a):            
+            if os.environ.has_key(a):
                 os.environ.pop(a)
     else:
         debug("Set %s=%s" % (a, b))
@@ -169,7 +169,7 @@ def do_env(c, unload=False):
             if b == '':
                 del os.environ[a]
             else:
-                os.environ[a] = b                
+                os.environ[a] = b
         elif b:
             os.environ[a] = b
 
@@ -270,7 +270,7 @@ def run_commands(pkg, section):
         for m in mods.split():
             module_load(m, section == 'after')
 
-    
+
 def copytree(src, dst, ctype):
     os.makedirs(dst)
     if ctype <= 0:
@@ -299,7 +299,7 @@ def set_python_path(dir):
     pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a, b), 'site-packages')
     pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a, b), 'site-packages')
     pypath = pypath1 + ':' + pypath2
-    
+
     for p in [pypath1, pypath2]:
         try:
             os.makedirs(p)
@@ -317,22 +317,26 @@ def set_python_path(dir):
     return pypath1
 
 def write_env(bld, cwd, cname):
+    idir = os.path.join(bld.blddir, "include")
     # write out env.csh for people who haven't yet learned bash
     env_name = os.path.join(cwd, 'env.csh')
     f = open(env_name, 'w')
-    for cmd in config('ALL', 'before'):   
+    for cmd in config('ALL', 'before'):
         exp = re.findall(r'export (\S+)=(\S+)', cmd)
         if exp:
             f.write('setenv %s %s\n' % (exp[0][0], exp[0][1]))
         else:
             f.write('%s\n' % cmd)
-        
+
     print >> f, "setenv LD_LIBRARY_PATH " + bld.libdir + ":$LD_LIBRARY_PATH"
     try:
         if os.environ['PYTHONPATH']:
             print >> f, "setenv PYTHONPATH " + os.environ['PYTHONPATH']
     except:
         pass
+    print >> f, "# Add include and lib directories to compiler paths"
+    print >> f, "setenv C_INCLUDE_PATH %s:$C_INCLUDE_PATH" % idir
+    print >> f, "setenv CPLUS_INCLUDE_PATH %s:$C_INCLUDE_PATH" % idir
     print >> f, "setenv PATH %s:$PATH" % bld.bindir
     print >> f, "\n# Need this to recompile MPM in its directory."
     print >> f, "setenv MEMOSA_CONFNAME %s" % cname
@@ -343,13 +347,17 @@ def write_env(bld, cwd, cname):
     f = open(env_name, 'w')
     for cmd in config('ALL', 'before'):
         f.write('%s\n' % cmd)
-    
+
     print >> f, "export LD_LIBRARY_PATH=" + bld.libdir + ":$LD_LIBRARY_PATH"
     try:
         if os.environ['PYTHONPATH']:
             print >> f, "export PYTHONPATH=" + os.environ['PYTHONPATH']
     except:
         pass
+
+    print >> f, "# Add include and lib directories to compiler paths"
+    print >> f, "export C_INCLUDE_PATH=%s:$C_INCLUDE_PATH" % idir
+    print >> f, "export CPLUS_INCLUDE_PATH=%s:$C_INCLUDE_PATH" % idir
     print >> f, "export PATH=%s:$PATH" % bld.bindir
     print >> f, "\n# Need this to recompile MPM in its directory."
     print >> f, "export MEMOSA_CONFNAME=%s" % cname
