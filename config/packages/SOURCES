@@ -19,6 +19,7 @@ Lammps   src/lammps
 MPM      src/MPM
 Fvm      src/fvm
 MEMOSA   src/MEMOSA
+Puq      src/puq
 Hdf5	 pkgs/hdf5-1.8.4.tar.bz2
 Matplotlib	pkgs/matplotlib-0.99.1.1.tar.gz
 Scipy		pkgs/scipy-0.7.1.tar.gz
