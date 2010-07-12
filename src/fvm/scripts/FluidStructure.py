@@ -45,19 +45,26 @@ class MPMCoupling:
        
          self.couplingStep = 0
 	 self.isCouplingInit = False
+	 self.isUnitConversion   = False
 	 
+     def  unitConversion(self, is_unit_conversion):
+	  self.isUnitConversion = is_unit_conversion
+
      def couplingInit(self, dt):
 	 #this should be done once, fvm and mpm time steps should be fixed  
          if (  self.isCouplingInit == False ):
+	      mpi_proc = MPI.PROC_NULL
+	      if ( self.procID == 0 ):
+	          mpi_proc = MPI.ROOT
+              #sending unit conversion
+              self.FVM_COMM_MPM.Bcast([self.isUnitConversion, MPI.INT],mpi_proc)
 	      self.dt[0] = dt
               #getting mpm time step 
               self.FVM_COMM_MPM.Bcast([self.dtMPM, MPI.DOUBLE], root=0)
 	      #sending fvm time step
-	      mpi_proc = MPI.PROC_NULL
-	      if ( self.procID == 0 ):
-	          mpi_proc = MPI.ROOT
               self.FVM_COMM_MPM.Bcast([self.dt,MPI.DOUBLE], mpi_proc)	
-              self.dtMPM = self.dtMPM / 1000.0 #from "msec" to "second" conversion
+	      if ( self.isUnitConversion ):
+		  self.dtMPM = self.dtMPM / 1000.0 #from "msec" to "second" conversion
 	      a = int(round(self.dt/self.dtMPM))
 	      b = int(round(self.dtMPM/self.dt))
 	      #coupling if mod(step, couplingStep)=0
@@ -103,7 +110,8 @@ class MPMCoupling:
                 self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.faceNodesCoord.asNumPyArray(),count, displ,MPI.DOUBLE]) 
 		print "self.nfaces = ", self.nfaces
                 print "MPI_RANK = ", MPI.COMM_WORLD.Get_rank(), "  faceNodes coord = ", self.faceNodesCoord.asNumPyArray()                 
-		self.faceNodesCoord.asNumPyArray()[:,:] = self.faceNodesCoord.asNumPyArray()[:,:] / 1000.0
+		if ( self.isUnitConversion ):
+		    self.faceNodesCoord.asNumPyArray()[:,:] = self.faceNodesCoord.asNumPyArray()[:,:] / 1000.0
                 #creating meshList 
                 #self.surfaceMeshes= fvmbaseExt.MeshList( fvmbaseExt.Mesh(3,99,self.faceNodesCoord) );
 		self.surfaceMeshes = [ fvmbaseExt.Mesh(3,99,self.faceNodesCoord) ]
@@ -129,8 +137,7 @@ class MPMCoupling:
   
      def  getSurfaceVel(self):
          return self.FaceCentroidVels
-
-
+     
      def dump_faces( self, faceNodesCoord, faceVel ):
         f = open('faces.dat','w')
 	f.write("Title = \" MPM Faces \" \n")
