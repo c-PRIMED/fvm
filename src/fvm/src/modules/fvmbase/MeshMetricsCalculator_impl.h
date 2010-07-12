@@ -1010,30 +1010,44 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 
   Array<T>& cellToSBCoeff = cellToSolidFaces->getCoeff();
 
-
 #if 1
-
-  /**********linear least square interpolation*********/
-  // X=x-xf  Y=y-yf  Z=Z-zf
-  //matrix M=[1 X1 Y1 Z1]
-  //         [1 X2 Y2 Z2]
-  //         ...........
-  //         [1 Xn Yn Zn]
-  //coefficient matrix A=[a, b, c, d]T
-  //velocity element v = M * A
-  //linear relation v = a + b*X + c*Y + d*Z
-  //to make least square
-  //matrix A = (M(T)*M)^(-1)*M(T)*v
-  //so, velocity at face is vface = a + b*Xf + c*Yf + d*Zf = a
-  //which is the first row of matrix A
-  //so, the weight function should be the first row of  (M(T)*M)^(-1)*M(T)
-  //note Q = M(T)*M  and Qinv = Q^(-1)
-  //the following code is to calculate it
-  //insteading of doing full matrix operation, only nessesary operation on entries are performed
-
+  /******distance weighted interpolation******/
  
 
   for(int f=0; f<nSolidFaces; f++)
+  {
+      T wtSum(0);
+      int nnb(0);
+      
+      for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+      { 
+	  const int c = sFCCol[nc];
+          VectorT3 dr(xCells[c]-xFaces[f]);
+          T wt = 1.0/dot(dr,dr);
+          cellToSBCoeff[nc] = wt;
+          wtSum += wt;
+          nnb++;
+	 
+      }
+    
+      if (nnb == 0)
+	throw CException("no cell or particle neighbors for ib face");
+      
+      for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+      {
+	cellToSBCoeff[nc] /= wtSum;
+      }
+  }
+
+ 
+#endif
+
+#if 0
+
+  /**********linear least square interpolation*********/
+ 
+  //for(int f=0; f<nSolidFaces; f++)
+  for(int f=0; f<10; f++)
   {
       T wt(0);
       int nnb(0);
@@ -1050,7 +1064,8 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       {
           const int c = sFCCol[nc];
           VectorT3 dr(xCells[c]-xFaces[f]);
-
+          cout << "face  " << xFaces[f] << endl;
+	  cout << "cells " << c << "  " << xCells[c] << endl;
 	  Q[0][0] += 1.0;
 	  Q[0][1] += dr[0];
 	  Q[0][2] += dr[1];
@@ -1088,6 +1103,7 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 	    wt += Qinv[0][i]*dr[i-1];
 
 	  cellToSBCoeff[nc] = wt;
+	  cellToSBCoeff[nc] = 0.25;
 	  //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
       }
   }
