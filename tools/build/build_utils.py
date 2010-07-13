@@ -328,15 +328,30 @@ def write_env(bld, cwd, cname):
         else:
             f.write('%s\n' % cmd)
 
-    print >> f, "setenv LD_LIBRARY_PATH " + bld.libdir + ":$LD_LIBRARY_PATH"
+    print >> f, "if ${?LD_LIBRARY_PATH} then"
+    print >> f, "  setenv LD_LIBRARY_PATH " + bld.libdir + ":${LD_LIBRARY_PATH};"
+    print >> f, "else"
+    print >> f, "  setenv LD_LIBRARY_PATH " + bld.libdir + ";"    
+    print >> f, "endif"
+    
     try:
         if os.environ['PYTHONPATH']:
             print >> f, "setenv PYTHONPATH " + os.environ['PYTHONPATH']
     except:
         pass
     print >> f, "# Add include and lib directories to compiler paths"
-    print >> f, "setenv C_INCLUDE_PATH %s:$C_INCLUDE_PATH" % idir
-    print >> f, "setenv CPLUS_INCLUDE_PATH %s:$C_INCLUDE_PATH" % idir
+    print >> f, "if ${?C_INCLUDE_PATH} then"
+    print >> f, "  setenv C_INCLUDE_PATH %s:${C_INCLUDE_PATH};" % idir
+    print >> f, "else"
+    print >> f, "  setenv C_INCLUDE_PATH %s;" % idir
+    print >> f, "endif"
+        
+    print >> f, "if ${?CPLUS_INCLUDE_PATH} then"    
+    print >> f, "  setenv CPLUS_INCLUDE_PATH %s:${CPLUS_INCLUDE_PATH};" % idir
+    print >> f, "else"
+    print >> f, "  setenv CPLUS_INCLUDE_PATH %s;" % idir    
+    print >> f, "endif"
+    
     print >> f, "setenv PATH %s:$PATH" % bld.bindir
     print >> f, "\n# Need this to recompile MPM in its directory."
     print >> f, "setenv MEMOSA_CONFNAME %s" % cname
@@ -357,7 +372,7 @@ def write_env(bld, cwd, cname):
 
     print >> f, "# Add include and lib directories to compiler paths"
     print >> f, "export C_INCLUDE_PATH=%s:$C_INCLUDE_PATH" % idir
-    print >> f, "export CPLUS_INCLUDE_PATH=%s:$C_INCLUDE_PATH" % idir
+    print >> f, "export CPLUS_INCLUDE_PATH=%s:$CPLUS_INCLUDE_PATH" % idir
     print >> f, "export PATH=%s:$PATH" % bld.bindir
     print >> f, "\n# Need this to recompile MPM in its directory."
     print >> f, "export MEMOSA_CONFNAME=%s" % cname
