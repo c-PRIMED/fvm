@@ -14,4 +14,5 @@ public:
 
   int fluidNeighborsPerIBFace;
   int solidNeighborsPerIBFace;
+  int fluidNeighborsPerSolidFace;
 };
