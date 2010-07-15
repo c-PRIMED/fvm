@@ -10,6 +10,8 @@
 #include "BCGStab.h"
 #include "ILU0Solver.h"
 #include "JacobiSolver.h"
+#include "SpikeStorage.h"
+#include "SpikeSolver.h"
 #include "ArrayBase.h"
 #include "Array.h"
 
@@ -72,6 +74,8 @@ typedef TwobyTwoTensor<double> TensorD2x2;
 %include "AMG.i"
 %include "BCGStab.i"
 %include "JacobiSolver.i"
+%include "SpikeSolver.i"
+%include "SpikeStorage.i"
 
 
 %include "Octree.i"
