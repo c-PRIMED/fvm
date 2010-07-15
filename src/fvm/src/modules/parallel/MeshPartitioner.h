@@ -240,7 +240,6 @@ private:
    vector< vector< ArrayIntPtr > > _fromIndices;
    vector< vector< ArrayIntPtr > > _toIndices;
    ArrayIntPtr  _fiedlerMap; // map original cell number to  fiedler numbering
-   ArrayIntPtr  _fiedlerPart; // map cell number to its partition id
    PARTTYPE _partTYPE;
 
    MPI::Win  _winGlobal;

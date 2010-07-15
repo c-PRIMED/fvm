@@ -632,30 +632,13 @@ MeshPartitioner::fiedler_partition()
 {
    MPI::COMM_WORLD.Barrier();
 
-   int totElms = _totElems[0];
-   _fiedlerPart = ArrayIntPtr( new Array<int>(totElms) );
-   //construct fiedlearPart
-   int npart  = _nPart[0];
-
-   int part_id = 0;
-   for ( int n = 1; n <= npart; n++){
-       int ibeg = ((*_globalIndx.at(0))[n-1]); 
-       int iend = ((*_globalIndx.at(0))[n]);
-       for ( int i = ibeg; i < iend; i++ ){
-            int fiedlerID = (*_fiedlerMap)[i];
-           (*_fiedlerPart)[fiedlerID] = part_id;
-       }
-       part_id++;
-   }
-
    //copy to part
    int elem_start   = (*_globalIndx.at(0))[_procID];
    int elem_finish  = elem_start + (*_elemDist[0])[_procID];
 
    int indx = 0;
    for ( int i = elem_start; i < elem_finish; i++ ){
-       //int fiedlerID = (*_fiedlerMap)[i];
-      _part.at(0)[indx] = (*_fiedlerPart)[i];
+      _part.at(0)[indx] = _procID; 
       indx++;
    }
 
@@ -680,12 +663,6 @@ MeshPartitioner::DEBUG_fiedler_partition()
     int totElms = _totElems[0];
     for ( int n = 0; n < totElms; n++ )
        _debugFile << "_fiedlerMap[" << n << "] = " <<  (*_fiedlerMap)[n] << endl;
-    _debugFile << endl; 
-   //_fielderpart
-   _debugFile << "Fiedler Partition :" << endl;  //map from current cellID to partitionID which belongs
-   _debugFile << endl;
-    for ( int n = 0; n < totElms; n++ )
-       _debugFile << "_fiedlerPart[" << n << "] = " <<  (*_fiedlerPart)[n] << endl;
     _debugFile << endl; 
     //_part
    _debugFile << "_part :" << endl;
@@ -973,7 +950,7 @@ MeshPartitioner::mesh_setup()
         //interior faces
         _meshListLocal.at(id)->createInteriorFaceGroup( count_interior_faces(id) );
 
-         //boundary faces
+        //boundary faces
         set<int>::const_iterator it_set;
         for ( it_set = _boundarySet.at(id).begin(); it_set != _boundarySet.at(id).end(); it_set++){
            int bndryID = *it_set;
@@ -981,10 +958,9 @@ MeshPartitioner::mesh_setup()
            if ( size > 0 ){
               int offset =  _bndryOffsets.at(id)[ bndryID ] ;
               string boundaryType = _mapBounIDAndBounType.at(id)[bndryID];
-              _meshListLocal.at(id)->createBoundaryFaceGroup( size, offset, bndryID, boundaryType);
+              _meshListLocal.at(id)->createBoundaryFaceGroup(size, offset, bndryID, boundaryType);
            }
          }
-
 
         //then interface faces
         for ( it_set = _interfaceSet.at(id).begin(); it_set != _interfaceSet.at(id).end(); it_set++){
