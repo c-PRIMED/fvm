@@ -3,9 +3,31 @@
 
 #include "Mesh.h"
 #include "GeomFields.h"
+#include <set>
 
 class KSearchTree;
 class AABB;
+
+/**
+ * structure that keeps information about nearest cell for a solid
+ * boundary face.
+ * 
+ */
+
+struct
+NearestCell
+{
+  NearestCell():
+    mesh(0),
+    cell(-1),
+    distanceSquared(0)
+  {}
+
+  const Mesh* mesh;
+  int cell;
+  double distanceSquared;
+  set<int> neighbors;
+};
 
 class IBManager
 {
@@ -27,14 +49,18 @@ public:
 private:
 
   void markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB);
-  void markIBType(Mesh& fluidMesh, AABB& sMeshesAABB);
+  void markIBType(Mesh& fluidMesh);
   void createIBFaces(Mesh& fluidMesh);
   void createIBInterpolationStencil(Mesh& mesh,
                                     KSearchTree& fluidCellsTree,
                                     KSearchTree& solidFacesTree);
+  void
+  findNearestCellForSolidFaces(Mesh& mesh,
+                               KSearchTree& fluidCellsTree,
+                               vector<NearestCell>& nearest);
+  
   void createSolidInterpolationStencil(Mesh& mesh,
-                                       KSearchTree& fluidCellsTree);
-                                       
+                                       vector<NearestCell>& nearest);                                       
   GeomFields& _geomFields;
   Mesh& _solidBoundaryMesh;
   const MeshList _fluidMeshes;

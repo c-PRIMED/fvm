@@ -4,6 +4,8 @@
 #include "Mesh.h"
 #include <stack>
 
+
+
 IBManager::IBManager(GeomFields& geomFields,
                      Mesh& solidBoundaryMesh,
                      const MeshList& fluidMeshes):
@@ -27,6 +29,7 @@ void IBManager::update()
   KSearchTree solidMeshKSearchTree(solidMeshCoords);
 
   const int numFluidMeshes = _fluidMeshes.size();
+  
   for (int n=0; n<numFluidMeshes; n++)
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
@@ -40,7 +43,7 @@ void IBManager::update()
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
 
-      markIBType(fluidMesh, sMeshesAABB);
+      markIBType(fluidMesh);
   }
 
   _geomFields.ibType.syncLocal();
@@ -51,6 +54,8 @@ void IBManager::update()
 
       createIBFaces(fluidMesh);
   }
+
+  vector<NearestCell> solidFacesNearestCell(solidMeshFaces.getCount());
   
   for (int n=0; n<numFluidMeshes; n++)
   {
@@ -73,8 +78,13 @@ void IBManager::update()
       }
 
       createIBInterpolationStencil(fluidMesh,fluidCellsTree,solidMeshKSearchTree);
-      createSolidInterpolationStencil(fluidMesh,fluidCellsTree);
-                                              
+      findNearestCellForSolidFaces(fluidMesh,fluidCellsTree,solidFacesNearestCell);
+  }
+  
+  for (int n=0; n<numFluidMeshes; n++)
+  {
+      Mesh& fluidMesh = *_fluidMeshes[n];
+      createSolidInterpolationStencil(fluidMesh,solidFacesNearestCell);
   }
 }
 
@@ -166,87 +176,45 @@ IBManager::markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB)
 }
 
 void
-IBManager::markIBType(Mesh& fluidMesh, AABB& sMeshesAABB)
+IBManager::markIBType(Mesh& fluidMesh)
 {
-  const Array<Vector<double,3> >& meshCoords = fluidMesh.getNodeCoordinates();
-  const StorageSite& faces = fluidMesh.getFaces();
   const StorageSite& cells = fluidMesh.getCells();
-  
-  const CRConnectivity& faceCells = fluidMesh.getAllFaceCells();
-  const CRConnectivity& cellNodes = fluidMesh.getCellNodes();
 
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
-  const int nFaces = faces.getCount();
   const int nCells = cells.getSelfCount();
-  
-  // find one cell that is definitely inside or outside by brute force search
+  const int nCellsTotal = cells.getCount();
 
+  Array<bool> isFluidCell(nCellsTotal);
+  isFluidCell = false;
+  foreach(const FaceGroupPtr fgPtr, fluidMesh.getBoundaryFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      
+      const CRConnectivity& faceCells = fluidMesh.getFaceCells(faces);
+      const int nFaces = faces.getCount();
+      for(int f=0; f<nFaces; f++)
+        isFluidCell[faceCells(f,0)] = true;
+      
+  }
+  
   const CRConnectivity& cellCells = fluidMesh.getCellCells();
 
          
+  int ibGroup=-1;
+  map<int, int> ibGroupToIBType;
   
   for(int c=0; c<nCells; c++)
   {
       if (cellIBType[c] == Mesh::IBTYPE_UNKNOWN)
       {
-          int iBType=Mesh::IBTYPE_UNKNOWN;
-          const int nNodes = cellNodes.getCount(c);
-
-          // the side the first node is on. if all the other nodes of
-          // the cell are on the same side then we know the cell is on
-          // the same side. if any node is on the AABB faces we skip
-          // checking it
-          
-          int s0 = sMeshesAABB.findOrientedSide(meshCoords[cellNodes(c,0)]);
-
-          bool located = true;
-          for (int nn=1; nn<nNodes; nn++)
-          {
-              int s1 = sMeshesAABB.findOrientedSide(meshCoords[cellNodes(c,nn)]);
-              if (s1 !=0)
-              {
-                  // handle the possibility that the first node was on the AABB faces
-                  if (s0==0)
-                    s0 = s1;
-                  else if (s0 != s1)
-                  {
-                      located = false;
-                      break;
-                  }
-              }
-          }
-          if (located)
-          {
-              if (s0 == 1)
-                iBType = Mesh::IBTYPE_FLUID;
-              else if (s0 == -1)
-                iBType = Mesh::IBTYPE_SOLID;
-              else
-              {
-                  cout << "cell id " << c << endl;
-                  for(int nn=0; nn<nNodes; nn++)
-                    cout << " node " << cellNodes(c,nn) << "("
-                         << meshCoords[cellNodes(c,nn)] << ")" << endl;
-                  
-                  throw CException("found cell with all nodes on solid boundary");
-              }
-          }
-          else
-          {
-              cout << "cell id " << c << endl;
-              for(int nn=0; nn<nNodes; nn++)
-                cout << " node " << cellNodes(c,nn) << "("
-                     << meshCoords[cellNodes(c,nn)] << ")" << endl;
-              
-              throw CException("found cell with intersections with solid boundary");
-          }
-          
-          // now that we know the ib type of cell c we can set the type to be
+          ibGroup++;
+          // create a new group for  cell c and then set the group to be
           // the same for all the unmarked cells we can recursively reach
           // through the neighbours list.
           
-          cellIBType[c] = iBType;
+          cellIBType[c] = ibGroup;
           
           stack<int> cellsToCheck;
           cellsToCheck.push(c);
@@ -255,6 +223,10 @@ IBManager::markIBType(Mesh& fluidMesh, AABB& sMeshesAABB)
           while(!cellsToCheck.empty())
           {
               int c_nb = cellsToCheck.top();
+              if (isFluidCell[c_nb] &&
+                  ibGroupToIBType.find(ibGroup) == ibGroupToIBType.end())
+                ibGroupToIBType[ibGroup] = Mesh::IBTYPE_FLUID;
+              
               cellsToCheck.pop();
               const int nNeighbors = cellCells.getCount(c_nb);
               for(int nn=0; nn<nNeighbors; nn++)
@@ -262,7 +234,7 @@ IBManager::markIBType(Mesh& fluidMesh, AABB& sMeshesAABB)
                   const int neighbor = cellCells(c_nb,nn);
                   if (cellIBType[neighbor] == Mesh::IBTYPE_UNKNOWN)
                   {
-                      cellIBType[neighbor] = iBType;
+                      cellIBType[neighbor] = ibGroup;
                       cellsToCheck.push(neighbor);
                   }
               }
@@ -270,12 +242,27 @@ IBManager::markIBType(Mesh& fluidMesh, AABB& sMeshesAABB)
           }
       }
   }
+
+  for(int c=0; c<nCellsTotal; c++)
+  {
+      if (cellIBType[c] >=0)
+      {
+          map<int,int>::const_iterator pos =
+            ibGroupToIBType.find(cellIBType[c]);
+          if (pos != ibGroupToIBType.end())
+          {
+              cellIBType[c] = pos->second;
+          }
+          else
+            cellIBType[c] = Mesh::IBTYPE_SOLID;
+      }
+  }
   
   int nFluid=0;
   int nSolid=0;
   int nBoundary=0;
 
-  for(int c=0; c<nCells; c++)
+  for(int c=0; c<nCellsTotal; c++)
   {
       if (cellIBType[c] == Mesh::IBTYPE_FLUID)
         nFluid++;
@@ -414,10 +401,10 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   
 }
 
-
 void
-IBManager::createSolidInterpolationStencil(Mesh& mesh,
-                                           KSearchTree& fluidCellsTree)
+IBManager::findNearestCellForSolidFaces(Mesh& mesh,
+                                        KSearchTree& fluidCellsTree,
+                                        vector<NearestCell>& nearest)
                                            
 {
   const StorageSite& cells = mesh.getCells();
@@ -432,47 +419,103 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
 
 
-  Array<int> fluidNeighbors(fluidNeighborsPerSolidFace);
+  Array<int> fluidNeighbors(1);
 
-  AABB meshAABB(mesh);
+  for(int f=0; f<nSolidFaces; f++)
+  {
+      const Vec3D& xf = solidFaceCentroid[f];
+      fluidCellsTree.findNeighbors(xf, 1, fluidNeighbors);
+
+      const int c = fluidNeighbors[0];
+      const Vec3D& xc = cellCentroid[c];
+      const double distanceSquared = mag2(xf-xc);
+      NearestCell& nc = nearest[f];
+      if ((nc.mesh == 0) || (nc.distanceSquared > distanceSquared))
+      {
+          nc.mesh = &mesh;
+          nc.cell = c;
+          nc.distanceSquared = distanceSquared;
+      }
+  }
+}
+
+/**
+ * given a set of cells, add all their fluid ibtype neighbors to the
+ * list if they aren't already in it.
+ * 
+ */
+
+void addFluidNeighbors(set<int>& neighbors,
+                       const CRConnectivity& cellCells,
+                       const Array<int>& ibType)
+{
+  set<int> newNeighbors;
+  foreach(int c, neighbors)
+  {
+      const int neighborCount = cellCells.getCount(c);
+      for(int nnb=0; nnb<neighborCount; nnb++)
+      {
+          const int c_nb = cellCells(c,nnb);
+          if (ibType[c_nb] == Mesh::IBTYPE_FLUID)
+            newNeighbors.insert(c_nb);
+      }
+  }
+  neighbors.insert(newNeighbors.begin(),newNeighbors.end());
+}
+
+void
+IBManager::createSolidInterpolationStencil(Mesh& mesh,
+                                           vector<NearestCell>& nearest)
+                                           
+{
+  const StorageSite& cells = mesh.getCells();
+  const StorageSite& solidMeshFaces = _solidBoundaryMesh.getFaces();
+
+  const int nSolidFaces = solidMeshFaces.getCount();
+  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+  const CRConnectivity& cellCells = mesh.getCellCells();
+  
 
   shared_ptr<CRConnectivity> solidFacesToCells
     (new CRConnectivity(solidMeshFaces,cells));
   
   solidFacesToCells->initCount();
 
-  Array<bool> inThisMesh(nSolidFaces);
-  
   for(int f=0; f<nSolidFaces; f++)
   {
-      const Vec3D& xf = solidFaceCentroid[f];
-      fluidCellsTree.findNeighbors(xf, fluidNeighborsPerSolidFace,
-                                   fluidNeighbors);
-
-      // check if the line joining face to nearest cell intersects the
-      // mesh boundaries
-      
-      const Vec3D& xc = cellCentroid[fluidNeighbors[0]];
-      if (!meshAABB.hasIntersectionWithSegment(xf,xc))
+      NearestCell& nc = nearest[f];
+      if (nc.mesh == &mesh)
       {
-          solidFacesToCells->addCount(f,fluidNeighborsPerSolidFace);
-          inThisMesh[f] = true;
-      }
-      else
-        inThisMesh[f] = false;
-  }
+          const int c = nc.cell;
+          nc.neighbors.insert(c);
+          
+          int nLayers=0;
 
+          // repeat till we have the required number but also protect
+          // against infinite loop by capping the max number of layers
+          while( (nc.neighbors.size() < fluidNeighborsPerSolidFace) &&
+                 (nLayers < 10))
+          {
+              addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
+              nLayers++;
+          }
+          if (nLayers == 10)
+            throw CException("not enough fluid cells for solid face interpolation");
+          solidFacesToCells->addCount(f,nc.neighbors.size());
+      }
+  }
+  
   solidFacesToCells->finishCount();
 
   for(int f=0; f<nSolidFaces; f++)
   {
-      if (inThisMesh[f])
+      NearestCell& nc = nearest[f];
+      if (nc.mesh == &mesh)
       {
-          const Vec3D& xf = solidFaceCentroid[f];
-          fluidCellsTree.findNeighbors(xf, fluidNeighborsPerSolidFace,
-                                       fluidNeighbors);
-          for(int n=0; n<fluidNeighborsPerSolidFace; n++)
-            solidFacesToCells->add(f,fluidNeighbors[n]);
+          foreach(int nb, nc.neighbors)
+          {
+              solidFacesToCells->add(f,nb);
+          }
       }
   }
   
