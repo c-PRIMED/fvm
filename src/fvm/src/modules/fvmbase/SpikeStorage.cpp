@@ -69,13 +69,13 @@ SpikeStorage::syncCellIDs()
    shared_ptr< Array<int> > indPtr( new Array<int>(cellCount) );
    Array<int>& indices = *indPtr;
    Array<int>  indicesOld( cellCount ); //keep original indices
+   //zeroing
+   indices.zero(); 
    //filling indices
    for ( int n = 0; n < cells.getCount(); n++ ){
        indices[n] = n;
        indicesOld[n] = n;
    }
-   //zeroing
-   indices.zero(); 
    //volume add
    cellIndicesField->addArray(cells, indPtr);
    //synLocal to get neighbourhood
@@ -95,7 +95,7 @@ void
 SpikeStorage::setGlobalIndices()
 {
   int indx_base = 0; 
-  for ( int i = 1; i < _procID; i++)
+  for ( int i = 1; i <= _procID; i++)
      indx_base += _cellSelfCounts[i-1];
   
   const StorageSite& cellSite = _conn.getRowSite();
@@ -103,36 +103,31 @@ SpikeStorage::setGlobalIndices()
   //loop over gather maps
   foreach( const StorageSite::GatherMap::value_type& mpos, gatherMap ){
      const StorageSite& oSite = *mpos.first;
-     const int oRank = oSite.getScatterProcID();
+     const int oRank = oSite.getGatherProcID();
      const Array<int>& ghostIndices = *(mpos.second);
      //get inner indices 
      Array<int> innerIndices( ghostIndices.getLength() );
      for ( int n = 0; n < ghostIndices.getLength(); n++ ){
          innerIndices[n] = _conn( ghostIndices[n], 0 ); 
      }
-
+     //finding base for neighbour
      int indx_base_other = 0; 
-     for (  int i = 1; i < oRank; i++)
+     for (  int i = 1; i <= oRank; i++)
          indx_base_other += _cellSelfCounts[i-1];
 
      //check
      for ( int n = 0; n < ghostIndices.getLength(); n++ ){
          const int iGlbIndx = indx_base + innerIndices[n];
 	 const int jGlbIndx = indx_base_other + _ghostMap[ ghostIndices[n] ];
-         if ( (iGlbIndx - jGlbIndx) < _bandwidth){ 
-            _RSPK_INTERIOR.push_back( innerIndices[n] );
-	    _RSPK_GHOST.push_back   ( ghostIndices[n] );
-	    //RSPK_OFFD_PTR goes here
-	 } else if ( (iGlbIndx - jGlbIndx) > _bandwidth ) {
+         //check left or right
+         if ( (iGlbIndx > jGlbIndx) && ((iGlbIndx - jGlbIndx) <= _bandwidth) ){ 
             _LSPK_INTERIOR.push_back( innerIndices[n] );
 	    _LSPK_GHOST.push_back   ( ghostIndices[n] );
-	    //_LSPK_OFFD_PTR goes here
-	 } else {
-	     abort(); 
-	     cout << " iGlblIndx can not be equal to jGlbIndx !!!!!!!!!!!!!!!!" << endl;
-	 }    
-     }     
-         
+	 } else if ( (iGlbIndx < jGlbIndx) && (jGlbIndx - iGlbIndx) <= _bandwidth ) {
+            _RSPK_INTERIOR.push_back( innerIndices[n] );
+	    _RSPK_GHOST.push_back   ( ghostIndices[n] );
+         }
+     }
   }
   
 }
@@ -145,23 +140,19 @@ SpikeStorage::setOffDiagPtr()
     const Array<int>& col = _conn.getCol();
     for( unsigned int i = 0; i < _LSPK_INTERIOR.size(); i++ ){
         const int rowIndx = _LSPK_INTERIOR[i]; 
-	int jIndx = 0;
 	for ( int j = row[rowIndx]; j < row[rowIndx+1]; j++ ){
            const int neighCellID = col[j];
 	   if ( neighCellID == _LSPK_GHOST[i] )
-              _LSPK_OFFD_PTR.push_back( _conn(rowIndx,0) + jIndx ); 
-	   jIndx++;
+              _LSPK_OFFD_PTR.push_back( j ); 
 	}
     }
     //loop over RSPK
     for( unsigned int i = 0; i < _RSPK_INTERIOR.size(); i++ ){
         const int rowIndx = _RSPK_INTERIOR[i]; 
-	int jIndx = 0;
 	for ( int j = row[rowIndx]; j < row[rowIndx+1]; j++ ){
            const int neighCellID = col[j];
 	   if ( neighCellID == _RSPK_GHOST[i] )
-              _RSPK_OFFD_PTR.push_back( _conn(rowIndx,0) + jIndx ); 
-	   jIndx++;
+              _RSPK_OFFD_PTR.push_back( j ); 
 	}
     }
 
