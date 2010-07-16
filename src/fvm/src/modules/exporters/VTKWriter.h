@@ -8,6 +8,26 @@
 #include "Field.h"
 #include "GeomFields.h"
 
+// taken from VTK source
+#define VTK_EMPTY_CELL        0
+#define VTK_VERTEX            1
+#define VTK_POLY_VERTEX       2
+#define VTK_LINE              3
+#define VTK_POLY_LINE         4
+#define VTK_TRIANGLE          5
+#define VTK_TRIANGLE_STRIP    6
+#define VTK_POLYGON           7
+#define VTK_PIXEL             8
+#define VTK_QUAD              9
+#define VTK_TETRA             10
+#define VTK_VOXEL             11
+#define VTK_HEXAHEDRON        12
+#define VTK_WEDGE             13
+#define VTK_PYRAMID           14
+#define VTK_PENTAGONAL_PRISM  15
+#define VTK_HEXAGONAL_PRISM   16
+#define VTK_CONVEX_POINT_SET  41
+
 template<class T>
 class VTKWriter
 {
@@ -213,6 +233,8 @@ public:
         for (int n=0; n<numMeshes; n++)
         {
             const Mesh& mesh = *_meshes[n];
+            const int dim = mesh.getDimension();
+            
             const StorageSite& cells = mesh.getCells();
             const int numCells = cells.getSelfCount();
             const IntArray& ibType =
@@ -224,8 +246,28 @@ public:
               if (ibType[c] == Mesh::IBTYPE_FLUID)
               {
                   const int nCellNodes = cellNodes.getCount(c);
-                  if (nCellNodes == 4)
-                    fprintf(_fp,"9\n");
+                  int vtkCellType = VTK_CONVEX_POINT_SET;
+                  if (dim == 2)
+                  {
+                      if (nCellNodes == 4)
+                        vtkCellType = VTK_QUAD;
+                      else if (nCellNodes == 3)
+                        vtkCellType = VTK_TRIANGLE;
+                      else
+                        vtkCellType = VTK_POLYGON;
+                  }
+                  else
+                  {
+                      if (nCellNodes == 4)
+                        vtkCellType = VTK_TETRA;
+                      else if (nCellNodes == 8)
+                        vtkCellType = VTK_HEXAHEDRON;
+                      else if (nCellNodes == 5)
+                        vtkCellType = VTK_PYRAMID;
+                      else if (nCellNodes == 6)
+                        vtkCellType = VTK_WEDGE;
+                  }
+                  fprintf(_fp,"%d\n",vtkCellType);
               }
         }
         fprintf(_fp,"CELL_DATA %d\n", _gCellCount);
