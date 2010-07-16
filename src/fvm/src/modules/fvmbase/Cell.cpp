@@ -1,6 +1,7 @@
 #include "Cell.h"
 #include <iostream>
 #include <math.h>
+#include <algorithm>
 #include "CRConnectivity.h"
 
 using namespace std;
@@ -93,7 +94,8 @@ Cell<CellTrait>::orderCellFacesAndNodes(const int c,
                                         CRConnectivity& cellFaces,
                                         CRConnectivity& cellNodes,
                                         const CRConnectivity& faceNodes,
-                                        const CRConnectivity& faceCells)
+                                        const CRConnectivity& faceCells,
+                                        const Array<Vector<double,3> >& nodeCoordinates)
 {
 
   int face0 = 0;
@@ -210,11 +212,33 @@ static Cell<Prism> prismCell;
 
 #include "StorageSite.h"
 
+struct MyCoords
+{
+  MyCoords(int i_, const double x_) :
+    i(i_),
+    x(x_)
+  {}
+
+  MyCoords(const MyCoords& o) :
+    i(o.i),
+    x(o.x)
+  {}
+  
+  int i;
+  double x;
+};
+
+bool myCoordComparison (const MyCoords& a, const MyCoords& b)
+{
+  return (a.x<b.x);
+}
+
 void
 orderCellFacesAndNodes(CRConnectivity& cellFaces,
                        CRConnectivity& cellNodes,
                        const CRConnectivity& faceNodes,
-                       const CRConnectivity& faceCells)
+                       const CRConnectivity& faceCells,
+                       const Array<Vector<double,3> >& nodeCoordinates)
 {
 
   const int numCells = cellNodes.getRowSite().getSelfCount();
@@ -250,43 +274,70 @@ orderCellFacesAndNodes(CRConnectivity& cellFaces,
       if (numCellNodes == 4 && edgeFaceCount == 4)
       {
           quad.orderCellFacesAndNodes(c,cellFaces,cellNodes,
-                                      faceNodes,faceCells);
+                                      faceNodes,faceCells,nodeCoordinates);
       }
       else if (numCellNodes == 3 && edgeFaceCount == 3)
       {
           tri.orderCellFacesAndNodes(c,cellFaces,cellNodes,
-                                      faceNodes,faceCells);
+                                     faceNodes,faceCells,nodeCoordinates);
+      }
+      else if (numCellNodes == edgeFaceCount)
+      {
+          vector<MyCoords> angles;
+          Vector<double,3> mean(Vector<double,3>::getZero());
+          for(int nn=0; nn<numCellNodes; nn++)
+            mean += nodeCoordinates[cellNodes(c,nn)];
+          mean /= numCellNodes;
+          for(int nn=0; nn<numCellNodes; nn++)
+          {
+              const int nodeIndex = cellNodes(c,nn);
+              const Vector<double,3> xm =
+                nodeCoordinates[nodeIndex] - mean;
+              const double angle = atan2(xm[1], xm[0]);
+              angles.push_back(MyCoords(nodeIndex,angle));
+          }
+
+          sort(angles.begin(),angles.end(),myCoordComparison);
+          
+          for(int nn=0; nn<numCellNodes; nn++)
+          {
+              cellNodes(c,nn) = angles[nn].i;
+          }
       }
       else if (numCellNodes == 8 && quadFaceCount == 6)
       {
           hexCell.orderCellFacesAndNodes(c,cellFaces,cellNodes,
-                                     faceNodes,faceCells);
+                                         faceNodes,faceCells,nodeCoordinates);
       }
       else if (numCellNodes == 4 && triFaceCount == 4)
       {
           tetCell.orderCellFacesAndNodes(c,cellFaces,cellNodes,
-                                         faceNodes,faceCells);
+                                         faceNodes,faceCells,nodeCoordinates);
       }
       else if (numCellNodes == 5 && triFaceCount == 4 &&
                quadFaceCount == 1)
       {
           pyramidCell.orderCellFacesAndNodes(c,cellFaces,cellNodes,
-                                             faceNodes,faceCells);
+                                             faceNodes,faceCells,
+                                             nodeCoordinates);
       }
       else if (numCellNodes == 6 && triFaceCount == 2 &&
                quadFaceCount == 3)
       {
           prismCell.orderCellFacesAndNodes(c,cellFaces,cellNodes,
-                                         faceNodes,faceCells);
+                                           faceNodes,faceCells,
+                                           nodeCoordinates);
       }
       else
       {
+#if 0
           cerr << "unimplemented cell type: numCellnodes = "
                << numCellNodes
                << " quadFaceCount = " << quadFaceCount
                << " triFaceCount = " << triFaceCount
                << " edgeFaceCount = " << edgeFaceCount
                << endl;
+#endif
       }
   }
 }

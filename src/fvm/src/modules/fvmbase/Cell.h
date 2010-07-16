@@ -3,6 +3,8 @@
 
 #include <map>
 using namespace std;
+#include "Array.h"
+#include "Vector.h"
 
 class CRConnectivity;
 
@@ -21,7 +23,8 @@ public:
                          CRConnectivity& cellFaces,
                          CRConnectivity& cellNodes,
                          const CRConnectivity& faceNodes,
-                         const CRConnectivity& faceCells);
+                         const CRConnectivity& faceCells,
+                         const Array<Vector<double,3> >& nodeCoordinates);
 
 private:
 
@@ -38,6 +41,7 @@ void
 orderCellFacesAndNodes(CRConnectivity& cellFaces,
                        CRConnectivity& cellNodes,
                        const CRConnectivity& faceNodes,
-                       const CRConnectivity& faceCells);
+                       const CRConnectivity& faceCells,
+                       const Array<Vector<double,3> >& nodeCoordinates);
 
 #endif
