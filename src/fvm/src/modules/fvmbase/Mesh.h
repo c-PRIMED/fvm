@@ -62,11 +62,11 @@ public:
 
   enum
     {
-      IBTYPE_FLUID,
-      IBTYPE_BOUNDARY,
-      IBTYPE_SOLID,
-      IBTYPE_REALBOUNDARY,
-      IBTYPE_UNKNOWN
+      IBTYPE_FLUID=-1,
+      IBTYPE_BOUNDARY=-2,
+      IBTYPE_SOLID=-3,
+      IBTYPE_REALBOUNDARY=-4,
+      IBTYPE_UNKNOWN=-5
     };
   
   Mesh(const int dimension, const int id);

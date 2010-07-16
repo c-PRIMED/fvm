@@ -52,11 +52,10 @@ Mesh::Mesh( const int dimension, const int id,
   int totNodes      = faceNodesCoord.getLength();
 
   // counting duplicate nodes as well for 3d
-  int totFaces      = _dimension == 2 ? totNodes :totNodes / faceNodeCount;
+  int totFaces      = totNodes / faceNodeCount;
 
   //check if this is corect integer division
-  if (_dimension == 3)
-    assert( (faceNodeCount*totFaces) == totNodes );
+  assert( (faceNodeCount*totFaces) == totNodes );
   //set sites
   StorageSite& faceSite = getFaces();
   StorageSite& nodeSite = getNodes();
@@ -88,11 +87,7 @@ Mesh::Mesh( const int dimension, const int id,
       for( int j =0; j < faceNodeCount; j++ )
       {
           faceNodes->add(face, nodeIndx++);
-          if (_dimension == 2 && nodeIndx == totNodes)
-            nodeIndx  =0;
       }
-      if (_dimension == 2)
-        nodeIndx--;
       face++;
   }
   //finish add
@@ -297,7 +292,8 @@ Mesh::getCellNodes() const
   _connectivityMap[keycf] = cellFaces;
   _connectivityMap[key] = cellNodes;
   
-  orderCellFacesAndNodes(*cellFaces, *cellNodes, faceNodes, faceCells);
+  orderCellFacesAndNodes(*cellFaces, *cellNodes, faceNodes,
+                         faceCells, *_coordinates);
   return *cellNodes;
 }
 
