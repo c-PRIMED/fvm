@@ -790,7 +790,7 @@ public:
     return stressTensorPtr;
   }
     
-  void getTractionX(const Mesh& mesh)
+  void getTraction(const Mesh& mesh)
   {
       const StorageSite& cells = mesh.getCells();
 
@@ -800,6 +800,16 @@ public:
       tractionXPtr->zero();
       _structureFields.tractionX.addArray(cells,tractionXPtr);
       VectorT3Array& tractionX = *tractionXPtr;
+
+      shared_ptr<VectorT3Array> tractionYPtr(new VectorT3Array(nCells));
+      tractionYPtr->zero();
+      _structureFields.tractionY.addArray(cells,tractionYPtr);
+      VectorT3Array& tractionY = *tractionYPtr;
+
+      shared_ptr<VectorT3Array> tractionZPtr(new VectorT3Array(nCells));
+      tractionZPtr->zero();
+      _structureFields.tractionZ.addArray(cells,tractionZPtr);
+      VectorT3Array& tractionZ = *tractionZPtr;
 
       _deformationGradientModel.compute();
 
@@ -820,9 +830,19 @@ public:
 	  
 	  tractionX[n][0] = wgPlusTranspose[0][0]*eta[n]+
 	 	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
-	  tractionX[n][1] = wgPlusTranspose[1][0]*eta[n];
-	  tractionX[n][2] = wgPlusTranspose[1][1]*eta[n]+
-	  	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
+	  tractionX[n][1] = wgPlusTranspose[0][1]*eta[n];
+	  tractionX[n][2] = wgPlusTranspose[0][2]*eta[n];
+
+          tractionY[n][0] = wgPlusTranspose[1][0]*eta[n];
+          tractionY[n][1] = wgPlusTranspose[1][1]*eta[n]+
+	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];
+          tractionY[n][2] = wgPlusTranspose[1][2]*eta[n];
+
+          tractionZ[n][0] = wgPlusTranspose[2][0]*eta[n];
+          tractionZ[n][1] = wgPlusTranspose[2][1]*eta[n];
+          tractionZ[n][2] = wgPlusTranspose[2][2]*eta[n]+
+	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];	  
+
       }
   }
 
@@ -1075,9 +1095,9 @@ StructureModel<T>::getDeformationDerivativeIntegral(const Mesh& mesh)
 
 template<class T>
 void
-StructureModel<T>::getTractionX(const Mesh& mesh)
+StructureModel<T>::getTraction(const Mesh& mesh)
 {
-  return  _impl->getTractionX(mesh);
+  return  _impl->getTraction(mesh);
 }
 
 /*

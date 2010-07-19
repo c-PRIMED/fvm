@@ -46,7 +46,7 @@ public:
   //  Vector<T,3> getPVIntegral(const Field& velCoeff, const Mesh& mesh, const int faceGroupID);
   Vector<T,3> getDeformationFluxIntegral(const Mesh& mesh, const int faceGroupID);
   Vector<T,3> getDeformationDerivativeIntegral(const Mesh& mesh);
-  void getTractionX(const Mesh& mesh);
+  void getTraction(const Mesh& mesh);
 
   //  Vector<T,3> getPressureIntegralonIBFaces(const Mesh& mesh);
   //  Vector<T,3> getMomentumFluxIntegralonIBFaces(const Mesh& mesh);

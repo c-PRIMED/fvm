@@ -11,6 +11,8 @@ StructureFields::StructureFields(const string baseName) :
   deformationN1(baseName + ".deformationN1"),
   deformationN2(baseName + ".deformationN2"),
   tractionX(baseName + ".tractionX"),
+  tractionY(baseName + ".tractionY"),
+  tractionZ(baseName + ".tractionZ"),
   bodyForce(baseName + ".bodyForce"),
   volume0(baseName + ".volume0")
 {}
