@@ -499,8 +499,8 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
               addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
               nLayers++;
           }
-          if (nLayers == 10)
-            throw CException("not enough fluid cells for solid face interpolation");
+          //if (nLayers == 10)
+          //  throw CException("not enough fluid cells for solid face interpolation");
           solidFacesToCells->addCount(f,nc.neighbors.size());
       }
   }
