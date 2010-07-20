@@ -11,6 +11,7 @@ struct ElectricBC : public FloatVarDict<T>
   ElectricBC()
   {
       this->defineVar("specifiedPotential",T(300.0));
+      this->defineVar("specifiedPotentialFlux",T(0.0));
       this->defineVar("specifiedXElecField",T(0.0));
       this->defineVar("specifiedYElecField",T(0.0));
       this->defineVar("specifiedZElecField",T(0.0));
