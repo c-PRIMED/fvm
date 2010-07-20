@@ -194,52 +194,156 @@ public:
 	  VectorT3Array& gridVel = *gridVelPtr;
 	  TArray volChangeDot(cells.getCount());
 
-
-	  faceVel.zero();
-	  gridVel.zero();
-	  volChangeDot.zero();
-	  sweptVolDot.zero();
-	  gridFlux.zero();
 	  const T deltaT = _options["timeStep"];
-	  const T half(0.5);
-	  const T onepointfive(1.5);
-	  for(int i=0;i<nNodes;i++)
-	  {
-	      VectorT3 dr = (nodeCoord[i] - nodeCoordN1[i]);
-              gridVel[i] = dr/deltaT;
-	  }
-	  for (int f=0;f<nFaces;f++)
-	  {
-	      const int numNodes = faceNodes.getCount(f);
-	      for (int n=0;n<numNodes;n++)
-	      {
-		  const int num = faceNodes(f,n);
-		  faceVel[f] += gridVel[num];
-	      }
-	      faceVel[f] /= T(numNodes);
-	      T temp = dot((half*(faceArea[f]+faceAreaN1[f])),faceVel[f]);
-	      sweptVolDot[f] = temp;
-	      const int c0 = faceCells(f,0);
-	      volChangeDot[c0] += temp;
-	      const int c1 = faceCells(f,1);
-	      volChangeDot[c1] -= temp;
-	      if (_geomFields.sweptVolDotN1.hasArray(faces))
-	      {
-	          TArray& sweptVolDotN1 = 
-	            dynamic_cast<TArray&>(_geomFields.sweptVolDotN1[faces]);
-	          gridFlux[f] = onepointfive*sweptVolDot[f] - 
-                    half*sweptVolDotN1[f];
-	      }
-	      else
-	        gridFlux[f] = sweptVolDot[f];
-	      gridFlux[f] *= half*(rho[c0]+rho[c1]);
-	  }
-	  T volumeChange(0.0);
-	  for(int c=0;c<cells.getSelfCount();c++)
-	    volumeChange += volChangeDot[c];
-	  volumeChange *= deltaT;
-	  cout << "volume change for Mesh " << mesh.getID() << " = " << volumeChange << endl;
 
+	  if (mesh.getDimension() == 2)
+	  {
+
+	      faceVel.zero();
+	      gridVel.zero();
+	      volChangeDot.zero();
+	      sweptVolDot.zero();
+	      gridFlux.zero();
+	      //	      const T deltaT = _options["timeStep"];
+	      const T half(0.5);
+	      const T onepointfive(1.5);
+	      for(int i=0;i<nNodes;i++)
+	      {
+		  VectorT3 dr = (nodeCoord[i] - nodeCoordN1[i]);
+		  gridVel[i] = dr/deltaT;
+	      }
+	      for (int f=0;f<nFaces;f++)
+	      {
+		  const int numNodes = faceNodes.getCount(f);
+		  for (int n=0;n<numNodes;n++)
+		  {
+		      const int num = faceNodes(f,n);
+		      faceVel[f] += gridVel[num];
+		  }
+		  faceVel[f] /= T(numNodes);
+		  T temp = dot((half*(faceArea[f]+faceAreaN1[f])),faceVel[f]);
+		  sweptVolDot[f] = temp;
+		  const int c0 = faceCells(f,0);
+		  volChangeDot[c0] += temp;
+		  const int c1 = faceCells(f,1);
+		  volChangeDot[c1] -= temp;
+		  if (_geomFields.sweptVolDotN1.hasArray(faces))
+		  {
+		      TArray& sweptVolDotN1 = 
+			dynamic_cast<TArray&>(_geomFields.sweptVolDotN1[faces]);
+		      gridFlux[f] = onepointfive*sweptVolDot[f] - 
+			half*sweptVolDotN1[f];
+		  }
+		  else
+		    gridFlux[f] = sweptVolDot[f];
+		  gridFlux[f] *= half*(rho[c0]+rho[c1]);
+	      }
+	      T volumeChange(0.0);
+	      for(int c=0;c<cells.getSelfCount();c++)
+		volumeChange += volChangeDot[c];
+	      volumeChange *= deltaT;
+	      cout << "volume change for Mesh " << mesh.getID() << " = " << volumeChange << endl;
+	  }
+	  else if (mesh.getDimension() == 3)
+	  {
+
+	      faceVel.zero();
+	      gridVel.zero();
+	      volChangeDot.zero();
+	      sweptVolDot.zero();
+	      gridFlux.zero();
+	      //	      const T deltaT = _options["timeStep"];
+	      const T half(0.5);
+	      const T onepointfive(1.5);
+	      const T onesixth(1./6.);
+	      const T onethird(1./3.);
+	      T temp;
+	      for(int i=0;i<nNodes;i++)
+	      {
+		  VectorT3 dr = (nodeCoord[i] - nodeCoordN1[i]);
+		  gridVel[i] = dr/deltaT;
+              }
+	      for (int f=0;f<nFaces;f++)
+	      {
+		  const int numNodes = faceNodes.getCount(f);
+		  for (int n=0;n<numNodes;n++)
+		  {
+		      const int num = faceNodes(f,n);
+		      faceVel[f] += gridVel[num];
+                  }
+		  faceVel[f] /= T(numNodes);
+		  if (numNodes == 3)
+		  {
+		      const int n0 = faceNodes(f,0);
+		      const int n1 = faceNodes(f,1);
+		      const int n2 = faceNodes(f,2);
+		      VectorT3 dr10 = nodeCoord[n1]-nodeCoord[n0];
+		      VectorT3 dr20 = nodeCoord[n2]-nodeCoord[n0];
+                      VectorT3 dr10N1 = nodeCoordN1[n1]-nodeCoordN1[n0];
+                      VectorT3 dr20N1 = nodeCoordN1[n2]-nodeCoordN1[n0];
+		      VectorT3 eta = onesixth*(cross(dr10,dr20)+cross(dr10N1,dr20N1)
+					+half*(cross(dr10,dr20N1)+cross(dr10N1,dr20)));
+                      VectorT3 del0 = nodeCoord[n0]-nodeCoordN1[n0];
+                      VectorT3 del1 = nodeCoord[n1]-nodeCoordN1[n1];
+                      VectorT3 del2 = nodeCoord[n2]-nodeCoordN1[n2];
+		      VectorT3 avg = onethird*(del0 + del1 + del2);
+		      temp = dot(avg,eta)/deltaT;
+		  }
+                  else if (numNodes == 4)
+		  {
+                      const int n0 = faceNodes(f,0);
+                      const int n1 = faceNodes(f,1);
+                      const int n2 = faceNodes(f,2);
+                      const int n3 = faceNodes(f,3);
+
+                      VectorT3 del0 = nodeCoord[n0]-nodeCoordN1[n0];
+                      VectorT3 del1 = nodeCoord[n1]-nodeCoordN1[n1];
+                      VectorT3 del2 = nodeCoord[n2]-nodeCoordN1[n2];
+                      VectorT3 del3 = nodeCoord[n3]-nodeCoordN1[n3];
+
+                      VectorT3 dr10 = nodeCoord[n1]-nodeCoord[n0];
+                      VectorT3 dr20 = nodeCoord[n2]-nodeCoord[n0];
+                      VectorT3 dr10N1 = nodeCoordN1[n1]-nodeCoordN1[n0];
+                      VectorT3 dr20N1 = nodeCoordN1[n2]-nodeCoordN1[n0];
+                      VectorT3 eta1 = onesixth*(cross(dr10,dr20)+cross(dr10N1,dr20N1)
+					       +half*(cross(dr10,dr20N1)+cross(dr10N1,dr20)));
+                      VectorT3 avg1 = onethird*(del0+del1+del2);
+                      T temp1 = dot(avg1,eta1)/deltaT;
+
+		      //                      VectorT3 dr20 = nodeCoord[n2]-nodeCoord[n0];
+                      VectorT3 dr30 = nodeCoord[n3]-nodeCoord[n0];
+		      //                      VectorT3 dr20N1 = nodeCoordN1[n2]-nodeCoordN1[n0];
+                      VectorT3 dr30N1 = nodeCoordN1[n3]-nodeCoordN1[n0];
+                      VectorT3 eta2 = onesixth*(cross(dr20,dr30)+cross(dr20N1,dr30N1)
+						+half*(cross(dr20,dr30N1)+cross(dr20N1,dr30)));
+                      VectorT3 avg2 = onethird*(del0+del2+del3);
+                      T temp2 = dot(avg2,eta2)/deltaT;
+
+		      temp = temp1+temp2;
+		  }
+		  sweptVolDot[f] = temp;
+		  const int c0 = faceCells(f,0);
+		  volChangeDot[c0] += temp;
+		  const int c1 = faceCells(f,1);
+		  volChangeDot[c1] -= temp;
+		  if (_geomFields.sweptVolDotN1.hasArray(faces))
+		  {
+		      TArray& sweptVolDotN1 =
+			dynamic_cast<TArray&>(_geomFields.sweptVolDotN1[faces]);
+		      gridFlux[f] = onepointfive*sweptVolDot[f] -
+			half*sweptVolDotN1[f];
+		  }
+		  else
+		    gridFlux[f] = sweptVolDot[f];
+		  gridFlux[f] *= half*(rho[c0]+rho[c1]);
+	      }
+	      T volumeChange(0.0);
+	      for(int c=0;c<cells.getSelfCount();c++)
+		volumeChange += volChangeDot[c];
+	      volumeChange *= deltaT;
+	      cout << "volume change for Mesh " << mesh.getID() << " = " << volumeChange << endl;
+
+	  }
 
           // update boundary cells with adjacent interior cells values
           foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
