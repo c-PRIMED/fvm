@@ -1010,7 +1010,7 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 
   Array<T>& cellToSBCoeff = cellToSolidFaces->getCoeff();
 
-#if 1
+#if 0
   /******distance weighted interpolation******/
  
 
@@ -1042,12 +1042,11 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
  
 #endif
 
-#if 0
+#if 1
 
   /**********linear least square interpolation*********/
  
-  //for(int f=0; f<nSolidFaces; f++)
-  for(int f=0; f<10; f++)
+  for(int f=0; f<nSolidFaces; f++)
   {
       T wt(0);
       int nnb(0);
@@ -1064,8 +1063,6 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       {
           const int c = sFCCol[nc];
           VectorT3 dr(xCells[c]-xFaces[f]);
-          cout << "face  " << xFaces[f] << endl;
-	  cout << "cells " << c << "  " << xCells[c] << endl;
 	  Q[0][0] += 1.0;
 	  Q[0][1] += dr[0];
 	  Q[0][2] += dr[1];
@@ -1080,7 +1077,14 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       }
       
       if (nnb < 4)
-	throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+      {
+          for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+          {
+              cellToSBCoeff[nc] = 1.0/nnb;
+          }
+          continue;
+      }
+
 
       //symetric matrix
       for(int i=0; i<4; i++)
@@ -1103,7 +1107,6 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 	    wt += Qinv[0][i]*dr[i-1];
 
 	  cellToSBCoeff[nc] = wt;
-	  cellToSBCoeff[nc] = 0.25;
 	  //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
       }
   }
