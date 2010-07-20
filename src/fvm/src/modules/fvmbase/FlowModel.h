@@ -55,7 +55,7 @@ public:
 
   Vector<T,3> getPressureIntegralonIBFaces(const Mesh& mesh);
   Vector<T,3> getMomentumFluxIntegralonIBFaces(const Mesh& mesh);
-
+  void getTraction(const Mesh& mesh);
 
   boost::shared_ptr<ArrayBase> getStressTensor(const Mesh& mesh, const ArrayBase& cellIds);
 

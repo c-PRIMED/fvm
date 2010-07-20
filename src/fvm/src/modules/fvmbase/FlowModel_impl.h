@@ -1673,6 +1673,61 @@ public:
     return stressTensorPtr;
   }
 
+
+  void getTraction(const Mesh& mesh)
+  {
+    const StorageSite& cells = mesh.getCells();
+
+    const int nCells = cells.getSelfCount();
+
+    shared_ptr<VectorT3Array> tractionXPtr(new VectorT3Array(nCells));
+    tractionXPtr->zero();
+    _flowFields.tractionX.addArray(cells,tractionXPtr);
+    VectorT3Array& tractionX = *tractionXPtr;
+
+    shared_ptr<VectorT3Array> tractionYPtr(new VectorT3Array(nCells));
+    tractionYPtr->zero();
+    _flowFields.tractionY.addArray(cells,tractionYPtr);
+    VectorT3Array& tractionY = *tractionYPtr;
+
+    shared_ptr<VectorT3Array> tractionZPtr(new VectorT3Array(nCells));
+    tractionZPtr->zero();
+    _flowFields.tractionZ.addArray(cells,tractionZPtr);
+    VectorT3Array& tractionZ = *tractionZPtr;
+
+    _velocityGradientModel.compute();
+
+    const VGradArray& vGrad =
+      dynamic_cast<const VGradArray&>(_flowFields.velocityGradient[cells]);
+
+    const TArray& pCell =
+      dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
+
+    const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
+      
+    for(int n=0; n<nCells; n++)
+    {
+        const VGradType& vg = vGrad[n];
+        VGradType vgPlusTranspose = vGrad[n];
+
+        for(int i=0;i<3;i++)
+          for(int j=0;j<3;j++)
+            vgPlusTranspose[i][j] += vg[j][i];
+          
+        tractionX[n][0] = vgPlusTranspose[0][0]*mu[n] - pCell[n];
+        tractionX[n][1] = vgPlusTranspose[0][1]*mu[n];
+        tractionX[n][2] = vgPlusTranspose[0][2]*mu[n];
+
+        tractionY[n][0] = vgPlusTranspose[1][0]*mu[n];
+        tractionY[n][1] = vgPlusTranspose[1][1]*mu[n] - pCell[n];
+        tractionY[n][2] = vgPlusTranspose[1][2]*mu[n];
+
+        tractionZ[n][0] = vgPlusTranspose[2][0]*mu[n];
+        tractionZ[n][1] = vgPlusTranspose[2][1]*mu[n];
+        tractionZ[n][2] = vgPlusTranspose[2][2]*mu[n] - pCell[n];
+    }
+  }
+
   void
   computeSolidSurfaceForce(const StorageSite& solidFaces)
   {
@@ -2049,6 +2104,13 @@ boost::shared_ptr<ArrayBase>
 FlowModel<T>::getStressTensor(const Mesh& mesh, const ArrayBase& cellIds)
 {
   return _impl->getStressTensor(mesh, cellIds);
+}
+
+template<class T>
+void
+FlowModel<T>::getTraction(const Mesh& mesh)
+{
+  return  _impl->getTraction(mesh);
 }
 
 template<class T>

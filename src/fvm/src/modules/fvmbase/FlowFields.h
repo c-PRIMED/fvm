@@ -19,6 +19,9 @@ struct FlowFields
   Field continuityResidual;
   Field velocityN1;
   Field velocityN2;
+  Field tractionX;
+  Field tractionY;
+  Field tractionZ;
   Field stress;
   Field force;
 };
