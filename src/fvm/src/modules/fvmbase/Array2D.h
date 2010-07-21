@@ -66,7 +66,7 @@ private:
   void init()
   {
     for ( int i = 0; i < _length; i++ )
-        _data[i] =T(-1);// NumTypeTraits<T>::getZero();
+        _data[i] =  NumTypeTraits<T>::getZero();//NumTypeTraits<T>::getNegativeUnity()
   }
 
   int _rowSize;
