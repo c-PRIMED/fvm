@@ -11,6 +11,7 @@
 
 
 class CRConnectivity;
+class GeomFields;
 
 class MPM;
 
@@ -181,6 +182,10 @@ public:
   void createCellColor();
 
   void findCommonNodes(Mesh& other);
+  void findCommonFaces(StorageSite& faces, StorageSite& otherFaces,
+                       const GeomFields& geomFields);
+
+  Mesh* extractBoundaryMesh();
   
 protected:
   const int _dimension;

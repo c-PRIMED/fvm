@@ -4,7 +4,9 @@
 #include "Cell.h"
 #include <cassert>
 #include "KSearchTree.h"
+#include "GeomFields.h"
 
+#define epsilon 1e-6
 
 Mesh::Mesh(const int dimension, const int id):
   _dimension(dimension),
@@ -468,7 +470,6 @@ Mesh::findCommonNodes(Mesh& other)
   
   nodeMark = false;
 
-  const double epsilon(1e-6);
   
   foreach(const FaceGroupPtr fgPtr, other.getAllFaceGroups())
   {
@@ -532,4 +533,196 @@ Mesh::findCommonNodes(Mesh& other)
   nodes.getCommonMap()[&otherNodes] = myCommonNodes;
   otherNodes.getCommonMap()[&nodes] = otherCommonNodes;
   
+}
+
+void
+Mesh::findCommonFaces(StorageSite& faces, StorageSite& otherFaces,
+                      const GeomFields& geomFields)
+{
+  const int count(faces.getCount());
+  if (count != otherFaces.getCount())
+    throw CException("face groups are not of the same length");
+
+  const Array<VecD3>& coords =
+    dynamic_cast<const Array<VecD3>& >(geomFields.coordinate[faces]);
+  
+  const Array<VecD3>& otherCoords =
+    dynamic_cast<const Array<VecD3>& >(geomFields.coordinate[otherFaces]);
+
+  const Array<VecD3>& area =
+    dynamic_cast<const Array<VecD3>& >(geomFields.area[faces]);
+  
+  const Array<VecD3>& otherArea =
+    dynamic_cast<const Array<VecD3>& >(geomFields.area[otherFaces]);
+
+  KSearchTree thisFacesTree(coords);
+  
+  Array<int> closest(2);
+
+  shared_ptr<IntArray> myCommonFaces(new IntArray(count));
+  shared_ptr<IntArray> otherCommonFaces(new IntArray(count));
+  
+  for(int f=0; f<count; f++)
+  {
+      thisFacesTree.findNeighbors(otherCoords[f],2,closest);
+      
+      const int closestFace = closest[0];
+      double dist0 = mag(otherCoords[f] - coords[closestFace]);
+      
+      // distance between the two closest point used as scale
+      
+      double distScale = mag(coords[closest[0]] - coords[closest[1]]);
+      
+      if (dist0 < distScale*epsilon)
+      {
+          double crossProductMag(mag2(cross(otherArea[f],area[closestFace])));
+          if (crossProductMag > mag2(otherArea[f])*epsilon)
+            throw CException("cross product is not small");
+          
+          (*otherCommonFaces)[f] = closestFace;
+          (*myCommonFaces)[closestFace] = f;
+          
+      }
+  }
+  
+  faces.getCommonMap()[&otherFaces] = myCommonFaces;
+  otherFaces.getCommonMap()[&faces] = otherCommonFaces;
+  
+}
+
+
+Mesh*
+Mesh::extractBoundaryMesh()
+{
+  StorageSite& nodes = _nodes;
+  const Array<VecD3>& coords = getNodeCoordinates();
+
+  const int nodeCount = nodes.getCount();
+  Array<int> globalToLocalNodes(nodeCount);
+
+  globalToLocalNodes = -1;
+  int bMeshNodeCount=0;
+  int bMeshFaceCount=0;
+  foreach(const FaceGroupPtr fgPtr, getAllFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      if (fg.groupType!="interior")
+      {
+          const int nFaces = faces.getCount();
+          const CRConnectivity& faceNodes = getFaceNodes(faces);
+          for(int f=0; f<nFaces; f++)
+          {
+              const int nFaceNodes = faceNodes.getCount(f);
+              for(int nn=0; nn<nFaceNodes; nn++)
+              {
+                  const int n=faceNodes(f,nn);
+                  if (globalToLocalNodes[n] == -1)
+                  {
+                      globalToLocalNodes[n] = bMeshNodeCount++;
+                  }
+              }
+          }
+          bMeshFaceCount += nFaces;
+      }
+  }
+
+
+  Mesh *bMesh = new Mesh(_dimension,0);
+
+
+  StorageSite& bMeshFaces = bMesh->getFaces();
+  StorageSite& bMeshNodes = bMesh->getNodes();
+  bMeshFaces.setCount( bMeshFaceCount );
+  bMeshNodes.setCount( bMeshNodeCount );
+  
+  bMesh->createBoundaryFaceGroup(bMeshFaceCount,0,0,"wall");
+  
+  //setting coordinates
+  shared_ptr< Array<VecD3> > bMeshCoordPtr( new Array< VecD3 > ( bMeshNodeCount ) );
+
+  shared_ptr<IntArray> myCommonNodes(new IntArray(bMeshNodeCount));
+  shared_ptr<IntArray> otherCommonNodes(new IntArray(bMeshNodeCount));
+
+  for(int n=0; n<nodeCount; n++)
+  {
+      const int nLocal = globalToLocalNodes[n];
+      if (nLocal >=0)
+      {
+          (*bMeshCoordPtr)[nLocal] = coords[n];
+          (*myCommonNodes)[nLocal] = nLocal;
+          (*otherCommonNodes)[nLocal] = n;
+      }
+  }
+  nodes.getCommonMap()[&bMeshNodes] = myCommonNodes;
+  bMeshNodes.getCommonMap()[&nodes] = otherCommonNodes;
+         
+  bMesh->setCoordinates( bMeshCoordPtr );
+  
+  //faceNodes constructor
+  shared_ptr<CRConnectivity> bFaceNodes( new CRConnectivity(bMeshFaces,
+                                                            bMeshNodes) );
+  
+  bFaceNodes->initCount();
+
+  bMeshFaceCount=0;
+  
+  foreach(FaceGroupPtr fgPtr, getAllFaceGroups())
+  {
+      FaceGroup& fg = *fgPtr;
+      StorageSite& faces = const_cast<StorageSite&>(fg.site);
+      if (fg.groupType!="interior")
+      {
+          const int nFaces = faces.getCount();
+          const CRConnectivity& faceNodes = getFaceNodes(faces);
+
+          shared_ptr<IntArray> myCommonFaces(new IntArray(nFaces));
+          shared_ptr<IntArray> otherCommonFaces(new IntArray(nFaces));
+
+          for(int f=0; f<nFaces; f++)
+          {
+              const int nFaceNodes = faceNodes.getCount(f);
+              bFaceNodes->addCount(bMeshFaceCount,nFaceNodes);
+              (*myCommonFaces)[f] = bMeshFaceCount;
+              (*otherCommonFaces)[f] = f;
+              bMeshFaceCount++;
+          }
+
+          faces.getCommonMap()[&bMeshFaces] = myCommonFaces;
+          bMeshFaces.getCommonMap()[&faces] = otherCommonFaces;
+      }
+  }
+
+  bFaceNodes->finishCount();
+  bMeshFaceCount=0;
+
+  foreach(const FaceGroupPtr fgPtr, getAllFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      if (fg.groupType!="interior")
+      {
+          const int nFaces = faces.getCount();
+          const CRConnectivity& faceNodes = getFaceNodes(faces);
+          for(int f=0; f<nFaces; f++)
+          {
+              const int nFaceNodes = faceNodes.getCount(f);
+              for(int nn=0; nn<nFaceNodes; nn++)
+              {
+                  const int n=faceNodes(f,nn);
+                  const int nLocal = globalToLocalNodes[n];
+                  bFaceNodes->add(bMeshFaceCount,nLocal);
+              }
+              bMeshFaceCount++;
+          }
+      }
+  }
+  
+  bFaceNodes->finishAdd();
+  //setting faceNodes
+  SSPair key(&bMeshFaces,&bMeshNodes);
+  bMesh->_connectivityMap[key] = bFaceNodes;
+
+  return bMesh;
+
 }

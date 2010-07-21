@@ -25,6 +25,18 @@ public:
   const CommonMap&   getCommonMap()  const;
   
   void clearGatherScatterMaps();
+
+  %extend{
+    boost::shared_ptr<ArrayBase> getCommonIndices(const StorageSite& other)
+    {
+      StorageSite::CommonMap::iterator pos = self->getCommonMap().find(&other);
+      if (pos != self->getCommonMap().end())
+      {
+          return pos->second;
+      }
+      return boost::shared_ptr<ArrayBase>();
+    }
+  }
   
 private:
   StorageSite();
@@ -102,7 +114,10 @@ public:
   const CRConnectivity& getCellCells() const;
 					
   void findCommonNodes(Mesh& otherMesh);
+  void findCommonFaces(StorageSite& faces, StorageSite& otherFaces,
+                       const GeomFields& geomFields);
   
+  Mesh* extractBoundaryMesh();
   // const GhostCellSiteMap& getGhostCellSiteMap() const;
   // const StorageSite* getGhostCellSite( int id );
 
@@ -125,6 +140,14 @@ public:
       foreach(FaceGroupPtr fg, fgs)
         v.push_back(fg.get());
       return v;
+    }
+    const FaceGroup* getFaceGroup(const int i)
+    {
+      const FaceGroupList& fgs = self->getAllFaceGroups();
+      foreach(FaceGroupPtr fg, fgs)
+        if (i == fg->id)
+          return fg.get();
+      return 0;
     }
   }
   //  const FaceGroup&  getFaceGroup(const int i) const;
