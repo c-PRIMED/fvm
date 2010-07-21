@@ -30,7 +30,7 @@ public:
   const vector<int>&  getRSPKOffDiagPtr() const {return _RSPK_OFFD_PTR;} 
   const vector<int>&  getRSPKOffDiagPtr() {return _RSPK_OFFD_PTR;} 
 
-  int getBandWidth() { return _bandwidth;}
+  int getBandWidth() const { return _bandwidth;}
 
   
 private:

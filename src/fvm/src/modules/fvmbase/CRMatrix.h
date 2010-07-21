@@ -10,7 +10,8 @@
 #include "Array.h"
 #include "StorageSite.h"
 #include "LinearSystemMerger.h"
-
+#include "SpikeStorage.h"
+#include "SpikeMatrix.h"
 #include <set>
 
 // used to handle cases where OffDiag and Diag are not the same type
@@ -271,7 +272,18 @@ public:
     lowerSolve(*y,b);
     upperSolve(x,*y);
   }
-  
+
+  virtual void spikeSolve(IContainer& xB, const IContainer& bB, const IContainer&, const SpikeStorage& spike_storage) const
+  {
+
+    XArray& x = dynamic_cast<XArray&>(xB);
+    shared_ptr<XArray> y = dynamic_pointer_cast<XArray>(x.newClone());
+    const XArray& b = dynamic_cast<const XArray&>(bB);
+    SpikeMatrix<T_Diag, T_OffDiag, X>  spikeMatrix(_conn, _diag, _offDiag, spike_storage);
+
+  }
+
+
   /**
    * r = b + this*x
    * 
@@ -1026,7 +1038,7 @@ private:
 
   // ilu coeffs
   mutable DiagArrayPtr _iluCoeffsPtr;
-
+  
  
 };
 

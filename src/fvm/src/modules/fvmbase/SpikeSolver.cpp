@@ -31,7 +31,7 @@ SpikeSolver::doSweeps(LinearSystem& ls, const int nSweeps)
 
   for(int i=0; i<nSweeps; i++)
   {
-      m.iluSolve(delta,b,r);
+      m.spikeSolve(delta,b,r,_spikeStorage);
   }
 }
 

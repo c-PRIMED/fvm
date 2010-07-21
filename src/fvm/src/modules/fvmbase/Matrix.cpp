@@ -67,6 +67,12 @@ void Matrix::iluSolve(IContainer&, const IContainer&,
 {
   throw CException("iluSolve not implemented");
 }
+void Matrix::spikeSolve(IContainer& xB, const IContainer& bB,
+                const IContainer& residual, const SpikeStorage& spike_storage) const
+{
+   throw CException("spikeSolve not imlemented");
+}
+  
 
 void Matrix::solveBoundary(IContainer& xB, IContainer& bB,
                            IContainer& residual) const

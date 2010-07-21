@@ -7,7 +7,7 @@ class IContainer;
 class StorageSite;
 class CRConnectivity;
 class LinearSystemMerger;
-
+class SpikeStorage;
 
 class Matrix
 {
@@ -29,6 +29,8 @@ public:
                          const IContainer& b) const;
   virtual void iluSolve(IContainer& xB, const IContainer& bB,
                         const IContainer& residual) const;
+  virtual void spikeSolve(IContainer& xB, const IContainer& bB,
+                        const IContainer& residual, const SpikeStorage& spike_storage) const;
   virtual void solveBoundary(IContainer& xB, IContainer& bB,
                              IContainer& residual) const;
   virtual void computeResidual(const IContainer& xB, const IContainer& bB,

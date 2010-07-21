@@ -4,7 +4,7 @@
 #include "IContainer.h"
 #include "StorageSite.h"
 #include "OneToOneIndexMap.h"
-
+#include "SpikeStorage.h"
 
 MultiFieldMatrix::MultiFieldMatrix() :
   _matrices(),
@@ -232,6 +232,28 @@ MultiFieldMatrix::iluSolve(IContainer& xB, const IContainer& bB, IContainer& tem
       {
           const Matrix& mII = getMatrix(rowIndex,rowIndex);
           mII.iluSolve(x[rowIndex],b[rowIndex],temp);
+      }
+  }
+  x.sync();
+}
+
+// spike preconditioner
+void 
+MultiFieldMatrix::spikeSolve(IContainer& xB, const IContainer& bB, IContainer& tempB, const SpikeStorage& spike_storage) const
+{
+  MultiField& x = dynamic_cast<MultiField&>(xB);
+  const MultiField& b = dynamic_cast<const MultiField&>(bB);
+  MultiField& temp = dynamic_cast<MultiField&>(tempB);
+
+  const int xLen = x.getLength();
+  //#pragma omp parallel for
+  for(int i=0; i<xLen; i++)
+  {
+      const Index rowIndex = x.getArrayIndex(i);
+      if (hasMatrix(rowIndex,rowIndex))
+      {
+          const Matrix& mII = getMatrix(rowIndex,rowIndex);
+          mII.spikeSolve(x[rowIndex], b[rowIndex], temp, spike_storage);
       }
   }
   x.sync();

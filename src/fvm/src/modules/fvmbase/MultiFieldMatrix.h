@@ -37,7 +37,7 @@ class UnorderedSet
 class Connectivity;
 class IContainer;
 class OneToOneIndexMap;
-
+class SpikeStorage;
 class LinearSystem;
 
 class  MultiFieldMatrix
@@ -81,6 +81,7 @@ public:
   virtual void  Jacobi(IContainer& xB, const IContainer& bB, IContainer& tempB) const;
 
   virtual void  iluSolve(IContainer& xB, const IContainer& bB, IContainer& tempB) const;
+  virtual void  spikeSolve(IContainer& xB, const IContainer& bB, IContainer& tempB, const SpikeStorage& spike_storage) const;
 
   virtual void solveBoundary(IContainer& xB, const IContainer& bB, IContainer& temp) const;
 
