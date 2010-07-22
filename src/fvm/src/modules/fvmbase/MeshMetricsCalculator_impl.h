@@ -1714,6 +1714,31 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p)
 
 template<class T>
 void
+MeshMetricsCalculator<T>::eraseIBInterpolationMatrices(const StorageSite& p)
+{
+  const int numMeshes = _meshes.size();
+  for (int n=0; n<numMeshes; n++)
+  {
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& ibFaces = mesh.getIBFaces();
+      const StorageSite& cells = mesh.getCells();
+
+      GeomFields::SSPair key1(&ibFaces,&cells);
+      this->_geomFields._interpolationMatrices.erase(key1);
+      mesh.eraseConnectivity(ibFaces,cells);
+      
+      GeomFields::SSPair key2(&ibFaces,&p);
+      this->_geomFields._interpolationMatrices.erase(key2);
+      mesh.eraseConnectivity(ibFaces,p);
+      
+      GeomFields::SSPair key3(&p,&cells);
+      this->_geomFields._interpolationMatrices.erase(key3);
+      mesh.eraseConnectivity(p,cells);
+  }
+}
+
+template<class T>
+void
 MeshMetricsCalculator<T>::computeSolidInterpolationMatrices(const StorageSite& p)
 {
   const int numMeshes = _meshes.size();

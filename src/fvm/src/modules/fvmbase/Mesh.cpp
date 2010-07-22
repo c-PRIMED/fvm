@@ -212,6 +212,13 @@ void Mesh::setConnectivity(const StorageSite& rowSite, const StorageSite& colSit
   _connectivityMap[key] = conn;
 }
 
+void Mesh::eraseConnectivity(const StorageSite& rowSite,
+                             const StorageSite& colSite) const
+{
+  SSPair key(&rowSite,&colSite);
+  _connectivityMap.erase(key);
+}
+
 
 const CRConnectivity&
 Mesh::getAllFaceNodes() const

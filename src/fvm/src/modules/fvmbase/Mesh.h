@@ -151,6 +151,9 @@ public:
   
   void setConnectivity(const StorageSite& rowSite, const StorageSite& colSite,
 		       shared_ptr<CRConnectivity> conn);
+  void eraseConnectivity(const StorageSite& rowSite,
+                         const StorageSite& colSite) const;
+		    
   
   shared_ptr<Array<int> > createAndGetBNglobalToLocal() const;
   const ArrayBase& getBNglobalToLocal() const;
