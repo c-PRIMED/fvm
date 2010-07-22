@@ -1377,9 +1377,13 @@ MeshMetricsCalculator<T>::init()
     {
         const Mesh& mesh = *_meshes[n];
         const StorageSite& cells = mesh.getCells();
-        shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCount()));
-        *ibTypePtr = Mesh::IBTYPE_FLUID;
-        _geomFields.ibType.addArray(cells,ibTypePtr);
+        const int cellCount = cells.getCount();
+        if (cellCount > 0)
+        {
+            shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCount()));
+            *ibTypePtr = Mesh::IBTYPE_FLUID;
+            _geomFields.ibType.addArray(cells,ibTypePtr);
+        }
     }
     
    _volumeField.syncLocal();
