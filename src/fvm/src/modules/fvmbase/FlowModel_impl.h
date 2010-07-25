@@ -1105,7 +1105,7 @@ public:
 #endif
 
 #ifndef FVM_PARALLEL
-        //setDirichlet(matrix,b);
+        setDirichlet(matrix,b);
 #endif
 
     }
