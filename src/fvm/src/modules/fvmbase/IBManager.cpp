@@ -271,8 +271,9 @@ IBManager::markIBType(Mesh& fluidMesh)
       {
           const int c0 = faceCells(f,0);
           const int c1 = faceCells(f,1);
-          if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN)
-            cellIBType[c1] == cellIBType[c0];
+          if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN){
+            cellIBType[c1] = cellIBType[c0];
+	  }
       }
       
   }
@@ -540,4 +541,5 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
   
   solidFacesToCells->finishAdd();
   mesh.setConnectivity(solidMeshFaces,cells,solidFacesToCells);
+
 }
