@@ -45,10 +45,10 @@ class MPMCoupling:
        
          self.couplingStep = 0
 	 self.isCouplingInit = False
-	 self.isUnitConversion   = False
+	 self.isUnitConversion   = zeros(1,dtype='i') 
 	 
      def  unitConversion(self, is_unit_conversion):
-	  self.isUnitConversion = is_unit_conversion
+	  self.isUnitConversion[0] = is_unit_conversion
 
      def couplingInit(self, dt):
 	 #this should be done once, fvm and mpm time steps should be fixed  
@@ -56,14 +56,14 @@ class MPMCoupling:
 	      mpi_proc = MPI.PROC_NULL
 	      if ( self.procID == 0 ):
 	          mpi_proc = MPI.ROOT
-              #sending unit conversion
+              #sending unit conversione
               self.FVM_COMM_MPM.Bcast([self.isUnitConversion, MPI.INT],mpi_proc)
 	      self.dt[0] = dt
               #getting mpm time step 
               self.FVM_COMM_MPM.Bcast([self.dtMPM, MPI.DOUBLE], root=0)
 	      #sending fvm time step
               self.FVM_COMM_MPM.Bcast([self.dt,MPI.DOUBLE], mpi_proc)	
-	      if ( self.isUnitConversion ):
+	      if ( self.isUnitConversion[0] == 1 ):
 		  self.dtMPM = self.dtMPM / 1000.0 #from "msec" to "second" conversion
 	      a = int(round(self.dt/self.dtMPM))
 	      b = int(round(self.dtMPM/self.dt))
@@ -86,7 +86,9 @@ class MPMCoupling:
 	     totCentroids = self.nfaces.sum()
              self.stress  = self.flowFields.force[self.surfaceMeshes[0].getFaces()].asNumPyArray().copy()
              recvbuf      = self.flowFields.force[self.surfaceMeshes[0].getFaces()].asNumPyArray().copy()
-		     
+	     #self.stress = -self.stress #experimeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeenting
+             		     
+             print "self.stress = ", self.stress
              self.FVM_COMM_MPM.Allreduce( [self.stress, MPI.DOUBLE], [recvbuf,MPI.DOUBLE], op=MPI.SUM)
 
              print "face Stress(11) = ", self.stress[11][0], "  ",   self.stress[11][1], "  ", \
@@ -96,7 +98,9 @@ class MPMCoupling:
      def acceptMPM( self, istep):
          if (  istep%self.couplingStep == 0  ):
                 #gettin nlocalfaces from MPM ( len(nlocalfaces) = remote_comm_world.size() )
+		print "self.nfaces = ", self.nfaces
                 self.FVM_COMM_MPM.Allgather([None,MPI.INT],[self.nfaces,MPI.INT])
+		print "self.nfaces = ", self.nfaces
                 #count
                 count = self.nfaces * 4 * 3 # each face has four nodes and three coordinates
                 #displ
@@ -108,9 +112,8 @@ class MPMCoupling:
                 #creating fvm array 
                 self.faceNodesCoord =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nfaces.sum()*4 )
                 self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.faceNodesCoord.asNumPyArray(),count, displ,MPI.DOUBLE]) 
-		print "self.nfaces = ", self.nfaces
                 print "MPI_RANK = ", MPI.COMM_WORLD.Get_rank(), "  faceNodes coord = ", self.faceNodesCoord.asNumPyArray()                 
-		if ( self.isUnitConversion ):
+		if ( self.isUnitConversion[0] == 1 ):
 		    self.faceNodesCoord.asNumPyArray()[:,:] = self.faceNodesCoord.asNumPyArray()[:,:] / 1000.0
                 #creating meshList 
                 #self.surfaceMeshes= fvmbaseExt.MeshList( fvmbaseExt.Mesh(3,99,self.faceNodesCoord) );
@@ -127,10 +130,10 @@ class MPMCoupling:
                    displ[i] = displ[i-1] + count[i-1]
                 #creating fvm array 
                 self.FaceCentroidVels =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nfaces.sum() )
-		print "facecentroidvels = ", self.FaceCentroidVels.asNumPyArray(), "   rank = ", MPI.COMM_WORLD.Get_rank()
                 self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.FaceCentroidVels.asNumPyArray(),count, displ,MPI.DOUBLE]) 
 		if  MPI.COMM_WORLD.Get_rank() == 0:
 		    self.dump_faces(self.faceNodesCoord.asNumPyArray(), self.FaceCentroidVels.asNumPyArray())
+		print "facecentroidvels = ", self.FaceCentroidVels.asNumPyArray(), "   rank = ", MPI.COMM_WORLD.Get_rank()
 
      def  getSurfaceMeshes(self):
          return self.surfaceMeshes
