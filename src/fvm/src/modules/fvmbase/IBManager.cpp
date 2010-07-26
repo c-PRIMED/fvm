@@ -257,7 +257,26 @@ IBManager::markIBType(Mesh& fluidMesh)
             cellIBType[c] = Mesh::IBTYPE_SOLID;
       }
   }
-  
+
+  // mark any ungrouped boundary cells to be of the same type as the
+  // interior
+  foreach(const FaceGroupPtr fgPtr, fluidMesh.getBoundaryFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      
+      const CRConnectivity& faceCells = fluidMesh.getFaceCells(faces);
+      const int nFaces = faces.getCount();
+      for(int f=0; f<nFaces; f++)
+      {
+          const int c0 = faceCells(f,0);
+          const int c1 = faceCells(f,1);
+          if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN)
+            cellIBType[c1] == cellIBType[c0];
+      }
+      
+  }
+
   int nFluid=0;
   int nSolid=0;
   int nBoundary=0;
