@@ -1860,9 +1860,9 @@ public:
             }
 
             const VectorT3& Af = solidFaceArea[f];
-            force[f][0] = Af[0]*stress[0] + Af[1]*stress[3] + Af[2]*stress[4];
-            force[f][1] = Af[0]*stress[3] + Af[1]*stress[1] + Af[2]*stress[5];
-            force[f][2] = Af[0]*stress[4] + Af[1]*stress[5] + Af[2]*stress[2];
+            force[f][0] = Af[0]*stress[0] + Af[1]*stress[3] + Af[2]*stress[5];
+            force[f][1] = Af[0]*stress[3] + Af[1]*stress[1] + Af[2]*stress[4];
+            force[f][2] = Af[0]*stress[5] + Af[1]*stress[4] + Af[2]*stress[2];
         }
     }
   }
