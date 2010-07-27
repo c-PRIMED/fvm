@@ -984,23 +984,30 @@ public:
             dFluxdFlux.unitize();
         }
 
-	// add additional imbalance to netFlux
-	const TArray& density =
-	  dynamic_cast<const TArray&>(_flowFields.density[cells]);	
-	const TArray& cellVolume =
-	  dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-	const int nCells = cells.getSelfCount();
-	T _dT(_options["timeStep"]);
-        T onePointFive(1.5);
-        T two(2.0);
-        T pointFive(0.5);
-	if (_flowFields.velocityN2.hasArray(cells))
-	{
-	    if (_geomFields.volumeN1.hasArray(cells))
+	// add additional imbalance to netFlux due to transient term
+	// when we have deforming mesh
+        if (_geomFields.volumeN1.hasArray(cells))
+        {
+
+            // this block computes the net sum of d(rho)/dt over all the cells
+            const TArray& density =
+              dynamic_cast<const TArray&>(_flowFields.density[cells]);	
+            const TArray& cellVolume =
+              dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+            const int nCells = cells.getSelfCount();
+            T _dT(_options["timeStep"]);
+            T onePointFive(1.5);
+            T two(2.0);
+            T pointFive(0.5);
+
+            const TArray& cellVolumeN1 = 
+              dynamic_cast<const TArray&>(_geomFields.volumeN1[cells]);
+
+            if (_geomFields.volumeN2.hasArray(cells))
 	    {
-	        const TArray& cellVolumeN1 = 
-		  dynamic_cast<const TArray&>(_geomFields.volumeN1[cells]);
-		const TArray& cellVolumeN2 = 
+                // second order time discretization
+
+                const TArray& cellVolumeN2 = 
 		  dynamic_cast<const TArray&>(_geomFields.volumeN2[cells]);
 		for(int c=0; c<nCells; c++)
 		{
@@ -1008,40 +1015,37 @@ public:
 		    const T term1 = onePointFive*cellVolume[c];
 		    const T term2 = two*cellVolumeN1[c];
 		    const T term3 = pointFive*cellVolumeN2[c];
-		    netFlux += rhobydT*(term1 - term2 + term3);
+		    netFlux -= rhobydT*(term1 - term2 + term3);
 		}
 	    }
-	}
-	else
-	{
-	    if (_geomFields.volumeN1.hasArray(cells))
-	    {
-	        const TArray& cellVolumeN1 =
-		  dynamic_cast<const TArray&>(_geomFields.volumeN1[cells]);
+            else
+            {
+                // first order time discretization
 		for(int c=0; c<nCells; c++)
 		{       
 		    const T rhobydT = density[c]/_dT;
-		    netFlux += rhobydT*(cellVolume[c] - cellVolumeN1[c]);
+		    netFlux -= rhobydT*(cellVolume[c] - cellVolumeN1[c]);
 		}
 	    }
-	}
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-	{
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
-	    const int nFaces = faces.getCount();
-	    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
-	    const VectorT3Array& faceArea =
-	      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-	    const VectorT3Array& faceVel =
-	      dynamic_cast<const VectorT3Array&>(_geomFields.faceVel[faces]);
-            for(int f=0; f<nFaces; f++)
-	    {
-	        const int c0 = faceCells(f,0);
-		netFlux -= density[c0]*dot(faceVel[f],faceArea[f]);
-	    }
-	}
 
+            // compute the net integral of the grid flux term 
+            foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+            {
+                const FaceGroup& fg = *fgPtr;
+                const StorageSite& faces = fg.site;
+                const int nFaces = faces.getCount();
+                const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+                const VectorT3Array& faceArea =
+                  dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+                const VectorT3Array& faceVel =
+                  dynamic_cast<const VectorT3Array&>(_geomFields.faceVel[faces]);
+                for(int f=0; f<nFaces; f++)
+                {
+                    const int c0 = faceCells(f,0);
+                    netFlux += density[c0]*dot(faceVel[f],faceArea[f]);
+                }
+            }
+        }
     }
   
 
