@@ -16,19 +16,21 @@ public:
   ~SpikeStorage();
   //interior
   const vector<int>&  getLSPKInterior() const {return _LSPK_INTERIOR;}  
-  const vector<int>&  getLSPKInterior() {return _LSPK_INTERIOR;} 
   const vector<int>&  getRSPKInterior() const {return _RSPK_INTERIOR;}  
-  const vector<int>&  getRSPKInterior() {return _RSPK_INTERIOR;} 
   //ghost 
   const vector<int>&  getLSPKGhost() const {return _LSPK_GHOST;}  
-  const vector<int>&  getLSPKGhost() {return _LSPK_GHOST;} 
   const vector<int>&  getRSPKGhost() const {return _RSPK_GHOST;}  
-  const vector<int>&  getRSPKGhost() {return _RSPK_GHOST;} 
   //offdiag_ptr
   const vector<int>&  getLSPKOffDiagPtr() const {return _LSPK_OFFD_PTR;}  
-  const vector<int>&  getLSPKOffDiagPtr() {return _LSPK_OFFD_PTR;} 
   const vector<int>&  getRSPKOffDiagPtr() const {return _RSPK_OFFD_PTR;} 
-  const vector<int>&  getRSPKOffDiagPtr() {return _RSPK_OFFD_PTR;} 
+  //get I and J indices (local)
+  const vector<int>&  getLSPKIndexI() const { return _LSPK_I;}
+  const vector<int>&  getLSPKIndexJ() const { return _LSPK_J;}
+  const vector<int>&  getRSPKIndexI() const { return _RSPK_I;}
+  const vector<int>&  getRSPKIndexJ() const { return _RSPK_J;}
+  //get GhostCount
+  const vector<int>&  getLSPKCountGhost() const { return _LSPKCountGhost;}
+  const vector<int>&  getRSPKCountGhost() const { return _RSPKCountGhost;}
 
   int getBandWidth() const { return _bandwidth;}
 
@@ -54,8 +56,14 @@ private:
    vector<int>  _RSPK_INTERIOR;
    vector<int>  _RSPK_GHOST;
    vector<int>  _RSPK_OFFD_PTR;
+   vector<int>  _LSPK_I;
+   vector<int>  _LSPK_J;
+   vector<int>  _RSPK_I;
+   vector<int>  _RSPK_J;
    vector<int>  _glblIndices;
-   
+   vector<int>  _LSPKCountGhost;
+   vector<int>  _RSPKCountGhost;
+
 };
 
 #endif

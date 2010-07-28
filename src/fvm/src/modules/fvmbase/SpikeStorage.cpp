@@ -34,6 +34,16 @@ SpikeStorage::init()
    _RSPK_INTERIOR.reserve(_bandwidth);
    _RSPK_GHOST.reserve   (_bandwidth);
    _RSPK_OFFD_PTR.reserve(_bandwidth);
+   _LSPK_I.reserve(_bandwidth);
+   _LSPK_J.reserve(_bandwidth);
+   _RSPK_I.reserve(_bandwidth);
+   _RSPK_J.reserve(_bandwidth);
+   //keeping left and right spike matrices counter, we will know if there is more than one ghost cell
+    int ncells = _conn.getRowSite().getSelfCount();
+   _LSPKCountGhost.resize(ncells,0);
+   _RSPKCountGhost.resize(ncells,0);
+
+
 #ifdef FVM_PARALLEL
    _cellSelfCounts.resize( MPI::COMM_WORLD.Get_size() );
    _procID = MPI::COMM_WORLD.Get_rank();
@@ -123,9 +133,15 @@ SpikeStorage::setGlobalIndices()
          if ( (iGlbIndx > jGlbIndx) && ((iGlbIndx - jGlbIndx) <= _bandwidth) ){ 
             _LSPK_INTERIOR.push_back( innerIndices[n] );
 	    _LSPK_GHOST.push_back   ( ghostIndices[n] );
+            _LSPK_I.push_back( innerIndices[n] );
+            _LSPK_J.push_back( _bandwidth + jGlbIndx - indx_base );
+            _LSPKCountGhost[innerIndices[n]] += 1;
 	 } else if ( (iGlbIndx < jGlbIndx) && (jGlbIndx - iGlbIndx) <= _bandwidth ) {
             _RSPK_INTERIOR.push_back( innerIndices[n] );
 	    _RSPK_GHOST.push_back   ( ghostIndices[n] );
+            _RSPK_I.push_back( innerIndices[n] );
+            _RSPK_J.push_back( jGlbIndx - indx_base_other );
+            _RSPKCountGhost[innerIndices[n]] += 1;
          }
      }
   }

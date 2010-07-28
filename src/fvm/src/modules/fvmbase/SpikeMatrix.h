@@ -51,6 +51,8 @@ private:
   void initAssembly()
   {
      setMatrix();
+     setLSpikeMtrx();
+     setRSpikeMtrx();
   }
 
   void setMatrix()
@@ -75,9 +77,43 @@ private:
      
      _A.print(cout);
   } 
-  //void setLSpikeMtrx();
-  /*void setRSpikeMtrx();*/
-
+  //left spike matrix
+  void setLSpikeMtrx()
+  {
+     const vector<int>& vecI = _spikeStorage.getLSPKIndexI();
+     const vector<int>& vecJ = _spikeStorage.getLSPKIndexJ();
+     const vector<int>& offDiagPtr = _spikeStorage.getLSPKOffDiagPtr(); 
+     const vector<int>& countGhost = _spikeStorage.getLSPKCountGhost();
+     int indx = 0;
+     for ( int n = 0; n < _ncells; n++ ){
+        int ncount = countGhost[n];
+	for ( int c = 0; c < ncount; c++){ 
+          int i = vecI[indx];
+	  int j = vecJ[indx];
+	  _LSPIKE(i,j) = _offDiag[offDiagPtr[indx++]];
+	}
+     }
+     _LSPIKE.print(cout);
+  }
+  //right spike matrix
+  void setRSpikeMtrx()
+  {
+     const vector<int>& vecI = _spikeStorage.getRSPKIndexI();
+     const vector<int>& vecJ = _spikeStorage.getRSPKIndexJ();
+     const vector<int>& offDiagPtr = _spikeStorage.getRSPKOffDiagPtr();
+     const vector<int>& countGhost = _spikeStorage.getRSPKCountGhost();
+     int indx = 0;
+     for ( int n = 0; n < _ncells; n++ ){
+        int ncount = countGhost[n];
+	for ( int c = 0; c < ncount; c++){ 
+          int i = vecI[indx];
+	  int j = vecJ[indx];
+	  _RSPIKE(i,j) = _offDiag[offDiagPtr[indx++]];
+	}
+     }
+     _RSPIKE.print(cout);
+  }
+   
 
   const CRConnectivity& _conn;
   const Array<Diag>& _diag;
