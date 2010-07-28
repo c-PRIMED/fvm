@@ -12,18 +12,25 @@
 #include "DiagonalMatrix.h"
 #include "CRMatrix.h"
 
-//Diag type: 2x2Tensor
-/***  | d0,  d1 |
-      | d2,  d3 |    ***/
-//OffDiag type: 2x2Tensor
-/***  | o0,  o1 |
-      | o2,  o3 |    ***/
-//X type: VectorT2
-/***  | x0 |
-      | x1 |         ***/
+/**************************************************
+Diag type: 2x2Tensor
+      | d00,  d01 |
+      | d10,  d11 |    
 
-// in emission model, the d0, d2 and x0, x1 are modified
-// the rest remains unchanged
+OffDiag type: 2x2Tensor
+      | o00,  o01 |
+      | o10,  o11 |    
+
+X type: VectorT2
+      | x0 |
+      | x1 |         
+
+"0" is trapped charge
+"1" is band charge
+
+Emission model modifies d00,  x0, x1
+
+*************************************************/
 
 
 template <class X, class Diag, class OffDiag>
@@ -42,13 +49,11 @@ class EmissionDiscretization : public Discretization
   EmissionDiscretization(const MeshList& meshes,
 			 const GeomFields& geomFields,
 			 const Field& varField,
-			 const Field& varN1Field,
 			 const Field& electricField,
 			 const ElectricModelConstants<T_Scalar>& constants):
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
-    _varN1Field(varN1Field),
     _electricField(electricField),
     _constants(constants)
     {}
@@ -69,8 +74,6 @@ class EmissionDiscretization : public Discretization
     
     const XArray& xCell = dynamic_cast<const XArray&>(_varField[cells]);
     
-    const XArray& xN1Cell = dynamic_cast<const XArray&>(_varN1Field[cells]);
-
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
     
@@ -85,15 +88,18 @@ class EmissionDiscretization : public Discretization
     const T_Scalar& temperature = _constants["OP_temperature"];
     const T_Scalar& poole_frenkel_emission_frequency = _constants["poole_frenkel_emission_frequency"];
 
-    T_Scalar beta = sqrt( QE / (PI * E0_SI * optical_dielectric_constant) );
+    const T_Scalar beta = sqrt( QE / (PI * E0_SI * optical_dielectric_constant) );
 
     for(int c=0; c<nCells; c++){
       
       T_Scalar expt = (electron_trapdepth - beta * sqrt(mag(electric_field[c]))) * QE / (K_SI * temperature);
+
       T_Scalar fluxCoeff = cellVolume[c] * poole_frenkel_emission_frequency * exp(-expt);
-      
+	
       rCell[c][0] += -(fluxCoeff * xCell[c][0]);
-      diag[c][0] -= fluxCoeff;
+
+      diag[c](0,0) -= fluxCoeff;
+
       rCell[c][1] += fluxCoeff * xCell[c][0];
     }
   }
@@ -101,7 +107,6 @@ class EmissionDiscretization : public Discretization
  private:
     const GeomFields& _geomFields;
     const Field& _varField;
-    const Field& _varN1Field;
     const Field& _electricField;
     const ElectricModelConstants<T_Scalar>& _constants;
 
