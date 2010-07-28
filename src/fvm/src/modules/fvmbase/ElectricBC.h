@@ -55,7 +55,12 @@ struct ElectricModelConstants : public FloatVarDict<T>
     this->defineVar("poole_frenkel_emission_frequency", T(1.0e+12));  //in s^-1
     this->defineVar("electron_mobility", T(50e4));                     // m^2 / Vs
     this->defineVar("electron_saturation_velocity", T(1e9));	      // m/s
-   
+    this->defineVar("voltage", T(100));                           // V
+
+    this->defineVar("substrate_id", int(5));               //mesh id of substrate
+    this->defineVar("membrane_id", int(4));                //mesh id of membrane
+    this->defineVar("nLevel", int(0));                   //number of grid in normal direction
+    this->defineVar("normal_direction", int(2));          //normal direction index; values: 0 1 2
   }
 
 };
@@ -76,7 +81,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
     this->chargetransportLinearSolver = 0;
     this->timeDiscretizationOrder = 1;
     this->transient_enable = true;
-    this->ibm = false;
+    this->ibm_enable = false;
     this->electrostatics_enable = true;
     this->chargetransport_enable = true;
     this->tunneling_enable = false;
@@ -86,6 +91,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
     this->drift_enable = false;
     this->diffusion_enable = false;
     this->trapbandtunneling_enable = false;
+    this->printNormalizedResiduals = true;
   }
   bool printNormalizedResiduals;
 
@@ -93,7 +99,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
   double chargetransportTolerance;
   double tunnelingtransportTolerance;
   
-  bool ibm;
+  bool ibm_enable;
   bool transient_enable;
   bool tunneling_enable;
   bool emission_enable;

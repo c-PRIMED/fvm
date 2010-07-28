@@ -31,6 +31,7 @@
 #include "TwobyTwoTensor.h"
 #include "ElectricUtilityFunctions.h"
 #include "DielectricOneDimColumn.h"
+#include "SquareTensor.h"
 
 
 template<class T>
@@ -43,7 +44,9 @@ public:
   typedef Array<VectorT3> VectorT3Array;
   typedef Vector<T,2> VectorT2;
   typedef Array<VectorT2> VectorT2Array;
-  typedef TwobyTwoTensor<T> Tensor2x2;
+  
+  //typedef TwobyTwoTensor<T> Tensor2x2;
+  typedef SquareTensor<T, 2> Tensor2x2;
   typedef Array<Tensor2x2> Tensor2x2Array;
   
   typedef Gradient<T> PGradType;
@@ -229,11 +232,7 @@ public:
 	    fecr->zero();
 	    _electricFields.free_electron_capture_cross.addArray(cells, fecr);
 
-	    //transmission coefficient setup
-	    shared_ptr<TArray> trs(new TArray(nCells));
-	    trs->zero();
-	    _electricFields.transmission.addArray(cells, trs);
-
+	    
 	    // convection flux on all faces 
 	    shared_ptr<TArray> mf (new TArray(faces.getCount()));
 	    mf->zero();
@@ -409,6 +408,7 @@ public:
 	TArray& totalcharge = dynamic_cast<TArray&>(_electricFields.total_charge[cells]);
 	for (int c=0; c<nCells; c++){
 	  totalcharge[c] = - (charge[c][0] + charge[c][1]) * QE;
+	  totalcharge[c] = 0.0;
 	}
     }
   }
@@ -440,8 +440,6 @@ public:
     updateElectronVelocity();
     
     updateConvectionFlux();
-
-    //testTwobyTwoTensor();
 
     return rNorm;
   }
@@ -608,7 +606,7 @@ public:
 	));
     discretizations.push_back(sd);
 
-    if(_options.ibm){
+    if(_options.ibm_enable){
       shared_ptr<Discretization>
 	ibm(new GenericIBDiscretization<T,T,T>
 	    (_meshes,_geomFields,_electricFields.potential));
@@ -680,28 +678,38 @@ public:
     _chargeGradientModel.compute();
     
     DiscrList discretizations;
-    
-    if (_options.tunneling_enable){
+  
+    if (_options.injection_enable){
+      shared_ptr<Discretization>
+	inj(new InjectionDiscretization<VectorT2, Tensor2x2, Tensor2x2>
+	    (_meshes, _geomFields,
+	     _electricFields.charge,
+	     _electricFields.electric_field,
+	     _electricFields.conduction_band,
+	     _constants
+	     ));
+      discretizations.push_back(inj);
+    }
+
+  
+     if (_options.tunneling_enable){
       shared_ptr<Discretization>
 	tnd(new TunnelingDiscretization<VectorT2, Tensor2x2, Tensor2x2>
 	    (_meshes, _geomFields,
 	     _electricFields.charge,
-	     _electricFields.chargeN1,
 	     _electricFields.electron_totaltraps,
 	     _electricFields.conduction_band,
-	     _constants,
-	     _electricFields.transmission, 
-	     _columnList));
-      discretizations.push_back(tnd);
-      
+	     _constants
+	     ));
+      discretizations.push_back(tnd);      
     }
-    
+
+
     if (_options.emission_enable){
       shared_ptr<Discretization>
 	em(new EmissionDiscretization<VectorT2, Tensor2x2, Tensor2x2>
 	   (_meshes, _geomFields,
 	    _electricFields.charge,
-	    _electricFields.chargeN1,
 	    _electricFields.electric_field,
 	    _constants));
       discretizations.push_back(em);
@@ -712,20 +720,18 @@ public:
 	capt(new CaptureDiscretization<VectorT2, Tensor2x2, Tensor2x2>
 	   (_meshes, _geomFields,
 	    _electricFields.charge,
-	    _electricFields.chargeN1,
 	    _electricFields.electron_totaltraps,
 	    _electricFields.free_electron_capture_cross,
 	    _constants));
       discretizations.push_back(capt);
     }
    
-   
+ 
     if (_options.trapbandtunneling_enable){
       shared_ptr<Discretization>
 	tbt(new TrapBandTunnelingDiscretization<VectorT2, Tensor2x2, Tensor2x2>
 	    (_meshes, _geomFields,
 	     _electricFields.charge,
-	     _electricFields.chargeN1,
 	     _electricFields.electric_field,
 	     _electricFields.conduction_band,
 	     _constants));
@@ -733,7 +739,7 @@ public:
 
     }
 	    
-
+#if 0
     if (_options.diffusion_enable){
       shared_ptr<Discretization>
 	dd(new ElecDiffusionDiscretization<VectorT2, Tensor2x2,Tensor2x2>
@@ -743,7 +749,7 @@ public:
 	    _electricFields.chargeGradient));
       discretizations.push_back(dd);
     }
-
+#endif
     if (_options.drift_enable){
       shared_ptr<Discretization>
 	cd(new DriftDiscretization<VectorT2, Tensor2x2, Tensor2x2>
@@ -752,9 +758,9 @@ public:
 	    _electricFields.convectionFlux));
       discretizations.push_back(cd);
     }
-    
+
     if (_options.transient_enable)
-    {
+      {
       shared_ptr<Discretization>
 	td(new TimeDerivativeDiscretization<VectorT2, Tensor2x2,Tensor2x2>
 	   (_meshes,_geomFields,
@@ -764,10 +770,13 @@ public:
 	    _electricFields.one,
 	    _options["timeStep"]));
       discretizations.push_back(td);
-    }
+      }
 
+   
+
+    
     Linearizer linearizer;
-
+      
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
                          ls.getX(), ls.getB());
    
@@ -792,7 +801,7 @@ public:
                                   ls.getMatrix(), ls.getX(), ls.getB());
 	    //dielectric charging uses fixed zero dirichlet bc
 	    VectorT2 zero;
-	    gbc.applyNonzeroDiagBC();
+	    //gbc.applyNonzeroDiagBC();
 	    zero[0] = zero[1] = T(0);
 	    gbc.applyDirichletBC(zero);
 
@@ -1075,6 +1084,7 @@ public:
 	  charge[c][1] = electron_totaltraps[c] * FermiFunction(energy, fermilevel, temperature);
 	  chargeN1[c][1] = charge[c][1];
 	 
+	  
 	  if (_options.timeDiscretizationOrder > 1)
 	    (*chargeN2)[c][1] = charge[c][1];
 
@@ -1091,7 +1101,46 @@ public:
   }
 
  
-		       
+  void computeIBFacePotential(const StorageSite& solid)
+  {
+    typedef CRMatrixTranspose<T,T,T> IMatrix;
+    
+    const TArray& sP =
+      dynamic_cast<const TArray&>(_electricFields.potential[solid]);
+
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+
+        const StorageSite& cells = mesh.getCells();
+        const StorageSite& ibFaces = mesh.getIBFaces();
+        
+        GeomFields::SSPair key1(&ibFaces,&cells);
+        const IMatrix& mIC =
+          dynamic_cast<const IMatrix&>
+          (*_geomFields._interpolationMatrices[key1]);
+
+	GeomFields::SSPair key2(&ibFaces,&solid);
+        const IMatrix& mIP =
+          dynamic_cast<const IMatrix&>
+          (*_geomFields._interpolationMatrices[key2]);
+
+	shared_ptr<TArray> ibP(new TArray(ibFaces.getCount()));
+        
+        const TArray& cP =
+          dynamic_cast<const TArray&>(_electricFields.potential[cells]);
+    
+        ibP->zero();
+
+	mIC.multiplyAndAdd(*ibP,cP);
+	mIP.multiplyAndAdd(*ibP,sP);
+
+        _electricFields.potential.addArray(ibFaces,ibP);
+    }
+
+  }      
+
 
   void printBCs()
   {
@@ -1221,94 +1270,7 @@ public:
    return pathPointValues;
  }
 
-
- void testTwobyTwoTensor()
- {
-   Tensor2x2 t1, t2, t3;
-   cout << "t.zero" << endl;
-   t1.zero();
-   cout << t1 << endl;
-   
-   cout << " t = -1" << endl; 
-   t1 = -1.0;
-   cout << t1 << endl;
-
-   cout << " t2 = t1 " << endl;
-   t2 = t1;
-   cout << t2 << endl;
-
-   cout <<"t += 5" << endl;
-   t1+=5.0;
-   cout << t1 <<endl;
-
-   cout <<"t -= 3" << endl;
-   t2 -= 3.0;
-   cout << t2 << endl;
-
-   cout <<"t *= 2" << endl;
-   t1 *= 2.0;
-   cout << t1 << endl;
-
-   cout << "t1*t2" <<endl;
-   t3 = t1*=t2;
-   cout << t1 << endl;
-
-   cout << "t2/t1" <<endl;
-   t1[0] = 1.0;
-   t1[1] = 2.0;
-   t1[2] = 3.0;
-   t1[3] = 4.0; 
-   t2 = t1;
-   t2 /= t1;
-   cout << t2 << endl;
-
-   t2 = t1 * 2.0;
-
-   cout <<"t1 + t2"<<endl;
-   t3 = t1 + t2;
-   cout << t3 << endl;
-
-   cout <<"t1 - t2"<<endl;
-   t3 = t1 - t2; 
-   cout << t3 << endl;
-
-   cout <<"t1 * t2"<<endl;
-   t3 = t1 * t2; 
-   cout << t3 << endl;
-
-   cout <<"t1 / t2"<<endl;
-   t3 = t1 / t2;
-   cout << t3 << endl;
-
-   Vector<T,2> v1, v2, v3, v4;
-   v1[0] = 1.0;
-   v1[1] = 2.0;
-   v2 = v1 * 2.0;
-
-   cout << "v1 "<< endl;
-   cout << v1 << endl;
-
-   cout << "t1" << endl;
-   cout << t1 << endl;
-
-   cout <<"v1 * t1" << endl;
-   v3 = v1 * t1;
-   cout << v3 <<endl;
-   cout <<"t1 * v1" << endl;
-   v3 = t1 * v1;
-   cout << v3 << endl;
-
-   cout << "v1 / t1" << endl;
-   v4 = v1 / t1;
-   cout << v4 << endl;
- }
-
-   
-   
-
-
     
-     
 
 
 private:
@@ -1433,14 +1395,13 @@ ElectricModel<T>::calculateEquilibriumParameters()
   _impl->calculateEquilibriumParameters();
 }
 
-#if 0
 template<class T>
 void
 ElectricModel<T>::computeIBFacePotential(const StorageSite& particles)
 {
   _impl->computeIBFacePotential(particles);
 }
-#endif 
+ 
 
 /* only the members who need to be exposed in python are listed here */
 /* and declared in ElectricModel class */

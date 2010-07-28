@@ -27,14 +27,15 @@ struct ElectricModelOptions : public FloatVarDict<T>
   bool tunneling_enable;
   bool chargetransport_enable;
   bool electrostatics_enable;
-  bool ibm;
+  bool ibm_enable;
   bool capture_enable;
   bool emission_enable;
   bool drift_enable;
   bool injection_enable;
   bool drift_enable;
-  bool diffusion_enable;  
-
+  bool diffusion_enable; 
+  bool trapbandtunneling_enable; 
+  bool printNormalizedResiduals;
   LinearSolver *electrostaticsLinearSolver;
   LinearSolver *chargetransportLinearSolver;
 }; 

@@ -44,7 +44,7 @@ public:
 
   ElectricModelConstants<T>& getConstants();
   
-  //computeIBFacePotential(const StorageSite& particles);
+  void computeIBFacePotential(const StorageSite& solid);
     
   void printBCs();
 
