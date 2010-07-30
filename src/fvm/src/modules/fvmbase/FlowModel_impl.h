@@ -1793,7 +1793,7 @@ public:
   }
 
   void
-  computeSolidSurfaceForce(const StorageSite& solidFaces)
+  computeSolidSurfaceForce(const StorageSite& solidFaces, bool perUnitArea)
   {
     typedef CRMatrixTranspose<T,T,T> IMatrix;
 
@@ -1810,6 +1810,9 @@ public:
 
     const VectorT3Array& solidFaceArea =
       dynamic_cast<const VectorT3Array&>(_geomFields.area[solidFaces]);
+
+    const TArray& solidFaceAreaMag =
+      dynamic_cast<const TArray&>(_geomFields.areaMag[solidFaces]);
     
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -1867,6 +1870,10 @@ public:
             force[f][0] = Af[0]*stress[0] + Af[1]*stress[3] + Af[2]*stress[5];
             force[f][1] = Af[0]*stress[3] + Af[1]*stress[1] + Af[2]*stress[4];
             force[f][2] = Af[0]*stress[5] + Af[1]*stress[4] + Af[2]*stress[2];
+            if (perUnitArea)
+            {
+                force[f] /= solidFaceAreaMag[f];
+            }
         }
     }
   }
@@ -2150,7 +2157,14 @@ template<class T>
 void
 FlowModel<T>::computeSolidSurfaceForce(const StorageSite& particles)
 {
-  return _impl->computeSolidSurfaceForce(particles);
+  return _impl->computeSolidSurfaceForce(particles,false);
+}
+
+template<class T>
+void
+FlowModel<T>::computeSolidSurfaceForcePerUnitArea(const StorageSite& particles)
+{
+  return _impl->computeSolidSurfaceForce(particles,true);
 }
 
 
