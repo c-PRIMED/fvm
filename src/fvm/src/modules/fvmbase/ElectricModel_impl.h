@@ -278,14 +278,14 @@ public:
 	      cFlux->zero();
 	      _electricFields.chargeFlux.addArray(faces,cFlux);
 	    }
-	  }
-	//}
+	}
     }
     
     _electricFields.dielectric_constant.syncLocal();
     _niters  = 0;
     _initialElectroStaticsNorm = MFRPtr();
-    _initialChargeTransportNorm = MFRPtr();
+    if (_options.chargetransport_enable)
+      _initialChargeTransportNorm = MFRPtr();
   }
   
 
@@ -436,10 +436,13 @@ public:
     ls.updateSolution();
 
     updateElectricField();
-
-    updateElectronVelocity();
     
-    updateConvectionFlux();
+    if (_options.chargetransport_enable){
+
+      updateElectronVelocity();
+      
+      updateConvectionFlux();
+    }
 
     return rNorm;
   }
@@ -801,10 +804,14 @@ public:
                                   ls.getMatrix(), ls.getX(), ls.getB());
 	    //dielectric charging uses fixed zero dirichlet bc
 	    VectorT2 zero;
-	    //gbc.applyNonzeroDiagBC();
 	    zero[0] = zero[1] = T(0);
-	    gbc.applyDirichletBC(zero);
-
+	    //gbc.applyNonzeroDiagBC();
+	    if (bc.bcType == "Symmetry")
+	      //gbc.applyExtrapolationBC();
+	      gbc.applyDirichletBC(zero);
+	    else
+	      gbc.applyDirichletBC(zero);
+	    
 	  }
 
         foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
@@ -927,10 +934,10 @@ public:
       for(int c=0; c<nCells; c++){
 	VectorT3 vel = electron_mobility * electric_field[c];
 	if (mag(vel) < electron_saturation_velocity ){
-	  electron_velocity[c] = electron_mobility * electric_field[c];
+	  electron_velocity[c] = - electron_mobility * electric_field[c];
 	}
 	else {
-	  electron_velocity[c] =  electron_saturation_velocity * (electric_field[c] / mag(electric_field[c]));
+	  electron_velocity[c] = -  electron_saturation_velocity * (electric_field[c] / mag(electric_field[c]));
 	}
       }
     }
@@ -1142,6 +1149,38 @@ public:
   }      
 
 
+  void
+  computeSolidSurfaceForce(const StorageSite& solidFaces, bool perUnitArea)
+  {
+    typedef CRMatrixTranspose<T,T,T> IMatrix;
+
+    const int nSolidFaces = solidFaces.getCount();
+
+    _potentialGradientModel.compute();
+
+    boost::shared_ptr<VectorT3Array>
+      forcePtr( new VectorT3Array(nSolidFaces));
+    VectorT3Array& force = *forcePtr;
+
+    force.zero();
+    _electricFields.force.addArray(solidFaces,forcePtr);
+
+    const VectorT3Array& solidFaceArea =
+      dynamic_cast<const VectorT3Array&>(_geomFields.area[solidFaces]);
+
+    const TArray& solidFaceAreaMag =
+      dynamic_cast<const TArray&>(_geomFields.areaMag[solidFaces]);
+    
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+
+
+    }
+  }
+
+
+
   void printBCs()
   {
     foreach(typename ElectricBCMap::value_type& pos, _bcMap)
@@ -1156,119 +1195,7 @@ public:
   }
 
 
- const int findClosestPoint(const VectorT3 point, Octree& O)
- {
-   const int nearestCell = O.getNode(point);
-   return nearestCell;
-  
- }
 
- vector<int> findCloestPoints(VectorT3 point, Octree& O, const double radius)
- {
-   vector<int> nearestCellList;
-   O.getNodes(point, radius, nearestCellList);
- }
-
- shared_ptr<VectorT3Array> createPathAndDiscretize (
-	 const VectorT3 startPoint, const VectorT3 endPoint, const int N)
- {
-   shared_ptr<VectorT3Array> pathPoints(new VectorT3Array(N+1));
-   const VectorT3 path = endPoint - startPoint;
-   const VectorT3 delta(path / T(N));
-   for (int n=0; n<=N; n++){
-     VectorT3 tmp = startPoint + (delta * T(n));
-     (*pathPoints)[n] = tmp;
-   }
-   return pathPoints;
- }
-
-
- shared_ptr<VectorT3Array> pathPointsInterpolation(
-			      shared_ptr<VectorT3Array> pathPoints, 
-			      Octree& O,
-			      const double radius)
- {
-   const int  printOption = 1;
-   const int nP = (*pathPoints).getLength();
-   shared_ptr<VectorT3Array> pathPointValues (new VectorT3Array(nP));
-   for(int n=0; n<nP; n++){
-     (*pathPointValues)[n]=0.0;
-   }
-
-   const Mesh& mesh = *_meshes[0];
-   const StorageSite& cells = mesh.getCells();
-   const VectorT3Array& cellCentroid = dynamic_cast<const VectorT3Array& > (_geomFields.coordinate[cells]);
-
-   /// print out path Points 
-   if (printOption == 1) {
-     for (int n=0; n<nP; n++){
-       cout<<n<<"   "<<(*pathPoints)[n]<<endl;
-     }
-     cout<<"end of path points list"<<endl;
-   }
-      
-   for (int n=0; n<nP; n++){ 
-
-     //step 1. for each path point, find out its cell neighbors within a radius
-     const VectorT3 point = (*pathPoints)[n];
-     vector<int> neighborList;
-     O.getNodes(point, radius, neighborList);
-
-     //step 2. use distance weighted method, calcualte the interpolation coefficients to all the neighbors
-     const int nNBCells = neighborList.size();
-     TArray pointToCellCoeff(nNBCells);
-     T wtSum(0);
-     int onTarget = 0;
-     int target = 0;
-     for (int i=0; i<nNBCells; i++){
-       const int cid = neighborList[i];
-       cout<<"point "<<n<<"   "<<point<<endl;
-       cout<<"neighbors "<<i<<"   "<<cellCentroid[cid]<<endl;
-
-       VectorT3 dr(point - cellCentroid[cid]);
-       if (dot(dr,dr)<=1.0e-15){
-	 onTarget = 1;
-	 target = i;
-       }
-       else{
-	 T wt = 1.0/dot(dr,dr);
-	 pointToCellCoeff[i]=wt;
-	 wtSum += wt;
-       }
-     }
-     if (onTarget == 1){
-       for (int i=0; i<nNBCells; i++){
-	 pointToCellCoeff[i] = 0;
-       }
-       pointToCellCoeff[target] = 1;
-     } 
-     else{
-       for (int i=0; i<nNBCells; i++){
-	 pointToCellCoeff[i] /= wtSum;
-       }
-     }
-
-     //step 3. interpolation the value using the coefficients
-     for (int i=0; i<nNBCells; i++){
-       const int cid = neighborList[i];
-       VectorT3 cellValue;
-       cellValue[0]=1.0;
-       cellValue[1]=1.0;
-       cellValue[2]=1.0;       
-       (*pathPointValues)[n] = (*pathPointValues)[n] + cellValue * pointToCellCoeff[i];
-       cout<<"coeff   "<<pointToCellCoeff[i]<<endl;
-     } 
-   }
-
-    /// print out path point values 
-   if (printOption){
-     for (int n=0; n<nP; n++){
-       cout<<n<<"   "<<(*pathPointValues)[n]<<endl;
-     }
-     cout<<"end of path points list"<<endl;
-   }
-   return pathPointValues;
- }
 
     
 
@@ -1402,31 +1329,16 @@ ElectricModel<T>::computeIBFacePotential(const StorageSite& particles)
   _impl->computeIBFacePotential(particles);
 }
  
-
-/* only the members who need to be exposed in python are listed here */
-/* and declared in ElectricModel class */
-
-/*
-
 template<class T>
-const int
-ElectricModel<T>::findClosestPoint(const VectorT3 point, Octree& O)
+void
+ElectricModel<T>::computeSolidSurfaceForce(const StorageSite& particles)
 {
-  return _impl->findClosestPoint(point, O);
-}
- 
-template<class T>
-boost::shared_ptr<ArrayBase>
-ElectricModel<T>::createPathAndDiscretize 
-    (const VectorT3 startPoint, const VectorT3 endPoint, const int N)
-{
-  return _impl->createPathAndDiscretize(startPoint, endPoint, N);
+  return _impl->computeSolidSurfaceForce(particles,false);
 }
 
 template<class T>
-boost::shared_ptr<ArrayBase>
-ElectricModel<T>::pathPointsInterpolation(boost::shared_ptr<ArrayBase> pathPoints, Octree& O, const double radius)
+void
+ElectricModel<T>::computeSolidSurfaceForcePerUnitArea(const StorageSite& particles)
 {
-  return _impl->pathPointsInterpolation( dynamic_pointer_cast<Array<Vector<T,3> > >(pathPoints), O, radius);
+  return _impl->computeSolidSurfaceForce(particles,true);
 }
-*/
