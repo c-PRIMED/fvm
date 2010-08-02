@@ -45,7 +45,11 @@ public:
   ElectricModelConstants<T>& getConstants();
   
   void computeIBFacePotential(const StorageSite& solid);
-    
+
+  void computeSolidSurfaceForce(const StorageSite& particles);
+
+  void computeSolidSurfaceForcePerUnitArea(const StorageSite& particles);  
+
   void printBCs();
 
   bool advance(const int niter);
