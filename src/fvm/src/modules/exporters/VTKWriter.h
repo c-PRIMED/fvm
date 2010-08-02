@@ -34,6 +34,8 @@ class VTKWriter
 public:
   typedef Array<T> TArray;
   typedef Array<int> IntArray;
+  typedef Vector<T,3> VectorT3;
+  typedef Array<Vector<T,3> > VectorT3Array;
   
   VTKWriter(const GeomFields& geomFields,
             const MeshList& meshes,
@@ -126,7 +128,7 @@ public:
         }
     }
 
-    Array<Vector<float,3> > gNodeCoords(_gNodeCount);
+    Array<Vector<double,3> > gNodeCoords(_gNodeCount);
 
     for (int n=0; n<numMeshes; n++)
     {
@@ -136,7 +138,9 @@ public:
 
         const IntArray& gNodeIndex =
           dynamic_cast<const IntArray&>(globalIndexField[nodes]);
-        const Array<Vector<double,3> >& coords = mesh.getNodeCoordinates();
+
+        const VectorT3Array& coords =
+            dynamic_cast<const VectorT3Array&>(geomFields.coordinate[nodes]);
 
         for(int node=0; node<numNodes; node++)
         {
@@ -144,27 +148,27 @@ public:
             if (gn != -1)
             {
                 for(int k=0; k<3; k++)
-                  gNodeCoords[gn][k] = (float)  coords[node][k];
+                  gNodeCoords[gn][k] =   coords[node][k];
             }
         }
     }
     
     fprintf(_fp,"# vtk DataFile Version 2.0\n");
     fprintf(_fp,"%s\n",comment.c_str());
-    if (_surfaceOnly)
-      fprintf(_fp,"ASCII\nDATASET POLYDATA\n");
-    else
+    //    if (_surfaceOnly)
+    //   fprintf(_fp,"ASCII\nDATASET POLYDATA\n");
+    //else
       fprintf(_fp,"ASCII\nDATASET UNSTRUCTURED_GRID\n");
     
-    fprintf(_fp,"POINTS %d float\n", _gNodeCount);
+    fprintf(_fp,"POINTS %d double\n", _gNodeCount);
 
     for(int node=0; node<_gNodeCount; node++)
-      fprintf(_fp,"%e %e %e\n", gNodeCoords[node][0],
+      fprintf(_fp,"%12.5le %12.5le %12.5le\n", gNodeCoords[node][0],
               gNodeCoords[node][1],gNodeCoords[node][2]);
 
-    if (_surfaceOnly)
-      fprintf(_fp,"LINES");
-    else
+    //if (_surfaceOnly)
+    //  fprintf(_fp,"LINES");
+    //else
       fprintf(_fp,"CELLS");
     
     fprintf(_fp," %d %d\n", _gCellCount, gCellNodeCount);
@@ -226,15 +230,39 @@ public:
         }
     }
 
-    if (!_surfaceOnly)
+    fprintf(_fp,"CELL_TYPES %d\n", _gCellCount);
+    for (int n=0; n<numMeshes; n++)
     {
-        fprintf(_fp,"CELL_TYPES %d\n", _gCellCount);
-        
-        for (int n=0; n<numMeshes; n++)
+        const Mesh& mesh = *_meshes[n];
+        const int dim = mesh.getDimension();
+        if (_surfaceOnly)
         {
-            const Mesh& mesh = *_meshes[n];
-            const int dim = mesh.getDimension();
-            
+            foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+            {
+                const FaceGroup& fg = *fgPtr;
+                if (fg.groupType!="interior")
+                {
+                    const StorageSite& faces = fg.site;
+                    const int faceCount = faces.getCount();
+                    const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+                    
+                    for(int f=0; f<faceCount; f++)
+                    {
+                        const int nFaceNodes = faceNodes.getCount(f);
+                        int vtkCellType = VTK_POLYGON;
+                        if (dim == 2)
+                          vtkCellType = VTK_LINE;
+                        else if (nFaceNodes == 3)
+                          vtkCellType = VTK_TRIANGLE;
+                        else if (nFaceNodes == 4)
+                          vtkCellType = VTK_QUAD;
+                        fprintf(_fp,"%d\n",vtkCellType);
+                    }
+                }
+            }
+        }
+        else
+        {
             const StorageSite& cells = mesh.getCells();
             const int numCells = cells.getSelfCount();
             const IntArray& ibType =
@@ -270,8 +298,10 @@ public:
                   fprintf(_fp,"%d\n",vtkCellType);
               }
         }
-        fprintf(_fp,"CELL_DATA %d\n", _gCellCount);
     }
+    
+    fprintf(_fp,"CELL_DATA %d\n", _gCellCount);
+
   }
 
   void init()
@@ -282,51 +312,105 @@ public:
                         const string label)
   {
     const int numMeshes = _meshes.size();
-    fprintf(_fp,"SCALARS %s float\n", label.c_str());
+    fprintf(_fp,"SCALARS %s double\n", label.c_str());
     fprintf(_fp,"LOOKUP_TABLE default\n");
     
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
-        const StorageSite& cells = mesh.getCells();
-        const int numCells = cells.getSelfCount();
-        const IntArray& ibType =
-          dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
-        
-        const TArray& aCell = dynamic_cast<const TArray&>(field[cells]);
-        for(int c=0; c<numCells; c++)
-          if (ibType[c] == Mesh::IBTYPE_FLUID)
-          {
-              fprintf(_fp,"%e\n", float(aCell[c]));
-          }
+        if (_surfaceOnly)
+        {
+            const StorageSite& allFaces = mesh.getFaces();
+            const TArray& a =
+              dynamic_cast<const TArray&>(field[allFaces]);
+
+            foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+            {
+                const FaceGroup& fg = *fgPtr;
+                if (fg.groupType!="interior")
+                {
+                    const StorageSite& faces = fg.site;
+                    const int numFaces = faces.getSelfCount();
+                    const int offset = faces.getOffset();
+                    for(int f=0; f<numFaces; f++)
+                    {
+                        const int gf = f + offset;
+                        fprintf(_fp,"%12.5le\n", (a[gf]));
+                    }
+                }
+            }
+        }
+        else
+        {
+            const StorageSite& cells = mesh.getCells();
+            const int numCells = cells.getSelfCount();
+            const IntArray& ibType =
+              dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+            
+            const TArray& aCell = dynamic_cast<const TArray&>(field[cells]);
+            for(int c=0; c<numCells; c++)
+              if (ibType[c] == Mesh::IBTYPE_FLUID)
+              {
+                  fprintf(_fp,"%12.5le\n", (aCell[c]));
+              }
+        }
     }
   }
   
   void writeVectorField(const Field& field,const string label)
   {
 
-    typedef Array<Vector<T,3> > VectorT3Array;
 
-    fprintf(_fp,"VECTORS %s float\n", label.c_str());
+    fprintf(_fp,"VECTORS %s double\n", label.c_str());
     const int numMeshes = _meshes.size();
     
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
-        const StorageSite& cells = mesh.getCells();
-        const int numCells = cells.getSelfCount();
-        const IntArray& ibType =
-          dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
-        
-        const VectorT3Array& aCell = dynamic_cast<const VectorT3Array&>(field[cells]);
-        for(int c=0; c<numCells; c++)
-          if (ibType[c] == Mesh::IBTYPE_FLUID)
-          {
-              fprintf(_fp,"%e %e %e\n", float(aCell[c][0]),
-                      float(aCell[c][1]),
-                      float(aCell[c][2])
-                      );
-          }
+
+        if (_surfaceOnly)
+        {
+            const StorageSite& allFaces = mesh.getFaces();
+            const VectorT3Array& v =
+              dynamic_cast<const VectorT3Array&>(field[allFaces]);
+
+            foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+            {
+                const FaceGroup& fg = *fgPtr;
+                if (fg.groupType!="interior")
+                {
+                    const StorageSite& faces = fg.site;
+                    const int numFaces = faces.getSelfCount();
+                    const int offset = faces.getOffset();
+                    for(int f=0; f<numFaces; f++)
+                    {
+                        const int gf = f + offset;
+                        fprintf(_fp,"%12.5le %12.5le %12.5le\n", (v[gf][0]),
+                                (v[gf][1]),
+                                (v[gf][2])
+                                );
+                    }
+                }
+            }
+        }
+        else
+        {
+            const StorageSite& cells = mesh.getCells();
+            const int numCells = cells.getSelfCount();
+            const IntArray& ibType =
+              dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+            
+            const VectorT3Array& aCell =
+              dynamic_cast<const VectorT3Array&>(field[cells]);
+            for(int c=0; c<numCells; c++)
+              if (ibType[c] == Mesh::IBTYPE_FLUID)
+              {
+                  fprintf(_fp,"%12.5le %12.5le %12.5le\n", (aCell[c][0]),
+                          (aCell[c][1]),
+                          (aCell[c][2])
+                          );
+              }
+        }
     }
   }
 
