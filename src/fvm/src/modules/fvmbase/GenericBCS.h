@@ -164,6 +164,12 @@ public:
       applyNeumannBC(i,bFlux[i]);
   }
 
+  void applyExtrapolationBC() const
+  {
+    for(int i=0; i<_faces.getCount(); i++)
+	applyExtrapolationBC(i);
+  }
+
   // boundary value = cell value, flux as defined by interior discretization
   
   void applyExtrapolationBC(const int f) const
