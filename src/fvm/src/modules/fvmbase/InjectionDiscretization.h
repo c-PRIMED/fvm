@@ -142,7 +142,7 @@ class InjectionDiscretization : public Discretization
 	    int high = c0;	       
 	    
 	    //for(int l=0; l<nLevel; l++){
-	    for(int l=0; l< int(nLevel/10); l++){
+	    for(int l=0; l< int(nLevel/20); l++){
 
 	      T_Scalar enMe = conduction_band[me];
 	      T_Scalar enLow = conduction_band[low];
@@ -212,11 +212,10 @@ class InjectionDiscretization : public Discretization
 	      //fluxCoeff = alpha * (transmission)[me] * supplyfunction * fermifunction * fabs(electric_field[me][normal]) * cellVolume[me] * QE;
 
 	      fluxCoeff = fabs(fluxCoeff);
-	      
-	      //cout << me <<" "<< (*transmission)[me] << "  " << supplyfunction << "  " << fermifunction << "   " << fluxCoeff << endl;	      
+	         
 
 	      rCell[me][1] += fluxCoeff; 
-	      
+
 	      const int nbc = cellCells.getCount(me);
 	      
 	      for(int nc = 0; nc < nbc; nc++){
@@ -235,6 +234,7 @@ class InjectionDiscretization : public Discretization
 	  }	
 	}
       }
+
   }
 	
 
