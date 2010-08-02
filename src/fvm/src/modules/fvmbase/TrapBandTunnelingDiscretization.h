@@ -29,14 +29,12 @@ class TrapBandTunnelingDiscretization : public Discretization
   TrapBandTunnelingDiscretization(const MeshList& meshes,
 				  const GeomFields& geomFields,
 				  const Field& varField,
-				  const Field& varN1Field,
 				  const Field& electricField,
 				  const Field& conductionbandField,
 				  const ElectricModelConstants<T_Scalar>& constants):
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
-    _varN1Field(varN1Field),
     _electricField(electricField),
     _conductionbandField(conductionbandField),
     _constants(constants)
@@ -46,7 +44,8 @@ class TrapBandTunnelingDiscretization : public Discretization
                   MultiField& xField, MultiField& rField)
   {
     const StorageSite& cells = mesh.getCells();
-
+    const int nCells = cells.getSelfCount();
+    
     const TArray& conduction_band = dynamic_cast<const TArray&> (_conductionbandField[cells]);
 
     const VectorT3Array& electric_field = dynamic_cast<const VectorT3Array&> (_electricField[cells]);
@@ -60,120 +59,184 @@ class TrapBandTunnelingDiscretization : public Discretization
     
     const XArray& xCell = dynamic_cast<const XArray&>(_varField[cells]);
     
-    const XArray& xN1Cell = dynamic_cast<const XArray&>(_varN1Field[cells]);
-    
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
        
     DiagArray& diag = matrix.getDiag();
 
-    OffDiagArray& offdiag = matrix.getOffDiag();
-
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-
+    
+    const CRConnectivity& cellCells = mesh.getCellCells();
+    
+    shared_ptr<TArray> ts(new TArray(nCells));
+    *ts = 0;
+    TArray& transmission = *ts;    
+    
     const T_Scalar& electron_trapdepth = _constants["electron_trapdepth"];
     const T_Scalar& electron_capture_cross = _constants["electron_capture_cross"];
     const T_Scalar& electron_effmass = _constants["electron_effmass"];
+    const int& normal = _constants["normal_direction"];
 
-    const int subID = 5;
-    const int memID = 4;
-    const int nLevel = 100;
+    const T_Scalar epsilon = 1e-18;
 
+    const int nMax = 200;
+    
+    T_Scalar transmissionHigh(0), transmissionLow(0);
 
-    //start from substrate boundary faces
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-    {
-      const FaceGroup& fg = *fgPtr;
+    int idHigh, idLow, high, low, me, count;
 
-      if (fg.id == subID) {
+    bool foundHigh, foundLow, flag;
 
-	const StorageSite& faces = fg.site;
-	const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+    idHigh = idLow = 0;
 
-	for(int f=0; f<faces.getCount(); f++){
-	  //for (int f=0; f<1; f++){
-	  int c0 = faceCells(f,0);
-	  int c1 = faceCells(f,1);
-	   
-	  int low = c1;
-	  int me = c0;	      
-	  int high = c0 - 4;	
+    foundHigh = foundLow = false;
 
-	  for(int l=0; l<nLevel; l++){	
-	    T_Scalar en = conduction_band[me] - electron_trapdepth;
-	    T_Scalar transmissionLow = 1;
-	    T_Scalar transmissionHigh = 1;
-	    int jLow = l,  jHigh = l;            //level index
-	    int iLow = low, iHigh = high;       // real cell index
-	    int lowFound = 0, highFound = 0;    // found or not
-	   
-	    T_Scalar ef = mag(electric_field[me]);
-	    T_Scalar factor = cellVolume[me] * QE * ef * ef * electron_capture_cross / 
-	      (16 * PI*PI * HBAR_SI * electron_effmass * electron_trapdepth);
-	    //checking conduction band edge on membrane
-	    jHigh = l+1;
-	    while(jHigh < nLevel){
-	      T_Scalar delta = cellCentroid[iHigh][2] - cellCentroid[me][2];
-	      T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
-	      T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
-	      T_Scalar valueHigh = PositiveValueOf( conduction_band[iHigh] - en);
-	      T_Scalar avg = (valueMe + valueHigh) / 2.0;
-	      T_Scalar exponent = factor * sqrt(avg) * delta; 
-	      transmissionHigh *= exp(exponent);
-	      if(en-conduction_band[iHigh] >0){	
-		highFound = 1;
-		//cout << jHigh << "  " << iHigh << "  " <<transmissionHigh << endl;
-		break;
-	      }
-	      jHigh ++;
-	      iHigh = iHigh - 4;
+    for(int c=0; c<nCells; c++){
+      transmission[c] = 0.0;
+    }
+    
+    for(int c=0; c<nCells; c++){     
+      
+      T_Scalar en = conduction_band[c] - electron_trapdepth;
+
+      transmission[c] = 1.0;
+	
+      //-------------------------------------------------------------------------//
+
+      high = low = me = c;
+
+      flag = false;
+
+      count = 0;
+
+      while(flag == false && count < nMax ){
+
+	const int nbc = cellCells.getCount(me);
+
+	for(int nc = 0; nc < nbc; nc++){
+
+	  const int neighbor = cellCells(me, nc);
+	  
+	  const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
+		 
+	  if ((fabs(dr) > epsilon) && (dr < 0.0) ){
+	    if (neighbor < nCells) {
+	      high = neighbor;
+	      low = me;
+	      me = high;
 	    }
-	    jLow = l-1;
-	    while (jLow >= 0 ){
-	      T_Scalar delta = cellCentroid[me][2] - cellCentroid[iLow][2];
-	      T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
-	      T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
-	      T_Scalar valueLow = PositiveValueOf( conduction_band[iLow] - en);
-	      T_Scalar avg = (valueMe + valueLow) / 2.0;
-	      T_Scalar exponent = factor * sqrt(avg) * delta; 
-	      transmissionLow *= exp(exponent);
-	      if(en-conduction_band[iLow] >0){	
-		lowFound = 1;
-		//cout << jLow << "  " << iLow << "  " <<transmissionLow << endl;
-		break;
-	      }
-	      jLow --;
-	      iLow = iLow + 4;
-	    }
-	    if( lowFound == 1 || highFound == 1){
-	      rCell[me][0] -= factor * (transmissionLow + transmissionHigh) * xCell[me][0];
-	      diag[me][0] -= factor  * (transmissionLow + transmissionHigh);
-	    }
+	    else flag = true;
+	  }	  
+	}
+
+	T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
+	T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
+	T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
+	T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+	T_Scalar avg = (valueMe + valueLow) / 2.0;
+	T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
+
+	transmission[me] = transmission[low] * exp(exponent);
+	
+	if (en - conduction_band[me] >0 ){
+
+	  foundHigh = true;
+	  idHigh = me;
+	  transmissionHigh = transmission[me];
+	  //cout << "found high " << c <<"  " << me << "  " << transmissionHigh << endl;
+	  break;
+
+	}
+
+	count ++;
+
+	//	cout << c << " high " << high << endl; 
+      }	
+
+#if 0 
+      //-------------------------------------------------------------------------//
+
+      high = low = me = c;
+      
+      flag = false;
+      
+      count = 0;
+
+      while(flag == false && count < nMax){
+	
+	const int nbc = cellCells.getCount(me);
+
+	for(int nc = 0; nc < nbc; nc++){
+
+	  const int neighbor = cellCells(me, nc);
+	  
+	  const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
+		 
+	  if ((fabs(dr) > epsilon) && (dr > 0.0) ){
 	    
-	    if (lowFound == 1){
-	      rCell[iLow][1] += factor * transmissionLow * xCell[me][0];
-	      diag[iLow][1] += factor * transmissionLow;
+	    if (neighbor < nCells) {	    
+	      high = neighbor;
+	      low = me;
+	      me = high;
 	    }
-
-	    if (highFound == 1){
-	      rCell[iHigh][1] += factor * transmissionHigh * xCell[me][0];
-	      diag[iHigh][1] += factor * transmissionHigh;
-	    }
-	    
-	    low = me;
-	    me = high;
-	    high = high - 4;
-	    
+	    else flag = true;	   
 	  }
 	}
+
+	T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
+	T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
+	T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
+	T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+	T_Scalar avg = (valueMe + valueLow) / 2.0;
+	T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
+
+	transmission[me] = transmission[low] * exp(exponent);
+	
+	if (en - conduction_band[me] >0 ){
+
+	  foundLow = true;
+	  idLow = me;
+	  transmissionLow = transmission[me];
+	  //cout << "found high " << c <<"  " << me << endl;
+	  break;
+	}
+	//	cout << c << " low " << low << endl; 
+	count ++;
+
+      }
+#endif
+      //-------------------------------------------------------------------------//
+
+      const T_Scalar ef = mag(electric_field[c]);
+	    
+      const T_Scalar alpha = cellVolume[c] * QE * ef * ef * electron_capture_cross /    
+	(16 * PI*PI * HBAR_SI * electron_effmass * electron_trapdepth);
+
+      if( foundHigh == true || foundLow == true){
+	      
+	rCell[c][0] -= alpha * (transmissionLow + transmissionHigh) * xCell[c][0];
+	diag[c](0,0) -= alpha  * (transmissionLow + transmissionHigh);
+      
+      }
+	    
+      if (foundLow == true){	
+	
+	rCell[idLow][1] += alpha * transmissionLow * xCell[c][0];
+	
+      }
+
+      if (foundHigh == true){
+
+	rCell[idHigh][1] += alpha * transmissionHigh * xCell[c][0];
+
       }
     }
-  }
+  }	    
+	
 
  private:
   const GeomFields& _geomFields;
   const Field& _varField;
-  const Field& _varN1Field;
   const Field& _electricField;
   const Field& _conductionbandField;
   const ElectricModelConstants<T_Scalar>& _constants;
