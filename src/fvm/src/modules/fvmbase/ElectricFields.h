@@ -19,7 +19,7 @@ struct ElectricFields
   Field dielectric_constant;         //permittivity;
   Field total_charge;                 //source term in Poisson equation
                                      //which is the sum of charge[0] and charge[1]
-  
+  Field force;
 
   //Fields in charge transport
 
