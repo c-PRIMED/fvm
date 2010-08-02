@@ -87,18 +87,18 @@ public:
 	    if (faceCFlux > T_Scalar(0))
 	    {
 	        varFlux = faceCFlux*xCell[c0];
-                diag[c0] -= faceCFlux;
+                diag[c0](1,1) -= faceCFlux;
                 assembler.getCoeff10(f) += faceCFlux;
 	    }
 	    else
 	    {
                 varFlux = faceCFlux*xCell[c1];
-                diag[c1] += faceCFlux;
+                diag[c1](1,1) += faceCFlux;
                 assembler.getCoeff01(f)-= faceCFlux;
 	    }
         
-	    rCell[c0] -= varFlux;
-	    rCell[c1] += varFlux;
+	    rCell[c0][1] -= varFlux[1];
+	    rCell[c1][1] += varFlux[1];
 	}
     }
     else
@@ -117,8 +117,8 @@ public:
 
               X varFlux =0.5*faceCFlux*(xCell[c0] + xCell[c0]);
 
-              rCell[c0] -= varFlux;
-              rCell[c1] += varFlux;
+              rCell[c0][1] -= varFlux[1];
+              rCell[c1][1] += varFlux[1];
 
               if (isIBFace)
               {
@@ -127,9 +127,9 @@ public:
                   // discretization will be able to fix the value
                   // correctly using the ib face value
                   
-                  diag[c0] -= 0.5*faceCFlux;
+                  diag[c0](1,1) -= 0.5*faceCFlux;
                   assembler.getCoeff10(f) -= 0.5*faceCFlux;
-                  diag[c1] += 0.5*faceCFlux;
+                  diag[c1](1,1) += 0.5*faceCFlux;
                   assembler.getCoeff01(f) += 0.5*faceCFlux;
               }
               else
@@ -138,12 +138,12 @@ public:
                   // remains diagonally dominant
                   if (faceCFlux > T_Scalar(0))
                   {
-                      diag[c0] -= faceCFlux;
+                      diag[c0](1,1) -= faceCFlux;
                       assembler.getCoeff10(f) += faceCFlux;
                   }
                   else
                   {
-                      diag[c1] += faceCFlux;
+                      diag[c1](1,1) += faceCFlux;
                       assembler.getCoeff01(f)-= faceCFlux;
                   }
               }
@@ -162,14 +162,14 @@ public:
               if (faceCFlux > T_Scalar(0))
               {
                   varFlux = faceCFlux*xCell[c0][1];
-                  diag[c0][3] -= faceCFlux;
-                  assembler.getCoeff10(f)[3] += faceCFlux;
+                  diag[c0](1,1) -= faceCFlux;
+                  assembler.getCoeff10(f)(1,1) += faceCFlux;
               }
               else
               {
                   varFlux = faceCFlux*xCell[c1][1];
-                  diag[c1][3] += faceCFlux;
-                  assembler.getCoeff01(f)[3] -= faceCFlux;
+                  diag[c1](1,1) += faceCFlux;
+                  assembler.getCoeff01(f)(1,1) -= faceCFlux;
               }
 
 	      rCell[c0][1] -= varFlux;
