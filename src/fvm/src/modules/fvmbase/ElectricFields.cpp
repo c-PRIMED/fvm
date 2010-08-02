@@ -24,6 +24,7 @@ ElectricFields::ElectricFields(const string baseName) :
   chargeN2(baseName + "chargeN2"),
   zero(baseName + "zero"),
   one(baseName + "one"),
-  oneD_column(baseName + "oneD_column")
+  oneD_column(baseName + "oneD_column"),
+  force(baseName + "force")
 {}
 
