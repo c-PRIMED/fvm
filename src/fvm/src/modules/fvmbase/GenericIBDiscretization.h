@@ -90,6 +90,7 @@ public:
             if (ibType[c0] == Mesh::IBTYPE_FLUID)
             {
                 rCell[c0] += assembler.getCoeff01(f)*(facePhi-cellPhi[c1]);
+                cellPhi[c1] = facePhi;
                 rCell[c1] = NumTypeTraits<X>::getZero();
                 assembler.getCoeff01(f) = OffDiag(0);
                 matrix.setDirichlet(c1);
@@ -97,6 +98,7 @@ public:
             else
             {
                 rCell[c1] += assembler.getCoeff10(f)*(facePhi-cellPhi[c0]);
+                cellPhi[c0] = facePhi;
                 rCell[c0] = NumTypeTraits<X>::getZero();
                 assembler.getCoeff10(f) = OffDiag(0);
                 matrix.setDirichlet(c0);
