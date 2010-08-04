@@ -350,6 +350,8 @@ double detMatrix6x6 (T matrix[6][6], int size)
    }
    return det;
 }
+
+
 //source matrix b
 //inversed matrix a
 void Inverse10x10(T b[10][10], T a[10][10])
@@ -454,7 +456,44 @@ double detMatrix10x10 (T matrix[10][10], int size)
    return det;
 }
 
-
+//find the determinant of a matrix
+double detMatrix4x4 (T matrix[4][4], int size)
+{
+   if (size > 4)
+     throw CException("matrix size is too large!" );
+   
+   double s = 1.0;
+   double det = 0.0;
+   double b[4][4];
+   int m,n;
+   if(size==1){
+     det = matrix[0][0];
+     return det;
+   }
+   else{
+     for(int k=0; k<size; k++){
+       m = 0;
+       n = 0;
+       for(int i=0; i<size; i++){
+	 for(int j=0; j<size; j++){
+	   b[i][j]=0.0;
+	   if(i!=0&&j!=k){
+	     b[m][n]=matrix[i][j];
+	     if(n<(size-2))
+	       n++;
+	     else{
+	       n=0;
+	       m++;
+	     }
+	   }
+	 }
+       }
+       det = det + s*(matrix[0][k]*detMatrix4x4(b, size-1));
+       s=-1*s;
+     }
+   }
+   return det;
+}
 
 
 void InverseGauss (T a[10][10], T x[10][10])
