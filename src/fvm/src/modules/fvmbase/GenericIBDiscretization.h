@@ -99,7 +99,7 @@ public:
             {
                 rCell[c1] += assembler.getCoeff10(f)*(facePhi-cellPhi[c0]);
                 cellPhi[c0] = facePhi;
-                rCell[c0] = NumTypeTraits<X>::getZero();
+		rCell[c0] = NumTypeTraits<X>::getZero();
                 assembler.getCoeff10(f) = OffDiag(0);
                 matrix.setDirichlet(c0);
             }
