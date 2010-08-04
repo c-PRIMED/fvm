@@ -72,6 +72,8 @@ public:
   
   typedef Array<T_Scalar> TArray;
 
+  typedef Array<int> IntArray;
+
   typedef Vector<T_Scalar,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
 
@@ -105,6 +107,9 @@ public:
     const VectorT3Array& cellCentroid =
       dynamic_cast<const VectorT3Array&>(geomFields.coordinate[cells]);
 
+    const VectorT3Array& faceCentroid =
+      dynamic_cast<const VectorT3Array&>(geomFields.coordinate[faces]);
+    
     const VectorT3Array& faceArea =
       dynamic_cast<const VectorT3Array& >(geomFields.area[faces]);
 
@@ -113,21 +118,39 @@ public:
 
     const T_Scalar epsilon(1e-6);
     
+    const IntArray& ibType = dynamic_cast<const IntArray&>(geomFields.ibType[cells]);
+    
     coeffs.zero();
 
     Array<bool> isDegenerate(cells.getCount());
     isDegenerate = false;
-    
+
     for(int f=0; f<faceCount; f++)
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
-        const VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
+        VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
+
+	//fix the distance for ibfaces
+	if (((ibType[c0] == Mesh::IBTYPE_FLUID)
+             && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+            ((ibType[c1] == Mesh::IBTYPE_FLUID)
+             && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+        {
+	    if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+	        ds = faceCentroid[f]-cellCentroid[c0];
+            }
+            else
+            {
+	        ds = cellCentroid[c1]-faceCentroid[f];
+            }
+        }
         const T_Scalar dsMag = mag(ds);
         assembler.getCoeff01(f)=ds/dsMag;
         assembler.getCoeff10(f)=-ds/dsMag;
     }
-
+  
     const Array<int>& row = cellCells.getRow();
     const Array<int>& col = cellCells.getCol();
     
@@ -164,11 +187,10 @@ public:
                 // make a copy
                 VectorT3 ds(coeffs[inb]);
                 const int j = col[inb];
-                const T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);
-                
-                coeffs[inb][0] = (Kxx*ds[0] + Kxy*ds[1] + Kxz*ds[2])/dsMag;
-                coeffs[inb][1] = (Kxy*ds[0] + Kyy*ds[1] + Kyz*ds[2])/dsMag;
-                coeffs[inb][2] = (Kxz*ds[0] + Kyz*ds[1] + Kzz*ds[2])/dsMag;
+		T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);
+                coeffs[inb][0] = (Kxx*ds[0] + Kxy*ds[1] + Kxz*ds[2]);
+                coeffs[inb][1] = (Kxy*ds[0] + Kyy*ds[1] + Kyz*ds[2]);
+                coeffs[inb][2] = (Kxz*ds[0] + Kyz*ds[1] + Kzz*ds[2]);
             }
         }
         else
@@ -176,6 +198,33 @@ public:
             isDegenerate[nc] = true;
         }
     }
+    
+    for(int f=0; f<faceCount; f++)
+    {
+        const int c0 = faceCells(f,0);
+        const int c1 = faceCells(f,1);
+        VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
+
+	//fix the distance for ibfaces
+	if (((ibType[c0] == Mesh::IBTYPE_FLUID)
+             && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+            ((ibType[c1] == Mesh::IBTYPE_FLUID)
+             && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+        {
+	    if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+	        ds = faceCentroid[f]-cellCentroid[c0];
+            }
+            else
+            {
+	        ds = cellCentroid[c1]-faceCentroid[f];
+            }
+        }
+        const T_Scalar dsMag = mag(ds);
+        assembler.getCoeff01(f) /= dsMag;
+        assembler.getCoeff10(f) /= dsMag;
+    }
+
 
     for(int f=0; f<faceCount; f++)
     {
@@ -203,7 +252,8 @@ public:
     
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
     const CRConnectivity& cellCells = mesh.getCellCells();
-    
+    const CRConnectivity& cellFaces = mesh.getCellFaces();
+
     const int cellCount = cells.getSelfCount();
     const int faceCount = faces.getSelfCount();
       
@@ -216,12 +266,16 @@ public:
     const VectorT3Array& cellCentroid =
       dynamic_cast<const VectorT3Array&>(geomFields.coordinate[cells]);
 
+    const VectorT3Array& faceCentroid =
+      dynamic_cast<const VectorT3Array&>(geomFields.coordinate[faces]);
+
     const VectorT3Array& faceArea =
       dynamic_cast<const VectorT3Array& >(geomFields.area[faces]);
 
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(geomFields.volume[cells]);
 
+    const IntArray& ibType = dynamic_cast<const IntArray&>(geomFields.ibType[cells]);
 
     const T_Scalar epsilon(1e-26);
     
@@ -234,7 +288,23 @@ public:
     {
         const int c0 = faceCells(f,0);
         const int c1 = faceCells(f,1);
-        const VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
+        VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
+
+	//fix the distance for ibfaces
+	if (((ibType[c0] == Mesh::IBTYPE_FLUID)
+             && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+            ((ibType[c1] == Mesh::IBTYPE_FLUID)
+             && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+        {
+	    if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+	        ds = faceCentroid[f]-cellCentroid[c0];
+            }
+            else
+            {
+	        ds = cellCentroid[c1]-faceCentroid[f];
+            }
+        }
         const T_Scalar dsMag = mag(ds);
         assembler.getCoeff01(f)=ds/dsMag;
         assembler.getCoeff10(f)=-ds/dsMag;
@@ -270,10 +340,10 @@ public:
                 VectorT3 ds(coeffs[inb]);
 
                 const int j = col[inb];
-                const T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);
-                
-                coeffs[inb][0] = (Kxx*ds[0] + Kxy*ds[1])/dsMag;
-                coeffs[inb][1] = (Kxy*ds[0] + Kyy*ds[1])/dsMag;
+                T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);          
+	
+                coeffs[inb][0] = (Kxx*ds[0] + Kxy*ds[1]);
+                coeffs[inb][1] = (Kxy*ds[0] + Kyy*ds[1]);
                 coeffs[inb][2] = 0;
             }
         }
@@ -281,6 +351,32 @@ public:
         {
             isDegenerate[nc] = true;
         }
+    }
+
+    for(int f=0; f<faceCount; f++)
+    {
+        const int c0 = faceCells(f,0);
+        const int c1 = faceCells(f,1);
+        VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
+
+	//fix the distance for ibfaces
+	if (((ibType[c0] == Mesh::IBTYPE_FLUID)
+             && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+            ((ibType[c1] == Mesh::IBTYPE_FLUID)
+             && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+        {
+	    if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+	        ds = faceCentroid[f]-cellCentroid[c0];
+            }
+            else
+            {
+	        ds = cellCentroid[c1]-faceCentroid[f];
+            }
+        }
+        const T_Scalar dsMag = mag(ds);
+        assembler.getCoeff01(f) /= dsMag;
+        assembler.getCoeff10(f) /= dsMag;
     }
 
     for(int f=0; f<faceCount; f++)
