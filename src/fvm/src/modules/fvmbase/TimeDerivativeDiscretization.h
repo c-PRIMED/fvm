@@ -66,7 +66,7 @@ public:
     
     const int nCells = cells.getSelfCount();
 
-
+   
     if (_varN2Field.hasArray(cells))
     {
         // second order
@@ -116,7 +116,9 @@ public:
 		const T_Scalar rhobydT = density[c]/_dT;
 	        rCell[c] -= rhobydT*(cellVolume[c]*x[c] 
                                      - cellVolumeN1[c]*xN1[c]);
+		
 	        diag[c] -= rhoVbydT;
+		
             }
 	}
         else
@@ -126,10 +128,15 @@ public:
                 const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
                 rCell[c] -= rhoVbydT*(x[c]- xN1[c]);
 		diag[c] -= rhoVbydT;
+	
 	    }
 	}
     }
+  
   }
+
+  
+
 private:
   const GeomFields& _geomFields;
   const Field& _varField;
