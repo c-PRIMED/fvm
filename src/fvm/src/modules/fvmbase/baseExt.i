@@ -58,14 +58,9 @@ namespace std{
 using namespace std;
 %include "ArrayBase.i"
 %include "Vector.i"
-%include "TwobyTwoTensor.i"
 
 typedef Vector<double,3> VecD3;
 %template(VecD3) Vector<double,3>;
-
-typedef TwobyTwoTensor<double> TensorD2x2;
-%template(TensorD2x2) TwobyTwoTensor<double>;
-
 
 %include "Field.i"
 %include "CRConnectivity.i"
