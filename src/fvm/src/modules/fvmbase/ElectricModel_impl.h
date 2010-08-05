@@ -1206,18 +1206,18 @@ public:
       for(int f=0; f<solidFaces.getCount(); f++)
       {
 
-	VectorT3 efI;
-	efI[0] = efI[1] = efI[2] = 0.0;
+	//VectorT3 efI;
+	//efI[0] = efI[1] = efI[2] = 0.0;
+	T forceMag(0);
 
 	for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
 	{
 	  const int c = sFCCol[nc];
 	  const T coeff = iCoeffs[nc];
-	  efI += coeff * electric_field[c];
-	  //cout << c << " " <<  coeff << " " << electric_field[c] << endl;
+	  //efI += coeff * electric_field[c];
+	  const T efmag = mag(electric_field[c]);
+	  forceMag += 0.5 * dielectric_constant[c] * E0_SI *  efmag * efmag; 
 	}
-	//cout << efI << endl;
-	const T forceMag = mag(efI);
 	
 	const VectorT3& Af = solidFaceArea[f];
 	force[f] = Af * forceMag;
