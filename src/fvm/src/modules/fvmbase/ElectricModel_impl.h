@@ -28,7 +28,6 @@
 #include "SourceDiscretization.h"
 #include "Octree.h"
 #include "PhysicsConstant.h"
-#include "TwobyTwoTensor.h"
 #include "ElectricUtilityFunctions.h"
 #include "DielectricOneDimColumn.h"
 #include "SquareTensor.h"
@@ -39,13 +38,13 @@ class ElectricModel<T>::Impl
 {
 public:
   typedef Array<T> TArray;
+  typedef Array<int> IntArray;
   typedef Vector<T,3> VectorT3;
   typedef Vector<double, 3> VectorD3;
   typedef Array<VectorT3> VectorT3Array;
   typedef Vector<T,2> VectorT2;
   typedef Array<VectorT2> VectorT2Array;
   
-  //typedef TwobyTwoTensor<T> Tensor2x2;
   typedef SquareTensor<T, 2> Tensor2x2;
   typedef Array<Tensor2x2> Tensor2x2Array;
   
@@ -408,7 +407,7 @@ public:
 	TArray& totalcharge = dynamic_cast<TArray&>(_electricFields.total_charge[cells]);
 	for (int c=0; c<nCells; c++){
 	  totalcharge[c] = - (charge[c][0] + charge[c][1]) * QE;
-	  totalcharge[c] = 0.0;
+	  //totalcharge[c] = 0.0;
 	}
     }
   }
@@ -1142,7 +1141,15 @@ public:
 
 	mIC.multiplyAndAdd(*ibP,cP);
 	mIP.multiplyAndAdd(*ibP,sP);
-
+#if 0
+	const Array<int>& ibFaceList = mesh.getIBFaceList();
+	const StorageSite& faces = mesh.getFaces();
+	
+	for(int f=0; f<ibFaces.getCount();f++){
+	  int fID = ibFaceList[f];
+	  (*ibP)[fID] = 10.0;
+	}
+#endif
         _electricFields.potential.addArray(ibFaces,ibP);
     }
 
@@ -1156,7 +1163,7 @@ public:
 
     const int nSolidFaces = solidFaces.getCount();
 
-    _potentialGradientModel.compute();
+    updateElectricField();
 
     boost::shared_ptr<VectorT3Array>
       forcePtr( new VectorT3Array(nSolidFaces));
@@ -1170,12 +1177,54 @@ public:
 
     const TArray& solidFaceAreaMag =
       dynamic_cast<const TArray&>(_geomFields.areaMag[solidFaces]);
-    
+
+       
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& cells = mesh.getCells();
 
+      const VectorT3Array& electric_field = 
+	dynamic_cast<const VectorT3Array&> (_electricFields.electric_field[cells]);
 
+      const TArray& dielectric_constant = 
+	dynamic_cast<const TArray&>(_electricFields.dielectric_constant[cells]);
+      
+      const CRConnectivity& solidFacesToCells
+	= mesh.getConnectivity(solidFaces,cells);
+        
+      const IntArray& sFCRow = solidFacesToCells.getRow();
+      const IntArray& sFCCol = solidFacesToCells.getCol();
+      
+      GeomFields::SSPair key1(&solidFaces,&cells);
+      const IMatrix& mIC = dynamic_cast<const IMatrix&>
+	(*_geomFields._interpolationMatrices[key1]);
+
+      const Array<T>& iCoeffs = mIC.getCoeff();
+
+      for(int f=0; f<solidFaces.getCount(); f++)
+      {
+
+	VectorT3 efI;
+	efI[0] = efI[1] = efI[2] = 0.0;
+
+	for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+	{
+	  const int c = sFCCol[nc];
+	  const T coeff = iCoeffs[nc];
+	  efI += coeff * electric_field[c];
+	  //cout << c << " " <<  coeff << " " << electric_field[c] << endl;
+	}
+	//cout << efI << endl;
+	const T forceMag = mag(efI);
+	
+	const VectorT3& Af = solidFaceArea[f];
+	force[f] = Af * forceMag;
+	if (perUnitArea){
+	  force[f] /= solidFaceAreaMag[f];
+	}
+      }	  
     }
   }
 
