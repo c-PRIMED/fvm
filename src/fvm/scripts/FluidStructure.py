@@ -110,7 +110,8 @@ class MPMCoupling:
                 for i in range(1,len(count)):
                    displ[i] = displ[i-1] + count[i-1]
                 #creating fvm array 
-                self.faceNodesCoord =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nfaces.sum()*4 )
+		SIZE = int(self.nfaces.sum()*4)
+                self.faceNodesCoord =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( SIZE )
                 self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.faceNodesCoord.asNumPyArray(),count, displ,MPI.DOUBLE]) 
                 print "MPI_RANK = ", MPI.COMM_WORLD.Get_rank(), "  faceNodes coord = ", self.faceNodesCoord.asNumPyArray()                 
 		if ( self.isUnitConversion[0] == 1 ):
@@ -129,7 +130,8 @@ class MPMCoupling:
                 for i in range(1,len(count)):
                    displ[i] = displ[i-1] + count[i-1]
                 #creating fvm array 
-                self.FaceCentroidVels =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( self.nfaces.sum() )
+		SIZE = int(self.nfaces.sum())
+                self.FaceCentroidVels =  self.geomField.coordinate[self.mesh.getCells()].newSizedClone( SIZE )
                 self.FVM_COMM_MPM.Allgatherv([None,0,0,MPI.DOUBLE],[self.FaceCentroidVels.asNumPyArray(),count, displ,MPI.DOUBLE]) 
 		if  MPI.COMM_WORLD.Get_rank() == 0:
 		    self.dump_faces(self.faceNodesCoord.asNumPyArray(), self.FaceCentroidVels.asNumPyArray())
