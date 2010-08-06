@@ -19,6 +19,8 @@ public:
 
   void clear();
   
+  void removeArray(const StorageSite&);
+  
   %extend
   {
     boost::shared_ptr<ArrayBase> __getitem__(const StorageSite* s)
