@@ -59,6 +59,7 @@ public:
 	 }
 	 os << "\n";
       }
+      os << endl;
   }
 
 private:
@@ -66,7 +67,7 @@ private:
   void init()
   {
     for ( int i = 0; i < _length; i++ )
-        _data[i] =  NumTypeTraits<T>::getZero();//NumTypeTraits<T>::getNegativeUnity()
+        _data[i] =  NumTypeTraits<T>::getZero();//NumTypeTraits<T>::getNegativeUnity();
   }
 
   int _rowSize;

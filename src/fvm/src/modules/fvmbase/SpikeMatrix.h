@@ -33,8 +33,10 @@ public:
    _bandwidth(spike_storage.getBandWidth()),
    _ncells(conn.getRowSite().getSelfCount()),
    _A(2*_bandwidth+1,_ncells), 
-   _LSPIKE(_ncells,_bandwidth),
-   _RSPIKE(_ncells,_bandwidth)
+   _L(_bandwidth,_bandwidth),
+   _R(_bandwidth,_bandwidth),
+   _LSpikeT(_bandwidth,_bandwidth),
+   _RSpikeB(_bandwidth,_bandwidth)
   {
     initAssembly();
     logCtor();
@@ -45,15 +47,36 @@ public:
   {
     logDtor();
   }
-
-
-private:
+  //initial assamely 
   void initAssembly()
   {
      setMatrix();
      setLSpikeMtrx();
      setRSpikeMtrx();
   }
+  //solve 
+  void lu()
+  {
+     const int b = _bandwidth;
+     for ( int i = 0; i < _ncells-1; i++ ){
+        const Diag pivot = _A(b,i);
+	for ( int j = i+1;  j <= min(_ncells-1,i+b); j++ ){
+	   const int j2 = b+j-i;
+	   const Diag m = _A(j2,i) / pivot; //Division(/) should be defined as _A * pivot^-1 for matrix ops.
+	   _A(j2,i) = m;
+	   for ( int k = i+1; k <= min(_ncells-1,i+b); k++ ){
+	      const int j2 = b+j-k;
+	      const int i2 = b+i-k;
+	      _A(j2,k) -= m * _A(i2,k);
+           }
+       }
+    }  
+    _A.print(cout);
+  }
+
+
+
+private:
 
   void setMatrix()
   {
@@ -85,15 +108,15 @@ private:
      const vector<int>& offDiagPtr = _spikeStorage.getLSPKOffDiagPtr(); 
      const vector<int>& countGhost = _spikeStorage.getLSPKCountGhost();
      int indx = 0;
-     for ( int n = 0; n < _ncells; n++ ){
+     for ( int n = 0; n < _bandwidth; n++ ){
         int ncount = countGhost[n];
 	for ( int c = 0; c < ncount; c++){ 
           int i = vecI[indx];
 	  int j = vecJ[indx];
-	  _LSPIKE(i,j) = _offDiag[offDiagPtr[indx++]];
+	  _L(i,j) = _offDiag[offDiagPtr[indx++]];
 	}
      }
-     _LSPIKE.print(cout);
+     _L.print(cout);
   }
   //right spike matrix
   void setRSpikeMtrx()
@@ -103,15 +126,15 @@ private:
      const vector<int>& offDiagPtr = _spikeStorage.getRSPKOffDiagPtr();
      const vector<int>& countGhost = _spikeStorage.getRSPKCountGhost();
      int indx = 0;
-     for ( int n = 0; n < _ncells; n++ ){
+     for ( int n = _ncells-_bandwidth; n < _ncells; n++ ){
         int ncount = countGhost[n];
 	for ( int c = 0; c < ncount; c++){ 
-          int i = vecI[indx];
+          int i = _bandwidth - _ncells +  vecI[indx];
 	  int j = vecJ[indx];
-	  _RSPIKE(i,j) = _offDiag[offDiagPtr[indx++]];
+	  _R(i,j) = _offDiag[offDiagPtr[indx++]];
 	}
      }
-     _RSPIKE.print(cout);
+     _R.print(cout);
   }
    
 
@@ -122,9 +145,10 @@ private:
   const	int _bandwidth;
   const int _ncells;
   Array2D<Diag>  _A;
-  Array2D<Diag>  _LSPIKE;
-  Array2D<Diag>  _RSPIKE;
-  
+  Array2D<Diag>  _L;     
+  Array2D<Diag>  _R;
+  Array2D<Diag>  _LSpikeT; //left-top spike matrix
+  Array2D<Diag>  _RSpikeB; //right-top spike matrix
  
 };
 
