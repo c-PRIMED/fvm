@@ -195,8 +195,11 @@ IBManager::markIBType(Mesh& fluidMesh)
       const CRConnectivity& faceCells = fluidMesh.getFaceCells(faces);
       const int nFaces = faces.getCount();
       for(int f=0; f<nFaces; f++)
-        isFluidCell[faceCells(f,0)] = true;
-      
+      {
+          const int c0 = faceCells(f,0);
+          if (cellIBType[c0] == Mesh::IBTYPE_UNKNOWN)
+            isFluidCell[c0] = true;
+      }
   }
   
   const CRConnectivity& cellCells = fluidMesh.getCellCells();
@@ -271,9 +274,8 @@ IBManager::markIBType(Mesh& fluidMesh)
       {
           const int c0 = faceCells(f,0);
           const int c1 = faceCells(f,1);
-          if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN){
+          if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN)
             cellIBType[c1] = cellIBType[c0];
-	  }
       }
       
   }

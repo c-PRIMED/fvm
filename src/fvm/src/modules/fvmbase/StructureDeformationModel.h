@@ -21,7 +21,8 @@ public:
   typedef Vector<T,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;  
  
-  StructureDeformationModel(GeomFields& geomFields,StructureFields& structureFields, 
+  StructureDeformationModel(GeomFields& geomFields,
+                            StructureFields& structureFields, 
 			    const MeshList& meshes) :
     Model(meshes),
     _geomFields(geomFields),
@@ -54,8 +55,6 @@ public:
           VectorT3Array& nodeDisplacement =
             dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
 	  const T one(1.0);
-          _previousNodeDisplacementPtr =
-            dynamic_pointer_cast<VectorT3Array>(nodeDisplacement.newCopy());
 
 	  for(int j=0;j<nNodes;j++)
           {
@@ -84,19 +83,96 @@ public:
           const int nNodes = nodes.getCount();
        	  VectorT3Array& nodeCoord =
             dynamic_cast<VectorT3Array&>(_geomFields.coordinate[nodes]);
-	  VectorT3Array& nodeCoordN1 =
-            dynamic_cast<VectorT3Array&>(_geomFields.coordinateN1[nodes]);
+	  const VectorT3Array& nodeCoord0 =
+            dynamic_cast<const VectorT3Array&>(_geomFields.coordinate0[nodes]);
           VectorT3Array& nodeDisplacement =
             dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
-	  nodeCoordN1 = nodeCoord;
+
 	  for (int i=0;i<nNodes;i++)
 	  {
-	      nodeCoord[i] = nodeCoord[i] + 
-		nodeDisplacement[i]-(*_previousNodeDisplacementPtr)[i];
+	      nodeCoord[i] = nodeCoord0[i] + nodeDisplacement[i];
 	  }
       }
   }
+
+  // update node coordinates and face velocity for the boundary mesh
+  // corresponding to the given mesh
+  void updateBoundaryMesh(const Mesh& mesh, Mesh& bMesh,
+                          Field& velocityField,
+                          const double timeStep)
+  {
+    // update node coords
+    const StorageSite& bMeshNodes = bMesh.getNodes();
     
+    
+    const StorageSite& nodes = mesh.getNodes();
+
+    const VectorT3Array& nodeCoord =
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[nodes]);
+
+    VectorT3Array& bNodeCoord =
+      dynamic_cast<VectorT3Array&>(_geomFields.coordinate[bMeshNodes]);
+
+    VectorT3Array& bMeshCoord = bMesh.getNodeCoordinates();
+
+    const Array<int>& myNodeIndices =
+      *(bMeshNodes.getCommonMap().find(&nodes)->second);
+    const Array<int>& bNodeIndices =
+      *(nodes.getCommonMap().find(&bMeshNodes)->second);
+
+    const int nCommon = myNodeIndices.getLength();
+    for(int n=0; n<nCommon; n++)
+    {
+        bNodeCoord[bNodeIndices[n]] = nodeCoord[myNodeIndices[n]];
+        bMeshCoord[bNodeIndices[n]] = nodeCoord[myNodeIndices[n]];
+    }
+   
+
+
+    // update face velocity
+    
+    const StorageSite& bMeshFaces = bMesh.getFaces();
+
+    shared_ptr<VectorT3Array>
+      bVelocity(new VectorT3Array(bMeshFaces.getCount()));
+
+    velocityField.addArray(bMeshFaces,bVelocity);
+
+    VectorT3Array& w =
+      dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
+    VectorT3Array& wN1 =
+      dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacementN1[nodes]);
+
+    int bMeshFaceCount=0;
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        const StorageSite& faces = fg.site;
+        if (fg.groupType!="interior")
+        {
+            const int nFaces = faces.getCount();
+            const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+            for(int f=0; f<nFaces; f++)
+            {
+                const int nFaceNodes = faceNodes.getCount(f);
+                VectorT3 vf(VectorT3::getZero());
+                
+                for(int nn=0; nn<nFaceNodes; nn++)
+                {
+                    const int node = faceNodes(f,nn);
+                    VectorT3 vn = (w[node] - wN1[node])/timeStep;
+                    vf += vn;
+                }
+                vf /= nFaceNodes;
+                (*bVelocity)[bMeshFaceCount] = vf;
+                 bMeshFaceCount++;
+            }
+        }
+    }
+  }
+  
+  
   const ArrayBase& getCommon(const StorageSite& site)
   {
     
@@ -123,17 +199,44 @@ public:
             dynamic_cast<VectorT3Array&>(_geomFields.coordinate[nodes]);
           _geomFields.coordinateN1.addArray(nodes,
 	    dynamic_pointer_cast<ArrayBase>(nodeCoord.newCopy()));
-          shared_ptr<VectorT3Array> nodeDisplacement(new VectorT3Array(nodes.getCount()));
+
+          _geomFields.coordinate0.addArray(nodes,
+	    dynamic_pointer_cast<ArrayBase>(nodeCoord.newCopy()));
+
+          shared_ptr<VectorT3Array>
+            nodeDisplacement(new VectorT3Array(nodes.getCount()));
           nodeDisplacement->zero();
           _geomFields.nodeDisplacement.addArray(nodes,nodeDisplacement);
+
+          shared_ptr<VectorT3Array>
+            nodeDisplacementN1(new VectorT3Array(nodes.getCount()));
+          nodeDisplacementN1->zero();
+
+          _geomFields.nodeDisplacementN1.addArray(nodes,
+                                                  nodeDisplacementN1);
       }
   }
-  
+
+  void updateTime()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+
+        const StorageSite& nodes = mesh.getNodes();
+        VectorT3Array& w =
+          dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
+        VectorT3Array& wN1 =
+          dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacementN1[nodes]);
+	wN1 = w;
+    }
+  }
+
 private:
   GeomFields& _geomFields;
   StructureFields& _structureFields;
   const MeshList _meshes;
-  shared_ptr<VectorT3Array> _previousNodeDisplacementPtr; 
 };
 
 

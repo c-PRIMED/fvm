@@ -160,6 +160,7 @@ public:
   const StorageSite& getBoundaryNodes() const;  
 
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
+  Array<VecD3>& getNodeCoordinates() {return *_coordinates;}
   //  ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
 
   void setNumOfAssembleMesh( int nmesh ){ _numOfAssembleMesh = nmesh; }
