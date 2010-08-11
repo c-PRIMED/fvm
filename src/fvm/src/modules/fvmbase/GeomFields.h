@@ -14,6 +14,7 @@ struct GeomFields
 
   Field coordinate;
   Field coordinateN1;
+  Field coordinate0; // value at t=0
   Field area;
   Field areaN1;
   Field areaMag;
@@ -25,6 +26,7 @@ struct GeomFields
   Field gridFlux;
   Field faceVel;
   Field nodeDisplacement;
+  Field nodeDisplacementN1;
   Field boundaryNodeNormal;
   Field dirichletNodeDisplacement;
   Field displacementOptions;

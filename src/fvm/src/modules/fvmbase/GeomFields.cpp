@@ -3,6 +3,7 @@
 GeomFields::GeomFields(const string baseName) :
   coordinate(baseName+"coordinate"),
   coordinateN1(baseName+"coordinateN1"),
+  coordinate0(baseName+"coordinate0"),
   area(baseName+"area"),
   areaN1(baseName+"areaN1"),
   areaMag(baseName+"areaMag"),
@@ -14,6 +15,7 @@ GeomFields::GeomFields(const string baseName) :
   gridFlux(baseName+"gridFlux"),
   faceVel(baseName+"faceVel"),
   nodeDisplacement(baseName+"nodeDisplacement"),
+  nodeDisplacementN1(baseName+"nodeDisplacementN1"),
   boundaryNodeNormal(baseName+"boundaryNodeNormal"),
   dirichletNodeDisplacement(baseName+"dirichletNodeDisplacement"),
   displacementOptions(baseName+"displacementOptions"),
