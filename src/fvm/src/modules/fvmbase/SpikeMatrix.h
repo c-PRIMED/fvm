@@ -43,7 +43,7 @@ public:
    _RSpikeB(_bandwidth,_bandwidth),
    _g(_bandwidth,_bandwidth),
    _yL(_ncells,_bandwidth),
-   _yR(_ncells,_bandwidth)
+   _yR(_bandwidth,_bandwidth)
   {
     initAssembly();
     logCtor();
@@ -150,7 +150,7 @@ private:
 	  _R(i,j) = _offDiag[offDiagPtr[indx++]];
 	}
      }
-     //_R.print(cout);
+     _R.print(cout);
   }
   
   //left Spike Mtrx
@@ -266,7 +266,7 @@ private:
 	  _RSpikeB(i,n) = soli / _A(b,ii);
       }
    }
-   //_RSpikeB.print(cout);
+  // _RSpikeB.print(cout);
  }
  
 
