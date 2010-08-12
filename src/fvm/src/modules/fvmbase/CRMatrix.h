@@ -280,8 +280,7 @@ public:
     shared_ptr<XArray> y = dynamic_pointer_cast<XArray>(x.newClone());
     const XArray& b = dynamic_cast<const XArray&>(bB);
     SpikeMatrix<T_Diag, T_OffDiag, X>  spikeMatrix(_conn, _diag, _offDiag, spike_storage);
-    spikeMatrix.initAssembly();
-    spikeMatrix.lu();
+    spikeMatrix.solve();
 
   }
 

@@ -14,6 +14,7 @@ public:
 
   
   explicit Array2D(const int row_size, const int col_size):
+    _self(*this),
     _rowSize(row_size),
     _colSize(col_size),
     _length(row_size*col_size),
@@ -51,11 +52,38 @@ public:
      for ( int i = 0; i < _length; i++ )
          _data[i] = x;
   }        
-  void print(ostream& os) const
+  //copy of aij to this array
+  void partialCopyFrom(const Array2D& aij){
+      const int nrow = aij.getRow();
+      const int ncol = aij.getCol();
+      for ( int i = 0; i < nrow; i++ ){
+          for ( int j = 0; j < ncol; j++){
+	       _self(i,j) = aij(i,j); 
+	  }
+      }
+  }
+  //partial copy of this array to aij 
+  void partialCopyTo(Array2D& aij){
+      const int nrow = aij.getRow();
+      const int ncol = aij.getCol();
+      for ( int i = 0; i < nrow; i++ ){
+          for ( int j = 0; j < ncol; j++){
+	       aij(i,j) = _self(i,j);   
+	  }
+      }
+  }
+ 
+  void zeros()
+  {
+     for ( int i = 0; i < _length; i++ )
+         _data[i] =  NumTypeTraits<T>::getZero();
+  }
+
+ void print(ostream& os) const
   {
       for ( int i = 0; i < _rowSize; i++){
          for ( int j = 0; j < _colSize; j++ ){
-            os << std::setprecision(4) << this->operator()(i,j) << "    ";
+            os << std::setprecision(14) << this->operator()(i,j) << "    ";
 	 }
 	 os << "\n";
       }
@@ -69,6 +97,8 @@ private:
     for ( int i = 0; i < _length; i++ )
         _data[i] =  NumTypeTraits<T>::getZero();//NumTypeTraits<T>::getNegativeUnity();
   }
+
+  Array2D&   _self;
 
   int _rowSize;
   int _colSize;
