@@ -1216,7 +1216,8 @@ public:
 	  const T coeff = iCoeffs[nc];
 	  //efI += coeff * electric_field[c];
 	  const T efmag = mag(electric_field[c]);
-	  forceMag += 0.5 * dielectric_constant[c] * E0_SI *  efmag * efmag; 
+	  forceMag += 0.5 * coeff * dielectric_constant[c] *  efmag * efmag; 
+	  //cout << coeff << "  " << efmag << "  " << dielectric_constant[c] << "  "  << forceMag<< endl; 
 	}
 	
 	const VectorT3& Af = solidFaceArea[f];
