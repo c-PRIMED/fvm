@@ -551,7 +551,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       const double det = matrix.detMatrix4x4(Q, 4);
 
       // linear least square interpolation
-      if (fabs(det) > 1.0e-10){     
+      if (fabs(det) > 1.0e-8){     
 	
 	matrix.Inverse4x4(Q, Qinv);
 
