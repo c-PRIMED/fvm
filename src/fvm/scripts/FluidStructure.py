@@ -84,10 +84,11 @@ class MPMCoupling:
         
          if (  istep%self.couplingStep == 0  ):
 	     totCentroids = self.nfaces.sum()
-             self.stress  = self.flowFields.force[self.surfaceMeshes[0].getFaces()].asNumPyArray().copy()
-             recvbuf      = self.flowFields.force[self.surfaceMeshes[0].getFaces()].asNumPyArray().copy()
+             self.stress  = -self.flowFields.force[self.surfaceMeshes[0].getFaces()].asNumPyArray().copy()
+             recvbuf      =  self.flowFields.force[self.surfaceMeshes[0].getFaces()].asNumPyArray().copy()
 	     #self.stress = -self.stress #experimeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeenting
              		     
+	     #self.stress[:,:] = 0.0
              print "self.stress = ", self.stress
              self.FVM_COMM_MPM.Allreduce( [self.stress, MPI.DOUBLE], [recvbuf,MPI.DOUBLE], op=MPI.SUM)
 
