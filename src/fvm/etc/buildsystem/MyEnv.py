@@ -15,6 +15,7 @@ optionsList = [
   ('OPENMP', False, 'Compile with OpenMP'),
   ('COMPILER', None, 'C++ compiler (default is the one found in path)'),
   ('PARALLEL', False, 'Build using MPI'),
+  ('COUPLING', False, 'MPM Coupling'),  
   ('ATYPES', ['double'],'The atypes to build (e.g., float,double,tangent)'),
   ('BUILDDIR', None, 'build directory (default build)'),
   ('PACKAGESDIR', None, 'packages tree (default packages)'),
@@ -222,9 +223,15 @@ class MyEnvironment(SConsEnvironment):
         env.Append(CPPPATH=['$AUTOGENDIR'])
         env['SHLIBPREFIX'] = ""
         if env['PARALLEL']:
-            env.AppendUnique(SWIGFLAGS = CLVar('-DFVM_PARALLEL -c++ -python -module %s' % target))
+            if env['COUPLING']:
+                env.AppendUnique(SWIGFLAGS = CLVar('-DFVM_PARALLEL -DFVM_COUPLING -c++ -python -module %s' % target))
+            else:
+                env.AppendUnique(SWIGFLAGS = CLVar('-DFVM_PARALLEL -c++ -python -module %s' % target))
         else:
-            env.AppendUnique(SWIGFLAGS = CLVar('-c++ -python -module %s' % target))
+            if env['COUPLING']:
+                env.AppendUnique(SWIGFLAGS = CLVar('-DFVM_COUPLING -c++ -python -module %s' % target))
+            else:
+                env.AppendUnique(SWIGFLAGS = CLVar('-c++ -python -module %s' % target))
         env['SWIGOUTDIR'] = '$COMPONENTTARGETDIR'
 
 
