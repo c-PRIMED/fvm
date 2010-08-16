@@ -19,6 +19,7 @@ _config = {
         'parallel': 'False',
         'version': 'release',
         'compiler': 'gcc',
+        'coupling': 'False',
         },
     'MEMOSA': {
         'Build' : 'True',

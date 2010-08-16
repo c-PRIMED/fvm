@@ -105,7 +105,7 @@ def main():
     
     # CLEAN
     if options.clean or options.all:
-        for p in bld.packages:
+        for p in bld.all_packages:
             p.clean()
 
     build_utils.fix_path('PATH', bld.bindir, 1, 0)
