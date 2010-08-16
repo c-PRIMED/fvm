@@ -51,10 +51,9 @@ class Fvm(BuildPkg):
         par = config(self.name, 'parallel')
         comp = config(self.name, 'compiler')
         ver = config(self.name, 'version')
-        coupling = config(self.name, 'coupling')        
         self.bld.Scons.set_path(unload=0)
-        val = self.sys_log("%s/etc/buildsystem/build -j%s -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s COUPLING=%s" \
-                         % (self.sdir, 1 , self.sdir, par, ver, comp, coupling))
+        val = self.sys_log("%s/etc/buildsystem/build -j%s -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s" \
+                         % (self.sdir, 1 , self.sdir, par, ver, comp))
         self.bld.Scons.set_path(unload=1)
         return val
 

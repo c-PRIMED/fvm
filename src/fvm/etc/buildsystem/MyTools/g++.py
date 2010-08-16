@@ -38,11 +38,8 @@ def generate(env):
         #bug fix for mpich
         env.Append(CXXFLAGS=['-DMPICH_IGNORE_CXX_SEEK'])
     else:
-        env['CXX'] = 'mpicxx'
+        env['CXX'] = 'cxx'
 
-    if env['COUPLING']:
-        env.Append(CXXFLAGS=['-DFVM_COUPLING'])
-        
     env['CCFLAGS'] = env['CXXFLAGS']
 
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')

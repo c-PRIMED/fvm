@@ -40,9 +40,6 @@ def generate(env):
     else:
         env['CXX'] = 'icpcc'
 
-    if env['COUPLING']:
-        env.Append(CXXFLAGS=['-DFVM_COUPLING'])
-                
     env['CCFLAGS'] = env['CXXFLAGS']
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')
 
