@@ -64,8 +64,23 @@ reflectGradient(Gradient<Vector<T,3> >& gr,
 }
 
 
+// non templated base class where we can store and manage the gradient matrices
+// used by all templated versions
+class GradientModelBase : public Model
+{
+public:
+  GradientModelBase(const MeshList& meshes) :
+    Model(meshes)
+  {}
+
+  static void clearGradientMatrix(const Mesh& mesh);
+protected:
+  static map<const Mesh*, shared_ptr<GradientMatrixBase> > _gradientMatricesMap;
+
+};
+
 template<class X>
-class GradientModel : public Model
+class GradientModel : public GradientModelBase
 {
 public:
   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
@@ -86,7 +101,7 @@ public:
   typedef typename GradMatrixType::PairWiseAssembler GradientMatrixAssembler;
 
   static
-  shared_ptr<GradMatrixType>
+  shared_ptr<GradientMatrixBase>
   getLeastSquaresGradientMatrix3D(const Mesh& mesh, const GeomFields& geomFields)
   {
     const StorageSite& cells = mesh.getCells();
@@ -98,7 +113,7 @@ public:
     const int cellCount = cells.getSelfCount();
     const int faceCount = faces.getSelfCount();
       
-    shared_ptr<GradMatrixType> gMPtr(new GradMatrixType(cellCells));
+    GradMatrixType* gMPtr(new GradMatrixType(cellCells));
     GradMatrixType& gM = *gMPtr;
     GradientMatrixAssembler& assembler = gM.getPairWiseAssembler(faceCells);
     
@@ -240,11 +255,11 @@ public:
         }
     }
 
-    return gMPtr;
+    return shared_ptr<GradientMatrixBase>(gMPtr);
   }
 
   static
-  shared_ptr<GradMatrixType>
+  shared_ptr<GradientMatrixBase>
   getLeastSquaresGradientMatrix2D(const Mesh& mesh, const GeomFields& geomFields)
   {
     const StorageSite& cells = mesh.getCells();
@@ -257,7 +272,7 @@ public:
     const int cellCount = cells.getSelfCount();
     const int faceCount = faces.getSelfCount();
       
-    shared_ptr<GradMatrixType> gMPtr(new GradMatrixType(cellCells));
+    GradMatrixType* gMPtr(new GradMatrixType(cellCells));
     GradMatrixType& gM = *gMPtr;
     GradientMatrixAssembler& assembler = gM.getPairWiseAssembler(faceCells);
     
@@ -393,14 +408,14 @@ public:
         }
     }
 
-    return gMPtr;
+    return shared_ptr<GradientMatrixBase>(gMPtr);
   }
 
   
   GradientModel(const MeshList& meshes,
                 const Field& varField, Field& gradientField,
                 const GeomFields& geomFields) :
-    Model(meshes),
+    GradientModelBase(meshes),
     _varField(varField),
     _gradientField(gradientField),
     _geomFields(geomFields)
@@ -425,7 +440,7 @@ public:
             _gradientMatricesMap[&mesh] = getLeastSquaresGradientMatrix3D(mesh,geomFields);
         }
     }
-    return *_gradientMatricesMap[&mesh];
+    return dynamic_cast<const GradMatrixType&>(*_gradientMatricesMap[&mesh]);
   }
 
   void init() {}
@@ -492,12 +507,8 @@ private:
   const Field& _varField;
   Field& _gradientField;
   const GeomFields& _geomFields;
-  static map<const Mesh*, shared_ptr<GradMatrixType> > _gradientMatricesMap;
 };
 
-template<class T>
-map<const Mesh*, shared_ptr<typename GradientModel<T>::GradMatrixType> >
-GradientModel<T>::_gradientMatricesMap;
 
 #endif
 

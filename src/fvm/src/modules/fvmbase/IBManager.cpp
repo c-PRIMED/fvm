@@ -2,6 +2,7 @@
 #include "AABB.h"
 #include "KSearchTree.h"
 #include "Mesh.h"
+#include "GradientModel.h"
 #include <stack>
 
 
@@ -363,6 +364,8 @@ IBManager::createIBFaces(Mesh& fluidMesh)
   
   fluidMesh.setIBFaces(ibFaceListPtr);
   cout << " found " << nIBFaces << " ib Faces " << endl;
+
+  GradientModelBase::clearGradientMatrix(fluidMesh);
 }
 
 void

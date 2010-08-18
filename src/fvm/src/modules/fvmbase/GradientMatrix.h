@@ -6,8 +6,15 @@
 #include "StorageSite.h"
 #include "Gradient.h"
 
+class GradientMatrixBase
+{
+public:
+  GradientMatrixBase() {}
+  virtual ~GradientMatrixBase() {}
+};
+
 template<class T_Scalar>
-class GradientMatrix
+class GradientMatrix : public GradientMatrixBase
 {
 public:
   typedef Vector<T_Scalar,3> Coord;
@@ -62,7 +69,25 @@ public:
         g.accumulate(_coeffs[nb],x[j]-x[i]);
     }
   }
+
+  template<class X>
+  void
+  computeFaceGradient(Gradient<X>& g, const Array<X>& x, int i) const
+  {
+    g.zero();
+   
+    // for boundaries use the adjacent cell
+    if (_row[i+1] - _row[i]  == 1)
+      i = _col[_row[i]];
+    
+    for (int nb = _row[i]; nb<_row[i+1]; nb++)
+    {
+        const int j = _col[nb];
+        g.accumulate(_coeffs[nb],x[j]);
+    }
+  }
   
+
   const CRConnectivity& getConnectivity() const {return _conn;}
 
   Array<Coord>& getCoeffs() {return _coeffs;}
