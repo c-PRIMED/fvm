@@ -32,6 +32,8 @@ public:
    _spikeStorage(spike_storage),
    _bandwidth(spike_storage.getBandWidth()),
    _ncells(conn.getRowSite().getSelfCount()),
+   _procID(0),
+   _nprocs(1),
    _A(2*_bandwidth+1,_ncells), 
    _LL(_ncells, _bandwidth),
    _L(_bandwidth,_bandwidth),
@@ -41,6 +43,8 @@ public:
    _LSpikeT(_bandwidth,_bandwidth),
    _RSpike (_ncells,_bandwidth),
    _RSpikeB(_bandwidth,_bandwidth),
+   _JokerSpikeT(_bandwidth,_bandwidth),
+   _JokerSpikeB(_bandwidth,_bandwidth),
    _g(_bandwidth,_bandwidth),
    _yL(_ncells,_bandwidth),
    _yR(_bandwidth,_bandwidth)
@@ -64,12 +68,17 @@ private:
   //initial assamely 
   void initAssembly()
   {
+#ifdef FVM_PARALLEL
+     _procID = MPI::COMM_WORLD.Get_rank();
+     _nprocs = MPI::COMM_WORLD.Get_size();
+#endif
      setMatrix();
      setLMtrx();
      setRMtrx();
      lu();
      setLSpikeMtrx();
      setRSpikeMtrx();
+     exchangeSpikeMtrx();
      //setRSpikeMtrxFull();
   }
  
@@ -150,7 +159,7 @@ private:
 	  _R(i,j) = _offDiag[offDiagPtr[indx++]];
 	}
      }
-     _R.print(cout);
+     /*_R.print(cout);*/
   }
   
   //left Spike Mtrx
@@ -188,7 +197,7 @@ private:
    }
     //_LSpike.print(cout);
    _LSpike.partialCopyTo(_LSpikeT);
-   //_LSpikeT.print(cout);
+   _LSpikeT.print(cout);
 
   }
   //Right Spike Mtrx
@@ -226,7 +235,7 @@ private:
    }
    //_RSpike.print(cout);
    _RSpike.partialCopyTo(_RSpikeB);
-   //_RSpikeB.print(cout);
+   _RSpikeB.print(cout);
 
   }
 
@@ -266,9 +275,27 @@ private:
 	  _RSpikeB(i,n) = soli / _A(b,ii);
       }
    }
-  // _RSpikeB.print(cout);
+   _RSpikeB.print(cout);
  }
- 
+
+ //exchanging LSpikeT (to rank-1) and RSpikeB(to rank+1), will be stored _JokerSpike Mtrx 
+ void   exchangeSpikeMtrx()
+ {
+ #ifdef FVM_PARALLEL
+   //send-recv single call since each process is involving send and recv
+   MPI::Status status;  
+   if ( _procID != _nprocs-1)
+   MPI::COMM_WORLD.Sendrecv(_RSpikeB.getData()    , _RSpikeB.getDataSize()    , MPI::BYTE, _procID+1, 1199,
+                            _JokerSpikeT.getData(), _JokerSpikeT.getDataSize(), MPI::BYTE, _procID+1, 2199, status );
+   if ( _procID != 0 )
+   MPI::COMM_WORLD.Sendrecv(_LSpikeT.getData()    , _LSpikeT.getDataSize()    , MPI::BYTE, _procID-1, 2199,
+		   _JokerSpikeB.getData(), _JokerSpikeB.getDataSize(), MPI::BYTE, _procID-1, 1199, status );
+   _JokerSpikeB.print(cout);
+   _JokerSpikeT.print(cout);
+#endif
+				   
+
+ }
 
   const CRConnectivity& _conn;
   const Array<Diag>& _diag;
@@ -276,6 +303,8 @@ private:
   const SpikeStorage& _spikeStorage;
   const	int _bandwidth;
   const int _ncells;
+  int  _procID;
+  int  _nprocs;
   Array2D<Diag>  _A;
   Array2D<Diag>  _LL;     //C matrix full Nxb 
   Array2D<Diag>  _L;      //C matrix only bxb
@@ -285,6 +314,8 @@ private:
   Array2D<Diag>  _LSpikeT; //left-top spike matrix
   Array2D<Diag>  _RSpike;  //full right spike matrix
   Array2D<Diag>  _RSpikeB; //right-top spike matrix
+  Array2D<Diag>  _JokerSpikeT; // bxb matrix come from rank+1(source) 
+  Array2D<Diag>  _JokerSpikeB; // bxb matrix come from rank-1(source)  
   Array2D<Diag>  _g;       //g matrix LU g = f
   Array2D<Diag>  _yL; 
   Array2D<Diag>  _yR;       //joker vector for intermiediate steps, 

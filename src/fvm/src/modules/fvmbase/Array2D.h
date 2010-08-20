@@ -79,6 +79,13 @@ public:
          _data[i] =  NumTypeTraits<T>::getZero();
   }
 
+  void*  getData() { return _data;} 
+  int getDataSize() const
+  {
+    return  _length*NumTypeTraits<T>::getDataSize();
+  }
+
+
  void print(ostream& os) const
   {
       for ( int i = 0; i < _rowSize; i++){
