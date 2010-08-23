@@ -142,7 +142,7 @@ class InjectionDiscretization : public Discretization
 	    int high = c0;	       
 	    
 	    //for(int l=0; l<nLevel; l++){
-	    for(int l=0; l< int(nLevel/20); l++){
+	    for(int l=0; l< int(nLevel/10); l++){
 
 	      T_Scalar enMe = conduction_band[me];
 	      T_Scalar enLow = conduction_band[low];
