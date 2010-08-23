@@ -459,8 +459,9 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   Array<T>& cellToIBCoeff = cellToIB->getCoeff();
   Array<T>& particlesToIBCoeff = particlesToIB->getCoeff();
 
-
-
+  const bool is2D = mesh.getDimension() == 2;
+  const bool is3D = mesh.getDimension() == 3;
+  
   /***********************************************************************/
   // default is to use linear least square interpolation
   // if the matrix determinant is too small
@@ -484,105 +485,125 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   //note Q = M(T)*M  and Qinv = Q^(-1)
   //the following code is to calculate it
   //insteading of doing full matrix operation, only nessesary operation on entries are performed
- 
+  //when dealing with coodinates with small numbers, like in micrometers
+  //scaling the coodinates does not change the coefficients but improve the matrix quality
 
+  // FILE * fp = fopen("/home/lin/work/app-memosa/src/fvm/verification/Structure_Electrostatics_Interaction/2D_beam/test/coeff.dat", "w");
   for(int n=0; n<nIBFaces; n++)
   {
       const int f = ibFaceIndices[n];
       T wt(0);
       T wtSum(0);
+      T det(0);
       int nnb(0);
-      
-      T Q[4][4];
-      T Qinv[4][4];
-
-      for(int i=0; i<4; i++){
-	for(int j=0; j<4; j++){
-	  Q[i][j]=Qinv[i][j]=0;
-	}
-      }
-      
+                 
+      SquareMatrix<T,4>  Q(0);
+      SquareMatrix<T,4>  Qinv(0);
+      SquareMatrix<T,3>  QQ(0);
+      SquareMatrix<T,3>  QQinv(0);   
+        
       for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++){	
 	const int c = ibFCCol[nc];
-	VectorT3 dr(xCells[c]-xFaces[f]);	 
-	Q[0][0] += 1.0;
-	Q[0][1] += dr[0];
-	Q[0][2] += dr[1];
-	Q[0][3] += dr[2];
-	Q[1][1] += dr[0]*dr[0];
-	Q[1][2] += dr[0]*dr[1];
-	Q[1][3] += dr[0]*dr[2];
-	Q[2][2] += dr[1]*dr[1];
-	Q[2][3] += dr[1]*dr[2];
-	Q[3][3] += dr[2]*dr[2];          
+	VectorT3 dr((xCells[c]-xFaces[f])*1.0e6);
+	Q(0,0) += 1.0;
+	Q(0,1) += dr[0];
+	Q(0,2) += dr[1];
+	Q(0,3) += dr[2];
+	Q(1,1) += dr[0]*dr[0];
+	Q(1,2) += dr[0]*dr[1];
+	Q(1,3) += dr[0]*dr[2];
+	Q(2,2) += dr[1]*dr[1];
+	Q(2,3) += dr[1]*dr[2];
+	Q(3,3) += dr[2]*dr[2];      
 	nnb++;
       }
 
       for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
       {
-          const int p = ibFPCol[np];
-          VectorT3 dr(xParticles[p]-xFaces[f]);
-	  
-	  Q[0][0] += 1.0;
-	  Q[0][1] += dr[0];
-	  Q[0][2] += dr[1];
-	  Q[0][3] += dr[2];
-	  Q[1][1] += dr[0]*dr[0];
-	  Q[1][2] += dr[0]*dr[1];
-	  Q[1][3] += dr[0]*dr[2];
-	  Q[2][2] += dr[1]*dr[1];
-	  Q[2][3] += dr[1]*dr[2];
-	  Q[3][3] += dr[2]*dr[2];      
-	  nnb++;
+	const int p = ibFPCol[np];
+	VectorT3 dr((xParticles[p]-xFaces[f])*1.0e6);
+  	Q(0,0) += 1.0;
+	Q(0,1) += dr[0];
+	Q(0,2) += dr[1];
+	Q(0,3) += dr[2];
+	Q(1,1) += dr[0]*dr[0];
+	Q(1,2) += dr[0]*dr[1];
+	Q(1,3) += dr[0]*dr[2];
+	Q(2,2) += dr[1]*dr[1];
+	Q(2,3) += dr[1]*dr[2];
+	Q(3,3) += dr[2]*dr[2];      
+	nnb++;
       }
       
-      if (nnb < 4)
-	throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+      //if (nnb < 4)
+	//throw CException("not enough cell or particle neighbors for ib face to interpolate!");
 
       //symetric matrix
       for(int i=0; i<4; i++){
 	for(int j=0; j<i; j++){
-	  Q[i][j]=Q[j][i];
+	  Q(i,j) = Q(j,i);
 	}
       }    
 
-      matrix<T> matrix;
+      // calculate the determinant of the matrix Q
+      // if 3D mesh, then det(Q)
+      // if 2D mesh, then det(QQ) where QQ is the 3x3 subset of Q
+      
 
-      const double det = matrix.detMatrix4x4(Q, 4);
-
-      // linear least square interpolation
-      if (fabs(det) > 1.0e-8){     
-	
-	matrix.Inverse4x4(Q, Qinv);
-
-	//calculate Qinv*M(T) get the first row element, put in coeffMatrix
-	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
-	  {
-          const int c = ibFCCol[nc];
-          VectorT3 dr(xCells[c]-xFaces[f]);
-	  wt = Qinv[0][0];
-	  for (int i=1; i<=3; i++){
-	    wt += Qinv[0][i]*dr[i-1];
+      if (is2D) {	
+	for(int i=0; i<3; i++){
+	  for(int j=0; j<3; j++){
+	    QQ(i,j)=Q(i,j);
 	  }
-	  cellToIBCoeff[nc] = wt;
-	  //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
-	  }
-	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
-	  {
-          const int p = ibFPCol[np];
-          VectorT3 dr(xParticles[p]-xFaces[f]);
-	  wt = Qinv[0][0];
-	  for (int i=1; i<=3; i++){
-	    wt += Qinv[0][i]*dr[i-1];
-	  }
-	  particlesToIBCoeff[np] = wt;
-	  // cout<<n<<" particles  "<<np<<" "<<particlesToIBCoeff[np]<<endl;
-	  }
+	}  	
+	det =  determinant(QQ);
       }
 
-      //distance weighted interpolation
+      if (is3D) {
+	det = determinant(Q, 4);
+      }
+            
+      // linear least square interpolation if the matrix is not singular
+
+      if (fabs(det) >= 1.0e-30){  
+	if(is2D){
+	  QQinv = inverse(QQ);
+	  for(int i=0; i<3; i++){
+	    for(int j=0; j<3; j++){
+	      Qinv(i,j)=QQinv(i,j);
+	    }
+	  }
+	}
+
+	if(is3D){
+	  Qinv = inverse(Q, 4);
+	}
+
+	//calculate Qinv*M(T) get the first row element, put in coeffMatrix
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)	  {
+	  wt = 0.0;
+          const int c = ibFCCol[nc];
+          VectorT3 dr((xCells[c]-xFaces[f])*1.0e6);
+	  wt = Qinv(0,0);
+	  for (int i=1; i<=3; i++){
+	    wt += Qinv(0,i)*dr[i-1];
+	  }
+	  cellToIBCoeff[nc] = wt;
+	}
+	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)	  {
+          const int p = ibFPCol[np];
+          VectorT3 dr((xParticles[p]-xFaces[f])*1.0e6);
+	  wt = Qinv(0,0);
+	  for (int i=1; i<=3; i++){
+	    wt += Qinv(0,i)*dr[i-1];
+	  }
+	  particlesToIBCoeff[np] = wt;	  
+	}
+      }
+      
+      //if matrix is singular, use distance weighted interpolation
       else {
-	//cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
+	cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
 	  {
           const int c = ibFCCol[nc];
@@ -615,8 +636,9 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 	    particlesToIBCoeff[np] /= wtSum;
 	  }
       }	
-  }
-
+  } 
+  
+  //fclose(fp);
 #if 0
 
   /**********second order least square interpolation*********/
@@ -1008,36 +1030,37 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
   shared_ptr<IMatrix> cellToSolidFaces(new IMatrix(solidFacesToCells));
 
   Array<T>& cellToSBCoeff = cellToSolidFaces->getCoeff();
-
-  /*****  default: linear least square interpolation  *******/
- 
+  
+  const bool is2D = mesh.getDimension() == 2;
+  const bool is3D = mesh.getDimension() == 3;
+  
   for(int f=0; f<nSolidFaces; f++)
   {
       T wt(0);
       T wtSum(0.0);
       int nnb(0);
+      T det(0);
      
-      T Q[4][4];
-      T Qinv[4][4];
-      
-      for(int i=0; i<4; i++)
-          for(int j=0; j<4; j++)
-            Q[i][j]=Qinv[i][j]=0;      
-      
+      SquareMatrix<T,4>  Q(0);
+      SquareMatrix<T,4>  Qinv(0);
+      SquareMatrix<T,3>  QQ(0);
+      SquareMatrix<T,3>  QQinv(0);   
+
+           
       for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
       {
           const int c = sFCCol[nc];
           VectorT3 dr(xCells[c]-xFaces[f]);
-	  Q[0][0] += 1.0;
-	  Q[0][1] += dr[0];
-	  Q[0][2] += dr[1];
-	  Q[0][3] += dr[2];
-	  Q[1][1] += dr[0]*dr[0];
-	  Q[1][2] += dr[0]*dr[1];
-	  Q[1][3] += dr[0]*dr[2];
-	  Q[2][2] += dr[1]*dr[1];
-	  Q[2][3] += dr[1]*dr[2];
-	  Q[3][3] += dr[2]*dr[2];          
+	  Q(0,0) += 1.0;
+	  Q(0,1) += dr[0];
+	  Q(0,2) += dr[1];
+	  Q(0,3) += dr[2];
+	  Q(1,1) += dr[0]*dr[0];
+	  Q(1,2) += dr[0]*dr[1];
+	  Q(1,3) += dr[0]*dr[2];
+	  Q(2,2) += dr[1]*dr[1];
+	  Q(2,3) += dr[1]*dr[2];
+	  Q(3,3) += dr[2]*dr[2];          
           nnb++;
       }
       
@@ -1048,24 +1071,42 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       //symetric matrix
       for(int i=0; i<4; i++)
 	for(int j=0; j<i; j++)
-	  Q[i][j]=Q[j][i];
-
-      matrix<T> matrix;
+	  Q(i,j)=Q(j,i);
       
-      const double det = matrix.detMatrix4x4(Q, 4);
+      if (is2D) {	
+	for(int i=0; i<3; i++){
+	  for(int j=0; j<3; j++){
+	    QQ(i,j)=Q(i,j);
+	  }
+	}  	
+	det =  determinant(QQ);
+      }
 
-      if (fabs(det) > 1.0e-10){     
-
-	matrix.Inverse4x4(Q, Qinv);
+      if (is3D) {
+	det = determinant(Q, 4);
+      }
       
-	//calculate Qinv*M(T) get the first row element, put in coeffMatrix
-	for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
+      if (fabs(det) >= 1.0e-30){  
+	if(is2D){
+	  QQinv = inverse(QQ);
+	  for(int i=0; i<3; i++){
+	    for(int j=0; j<3; j++){
+	      Qinv(i,j)=QQinv(i,j);
+	    }
+	  }
+	}
+
+	if(is3D){
+	  Qinv = inverse(Q, 4);
+	}
+
+     	for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
 	{
           const int c = sFCCol[nc];
           VectorT3 dr(xCells[c]-xFaces[f]);
-	  wt = Qinv[0][0];
+	  wt = Qinv(0,0);
 	  for (int i=1; i<=3; i++)
-	    wt += Qinv[0][i]*dr[i-1];
+	    wt += Qinv(0,i)*dr[i-1];
 
 	  cellToSBCoeff[nc] = wt;
 	}
@@ -1093,6 +1134,7 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 	  }
       }
   }
+
 
 
 #if 0
@@ -1485,7 +1527,7 @@ MeshMetricsCalculator<T>::computeGridInterpolationMatrices
 #endif 
 
 
-#if 1
+#if 0
    /* linear interpolation */
    // v = a + b*x +c*y
    //solve a, b, c 
@@ -1605,7 +1647,7 @@ MeshMetricsCalculator<T>::computeIBandSolidInterpolationMatrices
   shared_ptr<IMatrix> particlesToCell(new IMatrix(cellToParticles));
 
   Array<T>& particlesToCellCoeff = particlesToCell->getCoeff();
-
+  /*
   for (int c=0; c<nCells; c++){
     const int nP = CPRow[c+1] - CPRow[c];
     if (nP == 0){
@@ -1680,7 +1722,8 @@ MeshMetricsCalculator<T>::computeIBandSolidInterpolationMatrices
 	  particlesToCellCoeff[nc] = wt;
 	}
     }
-  }
+    }
+*/
     GeomFields::SSPair key2(&cells,&mpmParticles);
     this->_geomFields._interpolationMatrices[key2] = particlesToCell;
 
