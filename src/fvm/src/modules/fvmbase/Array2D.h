@@ -78,6 +78,17 @@ public:
      for ( int i = 0; i < _length; i++ )
          _data[i] =  NumTypeTraits<T>::getZero();
   }
+  void setIdentity()
+  {
+      for ( int i = 0; i < _rowSize; i++ ){
+          for ( int j = 0; j < _colSize; j++){
+	      if ( i == j )
+	         _self(i,j) = NumTypeTraits<T>::getUnity();
+
+	  }
+      }
+  }
+
 
   void*  getData() { return _data;} 
   int getDataSize() const

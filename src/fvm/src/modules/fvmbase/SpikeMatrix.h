@@ -10,6 +10,7 @@
 #include "Array.h"
 #include "Array2D.h"
 #include "SpikeStorage.h"
+#include "Array.h"
 
 template<typename T_Diag, typename T_OffDiag,  typename X>
 class SpikeMatrix : public Matrix
@@ -45,17 +46,21 @@ public:
    _RSpikeB(_bandwidth,_bandwidth),
    _JokerSpikeT(_bandwidth,_bandwidth),
    _JokerSpikeB(_bandwidth,_bandwidth),
-   _g(_bandwidth,_bandwidth),
+   _reducedA1(_bandwidth,_bandwidth),
+   _reducedA2(_bandwidth,_bandwidth),
+   _g(_bandwidth),
    _yL(_ncells,_bandwidth),
-   _yR(_bandwidth,_bandwidth)
+   _yR(_bandwidth,_bandwidth),
+   _y(_ncells)
   {
     initAssembly();
     logCtor();
   }
 
-  void solve()
+  void solve( const XArray& f, XArray& x )
   {
-
+      //negate rhs (f) for x
+      luSolver(f, x, true);
   }
 
   virtual ~SpikeMatrix()
@@ -79,6 +84,7 @@ private:
      setLSpikeMtrx();
      setRSpikeMtrx();
      exchangeSpikeMtrx();
+     setReducedMtrx();
      //setRSpikeMtrxFull();
   }
  
@@ -102,7 +108,7 @@ private:
          }
      }
      
-     //_A.print(cout);
+     _A.print(cout);
   } 
   //left matrix
   void setLMtrx()
@@ -197,7 +203,7 @@ private:
    }
     //_LSpike.print(cout);
    _LSpike.partialCopyTo(_LSpikeT);
-   _LSpikeT.print(cout);
+   /*_LSpikeT.print(cout);*/
 
   }
   //Right Spike Mtrx
@@ -235,7 +241,7 @@ private:
    }
    //_RSpike.print(cout);
    _RSpike.partialCopyTo(_RSpikeB);
-   _RSpikeB.print(cout);
+   //_RSpikeB.print(cout);
 
   }
 
@@ -275,7 +281,7 @@ private:
 	  _RSpikeB(i,n) = soli / _A(b,ii);
       }
    }
-   _RSpikeB.print(cout);
+    /*_RSpikeB.print(cout);*/
  }
 
  //exchanging LSpikeT (to rank-1) and RSpikeB(to rank+1), will be stored _JokerSpike Mtrx 
@@ -290,13 +296,87 @@ private:
    if ( _procID != 0 )
    MPI::COMM_WORLD.Sendrecv(_LSpikeT.getData()    , _LSpikeT.getDataSize()    , MPI::BYTE, _procID-1, 2199,
 		   _JokerSpikeB.getData(), _JokerSpikeB.getDataSize(), MPI::BYTE, _procID-1, 1199, status );
-   _JokerSpikeB.print(cout);
-   _JokerSpikeT.print(cout);
+   /*_JokerSpikeB.print(cout);*/
+   /*_JokerSpikeT.print(cout);*/
 #endif
 				   
 
  }
 
+//settting reduced matrix 
+void  setReducedMtrx()
+{
+    //system above the processor line 
+    if ( _procID != _nprocs-1 ){
+	_reducedA1.setIdentity();
+	for ( int i = 0; i < _bandwidth; i++ ){
+	   for ( int j = 0; j < _bandwidth; j++ ){
+	      for ( int k = 0; k < _bandwidth; k++ ){
+	         _reducedA1(i,j) -=  _RSpikeB(i,k) * _JokerSpikeT(k,j);
+	      }
+	   }
+	}
+   }
+    /*_reducedA1.print(cout);*/
+
+    //system above the processor line 
+    if ( _procID != 0 ){
+	_reducedA2.setIdentity();
+	for ( int i = 0; i < _bandwidth; i++ ){
+	   for ( int j = 0; j < _bandwidth; j++ ){
+	      for ( int k = 0; k < _bandwidth; k++ ){
+	         _reducedA2(i,j) -=  _LSpikeT(i,k) * _JokerSpikeB(k,j);
+	      }
+	   }
+	}
+   }
+    /*_reducedA2.print(cout);*/
+}
+
+// generalized Lu solve Lu x = f as Vector
+  void luSolver(const Array<X>& f, Array<X>& x, bool negate_rhs=false)
+  {
+      /*f.print(cout);*/
+     //zeros y
+     _y.zero();
+      const int b = _bandwidth;
+     if ( negate_rhs ){
+        _y[0] = -f[0];
+        for ( int i = 1; i < _ncells; i++ ){
+           X yi = -f[i];
+           for ( int j = max(0,i-b); j <= i-1; j++ ){
+              const int i2 = b+i-j;
+              yi -=  _A(i2,j) * _y[j];
+           }
+           _y[i] = yi;
+        }
+    } else {
+        _y[0] = f[0];
+        for ( int i = 1; i < _ncells; i++ ){
+           X yi = f[i];
+           for ( int j = max(0,i-b); j <= i-1; j++ ){
+              const int i2 = b+i-j;
+              yi -=  _A(i2,j) * _y[j];
+           }
+           _y[i] = yi;
+        }
+    }
+     /*_y.print(cout);*/
+    //backward solve
+    x.zero();
+    x[_ncells-1] = _y[_ncells-1] / _A(b,_ncells-1);
+    for ( int i = _ncells-2; i >= 0; i-- ){
+        X soli = _y[i];
+        for ( int j = i+1; j <= min(_ncells-1,i+b); j++ ){
+            const int i2 = b+i-j;
+            soli -=  _A(i2,j)*x[j];
+        }
+	x[i] = soli / _A(b,i);
+    }
+
+    /*x.print(cout);*/
+
+  }
   const CRConnectivity& _conn;
   const Array<Diag>& _diag;
   const Array<OffDiag>& _offDiag;
@@ -316,10 +396,13 @@ private:
   Array2D<Diag>  _RSpikeB; //right-top spike matrix
   Array2D<Diag>  _JokerSpikeT; // bxb matrix come from rank+1(source) 
   Array2D<Diag>  _JokerSpikeB; // bxb matrix come from rank-1(source)  
-  Array2D<Diag>  _g;       //g matrix LU g = f
+  Array2D<Diag>  _reducedA1;    // bxb matrix (I-V * W )z1 = g1 - V g2 (system above processor boundary line)
+  Array2D<Diag>  _reducedA2;    // bxb matrix (I-V * W )z1 = g1 - V g2 (system below processor boundayr line)
+  Array<X>       _g;       //g matrix LU g = f
   Array2D<Diag>  _yL; 
-  Array2D<Diag>  _yR;       //joker vector for intermiediate steps, 
+  Array2D<Diag>  _yR;      //joker vector for intermiediate steps, 
                            //LU x = f,  Ux = y first solve L y = f and then solve U x = y 
+  Array<X>        _y;      //joker vector			   
 };
 
 
