@@ -1208,26 +1208,25 @@ public:
 
       for(int f=0; f<solidFaces.getCount(); f++)
       {
-	//only calculate force on beam bottom
-	if (solidFaceCoordinate[f][1] < 0.0){
-	  
-	  T forceMag(0);
-	  T forceSign(1);
-
-	  for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)	    {
-	    const int c = sFCCol[nc];
-	    const T coeff = iCoeffs[nc];
-	    const T efmag = mag(electric_field[c]);
-	    //forceSign = dot(electric_field[c], solidFaceArea[f]);
-	    //forceSign /= fabs(forceSign);
-	    forceMag += 0.5 * coeff * dielectric_constant[c] *  efmag * efmag * forceSign; 
+	T forceMag(0);
+	T forceSign(1);
+	for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)	    {
+	  const int c = sFCCol[nc];
+	  const T coeff = iCoeffs[nc];
+	  const T efmag = mag(electric_field[c]);
+	  forceSign = dot(electric_field[c], solidFaceArea[f]);
+	  if (fabs(forceSign) > 0.0) 
+	    forceSign /= fabs(forceSign);
+	  else{
+	    forceSign = 0.0;
+	    cout << f << " " << solidFaceCoordinate[f][0] << " "  <<solidFaceCoordinate[f][1] << " " <<efmag << endl;
 	  }
-	  	
-	  const VectorT3& Af = solidFaceArea[f];
-	  force[f] = Af * forceMag;
-	  if (perUnitArea){
-	    force[f] /= solidFaceAreaMag[f];
-	  }
+	  forceMag += 0.5 * coeff * dielectric_constant[c] *  efmag * efmag * forceSign; 
+	}
+	const VectorT3& Af = solidFaceArea[f];
+	force[f] = Af * forceMag;
+	if (perUnitArea){
+	  force[f] /= solidFaceAreaMag[f];
 	}
       }	  
     }
