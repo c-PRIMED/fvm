@@ -1219,7 +1219,7 @@ public:
 	    forceSign /= fabs(forceSign);
 	  else{
 	    forceSign = 0.0;
-	    cout << f << " " << solidFaceCoordinate[f][0] << " "  <<solidFaceCoordinate[f][1] << " " <<efmag << endl;
+	    //cout << f << " " << solidFaceCoordinate[f][0] << " "  <<solidFaceCoordinate[f][1] << " " <<efmag << endl;
 	  }
 	  forceMag += 0.5 * coeff * dielectric_constant[c] *  efmag * efmag * forceSign; 
 	}
