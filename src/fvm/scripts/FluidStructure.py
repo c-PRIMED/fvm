@@ -80,11 +80,15 @@ class MPMCoupling:
      def dim(self):
          return self.ndim;
 
-     def updateMPM(self, istep):
+     #otherStress is list of numpy array
+     def updateMPM(self, istep, otherTractions):
         
          if (  istep%self.couplingStep == 0  ):
 	     totCentroids = self.nfaces.sum()
              self.stress  = -self.flowFields.force[self.surfaceMeshes[0].getFaces()].asNumPyArray().copy()
+	     for otherTraction in otherTractions:
+	         self.stress = self.stress - otherTraction
+	         
              recvbuf      =  self.flowFields.force[self.surfaceMeshes[0].getFaces()].asNumPyArray().copy()
 	     #self.stress = -self.stress #experimeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeenting
              		     
