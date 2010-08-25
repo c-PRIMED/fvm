@@ -26,7 +26,7 @@ void IBManager::update()
   
   const Vec3DArray& solidMeshCoords =
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
-  
+
   KSearchTree solidMeshKSearchTree(solidMeshCoords);
 
   const int numFluidMeshes = _fluidMeshes.size();
@@ -188,6 +188,7 @@ IBManager::markIBType(Mesh& fluidMesh)
 
   Array<bool> isFluidCell(nCellsTotal);
   isFluidCell = false;
+
   foreach(const FaceGroupPtr fgPtr, fluidMesh.getBoundaryFaceGroups())
   {
       const FaceGroup& fg = *fgPtr;
@@ -368,6 +369,30 @@ IBManager::createIBFaces(Mesh& fluidMesh)
   GradientModelBase::clearGradientMatrix(fluidMesh);
 }
 
+/**
+ * given a set of cells, add all their fluid ibtype neighbors to the
+ * list if they aren't already in it.
+ * 
+ */
+
+void addFluidNeighbors(set<int>& neighbors,
+                       const CRConnectivity& cellCells,
+                       const Array<int>& ibType)
+{
+  set<int> newNeighbors;
+  foreach(int c, neighbors)
+  {
+      const int neighborCount = cellCells.getCount(c);
+      for(int nnb=0; nnb<neighborCount; nnb++)
+      {
+          const int c_nb = cellCells(c,nnb);
+          if (ibType[c_nb] == Mesh::IBTYPE_FLUID)
+            newNeighbors.insert(c_nb);
+      }
+  }
+  neighbors.insert(newNeighbors.begin(),newNeighbors.end());
+}
+
 void
 IBManager::createIBInterpolationStencil(Mesh& mesh,
                                          KSearchTree& fluidCellsTree,
@@ -381,7 +406,7 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   const Vec3DArray& faceCentroid =
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[mesh.getFaces()]);
 
-  Array<int> fluidNeighbors(fluidNeighborsPerIBFace);
+  Array<int> fluidNeighbors(1);
   Array<int> solidNeighbors(solidNeighborsPerIBFace);
 
   const Array<int>& ibFaceIndices = mesh.getIBFaceList();
@@ -391,35 +416,71 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   
   shared_ptr<CRConnectivity> ibFaceToSolid
     (new CRConnectivity(ibFaces,solidMeshFaces));
-  
+
+  const CRConnectivity& cellCells = mesh.getCellCells();
+  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+
+
+  vector<NearestCell> nearestCellForIBFace(nIBFaces);
+
   ibFaceToCells->initCount();
   ibFaceToSolid->initCount();
 
   for(int f=0; f<nIBFaces; f++)
   {
-      ibFaceToCells->addCount(f,fluidNeighborsPerIBFace);
       ibFaceToSolid->addCount(f,solidNeighborsPerIBFace);
   }
 
-  ibFaceToCells->finishCount();
   ibFaceToSolid->finishCount();
 
+  // in first pass we find the number of fluid cells and also set all the solid neighbors
   for(int f=0; f<nIBFaces; f++)
   {
       // the index of this ib face in the mesh faces
       const int gf = ibFaceIndices[f];
       const Vec3D& xf = faceCentroid[gf];
-      fluidCellsTree.findNeighbors(xf, fluidNeighborsPerIBFace, fluidNeighbors);
+
+      // find the closest fluid cell
+      fluidCellsTree.findNeighbors(xf, 1, fluidNeighbors);
+
+      NearestCell& nc = nearestCellForIBFace[f];
+
+      nc.neighbors.insert(fluidNeighbors[0]);
+
+      int nLayers=0;
+      // repeat till we have the required number but also protect
+      // against infinite loop by capping the max number of layers
+      while( ((int)nc.neighbors.size() < fluidNeighborsPerIBFace) &&
+             (nLayers < 10))
+      {
+          addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
+          nLayers++;
+      }
+      if (nLayers == 10) 
+        throw CException("not enough fluid cells for IB face interpolation");
+
+      ibFaceToCells->addCount(f,nc.neighbors.size());
+
+      // locate the required number of solid faces
       solidFacesTree.findNeighbors(xf, solidNeighborsPerIBFace, solidNeighbors);
 
-      for(int n=0; n<fluidNeighborsPerIBFace; n++)
-        ibFaceToCells->add(f,fluidNeighbors[n]);
       for(int n=0; n<solidNeighborsPerIBFace; n++)
         ibFaceToSolid->add(f,solidNeighbors[n]);
   }
 
-  ibFaceToCells->finishAdd();
+  ibFaceToCells->finishCount();
   ibFaceToSolid->finishAdd();
+
+  for(int f=0; f<nIBFaces; f++)
+  {
+      NearestCell& nc = nearestCellForIBFace[f];
+      foreach(int nb, nc.neighbors)
+      {
+          ibFaceToCells->add(f,nb);
+      }
+  }
+  
+  ibFaceToCells->finishAdd();
 
   mesh.setConnectivity(ibFaces,cells,ibFaceToCells);
   mesh.setConnectivity(ibFaces,solidMeshFaces,ibFaceToSolid);
@@ -464,29 +525,6 @@ IBManager::findNearestCellForSolidFaces(Mesh& mesh,
   }
 }
 
-/**
- * given a set of cells, add all their fluid ibtype neighbors to the
- * list if they aren't already in it.
- * 
- */
-
-void addFluidNeighbors(set<int>& neighbors,
-                       const CRConnectivity& cellCells,
-                       const Array<int>& ibType)
-{
-  set<int> newNeighbors;
-  foreach(int c, neighbors)
-  {
-      const int neighborCount = cellCells.getCount(c);
-      for(int nnb=0; nnb<neighborCount; nnb++)
-      {
-          const int c_nb = cellCells(c,nnb);
-          if (ibType[c_nb] == Mesh::IBTYPE_FLUID)
-            newNeighbors.insert(c_nb);
-      }
-  }
-  neighbors.insert(newNeighbors.begin(),newNeighbors.end());
-}
 
 void
 IBManager::createSolidInterpolationStencil(Mesh& mesh,
@@ -518,7 +556,7 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
 
           // repeat till we have the required number but also protect
           // against infinite loop by capping the max number of layers
-          while( (nc.neighbors.size() < fluidNeighborsPerSolidFace) &&
+          while( ((int)nc.neighbors.size() < fluidNeighborsPerSolidFace) &&
                  (nLayers < 10))
           {
               addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
