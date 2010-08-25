@@ -81,7 +81,7 @@ class MPMCoupling:
          return self.ndim;
 
      #otherStress is list of numpy array
-     def updateMPM(self, istep, otherTractions):
+     def updateMPM(self, istep, otherTractions=[]):
         
          if (  istep%self.couplingStep == 0  ):
 	     totCentroids = self.nfaces.sum()
