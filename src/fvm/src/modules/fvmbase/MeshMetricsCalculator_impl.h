@@ -604,23 +604,26 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       //if matrix is singular, use distance weighted interpolation
       else {
 	cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
+	//cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
-	  {
+	  {	  
           const int c = ibFCCol[nc];
           VectorT3 dr(xCells[c]-xFaces[f]);
           T wt = 1.0/dot(dr,dr);
           cellToIBCoeff[nc] = wt;
           wtSum += wt;
           nnb++;
+	  cout << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << " " << endl;  
 	  }
 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
 	  {
-          const int p = ibFPCol[np];
+	  const int p = ibFPCol[np];
           VectorT3 dr(xParticles[p]-xFaces[f]);
           T wt = 1.0/dot(dr,dr);
           particlesToIBCoeff[np] = wt;
           wtSum += wt;
           nnb++;
+	  cout << xParticles[p][0] << " " << xParticles[p][1] << " " << xParticles[p][2] << " " << endl; 
 	  }
 
 	if (nnb == 0)
