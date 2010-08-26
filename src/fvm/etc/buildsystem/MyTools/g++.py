@@ -38,7 +38,7 @@ def generate(env):
         #bug fix for mpich
         env.Append(CXXFLAGS=['-DMPICH_IGNORE_CXX_SEEK'])
     else:
-        env['CXX'] = 'cxx'
+        env['CXX'] = 'c++'
 
     env['CCFLAGS'] = env['CXXFLAGS']
 
