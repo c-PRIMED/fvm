@@ -48,10 +48,18 @@ public:
    _JokerSpikeB(_bandwidth,_bandwidth),
    _reducedA1(_bandwidth,_bandwidth),
    _reducedA2(_bandwidth,_bandwidth),
-   _g(_bandwidth),
+   _reducedRHS1(_bandwidth),
+   _reducedRHS2(_bandwidth),
+   _g(_ncells),
+   _gB(_bandwidth),
+   _gT(_bandwidth),
+   _JokergB(_bandwidth),
+   _JokergT(_bandwidth),
    _yL(_ncells,_bandwidth),
    _yR(_bandwidth,_bandwidth),
-   _y(_ncells)
+   _y(_ncells),
+   _pp1(_bandwidth),
+   _pp2(_bandwidth)
   {
     initAssembly();
     logCtor();
@@ -60,7 +68,16 @@ public:
   void solve( const XArray& f, XArray& x )
   {
       //negate rhs (f) for x
-      luSolver(f, x, true);
+      luSolver(f, _g, true);
+      //set gB, gT from 
+      setgBgT();
+      //communicate gB and gT to neighbourhood processors
+      exchange_gTgB();
+      //setting rhs for reduced system
+      setReducedRHS();
+      //solve reduced system
+      solveReducedSystem();
+      
   }
 
   virtual ~SpikeMatrix()
@@ -86,6 +103,10 @@ private:
      exchangeSpikeMtrx();
      setReducedMtrx();
      //setRSpikeMtrxFull();
+     if (_procID != _nprocs-1)
+        denseMtrxLU (_reducedA1, _pp1);
+     if ( _procID != 0 )
+        denseMtrxLU (_reducedA2, _pp2);
   }
  
   void setMatrix()
@@ -333,10 +354,56 @@ void  setReducedMtrx()
     /*_reducedA2.print(cout);*/
 }
 
+//getting LU decomposigion for dense matrix, the LU decomposition is stored in 
+void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
+{
+    A.print(cout);
+    //fill permutation
+    for( int i = 0; i < pp.getLength(); i++ )
+       pp[i] = i;
+
+    const int n = A.getRow();
+    for ( int i = 0; i < n-1; i++ ){
+       //doing paritial (column) pivoting
+       Diag pivot = A(i,i);
+       int jj = i;
+       for ( int j = i+1; j < n; j++){
+           if ( NumTypeTraits<Diag>::doubleMeasure( A(j,i) ) > NumTypeTraits<Diag>::doubleMeasure( pivot ) ){
+	       jj = j;
+	       pivot = A(j,i);
+	   }
+       }
+       //explicitly swap A(i,i:n-1) and A(jj,i:n-1)
+       if ( jj > i ){
+         for ( int j = i; j < n; j++){ 
+            const Diag tmp = A(i,j);
+            A(i,j) = A(jj,j);
+	    A(jj,j) = tmp;
+	 }
+	 pp[i] = jj;
+       }
+       ///////////
+       pivot = A(i,i);
+       for ( int j = i+1; j < n; j++ ){
+           const Diag m = A(j,i) / pivot;
+	   A(j,i) = m;
+	   for ( int k = i+1; k < n; k++ ){
+	       A(j,k) -= m * A(i,k);
+	   }
+       }
+    }
+    pp.print(cout);
+    A.print(cout);
+      
+
+}
+
+
 // generalized Lu solve Lu x = f as Vector
   void luSolver(const Array<X>& f, Array<X>& x, bool negate_rhs=false)
   {
-      /*f.print(cout);*/
+      f.print(cout);
+      x.zero();
      //zeros y
      _y.zero();
       const int b = _bandwidth;
@@ -373,10 +440,107 @@ void  setReducedMtrx()
         }
 	x[i] = soli / _A(b,i);
     }
+    x.print(cout);
+  }
 
-    /*x.print(cout);*/
+  //setting gB and gT from g
+  void setgBgT()
+  {
+      //top part of g
+      _gT.zero();
+      for ( int i = 0; i < _bandwidth; i++ )
+          _gT[i] = _g[i];
+      //bottom part of g
+      _gB.zero();
+      int indx = 0;
+      for ( int i = _ncells-_bandwidth; i < _ncells; i++ )
+          _gB[indx++] = _g[i];
+      _g.print(cout);
+      _gT.print(cout);
+      _gB.print(cout);
 
   }
+  //exhange gT and gB to temporary arrays
+  void exchange_gTgB()
+  {
+     _JokergB.zero();
+     _JokergT.zero();
+     #ifdef FVM_PARALLEL
+     //send-recv single call since each process is involving send and recv
+     MPI::Status status;  
+     if (_procID != _nprocs-1)
+     MPI::COMM_WORLD.Sendrecv(_gB.getData()     , _gB.getDataSize()     , MPI::BYTE, _procID+1, 3199,
+                              _JokergT.getData(), _JokergT.getDataSize(), MPI::BYTE, _procID+1, 4199, status );
+     if ( _procID != 0 )
+     MPI::COMM_WORLD.Sendrecv(_gT.getData()    , _gT.getDataSize()      , MPI::BYTE, _procID-1, 4199,
+                 	      _JokergB.getData(), _JokergB.getDataSize(), MPI::BYTE, _procID-1, 3199, status );
+     #endif
+     _JokergB.print(cout);
+     _JokergT.print(cout);
+	
+  }
+  
+  //setting rhs for reduced system
+  void setReducedRHS()
+  {
+      //rhs1
+      for ( int i = 0; i < _bandwidth; i++ ){
+          X dot_product = NumTypeTraits<X>::getZero();
+	  for ( int j = 0; j < _bandwidth; j++ ){
+	       dot_product +=   _RSpikeB(i,j) * _JokergT[j];
+          }
+	  _reducedRHS1[i] = _gB[i] - dot_product;
+      }
+      //rhs2
+      for ( int i = 0; i < _bandwidth; i++ ){
+          X dot_product = NumTypeTraits<X>::getZero();
+	  for ( int j = 0; j < _bandwidth; j++ ){
+	       dot_product += _LSpikeT(i,j) * _JokergB[j];
+          }
+	  _reducedRHS2[i] = _gT[i] - dot_product;
+      }
+  }
+  //solving reduced system
+  void solveReducedSystem()
+  {
+     if (_procID != _nprocs-1)
+        denseLUsolve(_reducedA1, _pp1, _reducedRHS1); //solution z1 is stored in reducedRHS1
+     if ( _procID != 0 )
+        denseLUsolve(_reducedA2, _pp2, _reducedRHS2);//solution z2 is stored in reducedRHS2
+  }
+  //dens LU solver
+  void denseLUsolve( const Array2D<Diag>& A, const Array<int>& pp, Array<X>& rhs )
+  {
+    rhs.print(cout);
+     const int n = A.getRow();
+     //forward solve
+     for ( int i = 0; i < n-1; i++ ){
+        //swap components of y: y(i) <---> y(pp(i))
+        if ( pp[i] > i ){
+	    X tmp = rhs[i];
+	    rhs[i] = rhs[pp[i]];
+	    rhs[pp[i]]=tmp;
+        }
+	for ( int j = i+1; j < n; j++ ){
+	   rhs[j] -= A(j,i) * rhs[i];
+	}
+     }
+
+     //back solve (later =/ might be useful to define)
+     rhs[n-1] = rhs[n-1] /  A(n-1,n-1);
+     for ( int i = n-2; i >=0; i-- ){
+        for ( int j = i+1; j < n; j++ ){
+	   rhs[i] -= A(i,j) * rhs[j];
+        }
+	rhs[i] = rhs[i] /  A(i,i);
+     }
+     rhs.print(cout);
+  }
+
+
+
+
+
   const CRConnectivity& _conn;
   const Array<Diag>& _diag;
   const Array<OffDiag>& _offDiag;
@@ -397,12 +561,20 @@ void  setReducedMtrx()
   Array2D<Diag>  _JokerSpikeT; // bxb matrix come from rank+1(source) 
   Array2D<Diag>  _JokerSpikeB; // bxb matrix come from rank-1(source)  
   Array2D<Diag>  _reducedA1;    // bxb matrix (I-V * W )z1 = g1 - V g2 (system above processor boundary line)
-  Array2D<Diag>  _reducedA2;    // bxb matrix (I-V * W )z1 = g1 - V g2 (system below processor boundayr line)
+  Array2D<Diag>  _reducedA2;    // bxb matrix (I-W * V )z2 = g2 - V g1 (system below processor boundayr line)
+  Array<X>       _reducedRHS1;  // g1 - V g2
+  Array<X>       _reducedRHS2;  // g2 - W g1
   Array<X>       _g;       //g matrix LU g = f
+  Array<X>       _gB;    //bottom part of g, gB = g(ncells-b,ncells-1)
+  Array<X>       _gT;    //top part of g, gT = g(0:b-1)
+  Array<X>       _JokergB;  //from top process 
+  Array<X>       _JokergT;  //from bottom process
   Array2D<Diag>  _yL; 
   Array2D<Diag>  _yR;      //joker vector for intermiediate steps, 
                            //LU x = f,  Ux = y first solve L y = f and then solve U x = y 
   Array<X>        _y;      //joker vector			   
+  Array<int>      _pp1;
+  Array<int>      _pp2;   //permutation vectors
 };
 
 
