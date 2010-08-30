@@ -133,12 +133,12 @@ private:
 	     int j =  col[n];
 	     //check if it is in bandwidth and inner coefficient
 	     if ( abs(j-i) <= _bandwidth && j < _ncells ){
-	       _A(_bandwidth-(j-i),j) = _offDiag[ _conn(i,j) ];
+	       _A(_bandwidth-(j-i),j) = _offDiag[_conn(i,j)];
 	     }
          }
      }
      
-     _A.print(cout);
+     /*_A.print(cout);*/
   } 
   //left matrix
   void setLMtrx()
@@ -366,7 +366,7 @@ void  setReducedMtrx()
 //getting LU decomposigion for dense matrix, the LU decomposition is stored in 
 void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
 {
-    A.print(cout);
+	/*A.print(cout);*/
     //fill permutation
     for( int i = 0; i < pp.getLength(); i++ )
        pp[i] = i;
@@ -401,8 +401,8 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
 	   }
        }
     }
-    pp.print(cout);
-    A.print(cout);
+    /*pp.print(cout);*/
+    /*A.print(cout);*/
       
 
 }
@@ -411,7 +411,7 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
 // generalized Lu solve Lu x = f as Vector
   void luSolver(const Array<X>& f, Array<X>& x, bool negate_rhs=false)
   {
-      f.print(cout);
+	  /*f.print(cout);*/
       x.zero();
      //zeros y
      _y.zero();
@@ -449,7 +449,7 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
         }
 	x[i] = soli / _A(b,i);
     }
-    x.print(cout);
+    /*x.print(cout);*/
   }
 
   //setting gB and gT from g
@@ -464,9 +464,9 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
       int indx = 0;
       for ( int i = _ncells-_bandwidth; i < _ncells; i++ )
           _gB[indx++] = _g[i];
-      _g.print(cout);
-      _gT.print(cout);
-      _gB.print(cout);
+      /*_g.print(cout);*/
+      /*_gT.print(cout);*/
+      /*_gB.print(cout);*/
 
   }
   //exhange gT and gB to temporary arrays
@@ -484,8 +484,8 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
      MPI::COMM_WORLD.Sendrecv(_gT.getData()    , _gT.getDataSize()      , MPI::BYTE, _procID-1, 4199,
                  	      _JokergB.getData(), _JokergB.getDataSize(), MPI::BYTE, _procID-1, 3199, status );
      #endif
-     _JokergB.print(cout);
-     _JokergT.print(cout);
+     /*_JokergB.print(cout);*/
+     /*_JokergT.print(cout);*/
 	
   }
   
@@ -520,7 +520,7 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
   //dens LU solver
   void denseLUsolve( const Array2D<Diag>& A, const Array<int>& pp, Array<X>& rhs )
   {
-    rhs.print(cout);
+	  /*rhs.print(cout);*/
      const int n = A.getRow();
      //forward solve
      for ( int i = 0; i < n-1; i++ ){
@@ -543,9 +543,9 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
         }
 	rhs[i] = rhs[i] /  A(i,i);
      }
-     cout << endl;
-     rhs.print(cout);
-     cout << endl;
+     /*cout << endl;*/
+     /*rhs.print(cout);*/
+     /*cout << endl;*/
   }
 
 //exchange reduced system solution between neighbourhodds
@@ -563,11 +563,11 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
      MPI::COMM_WORLD.Sendrecv(_reducedRHS2.getData(), _reducedRHS2.getDataSize(), MPI::BYTE, _procID-1, 4199,
                  	      _JokerZ1.getData(), _JokerZ1.getDataSize(), MPI::BYTE, _procID-1, 3199, status );
      #endif
-     cout << endl;
-     _JokerZ1.print(cout);
-     cout << endl;
-     _JokerZ2.print(cout);
-     cout << endl;
+     /*cout << endl;*/
+     /*_JokerZ1.print(cout);*/
+     /*cout << endl;*/
+     /*_JokerZ2.print(cout);*/
+     /*cout << endl;*/
 	
   }
 //setting rhs for  final 

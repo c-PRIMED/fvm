@@ -55,6 +55,7 @@ public:
   typedef shared_ptr< Array<Diag> > DiagArrayPtr;
   
   typedef shared_ptr< Array<double> >  ArrayDblePtr;
+  typedef  SpikeMatrix< Diag, OffDiag, X> T_SpikeMtrx;
   /**
    * Embedded class used for easy (ie. no search) access to matrix
    * entries for the special case of face based finite volume
@@ -119,7 +120,8 @@ public:
     _diag(_conn.getRowDim()),
     _offDiag(_col.getLength()),
     _pairWiseAssemblers(),
-    _isBoundary(_conn.getRowDim())
+    _isBoundary(_conn.getRowDim()),
+    _spikeMtrx()
   {
     logCtor();
     _isBoundary = false;
@@ -275,12 +277,13 @@ public:
 
   virtual void spikeSolve(IContainer& xB, const IContainer& bB, const IContainer&, const SpikeStorage& spike_storage) const
   {
-
+    if (!_spikeMtrx)
+       _spikeMtrx = shared_ptr<T_SpikeMtrx>(new T_SpikeMtrx(_conn, _diag, _offDiag, spike_storage));
+        
     XArray& x = dynamic_cast<XArray&>(xB);
     shared_ptr<XArray> y = dynamic_pointer_cast<XArray>(x.newClone());
     const XArray& b = dynamic_cast<const XArray&>(bB);
-    SpikeMatrix<T_Diag, T_OffDiag, X>  spikeMatrix(_conn, _diag, _offDiag, spike_storage);
-    spikeMatrix.solve( b, x);
+    _spikeMtrx->solve( b, x);
 
   }
 
@@ -1039,6 +1042,8 @@ private:
 
   // ilu coeffs
   mutable DiagArrayPtr _iluCoeffsPtr;
+  
+  mutable shared_ptr<T_SpikeMtrx>  _spikeMtrx;
   
  
 };
