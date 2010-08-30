@@ -133,7 +133,7 @@ private:
 	     int j =  col[n];
 	     //check if it is in bandwidth and inner coefficient
 	     if ( abs(j-i) <= _bandwidth && j < _ncells ){
-	       _A(_bandwidth-(j-i),j) = _offDiag[_conn(i,j)];
+	       _A(_bandwidth-(j-i),j) = _offDiag[j];
 	     }
          }
      }
