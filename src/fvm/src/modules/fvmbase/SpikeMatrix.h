@@ -50,6 +50,9 @@ public:
    _reducedA2(_bandwidth,_bandwidth),
    _reducedRHS1(_bandwidth),
    _reducedRHS2(_bandwidth),
+   _JokerZ1(_bandwidth),
+   _JokerZ2(_bandwidth),
+   _RHS(_ncells),
    _g(_ncells),
    _gB(_bandwidth),
    _gT(_bandwidth),
@@ -77,6 +80,12 @@ public:
       setReducedRHS();
       //solve reduced system
       solveReducedSystem();
+      //exchange reduced system solutions
+      exchange_reducedSol(); 
+      //setting final system rhs 
+      setRHS(f, true);
+      //get solution
+      luSolver( _RHS, x,  false);
       
   }
 
@@ -534,10 +543,75 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
         }
 	rhs[i] = rhs[i] /  A(i,i);
      }
+     cout << endl;
      rhs.print(cout);
+     cout << endl;
   }
 
-
+//exchange reduced system solution between neighbourhodds
+  void exchange_reducedSol()
+  {
+     _JokerZ1.zero();
+     _JokerZ2.zero();
+     #ifdef FVM_PARALLEL
+     //send-recv single call since each process is involving send and recv
+     MPI::Status status;  
+     if (_procID != _nprocs-1)
+     MPI::COMM_WORLD.Sendrecv(_reducedRHS1.getData(), _reducedRHS1.getDataSize(), MPI::BYTE, _procID+1, 3199,
+                              _JokerZ2.getData(), _JokerZ2.getDataSize(), MPI::BYTE, _procID+1, 4199, status );
+     if ( _procID != 0 )
+     MPI::COMM_WORLD.Sendrecv(_reducedRHS2.getData(), _reducedRHS2.getDataSize(), MPI::BYTE, _procID-1, 4199,
+                 	      _JokerZ1.getData(), _JokerZ1.getDataSize(), MPI::BYTE, _procID-1, 3199, status );
+     #endif
+     cout << endl;
+     _JokerZ1.print(cout);
+     cout << endl;
+     _JokerZ2.print(cout);
+     cout << endl;
+	
+  }
+//setting rhs for  final 
+  void setRHS(const Array<X>& f,  bool negate_rhs=false)
+  {
+      _RHS.zero();
+      if ( negate_rhs == true ){
+         //top part
+         for ( int i = 0; i < _bandwidth; i++ ){
+            X dot_product = NumTypeTraits<X>::getZero();
+	    for ( int j = 0; j < _bandwidth; j++ ){
+	       dot_product +=   _L(i,j) * _JokerZ1[j];
+            }
+	    _RHS[i] = -f[i] - dot_product;
+         }
+         //bottom part
+         for ( int i = 0; i < _bandwidth; i++ ){
+            X dot_product = NumTypeTraits<X>::getZero();
+	    const int indx = _ncells-_bandwidth+i;
+	    for ( int j = 0; j < _bandwidth; j++ ){
+	       dot_product +=  _R(i,j) * _JokerZ2[j];
+            }
+	    _RHS[indx] = -f[indx] - dot_product;
+         }
+      } else { 
+         //top part
+         for ( int i = 0; i < _bandwidth; i++ ){
+            X dot_product = NumTypeTraits<X>::getZero();
+	    for ( int j = 0; j < _bandwidth; j++ ){
+	       dot_product +=   _L(i,j) * _JokerZ1[j];
+            }
+	    _RHS[i] = f[i] - dot_product;
+         }
+         //bottom part
+         for ( int i = 0; i < _bandwidth; i++ ){
+            X dot_product = NumTypeTraits<X>::getZero();
+	    const int indx = _ncells-_bandwidth+i;
+	    for ( int j = 0; j < _bandwidth; j++ ){
+	       dot_product +=  _R(i,j) * _JokerZ2[j];
+            }
+	    _RHS[indx] = f[indx] - dot_product;
+         }
+      }
+  }
 
 
 
@@ -564,6 +638,9 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
   Array2D<Diag>  _reducedA2;    // bxb matrix (I-W * V )z2 = g2 - V g1 (system below processor boundayr line)
   Array<X>       _reducedRHS1;  // g1 - V g2
   Array<X>       _reducedRHS2;  // g2 - W g1
+  Array<X>       _JokerZ1;      //store z1 solution from other process(rank-1)
+  Array<X>       _JokerZ2;      //store z2 solution from other process(rank+1)
+  Array<X>       _RHS;          //final step f1 - C2*z1 - B2*z4
   Array<X>       _g;       //g matrix LU g = f
   Array<X>       _gB;    //bottom part of g, gB = g(ncells-b,ncells-1)
   Array<X>       _gT;    //top part of g, gT = g(0:b-1)
