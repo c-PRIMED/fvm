@@ -176,7 +176,7 @@ private:
            }
        }
     }  
-    //_A.print(cout);
+     /*_A.print(cout);*/
   }
 
   //right matrix
@@ -449,6 +449,10 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
         }
 	x[i] = soli / _A(b,i);
     }
+    /*f.print(cout);*/
+    /*cout << endl;*/
+    /*_y.print(cout);*/
+    /*cout << endl;*/
     /*x.print(cout);*/
   }
 
@@ -575,41 +579,28 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
   {
       _RHS.zero();
       if ( negate_rhs == true ){
-         //top part
-         for ( int i = 0; i < _bandwidth; i++ ){
-            X dot_product = NumTypeTraits<X>::getZero();
-	    for ( int j = 0; j < _bandwidth; j++ ){
-	       dot_product +=   _L(i,j) * _JokerZ1[j];
-            }
-	    _RHS[i] = -f[i] - dot_product;
+         for ( int i = 0; i < _ncells; i++ )
+	     _RHS[i] = -f[i];
+      } else {
+         for ( int i = 0; i < _ncells; i++ )
+	     _RHS[i] = f[i];
+      }
+      //top part
+      for ( int i = 0; i < _bandwidth; i++ ){
+         X dot_product = NumTypeTraits<X>::getZero();
+         for ( int j = 0; j < _bandwidth; j++ ){
+		 dot_product +=   _L(i,j) * _JokerZ1[j];
          }
-         //bottom part
-         for ( int i = 0; i < _bandwidth; i++ ){
-            X dot_product = NumTypeTraits<X>::getZero();
-	    const int indx = _ncells-_bandwidth+i;
-	    for ( int j = 0; j < _bandwidth; j++ ){
-	       dot_product +=  _R(i,j) * _JokerZ2[j];
-            }
-	    _RHS[indx] = -f[indx] - dot_product;
+         _RHS[i] -=  dot_product;
+      }
+      //bottom part
+      for ( int i = 0; i < _bandwidth; i++ ){
+         X dot_product = NumTypeTraits<X>::getZero();
+         const int indx = _ncells-_bandwidth+i;
+         for ( int j = 0; j < _bandwidth; j++ ){
+		 dot_product +=  _R(i,j) * _JokerZ2[j];
          }
-      } else { 
-         //top part
-         for ( int i = 0; i < _bandwidth; i++ ){
-            X dot_product = NumTypeTraits<X>::getZero();
-	    for ( int j = 0; j < _bandwidth; j++ ){
-	       dot_product +=   _L(i,j) * _JokerZ1[j];
-            }
-	    _RHS[i] = f[i] - dot_product;
-         }
-         //bottom part
-         for ( int i = 0; i < _bandwidth; i++ ){
-            X dot_product = NumTypeTraits<X>::getZero();
-	    const int indx = _ncells-_bandwidth+i;
-	    for ( int j = 0; j < _bandwidth; j++ ){
-	       dot_product +=  _R(i,j) * _JokerZ2[j];
-            }
-	    _RHS[indx] = f[indx] - dot_product;
-         }
+         _RHS[indx] -=  dot_product;
       }
   }
 
