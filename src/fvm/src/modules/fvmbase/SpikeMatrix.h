@@ -128,11 +128,11 @@ private:
          _A(_bandwidth,i) = _diag[i];
      const Array<int>& row = _conn.getRow();
      const Array<int>& col = _conn.getCol();
-     for ( int i = 0; i < _ncells; i++ ){
+     for ( int i = 0; i < nc; i++ ){
          for (int n = row[i]; n < row[i+1]; n++ ){
 	     int j =  col[n];
 	     //check if it is in bandwidth and inner coefficient
-	     if ( abs(j-i) <= _bandwidth && j < _ncells ){
+	     if ( abs(j-i) <= _bandwidth && j < nc ){
 	       _A(_bandwidth-(j-i),j) = _offDiag[j];
 	     }
          }
@@ -497,6 +497,7 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
   void setReducedRHS()
   {
       //rhs1
+      _reducedRHS1.zero();
       for ( int i = 0; i < _bandwidth; i++ ){
           X dot_product = NumTypeTraits<X>::getZero();
 	  for ( int j = 0; j < _bandwidth; j++ ){
@@ -505,6 +506,7 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
 	  _reducedRHS1[i] = _gB[i] - dot_product;
       }
       //rhs2
+      _reducedRHS2.zero();
       for ( int i = 0; i < _bandwidth; i++ ){
           X dot_product = NumTypeTraits<X>::getZero();
 	  for ( int j = 0; j < _bandwidth; j++ ){
@@ -540,7 +542,9 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
      }
 
      //back solve (later =/ might be useful to define)
-     rhs[n-1] = rhs[n-1] /  A(n-1,n-1);
+     if ( n >= 1 ) //prevent accessing arrays if n=0 size
+        rhs[n-1] = rhs[n-1] /  A(n-1,n-1);
+
      for ( int i = n-2; i >=0; i-- ){
         for ( int j = i+1; j < n; j++ ){
 	   rhs[i] -= A(i,j) * rhs[j];
