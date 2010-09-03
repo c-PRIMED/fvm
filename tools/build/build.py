@@ -12,7 +12,8 @@ class Build:
 
     def __init__(self, cname, topdir, make_path):
         # create build directories
-        cwd = os.getcwd()        
+        cwd = os.getcwd()
+        topdir = os.path.abspath(topdir)   
         self.topdir = topdir
         self.blddir = os.path.join(os.getcwd(), "build-%s" % cname)
         self.logdir = os.path.join(self.blddir, "log")
@@ -36,7 +37,7 @@ class Build:
                 debug("importing package modules from %s" % path)
                 try:
                     os.chdir(path)
-                    sys.path = [path] + sys.path
+                    sys.path = [path] + sys.path                    
                 except:
                     fatal('Cannot read modules from %s' % path)    
                 for m in glob.glob('*.py'):
