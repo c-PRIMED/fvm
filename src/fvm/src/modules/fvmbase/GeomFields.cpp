@@ -4,6 +4,7 @@ GeomFields::GeomFields(const string baseName) :
   coordinate(baseName+"coordinate"),
   coordinateN1(baseName+"coordinateN1"),
   coordinate0(baseName+"coordinate0"),
+  coordinateK1(baseName+"coordinateK1"),
   area(baseName+"area"),
   areaN1(baseName+"areaN1"),
   areaMag(baseName+"areaMag"),

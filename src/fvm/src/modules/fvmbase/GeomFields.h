@@ -15,6 +15,7 @@ struct GeomFields
   Field coordinate;
   Field coordinateN1;
   Field coordinate0; // value at t=0
+  Field coordinateK1; //value at previous iteration
   Field area;
   Field areaN1;
   Field areaMag;
