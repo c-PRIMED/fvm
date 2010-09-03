@@ -87,13 +87,45 @@ public:
             dynamic_cast<const VectorT3Array&>(_geomFields.coordinate0[nodes]);
           VectorT3Array& nodeDisplacement =
             dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
-
+          VectorT3Array& nodeCoordK1 =
+            dynamic_cast<VectorT3Array&>(_geomFields.coordinateK1[nodes]);
+	  nodeCoordK1 = nodeCoord;
 	  for (int i=0;i<nNodes;i++)
 	  {
 	      nodeCoord[i] = nodeCoord0[i] + nodeDisplacement[i];
 	  }
       }
   }
+
+  void deformMeshStructure()
+  {
+      const int numMeshes = _meshes.size();
+      for (int n=0;n<numMeshes;n++)
+      {
+	  const Mesh& mesh = *_meshes[n];
+	  const StorageSite& nodes = mesh.getNodes();
+	  const int nNodes = nodes.getCount();
+	  const Array<int>& displacementOptions =
+	    dynamic_cast<Array<int>& > (_geomFields.displacementOptions[nodes]);
+	  VectorT3Array& nodeCoord =
+	    dynamic_cast<VectorT3Array&>(_geomFields.coordinate[nodes]);
+	  const VectorT3Array& nodeCoord0 =
+	    dynamic_cast<const VectorT3Array&>(_geomFields.coordinate0[nodes]);
+	  VectorT3Array& nodeDisplacement =
+	    dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
+          VectorT3Array& nodeCoordK1 =
+            dynamic_cast<VectorT3Array&>(_geomFields.coordinateK1[nodes]);
+          nodeCoordK1 = nodeCoord;	  
+	  for (int i=0;i<nNodes;i++)
+	  {
+	      if(displacementOptions[i] == 3)
+	      {
+		  nodeCoord[i] = nodeCoord0[i] + nodeDisplacement[i];
+	      }
+	  }
+      }
+  }
+
 
   // update node coordinates and face velocity for the boundary mesh
   // corresponding to the given mesh
@@ -197,7 +229,7 @@ public:
 	  const StorageSite& nodes = mesh.getNodes();
 	  VectorT3Array& nodeCoord =
             dynamic_cast<VectorT3Array&>(_geomFields.coordinate[nodes]);
-          _geomFields.coordinateN1.addArray(nodes,
+          _geomFields.coordinateK1.addArray(nodes,
 	    dynamic_pointer_cast<ArrayBase>(nodeCoord.newCopy()));
 
           _geomFields.coordinate0.addArray(nodes,
