@@ -98,7 +98,7 @@ def main():
     if cmd and not '_MEMOSA_MAKE' in os.environ:
         cmd = ';'.join(cmd)        
         os.environ['_MEMOSA_MAKE'] = '1'
-        os.system('%s;%s' %(cmd, ' '.join(sys.argv)))
+        os.system("/bin/bash -l -c '%s;%s'" %(cmd, ' '.join(sys.argv)))
         sys.exit(0)
 
     bld = Build(cname, sdir, make_path)

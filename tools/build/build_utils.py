@@ -251,6 +251,7 @@ def run_commands(pkg, section):
 
     # Optionally run a command
     cmd = config(pkg, section)
+    print "RUNNING",cmd
     if cmd:
         debug("executing: " + cmd)
         s = os.system(cmd)
