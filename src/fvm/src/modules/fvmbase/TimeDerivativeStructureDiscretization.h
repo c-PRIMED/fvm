@@ -76,35 +76,16 @@ public:
     const XArray& xN2 = dynamic_cast<const XArray&>(_varN2Field[cells]);
 
     T_Scalar two(2.0);
-    const T_Scalar _dT2 = _dT*_dT;
-    if (_geomFields.volumeN1.hasArray(cells))
+    const T_Scalar _dT2 = _dT*_dT;    
+    
+    for(int c=0; c<nCells; c++)
     {
-        const TArray& cellVolumeN1 = 
-	  dynamic_cast<const TArray&>(_geomFields.volumeN1[cells]);
-	const TArray& cellVolumeN2 = 
-	  dynamic_cast<const TArray&>(_geomFields.volumeN2[cells]);
-	for(int c=0; c<nCells; c++)
-	{
-	    const T_Scalar rhoVbydT2 = density[c]*cellVolume[c]/_dT2;
-	    const T_Scalar rhobydT2 = density[c]/_dT2;
-	    const T_Scalar term1 = cellVolume[c];
-	    const T_Scalar term2 = two*cellVolumeN1[c];
-	    const T_Scalar term3 = cellVolumeN2[c];
-	    rCell[c] -= rhobydT2*(term1*x[c]- term2*xN1[c]
-				 + term3*xN2[c]);
-	    diag[c] -= rhoVbydT2;
-	}
+        const T_Scalar rhoVbydT2 = density[c]*cellVolume0[c]/_dT2;
+	rCell[c] -= rhoVbydT2*(x[c]- two*xN1[c]
+			       + xN2[c]);
+	diag[c] -= rhoVbydT2;
     }
-    else
-    {
-        for(int c=0; c<nCells; c++)
-	{
-	    const T_Scalar rhoVbydT2 = density[c]*cellVolume0[c]/_dT2;
-	    rCell[c] -= rhoVbydT2*(x[c]- two*xN1[c]
-				  + xN2[c]);
-	    diag[c] -= rhoVbydT2;
-	}
-    }
+    
   }
 private:
   const GeomFields& _geomFields;
