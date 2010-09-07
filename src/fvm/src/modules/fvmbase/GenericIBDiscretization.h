@@ -71,7 +71,22 @@ public:
 
     const int nIBFaces = ibFaces.getCount();
 
-    // used to keep track of the current ib face index
+    // used for computing the average value in IBTYPE_BOUNDARY cells.
+    // we can't use the cellPhi storage during the loop below since a
+    // cell may have more than one ib face and the current value of
+    // phi in the cell is required to correctly impose the dirichlet
+    // condition. so we accumulate the boundary cell value and counts
+    // in the following arrays and after all the faces have been
+    // visited, overwrite any boundary cell values with the average of
+    // all the ib faces
+    const int nCells = cells.getCount();
+    XArray xB(nCells);
+    Array<int> wB(nCells);
+
+    xB.zero();
+    wB.zero();
+      
+      // used to keep track of the current ib face index
     int ibFace =0;
     
     const int nFaces = faces.getCount();
@@ -93,6 +108,8 @@ public:
                 rCell[c1] = NumTypeTraits<X>::getZero();
                 assembler.getCoeff01(f) = OffDiag(0);
                 matrix.setDirichlet(c1);
+                xB[c1] += facePhi;
+                wB[c1]++;
             }
             else
             {
@@ -100,6 +117,8 @@ public:
 		rCell[c0] = NumTypeTraits<X>::getZero();
                 assembler.getCoeff10(f) = OffDiag(0);
                 matrix.setDirichlet(c0);
+                xB[c0] += facePhi;
+                wB[c0]++;
             }
             ibFace++;
         }
@@ -119,6 +138,13 @@ public:
     }
     if (ibFace != nIBFaces)
       throw CException("incorrect number of IB faces");
+
+    // set the phi for boundary cells as average of the ib face values
+    for(int c=0; c<nCells; c++)
+    {
+        if (wB[c] > 0)
+          cellPhi[c] = xB[c] / T_Scalar(wB[c]);
+    }
   }
 
 private:
