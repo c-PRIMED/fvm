@@ -133,7 +133,7 @@ private:
 	     int j =  col[n];
 	     //check if it is in bandwidth and inner coefficient
 	     if ( abs(j-i) <= _bandwidth && j < nc ){
-	       _A(_bandwidth-(j-i),j) = _offDiag[j];
+	       _A(_bandwidth-(j-i),j) = _offDiag[n];
 	     }
          }
      }
@@ -156,7 +156,7 @@ private:
 	  _L(i,j) = _offDiag[offDiagPtr[indx++]];
 	}
      }
-     //_L.print(cout);
+     /*_L.print(cout);*/
   }
   
   //lu 
@@ -203,7 +203,7 @@ private:
   {
      //copy _L to LSpike
      _LL.partialCopyFrom(_L);
-     //_LL.print(cout);
+     /*_LL.print(cout);*/
      //zeros yL
      _yL.zeros();
      const int b = _bandwidth;
@@ -218,7 +218,7 @@ private:
             _yL(i,n) = yi;
 	}
     }
-     //_yL.print(cout);
+     /*_yL.print(cout);*/
     //backward solve
     for ( int n = 0; n < b; n++ ){
        _LSpike(_ncells-1,n) = _yL(_ncells-1,n) / _A(b,_ncells-1);
@@ -231,7 +231,7 @@ private:
 	  _LSpike(i,n) = soli / _A(b,i);
       }
    }
-    //_LSpike.print(cout);
+    /*_LSpike.print(cout);*/
    _LSpike.partialCopyTo(_LSpikeT);
    /*_LSpikeT.print(cout);*/
 
@@ -241,7 +241,7 @@ private:
   {
      //copy _R to RSpike
      _RR.partialCopyFrom(_R);
-     //_RR.print(cout);
+     /*_RR.print(cout);*/
      //zeros yR
      _yR.zeros();
      const int b = _bandwidth;
@@ -256,7 +256,7 @@ private:
             _yR(i,n) = yi;
 	}
     }
-    //_yR.print(cout);
+     /*_yR.print(cout);*/
     //backward solve
     for ( int n = 0; n < b; n++ ){
        _RSpike(_ncells-1,n) = _yR(_ncells-1,n) / _A(b,_ncells-1);
@@ -269,9 +269,9 @@ private:
 	  _RSpike(i,n) = soli / _A(b,i);
       }
    }
-   //_RSpike.print(cout);
+    /*_RSpike.print(cout);*/
    _RSpike.partialCopyTo(_RSpikeB);
-   //_RSpikeB.print(cout);
+   /*_RSpikeB.print(cout);*/
 
   }
 
@@ -296,7 +296,7 @@ private:
             _yR(i,n) = yi;
 	}
     }
-    //_yR.print(cout);
+     /*_yR.print(cout);*/
     //backward solve
     for ( int n = 0; n < b; n++ ){
        _RSpikeB(b-1,n) = _yR(b-1,n) / _A(b,_ncells-1);
@@ -411,7 +411,6 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
 // generalized Lu solve Lu x = f as Vector
   void luSolver(const Array<X>& f, Array<X>& x, bool negate_rhs=false)
   {
-	  /*f.print(cout);*/
       x.zero();
      //zeros y
      _y.zero();
@@ -454,6 +453,7 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
     /*_y.print(cout);*/
     /*cout << endl;*/
     /*x.print(cout);*/
+    /*cout << endl;*/
   }
 
   //setting gB and gT from g
@@ -505,6 +505,7 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
           }
 	  _reducedRHS1[i] = _gB[i] - dot_product;
       }
+      /*_reducedRHS1.print(cout);*/
       //rhs2
       _reducedRHS2.zero();
       for ( int i = 0; i < _bandwidth; i++ ){
@@ -514,6 +515,7 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
           }
 	  _reducedRHS2[i] = _gT[i] - dot_product;
       }
+      /*_reducedRHS2.print(cout);*/
   }
   //solving reduced system
   void solveReducedSystem()
@@ -606,6 +608,8 @@ void denseMtrxLU ( Array2D<Diag>&  A,  Array<int>& pp)
          }
          _RHS[indx] -=  dot_product;
       }
+      /*_RHS.print(cout);*/
+      /*cout << endl;*/
   }
 
 
