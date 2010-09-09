@@ -14,7 +14,8 @@ struct KineticBC : public FloatVarDict<T>
       this->defineVar("specifiedYVelocity",T(0.0));
       this->defineVar("specifiedZVelocity",T(0.0));
       this->defineVar("specifiedPressure",T(0.0));
-      this->defineVar("specifiedTemperature",T(300.0));
+      this->defineVar("specifiedDensity",T(0.0));
+      this->defineVar("specifiedTemperature",T(1.0));
       this->defineVar("accomodationCoefficient",T(1.0));
   }
   string bcType;

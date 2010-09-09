@@ -98,21 +98,21 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       for  (int j3=1;j3<N3;j3++){
 	absci3[j3]=absci3[j3-1]+dcz;
 	wts3[j3]=dcz;
-	printf("%4.2f", absci3[j3]);
+	//printf("%4.2f", absci3[j3]);
       }
-      printf("\n");
+      //printf("\n");
       for (int j2=1;j2<N2;j2++){
 	absci2[j2]=absci2[j2-1]+dcy;
 	wts2[j2]=dcy;
-	printf("%4.2f", absci2[j2]);
+	//printf("%4.2f", absci2[j2]);
       }
-      printf("\n");
+      //printf("\n");
       for  (int j1=1;j1<N1;j1++){
 	absci1[j1]=absci1[j1-1]+dcx;	
 	wts1[j1]=dcx;
-	printf("%4.2f", absci1[j1]);
+	//printf("%4.2f", absci1[j1]);
       }
-      printf("\n");
+      //printf("\n");
      
       int j;
       j=0;

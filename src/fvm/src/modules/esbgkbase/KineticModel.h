@@ -77,11 +77,11 @@ class KineticModel : public Model
 	}
       init(); 
       SetBoundaryConditions();
-      weightedMaxwellian(0.25,4.0,1.0);
+      weightedMaxwellian(0.5,0.0,0.0);
 
       ComputeMacroparameters(); //calculate density,velocity,temperature
       ComputeCollisionfrequency(); //calculate viscosity, collisionFrequency
-      initializeMaxwellianEq();
+      initializeMaxwellianEq(); //equilibrium distribution
 	// char * filename="f0.plt";
 	//advance(1);
     }
@@ -104,11 +104,11 @@ class KineticModel : public Model
 	//initialize density,velocity  
 	for(int c=0; c<nCells;c++)
 	  {
-	    density[c] =10.0;
-	    v[c][0]=10.0;
-	    v[c][1]=10.0;
+	    density[c] =1.0;
+	    v[c][0]=0.0;
+	    v[c][1]=0.0;
 	    v[c][2]=0.0;
-	    temperature[c]=5.0;
+	    temperature[c]=1.0;
 	    pressure[c]=temperature[c]*density[c];
 	  }	
       }
@@ -295,20 +295,10 @@ class KineticModel : public Model
       }
   }
   
-  KineticBCMap& getBCMap() 
-    {
-      return _bcMap;
-    }
-  KineticVCMap& getVCMap()
-    {
-return _vcMap;
-    }
+  KineticBCMap& getBCMap()  {return _bcMap;}
+  KineticVCMap& getVCMap()  {return _vcMap;}
   
-  KineticModelOptions<T>& 
-    getOptions() 
-    {
-      return _options;
-    }
+  KineticModelOptions<T>&   getOptions() {return _options;}
   
   void init()
   {
@@ -378,7 +368,11 @@ return _vcMap;
 		KineticBC<T> *bc(new KineticBC<T>());
 		
 		_bcMap[fg.id] = bc;
-		if ((fg.groupType == "wall"))
+		if ((fg.groupType == "NoSlipWall"))
+		  {
+		      bc->bcType = "WallBC";
+		  }	
+		else if((fg.groupType == "wall"))
 		  {
 		      bc->bcType = "WallBC";
 		  }
@@ -429,6 +423,7 @@ return _vcMap;
        
        ls.getMatrix().addMatrix(vIndex,vIndex,m);
      }
+   //mesh.getBoudaryfaces and interfacefaces?
   } 
   
   
@@ -497,8 +492,9 @@ return _vcMap;
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
 			 ls.getX(), ls.getB());
 
-    const int numMeshes = _meshes.size();
-    for (int n=0; n<numMeshes; n++)
+    /*
+      const int numMeshes = _meshes.size();
+      for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
 
@@ -509,16 +505,15 @@ return _vcMap;
 	    const int nFaces = faces.getCount();
 
 	    const KineticBC<T>& bc = *_bcMap[fg.id];
-
-	    //KineticBoundaryConditions<T,T,T> kbc(faces,
-		//				 mesh,
-		//				 _geomFields,
-		//				 _quadrature,
-		//				 _dsfPtr,
-		//				 ls.getMatrix(),
-		//				 ls.getX(),
-		//				 ls.getB());
-					 
+	    
+	    KineticBoundaryConditions<T,T,T> kbc(faces, mesh,
+						 _geomFields,
+						 _quadrature,
+						 _dsfPtr,
+						 ls.getMatrix(),
+						 ls.getX(),
+						 ls.getB());
+	   				 
 	    FloatValEvaluator<VectorT3>
 	      bVelocity(bc.getVal("specifiedXVelocity"),
 			bc.getVal("specifiedYVelocity"),
@@ -528,18 +523,21 @@ return _vcMap;
 	      bTemperature(bc.getVal("specifiedTemperature"),
 			   faces);
 
-	    //if (bc.bcType == "Diffuse Wall")
-	    //  {
-		
-	//	kbc.applyDiffuseWallBC(bVelocity,bTemperature);
-	  //    }
+	    if (bc.bcType == "NoSlipWall")
+	    {
+	      printf("%s \n", "bc is NoSlipWall");
+	      //	kbc.applyDiffuseWallBC(bVelocity,bTemperature);
+	    }
 	    //else if (bc.bcType == "Specular Wall")
 	     // {
 	//	kbc.applySpecularWallBC();
 	  //    }
 	  }
 	  }
+	  */
+    
   }
+
   
   void updateTime()
   {
@@ -566,9 +564,52 @@ return _vcMap;
 	    fN1 = f;
 	  }
       }
-  }	  
-  
-  
+  }
+	  
+
+  void callBoundaryConditions()
+    
+  { 
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr;
+	    const StorageSite& faces = fg.site;
+	    //const int nFaces = faces.getCount();
+	    
+	    const KineticBC<T>& bc = *_bcMap[fg.id];
+	    
+	    KineticBoundaryConditions<T,T,T> kbc(faces, mesh,_geomFields,_quadrature,_dsfPtr);
+	    
+	    FloatValEvaluator<VectorT3>
+	      bVelocity(bc.getVal("specifiedXVelocity"),
+			bc.getVal("specifiedYVelocity"),
+			bc.getVal("specifiedZVelocity"),
+			faces);
+	    FloatValEvaluator<T>
+	      bTemperature(bc.getVal("specifiedTemperature"),
+			   faces);
+
+	    if (bc.bcType == "WallBC")
+	      {
+		//printf("%s \n", "bc is NoSlipWall");
+		//	kbc.applyDiffuseWallBC(bVelocity,bTemperature);
+	      }
+	    //else if (bc.bcType == "Specular Wall")
+	    // {
+	    //	kbc.applySpecularWallBC();
+	    //    }
+	    
+	    
+	  }
+      }
+   }
+
+ 
   void advance(const int niter)
   {
     for(int n=0; n<niter; n++)  
@@ -592,6 +633,7 @@ return _vcMap;
 	    //  rNorm = iNorm;
 	     ls.postSolve();
 	     ls.updateSolution();
+	     callBoundaryConditions();  //new		 
 	     _options.getKineticLinearSolver().cleanup();
 	  }
 	
@@ -664,7 +706,8 @@ void OutputDsfBLOCK(const char* filename)
     fprintf(pFile, "%s %i %s %i %s %i \n","ZONE I=", N3,",J=",N2,"K=",N1);
     fprintf(pFile,"%s\n","F=POINT");
     const int numMeshes = _meshes.size();
-    for (int n=0; n<numMeshes; n++){
+    for (int n=0; n<numMeshes; n++)
+      {
       const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
       const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
       const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
@@ -672,16 +715,16 @@ void OutputDsfBLOCK(const char* filename)
       
       const Mesh& mesh = *_meshes[n];
       const StorageSite& cells = mesh.getCells();
-      for(int j=0;j< numFields;j++){
+      for(int j=0;j< numFields;j++)
+	{
 	Field& fnd = *_dsfPtr.dsf[j];
 	TArray& f = dynamic_cast< TArray&>(fnd[cells]);	
 	Field& fEqnd = *_dsfEqPtr.dsf[j];
 	TArray& fEq = dynamic_cast< TArray&>(fEqnd[cells]);
 	fprintf(pFile,"%E %E %E %E %E\n",cx[j],cy[j],cz[j],f[0],fEq[0]);
+	}
       }
-    }
   }
-
   
  private:
   //shared_ptr<Impl> _impl;
@@ -694,6 +737,7 @@ void OutputDsfBLOCK(const char* filename)
   DistFunctFields<T> _dsfPtr1;
   DistFunctFields<T> _dsfPtr2;
   DistFunctFields<T> _dsfEqPtr;
+
   KineticBCMap _bcMap;
   KineticVCMap _vcMap;
 
