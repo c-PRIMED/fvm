@@ -2,7 +2,6 @@
 
 StructureFields::StructureFields(const string baseName) :
   deformation(baseName + ".deformation"),
-  nodeDisplacement(baseName + ".nodeDisplacement"),
   deformationGradient(baseName + ".deformationGradient"),
   deformationFlux(baseName + ".deformationFlux"),
   eta(baseName + ".eta"),

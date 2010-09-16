@@ -9,7 +9,6 @@ struct StructureFields
   StructureFields(const string baseName);
 
   Field deformation;
-  Field nodeDisplacement;
   Field deformationGradient;
   Field deformationFlux;
   Field eta;
