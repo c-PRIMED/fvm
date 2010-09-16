@@ -93,7 +93,7 @@ class TunnelingDiscretization : public Discretization
     const XArray& xCell = dynamic_cast<const XArray&>(_varField[cells]);
     
     //TArray& transmission = dynamic_cast<TArray&> (_transmission[cells]);
-    shared_ptr<TArray> ts(new TArray(nCells));
+    shared_ptr<TArray> ts(new TArray(cells.getCount()));
     *ts = 0;
     TArray& transmission = *ts;    
 

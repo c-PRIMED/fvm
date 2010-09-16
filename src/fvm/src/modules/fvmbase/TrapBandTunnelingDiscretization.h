@@ -68,7 +68,7 @@ class TrapBandTunnelingDiscretization : public Discretization
     
     const CRConnectivity& cellCells = mesh.getCellCells();
     
-    shared_ptr<TArray> ts(new TArray(nCells));
+    shared_ptr<TArray> ts(new TArray(cells.getCount()));
     *ts = 0;
     TArray& transmission = *ts;    
     

@@ -74,7 +74,7 @@ class InjectionDiscretization : public Discretization
 
     //TArray& transmission = dynamic_cast<TArray&> (_transmissionField[cells]);
 
-    shared_ptr<TArray> ts(new TArray(nCells));
+    shared_ptr<TArray> ts(new TArray(cells.getCount()));
     *ts = 0;
     TArray& transmission = *ts;
 
@@ -141,8 +141,8 @@ class InjectionDiscretization : public Discretization
 	    int me = c0;	      
 	    int high = c0;	       
 	    
-	    //for(int l=0; l<nLevel; l++){
-	    for(int l=0; l< int(nLevel/10); l++){
+	    for(int l=0; l<nLevel; l++){
+	      //for(int l=0; l< int(nLevel/10); l++){
 
 	      T_Scalar enMe = conduction_band[me];
 	      T_Scalar enLow = conduction_band[low];
