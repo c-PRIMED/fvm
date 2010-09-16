@@ -19,3 +19,6 @@ def generate(env):
     except:
         pass
     env.Append(LIBS=['CGAL'])
+    if env['DEBUG']:
+        env.Append(CXXFLAGS=['-DCGAL_DISABLE_ROUNDING_MATH_CHECK'])
+
