@@ -1136,8 +1136,11 @@ public:
         
         const TArray& cP =
           dynamic_cast<const TArray&>(_electricFields.potential[cells]);
-    
-        ibP->zero();
+
+	const Array<T>& cellToIBCoeff = mIC.getCoeff();
+	const Array<T>& particlesToIBCoeff = mIP.getCoeff();
+	
+	ibP->zero();
 
 	mIC.multiplyAndAdd(*ibP,cP);
 	mIP.multiplyAndAdd(*ibP,sP);
@@ -1146,10 +1149,10 @@ public:
 	const StorageSite& faces = mesh.getFaces();
 	
 	for(int f=0; f<ibFaces.getCount();f++){
-	  int fID = ibFaceList[f];
-	  (*ibP)[fID] = 10.0;
+	  (*ibP)[f] = 160.0;
 	}
 #endif
+
         _electricFields.potential.addArray(ibFaces,ibP);
     }
 
@@ -1210,18 +1213,21 @@ public:
       {
 	T forceMag(0);
 	T forceSign(1);
+
 	for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)	    {
-	  const int c = sFCCol[nc];
-	  const T coeff = iCoeffs[nc];
-	  const T efmag = mag(electric_field[c]);
-	  forceSign = dot(electric_field[c], solidFaceArea[f]);
-	  if (fabs(forceSign) > 0.0) 
-	    forceSign /= fabs(forceSign);
-	  else{
-	    forceSign = 0.0;
-	    //cout << f << " " << solidFaceCoordinate[f][0] << " "  <<solidFaceCoordinate[f][1] << " " <<efmag << endl;
-	  }
-	  forceMag += 0.5 * coeff * dielectric_constant[c] *  efmag * efmag * forceSign; 
+	    const int c = sFCCol[nc];
+	    const T coeff = iCoeffs[nc];
+	    T efmag = mag(electric_field[c]);
+	    
+	    forceSign = dot(electric_field[c], solidFaceArea[f]);
+	    
+	    if (fabs(forceSign) > 0.0) 
+	      forceSign /= fabs(forceSign);
+	    else{
+	      forceSign = 0.0;
+	    }
+	  
+	    forceMag += 0.5 * coeff* dielectric_constant[c] *  efmag * efmag * forceSign; 
 	}
 	const VectorT3& Af = solidFaceArea[f];
 	force[f] = Af * forceMag;

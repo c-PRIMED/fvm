@@ -28,7 +28,7 @@ struct ElectricVC : public FloatVarDict<T>
 {
   ElectricVC()
   {
-      this->defineVar("dielectric_constant",T(1.0));
+      this->defineVar("dielectric_constant",T(7.9));
   }
   string vcType;
 };
