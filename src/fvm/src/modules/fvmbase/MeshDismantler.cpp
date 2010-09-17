@@ -47,7 +47,7 @@ MeshDismantler::init()
    int dim = _mesh.getDimension();
    //construct meshes
    for ( int n = 0; n < _nmesh; n++ )
-      _meshList.push_back( new Mesh( dim, id++) );
+      _meshList.push_back( new Mesh( dim) );
 
 
    setCellsSite();

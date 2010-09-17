@@ -70,8 +70,8 @@ public:
       IBTYPE_UNKNOWN=-5
     };
   
-  Mesh(const int dimension, const int id);
-  Mesh(const int dimension, const int id, const Array<VecD3>&  faceNodesCoord ); 
+  Mesh(const int dimension);
+  Mesh(const int dimension, const Array<VecD3>&  faceNodesCoord ); 
   
   ~Mesh();
 
@@ -190,11 +190,19 @@ public:
                        const GeomFields& geomFields);
 
   Mesh* extractBoundaryMesh();
-  
+  Mesh* extrude(int nz, double zmax);
+
+  int getCellZoneID() const { return _cellZoneID;}
+  void setCellZoneID(const int id) {_cellZoneID = id;}
 protected:
   const int _dimension;
+
+  // used for persistence etc. Each mesh we create has a unique ID
   const int _id;
 
+  // used to get bcs from Fluent case.
+  int _cellZoneID;
+  
   StorageSite _cells;
   StorageSite _faces;
   StorageSite _nodes;
@@ -225,6 +233,8 @@ protected:
   //mutable Array<int> *_cellTypeCount;
   mutable shared_ptr<CRConnectivity> _cellCells2;
   mutable shared_ptr<CRConnectivity> _faceCells2;
+
+  static int _lastID;
 };
 
 typedef vector<Mesh*> MeshList;

@@ -8,9 +8,12 @@
 
 #define epsilon 1e-6
 
-Mesh::Mesh(const int dimension, const int id):
+int Mesh::_lastID = 0;
+
+Mesh::Mesh(const int dimension):
   _dimension(dimension),
-  _id(id),
+  _id(_lastID++),
+  _cellZoneID(-1),
   _cells(0),
   _faces(0),
   _nodes(0),
@@ -30,10 +33,11 @@ Mesh::Mesh(const int dimension, const int id):
   logCtor();
 }
 
-Mesh::Mesh( const int dimension, const int id,
+Mesh::Mesh( const int dimension,
             const Array<VecD3>&  faceNodesCoord ): 
   _dimension(dimension),
-  _id(id),
+  _id(_lastID++),
+  _cellZoneID(-1),
   _cells(0),
   _faces(0),
   _nodes(0),
@@ -635,7 +639,7 @@ Mesh::extractBoundaryMesh()
   }
 
 
-  Mesh *bMesh = new Mesh(_dimension,0);
+  Mesh *bMesh = new Mesh(_dimension);
 
 
   StorageSite& bMeshFaces = bMesh->getFaces();
@@ -733,3 +737,307 @@ Mesh::extractBoundaryMesh()
   return bMesh;
 
 }
+
+Mesh*
+Mesh::extrude(int nz, double zmax)
+{
+  if (_dimension != 2)
+    throw CException("can only extrude two dimensional mesh");
+
+  const int myNCells = _cells.getSelfCount();
+  const int myNFaces = _faces.getSelfCount();
+  const int myNInteriorFaces = _interiorFaceGroup->site.getCount();
+  const int myNBoundaryFaces = myNFaces - myNInteriorFaces;
+  const int myNNodes = _nodes.getSelfCount();
+  const CRConnectivity& myCellNodes = getCellNodes();
+ 
+  const int eNInteriorFaces_rib = nz*myNInteriorFaces;
+  const int eNInteriorFaces_cap = (nz-1)*myNCells;
+  
+  const int eNInteriorFaces = eNInteriorFaces_rib + eNInteriorFaces_cap;
+  const int eNBoundaryFaces = nz*myNBoundaryFaces + 2*myNCells;
+  const int eNFaces = eNInteriorFaces + eNBoundaryFaces;
+  const int eNInteriorCells = nz*myNCells;
+  const int eNBoundaryCells = eNBoundaryFaces;
+  
+  const int eNCells = eNInteriorCells + eNBoundaryCells;
+  const int eNNodes = (nz+1)*myNNodes;
+  
+  Mesh *eMesh = new Mesh(3);
+
+  // set nodes
+  StorageSite& eMeshNodes = eMesh->getNodes();
+  eMeshNodes.setCount( eNNodes );
+
+  const Array<VecD3>& myCoords = getNodeCoordinates();
+  shared_ptr< Array<VecD3> > eMeshCoordPtr( new Array< VecD3 > ( eNNodes ) );
+  Array<VecD3>& eCoords = *eMeshCoordPtr;
+  const double dz = zmax/nz;
+
+  for(int k=0, en=0; k<=nz; k++)
+  {
+      const double z = dz*k;
+      for(int n=0; n<myNNodes; n++)
+      {
+          eCoords[en][0] = myCoords[n][0];
+          eCoords[en][1] = myCoords[n][1];
+          eCoords[en][2] = z;
+          en++;
+      }
+  }
+
+  eMesh->setCoordinates( eMeshCoordPtr );
+  
+          
+  // set cells
+  
+  StorageSite& eMeshCells = eMesh->getCells();
+  eMeshCells.setCount( eNInteriorCells, eNBoundaryCells);
+  
+
+  // set faces
+  
+  StorageSite& eMeshFaces = eMesh->getFaces();
+  eMeshFaces.setCount(eNFaces);
+
+
+  shared_ptr<CRConnectivity> eFaceNodes( new CRConnectivity(eMeshFaces,
+                                                            eMeshNodes) );
+
+  shared_ptr<CRConnectivity> eFaceCells( new CRConnectivity(eMeshFaces,
+                                                            eMeshCells) );
+
+  // set counts for face cells and face nodes
+
+  
+  eFaceNodes->initCount();
+  eFaceCells->initCount();
+
+  int f = 0;
+
+  // rib faces first
+  for(; f<eNInteriorFaces_rib; f++)
+  {
+      eFaceNodes->addCount(f,4);
+      eFaceCells->addCount(f,2);
+  }
+
+  // interior cap faces
+  for(int k=1; k<nz; k++)
+  {
+      for(int c=0; c<myNCells; c++)
+      {
+          eFaceNodes->addCount(f, myCellNodes.getCount(c));
+          eFaceCells->addCount(f, 2);
+          f++;
+      }
+  }
+
+  eMesh->createInteriorFaceGroup(eNInteriorFaces);
+
+  foreach(const FaceGroupPtr fgPtr, getAllFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      if (fg.groupType!="interior")
+      {
+          const int nBFaces = faces.getCount();
+
+          eMesh->createBoundaryFaceGroup(nBFaces*nz,  f, fg.id, fg.groupType);
+
+          for(int k=0;  k<nz; k++)
+            for(int bf=0; bf<nBFaces; bf++)
+            {
+                eFaceNodes->addCount(f,4);
+                eFaceCells->addCount(f,2);
+                f++;
+            }
+      }
+  }
+  
+
+  // z = 0 faces
+  eMesh->createBoundaryFaceGroup(myNCells,  f, 10000, "wall");
+  for(int c=0; c<myNCells; c++)
+  {
+      eFaceNodes->addCount(f, myCellNodes.getCount(c));
+      eFaceCells->addCount(f, 2);
+      f++;
+  }
+  
+  // z = zmax faces
+  eMesh->createBoundaryFaceGroup(myNCells,  f, 10001, "wall");
+  for(int c=0; c<myNCells; c++)
+  {
+      eFaceNodes->addCount(f, myCellNodes.getCount(c));
+      eFaceCells->addCount(f, 2);
+      f++;
+  }
+  
+  eFaceNodes->finishCount();
+  eFaceCells->finishCount();
+
+
+  // now set the indices of face cells and nodes
+
+  
+  f = 0;
+
+  
+  // rib faces first
+
+  const CRConnectivity& myFaceNodes = getAllFaceNodes();
+  const CRConnectivity& myFaceCells = getAllFaceCells();
+  
+  for(int k=0; k<nz; k++)
+  {
+      const int eCellOffset = k*myNCells;
+      const int eNodeOffset = k*myNNodes;
+      
+      for(int myf=0; myf<myNInteriorFaces; myf++)
+      {
+          const int myNode0 = myFaceNodes(myf,0);
+          const int myNode1 = myFaceNodes(myf,1);
+          
+          const int myCell0 = myFaceCells(myf,0);
+          const int myCell1 = myFaceCells(myf,1);
+          
+          
+          eFaceNodes->add(f, myNode0 + eNodeOffset);
+          eFaceNodes->add(f, myNode1 + eNodeOffset );
+          eFaceNodes->add(f, myNode1 + eNodeOffset + myNNodes);
+          eFaceNodes->add(f, myNode0 + eNodeOffset + myNNodes);
+          
+          eFaceCells->add(f, myCell0 + eCellOffset);
+          eFaceCells->add(f, myCell1 + eCellOffset);
+          
+          f++;
+      }
+  }
+  
+  // interior cap faces
+  for(int k=1; k<nz; k++)
+  {
+      const int eCellOffset = k*myNCells;
+      const int eNodeOffset = k*myNNodes;
+
+      for(int c=0; c<myNCells; c++)
+      {
+          const int nCellNodes = myCellNodes.getCount(c);
+          for(int nnc=0; nnc<nCellNodes; nnc++)
+          {
+              eFaceNodes->add(f, myCellNodes(c,nnc) + eNodeOffset);
+          }
+
+          eFaceCells->add(f, c + eCellOffset - myNCells);
+          eFaceCells->add(f, c + eCellOffset);
+          f++;
+      }
+  }
+
+
+  // counter for boundary faces 
+  int ebf = 0;
+
+
+  // rib boundary faces
+  foreach(const FaceGroupPtr fgPtr, getAllFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      if (fg.groupType!="interior")
+      {
+          const int nBFaces = faces.getCount();
+
+          const CRConnectivity& bFaceNodes = getFaceNodes(faces);
+          const CRConnectivity& bFaceCells = getFaceCells(faces);
+          
+          for(int k=0;  k<nz; k++)
+          {
+              const int eCellOffset = k*myNCells;
+              const int eNodeOffset = k*myNNodes;
+              for(int bf=0; bf<nBFaces; bf++)
+              {
+                  const int myNode0 = bFaceNodes(bf,0);
+                  const int myNode1 = bFaceNodes(bf,1);
+                  
+                  const int myCell0 = bFaceCells(bf,0);
+          
+                  
+                  eFaceNodes->add(f, myNode0 + eNodeOffset);
+                  eFaceNodes->add(f, myNode1 + eNodeOffset);
+                  eFaceNodes->add(f, myNode1 + eNodeOffset + myNNodes);
+                  eFaceNodes->add(f, myNode0 + eNodeOffset + myNNodes);
+                  
+                  eFaceCells->add(f, myCell0 + eCellOffset);
+                  eFaceCells->add(f, ebf + eNInteriorCells);
+                  
+                  f++;
+                  ebf++;
+              }
+          }
+      }
+      
+  }
+
+
+  // z = 0 faces
+  {  
+      const int eCellOffset = 0;
+      const int eNodeOffset = 0;
+
+      for(int c=0; c<myNCells; c++)
+      {
+          const int nCellNodes = myCellNodes.getCount(c);
+          
+          // reverse order of face nodes
+          for(int nnc=nCellNodes-1; nnc>=0; nnc--)
+          {
+              eFaceNodes->add(f, myCellNodes(c,nnc) + eNodeOffset);
+          }
+          
+          eFaceCells->add(f, c + eCellOffset);
+          eFaceCells->add(f, ebf + eNInteriorCells);
+          f++;
+          ebf++;
+      }
+      
+  }
+  
+  // z = zmax faces
+  {  
+      const int eCellOffset = (nz-1)*myNCells;
+      const int eNodeOffset = nz*myNNodes;
+
+      for(int c=0; c<myNCells; c++)
+      {
+          const int nCellNodes = myCellNodes.getCount(c);
+          
+          // reverse order of face nodes
+          for(int nnc=0; nnc<nCellNodes; nnc++)
+          {
+              eFaceNodes->add(f, myCellNodes(c,nnc) + eNodeOffset);
+          }
+          
+          eFaceCells->add(f, c + eCellOffset);
+          eFaceCells->add(f, ebf + eNInteriorCells);
+          f++;
+          ebf++;
+      }
+  }
+  
+  eFaceNodes->finishAdd();
+  eFaceCells->finishAdd();
+
+ //setting faceNodes
+  SSPair key1(&eMeshFaces,&eMeshNodes);
+  eMesh->_connectivityMap[key1] = eFaceNodes;
+
+  SSPair key2(&eMeshFaces,&eMeshCells);
+  eMesh->_connectivityMap[key2] = eFaceCells;
+
+  return eMesh;
+}
+
+  
+

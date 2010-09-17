@@ -73,12 +73,12 @@ public:
       IBTYPE_UNKNOWN
     };
 %extend{
-  Mesh(const int dimension, const int id, const ArrayBase&  faceNodesCoord ) 
+  Mesh(const int dimension, const ArrayBase&  faceNodesCoord ) 
   {
      typedef Vector<double,3> Vec3D;
      typedef Array<Vec3D> Vec3DArray;
      const Vec3DArray& points(dynamic_cast<const Vec3DArray&>(faceNodesCoord));
-     return new Mesh( dimension, id, points );
+     return new Mesh( dimension, points );
   }
 }
 
@@ -95,6 +95,8 @@ public:
   int getBoundaryGroupCount() const;
   int getInterfaceGroupCount() const;
   int getID() const;
+  int getCellZoneID() const;
+  
   shared_ptr<Array<int> > createAndGetBNglobalToLocal() const;
   const ArrayBase& getBNglobalToLocal() const;
   const StorageSite& getBoundaryNodes()const;
@@ -118,6 +120,7 @@ public:
                        const GeomFields& geomFields);
   
   Mesh* extractBoundaryMesh();
+  Mesh* extrude(int nz, double zmax);
   // const GhostCellSiteMap& getGhostCellSiteMap() const;
   // const StorageSite* getGhostCellSite( int id );
 

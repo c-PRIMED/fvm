@@ -28,7 +28,7 @@ MeshAssembler::init()
   int id = 9;
   int dim = _meshList.at(0)->getDimension();
    //construct merged Linearsystem
-  _mesh.push_back( new Mesh( dim, id) );
+  _mesh.push_back( new Mesh( dim) );
 
 
   _interfaceNodesSet.resize( _meshList.size() );

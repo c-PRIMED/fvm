@@ -310,17 +310,26 @@ FluentReader::readFaces(const int pass, const bool isBinary,
               int c0 = readInt(isBinary);
               int c1 = readInt(isBinary);
 
-              if (c0 == 0) reverseNodes = !reverseNodes;
-              
-              if (c0 != 0)
-                faceCells.add(f-1,c0-1);
-              if (c1 != 0)
-                faceCells.add(f-1,c1-1);
-
-              if (c0 ==0 || c1==0)
+              // handle boundary mesh where both c0 and c1 are zero
+              if ((c0 == 0) && (c1 == 0))
               {
-                  faceCells.add(f-1,_numCells+_numBoundaryFaces);
-                  _numBoundaryFaces++;
+                  faceCells.add(f-1,-1);
+                  faceCells.add(f-1,-1);
+              }
+              else
+              {
+                  if (c0 == 0) reverseNodes = !reverseNodes;
+                  
+                  if (c0 != 0)
+                    faceCells.add(f-1,c0-1);
+                  if (c1 != 0)
+                    faceCells.add(f-1,c1-1);
+                  
+                  if (c0 ==0 || c1==0)
+                  {
+                      faceCells.add(f-1,_numCells+_numBoundaryFaces);
+                      _numBoundaryFaces++;
+                  }
               }
               
               if (reverseNodes)
@@ -644,7 +653,13 @@ FluentReader::buildZones()
   {
       FluentFaceZone& fz = *(pos.second);
 
+      
       const int c0 = faceCells(fz.iBeg,0);
+
+      // handle boundary mesh that doesn't have any cells
+      if (c0 == -1)
+        continue;
+
       fz.leftCellZoneId = getCellZoneID(c0);
       FluentCellZone *lcz = _cellZones[fz.leftCellZoneId];
 
@@ -674,8 +689,8 @@ FluentReader::createMesh(const int cellZoneID)
   const Array<int>& fcRow = faceCells.getRow();
   const Array<int>& fcCol = faceCells.getCol();
   
-  Mesh *mesh = new Mesh(_dimension, cellZoneID);
-  
+  Mesh *mesh = new Mesh(_dimension);
+  mesh->setCellZoneID(cellZoneID);
   FluentCellZone& cz = *(_cellZones[cellZoneID]);
 
 
@@ -873,15 +888,27 @@ FluentReader::getMeshList()
           StorageSite& oSite = omesh->getCells();
           thisSite.getGatherMap()[&oSite] = mappers->_toIndices;
           oSite.getScatterMap()[&thisSite] = mappers->_fromIndices;
+      }
 
-          StorageSite& oNodes = omesh->getNodes();
+#if 0
+      foreach(const CellZonesMap::value_type& pos2, _cellZones)
+      {
 
-          shared_ptr<OneToOneIndexMap> nodeMap = getCommonNodeMap(cz,ocz);
-          if (nodeMap)
+          const FluentCellZone& ocz = *(pos2.second);
+          Mesh *omesh = ocz.mesh;
+          if (omesh != mesh)
           {
-              thisNodes.getCommonMap()[&oNodes] = nodeMap->_toIndices;
+              StorageSite& oNodes = omesh->getNodes();
+              
+              shared_ptr<OneToOneIndexMap> nodeMap = getCommonNodeMap(cz,ocz);
+              if (nodeMap)
+              {
+                  thisNodes.getCommonMap()[&oNodes] = nodeMap->_toIndices;
+              }
           }
       }
+#endif
+      
   }
   return meshes;
 }

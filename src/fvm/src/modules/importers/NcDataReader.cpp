@@ -384,7 +384,7 @@ NcDataReader::meshList()
 
      for ( int id = 0; id < _nmesh; id++ ){
 
-        meshList.push_back(  new Mesh( _dimensionVals[id], _meshIDVals[id] )  );
+        meshList.push_back(  new Mesh( _dimensionVals[id] )  );
          //storage sites
          storage_sites( id, meshList);
         //interior faces
