@@ -30,7 +30,10 @@ public:
   shared_ptr<MultiFieldReduction> operator/(const MultiFieldReduction& o);
   shared_ptr<MultiFieldReduction> normalize(const MultiFieldReduction& o);
   shared_ptr<MultiFieldReduction> operator*(const MultiFieldReduction& o);
+  shared_ptr<MultiFieldReduction> operator-() const;
+
   void setMax(const MultiFieldReduction& o);
+  void limit(const double min, const double max);
 
   void print(ostream &os) const;
   void sync();

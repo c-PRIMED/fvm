@@ -114,6 +114,19 @@ MultiFieldReduction::operator/(const MultiFieldReduction& o)
 }
 
 MFRPtr
+MultiFieldReduction::operator-() const
+{
+  MFRPtr r(new MultiFieldReduction());
+  
+  foreach(const ArrayMap::value_type& pos, _arrays)
+  {
+      shared_ptr<ArrayBase> aptr = -(*pos.second);
+      r->addArray(*pos.first,aptr);
+  }
+  return r;
+}
+
+MFRPtr
 MultiFieldReduction::normalize(const MultiFieldReduction& o)
 {
   MFRPtr r(new MultiFieldReduction());
@@ -133,6 +146,15 @@ MultiFieldReduction::setMax(const MultiFieldReduction& o)
   foreach(const ArrayMap::value_type& pos, _arrays)
   {
       pos.second->setMax(o[*pos.first]);
+  }
+}
+
+void
+MultiFieldReduction::limit(const double min, const double max)
+{
+  foreach(const ArrayMap::value_type& pos, _arrays)
+  {
+      pos.second->limit(min,max);
   }
 }
 

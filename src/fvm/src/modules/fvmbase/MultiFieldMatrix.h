@@ -7,6 +7,8 @@
 
 #include "Matrix.h"
 #include "MultiField.h"
+#include "MultiFieldReduction.h"
+
 #include <set>
 
 //UnorderedSet doesn't duplicate and  sort elements
@@ -116,6 +118,7 @@ public:
   void
   correctSolution(const MultiField& coarseIndex,
                   MultiField& fineSolutionField,
+                  MFRPtr scaleField,
                   const MultiField& coarseSolutionField);
 #ifdef FVM_PARALLEL
   int getMinSize( const MPI::Intracomm& comm ) const;  
@@ -130,6 +133,8 @@ public:
     EntryIndex e(rowI,colI);
     _matrices[e] = m;
   }
+  
+  MFRPtr quadProduct(const MultiField& x) const;
   
 private:
   MatrixMap _matrices;

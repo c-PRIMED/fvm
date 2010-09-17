@@ -647,6 +647,7 @@ MultiFieldMatrix::injectResidual(const MultiField& coarseIndex,
 void
 MultiFieldMatrix::correctSolution(const MultiField& coarseIndex,
                                   MultiField& fineSolutionField,
+                                  MFRPtr scaleField,
                                   const MultiField& coarseSolutionField)
 {
   const int xLen = fineSolutionField.getLength();
@@ -659,10 +660,14 @@ MultiFieldMatrix::correctSolution(const MultiField& coarseIndex,
       const StorageSite& coarseRowSite = *_coarseSites[rowIndex];
 
       const Index coarseRowIndex(rowIndex.first,&coarseRowSite);
+      ArrayBase* scale(0);
+      if (scaleField)
+        scale = &((*scaleField)[*(coarseRowIndex.first)]);
       
       ArrayBase& fineSolution = dynamic_cast<ArrayBase&>(fineSolutionField[rowIndex]);
       fineSolution.correct(coarseSolutionField[coarseRowIndex],
                            coarseIndex[rowIndex],
+                           scale,
                            rowIndex.second->getSelfCount());
   }
 }
@@ -760,4 +765,30 @@ MultiFieldMatrix::getLocalSize( ) const
 
   return size;
 
+}
+
+MFRPtr
+MultiFieldMatrix::quadProduct(const MultiField& x) const
+{
+  const int xLen = x.getLength();
+
+  MultiField *p = new MultiField();
+  for(int i=0; i<xLen; i++)
+  {
+      const Index rowIndex = x.getArrayIndex(i);
+      for(int j=0; j<xLen; j++)
+      {
+          const Index colIndex = x.getArrayIndex(j);
+          if (hasMatrix(rowIndex,colIndex))
+          {
+              const Matrix& mIJ = getMatrix(rowIndex,colIndex);
+              p->addArray(rowIndex,
+                          mIJ.quadProduct(x[colIndex]));
+          }
+      }
+  }
+
+  MFRPtr r = p->reduceSum();
+  delete p;
+  return r;
 }

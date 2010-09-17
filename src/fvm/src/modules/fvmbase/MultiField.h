@@ -59,7 +59,7 @@ public:
   shared_ptr<MultiFieldReduction> reduceSum() const;
   shared_ptr<MultiFieldReduction> getOneNorm() const;
 
-  shared_ptr<MultiFieldReduction> dotWith(const MultiField& ofield);
+  shared_ptr<MultiFieldReduction> dotWith(const MultiField& ofield) const;
 
   const ArrayIndexList& getArrayIndices() const {return _arrayIndices;}
 
