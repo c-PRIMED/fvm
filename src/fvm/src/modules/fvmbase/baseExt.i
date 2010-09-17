@@ -8,6 +8,7 @@
 #include <rlog/RLogChannel.h>
 #include "AMG.h"
 #include "BCGStab.h"
+#include "CG.h"
 #include "ILU0Solver.h"
 #include "JacobiSolver.h"
 #include "SpikeStorage.h"
@@ -68,6 +69,7 @@ typedef Vector<double,3> VecD3;
 %include "LinearSolver.i"
 %include "AMG.i"
 %include "BCGStab.i"
+%include "CG.i"
 %include "JacobiSolver.i"
 %include "SpikeSolver.i"
 %include "SpikeStorage.i"
