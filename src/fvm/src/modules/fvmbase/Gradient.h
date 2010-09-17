@@ -70,6 +70,14 @@ public:
     return *this;
   }
 
+  Gradient operator-() const
+  {
+    Gradient r;
+    for(int i=0;i<3;i++)
+      r._data[i] = -_data[i];
+    return r;
+  }
+
   Gradient& operator*=(const T_Scalar& s)
   {
     for(int i=0;i<3;i++)
@@ -238,6 +246,14 @@ operator/(const Gradient<T>& a, const int& s)
 {
   return Gradient<T>(a) /= typename NumTypeTraits<T>::T_Scalar(s);
 }
+
+template<class T>
+Gradient<T>
+operator-(const Gradient<T>& a)
+{
+  return -Gradient<T>(a);
+}
+
 
 #endif
 

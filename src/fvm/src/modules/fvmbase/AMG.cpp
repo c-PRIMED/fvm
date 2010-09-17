@@ -16,6 +16,7 @@ AMG::AMG() :
   weightRatioThreshold(0.65),
   cycleType(V_CYCLE),
   smootherType(GAUSS_SEIDEL),
+  scaleCorrections(true),
   _finestLinearSystem(0),
   _mergeLevel(-1),
   _isMerge(false),
@@ -108,8 +109,28 @@ AMG::cycle( CycleType cycleType, const int level)
       }
 #endif
 
+      MFRPtr scale;
+      if (coarseLS.isSymmetric && scaleCorrections)
+      {
+          const MultiField& x = coarseLS.getDelta();
+          const MultiField& b = coarseLS.getB();
+          const MultiFieldMatrix& A = coarseLS.getMatrix();
+          MFRPtr xb =  x.dotWith(b);
+          xb->reduceSum();
+
+          MFRPtr mxb = -(*xb);
+          MFRPtr xTAx = A.quadProduct(x);
+
+          xTAx->reduceSum();
+          
+          scale = (*mxb)/(*xTAx);
+          scale->limit(1.0, 1.0);
+          
+      }
+
       fineMatrix.correctSolution(fineLS.getCoarseIndex(),
                                  fineLS.getDelta(),
+                                 scale,
                                  coarseLS.getDelta())	;
 
 
@@ -131,6 +152,7 @@ AMG::createCoarseLevels( )
       shared_ptr<LinearSystem>
         coarseLS(fineLS.createCoarse(coarseGroupSize,weightRatioThreshold));
 
+      coarseLS->isSymmetric = fineLS.isSymmetric;
 
      int isContinue =  int( fineLS.getMatrix().getLocalSize() != coarseLS->getMatrix().getLocalSize() );
 #ifdef FVM_PARALLEL     
@@ -264,7 +286,10 @@ AMG::smooth(LinearSystem & ls)
   }
   _finestLinearSystem = &ls;
 
-  cycle(cycleType,0);
+ for(int i=0; i<nMaxIterations; i++)
+  {
+      cycle(cycleType,0);
+  }
 }
 
 

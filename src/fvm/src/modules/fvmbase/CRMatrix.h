@@ -186,6 +186,36 @@ public:
   }
 
   /**
+   * compute x^T * this * x; return as a new Array of length 1
+   *
+   */
+
+  virtual shared_ptr<ArrayBase>
+  quadProduct(const IContainer& xB) const
+  {
+
+    X sum( NumTypeTraits<X>::getZero());
+    const XArray& x = dynamic_cast<const XArray&>(xB);
+
+    const int nRows = _conn.getRowSite().getSelfCount();
+    for(int nr=0; nr<nRows; nr++)
+    {
+        X sum_n = _diag[nr]*x[nr];
+        for (int nb = _row[nr]; nb<_row[nr+1]; nb++)
+        {
+            const int j = _col[nb];
+            sum_n += _offDiag[nb]*x[j];
+        }
+
+        sum += sum_n*x[nr];
+    }
+
+    XArray  *p = new XArray(1);
+    (*p)[0] = sum;
+    return shared_ptr<ArrayBase>(p);
+  }
+
+  /**
    * forward GaussSeidel update for this * x  = b
    * 
    */

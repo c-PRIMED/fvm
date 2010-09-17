@@ -140,4 +140,36 @@ struct NumTypeTraits<float>
   static void setMax(float& x, const float& y) {if (y>x) x=y;}
 };
 
+template<class T>
+struct ArrayScalarTraits
+{
+  static void limit(T& val, const double min, const double max)
+  {throw;}
+  
+};
+
+
+template<>
+struct ArrayScalarTraits<double>
+{
+  static void limit(double& val, const double min, const double max)
+  {
+    if (val < min)
+      val = min;
+    else if (val > max)
+      val = max;
+  }
+};
+
+template<>
+struct ArrayScalarTraits<float>
+{
+  static void limit(float& val, const double min, const double max)
+  {
+    if (val < min)
+      val = min;
+    else if (val > max)
+      val = max;
+  }
+};
 #endif

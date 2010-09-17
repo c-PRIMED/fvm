@@ -41,6 +41,8 @@ public:
   void replaceB(shared_ptr<MultiField> newB) {_b=newB;}
   
   void setCoarseningField(const Field& f) {_coarseningField=&f;}
+
+  bool isSymmetric;
   
 private:
   MultiFieldMatrix _matrix;

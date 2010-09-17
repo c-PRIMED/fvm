@@ -28,7 +28,7 @@ public:
   double weightRatioThreshold;
   CycleType cycleType;
   SmootherType smootherType;
-  
+  bool scaleCorrections;
 private:
   AMG(const AMG&);
 };

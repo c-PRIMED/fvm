@@ -311,12 +311,27 @@ operator/(const Vector<T,N>& a, const T s)
   return Vector<T,N>(a) /= s;
 }
 
-// does elemenwise operation
+// does elementwise operation
 template<class T, int N>
 Vector<T,N>
 operator/(const Vector<T,N>& a, const Vector<T,N>& b)
 {
   return Vector<T,N>(a) /= b;
 }
+
+template<class T, int N>
+struct ArrayScalarTraits<Vector<T,N> >
+{
+  static void limit(Vector<T,N>& val, const double min, const double max)
+  {
+    for(int i=0; i<N; i++)
+    {
+        if (val[i] < min)
+          val[i] = min;
+        else if (val[i] > max)
+          val[i] = max;
+    }
+  }
+};
 
 #endif

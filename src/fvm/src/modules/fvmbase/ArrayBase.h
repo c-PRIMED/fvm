@@ -18,6 +18,7 @@ public:
 
   virtual void
   correct(const IContainer& coarseI, const IContainer& coarseIndexI,
+          const IContainer* scaleI,
           const int length)=0;
 
   virtual void
@@ -46,7 +47,10 @@ public:
   virtual ArrayBase& operator/=(const ArrayBase& a) =0;
   virtual ArrayBase& operator*=(const ArrayBase& a) =0;
 
-  virtual ArrayBase& safeDivide(const ArrayBase& a) =0;
+  virtual shared_ptr<ArrayBase> operator-() const {throw;}
+  virtual void limit(const double min, const double max) {throw;}
+  
+    virtual ArrayBase& safeDivide(const ArrayBase& a) =0;
   virtual ArrayBase& normalize(const ArrayBase& a) =0;
 
   virtual bool operator<(const double tolerance) const=0;

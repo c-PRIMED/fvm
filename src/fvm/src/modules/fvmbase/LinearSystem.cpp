@@ -7,6 +7,7 @@
 #include "Field.h"
 
 LinearSystem::LinearSystem() :
+  isSymmetric(false),
   _x(new MultiField()),
   _b(),
   _delta(),

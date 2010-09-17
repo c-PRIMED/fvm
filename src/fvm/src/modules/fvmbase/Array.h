@@ -391,6 +391,29 @@ public:
       _data[i] = NumTypeTraits<T>::getZero();
   }
 
+  virtual void limit(const double min, const double max)
+  {
+    if (_length == 1)
+    {
+        ArrayScalarTraits<T>::limit(_data[0],min, max);
+    }
+    else
+      throw CException("invalid array for limit");
+  }
+
+  virtual shared_ptr<ArrayBase>
+  operator-() const
+  {
+    if (_length == 1)
+    {
+        Array* nPtr(new Array(1));
+        (*nPtr)[0] = -_data[0];
+        return shared_ptr<ArrayBase>(nPtr);
+    }
+    throw CException("invalid  array for operator-");
+  }
+
+
   virtual void
   inject(IContainer& coarseI, const IContainer& coarseIndexI, const int length) const
   {
@@ -403,14 +426,34 @@ public:
   }
 
   virtual void
-  correct(const IContainer& coarseI, const IContainer& coarseIndexI, const int length)
+  correct(const IContainer& coarseI, const IContainer& coarseIndexI,
+          const IContainer* scaleI, const int length)
   {
     const Array& coarse = dynamic_cast<const Array&>(coarseI);
     const Array<int>& coarseIndex = dynamic_cast<const Array<int>& >(coarseIndexI);
 
-    for(int i=0; i<length; i++)
-      if (coarseIndex[i]>=0)
-        _data[i] += coarse[coarseIndex[i]];
+    if (scaleI)
+    {
+        const Array& scaleArray =
+          dynamic_cast<const Array&>(*scaleI);
+        if (scaleArray.getLength() == 1)
+        {
+            const T& scale = scaleArray[0];
+            //cout << "correction scale" << scale << endl;
+
+            for(int i=0; i<length; i++)
+              _data[i] += coarse[coarseIndex[i]]*scale;
+
+        }
+        else
+          throw CException("invalid scale array");
+    }
+    else
+    {
+        for(int i=0; i<length; i++)
+          if (coarseIndex[i]>=0)
+            _data[i] += coarse[coarseIndex[i]];
+    }
   }
 
   virtual shared_ptr<IContainer>

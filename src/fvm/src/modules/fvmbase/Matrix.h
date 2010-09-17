@@ -8,7 +8,7 @@ class StorageSite;
 class CRConnectivity;
 class LinearSystemMerger;
 class SpikeStorage;
-
+class ArrayBase;
 class Matrix
 {
 public:
@@ -21,6 +21,8 @@ public:
   
   virtual void multiply(IContainer& yB, const IContainer& xB) const;
   virtual void multiplyAndAdd(IContainer& yB, const IContainer& xB) const;
+  virtual shared_ptr<ArrayBase>  quadProduct(const IContainer& xB) const {throw;}
+  
   virtual void forwardGS(IContainer& xB, IContainer& bB,
                          IContainer& residual) const;
   virtual void reverseGS(IContainer& xB, IContainer& bB,
