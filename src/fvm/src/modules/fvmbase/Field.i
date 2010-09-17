@@ -31,6 +31,11 @@ public:
     {
       self->addArray(*s,a);
     }
+    
+    bool __contains__(const StorageSite* s)
+    {
+        return self->hasArray(*s);
+    }
   }
 private:
 };
