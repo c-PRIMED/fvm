@@ -1,5 +1,5 @@
 
-from fvm import importers
+import importers
 
 import SchemeParser
 
@@ -179,8 +179,10 @@ class FluentCase(importers.FluentReader):
     def read(self):
         print 'reading mesh'
         self.readMesh()
-
-        vars=SchemeParser.parse(self.getVars())
+        varString = self.getVars()
+        if varString=="":
+            return
+        vars=SchemeParser.parse(varString)
         self.varsDict = scmToDict(vars)
         if self.varsDict is None:
             raise TypeError("vars is not an association list")
@@ -246,18 +248,18 @@ class FluentCase(importers.FluentReader):
             else:
                 raise TypeError('invalid boundary type : ' + fluentZone.zoneType)
 
-    def importFlowBCs(self,fmodel):
+    def importFlowBCs(self,fmodel, meshes):
         options = fmodel.getOptions()
-        options.setVar('initialXVelocity', self.getVar('x-velocity/default'))
-        options.setVar('initialYVelocity', self.getVar('y-velocity/default'))
-        options.setVar('initialZVelocity', self.getVar('z-velocity/default'))
-        options.setVar('initialPressure', self.getVar('pressure/default'))
+        options['initialXVelocity'] =  self.getVar('x-velocity/default')
+        options['initialYVelocity']= self.getVar('y-velocity/default')
+        options['initialZVelocity']= self.getVar('z-velocity/default')
+        options['initialPressure']= self.getVar('pressure/default')
         if 'initialTemperature' in options.getKeys():
-            options.setVar('initialTemperature',
-                           self.getVar('temperature/default'))
+            options['initialTemperature']=\
+                           self.getVar('temperature/default')
 
-        options.setVar('momentumURF', self.getVar('mom/relax'))
-        options.setVar('pressureURF', self.getVar('pressure/relax'))
+        options['momentumURF']= self.getVar('mom/relax')
+        options['pressureURF']= self.getVar('pressure/relax')
                        
         bcMap = fmodel.getBCMap()
         for i in bcMap.keys():
@@ -270,9 +272,9 @@ class FluentCase(importers.FluentReader):
                     pass
                 elif motionBCType == 1:
                     vmag = fluentZone.getVar('vmag')
-                    bc.setVar('specifiedXVelocity',vmag*fluentZone.getConstantVar('ni'))
-                    bc.setVar('specifiedYVelocity',vmag*fluentZone.getConstantVar('nj'))
-                    bc.setVar('specifiedZVelocity',vmag*fluentZone.getConstantVar('nk'))
+                    bc['specifiedXVelocity']=vmag*fluentZone.getConstantVar('ni')
+                    bc['specifiedYVelocity']=vmag*fluentZone.getConstantVar('nj')
+                    bc['specifiedZVelocity']=vmag*fluentZone.getConstantVar('nk')
                 else:
                     raise TypeError('flow BCType %d not handled' % motionBCType)
             elif fluentZone.zoneType == 'velocity-inlet':
@@ -280,36 +282,36 @@ class FluentCase(importers.FluentReader):
                 bc.bcType = 'VelocityBoundary'
                 if motionBCType == 0:
                     vmag = fluentZone.getVar('vmag')
-                    bc.setVar('specifiedXVelocity',vmag*fluentZone.getConstantVar('ni'))
-                    bc.setVar('specifiedYVelocity',vmag*fluentZone.getConstantVar('nj'))
-                    bc.setVar('specifiedZVelocity',vmag*fluentZone.getConstantVar('nk'))
+                    bc['specifiedXVelocity']=vmag*fluentZone.getConstantVar('ni')
+                    bc['specifiedYVelocity']=vmag*fluentZone.getConstantVar('nj')
+                    bc['specifiedZVelocity']=vmag*fluentZone.getConstantVar('nk')
                 if motionBCType == 1:
                     vmag = fluentZone.getVar('vmag')
-                    bc.setVar('specifiedXVelocity',fluentZone.getConstantVar('u'))
-                    bc.setVar('specifiedYVelocity',fluentZone.getConstantVar('v'))
-                    bc.setVar('specifiedZVelocity',fluentZone.getConstantVar('w'))
+                    bc['specifiedXVelocity']=fluentZone.getConstantVar('u')
+                    bc['specifiedYVelocity']=fluentZone.getConstantVar('v')
+                    bc['specifiedZVelocity']=fluentZone.getConstantVar('w')
                 else:
                     raise TypeError('flow BCType %d not handled' % motionBCType)
             elif fluentZone.zoneType == 'pressure-outlet':
                 bc.bcType = 'PressureBoundary'
-                bc.setVar('specifiedPressure',fluentZone.getConstantVar('p'))
+                bc['specifiedPressure']=fluentZone.getConstantVar('p')
             elif fluentZone.zoneType == 'pressure-inlet':
                 bc.bcType = 'PressureBoundary'
-                bc.setVar('specifiedPressure',fluentZone.getConstantVar('p0'))
+                bc['specifiedPressure']=fluentZone.getConstantVar('p0')
             elif fluentZone.zoneType == 'symmetry':
                 bc.bcType = 'Symmetry'
             else:
                 raise TypeError('invalid boundary type : ' + fluentZone.zoneType)
 
         vcMap = fmodel.getVCMap()
-        for i in vcMap.keys():
-            fluentZone = self.cellZones[i]
+        for mesh in meshes:
+            vc = vcMap[mesh.getID()]
+            fluentZone = self.cellZones[mesh.getCellZoneID()]
             material = self.materials[fluentZone.getVar('material')]
-            vc = vcMap[i]
             if material.getPropMethod('density') == 'constant':
-                vc.setVar('density',material.getConstantProp('density'))
+                vc['density']=material.getConstantProp('density')
             else:
                 print 'Density method is not constant. Remember to setup ideal gas density model'
-            vc.setVar('viscosity',material.getConstantProp('viscosity'))
+            vc['viscosity']=material.getConstantProp('viscosity')
                       
                 
