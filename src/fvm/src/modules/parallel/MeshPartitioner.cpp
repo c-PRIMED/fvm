@@ -1880,7 +1880,9 @@ void
 MeshPartitioner::construct_mesh( int id )
 {
         int dim = _meshList.at(id)->getDimension();
-        _meshListLocal.push_back(  new Mesh( dim, _procID)   );
+        Mesh *pmesh = new Mesh(dim);
+        pmesh->setID(_procID);
+        _meshListLocal.push_back( pmesh   );
 
         StorageSite& faceSite = _meshListLocal.at(id)->getFaces();
         StorageSite& cellSite = _meshListLocal.at(id)->getCells();
