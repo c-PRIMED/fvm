@@ -194,11 +194,12 @@ public:
 
   int getCellZoneID() const { return _cellZoneID;}
   void setCellZoneID(const int id) {_cellZoneID = id;}
+  void setID(const int id) {_id = id;}
 protected:
   const int _dimension;
 
   // used for persistence etc. Each mesh we create has a unique ID
-  const int _id;
+  int _id;
 
   // used to get bcs from Fluent case.
   int _cellZoneID;
