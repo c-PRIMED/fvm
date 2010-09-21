@@ -122,8 +122,7 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	    cx[j]=absci1[j1];	
 	    cy[j]=absci2[j2];
 	    cz[j]=absci3[j3];
-	    dcxyz[j]=wts1[j1]*wts2[j2]*wts3[j3];	
-	 
+	    dcxyz[j]=wts1[j1]*wts2[j2]*wts3[j3];		 
 	    j++;
 	  }
 	}

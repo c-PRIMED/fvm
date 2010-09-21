@@ -21,6 +21,7 @@
 #include "CollisionTermDiscretization.h"
 #include "ConvectionDiscretization_Kmodel.h"
 #include "KineticBoundaryConditions.h"
+#include "GenericKineticBCS.h"
 
 #include "Linearizer.h"
 #include "CRConnectivity.h"
@@ -31,11 +32,13 @@
 #include "DiagonalMatrix.h"
 
 
+#include "NumType.h"
 
 template<class T>
 class KineticModel : public Model
 {
  public:
+  typedef typename NumTypeTraits<T>:: T_Scalar T_Scalar;
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3; 
   typedef Array<VectorT3> VectorT3Array;
@@ -168,7 +171,7 @@ class KineticModel : public Model
 	}
 	
 
-	cout << "T" << temperature[0] << endl;
+
 	for(int c=0; c<nCells;c++){
 	  v[c][0]=v[c][0]/density[c];
 	  v[c][1]=v[c][1]/density[c];
@@ -179,7 +182,9 @@ class KineticModel : public Model
 	  temperature[c]=temperature[c]/(1.5*density[c]);  
 	  pressure[c]=density[c]*temperature[c];
 	}
-	cout << "T" << temperature[0] << endl;
+	cout << "T0 " << temperature[0] << endl;
+	cout << "T50 " << temperature[50] << endl;
+	cout << "T120 " << temperature[120] << endl;
 	
       }
     //fclose(pFile);
@@ -236,11 +241,12 @@ class KineticModel : public Model
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
 	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
 	const int numFields= _quadrature.getDirCount(); 
-	
+	/*
 	cout << "temperature [0] = " << temperature[0] << endl;
 	cout << "v [0][0] = " << v[0][0] << endl;
 	cout << "v [0][1] = " << v[0][1] << endl;
 	cout << "v [0][2] = " << v[0][2] << endl;
+	*/
 	for(int j=0;j< numFields;j++){
 	  Field& fnd = *_dsfEqPtr.dsf[j];
 	  TArray& f = dynamic_cast< TArray&>(fnd[cells]);
@@ -441,7 +447,7 @@ class KineticModel : public Model
     
     Field& fnd = *_dsfPtr.dsf[direction]; 
     Field& feq = *_dsfEqPtr.dsf[direction]; 
-
+   
     const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
     const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
     const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
@@ -492,11 +498,12 @@ class KineticModel : public Model
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
 			 ls.getX(), ls.getB());
 
-    /*
+    
       const int numMeshes = _meshes.size();
       for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
 
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	  {
@@ -505,39 +512,51 @@ class KineticModel : public Model
 	    const int nFaces = faces.getCount();
 
 	    const KineticBC<T>& bc = *_bcMap[fg.id];
-	    
-	    KineticBoundaryConditions<T,T,T> kbc(faces, mesh,
-						 _geomFields,
-						 _quadrature,
-						 _dsfPtr,
+	    Field& fnd = *_dsfPtr.dsf[direction]; //field in a direction
+	    TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	    BaseGenericKineticBCS<T,T,T> gkbc(faces, mesh, _geomFields,
+						 fnd,
 						 ls.getMatrix(),
 						 ls.getX(),
-						 ls.getB());
-	   				 
-	    FloatValEvaluator<VectorT3>
-	      bVelocity(bc.getVal("specifiedXVelocity"),
-			bc.getVal("specifiedYVelocity"),
-			bc.getVal("specifiedZVelocity"),
-			faces);
-	    FloatValEvaluator<T>
-	      bTemperature(bc.getVal("specifiedTemperature"),
-			   faces);
-
-	    if (bc.bcType == "NoSlipWall")
+					      ls.getB());
+					      
+	   
+	    const CRConnectivity& faceCells = mesh.getFaceCells(faces);			 
+	    const Field& areaMagField = _geomFields.areaMag;
+            const TArray& faceAreaMag = dynamic_cast<const TArray &>(areaMagField[faces]);
+	    const Field& areaField = _geomFields.area;
+	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	    if (bc.bcType == "WallBC") 
 	    {
-	      printf("%s \n", "bc is NoSlipWall");
-	      //	kbc.applyDiffuseWallBC(bVelocity,bTemperature);
+	      for(int i=0; i< nFaces; i++)
+		{
+		  const VectorT3 en = faceArea[i]/faceAreaMag[i];
+		  const T c_dot_en = cx[direction]*en[0]+cy[direction]*en[1]+cz[direction]*en[2];
+	      
+		  if(c_dot_en >T_Scalar(0.0)){
+		    //outgoing direction - extrapolation bc
+		    //printf("%s \n", "bc is NoSlipWall");
+		    const int c1= faceCells(i,1);// boundary cell
+		  
+		    T bvalue =f[c1];
+		    gkbc.applyExtrapolationBC(i);
+		  } 
+		  else
+		    //incoming direction - dirchlet bc
+		    {
+		      const int c1= faceCells(i,1);// boundary cell
+		      //printf("%d \n",c1); values are 110-129
+		      T bvalue =f[c1];
+		      gkbc.applyDirichletBC(i,bvalue);
+		    }
+		}
 	    }
-	    //else if (bc.bcType == "Specular Wall")
-	     // {
-	//	kbc.applySpecularWallBC();
-	  //    }
+      
+      
 	  }
-	  }
-	  */
-    
+      }
   }
-
+  
   
   void updateTime()
   {
@@ -548,7 +567,7 @@ class KineticModel : public Model
 
 	const StorageSite& cells = mesh.getCells();
 	const int numFields= _quadrature.getDirCount(); 
-
+	callBoundaryConditions();  //new
 	for (int direction = 0; direction < numFields; direction++)
 	  {
 	    Field& fnd = *_dsfPtr.dsf[direction];
@@ -563,6 +582,11 @@ class KineticModel : public Model
 	      }
 	    fN1 = f;
 	  }
+
+	ComputeMacroparameters();	//update macroparameters
+        ComputeCollisionfrequency();
+	initializeMaxwellianEq();
+
       }
   }
 	  
@@ -596,14 +620,16 @@ class KineticModel : public Model
 
 	    if (bc.bcType == "WallBC")
 	      {
-		//printf("%s \n", "bc is NoSlipWall");
-		//	kbc.applyDiffuseWallBC(bVelocity,bTemperature);
+		kbc.applyDiffuseWallBC(bVelocity,bTemperature);
 	      }
-	    //else if (bc.bcType == "Specular Wall")
-	    // {
-	    //	kbc.applySpecularWallBC();
-	    //    }
-	    
+	    else if(bc.bcType=="SymmetryBC")
+	      {
+		kbc.applySpecularWallBC();
+	      } 
+	    else if(bc.bcType=="CopyBC")
+	      {
+		kbc.applyCopyWallBC();
+	      }
 	    
 	  }
       }
@@ -633,7 +659,7 @@ class KineticModel : public Model
 	    //  rNorm = iNorm;
 	     ls.postSolve();
 	     ls.updateSolution();
-	     callBoundaryConditions();  //new		 
+	    		 
 	     _options.getKineticLinearSolver().cleanup();
 	  }
 	
@@ -725,7 +751,8 @@ void OutputDsfBLOCK(const char* filename)
 	}
       }
   }
-  
+ 
+
  private:
   //shared_ptr<Impl> _impl;
  
