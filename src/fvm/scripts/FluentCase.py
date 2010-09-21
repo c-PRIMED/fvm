@@ -1,5 +1,5 @@
 
-import importers
+from fvm import importers
 
 import SchemeParser
 
