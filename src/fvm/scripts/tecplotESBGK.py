@@ -5,16 +5,16 @@ def esbgkTecplotFile(meshes, macroFields,filename ):
   cellSites = []
   n=0
   cellSites.append( meshes[n].getCells() )
-  print "cellSites[", n, "].getCount = ", cellSites[n].getCount()
+ # print "cellSites[", n, "].getCount = ", cellSites[n].getCount()
 
   #face sites
   faceSites = []
   faceSites.append( meshes[n].getFaces() )
-  print "faceSites[", n, "].getCount = ", faceSites[n].getCount()
+  #print "faceSites[", n, "].getCount = ", faceSites[n].getCount()
   #node sites
   nodeSites = []
   nodeSites.append( meshes[n].getNodes() )
-  print "NodeSites[", n, "].getCount = ", nodeSites[n].getCount()
+  #print "NodeSites[", n, "].getCount = ", nodeSites[n].getCount()
   #get connectivity (faceCells)
   faceCells = []
   faceCells.append( meshes[n].getConnectivity( faceSites[n], cellSites[n] ) )

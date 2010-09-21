@@ -68,7 +68,7 @@ public:
     _areaField(geomFields.area),
     _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces]))
   {}
-  
+    
   void applyDirichletBC(int f, const X& bValue) const
   {
     const int c0 = _faceCells(f,0);

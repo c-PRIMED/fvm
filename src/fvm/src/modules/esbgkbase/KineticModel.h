@@ -80,7 +80,7 @@ class KineticModel : public Model
 	}
       init(); 
       SetBoundaryConditions();
-      weightedMaxwellian(0.5,0.0,0.0);
+      weightedMaxwellian(0.5,0.02,0.02);
 
       ComputeMacroparameters(); //calculate density,velocity,temperature
       ComputeCollisionfrequency(); //calculate viscosity, collisionFrequency
