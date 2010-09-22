@@ -469,7 +469,7 @@ public:
             const StorageSite& faces = fg.site;
             const CRConnectivity& faceCells = mesh.getFaceCells(faces);
             const int faceCount = faces.getCount();
-	    if (fg.groupType!="interior")
+	    if ((fg.groupType!="interior") && (fg.groupType!="interface"))
 	    {
 	        if (fg.groupType == "symmetry")
 		{
