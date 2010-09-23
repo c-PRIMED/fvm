@@ -1081,9 +1081,12 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 	  Q(3,3) += dr[2]*dr[2];          
           nnb++;
       }
-      
+      if (nnb == 0)
+	continue;
+
       if (nnb < 4)
       {
+	printf("only %i solid neighbors to interpolate!\n ", nnb);
 	throw CException("Not enough solid points in Solid LLS interpolation!");
       }
       //symetric matrix
