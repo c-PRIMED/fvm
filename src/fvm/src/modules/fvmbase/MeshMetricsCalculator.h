@@ -24,7 +24,7 @@ public:
   typedef Array<int> IntArray;
   typedef Array<VectorT3> VectorT3Array;
       
-  MeshMetricsCalculator(GeomFields& geomFields, const MeshList& meshes);
+  MeshMetricsCalculator(GeomFields& geomFields, const MeshList& meshes, bool transient=false);
   virtual ~MeshMetricsCalculator();
 
   virtual void init();
@@ -46,7 +46,7 @@ public:
 
   void computeGridInterpolationMatrices(const StorageSite& grids, const StorageSite& faces );
 
-  DEFINE_TYPENAME("MeshMetricsCalculator<"+NumTypeTraits<T>::getTypeName()+">");
+  void updateTime();
 
 #ifdef USING_ATYPE_TANGENT
   void setTangentCoords(int meshID, int faceZoneID, int dim);
@@ -59,6 +59,7 @@ private:
   Field& _volumeField;
   Field& _nodeDisplacement;
   Field& _boundaryNodeNormal;
+  bool _transient;
 
   virtual void calculateNodeCoordinates(const Mesh& mesh);
 

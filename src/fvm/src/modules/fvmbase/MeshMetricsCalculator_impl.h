@@ -170,7 +170,7 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
       const CRConnectivity& faceCells = mesh.getFaceCells(faces);
       const int faceCount = faces.getCount();
 
-      if (fg.groupType != "interior")
+      if ((fg.groupType!="interior") && (fg.groupType!="interface"))
       {
 	  if (fg.groupType == "symmetry")
 	  {
@@ -401,7 +401,7 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
   foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
   {
       const FaceGroup& fg = *fgPtr;
-      if (fg.groupType != "interior")
+      if ((fg.groupType!="interior") && (fg.groupType!="interface"))
       {
 	  const StorageSite& faces = fg.site;
 	  const CRConnectivity& faceCells = mesh.getFaceCells(faces);
@@ -1368,7 +1368,8 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 }
 
 template<class T>
-MeshMetricsCalculator<T>::MeshMetricsCalculator(GeomFields& geomFields,const MeshList& meshes) :
+MeshMetricsCalculator<T>::MeshMetricsCalculator(GeomFields& geomFields,const MeshList& meshes,
+                                                bool transient) :
   Model(meshes),
   _geomFields(geomFields),
   _coordField(geomFields.coordinate),
@@ -1376,7 +1377,8 @@ MeshMetricsCalculator<T>::MeshMetricsCalculator(GeomFields& geomFields,const Mes
   _areaMagField(geomFields.areaMag),
   _volumeField(geomFields.volume),
   _nodeDisplacement(geomFields.nodeDisplacement),
-  _boundaryNodeNormal(geomFields.boundaryNodeNormal)
+  _boundaryNodeNormal(geomFields.boundaryNodeNormal),
+  _transient(transient)
 {
   logCtor();
 }
@@ -1420,6 +1422,13 @@ MeshMetricsCalculator<T>::init()
             shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCount()));
             *ibTypePtr = Mesh::IBTYPE_FLUID;
             _geomFields.ibType.addArray(cells,ibTypePtr);
+
+            if (_transient)
+            {
+                shared_ptr<IntArray> ibTypeN1Ptr(new IntArray(cells.getCount()));
+                *ibTypeN1Ptr = Mesh::IBTYPE_FLUID;
+                _geomFields.ibTypeN1.addArray(cells,ibTypeN1Ptr);
+            }
         }
     }
     
@@ -1444,6 +1453,34 @@ MeshMetricsCalculator<T>::recalculate()
   _volumeField.syncLocal();
   _coordField.syncLocal();
 }
+
+template<class T>
+void
+MeshMetricsCalculator<T>::updateTime()
+{
+  if (_transient)
+  {
+      const int numMeshes = _meshes.size();
+      for (int n=0; n<numMeshes; n++)
+      {
+          const Mesh& mesh = *_meshes[n];
+          const StorageSite& cells = mesh.getCells();
+          const int cellCount = cells.getCount();
+          if (cellCount > 0)
+          {
+              IntArray& ibTypeN1 = dynamic_cast<IntArray&>(_geomFields.ibTypeN1[cells]);
+              const IntArray& ibType =
+                dynamic_cast<const IntArray& >(_geomFields.ibType[cells]);
+              for(int c=0; c<cellCount; c++)
+                ibTypeN1[c] = ibType[c];
+              
+          }
+      }
+  }
+  else
+    throw CException("MeshMetricsCalculator: not transient");
+}
+
 //***********************************************************************//
 
 //***********************************************************************//

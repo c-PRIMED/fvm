@@ -32,6 +32,7 @@ struct GeomFields
   Field dirichletNodeDisplacement;
   Field displacementOptions;
   Field ibType;
+  Field ibTypeN1;
   // this file gets directly included in a swig ineterface definition
   // file hence protect the following
 #ifndef SWIG

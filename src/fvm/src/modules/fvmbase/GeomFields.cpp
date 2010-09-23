@@ -20,6 +20,7 @@ GeomFields::GeomFields(const string baseName) :
   boundaryNodeNormal(baseName+"boundaryNodeNormal"),
   dirichletNodeDisplacement(baseName+"dirichletNodeDisplacement"),
   displacementOptions(baseName+"displacementOptions"),
-  ibType(baseName+"ibType")
+  ibType(baseName+"ibType"),
+  ibTypeN1(baseName+"ibTypeN1")
 {}
 

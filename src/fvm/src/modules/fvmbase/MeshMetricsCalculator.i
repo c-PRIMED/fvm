@@ -10,10 +10,11 @@ template<class T>
 class MeshMetricsCalculator : public Model
 {
 public:
-  MeshMetricsCalculator(GeomFields& geomFields, const MeshList& meshes);
+  MeshMetricsCalculator(GeomFields& geomFields, const MeshList& meshes, bool transient=False);
   virtual void init();
   void calculateBoundaryNodeNormal();
   void recalculate();
+  void updateTime();
   void recalculate_deform();
   void computeIBInterpolationMatrices(const StorageSite& particles);
   void eraseIBInterpolationMatrices(const StorageSite& particles);
