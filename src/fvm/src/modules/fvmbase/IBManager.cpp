@@ -210,25 +210,7 @@ IBManager::markIBType(Mesh& fluidMesh)
             isFluidCell[c0] = true;
       }
   }
-  /*
-  foreach(const FaceGroupPtr fgPtr, fluidMesh.getInterfaceGroups())
-  {
-      const FaceGroup& fg = *fgPtr;
-      const StorageSite& faces = fg.site;
-      cout << "checking interface group" << endl;
-      const CRConnectivity& faceCells = fluidMesh.getFaceCells(faces);
-      const int nFaces = faces.getCount();
-      for(int f=0; f<nFaces; f++)
-      {
-          const int c0 = faceCells(f,0);
-          if (cellIBType[c0] == Mesh::IBTYPE_UNKNOWN)
-            isFluidCell[c0] = true;
-	  //const int c1 = faceCells(f,1);
-          //if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN)
-	  // isFluidCell[c1] = true;
-      }
-  }
-  */
+ 
   const CRConnectivity& cellCells = fluidMesh.getCellCells();
 
          
@@ -304,27 +286,7 @@ IBManager::markIBType(Mesh& fluidMesh)
           if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN)
             cellIBType[c1] = cellIBType[c0];
       }      
-  }
-  /*
-  foreach(const FaceGroupPtr fgPtr, fluidMesh.getInterfaceGroups())
-  {
-      const FaceGroup& fg = *fgPtr;
-      const StorageSite& faces = fg.site;
-      cout << "checking interface group" << endl;
-      const CRConnectivity& faceCells = fluidMesh.getFaceCells(faces);
-      const int nFaces = faces.getCount();
-      cout << nFaces << endl;
-      for(int f=0; f<nFaces; f++)
-      {
-          const int c0 = faceCells(f,0);
-          const int c1 = faceCells(f,1);
-          if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN)
-            cellIBType[c1] = cellIBType[c0];
-          //if (cellIBType[c0] == Mesh::IBTYPE_UNKNOWN)
-	  // cellIBType[c0] = cellIBType[c1];
-      }      
-  }
-  */ 
+  } 
 }
 
 void
@@ -346,7 +308,6 @@ IBManager::markIBTypePlus(Mesh& fluidMesh)
       else if (cellIBType[c] == Mesh::IBTYPE_BOUNDARY)
         nBoundary++;
       else{
-	//cout << c << " " << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << endl;
 	throw CException("invalid ib type");
 	}	
   }
