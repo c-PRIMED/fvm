@@ -10,22 +10,23 @@
 #include "CollisionTermDiscretization.h"
 #include "ConvectionDiscretization_Kmodel.h"
 #include "KineticBoundaryConditions.h"
+#include "AMG.h"
   %}
 
-//using namespace std;
-//using namespace boost;
-
+using namespace std;
+using namespace boost;
 //%include "FloatVarDict.i"
-
+%include "KineticModel.h"
 
 %import "Mesh.i"
 
 %import "DistFunctFields.h"
 %import "MacroFields.h"
 %import "Model.i"
+%import "KineticBC.h"
 
-
- /*template <class T>
+ /*
+template <class T>
 struct KineticBC : public FloatVarDict<T>
 {
   string bcType;
@@ -50,17 +51,17 @@ struct KineticModelOptions : public FloatVarDict<T>
     LinearSolver *KineticLinearSolver;
     };*/
 
-//%template(KineticBCD) KineticBC<double>;
-//%template(KineticBCList) std::vector<KineticBC<double>*>;
-//%template(KineticBCsMap) std::map<int,KineticBC<double>*>;
 
-//%template(KineticVCD) KineticVC<double >;
-//%template(KineticVCList) std::vector<KineticVC<double>*>;
-//%template(KineticVCsMap) std::map<int,KineticVC<double>*>;
+%template(KineticBCD) KineticBC<double>;
+%template(KineticBCList) std::vector<KineticBC<double>*>;
+%template(KineticBCsMap) std::map<int,KineticBC<double>*>;
 
-//%template(KineticModelOptionsD) KineticModelOptions<double>;
+%template(KineticVCD) KineticVC<double >;
+%template(KineticVCList) std::vector<KineticVC<double>*>;
+%template(KineticVCsMap) std::map<int,KineticVC<double>*>;
+%template(KineticModelOptionsD) KineticModelOptions<double>;
 
-%include "KineticModel.h"
+
 
 %template(KineticModelD) KineticModel<double>;
 %template(vdfField) DistFunctFields<double>;

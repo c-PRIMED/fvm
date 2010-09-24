@@ -78,9 +78,9 @@ public:
       return;
     
     // the current value of flux and its Jacobians
-    const X fluxB = -_r[c1];
-    const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
-    const Diag dFluxdXC1 = -_dRdXDiag[c1];
+    // const X fluxB = -_r[c1];
+    //const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
+    // const Diag dFluxdXC1 = -_dRdXDiag[c1];
     const OffDiag dRC0dXC1 = _assembler.getCoeff01(f);
     
     // since we know the boundary value, compute the boundary
@@ -88,7 +88,7 @@ public:
     // can then eliminate the coefficient to the boundary cell
     
     const X dXC1 = bValue - _x[c1];
-    const X dFlux = dFluxdXC1*dXC1;
+    // const X dFlux = dFluxdXC1*dXC1;
     const X dRC0 = dRC0dXC1*dXC1;
     _r[c0] += dRC0;
     
@@ -141,8 +141,8 @@ public:
       return;
 
     // the current value of flux and its Jacobians
-    const X fluxB = -_r[c1];
-    const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
+    //const X fluxB = -_r[c1];
+    // const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
     const Diag dFluxdXC1 = -_dRdXDiag[c1];
 
     const X xc0mxc1 = _x[c0]-_x[c1];

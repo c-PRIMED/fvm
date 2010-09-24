@@ -80,7 +80,7 @@ class KineticModel : public Model
 	}
       init(); 
       SetBoundaryConditions();
-      weightedMaxwellian(0.5,0.02,0.02);
+      weightedMaxwellian(1.0,0.00,0.00);
 
       ComputeMacroparameters(); //calculate density,velocity,temperature
       ComputeCollisionfrequency(); //calculate viscosity, collisionFrequency
@@ -182,8 +182,14 @@ class KineticModel : public Model
 	  temperature[c]=temperature[c]/(1.5*density[c]);  
 	  pressure[c]=density[c]*temperature[c];
 	}
-	cout << "T0 " << temperature[0] << endl;
-	cout << "T50 " << temperature[50] << endl;
+	cout << "T,0 " << temperature[0]<<endl;
+	//cout << "u0"<<v[0][0]<<endl;
+	//cout<<"v0"<<v[0][1]<<endl;
+	//cout<<"density0"<<density[0]<<endl;
+	cout << "T,50 " << temperature[50]<<endl;// << v[50][0]<<v[50][1]<<density[50]<<endl;
+	cout << "u50"<<v[0][0]<<endl;
+	cout<<"v50"<<v[0][1]<<endl;
+	cout<<"density50"<<density[0]<<endl;
 	cout << "T120 " << temperature[120] << endl;
 	
       }
@@ -201,7 +207,7 @@ class KineticModel : public Model
       {
 	double Tmuref=273.15;
 	double mu_w=0.81; double muref=2.117e-5; //Argon
-	double rho_init=1.6034e-4; double T_init= 300; 
+	double rho_init=9.28e-9; double T_init= 273; 
 	double R=8314.0/40.0;
 	double nondim_length=1.0;
 	double mu0=rho_init*R*T_init*nondim_length/pow(2*R*T_init,0.5);  
@@ -513,7 +519,7 @@ class KineticModel : public Model
 
 	    const KineticBC<T>& bc = *_bcMap[fg.id];
 	    Field& fnd = *_dsfPtr.dsf[direction]; //field in a direction
-	    TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	    TArray& dsf = dynamic_cast< TArray&>(fnd[cells]);
 	    BaseGenericKineticBCS<T,T,T> gkbc(faces, mesh, _geomFields,
 						 fnd,
 						 ls.getMatrix(),
@@ -528,26 +534,24 @@ class KineticModel : public Model
 	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
 	    if (bc.bcType == "WallBC") 
 	    {
-	      for(int i=0; i< nFaces; i++)
+	      for(int f=0; f< nFaces; f++)
 		{
-		  const VectorT3 en = faceArea[i]/faceAreaMag[i];
+		  const VectorT3 en = faceArea[f]/faceAreaMag[f];
 		  const T c_dot_en = cx[direction]*en[0]+cy[direction]*en[1]+cz[direction]*en[2];
 	      
 		  if(c_dot_en >T_Scalar(0.0)){
 		    //outgoing direction - extrapolation bc
 		    //printf("%s \n", "bc is NoSlipWall");
-		    const int c1= faceCells(i,1);// boundary cell
-		  
-		    T bvalue =f[c1];
-		    gkbc.applyExtrapolationBC(i);
+		    const int c1= faceCells(f,1);// boundary cell
+		    gkbc.applyExtrapolationBC(f);
 		  } 
 		  else
 		    //incoming direction - dirchlet bc
 		    {
-		      const int c1= faceCells(i,1);// boundary cell
+		      const int c1= faceCells(f,1);// boundary cell
 		      //printf("%d \n",c1); values are 110-129
-		      T bvalue =f[c1];
-		      gkbc.applyDirichletBC(i,bvalue);
+		      T bvalue =dsf[c1];
+		      gkbc.applyDirichletBC(f,bvalue);
 		    }
 		}
 	    }
@@ -641,8 +645,9 @@ class KineticModel : public Model
     for(int n=0; n<niter; n++)  
       {
 	const int N123 =_quadrature.getDirCount();
-
+	//T rNorm0=0.0;
 	MFRPtr rNorm;
+	//	rNorm = MFRPtr();
 	for(int direction=0; direction<N123;direction++)
 	  {
 	    LinearSystem ls;
@@ -651,42 +656,56 @@ class KineticModel : public Model
 	    linearizeKineticModel(ls,direction);
 	    ls.initSolve();
 	    
+	    //const T* kNorm=_options.getKineticLinearSolver().solve(ls);
+	     MFRPtr kNorm(_options.getKineticLinearSolver().solve(ls));
+	    //printf("%d \n", *iNorm); 
+	    //cout <<  *kNorm << endl;
 	    
-	    MFRPtr iNorm(_options.getKineticLinearSolver().solve(ls));
-	    //if (rNorm)
-	    //  *rNorm += *iNorm;
-	    //else
-	    //  rNorm = iNorm;
+	     
+	     if (!rNorm)
+	       rNorm = kNorm;
+	     //else
+	     //*rNorm += *kNorm;
+	      
+	     // rNorm=kNorm;
 	     ls.postSolve();
 	     ls.updateSolution();
 	    		 
 	     _options.getKineticLinearSolver().cleanup();
+	    
 	  }
-	
+	//cout <<  *rNorm << endl;
+
 	//ComputeMacroparameters();
 	//ComputeCollisionfrequency();	
-	//	_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
-	//	initializeMaxwellianEq();
-	  	/*
-	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm; 
-	MFRPtr normRatio((*rNorm)/(*_initialKModelNorm));
-	      cout << _niters << ": " << *rNorm << endl;   
-	      _options.getKineticLinearSolver().cleanup();
-	      
-	      //
-	      _niters++;
-	      if (*rNorm < _options.absoluteTolerance ||
-	      *normRatio < _options.relativeTolerance)
-	      break;
+	//_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
+	//initializeMaxwellianEq();
+	
+	/*	
+	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm;
+	if (_niters < 5)
+        {
+             _initialKmodelNorm->setMax(*rNorm);
+            
+        } 
+ 
+	MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));
+	cout << _niters << ": " << *rNorm << endl;   
+
+	_niters++;
+	if (*rNorm < _options.absoluteTolerance ||
+	    *normRatio < _options.relativeTolerance)
+	  break;
 	*/	    
-	  
       }
+
+
     //char * filename="f.txt";
     //itoa(n,filename,10);
     //_dsfPtr.OutputDsf(_dsfPtr,filename);
   }
   
-void OutputDsfBLOCK(const char* filename)
+  void OutputDsfBLOCK(const char* filename)
   {
     FILE * pFile;
     pFile = fopen(filename,"w"); 
