@@ -333,8 +333,8 @@ MultiField::syncScatter(const ArrayIndex& i)
       ArrayIndex oIndex(i.first,&oSite);
 
       // skip if the other site is not in this Multifield
-      if (!hasArray(oIndex))
-        continue;
+      //if (!hasArray(oIndex))
+      //  continue;
       
       // arrays are stored with (Sender,receiver) as the key
       EntryIndex eIndex(i,oIndex);
