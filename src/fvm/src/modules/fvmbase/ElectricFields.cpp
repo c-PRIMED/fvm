@@ -7,6 +7,7 @@ ElectricFields::ElectricFields(const string baseName) :
   electric_field(baseName + ".electric_field"),
   dielectric_constant(baseName + ".dielectric_constant"),
   total_charge(baseName + ".total_charge"),
+  init_charge(baseName + ".init_charge"),
   conduction_band(baseName + ".conduction_band"),
   valence_band(baseName + ".valence_band"),
   electron_totaltraps(baseName + ".electron_totaltraps"),
@@ -26,5 +27,6 @@ ElectricFields::ElectricFields(const string baseName) :
   one(baseName + "one"),
   oneD_column(baseName + "oneD_column"),
   force(baseName + "force")
+  
 {}
 

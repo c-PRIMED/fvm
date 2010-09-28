@@ -32,7 +32,6 @@ struct ElectricModelOptions : public FloatVarDict<T>
   bool emission_enable;
   bool drift_enable;
   bool injection_enable;
-  bool drift_enable;
   bool diffusion_enable; 
   bool trapbandtunneling_enable; 
   bool printNormalizedResiduals;

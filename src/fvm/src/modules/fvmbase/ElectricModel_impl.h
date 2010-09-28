@@ -152,7 +152,18 @@ public:
 	    *sdCell = _options["initialTotalCharge"];
 	    _electricFields.total_charge.addArray(cells,sdCell);
 	  }
-	
+	  
+	  if ( vc.vcType == "air"){
+	    shared_ptr<TArray> saCell(new TArray(nCells));
+	    saCell->zero();
+	    _electricFields.init_charge.addArray(cells,saCell);
+	  }
+	  // there is a initial charge in dielectric
+	  if ( vc.vcType == "dielectric"){
+	    shared_ptr<TArray> sdCell(new TArray(nCells));
+	    *sdCell = _options["initialTotalCharge"];
+	    _electricFields.init_charge.addArray(cells,sdCell);
+	  }
 	  //potential gradient setup
 	  shared_ptr<PGradArray> gradp(new PGradArray(nCells));
           gradp->zero();	
@@ -405,8 +416,11 @@ public:
       	
 	//update source term in electrostatics
 	TArray& totalcharge = dynamic_cast<TArray&>(_electricFields.total_charge[cells]);
+	TArray& initcharge = dynamic_cast<TArray&>(_electricFields.init_charge[cells]);
 	for (int c=0; c<nCells; c++){
-	  totalcharge[c] = - (charge[c][0] + charge[c][1]) * QE;
+	  totalcharge[c] = - (charge[c][0] + charge[c][1] - initcharge[c]) * QE;
+	  if (totalcharge[c] > 0)
+	    throw CException("got negative total number of charges; please check total_charge and init_charge");
 	  //totalcharge[c] = 0.0;
 	}
     }
@@ -1038,7 +1052,7 @@ public:
     const T& temperature = _constants["OP_temperature"];
     const T& electron_effmass = _constants["electron_effmass"];
     const T& poole_frenkel_emission_frequency = _constants["poole_frenkel_emission_frequency"];
-
+    
     //??? dielectric thickness ///
     T effefield = (membrane_workfunction - substrate_workfunction) / dielectric_thickness;
 
@@ -1057,6 +1071,8 @@ public:
 	const VectorT3Array& cellCentroid = dynamic_cast<const VectorT3Array& > (_geomFields.coordinate[cells]);
 	const TArray& electron_totaltraps = dynamic_cast<TArray& > (_electricFields.electron_totaltraps[cells]);
 	TArray& free_electron_capture_cross = dynamic_cast<TArray&> (_electricFields.free_electron_capture_cross[cells]);
+	TArray& initcharge = dynamic_cast<TArray&>(_electricFields.init_charge[cells]);
+
 	//  charge is a VectorT2 array
 	//  charge[0] contains the electron density in traps
 	//  charge[1] contains the electron density in conduction band 
@@ -1090,7 +1106,10 @@ public:
 	  charge[c][1] = electron_totaltraps[c] * FermiFunction(energy, fermilevel, temperature);
 	  chargeN1[c][1] = charge[c][1];
 	 
-	  
+	  cout << "init charge " << charge[100][0] << " " << charge[100][1] << endl;
+
+	  initcharge[c] = charge[c][0] + charge[c][1];
+
 	  if (_options.timeDiscretizationOrder > 1)
 	    (*chargeN2)[c][1] = charge[c][1];
 

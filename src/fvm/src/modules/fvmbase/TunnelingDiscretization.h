@@ -14,6 +14,7 @@
 #include "DielectricOneDimColumn.h"
 #include "ElectricUtilityFunctions.h"
 
+
 /**************************************************
 Diag type: 2x2Tensor
       | d00,  d01 |
@@ -93,7 +94,7 @@ class TunnelingDiscretization : public Discretization
     const XArray& xCell = dynamic_cast<const XArray&>(_varField[cells]);
     
     //TArray& transmission = dynamic_cast<TArray&> (_transmission[cells]);
-    shared_ptr<TArray> ts(new TArray(cells.getCount()));
+    TArray* ts = new TArray(cells.getCount());
     *ts = 0;
     TArray& transmission = *ts;    
 
@@ -102,19 +103,19 @@ class TunnelingDiscretization : public Discretization
     DiagArray& diag = matrix.getDiag();
 
 
-    const T_Scalar& electron_effmass = _constants["electron_effmass"];
-    const T_Scalar& temperature = _constants["OP_temperature"];
-    const T_Scalar& electron_capture_cross = _constants["electron_capture_cross"];
-    const T_Scalar& electron_trapdepth = _constants["electron_trapdepth"];
-    const T_Scalar& voltage = _constants["voltage"];
-    const T_Scalar& fermilevelsubstrate = -_constants["substrate_workfunction"];
-    const T_Scalar& fermilevelmembrane = -_constants["substrate_workfunction"] - voltage;
+    const T_Scalar electron_effmass = _constants["electron_effmass"];
+    const T_Scalar temperature = _constants["OP_temperature"];
+    const T_Scalar electron_capture_cross = _constants["electron_capture_cross"];
+    const T_Scalar electron_trapdepth = _constants["electron_trapdepth"];
+    const T_Scalar voltage = _constants["voltage"];
+    const T_Scalar fermilevelsubstrate = -_constants["substrate_workfunction"];
+    const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - voltage;
     const T_Scalar& dielectric_ionization = _constants["dielectric_ionization"];
 
-    const int& subID = _constants["substrate_id"];
-    const int& memID = _constants["membrane_id"];
-    const int& nLevel = _constants["nLevel"];
-    const int& normal = _constants["normal_direction"];
+    const int subID = _constants["substrate_id"];
+    const int memID = _constants["membrane_id"];
+    const int nLevel = _constants["nLevel"];
+    const int normal = _constants["normal_direction"];
 
     T_Scalar fluxCoeff(0), fermilevel(0), scatterfactor(0);
     

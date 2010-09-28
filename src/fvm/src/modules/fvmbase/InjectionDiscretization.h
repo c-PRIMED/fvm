@@ -74,7 +74,7 @@ class InjectionDiscretization : public Discretization
 
     //TArray& transmission = dynamic_cast<TArray&> (_transmissionField[cells]);
 
-    shared_ptr<TArray> ts(new TArray(cells.getCount()));
+    TArray* ts = (new TArray(cells.getCount()));
     *ts = 0;
     TArray& transmission = *ts;
 
