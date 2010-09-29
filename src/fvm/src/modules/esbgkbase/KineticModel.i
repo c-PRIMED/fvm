@@ -15,15 +15,18 @@
 
 using namespace std;
 using namespace boost;
-//%include "FloatVarDict.i"
+
+%include "atype.i"
+%import "Mesh.i"
+%include "FloatVarDict.i"
+%include "Model.i"
+
 %include "KineticModel.h"
 
-%import "Mesh.i"
 
 %import "DistFunctFields.h"
 %import "MacroFields.h"
-%import "Model.i"
-%import "KineticBC.h"
+%include "KineticBC.h"
 
  /*
 template <class T>
