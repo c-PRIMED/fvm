@@ -647,7 +647,7 @@ class KineticModel : public Model
 	const int N123 =_quadrature.getDirCount();
 	//T rNorm0=0.0;
 	MFRPtr rNorm;
-	//	rNorm = MFRPtr();
+       
 	for(int direction=0; direction<N123;direction++)
 	  {
 	    LinearSystem ls;
@@ -664,17 +664,25 @@ class KineticModel : public Model
 	     
 	     if (!rNorm)
 	       rNorm = kNorm;
-	     //else
-	     //*rNorm += *kNorm;
-	      
-	     // rNorm=kNorm;
+	     else
+             {
+                 // find the array for the 0the direction residual and
+                 // add the current residual to it
+                 Field& fn0 = *_dsfPtr.dsf[0];
+                 Field& fnd = *_dsfPtr.dsf[direction];
+                 
+                 ArrayBase& rArray0 = (*rNorm)[fn0];
+                 ArrayBase& rArrayd = (*kNorm)[fnd];
+                 rArray0 += rArrayd;
+             }
+
 	     ls.postSolve();
 	     ls.updateSolution();
 	    		 
 	     _options.getKineticLinearSolver().cleanup();
 	    
 	  }
-	//cout <<  *rNorm << endl;
+	cout <<  *rNorm << endl;
 
 	//ComputeMacroparameters();
 	//ComputeCollisionfrequency();	
