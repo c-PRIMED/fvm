@@ -286,7 +286,6 @@ AMG::smooth(LinearSystem & ls)
   }
   _finestLinearSystem = &ls;
 
- for(int i=0; i<nMaxIterations; i++)
   {
       cycle(cycleType,0);
   }
