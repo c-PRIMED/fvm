@@ -53,7 +53,7 @@ class Fvm(BuildPkg):
         ver = config(self.name, 'version')
         self.bld.Scons.set_path(unload=0)
         val = self.sys_log("%s/etc/buildsystem/build -j%s -C %s COMPACTOUTPUT=False PARALLEL=%s VERSION=%s COMPILER=%s" \
-                         % (self.sdir, 1 , self.sdir, par, ver, comp))
+                         % (self.sdir, 1 , self.sdir, par, ver, comp), show=True)
         self.bld.Scons.set_path(unload=1)
         return val
 

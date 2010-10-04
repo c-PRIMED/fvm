@@ -33,6 +33,6 @@ class MPM(BuildPkg):
         return False
     def _build(self):
         # Don't use parallel make here. Breaks on some systems.
-        return self.sys_log("make")
+        return self.sys_log("make", show=True)
     def _install(self):
         return self.sys_log("make install")
