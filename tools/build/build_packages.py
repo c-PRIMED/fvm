@@ -9,6 +9,9 @@ import testing, string, time
 from build_utils import *
 from config import *
 from build import Build
+from subprocess import Popen, STDOUT, PIPE
+from select import POLLIN, POLLNVAL, POLLERR, POLLHUP
+import select
 
 # superclass for all packages
 class BuildPkg(Build):
@@ -144,7 +147,7 @@ class BuildPkg(Build):
             cprint('GREEN', "%s OK" % ok)
         return ok, errs
 
-    def sys_log(self, cmd):
+    def sys_log(self, cmd, show=False):
         "Execute a system call and log the result."
         # get configuration variable
         e = config(self.name, self.state)
@@ -154,14 +157,37 @@ class BuildPkg(Build):
         e = e.replace('LOGDIR', self.logdir)
         cmd = cmd + " " + e
         debug(cmd)
+        f = None
         if self.logfile != '':
             f = open(self.logfile, 'a')
             print >> f, "EXECUTING:", cmd
-            f.close()
-            cmd = cmd + " >>" + self.logfile + " 2>&1"
-        return os.system("/bin/bash -c '%s'" % cmd)
-
-
+        p = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE)
+        pid = p.pid
+        poll = select.poll()
+        poll.register(p.stdout, POLLIN | POLLHUP | POLLERR | POLLNVAL)
+        poll.register(p.stderr, POLLIN | POLLHUP | POLLERR | POLLNVAL)
+        serr = p.stderr.fileno()        
+        done = 0
+        while done < 2:
+            events = poll.poll(10000)
+            for fd, ev in events:
+                if not (ev & POLLIN):
+                    done += 1
+                    poll.unregister(fd)
+                    continue
+                data = os.read(fd,1024)
+                if fd == serr:
+                    print >>f, data,
+                    if show: cprint('DYELLOW', data, False)
+                else:
+                    if show: print data,
+                    print >>f, data,
+        if f: f.close()                    
+        try:
+            return os.waitpid(pid, 0)[1]
+        except:
+            return 0
+    
     def add_required(self, deps):
         ''' This method allows packages to conditionally add to the required list. '''
         return deps

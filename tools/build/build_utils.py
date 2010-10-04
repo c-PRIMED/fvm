@@ -75,11 +75,14 @@ if ('NOCOLOR' in os.environ) \
         or (not sys.stdout.isatty()):
     clear_colors()
 
-def cprint(col, str):
+def cprint(col, str, newline=True):
     try: mycol = colors[col]
     except KeyError: mycol = ''
-    print "%s%s%s" % (mycol, str, colors['NORMAL'])
-
+    if newline:
+        print "%s%s%s" % (mycol, str, colors['NORMAL'])
+    else:
+        print "%s%s%s" % (mycol, str, colors['NORMAL']),
+        
 def _niceprint(msg, type=''):
     print_type = True
     def print_pat(color):
