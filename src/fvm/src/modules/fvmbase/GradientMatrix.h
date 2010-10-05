@@ -132,7 +132,7 @@ private:
   const Array<int>& _row;
   const Array<int>& _col;
   Array<Coord> _coeffs;
-  map<const CRConnectivity*,PairWiseAssembler*> _pairWiseAssemblers;
+  mutable map<const CRConnectivity*,PairWiseAssembler*> _pairWiseAssemblers;
 };
 
 
