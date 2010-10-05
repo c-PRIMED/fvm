@@ -426,7 +426,7 @@ public:
   virtual ~GradientModel()
   {}
 
-  static const GradMatrixType&
+  static GradMatrixType&
   getGradientMatrix(const Mesh& mesh, const GeomFields& geomFields)
   {
     if (_gradientMatricesMap.find(&mesh) == _gradientMatricesMap.end())
@@ -440,7 +440,7 @@ public:
             _gradientMatricesMap[&mesh] = getLeastSquaresGradientMatrix3D(mesh,geomFields);
         }
     }
-    return dynamic_cast<const GradMatrixType&>(*_gradientMatricesMap[&mesh]);
+    return dynamic_cast<GradMatrixType&>(*_gradientMatricesMap[&mesh]);
   }
 
   void init() {}
@@ -454,12 +454,46 @@ public:
 
         const StorageSite& cells = mesh.getCells();
 
-        const GradMatrixType& gradMatrix = getGradientMatrix(mesh,_geomFields);
+        GradMatrixType& gradMatrix = getGradientMatrix(mesh,_geomFields);
 
         const XArray& var = dynamic_cast<const XArray&>(_varField[cells]);
         shared_ptr<GradArray> gradPtr = gradMatrix.getGradient(var);
         _gradientField.addArray(cells,gradPtr);
 
+        // fix values in cells adjacent to IB Faces
+
+        const StorageSite& ibFaces = mesh.getIBFaces();
+        const int nIBFaces = ibFaces.getCount();
+        if (nIBFaces > 0)
+        {
+            const Array<int>& ibFaceList = mesh.getIBFaceList();
+            const CRConnectivity& faceCells = mesh.getAllFaceCells();
+            const IntArray& ibType =
+              dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+            GradientMatrixAssembler& assembler =
+              gradMatrix.getPairWiseAssembler(faceCells);
+            const XArray& varIB =
+              dynamic_cast<const XArray&>(_varField[ibFaces]);
+            
+            
+            for (int nf=0; nf<nIBFaces; nf++)
+            {
+                const int f = ibFaceList[nf];
+                const int c0 = faceCells(f,0);
+                const int c1 = faceCells(f,1);
+                
+                if (ibType[c0]==Mesh::IBTYPE_FLUID)
+                {
+                    (*gradPtr)[c0].accumulate(assembler.getCoeff01(f),
+                                              varIB[nf]-var[c1]);
+                }
+                else
+                {
+                    (*gradPtr)[c1].accumulate(assembler.getCoeff10(f),
+                                              varIB[nf]-var[c0]);
+                }
+            }
+        }
 
         // copy boundary values from adjacent cells
        
