@@ -80,6 +80,36 @@ public:
      const Vec3DArray& points(dynamic_cast<const Vec3DArray&>(faceNodesCoord));
      return new Mesh( dimension, points );
   }
+
+  Mesh(const int dimension,
+       const int nCells,
+       const ArrayBase&  nodesCoordB,
+       const ArrayBase& faceCellIndicesB,
+       const ArrayBase& faceNodeIndicesB,
+       const ArrayBase& faceNodeCountB,
+       const ArrayBase& faceGroupSizeB )
+  {
+     typedef Vector<double,3> Vec3D;
+     typedef Array<Vec3D> Vec3DArray;
+     typedef Array<int> IntArray;
+     const Vec3DArray&
+       nodesCoord(dynamic_cast<const Vec3DArray&>(nodesCoordB));
+     
+     const IntArray&
+       faceCellIndices(dynamic_cast<const IntArray&>(faceCellIndicesB));
+     const IntArray&
+       faceNodeIndices(dynamic_cast<const IntArray&>(faceNodeIndicesB));
+     const IntArray&
+       faceNodeCount(dynamic_cast<const IntArray&>(faceNodeCountB));
+     const IntArray&
+       faceGroupSize(dynamic_cast<const IntArray&>(faceGroupSizeB));
+      
+     return new Mesh( dimension, nCells, nodesCoord, faceCellIndices,
+                      faceNodeIndices, faceNodeCount, faceGroupSize);
+      
+      
+  }
+
 }
 
   //VecD3 getCellCoordinate(const int c) const;

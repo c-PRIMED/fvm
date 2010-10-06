@@ -106,6 +106,114 @@ Mesh::Mesh( const int dimension,
   logCtor();
 }
 
+Mesh::Mesh( const int dimension,
+            const int nCells,
+            const Array<VecD3>&  nodesCoord,
+            const Array<int>& faceCellIndices,
+            const Array<int>& faceNodeIndices,
+            const Array<int>& faceNodeCount,
+            const Array<int>& faceGroupSize
+            ): 
+  _dimension(dimension),
+  _id(_lastID++),
+  _cellZoneID(-1),
+  _cells(0),
+  _faces(0),
+  _nodes(0),
+  _ibFaces(0),
+  _boundaryNodes(0),
+  _interiorFaceGroup(),
+  _faceGroups(),
+  _boundaryGroups(),
+  _interfaceGroups(),
+  _connectivityMap(),
+  _coordinates(),
+  _boundaryNodeGlobalToLocalPtr(),
+  _ibFaceList(),
+  _numOfAssembleMesh(1),
+  _isAssembleMesh(false)
+{
+  int nFaces = faceNodeCount.getLength();
+  int nNodes      = nodesCoord.getLength();
+
+  StorageSite& faceSite = getFaces();
+  StorageSite& nodeSite = getNodes();
+  StorageSite& cellSite = getCells();
+  faceSite.setCount( nFaces );
+  nodeSite.setCount( nNodes );
+
+  //interior face group (we have only one interface for this
+  createInteriorFaceGroup(faceGroupSize[0]);
+  
+  int nFaceGroups = faceGroupSize.getLength();
+
+  int offset = faceGroupSize[0];
+  int nBoundaryFaces =0;
+  for(int nfg=1; nfg<nFaceGroups; nfg++)
+  {
+      createBoundaryFaceGroup(faceGroupSize[nfg], offset, nfg, "wall");
+      offset += faceGroupSize[nfg];
+      nBoundaryFaces += faceGroupSize[nfg];
+  }
+  
+  cellSite.setCount( nCells, nBoundaryFaces );
+  
+  //setting coordinates
+  shared_ptr< Array<VecD3> > coord( new Array< VecD3 > ( nNodes ) );
+  *coord = nodesCoord;
+  setCoordinates( coord );
+  
+  
+  //faceNodes constructor
+  shared_ptr<CRConnectivity> faceNodes( new CRConnectivity(faceSite,
+                                                           nodeSite) );
+
+  faceNodes->initCount();
+
+  shared_ptr<CRConnectivity> faceCells( new CRConnectivity(faceSite,
+                                                           cellSite) );
+
+  faceCells->initCount();
+
+  
+  //addCount
+  for ( int f = 0; f < nFaces; f++ )
+  {
+      faceNodes->addCount(f, faceNodeCount[f]);
+      faceCells->addCount(f, 2);
+  }
+  
+  //finish count
+  faceNodes->finishCount();
+  faceCells->finishCount();
+  
+  //add operation 
+  int nfn=0;
+  int nfc=0;
+
+  for( int f = 0; f < nFaces; f++ )
+  {
+      for( int j =0; j < faceNodeCount[f]; j++ )
+      {
+          faceNodes->add(f, faceNodeIndices[nfn++]);
+      }
+      faceCells->add(f,faceCellIndices[nfc++]);
+      faceCells->add(f,faceCellIndices[nfc++]);
+  }
+  //finish add
+  faceNodes->finishAdd();
+  faceCells->finishAdd();
+  
+  //setting faceNodes
+  SSPair key(&faceSite,&nodeSite);
+  _connectivityMap[key] = faceNodes;
+  
+  SSPair key2(&faceSite,&cellSite);
+  _connectivityMap[key2] = faceCells;
+
+  logCtor();
+}
+
 
 Mesh::~Mesh()
 {
@@ -774,9 +882,10 @@ Mesh::extrude(int nz, double zmax)
   Array<VecD3>& eCoords = *eMeshCoordPtr;
   const double dz = zmax/nz;
 
+  const double z0 = -zmax/2.0;
   for(int k=0, en=0; k<=nz; k++)
   {
-      const double z = dz*k;
+      const double z = z0 + dz*k;
       for(int n=0; n<myNNodes; n++)
       {
           eCoords[en][0] = myCoords[n][0];

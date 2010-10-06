@@ -72,6 +72,13 @@ public:
   
   Mesh(const int dimension);
   Mesh(const int dimension, const Array<VecD3>&  faceNodesCoord ); 
+  Mesh(const int dimension,
+       const int nCells,
+       const Array<VecD3>&  nodesCoord,
+       const Array<int>& faceCellIndices,
+       const Array<int>& faceNodeIndices,
+       const Array<int>& faceNodeCount,
+       const Array<int>& faceGroupSize );
   
   ~Mesh();
 
