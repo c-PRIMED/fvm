@@ -169,7 +169,7 @@ def main():
     bld.build_pkg_list(False)
 
     # TESTING
-    if options.test and not pbs.start(bld, cname):
+    if options.test and not pbs.start(bld, cname) and not moab.start(bld, cname):
         test_start_time = time.time()
         open(bld.logdir + '/StartTestTime', 'w').write(str(test_start_time))
         testing.run_all_tests(bld)
