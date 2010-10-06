@@ -41,6 +41,8 @@ def msub(bp, cname):
     nodes = config.config('Testing', 'nodes')
     f.write('#MSUB -l nodes=%s\n' % nodes)
     f.write('#MSUB -l walltime=%s\n' % config.config('Testing', 'walltime'))
+    f.write('#MSUB -l partition=%s\n' % config.config('Testing', 'partition'))
+
     f.write('source env.sh\n')
     
     # Load Modules

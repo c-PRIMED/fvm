@@ -38,6 +38,7 @@ import os
 import cdash
 import time
 import pbs
+import moab
 import update
 import traceback
 
