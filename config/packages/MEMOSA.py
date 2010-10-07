@@ -5,6 +5,9 @@ class MEMOSA(BuildPkg):
     copy_sources = 1
     name = "MEMOSA"
     def _build(self):
+        hdf5 = self.bld.pkglist['hdf5']
+        assert(hdf5)
+        hdf5.find_hdf5_vers()
         return self.sys_log("make -j%s" % (jobs(self.name)))
     def _install(self):
         os.chdir(self.bdir)
