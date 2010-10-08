@@ -205,19 +205,15 @@ public:
   }
   
   
-  const ArrayBase& getCommon(const StorageSite& site)
+  const ArrayBase& getCommon(const StorageSite& site, const StorageSite& osite)
   {
     
     const StorageSite::CommonMap& commonMap = site.getCommonMap();    
     cout<<"\n The size of commonMap is "<<commonMap.size()<<"\n";
 
-    foreach(const StorageSite::CommonMap::value_type& mpos, commonMap)
-    {
-	const StorageSite& oSite = *mpos.first;
-	const Array<int>& fromIndices = *(mpos.second);
-	cout<<"\n Common Nodes length is  "<<fromIndices.getLength()<<"\n";
-	return fromIndices;
-    }
+    const Array<int>& myNodeIndices =
+      *(site.getCommonMap().find(&osite)->second);
+    return myNodeIndices;
   }
     
   void init() 
