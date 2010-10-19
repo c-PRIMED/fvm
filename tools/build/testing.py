@@ -8,10 +8,11 @@
 Functions for running tests
 """
 
-import cgi, re
+import re
 from build_packages import *
 from build_utils import *
 from subprocess import Popen, PIPE, STDOUT
+from xml.sax.saxutils import escape
 
 
 class Test:
@@ -106,14 +107,17 @@ class Test:
             ostr = "\t<Name>%s</Name>\n" % tname
             ostr += "\t<Path>%s</Path>\n" % os.path.dirname(fname)
             ostr += "\t<FullName>%s</FullName>\n" % tname
-            ostr += "\t<FullCommandLine>%s</FullCommandLine>\n" % cgi.escape(cmd)
+            ostr += "\t<FullCommandLine>%s</FullCommandLine>\n" % escape(cmd)
             ostr += "\t<Results>\n"
             t = time.time()
             err, result_text = self.test_exec(cmd)
             t = time.time() - t
             ostr += "\t\t<NamedMeasurement type=\"numeric/double\" name=\"Execution Time\"><Value>%s</Value></NamedMeasurement>\n" % t
             ostr += "\t\t<Measurement><Value>"
-            ostr += cgi.escape(result_text)
+            # nosetests puts in an escape sequence we need to strip
+            # before xml quoting.
+            result_text = escape(result_text.rstrip("\x1b[?1034h"))
+            ostr += result_text
             ostr += "</Value></Measurement></Results>"
             if err:
                 verbose_warn("%s Failed" % tname)

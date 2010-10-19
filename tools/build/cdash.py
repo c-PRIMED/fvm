@@ -2,8 +2,9 @@
 Functions to submit build and test information to CDash
 """
 
-import cgi, time, os, socket, re
+import time, os, socket, re
 import sys, httplib, urlparse, build_utils
+from xml.sax.saxutils import escape
 
 try:
     set
@@ -288,7 +289,7 @@ def parse_builds(bp, filename):
                 ostr += "<Error>\n"
             else:
                 ostr += "<Warning>\n"
-            ostr += "\t<Text>%s</Text>\n" % cgi.escape(line)
+            ostr += "\t<Text>%s</Text>\n" % escape(line)
             fname = find_file(bp, fname)
             ostr += "\t<SourceFile>%s</SourceFile>\n" % fname
             ostr += "\t<SourceLineNumber>%s</SourceLineNumber>\n" % lnum
@@ -315,7 +316,7 @@ def build_str(bp, bstart, bstop, BuildCommand):
             bs += parse_builds(p, os.path.join(bp.logdir, "%s-build.log" % p.name))
     bs += "\t<Log Encoding=\"base64\" Compression=\"/bin/gzip\"></Log>\n"
 
-    for v in ("EndDateTime", "EndBuildTime"):
+    for v in ("EndDateTime", "EndBuildTime", "ElapsedMinutes"):
         bs += "\t<%s>%s</%s>\n" % (v, eval(v), v)
     return bs
 
@@ -347,7 +348,7 @@ def test_str(bp, tstart, tstop):
 
     ts += "<TestList>\n"
     for t in testlist:
-        ts += "\t<Test>%s</Test>\n" % cgi.escape(t)
+        ts += "\t<Test>%s</Test>\n" % escape(t)
     ts += "</TestList>\n"
 
     for p in bp.packages:
@@ -361,7 +362,8 @@ def test_str(bp, tstart, tstop):
 
     EndDateTime = time.strftime("%b %d %H:%M %Z", time.localtime(tstop))
     EndTestTime = tstop
-    for v in ("EndDateTime", "EndTestTime"):
+    ElapsedMinutes = (tstop - tstart) / 60.0
+    for v in ("EndDateTime", "EndTestTime", "ElapsedMinutes"):
         ts += "<%s>%s</%s>\n" % (v, eval(v), v)
     return ts
 

@@ -2,8 +2,9 @@
 Do subversion update and write out xml file.
 """
 
-import cgi, time, os, socket
+import time, os, socket
 from build_utils import verbose
+from xml.sax.saxutils import escape
 
 Dirname = None
 
@@ -20,7 +21,7 @@ def write_update(f, fname='', status=''):
         Dirname = None
     if not Dirname:
         Dirname = dname
-        f.write("<Directory>\n\t<Name>%s</Name>\n" % cgi.escape(dname))
+        f.write("<Directory>\n\t<Name>%s</Name>\n" % escape(dname))
 
     print "%s: %s" % (fname, status)
     f.write("<%s>\n\t<File Directory=\"%s\">%s</File>\n" % (status, dname, bname))
@@ -107,5 +108,6 @@ def update(bp, cname, nightly):
         f.write("\t<%s>%s</%s>\n" % (v, eval(v), v))
 
     svn_up(f)
+    f.write("<ElapsedMinutes>0</ElapsedMinutes>\n")
     f.write("</Update>\n")
     f.close()
