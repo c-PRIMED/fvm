@@ -1341,7 +1341,8 @@ class KineticModel : public Model
         } 
  
 	MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));
-	if ( MPI::COMM_WORLD.Get_rank() == 0 ) {cout << _niters << ": " << *rNorm << endl; }
+	//if ( MPI::COMM_WORLD.Get_rank() == 0 )
+	{cout << _niters << ": " << *rNorm << endl; }
 
 	_niters++;
 	if (*rNorm < _options.absoluteTolerance ||

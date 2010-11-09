@@ -6,6 +6,7 @@ MacroFields::MacroFields(const string baseName) :
   viscosity(baseName + ".viscosity"),
   density(baseName + ".density"),
   temperature(baseName +".temperature"),
+  collisionFrequency(baseName+".collisionFrequency"),
   Txx(baseName +".Txx"),
   Tyy(baseName +".Tyy"), 
   Tzz(baseName +".Tzz"), 
@@ -13,7 +14,6 @@ MacroFields::MacroFields(const string baseName) :
   Txz(baseName +".Txz"),
   Tyz(baseName +".Tyz"),
   coeff(baseName +".coeff"),
-  coeffg(baseName +".coeffg"),
-  collisionFrequency(baseName+".collisionFrequency")
+  coeffg(baseName +".coeffg")
 {}
 
