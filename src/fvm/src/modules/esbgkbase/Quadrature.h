@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include "Array.h"
+#include "Array2D.h"
 #include "Vector.h"
 #include <stdio.h>
 
@@ -23,7 +24,7 @@ class Quadrature
    * A constructor for the discrete ordinate in velocity space based on cartesian-type and spherical-type coordinates.
    */ 
   typedef Array<T> TArray;
- 
+  typedef  Array2D<T> TArray2D;
    /**
    *  Cx pointer. 
    *  Pointer to discrete velocity in x-direction.
@@ -44,6 +45,9 @@ class Quadrature
    * Pointer to weights associated with each direction in velocity space.
    */ 
   TArray* dcxyzPtr; 
+  TArray2D* malphaBGKPtr;
+  TArray2D* malphaESBGKPtr;
+
   int getDirCount() const {return N123;}
   int getNVCount()const {return _NV;}
    int getNthetaCount()const {return _Ntheta;}
@@ -76,6 +80,13 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
        * total number of velocity directions.
        */
       N123=N1*N2*N3;
+      // BGK and ESBGK Equilibrium distribution functions
+      malphaBGKPtr=new TArray2D(N123,5);
+      TArray2D & malphaBGK= *malphaBGKPtr;
+      
+      malphaESBGKPtr=new TArray2D(N123,10);
+      TArray2D & malphaESBGK= *malphaESBGKPtr;
+
       _NV=N1;_Ntheta=N2;_Nphi=N3;
 
 
@@ -122,7 +133,25 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	    cx[j]=absci1[j1];	
 	    cy[j]=absci2[j2];
 	    cz[j]=absci3[j3];
-	    dcxyz[j]=wts1[j1]*wts2[j2]*wts3[j3];		 
+	    dcxyz[j]=wts1[j1]*wts2[j2]*wts3[j3];
+	    
+	    malphaBGK(j,0)=1.0;
+	    malphaBGK(j,1)=cx[j];
+	    malphaBGK(j,2)=cy[j]; 
+	    malphaBGK(j,3)=cz[j];
+	    malphaBGK(j,4)=pow(cx[j],2)+pow(cy[j],2)+pow(cz[j],2); 
+	    
+	    malphaESBGK(j,0)=1.0;
+	    malphaESBGK(j,1)=cx[j];
+	    malphaESBGK(j,2)=cy[j]; 
+	    malphaESBGK(j,3)=cz[j];
+	    malphaESBGK(j,4)=pow(cx[j],2); 
+	    malphaESBGK(j,5)=pow(cy[j],2);
+	    malphaESBGK(j,6)=pow(cz[j],2);
+	    malphaESBGK(j,7)=cx[j]*cy[j]; 
+	    malphaESBGK(j,8)=cx[j]*cz[j];
+	    malphaESBGK(j,9)=cy[j]*cz[j];
+	    
 	    j++;
 	  }
 	}
@@ -178,6 +207,15 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       dcxyzPtr= new TArray(N123);
       TArray & cx= *cxPtr;TArray & cy= *cyPtr;TArray & cz= *czPtr;
       TArray & dcxyz= *dcxyzPtr;
+
+  // BGK and ESBGK Equilibrium distribution functions
+      malphaBGKPtr=new TArray2D(N123,5);
+      TArray2D & malphaBGK= *malphaBGKPtr;
+      
+      malphaESBGKPtr=new TArray2D(N123,10);
+      TArray2D & malphaESBGK= *malphaESBGKPtr;
+      _NV=N1;_Ntheta=N2;_Nphi=N3;
+
       switch(option_ur){
 	int j1;
       case 0:   // constant difference for Ur
@@ -341,6 +379,24 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	     cy[j]=absci1[j1]*sin(absci2[j2])*sin(absci3[j3]); //cy=Ur*sin(theta)*sin(phi)
 	     cz[j]=absci1[j1]*cos(absci3[j3]);                 //Ur*cos(phi)
 	     dcxyz[j]=wts1[j1]*wts2[j2]*wts3[j3];
+	     malphaBGK(j,0)=1.0;
+	     malphaBGK(j,1)=cx[j];
+	     malphaBGK(j,2)=cy[j]; 
+	     malphaBGK(j,3)=cz[j];
+	     malphaBGK(j,4)=pow(cx[j],2)+pow(cy[j],2)+pow(cz[j],2); 
+	     
+	     malphaESBGK(j,0)=1.0;
+	     malphaESBGK(j,1)=cx[j];
+	     malphaESBGK(j,2)=cy[j]; 
+	     malphaESBGK(j,3)=cz[j];
+	     malphaESBGK(j,4)=pow(cx[j],2); 
+	     malphaESBGK(j,5)=pow(cy[j],2);
+	     malphaESBGK(j,6)=pow(cz[j],2);
+	     malphaESBGK(j,7)=cx[j]*cy[j]; 
+	     malphaESBGK(j,8)=cx[j]*cz[j];
+	     malphaESBGK(j,9)=cy[j]*cz[j];
+	    
+	     
 	     j++;       
 	   }
 	 }

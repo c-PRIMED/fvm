@@ -46,32 +46,55 @@ struct KineticModelOptions : public FloatVarDict<T>
     this->defineVar("velocityURF",T(1.0));
     this->defineVar("pressureURF",T(0.3));
     this->defineVar("timeStep",T(1E-3)); 
-    this->defineVar("rho_init",T(9.28E-9)); 
+
+    this->defineVar("rho_init",T(9.28E-6));
+    this->defineVar("T_init",T(273.15));
     this->defineVar("nonDimLength",T(1.0));
+
     this->defineVar("operatingPressure",T(101325.0));
     this->defineVar("operatingTemperature",T(300.0));
-    this->defineVar("molecularWeight",T(28.966));
+    this->defineVar("molecularWeight",T(40.0));
 
+    this ->defineVar("Tmuref",T(273.15));
+    this ->defineVar("mu_w",T(0.81));
+    this ->defineVar("muref",T(2.117e-5)); //Argon
+    this->defineVar("Prandtl",T(2.0/3.0)); 
+    
+    this->defineVar("pi",T(3.1416));
+    
     this->Tolerance=1e-4;
     this->printNormalizedResiduals = true;
     this->transient = true;
+    this->ESBGK_fgamma = false; 
+    
+    this->fgamma=0;
     this->timeDiscretizationOrder=1;
     this->KineticLinearSolver = 0;
-     
+   
+    this-> printCellNumber=0;
+    this->NewtonsMethod_ktrial=5;
     this->relativeTolerance=1e-8;
-    this->absoluteTolerance=1e-16;
+    this->absoluteTolerance=1e-16; 
+
+    //used in Newton's Method for Equilibrium distribution function
+    this->defineVar("ToleranceX",T(1e-8));
+    this->defineVar("ToleranceF",T(1e-16));
   }
   
   bool printNormalizedResiduals;
   double Tolerance;
   bool transient;
-  
+  bool ESBGK_fgamma;
   double relativeTolerance;
   double absoluteTolerance;
-
+  
+  //double ToleranceX;
+  //double ToleranceF;
+  int NewtonsMethod_ktrial;
   int timeDiscretizationOrder;
   LinearSolver *KineticLinearSolver;
- 
+  int printCellNumber;
+  int fgamma;
 #ifndef SWIG
   LinearSolver& getKineticLinearSolver()
   {

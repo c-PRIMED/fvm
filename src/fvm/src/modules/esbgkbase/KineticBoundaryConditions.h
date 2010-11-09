@@ -80,6 +80,7 @@ class KineticBoundaryConditions
     const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
     const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
     const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+    const TArray& dcxyz= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
     
     const X uwall = WallVelocity[0];
     const X vwall = WallVelocity[1];
@@ -99,11 +100,11 @@ class KineticBoundaryConditions
 	const X fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
 	if (c_dot_en -wallV_dot_en > T_Scalar(0.0))
 	  {
-	    Nmr = Nmr + dsf[c0];
+	    Nmr = Nmr + dsf[c0]*dcxyz[j];
 	  }
 	else
 	  {
-	    Dmr = Dmr + fwall;
+	    Dmr = Dmr + fwall*dcxyz[j];
 	  }	
       }
     const X nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
@@ -228,7 +229,60 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
       applyCopyWallBC(i);
   } 
   
+  void applyInletBC(int f,const VectorX3&  inletVelocity,const X& inletTemperature,const X& inletPressure) const
+  {
+    
+    const double pi(acos(0.0)); 
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,0);
+    
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    
+   
+    const int numDirections = _quadrature.getDirCount();
+    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+    
+    const X uwall = inletVelocity[0];
+    const X vwall = inletVelocity[1];
+    const X wwall = inletVelocity[2];
+   
+    const X Twall = inletTemperature;
+    const X Pwall = inletPressure;
+  
+    const X nwall = Pwall/Twall; // wall number density for initializing Maxwellian
+    
+    for (int j=0; j<numDirections; j++)
+      {
+	Field& fnd = *_dsfPtr.dsf[j];
+	TArray& dsf = dynamic_cast< TArray&>(fnd[_cells]);
+	const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];	
+	const X wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+	if (c_dot_en-wallV_dot_en < T_Scalar(0.0))
+	  {
+	    dsf[c1] = nwall/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
+	    
+	  }
+	
+      }
+  }
 
+  void applyInletBC(const VectorX3& bVelocity,const X& bTemperature, const X& bPressure) const
+  {
+    for (int i=0; i<_faces.getCount();i++)
+      applyInletWallBC(i,bVelocity,bTemperature,bPressure);
+  }
+  
+  
+  void applyInletBC(const FloatValEvaluator<VectorX3>& bVelocity,const FloatValEvaluator<X>& bTemperature,const FloatValEvaluator<X>& bPresssure) const
+  {
+    for (int i=0; i<_faces.getCount();i++)
+      applyInletBC(i,bVelocity[i],bTemperature[i],bPresssure[i]);
+
+  }
   
  protected:
 
