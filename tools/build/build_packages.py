@@ -163,31 +163,30 @@ class BuildPkg(Build):
             print >> f, "EXECUTING:", cmd
         p = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE)
         pid = p.pid
-        poll = select.poll()
-        poll.register(p.stdout, POLLIN | POLLHUP | POLLERR | POLLNVAL)
-        poll.register(p.stderr, POLLIN | POLLHUP | POLLERR | POLLNVAL)
-        serr = p.stderr.fileno()        
+        plist = [p.stdout, p.stderr]
         done = 0
-        while done < 2:
-            events = poll.poll(10000)
-            for fd, ev in events:
-                if not (ev & POLLIN):
-                    done += 1
-                    poll.unregister(fd)
-                    continue
-                data = os.read(fd,1024)
-                if fd == serr:
-                    print >>f, data,
-                    if show: cprint('DYELLOW', data, False)
+        while not done:
+            rr, wr, er = select.select(plist, [], plist)
+            if er: print 'er=',er
+            for fd in rr:
+                data = os.read(fd.fileno(), 1024)
+                if data == '':
+                    plist.remove(fd)
+                    if plist == []:
+                        done = 1
                 else:
-                    if show: print data,
-                    print >>f, data,
-        if f: f.close()                    
+                    if fd == p.stderr:
+                        print >>f, data,
+                        if show: cprint('DYELLOW', data, False)
+                    else:
+                        if show: print data,
+                        print >>f, data,
+        if f: f.close()
         try:
             return os.waitpid(pid, 0)[1]
         except:
             return 0
-    
+
     def add_required(self, deps):
         ''' This method allows packages to conditionally add to the required list. '''
         return deps
