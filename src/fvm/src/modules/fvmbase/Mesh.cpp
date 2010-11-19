@@ -102,7 +102,7 @@ Mesh::Mesh( const int dimension,
   //setting faceNodes
   SSPair key(&faceSite,&nodeSite);
   _connectivityMap[key] = faceNodes;
-  
+
   logCtor();
 }
 
@@ -534,6 +534,14 @@ Mesh::createCellColor()
    *_cellColorOther = -1;
    _isAssembleMesh = true;
 }
+
+void
+Mesh::createLocalGlobalArray()
+{
+   _localToGlobal  = shared_ptr< Array<int> > ( new Array<int>( _cells.getCount() ) );
+   *_localToGlobal  = -1;
+}
+
 
 void
 Mesh::findCommonNodes(Mesh& other)

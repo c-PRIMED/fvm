@@ -8,7 +8,8 @@
 #include "Field.h"
 #include "FieldLabel.h"
 #include "MPM_Particles.h"
-
+#include <vector>
+#include <map>
 
 class CRConnectivity;
 class GeomFields;
@@ -42,7 +43,10 @@ public:
 
   typedef Vector<double,3> VecD3;
   typedef Array<int> IntArray;
-  
+
+  typedef vector<int>  vecList;
+  typedef multimap<int,int> multiMap;
+
   typedef pair<const StorageSite*, const StorageSite*> SSPair;
   typedef map<SSPair,shared_ptr<CRConnectivity> > ConnectivityMap;
   typedef pair<int,int>    PartIDMeshIDPair; //other Partition ID, other MeshID (always)
@@ -98,8 +102,14 @@ public:
   const GhostCellSiteMap& getGhostCellSiteScatterMap() const
   { return _ghostCellSiteScatterMap; }
 
+  GhostCellSiteMap& getGhostCellSiteScatterMap() 
+  { return _ghostCellSiteScatterMap; }
+
   const StorageSite* getGhostCellSiteGather( const PartIDMeshIDPair& id ) const
   { return _ghostCellSiteGatherMap.find(id)->second.get(); }
+
+  GhostCellSiteMap& getGhostCellSiteGatherMap() 
+  { return _ghostCellSiteGatherMap; }
 
   const GhostCellSiteMap& getGhostCellSiteGatherMap() const
   { return _ghostCellSiteGatherMap; }
@@ -182,6 +192,13 @@ public:
   Array<int>& getCellColorsOther() { return *_cellColorOther;}
   const Array<int>& getCellColorsOther() const { return *_cellColorOther;}
 
+  Array<int>&        getLocalToGlobal(){ return *_localToGlobal;}
+  const Array<int>&  getLocalToGlobal() const { return *_localToGlobal;}
+
+
+  multiMap& getCellCellsGlobal() { return _cellCellsGlobal;}
+  const multiMap& getCellCellsGlobal() const { return _cellCellsGlobal;}
+
   bool isMergedMesh() const { return _isAssembleMesh;}
   int  getNumOfAssembleMesh() const { return _numOfAssembleMesh;}
  
@@ -191,6 +208,7 @@ public:
   void createGhostCellSiteScatter( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
   void createGhostCellSiteGather ( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
   void createCellColor();
+  void createLocalGlobalArray();
 
   void findCommonNodes(Mesh& other);
   void findCommonFaces(StorageSite& faces, StorageSite& otherFaces,
@@ -233,8 +251,13 @@ protected:
   int  _numOfAssembleMesh;
   bool _isAssembleMesh;
 
+
   GhostCellSiteMap   _ghostCellSiteScatterMap;
   GhostCellSiteMap   _ghostCellSiteGatherMap;
+
+  shared_ptr< Array<int>  >        _localToGlobal;
+  multiMap     _cellCellsGlobal; //this hold cellCells information in global numbering, key is local,
+                                 // values are global neighbouring and itself(global again)
 
  
   //mutable Array<int> *_cellTypes;

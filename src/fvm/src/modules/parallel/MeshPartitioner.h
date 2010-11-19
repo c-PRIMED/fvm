@@ -41,6 +41,8 @@ public:
     typedef   shared_ptr< Array<Mesh::VecD3> >   ArrayVecD3Ptr;
     typedef   shared_ptr< Mesh >  MeshPtr;
     typedef   map<int, int>       IntMap;
+    typedef   map<int, vector<int> > VectorMap;
+    typedef   pair<int,int>       IntPair;
 
     enum ETYPE{ TRI = 1, QUAD = 2, TETRA = 3, HEXA = 4 };
     enum WTYPE{ NOWEIGHTS = 0, WEIGHTS_ONLY_EDGES = 1, WEIGTHS_ONLY_VERTICES  = 2,
@@ -89,6 +91,14 @@ private:
    void exchange_part_elems();
    void shift_sum_row();
    void mesh_setup();
+   int global_offset();
+   void set_local_global();
+   void set_cellcells_global();
+   void cellcells_global_extension();
+   void globalCellID_procID_map();
+   void gatherCellsLevel1_partID_map();
+   void scatter_cells_level1();
+
 
    void CRConnectivity_cellParts();
    void mapBounIDAndCell(int id);
@@ -110,6 +120,7 @@ private:
    void construct_mesh( int id );
    void setMeshColors();
    void preserve_cell_order();
+   void scatterCellsLevel1();
 
 
 
@@ -144,6 +155,11 @@ private:
    void DEBUG_coordinates();
    void DEBUG_exchange_interface_meshes();
    void DEBUG_mesh();
+   void DEBUG_local_global();
+   void DEBUG_cellcells_global();
+   void DEBUG_globalCellID_procID_map();
+   void DEBUG_gatherCellsLevel1_partID_map();
+   void DEBUG_scatter_cells_level1();
 
    void  debug_file_open( const string& fname );
    void  debug_file_close();
@@ -226,6 +242,8 @@ private:
    vector< map<int,int> > _localToGlobalMappers;
    map<int,int>           _globalToLocal; 
    map<int,int>           _cellToPreservedOrderCell;
+   map<int,int>           _cellsLevel1PartID;
+   map<int,int>           _gatherCellsLevel1PartIDMap;
 
   //variables aglomorated for MPI communications
    vector< ArrayIntPtr >  _interfaceMeshCounts; //ArrayIntPtr[0] = value , 0th mesh has total "value" neigh interfaced meshes
