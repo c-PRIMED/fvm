@@ -10,8 +10,7 @@ from build_utils import *
 from config import *
 from build import Build
 from subprocess import Popen, STDOUT, PIPE
-from select import POLLIN, POLLNVAL, POLLERR, POLLHUP
-import select
+from select import select
 
 # superclass for all packages
 class BuildPkg(Build):
@@ -166,7 +165,7 @@ class BuildPkg(Build):
         plist = [p.stdout, p.stderr]
         done = 0
         while not done:
-            rr, wr, er = select.select(plist, [], plist)
+            rr, wr, er = select(plist, [], plist)
             if er: print 'er=',er
             for fd in rr:
                 data = os.read(fd.fileno(), 1024)
