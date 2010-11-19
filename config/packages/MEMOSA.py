@@ -15,10 +15,10 @@ class MEMOSA(BuildPkg):
         os.chdir(self.sdir)
         self.sys_log("install bin/* %s" % self.bindir)
         self.sys_log("install -d %s" % os.path.join(self.libdir, 'memosa'))
-        self.sys_log("install --mode=644 lib/*.py %s" % os.path.join(self.libdir, 'memosa'))
+        self.sys_log("install -m 644 lib/*.py %s" % os.path.join(self.libdir, 'memosa'))
 
         idir = os.path.join(self.blddir, "include")
         if not os.path.isdir(idir):
             self.sys_log("/bin/mkdir -p %s" % idir)
-        self.sys_log("install --mode=444 lib/*.h %s" % idir)
+        self.sys_log("install -m 444 lib/*.h %s" % idir)
         return 0
