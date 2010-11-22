@@ -136,7 +136,7 @@ MeshPartitioner::mesh()
     set_cellcells_global();
     globalCellID_procID_map();
     gatherCellsLevel1_partID_map();
-    scatterCellsLevel1();
+    level1_scatter_gather_cells();
 }
 
 
@@ -2197,12 +2197,19 @@ MeshPartitioner::set_local_global()
           localToGlobal[i] = localCell[i];
           assert( localCell[i] != -1 );
        }
+
+       //copying GlobalToLocal
+       map<int,int>& globalToLocal = mesh.getGlobalToLocal();
+       for ( int i = 0; i < localCell.getLength(); i++ ){
+          globalToLocal[ localToGlobal[i] ] = i;
+       }
     }
 
    if ( _debugMode ) 
       DEBUG_local_global();
 
 }
+
 
 //debug Mesh::localToGlobal
 void 
@@ -2216,13 +2223,22 @@ MeshPartitioner::DEBUG_local_global()
    const int nmesh = int( _meshListLocal.size() );
    //loop over meshes
     for ( int id = 0; id < nmesh; id++ ){
-       Mesh& mesh = *_meshListLocal.at(id);
+       const Mesh& mesh = *_meshListLocal.at(id);
        const Array<int>& localToGlobal = mesh.getLocalToGlobal();
        _debugFile << "Mesh ID = " << id << endl;
        for ( int i = 0; i < localToGlobal.getLength(); i++ ){
            _debugFile << "   localToGlobal[" << i << "] = " << localToGlobal[i] << endl;
        }
     }
+    for ( int id = 0; id < nmesh; id++ ){
+       const Mesh& mesh = *_meshListLocal.at(id);
+       const map<int,int>& globalToLocal = mesh.getGlobalToLocal();
+       _debugFile << "Mesh ID = " << id << endl;
+       foreach ( const IntMap::value_type& mpos, globalToLocal ){
+           _debugFile << "   globalToLocal[" << mpos.first << "] = " << mpos.second << endl;
+       }
+    }
+
     debug_file_close();
 }
 
@@ -2547,7 +2563,6 @@ MeshPartitioner::gatherCellsLevel1_partID_map()
             const int iend = ibeg + faceGroupList[i]->site.getCount();
             for ( int i = ibeg; i < iend; i++ ){
                 const int localCellID  = faceCells(i,1);  //gather cellID(local)
-                const int globalID     = localToGlobal[i];
                 multimap<int,int>::const_iterator it;
                 for ( it = cellCellsMap.equal_range(localCellID).first; it != cellCellsMap.equal_range(localCellID).second; it++){
                     _gatherCellsLevel1PartIDMap[it->second] = _cellsLevel1PartID[it->second];
@@ -2555,7 +2570,6 @@ MeshPartitioner::gatherCellsLevel1_partID_map()
             }
 
             for ( int i = ibeg; i < iend; i++ ){
-                const int localCellID  = faceCells(i,1);  //gather cellID(local)
                 const int globalID     = localToGlobal[i];
                 //delete zero level gather cells
                 _gatherCellsLevel1PartIDMap.erase( globalID );
@@ -2589,9 +2603,9 @@ MeshPartitioner::DEBUG_gatherCellsLevel1_partID_map()
 }
 
 
-//creating scatter cells (second layer)
+//creating scatter and gather cells (second layer)
 void 
-MeshPartitioner::scatterCellsLevel1()
+MeshPartitioner::level1_scatter_gather_cells()
 {
 
       for ( int id = 0; id < _nmesh; id++ ){
@@ -2610,7 +2624,7 @@ MeshPartitioner::scatterCellsLevel1()
          MPI::Request   request_recv[ sendArrays.size() ];
          int indxSend = 0;
          int indxRecv = 0;
-         foreach( const VectorMap::value_type& pos, sendArrays){
+         foreach( const VectorMap::value_type pos, sendArrays){
             int to_where = pos.first;
             int count = int( sendArrays[to_where].size() );
             int send_tag = 112233;
@@ -2620,18 +2634,27 @@ MeshPartitioner::scatterCellsLevel1()
 
          //MPI RECEIVING
          map<int, vector<int> > recvArrays;   //key=recv procs, value = gather cells
+         list<int> recvProcs;
+         //create a list holding receiver processor
          foreach( const VectorMap::value_type& pos, sendArrays){
-            int from_where = pos.first; //whereever it sends data has to get another data from there
-            int recv_tag = 112233;
-            MPI::Status recv_status;
-            while ( !MPI::COMM_WORLD.Iprobe(from_where, recv_tag, recv_status) ){
+            recvProcs.push_back( pos.first);
+         }
 
-            }; 
-            //find receive buffer size
-            int recv_count = recv_status.Get_count( MPI::INT );
-            //recv arrays allocation
-            recvArrays[from_where].resize( recv_count);
-            
+         list<int>::iterator it;
+         while ( !recvProcs.empty() ){
+            for( it = recvProcs.begin(); it != recvProcs.end(); ++it ){
+               int from_where = *it; //whereever it sends data has to get another data from there
+               int recv_tag = 112233;
+               MPI::Status recv_status;
+               if( MPI::COMM_WORLD.Iprobe(from_where, recv_tag, recv_status) ){
+                  //find receive buffer size
+                  int recv_count = recv_status.Get_count( MPI::INT );
+                  //recv arrays allocation
+                  recvArrays[from_where].resize( recv_count);
+                  recvProcs.remove(from_where);
+                  break;	
+               }	
+            }
          }
 
 
@@ -2650,82 +2673,78 @@ MeshPartitioner::scatterCellsLevel1()
          MPI::Request::Waitall( count, request_send );
 
 
-          Mesh& mesh = *_meshListLocal.at(id);
-          const CRConnectivity&  cellCells = mesh.getCellCells();
-          StorageSite& cellSite = mesh.getCells();
-          const int selfCount = cellSite.getSelfCount();
-          StorageSite::ScatterMap& cellScatterMap       = cellSite.getScatterMap();
-          StorageSite::ScatterMap& cellScatterMapLevel1 = cellSite.getScatterMapLevel1();
-          //count boundary cells
-          const FaceGroupList&  bounGroupList = mesh.getBoundaryFaceGroups();
-          int nboun = 0;
-          for ( int n = 0; n < mesh.getBoundaryGroupCount(); n++ ){
-             nboun += bounGroupList[n]->site.getCount();
-          } 
-          //compute innercells + boundary cells
-          const int countNonGhostCells = selfCount +  nboun;
-          //get scatter map  key ={neight part id, mesh id}, value = scatter storage site
-           Mesh::GhostCellSiteMap& ghostCellSiteScatterMap = mesh.getGhostCellSiteScatterMap();
-          //loop over scatter mappers
-          foreach (  Mesh::GhostCellSiteMap::value_type& mpos, ghostCellSiteScatterMap ){
-              StorageSite& siteScatter =  *(mpos.second);
-              const Array<int>&  scatterArray =  *(cellScatterMap.find( &siteScatter )->second);
-              //loop over scatter cells
-              set<int>  scatterCellSet;
-              for ( int i = 0; i < siteScatter.getCount(); i++){
-                  const int cellID0 = scatterArray[i];
-                  const int jj = cellCells.getCount(cellID0);
-                  //around cells 
-                  for ( int j = 0; j < jj; j++ ){
-                     //now this cell arounds
-                     //check if this is not ghost cell since we are only including inner+boundary cells
-                     const int cellID1 = cellCells(cellID0,j);
-                     if ( cellID1 < countNonGhostCells ){  //since we order first local then boundary
-                         scatterCellSet.insert( cellID1 );
-                     }
-                  }
-              }
-              //erase scatterArray(this is first layer) to get second layer
-             for ( int i = 0; i < scatterArray.getLength(); i++ ){
-                 scatterCellSet.erase( scatterArray[i] );
-              }
-                
-              //allocate array size fro scatterArray
-               shared_ptr< Array<int> > fromIndices = ArrayIntPtr( new Array<int>(scatterCellSet.size()) );
-              //initilize to -1
-              *fromIndices = -1;
-              //fill values from scatterCellSet
-              int indx = 0;
-              foreach ( const set<int>::value_type globalID, scatterCellSet ){
-                  (*fromIndices)[indx++] = globalID;
-              }
-              //setCountLeve1
-              siteScatter.setCountLevel1( scatterCellSet.size() );
-              cellScatterMapLevel1[&siteScatter] =  fromIndices;
-          }
-      }
+        StorageSite::ScatterMap & cellScatterMapLevel1 = _meshListLocal.at(id)->getCells().getScatterMapLevel1();
+        StorageSite::GatherMap  & cellGatherMapLevel1  = _meshListLocal.at(id)->getCells().getGatherMapLevel1();
+        map<int,int>&  globalToLocal = _meshListLocal.at(id)->getGlobalToLocal();
+        StorageSite& cellSite = _meshListLocal.at(id)->getCells();
+        int gatherIndx = cellSite.getCount(); 
+        //create scatter and gather ghost sites level1
+        foreach ( const VectorMap::value_type& pos, recvArrays ){
+           const int gatherProcID = pos.first;
+           const vector<int>& recv_array = pos.second;
+           const int scatterSize  = int( recv_array.size() );
+           //scatter Arrays
+           ArrayIntPtr from_indices = ArrayIntPtr( new Array<int>( scatterSize ) );
+           //copy recv_array to from_indices
+           for ( int i = 0; i < scatterSize; i++ ){
+               (*from_indices)[i] = globalToLocal[ recv_array[i] ];
+           }
+           //gather Arrays
+           const vector<int>& send_array = sendArrays[gatherProcID];
+           const int gatherSize  = int( send_array.size() );
+           ArrayIntPtr to_indices = ArrayIntPtr( new Array<int>( gatherSize ) );
+          //copy send_array to to_indices
+           for ( int i = 0; i < gatherSize; i++ ){
+               (*to_indices)[i]  = gatherIndx;
+               globalToLocal[send_array[i]] = gatherIndx;
+               gatherIndx++;
+           }
+
+           //create scatter and ghost sites
+           shared_ptr<StorageSite> siteScatter( new StorageSite(scatterSize) );
+           shared_ptr<StorageSite> siteGather ( new StorageSite(gatherSize ) );
+ 
+           siteScatter->setScatterProcID( _procID );
+           siteScatter->setGatherProcID ( gatherProcID );
+  
+           siteGather->setScatterProcID( _procID );
+           siteGather->setGatherProcID ( gatherProcID );
+ 
+           int packed_info = (std::max(_procID,gatherProcID) << 16 ) | ( std::min(_procID,gatherProcID) );
+           siteScatter->setTag( packed_info );	
+           Mesh::PartIDMeshIDPair  pairID = make_pair<int,int>(gatherProcID, id);
+           _meshListLocal.at(id)->createGhostCellSiteScatterLevel1( pairID, siteScatter );
+           _meshListLocal.at(id)->createGhostCellSiteGatherLevel1 ( pairID, siteScatter );
+            cellScatterMapLevel1[ siteScatter.get() ] = from_indices;
+            cellGatherMapLevel1 [ siteScatter.get() ] = to_indices;
+        }
+
+        //create storage sites
+        cellSite.setCountLevel1(gatherIndx);
+    }
 
    if ( _debugMode ) 
-      DEBUG_scatter_cells_level1();
+      DEBUG_level1_scatter_gather_cells();
  }
 //scatter levels debugger
 void 
-MeshPartitioner::DEBUG_scatter_cells_level1()
+MeshPartitioner::DEBUG_level1_scatter_gather_cells()
 {
     //open file
-    debug_file_open("scatter_cells_level1");
+    debug_file_open("level1_scatter_gather_cells");
+    //scatter cells
     for ( int id = 0; id < _nmesh; id++ ){
           const Mesh& mesh = *_meshListLocal.at(id);
           const StorageSite& cellSite = mesh.getCells();
-          const StorageSite::ScatterMap& cellScatterMapLevel1 = cellSite.getScatterMapLevel1();
+          const StorageSite::ScatterMap& cellSiteScatterMapLevel1 = cellSite.getScatterMapLevel1();
           //get scatter map  key ={neight part id, mesh id}, value = scatter storage site
-          const Mesh::GhostCellSiteMap& ghostCellSiteScatterMap = mesh.getGhostCellSiteScatterMap();
-          _debugFile << "This Mesh ID = " << id << endl;
+          const Mesh::GhostCellSiteMap& ghostSiteScatterMapLevel1 = mesh.getGhostCellSiteScatterMapLevel1();
+          _debugFile << "This Mesh ID (Scatter Cells) = " << id << endl;
           //loop over scatter mappers
-          foreach ( const Mesh::GhostCellSiteMap::value_type& mpos, ghostCellSiteScatterMap ){
-              const StorageSite& siteScatter  =  *(mpos.second);
-              const Array<int>&  scatterArray =  *(cellScatterMapLevel1.find( &siteScatter )->second);
+          foreach ( const Mesh::GhostCellSiteMap::value_type& mpos, ghostSiteScatterMapLevel1 ){
               const Mesh::PartIDMeshIDPair& pairID = mpos.first;
+              const StorageSite& siteScatter  =  *(mpos.second);
+              const Array<int>&  scatterArray =  *(cellSiteScatterMapLevel1.find( &siteScatter )->second);
               const int neighProcID     = pairID.first;
               const int neighMeshID = pairID.second;
              _debugFile << "    neighProcID = " << neighProcID << "  neighMeshID = " << neighMeshID << endl;
@@ -2733,104 +2752,34 @@ MeshPartitioner::DEBUG_scatter_cells_level1()
                    _debugFile << "     " << scatterArray[i] << endl;
               }
           }
-      }
-  //close file
-  debug_file_close();
-
-}
-
-/*
-void 
-MeshPartitioner::scatterCells_gatherProcAndMeshIDs_map()
-{
-    //we get gatherProcsIDs (neighourhood partiton ID) to multimap data structure which
-    //has key as local scatter cell id, and values as pairs made up surrounding partition  and mesh ids
-    map<int,int>  neighProcIDs;
-    for ( int id = 0; id < _nmesh; id++ ){
-        const Mesh& mesh = *_meshListLocal.at(id);
-        const CRConnectivity&  cellCells = mesh.getCellCells();
-        const StorageSite& cellSite = mesh.getCells();
-        const int selfCount = cellSite.getSelfCount();
-        const StorageSite::ScatterMap& cellScatterMap       = cellSite.getScatterMap();
-        //get scatter map  key ={neight part id, mesh id}, value = scatter storage site
-        const Mesh::GhostCellSiteMap& ghostCellSiteScatterMap = mesh.getGhostCellSiteScatterMap();
-        //loop over scatter mappers
-        foreach ( const Mesh::GhostCellSiteMap::value_type& mpos, ghostCellSiteScatterMap ){
-             const StorageSite& siteScatter =  *(mpos.second);
-             const int gatherProcID = siteScatter.getGatherProcID();
-             const Array<int>&  scatterArray =  *(cellScatterMap.find( &siteScatter )->second);
-             for (int i = 0; i < scatterArray.getLenght(); i++){
-                 neighProcIDs.insert( IntPair(scatterArray[i], gatherProcID) );
-             }
-        }
-
-       //m
-       foreach ( const IntMap::value_type& mpos, neighProcIDs ){
-           const int scatterID = *(mpos.first);
-           const int gatherProcID = *(mpos.second);
-
-    }
-    
-   
-
     }
 
-    for ( int id = 0; id < _nmesh; id++ ){
-        const Mesh& mesh = *_meshListLocal.at(id);
-        const CRConnectivity&  cellCells = mesh.getCellCells();
-        const StorageSite& cellSite = mesh.getCells();
-        const int selfCount = cellSite.getSelfCount();
-        const StorageSite::ScatterMap& cellScatterMap       = cellSite.getScatterMap();
-        //get scatter map  key ={neight part id, mesh id}, value = scatter storage site
-        const Mesh::GhostCellSiteMap& ghostCellSiteScatterMap = mesh.getGhostCellSiteScatterMap();
-        //loop over scatter mappers
-        foreach ( const Mesh::GhostCellSiteMap::value_type& mpos, ghostCellSiteScatterMap ){
-             const StorageSite& siteScatter =  *(mpos.second);
-             const int gatherProcID = siteScatter.getGatherProcID();
-             const Array<int>&  scatterArray =  *(cellScatterMap.find( &siteScatter )->second);
-             for (int i = 0; i < scatterArray.getLenght(); i++){
-                 _neighProcIDs.insert( IntPair(scatterArray[i], gatherProcID) );
-             }
-        }
-    }
-
-
-
-   if ( _debugMode ) 
-      DEBUG_accumulate_gatherProcIDs_to_scatterCells();
-
-}
-
-void 
-MeshPartitioner::DEBUG_scatterCells_gatherProcIDs_map()
-{
-    //open file
-    debug_file_open("scatterCellsGatherProcsIDMap");
+   //gather cells
     for ( int id = 0; id < _nmesh; id++ ){
           const Mesh& mesh = *_meshListLocal.at(id);
           const StorageSite& cellSite = mesh.getCells();
-          const StorageSite::ScatterMap& cellScatterMapLevel1 = cellSite.getScatterMapLevel1();
+          const StorageSite::GatherMap& cellSiteGatherMapLevel1 = cellSite.getGatherMapLevel1();
           //get scatter map  key ={neight part id, mesh id}, value = scatter storage site
-          const Mesh::GhostCellSiteMap& ghostCellSiteScatterMap = mesh.getGhostCellSiteScatterMap();
-          _debugFile << "This Mesh ID = " << id << endl;
+          const Mesh::GhostCellSiteMap& ghostSiteGatherMapLevel1 = mesh.getGhostCellSiteGatherMapLevel1();
+          _debugFile << "This Mesh ID (Gather Cells) = " << id << endl;
           //loop over scatter mappers
-          foreach ( const Mesh::GhostCellSiteMap::value_type& mpos, ghostCellSiteScatterMap ){
-              const StorageSite& siteScatter  =  *(mpos.second);
-              const Array<int>&  scatterArray =  *(cellScatterMapLevel1.find( &siteScatter )->second);
+          foreach ( const Mesh::GhostCellSiteMap::value_type& mpos, ghostSiteGatherMapLevel1 ){
               const Mesh::PartIDMeshIDPair& pairID = mpos.first;
+              const StorageSite& siteGather  =  *(mpos.second);
+              const Array<int>&  gatherArray =  *(cellSiteGatherMapLevel1.find( &siteGather )->second);
               const int neighProcID     = pairID.first;
               const int neighMeshID = pairID.second;
              _debugFile << "    neighProcID = " << neighProcID << "  neighMeshID = " << neighMeshID << endl;
-              for ( int i = 0; i < scatterArray.getLength(); i++ ){
-                   _debugFile << "     " << scatterArray[i] << endl;
+              for ( int i = 0; i < gatherArray.getLength(); i++ ){
+                   _debugFile << "     " << gatherArray[i] << endl;
               }
           }
-      }
-  //close file
-  debug_file_close();
+    }
 
-}*/
+    //close file
+    debug_file_close();
 
+}
 
 
 

@@ -97,7 +97,7 @@ private:
    void cellcells_global_extension();
    void globalCellID_procID_map();
    void gatherCellsLevel1_partID_map();
-   void scatter_cells_level1();
+   void level1_scatter_gather_cells();
 
 
    void CRConnectivity_cellParts();
@@ -159,7 +159,7 @@ private:
    void DEBUG_cellcells_global();
    void DEBUG_globalCellID_procID_map();
    void DEBUG_gatherCellsLevel1_partID_map();
-   void DEBUG_scatter_cells_level1();
+   void DEBUG_level1_scatter_gather_cells();
 
    void  debug_file_open( const string& fname );
    void  debug_file_close();

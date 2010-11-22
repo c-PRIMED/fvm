@@ -115,6 +115,30 @@ public:
   { return _ghostCellSiteGatherMap; }
 
 
+
+
+
+
+  const StorageSite* getGhostCellSiteScatterLevel1(  const PartIDMeshIDPair& id ) const
+  { return _ghostCellSiteScatterMapLevel1.find(id)->second.get(); }
+
+  const GhostCellSiteMap& getGhostCellSiteScatterMapLevel1() const
+  { return _ghostCellSiteScatterMapLevel1; }
+
+  GhostCellSiteMap& getGhostCellSiteScatterMapLevel1() 
+  { return _ghostCellSiteScatterMapLevel1; }
+
+  const StorageSite* getGhostCellSiteGatherLevel1( const PartIDMeshIDPair& id ) const
+  { return _ghostCellSiteGatherMapLevel1.find(id)->second.get(); }
+
+  GhostCellSiteMap& getGhostCellSiteGatherMapLevel1() 
+  { return _ghostCellSiteGatherMapLevel1; }
+
+  const GhostCellSiteMap& getGhostCellSiteGatherMapLevel1() const
+  { return _ghostCellSiteGatherMapLevel1; }
+
+
+
   StorageSite& getFaces() {return _faces;}
   StorageSite& getCells() {return _cells;}
   StorageSite& getNodes() {return _nodes;}
@@ -194,6 +218,8 @@ public:
 
   Array<int>&        getLocalToGlobal(){ return *_localToGlobal;}
   const Array<int>&  getLocalToGlobal() const { return *_localToGlobal;}
+  map<int,int>&        getGlobalToLocal(){ return _globalToLocal;}
+  const map<int,int>&  getGlobalToLocal() const { return _globalToLocal;}
 
 
   multiMap& getCellCellsGlobal() { return _cellCellsGlobal;}
@@ -207,6 +233,9 @@ public:
 
   void createGhostCellSiteScatter( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
   void createGhostCellSiteGather ( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
+  void createGhostCellSiteScatterLevel1( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
+  void createGhostCellSiteGatherLevel1 ( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site ); 
+
   void createCellColor();
   void createLocalGlobalArray();
 
@@ -255,10 +284,13 @@ protected:
   GhostCellSiteMap   _ghostCellSiteScatterMap;
   GhostCellSiteMap   _ghostCellSiteGatherMap;
 
-  shared_ptr< Array<int>  >        _localToGlobal;
-  multiMap     _cellCellsGlobal; //this hold cellCells information in global numbering, key is local,
-                                 // values are global neighbouring and itself(global again)
+  GhostCellSiteMap   _ghostCellSiteScatterMapLevel1;
+  GhostCellSiteMap   _ghostCellSiteGatherMapLevel1;
 
+  shared_ptr< Array<int>  >        _localToGlobal;
+  map <int,int>        _globalToLocal;
+  multiMap             _cellCellsGlobal; //this hold cellCells information in global numbering, key is local,
+                                        // values are global neighbouring and itself(global again)
  
   //mutable Array<int> *_cellTypes;
   //mutable Array<int> *_cellTypeCount;

@@ -520,6 +520,22 @@ Mesh::createGhostCellSiteGather( const PartIDMeshIDPair& id, shared_ptr<StorageS
   _ghostCellSiteGatherMap.insert( pair<PartIDMeshIDPair, shared_ptr<StorageSite> >( id, site ) );
 
 }
+
+void 
+Mesh::createGhostCellSiteScatterLevel1(  const PartIDMeshIDPair& id, shared_ptr<StorageSite> site )
+{
+  _ghostCellSiteScatterMapLevel1.insert( pair<PartIDMeshIDPair, shared_ptr<StorageSite> >( id, site ) );
+
+}
+
+void 
+Mesh::createGhostCellSiteGatherLevel1( const PartIDMeshIDPair& id, shared_ptr<StorageSite> site )
+{
+  _ghostCellSiteGatherMapLevel1.insert( pair<PartIDMeshIDPair, shared_ptr<StorageSite> >( id, site ) );
+
+}
+
+
 //this 
 void 
 Mesh::createCellColor()
