@@ -103,6 +103,7 @@ Field::clear()
   _arrays.clear();
   _childSitesMap.clear();
   _ghostArrays.clear();
+  _ghostArraysLevel1.clear();
 }
 
 ArrayBase& 
@@ -206,6 +207,26 @@ Field::createSyncGatherArrays(const StorageSite& site)
 }
 
 void
+Field::createSyncGatherArraysLevel1(const StorageSite& site)
+{
+  ArrayBase& thisArray = operator[](site);
+
+  const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+
+  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      EntryIndex e(&oSite, &site);
+      const Array<int>& toIndices = *(mpos.second);
+      if (_ghostArraysLevel1.find(e) == _ghostArraysLevel1.end())
+      {
+          _ghostArraysLevel1[e] = thisArray.newSizedClone(toIndices.getLength());
+      }	
+  }
+}
+
+
+void
 Field::syncScatter(const StorageSite& site)
 {
   const ArrayBase& thisArray = operator[](site);
@@ -226,6 +247,30 @@ Field::syncScatter(const StorageSite& site)
 
   }
 }
+
+
+void
+Field::syncScatterLevel1(const StorageSite& site)
+{
+  const ArrayBase& thisArray = operator[](site);
+      	
+  const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+  
+  foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      EntryIndex e(&site, &oSite);	
+      const Array<int>& fromIndices = *(mpos.second);
+      if (_ghostArraysLevel1.find(e) == _ghostArraysLevel1.end()){
+        _ghostArraysLevel1[e] = thisArray.newSizedClone( fromIndices.getLength() );
+      }
+
+      ArrayBase& ghostArray = *_ghostArraysLevel1[e];	
+      thisArray.scatter(ghostArray,fromIndices);
+
+  }
+}
+
 
 void
 Field::syncGather(const StorageSite& site)
@@ -252,6 +297,34 @@ Field::syncGather(const StorageSite& site)
       thisArray.gather(ghostArray,toIndices);
   }
 }
+
+
+void
+Field::syncGatherLevel1(const StorageSite& site)
+{
+  ArrayBase& thisArray = operator[](site);
+      
+  const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+  
+  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      const Array<int>& toIndices = *(mpos.second);
+      EntryIndex e(&oSite, &site);
+
+      if (_ghostArraysLevel1.find(e) == _ghostArraysLevel1.end())
+      {
+         ostringstream e;
+         e << "Field::syncScatter: ghost array not found for"
+           << &oSite << endl;
+         throw CException(e.str());
+      }
+
+      const ArrayBase& ghostArray = *_ghostArraysLevel1[e];
+      thisArray.gather(ghostArray,toIndices);
+  }
+}
+
 
 void
 Field::syncLocal()
@@ -298,7 +371,7 @@ Field::syncLocal()
              request_recv[indxRecv++] =  
                     MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
          }
-       }
+      }
    }
 
    int count  = get_request_size();
@@ -319,6 +392,85 @@ Field::get_request_size()
    foreach(ArrayMap::value_type& pos, _arrays){
       const StorageSite& site = *pos.first;
       const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+      foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+          const StorageSite&  oSite = *mpos.first;
+          //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+          if ( oSite.getGatherProcID() != -1 )
+             indx++;
+      }
+   }
+   return indx;
+
+}
+
+
+
+void
+Field::syncLocalLevel1()
+{  
+   // scatter first (prepare ship packages)
+   foreach(ArrayMap::value_type& pos, _arrays)
+      syncScatterLevel1(*pos.first);
+
+   foreach(ArrayMap::value_type& pos, _arrays)
+      createSyncGatherArraysLevel1(*pos.first);
+
+#ifdef FVM_PARALLEL
+   //SENDING
+   MPI::Request   request_send[ get_request_size() ];
+   MPI::Request   request_recv[ get_request_size() ];
+   int indxSend = 0;
+   int indxRecv = 0;
+   foreach(ArrayMap::value_type& pos, _arrays){
+      const StorageSite& site = *pos.first;
+      const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+      foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+          const StorageSite&  oSite = *mpos.first;
+          //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+             EntryIndex e(&site,&oSite);
+             ArrayBase& sendArray = *_ghostArraysLevel1[e];
+             int to_where  = oSite.getGatherProcID();
+             if ( to_where != -1 ){
+                int mpi_tag = oSite.getTag();
+                request_send[indxSend++] =  
+                     MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+             }
+      }
+      //RECIEVING
+      //getting values from other meshes to fill g
+      const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+      foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+         const StorageSite&  oSite = *mpos.first;
+         //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+         EntryIndex e(&oSite,&site);
+         ArrayBase& recvArray = *_ghostArraysLevel1[e];
+         int from_where       = oSite.getGatherProcID();
+         if ( from_where != -1 ){
+             int mpi_tag = oSite.getTag();
+             request_recv[indxRecv++] =  
+                    MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+         }
+      }
+   }
+
+   int count  = get_request_size_level1();
+   MPI::Request::Waitall( count, request_recv );
+   MPI::Request::Waitall( count, request_send );
+#endif
+
+  // gather 
+  foreach(ArrayMap::value_type& pos, _arrays)
+    syncGatherLevel1(*pos.first);
+
+}
+
+int
+Field::get_request_size_level1()
+{
+   int indx =  0;
+   foreach(ArrayMap::value_type& pos, _arrays){
+      const StorageSite& site = *pos.first;
+      const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
           const StorageSite&  oSite = *mpos.first;
           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 

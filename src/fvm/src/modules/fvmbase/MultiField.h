@@ -66,20 +66,28 @@ public:
   shared_ptr<MultiField> extract(const ArrayIndexList& indices);
   void merge(const MultiField& other);
 
+  void sync();
+  void syncLevel1();
+  
+private:
+
   void  syncScatter(const ArrayIndex& i);
   void  createSyncGatherArrays(const ArrayIndex& i);
   void syncGather(const ArrayIndex& i);
-  void sync();
-  
-private:
-   void assign_mpi_tag();
-   int  get_request_size();
+  void  syncScatterLevel1(const ArrayIndex& i);
+  void  createSyncGatherArraysLevel1(const ArrayIndex& i);
+  void syncGatherLevel1(const ArrayIndex& i);
+
+  int  get_request_size();
+  int  get_request_size_level1();
+
 
   int _length;
   ArrayList _arrays;
   ArrayIndexList _arrayIndices;
   ArrayMap _arrayMap;
   GhostArrayMap _ghostArrays;
+  GhostArrayMap _ghostArraysLevel1;
 };
 
 #endif

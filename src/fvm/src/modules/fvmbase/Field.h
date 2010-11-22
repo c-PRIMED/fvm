@@ -40,23 +40,31 @@ public:
   bool hasArray(const StorageSite& s) const;
   
   void syncLocal();
+  void syncLocalLevel1();
 
   const string getName() const {return _name;}
-  void  createSyncGatherArrays(const StorageSite& site);
-  void  syncScatter(const StorageSite& site);
-  void  syncGather(const StorageSite& site);
 
   void clear();
   
 private:
+
   Field(const Field&);
+  void  createSyncGatherArrays(const StorageSite& site);
+  void  syncScatter(const StorageSite& site);
+  void  syncGather(const StorageSite& site);
+  void  createSyncGatherArraysLevel1(const StorageSite& site);
+  void  syncScatterLevel1(const StorageSite& site);
+  void  syncGatherLevel1(const StorageSite& site);
   int  get_request_size();
+  int  get_request_size_level1();
+
 
   //ArrayBase& getGhostArray(const StorageSite&);
   
   const string _name;
   ArrayMap _arrays;
   GhostArrayMap _ghostArrays;
+  GhostArrayMap _ghostArraysLevel1;
   
   ChildSitesMap _childSitesMap;
 
