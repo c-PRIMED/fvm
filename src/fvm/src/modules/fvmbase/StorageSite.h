@@ -57,6 +57,7 @@ public:
   //methods for Level1 layer creation
   void setCountLevel1( const int countLevel1 ) {
     _countLevel1 = countLevel1;
+    _count = countLevel1;
   }
   int getCountLevel1() const {return _countLevel1;}
   const ScatterMap&  getScatterMapLevel1() const { return _scatterMapLevel1;}
