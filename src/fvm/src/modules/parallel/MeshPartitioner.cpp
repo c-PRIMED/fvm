@@ -137,12 +137,9 @@ MeshPartitioner::mesh()
     globalCellID_procID_map();
     gatherCellsLevel1_partID_map();
     level1_scatter_gather_cells();
+    DEBUG_CRConnectivity_cellCells2();
+ 
 }
-
-
-
-
-
 
 void 
 MeshPartitioner::dumpTecplot()
@@ -2170,12 +2167,13 @@ MeshPartitioner::set_local_global()
        offset += selfCount;
        //loop over boundaries and global number boundary cells
        const FaceGroupList&  bounGroupList = mesh.getBoundaryFaceGroups();
+       const CRConnectivity& faceCells  = mesh.getAllFaceCells();
        for ( int i = 0; i < mesh.getBoundaryGroupCount(); i++ ){
           const int ibeg = bounGroupList[i]->site.getOffset();
           const int iend = ibeg + bounGroupList[i]->site.getCount();
           int indx=0;
           for ( int ii = ibeg; ii < iend; ii++ ){
-             localCell[ii] = offset + indx;
+             localCell[ faceCells(ii,1)] = offset + indx;
              indx++;
           }
           //update offset
@@ -2258,7 +2256,7 @@ MeshPartitioner::set_cellcells_global()
       const int ncells = cellSite.getCount();
       for ( int n = 0; n < ncells; n++ ){
          const int iend = cellCells.getCount(n);
-         cellCellsGlobal.insert( pair<int,int>(n, localToGlobal[n]) );
+         //cellCellsGlobal.insert( pair<int,int>(n, localToGlobal[n]) );
          for ( int i = 0; i < iend; i++ ){
             const int localCellID = cellCells(n,i);
             cellCellsGlobal.insert( pair<int,int>(n, localToGlobal[localCellID] ) );
@@ -2399,7 +2397,7 @@ MeshPartitioner::cellcells_global_extension()
                  //erase ghost cell to not duplicate
                  cellCellsMap.erase( localCellID );
                  //add itself
-                 cellCellsMap.insert( pair<int,int>( localCellID,globalCellID) );
+//                 cellCellsMap.insert( pair<int,int>( localCellID,globalCellID) );
                  for ( int j = 0; j < count; j++ ){
                      const int cellID = (*cellCellsGlobal)[offset+j];
                      
@@ -2780,6 +2778,22 @@ MeshPartitioner::DEBUG_level1_scatter_gather_cells()
     debug_file_close();
 
 }
+
+
+void 
+MeshPartitioner::DEBUG_CRConnectivity_cellCells2()
+{
+    const CRConnectivity& cellCells2 = _meshListLocal[0]->getCellCells2();
+    //openfile
+    debug_file_open("CRConnectivity_cellCells2");
+    //print connectivity
+    CRConnectivityPrintFile( cellCells2, "CellCells2" );
+   //close file
+    debug_file_close();
+}
+
+
+
 
 
 

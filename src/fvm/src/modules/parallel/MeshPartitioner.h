@@ -160,6 +160,7 @@ private:
    void DEBUG_globalCellID_procID_map();
    void DEBUG_gatherCellsLevel1_partID_map();
    void DEBUG_level1_scatter_gather_cells();
+   void DEBUG_CRConnectivity_cellCells2();
 
    void  debug_file_open( const string& fname );
    void  debug_file_close();

@@ -1,3 +1,4 @@
+#include <set>
 #include "Mesh.h"
 #include "StorageSite.h"
 #include "CRConnectivity.h"
@@ -463,9 +464,65 @@ const CRConnectivity&
 Mesh::getCellCells2() const
 {
   if (!_cellCells2)
-  {
-      const CRConnectivity& cellCells = getCellCells();
-      _cellCells2 = cellCells.multiply(cellCells, true);
+  { 
+#ifdef FVM_PARALLEL
+      //CRConnectivity constructor
+      _cellCells2 = shared_ptr<CRConnectivity> ( new CRConnectivity(this->getCells(), this->getCells()) );
+      //initCount
+      _cellCells2->initCount();
+
+      const int ncells = this->getCells().getSelfCount();
+      multimap<int,int>::const_iterator it0;
+      multimap<int,int>::const_iterator it1;
+      //loop over inner cells
+      for ( int n = 0; n < ncells; n++ ){ 
+         set<int> setCells;
+         for ( it0 = _cellCellsGlobal.equal_range(n).first; it0 != _cellCellsGlobal.equal_range(n).second; ++it0 ){
+             const int cellID1 = it0->second;
+             const int localID = _globalToLocal.find(cellID1)->second;
+             setCells.insert( cellID1 );
+             for (  it1 = _cellCellsGlobal.equal_range(localID).first; it1 != _cellCellsGlobal.equal_range(localID).second; ++it1 ){
+                 const int cellID2 = it1->second;
+                 setCells.insert(cellID2);
+             }
+         }
+         //erase itself
+         setCells.erase( (*_localToGlobal)[n]);
+         _cellCells2->addCount(n,setCells.size());
+      }
+      //finish count
+      _cellCells2->finishCount();
+      //add cellcells2
+      //loop over inner cells
+      for ( int n = 0; n < ncells; n++ ){ 
+         set<int> setCells;
+         for ( it0 = _cellCellsGlobal.equal_range(n).first; it0 != _cellCellsGlobal.equal_range(n).second; it0++ ){
+             const int cellID1 = it0->second;
+             const int localID = _globalToLocal.find(cellID1)->second;
+             setCells.insert( cellID1 );
+             for (  it1 = _cellCellsGlobal.equal_range(localID).first; it1 != _cellCellsGlobal.equal_range(localID).second; it1++ ){
+                 const int cellID2 = it1->second;
+                 setCells.insert(cellID2);
+             }
+         }
+         //erase itself
+         setCells.erase((*_localToGlobal)[n]);
+         foreach ( const set<int>::value_type globalID, setCells ){
+             const int localCellID = _globalToLocal.find(globalID)->second;
+            _cellCells2->add(n, localCellID);
+         }
+      }
+      //finish add
+      _cellCells2->finishAdd();
+#endif
+
+#ifndef FVM_PARALLEL
+       const CRConnectivity& cellCells = getCellCells();
+       _cellCells2 = cellCells.multiply(cellCells, true);
+#endif
+
+
+
   }
   return *_cellCells2;
 }
