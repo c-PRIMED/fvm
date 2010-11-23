@@ -82,7 +82,7 @@ def cprint(col, str, newline=True):
         print "%s%s%s" % (mycol, str, colors['NORMAL'])
     else:
         print "%s%s%s" % (mycol, str, colors['NORMAL']),
-        
+
 def _niceprint(msg, type=''):
     print_type = True
     def print_pat(color):
@@ -309,15 +309,13 @@ def set_python_path(dir):
         except OSError:
             pass
     if 'PYTHONPATH' in os.environ:
-        os.environ['PYTHONPATH'] += ':'
+        orig = os.environ['PYTHONPATH']
     else:
-        os.environ['PYTHONPATH'] = ''
-    if os.path.dirname(py) == os.path.join(dir, 'bin'):
-        os.environ['PYTHONPATH'] += libpath
-    else:
-        os.environ['PYTHONPATH'] += libpath + ':' + pypath
+        orig = ''
+    os.environ['PYTHONPATH'] = libpath + ':' + pypath
     os.environ['PYTHONPATH'] += ':' + os.path.join(dir, 'bin')
-    return pypath1
+    if orig:
+        os.environ['PYTHONPATH'] += ':' + orig
 
 def write_env(bld, cwd, cname):
     idir = os.path.join(bld.blddir, "include")
@@ -334,9 +332,9 @@ def write_env(bld, cwd, cname):
     print >> f, "if ${?LD_LIBRARY_PATH} then"
     print >> f, "  setenv LD_LIBRARY_PATH " + bld.libdir + ":${LD_LIBRARY_PATH};"
     print >> f, "else"
-    print >> f, "  setenv LD_LIBRARY_PATH " + bld.libdir + ";"    
+    print >> f, "  setenv LD_LIBRARY_PATH " + bld.libdir + ";"
     print >> f, "endif"
-    
+
     try:
         if os.environ['PYTHONPATH']:
             print >> f, "setenv PYTHONPATH " + os.environ['PYTHONPATH']
@@ -348,13 +346,13 @@ def write_env(bld, cwd, cname):
     print >> f, "else"
     print >> f, "  setenv C_INCLUDE_PATH %s;" % idir
     print >> f, "endif"
-        
-    print >> f, "if ${?CPLUS_INCLUDE_PATH} then"    
+
+    print >> f, "if ${?CPLUS_INCLUDE_PATH} then"
     print >> f, "  setenv CPLUS_INCLUDE_PATH %s:${CPLUS_INCLUDE_PATH};" % idir
     print >> f, "else"
-    print >> f, "  setenv CPLUS_INCLUDE_PATH %s;" % idir    
+    print >> f, "  setenv CPLUS_INCLUDE_PATH %s;" % idir
     print >> f, "endif"
-    
+
     print >> f, "setenv PATH %s:$PATH" % bld.bindir
     print >> f, "\n# Need this to recompile MPM in its directory."
     print >> f, "setenv MEMOSA_CONFNAME %s" % cname

@@ -17,7 +17,7 @@ class Python(BuildPkg):
             return "skip"
         return self.sys_log("make")
     def _install(self):
-        BuildPkg.pypath = set_python_path(self.blddir)
+        set_python_path(self.blddir)
         if self.use_installed:
             return "Skip"
         self.sys_log("make install")

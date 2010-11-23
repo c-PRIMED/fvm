@@ -23,8 +23,8 @@ Options:
   --nightly      Build, test, and submit to cdash. Flag as a "nightly" build.
 
 Configuration names are stored in the 'config' subdirectory. That directory must be
-in the source directory specified by the '-s' option (if one is given). 
-If there is a 'config' directory in the current directory, it will be used. 
+in the source directory specified by the '-s' option (if one is given).
+If there is a 'config' directory in the current directory, it will be used.
 Otherwise, the build system will look for one in the same directory as 'make.py'.
 """
 
@@ -78,7 +78,7 @@ def main():
         cname = args[0]
     if cname == '':
         usage()
-        
+
     sdir = ''
     if options.s:
         sdir = options.s
@@ -87,7 +87,7 @@ def main():
             sdir = cwd
         elif os.path.islink(sys.argv[0]):
             sdir = os.path.dirname(sys.argv[0])
-            
+
     if sdir == '' or not config.read(os.path.join(sdir, 'config'), cname):
         usage()
 
@@ -97,13 +97,13 @@ def main():
 
     cmd = config.config('ALL', 'before')
     if cmd and not '_MEMOSA_MAKE' in os.environ:
-        cmd = ';'.join(cmd)        
+        cmd = ';'.join(cmd)
         os.environ['_MEMOSA_MAKE'] = '1'
         os.system("/bin/bash -l -c '%s;%s'" %(cmd, ' '.join(sys.argv)))
         sys.exit(0)
 
     bld = Build(cname, sdir, make_path)
-    
+
     # CLEAN
     if options.clean or options.all:
         for p in bld.all_packages:
@@ -118,7 +118,7 @@ def main():
         oldpypath = os.environ['PYTHONPATH']
     except:
         oldpypath = ''
-    bld.pypath = build_utils.set_python_path(bld.blddir)
+    build_utils.set_python_path(bld.blddir)
 
     # if no options, default to build
     if not options.build and not options.test and not options.submit \
@@ -138,7 +138,7 @@ def main():
 
     if options.build and bld.packages == []:
         print "No packages need built."
-    
+
     if options.build and bld.packages != []:
         build_start_time = time.time()
         open(bld.logdir + '/StartBuildTime', 'w').write(str(build_start_time))
@@ -147,7 +147,7 @@ def main():
                 p.build()
             except build_utils.CompileException:
                 build_failed = 1
-                break                
+                break
             except:
                 traceback.print_exc()
                 build_failed = 1
@@ -156,7 +156,7 @@ def main():
         build_end_time = time.time()
         open(bld.logdir + '/EndBuildTime', 'w').write(str(build_end_time))
 
-        # write out env.[c]sh 
+        # write out env.[c]sh
         env_name = build_utils.write_env(bld, cwd, cname)
 
         if not build_failed:
