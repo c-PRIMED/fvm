@@ -15,6 +15,7 @@ struct MovingMeshModelOptions : public FloatVarDict<T>
   double absTolerance;
   double relativeTolerance;
   int nNodeDisplacementSweeps;
+  int timeDiscretizationOrder;
 }; 
 
 //%template(Vector3) Vector<ATYPE_STR,3>;
