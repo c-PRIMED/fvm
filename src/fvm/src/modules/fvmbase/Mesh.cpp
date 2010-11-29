@@ -471,7 +471,7 @@ Mesh::getCellCells2() const
       //initCount
       _cellCells2->initCount();
 
-      const int ncells = this->getCells().getSelfCount();
+      const int ncells = this->getCells().getCount();
       multimap<int,int>::const_iterator it0;
       multimap<int,int>::const_iterator it1;
       //loop over inner cells
@@ -514,6 +514,7 @@ Mesh::getCellCells2() const
       }
       //finish add
       _cellCells2->finishAdd();
+
 #endif
 
 #ifndef FVM_PARALLEL
