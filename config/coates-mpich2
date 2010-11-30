@@ -8,7 +8,7 @@ Testing:
 	modules=mpich2-gcc atlas hdf5-1.8.3/gcc-4.4.0
 
 lammps:
-	Build=True
+	Build=False
 	modules=mpich2-gcc
 	build=steele
 
@@ -44,7 +44,7 @@ netcdf:
 
 parmetis:
 	modules=mpich2-gcc
-	
+
 ALL:
 	before=module load python
 	modules=gcc atlas hdf5-1.8.3/gcc-4.4.0

@@ -6,10 +6,6 @@ Testing:
 	nodes=4
 	ncpus=8
 
-lammps:
-	Build=1
-	build=openmpi
-
 fvm:
 	Build=1
 
@@ -41,7 +37,7 @@ netcdf:
 
 MEMOSA:
 	Build=1
-	
+
 vitables:
 	Build=1
 
