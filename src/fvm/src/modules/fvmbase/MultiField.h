@@ -66,14 +66,14 @@ public:
   shared_ptr<MultiField> extract(const ArrayIndexList& indices);
   void merge(const MultiField& other);
 
+  void  syncScatter(const ArrayIndex& i);
+  void syncGather(const ArrayIndex& i);
   void sync();
   void syncLevel1();
   
 private:
 
-  void  syncScatter(const ArrayIndex& i);
   void  createSyncGatherArrays(const ArrayIndex& i);
-  void syncGather(const ArrayIndex& i);
   void  syncScatterLevel1(const ArrayIndex& i);
   void  createSyncGatherArraysLevel1(const ArrayIndex& i);
   void syncGatherLevel1(const ArrayIndex& i);
