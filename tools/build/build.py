@@ -13,7 +13,7 @@ class Build:
     def __init__(self, cname, topdir, make_path):
         # create build directories
         cwd = os.getcwd()
-        topdir = os.path.abspath(topdir)   
+        topdir = os.path.abspath(topdir)
         self.topdir = topdir
         self.blddir = os.path.join(os.getcwd(), "build-%s" % cname)
         self.logdir = os.path.join(self.blddir, "log")
@@ -29,7 +29,7 @@ class Build:
 
         # load build database
         self.database = shelve.open(os.path.join(self.logdir, 'PACKAGES'))
-        
+
         # import modules from 'packages' directory
         for path in (os.path.join(topdir, 'config', 'packages'),
                      os.path.join(make_path, 'packages')):
@@ -37,9 +37,9 @@ class Build:
                 debug("importing package modules from %s" % path)
                 try:
                     os.chdir(path)
-                    sys.path = [path] + sys.path                    
+                    sys.path = [path] + sys.path
                 except:
-                    fatal('Cannot read modules from %s' % path)    
+                    fatal('Cannot read modules from %s' % path)
                 for m in glob.glob('*.py'):
                     m = m.split('.')[0]
                     if m == '__init__':
@@ -52,12 +52,12 @@ class Build:
                     if not loaded:
                         _temp = __import__(m, globals(), locals(), [m])
                         exec('global %s; %s=_temp.%s; self.%s=%s' % (m, m, m, m, m))
-                
-        # create package class instances        
+
+        # create package class instances
         self.all_packages = []
         path = os.path.join(topdir, 'config', 'packages')
-        os.chdir(path)        
-                
+        os.chdir(path)
+
         for line in open('SOURCES'):
             cls, sdir = line.split()
             acls = []
@@ -117,6 +117,8 @@ class Build:
     def add_build(self, pkg, check_timestamp):
         ''' Add a package to the build list if it or its dependencies have changed. '''
         debug ('add_build %s [%s]' % (pkg, pkg.deps))
+        if self.database[pkg.name + '-status'] == 'installed':
+            return 0
         deps_needed = 0
         for p in pkg.deps:
             deps_needed += self.add_build(p, check_timestamp)
@@ -132,7 +134,7 @@ class Build:
                 elif self.database[pkg.name + '-status'] == '':
                     verbose(1, '\t%s needs built' % pkg.name)
                 else:
-                    verbose(1, "\t%s needs rebuilt. Status changed from '%s' to '%s.'" 
+                    verbose(1, "\t%s needs rebuilt. Status changed from '%s' to '%s.'"
                             % (pkg.name, self.database[pkg.name + '-status'], pkg.status()))
             self.packages.append(pkg)
         return 1

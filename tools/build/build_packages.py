@@ -112,7 +112,7 @@ class BuildPkg(Build):
                 print 'Using installed package %s%s%s' %\
                  (colors['BOLD'], self.name, colors['NORMAL'])
                 self.bld.database[self.name] = self.build_start_time
-                self.bld.database[self.name + '-status'] = self.status()
+                self.bld.database[self.name + '-status'] = 'installed'
                 return
 
         # get new sources

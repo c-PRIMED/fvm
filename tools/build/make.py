@@ -152,7 +152,6 @@ def main():
                 traceback.print_exc()
                 build_failed = 1
                 break
-        bld.done()
         build_end_time = time.time()
         open(bld.logdir + '/EndBuildTime', 'w').write(str(build_end_time))
 
@@ -168,6 +167,7 @@ def main():
     # set package list for testing and submit
     bld.packages = []
     bld.build_pkg_list(False)
+    bld.done()
 
     # TESTING
     if options.test and not pbs.start(bld, cname) and not moab.start(bld, cname):
