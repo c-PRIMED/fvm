@@ -28,17 +28,17 @@ def setBaseVars(env,cla):
     for o in optionsList:
         env[o[0]] = o[1]
 
-    
+
     for k,v in cla.iteritems():
         if v in ['True','true']:
             v = True
         elif v in ['False', 'false']:
             v = False
-            
+
         env[k] = v
 
     env['DEBUG'] = env['VERSION'] == 'debug'
-        
+
     env['ARCH'] = Arch.getArch()
     sconstructDir = os.path.abspath(str(env.fs.SConstruct_dir))
     #print sconstructDir
@@ -79,7 +79,7 @@ def setVersionPaths(env):
                               env.GetBuildPath('$BUILDVERSIONDIR'))
     if not os.access(buildvdir,os.F_OK):
         os.makedirs(buildvdir)
-        
+
 class MyEnvironment(SConsEnvironment):
 
     ### mapping between components and their directories. a component
@@ -95,12 +95,12 @@ class MyEnvironment(SConsEnvironment):
         ### our build process requires that we run everything from the top level dir
         self.SConscriptChdir(False)
 
-        ### extract our specific command line variables 
+        ### extract our specific command line variables
         commandLineOptions = self.getCommandLineOptions()
 
         ### set the arch and compiler independent options, overriding
         ### defauls with values specified on the command line
-        
+
         setBaseVars(self,commandLineOptions)
 
         ### now load the architecture specific defaults
@@ -109,11 +109,11 @@ class MyEnvironment(SConsEnvironment):
         ### should allow for a mechanism for user to override
         ### architecture specific defaults. currently we can only
         ### handle specification of the compiler
-        
+
 
         ### since our build paths depend on the arch/compiler settings
         ### we can only set these paths now
-        
+
         setVersionPaths(self)
 
         ### keep the sconsign database local to each build rather
@@ -141,7 +141,7 @@ class MyEnvironment(SConsEnvironment):
             buildDir = '$COMPONENTBUILDDIR'
             srcDir = '$COMPONENTSRCDIR'
             exports = {'env': env}
-            
+
             env.SConscript(script, build_dir=buildDir, src_dir=srcDir,
                            duplicate=False, exports=exports)
 
@@ -156,6 +156,7 @@ class MyEnvironment(SConsEnvironment):
     def createExe(self, target, source=[], deplibs=[], dynlibs=[], **kwargs):
         env = self.myClone()
         env._updateEnv(target, deplibs)
+        env.AppendUnique(CPPDEFINES='RLOG_COMPONENT=%s' % target)
 
         nodes = env.Program('$COMPONENTTARGETDIR/'+target, source, **kwargs)
 
@@ -212,13 +213,13 @@ class MyEnvironment(SConsEnvironment):
 
         return nodes
 
- 
+
     def createSwigModule(self, target, sources=[], deplibs=[], atype=None,**kwargs):
 
         env = self.myClone()
 
         env.loadTools(['swig'])
-        
+
         env.Append(CPPPATH=['$AUTOGENDIR'])
         env['SHLIBPREFIX'] = ""
         if env['PARALLEL']:
@@ -228,7 +229,7 @@ class MyEnvironment(SConsEnvironment):
         env['SWIGOUTDIR'] = '$COMPONENTTARGETDIR'
 
 
-        env.AppendUnique(CPPDEFINES='RLOG_COMPONENT=%s' % target[1:-3])
+        env.AppendUnique(CPPDEFINES='RLOG_COMPONENT=%s' % target)
         deplibs += ['python' ]
         env._updateEnv(target, deplibs,atype,True)
 
@@ -253,7 +254,7 @@ class MyEnvironment(SConsEnvironment):
                 libEnv.Append(CPPPATH=['$SRCDIR/modules/atypes/%s' % atype])
                 libEnv.AppendUnique(SWIGPATH=['$SRCDIR/modules/atypes/%s' % atype])
                 libEnv.AppendUnique(SWIGFLAGS=CLVar('-module %s_atyped_%s' % (target,atype)))
-                
+
                 libEnv['SHOBJSUFFIX'] = '_%s%s' % (atype, self['SHOBJSUFFIX'])
                 nodes += libEnv.createSwigModule(libTarget, sources, deplibs,
                                                  createPublicHeader=False,
@@ -262,7 +263,7 @@ class MyEnvironment(SConsEnvironment):
 
         return nodes
 
- 
+
     def getAbsPath(self, pathname):
         pathname = self.GetBuildPath(pathname)
         if not os.path.isabs(pathname):
@@ -299,7 +300,7 @@ class MyEnvironment(SConsEnvironment):
     def _addTarget(self, nodes):
         self._targets.extend(nodes)
 
-        
+
     def myClone(self, newTargets=False):
         newEnv = SConsEnvironment.Clone(self)
         if newTargets:
