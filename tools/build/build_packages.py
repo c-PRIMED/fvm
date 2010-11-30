@@ -102,32 +102,41 @@ class BuildPkg(Build):
         self.bld.database[self.name] = 0 # mark this package as not built
         self.logfile = os.path.join(self.logdir, self.name + "-conf.log")
         remove_file(self.logfile)
-        pmess("CONF", self.name, self.bdir)
         # remove any old sources
         os.system("/bin/rm -rf %s" % self.bdir)
+        self.build_start_time = time.time()
+
+        if config(self.name, 'Build') == '':
+            inst = self.installed()
+            if inst:
+                print 'Using installed package %s%s%s' %\
+                 (colors['BOLD'], self.name, colors['NORMAL'])
+                self.bld.database[self.name] = self.build_start_time
+                self.bld.database[self.name + '-status'] = self.status()
+                return
+
         # get new sources
         self.unpack_srcs()
         os.chdir(self.bdir)
         run_commands(self.name, 'before')
-        self.build_start_time = time.time()
-        c = self._configure()
-        self.pstatus(c)
-        if c != 'installed':
-            # Build
-            self.state = 'build'
-            self.logfile = os.path.join(self.logdir, self.name + "-build.log")
-            remove_file(self.logfile)
-            pmess("BUILD", self.name, self.bdir)
-            os.chdir(self.bdir)
-            self.pstatus(self._build())
 
-            # Install
-            self.state = 'install'
-            self.logfile = os.path.join(self.logdir, self.name + "-install.log")
-            remove_file(self.logfile)
-            pmess("INSTALL", self.name, self.blddir)
-            os.chdir(self.bdir)
-            self.pstatus(self._install())
+        pmess("CONF", self.name, self.bdir)
+        self.pstatus(self._configure())
+        # Build
+        self.state = 'build'
+        self.logfile = os.path.join(self.logdir, self.name + "-build.log")
+        remove_file(self.logfile)
+        pmess("BUILD", self.name, self.bdir)
+        os.chdir(self.bdir)
+        self.pstatus(self._build())
+
+        # Install
+        self.state = 'install'
+        self.logfile = os.path.join(self.logdir, self.name + "-install.log")
+        remove_file(self.logfile)
+        pmess("INSTALL", self.name, self.blddir)
+        os.chdir(self.bdir)
+        self.pstatus(self._install())
         self.bld.database[self.name] = self.build_start_time
         self.bld.database[self.name + '-status'] = self.status()
         debug('database[%s] = %s' % (self.name, self.build_start_time))
@@ -193,6 +202,9 @@ class BuildPkg(Build):
     def status(self):
         return 'normal'
 
+    def installed(self):
+        return self._installed()
+
     # subclasses must redefine these
     def _configure(self):
         pass
@@ -202,6 +214,8 @@ class BuildPkg(Build):
         pass
     def _install(self):
         pass
+    def _installed(self):
+        return False
     def _test(self, tst):
         return testing.do_tests(tst, self.name, self.sdir, self.logfile)
 

@@ -6,7 +6,7 @@ class Cgal(BuildPkg):
     def find_cgal_inc(self, installed=False, in_build=False):
         f = ''
         if installed or not in_build:
-            pathlist=['/usr', '/usr/local']
+            pathlist=['/usr', '/usr/local', '/opt/local']
             if os.environ.has_key('CGAL_DIR'):
                 p = os.path.join(os.environ['CGAL_DIR'], '..', '..')
                 pathlist.insert(0, os.path.abspath(p))
@@ -41,34 +41,27 @@ class Cgal(BuildPkg):
             f.close()
         verbose(2, 'CGAL version=%s' % v)
         return v
-    
-    def _configure(self):
+
+    def _installed(self):
         # Do we really need to build CGAL or can we use the installed one?
-        x = config.config(self.name, 'Build')
-        if x != '' and eval(x):
-            verbose(2, "CGAL MUST BUILD")
+        c = self.find_cgal_inc(in_build=True)
+        if c:
+            # includes were found in build directory
+            c.close()
         else:
-            c = self.find_cgal_inc(in_build=True)
-            if c:
-                # includes were found in build directory
-                c.close()
-            else:
-                # try system includes
-                v = self.find_cgal_vers(installed=True)
-                if v:
-                    v = v.split('.')
-                    if int(v[0]) > 3 or (int(v[0]) == 3 and int(v[1]) >= 5):
-                        self.use_installed = True
-                        return "installed"
-        self.use_installed = False
+            # try system includes
+            v = self.find_cgal_vers(installed=True)
+            if v:
+                v = v.split('.')
+                if int(v[0]) > 3 or (int(v[0]) == 3 and int(v[1]) >= 5):
+                    return True
+        return False
+
+    def _configure(self):
         return self.sys_log("cmake %s -DCMAKE_INSTALL_PREFIX=%s -DWITH_CGAL_Qt3=0 -DWITH_CGAL_Qt4=0 -DCMAKE_BUILD_TYPE=Release" % (self.sdir, self.blddir))
     def _build(self):
-        if self.use_installed:
-            return "skip"
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
-        if self.use_installed:
-            return "skip"
         return self.sys_log("make install")
 
 

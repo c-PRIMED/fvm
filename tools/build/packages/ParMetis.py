@@ -1,7 +1,6 @@
 from build_packages import *
 
 class ParMetis(BuildPkg):
-    copy_sources = 1    
     def _build(self):
         return self.sys_log("make")
     def _install(self):
@@ -9,4 +8,4 @@ class ParMetis(BuildPkg):
         if not os.path.isdir(idir):
             self.sys_log("/bin/mkdir -p %s" % idir)
         self.sys_log("install -m 444 parmetis.h %s" % idir)
-        return self.sys_log("install *.a *.so *.so.* %s" % self.libdir)
+        return self.sys_log("install *.a *.so* %s" % self.libdir)

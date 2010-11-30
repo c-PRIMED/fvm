@@ -407,6 +407,20 @@ def find_executable(executable, path=None):
     else:
         return None
 
+def python_package(name, version):
+    cmd = "python -c 'import %s; print %s.__version__'" % (name, name)
+    try:
+        ver = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        ver = re.findall(r'([\d]+)', ver)
+        for v1,v2 in zip(version, ver):
+            if v1 > v2:
+                return False
+            if v2 > v1:
+                return True
+    except:
+        pass
+    return False
+
 if __name__ == '__main__':
     for c in colors:
         cprint(c, c)
@@ -429,7 +443,6 @@ if __name__ == '__main__':
     pstatus(1)
 
     pmess("BUILD", "foo", "/tmp/foo")
-    pstatus("skipped")
     pmess("INSTALL", "foobar", "/tmp/foobar")
     pstatus(0, "(excellent in fact)")
 

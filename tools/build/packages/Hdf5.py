@@ -6,13 +6,13 @@ class Hdf5(BuildPkg):
     def find_hdf5_inc(self, installed=False, in_build=False):
         f = ''
         if installed:
-            pathlist=['/usr', '/usr/local']
+            pathlist=['/usr', '/usr/local', '/opt/local']
             if os.environ.has_key('HDF5_DIR'):
                 pathlist.insert(0, os.environ['HDF5_DIR'])
         elif in_build:
             pathlist=[self.blddir]
         else:
-            pathlist=[self.blddir, '/usr', '/usr/local']
+            pathlist=[self.blddir, '/usr', '/usr/local', '/opt/local']
             if os.environ.has_key('HDF5_DIR'):
                 pathlist.insert(0, os.environ['HDF5_DIR'])
 
@@ -50,27 +50,29 @@ class Hdf5(BuildPkg):
         verbose(2, 'HDF5 version=%s, mpi=%s' % (v, mpi))
         return v, mpi
 
+    def _installed(self):
+        # Need 1.8.x where x < 5
+        # API change starting with 1.8.5 breaks things.
+
+        #v, mpi = self.find_hdf5_vers(in_build=True)
+        v, mpi = self.find_hdf5_vers(installed=True)
+        if v:
+            v = v.split('.')
+
+            if int(v[0]) == 1 and int(v[1]) >= 8:
+                try:
+                    x = int(v[2].split('-')[0])
+                    if x < 5:
+                        return True
+                except:
+                    return False
+        return False
+
     def _configure(self):
-        # Do we really need to build HDF5 or can we use the installed one?
-        x = config.config(self.name, 'Build')
-        if x != '' and eval(x):
-            verbose(2, "HDF5 MUST BUILD")
-        else:
-            v, mpi = self.find_hdf5_vers(in_build=True)
-            if not v:
-                v, mpi = self.find_hdf5_vers(installed=True)
-                if v:
-                    self.use_installed = True
-                    return "installed"
-        self.use_installed = False
         return self.sys_log("%s/configure --enable-fortran --enable-cxx --prefix=%s" % (self.sdir, self.blddir))
     def _build(self):
-        if self.use_installed:
-            return "skip"
         return self.sys_log("make -j%s" % jobs(self.name))
     def _install(self):
-        if self.use_installed:
-            return "skip"
         return self.sys_log("make install")
 
 

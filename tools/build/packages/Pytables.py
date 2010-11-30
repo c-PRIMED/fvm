@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Pytables(BuildPkg):
-    requires = ['hdf5', 'numpy']
+    requires = ['h5py', 'numpy']
     def _install(self):
         hdf5 = self.bld.pkglist['hdf5']
         assert(hdf5)

@@ -1,8 +1,22 @@
 from build_packages import *
 
+def h5py_version():
+    cmd = "python -c 'import h5py; print h5py.version.version'"
+    try:
+        ver = subprocess.Popen(cmd, shell=True, stderr=subprocess.stdout, stdout=subprocess.PIPE).stdout.read()
+        return re.findall(r'([\d]+)', ver)
+    except:
+        return []
 
 class H5py(BuildPkg):
     requires = ['numpy', 'hdf5']
+
+    def _installed(self):
+        ver = h5py_version()
+        if ver and (int(ver[0]) > 0 and int(ver[1]) >= 2):
+                return True
+        return False
+
     def _build(self):
         hdf5 = self.bld.pkglist['hdf5']
         assert(hdf5)
