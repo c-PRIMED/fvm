@@ -26,3 +26,4 @@ Vitables pkgs/ViTables-2.0.tar.gz
 Pystatistics pkgs/statistics-0.19.tar.gz
 Cgal	pkgs/CGAL-3.6.tar.gz
 Sympy	pkgs/sympy-0.6.7.tar.gz
+Time	pkgs/time-1.7.tar.gz
