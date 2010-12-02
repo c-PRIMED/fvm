@@ -51,15 +51,17 @@ class InjectionDiscretization : public Discretization
 			  const Field& varField,
 			  const Field& electricField,
 			  const Field& conductionbandField,
-			  const ElectricModelConstants<T_Scalar>& constants
+			  const ElectricModelConstants<T_Scalar>& constants,
+			  const ElectricModelOptions<T_Scalar>& options
 			  ) :
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
     _electricField(electricField),
     _conductionbandField(conductionbandField),
-    _constants(constants)    
-      {}
+    _constants(constants),
+    _options(options)
+     {}
 
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
                   MultiField& xField, MultiField& rField)
@@ -71,8 +73,6 @@ class InjectionDiscretization : public Discretization
     const VectorT3Array& electric_field = dynamic_cast<const VectorT3Array&> (_electricField[cells]);
     
     const TArray& conduction_band = dynamic_cast<const TArray&> (_conductionbandField[cells]);
-
-    //TArray& transmission = dynamic_cast<TArray&> (_transmissionField[cells]);
 
     TArray* ts = (new TArray(cells.getCount()));
     *ts = 0;
@@ -96,146 +96,230 @@ class InjectionDiscretization : public Discretization
 
     OffDiagArray& offdiag = matrix.getOffDiag();
 
-    
-    const T_Scalar& electron_effmass = _constants["electron_effmass"];
-    const T_Scalar& temperature = _constants["OP_temperature"];
-    const T_Scalar& fermilevelsubstrate = -_constants["substrate_workfunction"];
-    //const T_Scalar& fermilevelmembrane = -_constants["substrate_workfunction"] - volt;
-    
-    const int& subID = _constants["substrate_id"];
-    const int& memID = _constants["membrane_id"];
-    const int& nLevel = _constants["nLevel"];
-    const int& normal = _constants["normal_direction"];
+    const T_Scalar dielectric_thickness = _constants["dielectric_thickness"];
+    const T_Scalar electron_effmass = _constants["electron_effmass"];
+    const T_Scalar temperature = _constants["OP_temperature"];
+    const T_Scalar substrate_voltage = _constants["substrate_voltage"];
+    const T_Scalar membrane_voltage = _constants["membrane_voltage"];
+    const T_Scalar fermilevelsubstrate = -_constants["substrate_workfunction"] - _constants["substrate_voltage"];
+    const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - _constants["membrane_voltage"];
+    const int subID = _constants["substrate_id"];
+    const int memID = _constants["membrane_id"];
+    const int nLevel = _constants["nLevel"];
+    const int normal = _constants["normal_direction"];
 
     T_Scalar fluxCoeff(0), fermilevel(0), scatterfactor(0);
-    
-    const T_Scalar epsilon = 1e-18;
-    
+    T_Scalar sourceInjection(0);
     const T_Scalar alpha = 4.0 * PI * (electron_effmass*ME) / pow(H_SI, 3.0);
-    
-    for(int c=0; c<nCells; c++){
+    //const T_Scalar energystep =  fabs(substrate_voltage - membrane_voltage) / nLevel;
+    const T_Scalar energystep = 0.01;
+    //=======================================//
+    // injection from substrate to dielectric 
+    //=======================================//
+    for(int c=0; c<cells.getCount(); c++){
       transmission[c] = 0.0;
     } 
 
-    fermilevel = fermilevelsubstrate;   
+    fermilevel = fermilevelsubstrate;
+   
+    for (T_Scalar en = fermilevel-4.0; en <= fermilevel+4.0; en += energystep){   
+   
+      const T_Scalar supplyfunction = ElectronSupplyFunction(en, fermilevel, temperature);
 
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      const T_Scalar fermifunction = FermiFunction(en, fermilevel, temperature);
+
+      foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
 	const FaceGroup& fg = *fgPtr;
-	const StorageSite& faces = fg.site;
-	
+
 	if (fg.id == subID){
-	  
+	  const StorageSite& faces = fg.site;	 
 	  const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 	  const CRConnectivity& cellCells = mesh.getCellCells();
 	  const int nFaces = faces.getCount();
 	  
 	  for(int f=0; f<nFaces; f++){
 
+	    //--------------------------------------------------------------------------------------------
+	    // 1D int array to store the cell index along each straight line from substrate to membrane
+	    int indices[nLevel+1];    
+
 	    int c0 = faceCells(f,0);
 	    int c1 = faceCells(f,1);
-	    	     
-	    (transmission)[c1] = 1.0;
 
+	    indices[0] = c1;
+	    	     
 	    int low = c1;
 	    int me = c0;	      
-	    int high = c0;	       
-	    
-	    for(int l=0; l<nLevel; l++){
-	      //for(int l=0; l< int(nLevel/10); l++){
-
-	      T_Scalar enMe = conduction_band[me];
-	      T_Scalar enLow = conduction_band[low];
-	      T_Scalar deltaEn = fabs(enMe - enLow);
-	      T_Scalar dX = fabs(cellCentroid[me][normal] - cellCentroid[low][normal]);
-
-	      // cout << fermilevel << "  " << enMe << endl;
-	     
-	      //calcualte transmission[me] from start point to me
-	      //--------------------------------------------------------------------------------
-	      int in_low = c1;
-	      int in_me = c0;	      
-	      int in_high = c0;
-	      int count = 0;
-
-	      T_Scalar deltaX = cellCentroid[in_me][normal] - cellCentroid[in_low][normal];
-	      T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
-	      T_Scalar valueMe = PositiveValueOf( conduction_band[in_me] - enMe);
-	      T_Scalar valueLow = PositiveValueOf( conduction_band[in_low] - enMe);
-	      T_Scalar avg = (valueMe + valueLow) / 2.0;
-	      T_Scalar exponent = factor * sqrt(avg) * fabs(deltaX);
-		
-	      (transmission)[in_me] = (transmission)[in_low] * exp(exponent);
-	      
-
-	      while (in_me != me && count <= l){
-		
-		const int nbc = cellCells.getCount(in_me);
-
-		for(int nc = 0; nc < nbc; nc++){
-
-		  const int neighbor = cellCells(in_me, nc);
-		  
-		  const T_Scalar dr = cellCentroid[in_me][normal] - cellCentroid[neighbor][normal];
-		 
-		  if ((fabs(dr) > epsilon) && (dr < 0.0) && (neighbor < nCells)) {
-
-		    in_high = neighbor;
-		    in_low = in_me;
-		    in_me = in_high;
-		  }
-		}
-	
-		T_Scalar deltaX = cellCentroid[in_me][normal] - cellCentroid[in_low][normal];
-		T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
-		T_Scalar valueMe = PositiveValueOf( conduction_band[in_me] - enMe);
-		T_Scalar valueLow = PositiveValueOf( conduction_band[in_low] - enMe);
-		T_Scalar avg = (valueMe + valueLow) / 2.0;
-		T_Scalar exponent = factor * sqrt(avg) * fabs(deltaX);
-		
-		(transmission)[in_me] = (transmission)[in_low] * exp(exponent);
-		
-		count ++;
-	      }
-	      //--------------------------------------------------------------------------------
-
-
-	      if (in_me != me)
-		throw CException ("wrong injection cell loop!");
-
-	      const T_Scalar supplyfunction = ElectronSupplyFunction(enMe, fermilevel, temperature);
-
-	      const T_Scalar fermifunction = FermiFunction(enMe, fermilevel, temperature);
-		
-     	      fluxCoeff = alpha * (transmission)[me] * supplyfunction * fermifunction * fabs(deltaEn) * QE * cellVolume[me] / fabs(dX) ;
-	      
-	      //fluxCoeff = alpha * (transmission)[me] * supplyfunction * fermifunction * fabs(electric_field[me][normal]) * cellVolume[me] * QE;
-
-	      fluxCoeff = fabs(fluxCoeff);
-	         
-
-	      rCell[me][1] += fluxCoeff; 
-
+	    int high = c0;
+	       
+	    for(int l=0; l < nLevel; l++){
+	      if (me > nCells) 
+		throw CException("index out of boundary in elec_model injection calculation");
+	      indices[l+1] = me;
 	      const int nbc = cellCells.getCount(me);
-	      
+	      T_Scalar drmin = 0.0;
+	      int neighborUp = 0;
 	      for(int nc = 0; nc < nbc; nc++){
-
 		const int neighbor = cellCells(me, nc);
-		  
 		const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
-		 
-		if ((fabs(dr) > epsilon) && (dr < 0.0) && (neighbor < nCells)) {
-		  high = neighbor;
-		  low = me;
-		  me = high;
+		if (dr < drmin){
+		  drmin = dr;
+		  neighborUp = neighbor;
 		}
-	      }
+	      }	      
+	      high = neighborUp;
+	      low = me;
+	      me = high;	 
 	    }
-	  }	
+	    //--------------------------------------------------------------------------------------------
+	    //calculate transmission coefficient along the line
+	    transmission[indices[0]]=1.0;
+	    for(int l=0; l < nLevel; l++){
+	      int low = indices[l];
+	      int me = indices[l+1];
+	      
+	      T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
+	      T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
+	      T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
+	      T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+	      T_Scalar avg = (valueMe + valueLow) / 2.0;
+	      T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
+#if DEBUG
+	      (*mark)[me] = 1;
+#endif		
+	      transmission[me] = transmission[low] * exp(exponent);
+	    }
+	    //--------------------------------------------------------------------------------------------
+	    for(int l=0; l < nLevel; l++){
+	      int low = indices[l];
+	      int me = indices[l+1];
+	      //injection occurs where the sign of (en-conductionband) switches. 
+	      if ((en-conduction_band[me]) > 0) {
+		
+		const T_Scalar dX = dielectric_thickness/nLevel;		
+		fluxCoeff = alpha * transmission[me] * supplyfunction * fermifunction * energystep * QE * cellVolume[me] / fabs(dX) ;  
+		rCell[me][1] += fluxCoeff; 
+		sourceInjection += fluxCoeff;
+		break;
+	      }
+	     
+	    }
+	  }
 	}
       }
+    }
+
+    const T_Scalar timeStep = _options["timeStep"];
+    sourceInjection *= timeStep;
+    FILE* fp = fopen("./sourceinjection.dat", "a");
+    fprintf(fp, "%e\n", sourceInjection);
+    fclose(fp);
+
+#if 0
+    //=======================================//
+    // Injection from membrane to dielectric 
+    //=======================================//
+    for(int c=0; c < cells.getCount(); c++){
+      transmission[c] = 0.0;
+    }
+
+    fermilevel = fermilevelmembrane;
+    for (T_Scalar en = fermilevel-4.0; en <= fermilevel+4.0; en += energystep){   
+   
+      const T_Scalar supplyfunction = ElectronSupplyFunction(en, fermilevel, temperature);
+
+      const T_Scalar fermifunction = FermiFunction(en, fermilevel, temperature);
+
+      foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      {
+	const FaceGroup& fg = *fgPtr;
+
+	if (fg.id == memID){
+	  const StorageSite& faces = fg.site;	 
+	  const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+	  const CRConnectivity& cellCells = mesh.getCellCells();
+	  const int nFaces = faces.getCount();
+	  
+	  for(int f=0; f<nFaces; f++){
+
+	    //--------------------------------------------------------------------------------------------
+	    // 1D int array to store the cell index along each straight line from substrate to membrane
+	    int indices[nLevel+1];    
+
+	    int c0 = faceCells(f,0);
+	    int c1 = faceCells(f,1);
+
+	    indices[0] = c1;
+	    	     
+	    int low = c1;
+	    int me = c0;	      
+	    int high = c0;
+	       
+	    for(int l=0; l < nLevel; l++){
+	      if (me > nCells) 
+		throw CException("index out of boundary in elec_model injection calculation");
+	      indices[l+1] = me;
+	      const int nbc = cellCells.getCount(me);
+	      T_Scalar drmin = 0.0;
+	      int neighborUp = 0;
+	      for(int nc = 0; nc < nbc; nc++){
+		const int neighbor = cellCells(me, nc);
+		const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
+		if (dr > drmin){
+		  drmin = dr;
+		  neighborUp = neighbor;
+		}
+	      }	      
+	      high = neighborUp;
+	      low = me;
+	      me = high;	 
+	    }
+	    //--------------------------------------------------------------------------------------------
+	    //calculate transmission coefficient along the line
+	    transmission[indices[0]]=1.0;
+	    for(int l=0; l < nLevel; l++){
+	      int low = indices[l];
+	      int me = indices[l+1];
+	      
+	      T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
+	      T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
+	      T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
+	      T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+	      T_Scalar avg = (valueMe + valueLow) / 2.0;
+	      T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
+#if DEBUG
+	      (*mark)[me] = 1;
+#endif		
+	      transmission[me] = transmission[low] * exp(exponent);
+	    }
+	    //--------------------------------------------------------------------------------------------
+	    for(int l=0; l < nLevel; l++){
+	      int low = indices[l];
+	      int me = indices[l+1];
+	      //injection occurs where the sign of (en-conductionband) switches. 
+	      if ((en-conduction_band[me]) > 0) {
+		
+		const T_Scalar dX = energystep / electric_field[me][normal];
+	      
+		fluxCoeff = alpha * transmission[me] * supplyfunction * fermifunction * energystep * QE * cellVolume[me] / fabs(dX) ;
+	  
+		rCell[me][1] += fluxCoeff; 
+		//cout << "transmission " << me << " " << transmission[me] << endl;
+		
+		break;
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    
+#endif
+
 
   }
+ 
 	
 
 
@@ -245,7 +329,7 @@ class InjectionDiscretization : public Discretization
   const Field& _varField;
   const Field& _electricField;
   const ElectricModelConstants<T_Scalar>& _constants;
-  
+  const ElectricModelOptions<T_Scalar>& _options;
 
 };
 

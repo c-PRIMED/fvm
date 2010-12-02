@@ -55,7 +55,8 @@ class TunnelingDiscretization : public Discretization
 			  const Field& varField,
 			  const Field& totaltrapsField,
 			  const Field& conductionbandField,
-			  const ElectricModelConstants<T_Scalar>& constants
+			  const ElectricModelConstants<T_Scalar>& constants,
+			  const ElectricModelOptions<T_Scalar>& options
 			 
 			  ) :
     Discretization(meshes),
@@ -63,7 +64,8 @@ class TunnelingDiscretization : public Discretization
     _varField(varField),
     _totaltrapsField(totaltrapsField),
     _conductionbandField(conductionbandField),
-    _constants(constants)
+    _constants(constants),
+    _options(options)
       {}
 
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -93,7 +95,6 @@ class TunnelingDiscretization : public Discretization
     
     const XArray& xCell = dynamic_cast<const XArray&>(_varField[cells]);
     
-    //TArray& transmission = dynamic_cast<TArray&> (_transmission[cells]);
     TArray* ts = new TArray(cells.getCount());
     *ts = 0;
     TArray& transmission = *ts;    
@@ -108,8 +109,10 @@ class TunnelingDiscretization : public Discretization
     const T_Scalar electron_capture_cross = _constants["electron_capture_cross"];
     const T_Scalar electron_trapdepth = _constants["electron_trapdepth"];
     const T_Scalar voltage = _constants["voltage"];
-    const T_Scalar fermilevelsubstrate = -_constants["substrate_workfunction"];
-    const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - voltage;
+    const T_Scalar substrate_voltage = _constants["substrate_voltage"];
+    const T_Scalar membrane_voltage = _constants["membrane_voltage"];
+    const T_Scalar fermilevelsubstrate = -_constants["substrate_workfunction"] - _constants["substrate_voltage"];
+    const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - _constants["membrane_voltage"];
     const T_Scalar& dielectric_ionization = _constants["dielectric_ionization"];
 
     const int subID = _constants["substrate_id"];
@@ -118,8 +121,9 @@ class TunnelingDiscretization : public Discretization
     const int normal = _constants["normal_direction"];
 
     T_Scalar fluxCoeff(0), fermilevel(0), scatterfactor(0);
-    
-    for(int c=0; c<nCells; c++){
+    T_Scalar sourceTunneling(0);
+
+    for(int c=0; c < cells.getCount(); c++){
       transmission[c] = 0.0;
     }
   
@@ -127,10 +131,8 @@ class TunnelingDiscretization : public Discretization
     // tunneling from substrate to dielectric 
     //=======================================//
 
+    //const T_Scalar energystep = 0.1 * fabs(substrate_voltage - membrane_voltage) / nLevel;
     const T_Scalar energystep = 0.01;
-
-    const T_Scalar epsilon = 1e-18;
-    
     const T_Scalar alpha = 4.0 * PI * (electron_effmass*ME) / pow(H_SI, 3.0);
     
     fermilevel = fermilevelsubstrate;   
@@ -148,8 +150,6 @@ class TunnelingDiscretization : public Discretization
 
       //========= transmission coefficient calculation ==========//
       // this scheme only works for Cartesian mesh 
-      //the transmission can be calculated only at place very close to the boundary
-      //since only there the transmission is nonzero
 
       foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	{
@@ -173,35 +173,41 @@ class TunnelingDiscretization : public Discretization
 	      int me = c0;	      
 	      int high = c0;	 	     
 	     
-	      for(int l=0; l< int(nLevel); l++){
+	      for(int l=0; l< nLevel; l++){
 		
 		T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
 		T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
 		T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
 		T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
-		T_Scalar avg = (valueMe + valueLow) / 2.0;
+		//T_Scalar avg = (valueMe + valueLow) / 2.0;
+		T_Scalar avg = valueMe;
 		T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
+		
 #if DEBUG
 		(*mark)[me] = 1;
 #endif		
 		transmission[me] = transmission[low] * exp(exponent);
-			
+	
 		const int nbc = cellCells.getCount(me);
 
-		for(int nc = 0; nc < nbc; nc++){
+		T_Scalar drmin = 0.0;
+		int neighborUp = 0;
 
+		for(int nc = 0; nc < nbc; nc++){
 		  const int neighbor = cellCells(me, nc);
-		  
 		  const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
-		 
-		  if ((fabs(dr) > epsilon) && (dr < 0.0) && (neighbor < nCells)) {
-		      high = neighbor;
-		      low = me;
-		      me = high;
+		  if (dr < drmin){
+		    drmin = dr;
+		    neighborUp = neighbor;
 		  }
+		}
+
+		if (neighborUp < nCells) {
+		  high = neighborUp;
+		  low = me;
+		  me = high;
 		}	
 	      }
-
 	    }
 	  }
 	}
@@ -216,25 +222,24 @@ class TunnelingDiscretization : public Discretization
 	const T_Scalar endiff = en - (conduction_band[c]-electron_trapdepth);
 	
 	// tunneling from substrate to traps 
-
-	if (en-conduction_band[c] < 0){
-
+	
+	if (en-conduction_band[c] < 0){    //this condition determines tunneling only happens close to contact
+	    
 	  if (endiff < 0)
 	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
 	  else scatterfactor = 1.0;
-
+	 
 	  fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * 
 	    fermifunction * scatterfactor * energystep * QE;
 	  
 	  rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xCell[c][0])); 
 	  diag[c](0,0) -= fluxCoeff;
 	  
+	  sourceTunneling +=  (fluxCoeff * (electron_totaltraps[c] - xCell[c][0])); 
 	}
-
 	// tunneling from traps to substrate 
-#if 1	
-	if(en - conduction_band[c] < 0){
 
+	if(en - conduction_band[c] < 0){
 	  if (endiff > 0)
 	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
 	  else scatterfactor = 1.0;
@@ -243,14 +248,17 @@ class TunnelingDiscretization : public Discretization
 	    (1-fermifunction) * scatterfactor * energystep * QE;
 	  
 	  rCell[c][0] += (fluxCoeff * (- xCell[c][0])); 
-	  diag[c](0,0) -= fluxCoeff;
+	  diag[c](0,0) -= fluxCoeff;	 
+	  sourceTunneling += (fluxCoeff * (- xCell[c][0]));
 	}
-	
-#endif
       }
 
     }
-
+    const T_Scalar timeStep = _options["timeStep"];
+    sourceTunneling *= timeStep;
+    FILE* fp = fopen("./sourcetunneling.dat", "a");
+    fprintf(fp, "%e\n", sourceTunneling);
+    fclose(fp);
 #if DEBUG
     for (int n=0; n<nCells; n++){
       if((*mark)[n] == 0){
@@ -265,7 +273,10 @@ class TunnelingDiscretization : public Discretization
     //=======================================//
     // tunneling from membrane to dielectric 
     //=======================================//
-   
+    for(int c=0; c < cells.getCount(); c++){
+      transmission[c] = 0.0;
+    }
+
     fermilevel = fermilevelmembrane;
     
     for (T_Scalar en = fermilevel-4.0; en <= fermilevel+4.0; en += energystep){
@@ -277,11 +288,11 @@ class TunnelingDiscretization : public Discretization
       foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	{
 	  const FaceGroup& fg = *fgPtr;
-	  const StorageSite& faces = fg.site;
-	 
+	  	 
 	  if (fg.id == memID){
-	    
+	    const StorageSite& faces = fg.site;
 	    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+	    const CRConnectivity& cellCells = mesh.getCellCells();
 	    const int nFaces = faces.getCount();
 	    
 	    for(int f=0; f<nFaces; f++){
@@ -295,18 +306,34 @@ class TunnelingDiscretization : public Discretization
 	      int me = c0;	      
 	      int high = c0;	      
 	      	     
-	      for(int l=0; l<nLevel; l++){		
+	      for(int l=0; l<nLevel; l++){
 		
 		T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
 		T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
 		T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
 		T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
 		T_Scalar avg = (valueMe + valueLow) / 2.0;
-		T_Scalar exponent = -factor * sqrt(avg) * fabs(dX);
+		T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
 		transmission[me] = transmission[low] * exp(exponent);
-		high = high + 4;
-		low = me;
-		me = high;
+	
+		const int nbc = cellCells.getCount(me);
+
+		T_Scalar drmin = 0.0;
+		int neighborUp = 0;
+
+		for(int nc = 0; nc < nbc; nc++){
+		  const int neighbor = cellCells(me, nc);
+		  const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
+		  if (dr > drmin){
+		    drmin = dr;
+		    neighborUp = neighbor;
+		  }
+		}
+		if (neighborUp < nCells) {
+		  high = neighborUp;
+		  low = me;
+		  me = high;
+		}	
 	      }
 	    }
 	  }
@@ -330,7 +357,7 @@ class TunnelingDiscretization : public Discretization
 	    fermifunction * scatterfactor * energystep * QE;
 	  
 	  rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xCell[c][0])); 
-	  diag[c][0] -= fluxCoeff;
+	  diag[c](0,0) -= fluxCoeff;
 	 }
 	  
 	// tunneling from traps to membrane
@@ -343,12 +370,12 @@ class TunnelingDiscretization : public Discretization
 	    (1-fermifunction) * scatterfactor * energystep * QE;
 	  
 	  rCell[c][0] += (fluxCoeff * (-xCell[c][0])); 
-	  diag[c][0] -= fluxCoeff;
+	  diag[c](0,0) -= fluxCoeff;
 	}
       }
     }
-#endif
 
+#endif
  
   }
  
@@ -358,7 +385,7 @@ class TunnelingDiscretization : public Discretization
   const Field& _totaltrapsField;
   const Field& _conductionbandField;
   const ElectricModelConstants<T_Scalar>& _constants;
-  
+  const ElectricModelOptions<T_Scalar>& _options;
 };
 
 

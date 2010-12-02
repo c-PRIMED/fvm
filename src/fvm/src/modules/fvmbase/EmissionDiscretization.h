@@ -98,8 +98,8 @@ class EmissionDiscretization : public Discretization
 	throw CException("exponential error in Emission model");
 
       T_Scalar fluxCoeff = cellVolume[c] * poole_frenkel_emission_frequency * exp(-expt);
-      
-      rCell[c][0] += -(fluxCoeff * xCell[c][0]);
+
+      rCell[c][0] -= (fluxCoeff * xCell[c][0]);
 
       diag[c](0,0) -= fluxCoeff;
 

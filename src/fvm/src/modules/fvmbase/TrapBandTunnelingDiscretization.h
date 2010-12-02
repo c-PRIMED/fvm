@@ -68,7 +68,7 @@ class TrapBandTunnelingDiscretization : public Discretization
     
     const CRConnectivity& cellCells = mesh.getCellCells();
     
-    shared_ptr<TArray> ts(new TArray(cells.getCount()));
+    TArray* ts = (new TArray(cells.getCount()));
     *ts = 0;
     TArray& transmission = *ts;    
     
@@ -91,7 +91,7 @@ class TrapBandTunnelingDiscretization : public Discretization
 
     foundHigh = foundLow = false;
 
-    for(int c=0; c<nCells; c++){
+    for(int c=0; c<cells.getCount(); c++){
       transmission[c] = 0.0;
     }
     
@@ -105,30 +105,34 @@ class TrapBandTunnelingDiscretization : public Discretization
 
       high = low = me = c;
 
-      flag = false;
+      flag = false;        //hit the boundary or not?
 
       count = 0;
 
       while(flag == false && count < nMax ){
 
 	const int nbc = cellCells.getCount(me);
-
+	
+	T_Scalar drmin = 0.0;
+	
+	int neighborUp = 0;
+	
 	for(int nc = 0; nc < nbc; nc++){
 
-	  const int neighbor = cellCells(me, nc);
-	  
+	  const int neighbor = cellCells(me, nc);	  
 	  const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
-		 
-	  if ((fabs(dr) > epsilon) && (dr < 0.0) ){
-	    if (neighbor < nCells) {
-	      high = neighbor;
-	      low = me;
-	      me = high;
-	    }
-	    else flag = true;
-	  }	  
+	  if (dr < drmin){
+	    drmin = dr;
+	    neighborUp = neighbor;
+	  }
 	}
-
+	if (neighborUp < nCells) {
+	  high = neighborUp;
+	  low = me;
+	  me = high;
+	}	
+	else flag = true;
+	 
 	T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
 	T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
 	T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
@@ -137,20 +141,17 @@ class TrapBandTunnelingDiscretization : public Discretization
 	T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
 
 	transmission[me] = transmission[low] * exp(exponent);
-	
+
 	if (en - conduction_band[me] >0 ){
 
 	  foundHigh = true;
 	  idHigh = me;
 	  transmissionHigh = transmission[me];
-	  //cout << "found high " << c <<"  " << me << "  " << transmissionHigh << endl;
+	  //  cout << "found high " << c <<"  " << me << "  " << transmissionHigh << endl;
 	  break;
 
 	}
-
 	count ++;
-
-	//	cout << c << " high " << high << endl; 
       }	
 
 #if 0 
@@ -166,22 +167,25 @@ class TrapBandTunnelingDiscretization : public Discretization
 	
 	const int nbc = cellCells.getCount(me);
 
+	T_Scalar drmin = 0.0;
+	
+	int neighborUp = 0;
+	
 	for(int nc = 0; nc < nbc; nc++){
-
-	  const int neighbor = cellCells(me, nc);
-	  
+	  const int neighbor = cellCells(me, nc);	  
 	  const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
-		 
-	  if ((fabs(dr) > epsilon) && (dr > 0.0) ){
-	    
-	    if (neighbor < nCells) {	    
-	      high = neighbor;
-	      low = me;
-	      me = high;
-	    }
-	    else flag = true;	   
+	  if (dr > drmin){
+	    drmin = dr;
+	    neighborUp = neighbor;
 	  }
 	}
+
+	if (neighborUp < nCells) {
+	  high = neighborUp;
+	  low = me;
+	  me = high;
+	}	
+	else flag = true;
 
 	T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
 	T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
@@ -197,7 +201,7 @@ class TrapBandTunnelingDiscretization : public Discretization
 	  foundLow = true;
 	  idLow = me;
 	  transmissionLow = transmission[me];
-	  //cout << "found high " << c <<"  " << me << endl;
+	  //cout << "found low " << c <<"  " << me << endl;
 	  break;
 	}
 	//	cout << c << " low " << low << endl; 
@@ -211,24 +215,17 @@ class TrapBandTunnelingDiscretization : public Discretization
 	    
       const T_Scalar alpha = cellVolume[c] * QE * ef * ef * electron_capture_cross /    
 	(16 * PI*PI * HBAR_SI * electron_effmass * electron_trapdepth);
-
-      if( foundHigh == true || foundLow == true){
-	      
-	rCell[c][0] -= alpha * (transmissionLow + transmissionHigh) * xCell[c][0];
-	diag[c](0,0) -= alpha  * (transmissionLow + transmissionHigh);
       
-      }
-	    
       if (foundLow == true){	
-	
+	rCell[c][0] -= alpha * transmissionLow  * xCell[c][0];
+	diag[c](0,0) -= alpha  * transmissionLow;
 	rCell[idLow][1] += alpha * transmissionLow * xCell[c][0];
-	
       }
 
       if (foundHigh == true){
-
+	rCell[c][0] -= alpha * transmissionHigh * xCell[c][0];
+	diag[c](0,0) -= alpha  *  transmissionHigh;
 	rCell[idHigh][1] += alpha * transmissionHigh * xCell[c][0];
-
       }
     }
   }	    

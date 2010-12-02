@@ -93,10 +93,9 @@ class CaptureDiscretization : public Discretization
     for(int c=0; c<nCells; c++){
       
       T_Scalar fluxCoeff = cellVolume[c] * velocity * free_electron_capture_cross[c];
-     
-
-      rCell[c][0] += fluxCoeff * xCell[c][1] * (electron_totaltraps[c] - xCell[c][0]); 
-
+            
+      rCell[c][0] += fluxCoeff * xCell[c][1] * (electron_totaltraps[c] - xCell[c][0]);
+      
       diag[c](0,0) -= fluxCoeff * xCell[c][1];  
 
       diag[c](0,1) += fluxCoeff * (electron_totaltraps[c]-xCell[c][0]);
