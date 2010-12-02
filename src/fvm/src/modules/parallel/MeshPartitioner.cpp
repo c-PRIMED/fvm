@@ -2568,9 +2568,8 @@ MeshPartitioner::gatherCellsLevel1_partID_map()
             }
 
             for ( int i = ibeg; i < iend; i++ ){
-                const int globalID     = localToGlobal[i];
                 //delete zero level gather cells
-                _gatherCellsLevel1PartIDMap.erase( globalID );
+                _gatherCellsLevel1PartIDMap.erase( localToGlobal[ faceCells(i,1) ] );
                 //delete scatter cells
                 _gatherCellsLevel1PartIDMap.erase( localToGlobal[ faceCells(i,0) ] );
             }
@@ -2581,7 +2580,6 @@ MeshPartitioner::gatherCellsLevel1_partID_map()
 
    if( _debugMode )
       DEBUG_gatherCellsLevel1_partID_map();
-
 
 }
 
