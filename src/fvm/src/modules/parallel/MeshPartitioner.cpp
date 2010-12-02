@@ -2567,6 +2567,11 @@ MeshPartitioner::gatherCellsLevel1_partID_map()
                 }
             }
 
+        }
+
+        for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
+            const int ibeg = faceGroupList[i]->site.getOffset();
+            const int iend = ibeg + faceGroupList[i]->site.getCount();
             for ( int i = ibeg; i < iend; i++ ){
                 //delete zero level gather cells
                 _gatherCellsLevel1PartIDMap.erase( localToGlobal[ faceCells(i,1) ] );
@@ -2575,6 +2580,7 @@ MeshPartitioner::gatherCellsLevel1_partID_map()
             }
 
         }
+
     } 
 
 
