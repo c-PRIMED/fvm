@@ -50,6 +50,10 @@ struct ElectricModelConstants : public FloatVarDict<T>
 
     this->defineVar("substrate_workfunction", T (5.0));             //in EV
 
+    this->defineVar("membrane_voltage", T (0.0));
+
+    this->defineVar("substrate_voltage", T(0.0));
+
     this->defineVar("OP_temperature", T(300.0));                   //in K
     this->defineVar("electron_effmass", T(0.5));
     this->defineVar("poole_frenkel_emission_frequency", T(1.0e+12));  //in s^-1

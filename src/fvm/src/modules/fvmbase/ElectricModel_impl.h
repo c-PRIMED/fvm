@@ -413,15 +413,16 @@ public:
             chargeN2 = chargeN1;
         }
         chargeN1 = charge;
-      	
+
 	//update source term in electrostatics
+      	const TArray& electron_totaltraps = dynamic_cast<TArray& > (_electricFields.electron_totaltraps[cells]);
 	TArray& totalcharge = dynamic_cast<TArray&>(_electricFields.total_charge[cells]);
 	TArray& initcharge = dynamic_cast<TArray&>(_electricFields.init_charge[cells]);
 	for (int c=0; c<nCells; c++){
-	  totalcharge[c] = - (charge[c][0] + charge[c][1] - initcharge[c]) * QE;
-	  if (totalcharge[c] > 0)
-	    throw CException("got negative total number of charges; please check total_charge and init_charge");
-	  //totalcharge[c] = 0.0;
+	  if (charge[c][0] >  electron_totaltraps[c] ){
+	    throw CException ("total charges go beyond limits!");
+	  }
+	  totalcharge[c] =  -(charge[c][0] + charge[c][1])*QE;
 	}
     }
   }
@@ -702,7 +703,8 @@ public:
 	     _electricFields.charge,
 	     _electricFields.electric_field,
 	     _electricFields.conduction_band,
-	     _constants
+	     _constants, 
+	     _options
 	     ));
       discretizations.push_back(inj);
     }
@@ -715,7 +717,8 @@ public:
 	     _electricFields.charge,
 	     _electricFields.electron_totaltraps,
 	     _electricFields.conduction_band,
-	     _constants
+	     _constants, 
+	     _options
 	     ));
       discretizations.push_back(tnd);      
     }
@@ -952,8 +955,9 @@ public:
 	else {
 	  electron_velocity[c] = -  electron_saturation_velocity * (electric_field[c] / mag(electric_field[c]));
 	}
-      }
+      }     
     }
+   
   }
 
   void updateConvectionFlux()
@@ -973,7 +977,7 @@ public:
       for ( int f=0; f<nFaces; f++){
 	const int c0 = faceCells(f, 0);
 	const int c1 = faceCells(f, 1);
-	convFlux[f] = 0.5 * (dot(vel[c0], faceArea[f]) + dot(vel[c1], faceArea[f]));
+	convFlux[f] = 0.5 * (dot(vel[c0], faceArea[f]) + dot(vel[c1], faceArea[f]));	
       }
       
       foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
@@ -992,10 +996,11 @@ public:
 	  else{
 	    for(int f=0; f<nFaces; f++){
 	      const int c0 = faceCells(f,0);
-	      convFlux[f] = dot(vel[c0], faceArea[f]);
+	      convFlux[f] = dot(vel[c0], faceArea[f]);	     
 	    }
+	    
 	  }
-	}
+	}      
     }
   }
       
@@ -1090,14 +1095,12 @@ public:
 	  T fermilevel = -substrate_workfunction+effefield*cellCentroid[c][2];  
 	  T energy(0.);
 
-	  //fermi function is extremely sentitive to energy and fermilevel ???//
-
 	  energy = -dielectric_ionization - electron_trapdepth;
 	  
 	  charge[c][0] = electron_totaltraps[c] * FermiFunction(energy, fermilevel, temperature);
 	  chargeN1[c][0] = charge[c][0];
 
-	  //here it should be N2 but got a compile error
+	  
 	  if (_options.timeDiscretizationOrder > 1)
 	    (*chargeN2)[c][0] = charge[c][0];
 
@@ -1105,8 +1108,8 @@ public:
 	  
 	  charge[c][1] = electron_totaltraps[c] * FermiFunction(energy, fermilevel, temperature);
 	  chargeN1[c][1] = charge[c][1];
-	 
-	  cout << "init charge " << charge[100][0] << " " << charge[100][1] << endl;
+	  if (c == 100)
+	    cout << "init charge " << charge[100][0] << " " << charge[100][1] << endl;
 
 	  initcharge[c] = charge[c][0] + charge[c][1];
 
