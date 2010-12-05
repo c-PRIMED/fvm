@@ -58,6 +58,7 @@ struct StructureModelOptions : public FloatVarDict<T>
     this->deformationTolerance=1e-4;
     this->printNormalizedResiduals = true;
     this->transient = false;
+    this->timeDiscretizationOrder=1;
     this->deformationLinearSolver = 0;
     this->coupledLinearSolver = 0;
 
@@ -67,6 +68,7 @@ struct StructureModelOptions : public FloatVarDict<T>
   bool printNormalizedResiduals;
   double deformationTolerance;
   bool transient;
+  int timeDiscretizationOrder;
   LinearSolver *deformationLinearSolver;
   LinearSolver *coupledLinearSolver;
 

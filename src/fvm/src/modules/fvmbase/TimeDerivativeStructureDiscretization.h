@@ -29,6 +29,7 @@ public:
 					Field& varField,
 					Field& varN1Field,
 					Field& varN2Field,
+					Field& varN3Field,
 					const Field& densityField,
 					const Field& volume0Field,
 					const T_Scalar dT) :
@@ -37,6 +38,7 @@ public:
     _varField(varField),
     _varN1Field(varN1Field),
     _varN2Field(varN2Field),
+    _varN3Field(varN3Field),
     _densityField(densityField),
     _volume0Field(volume0Field),
     _dT(dT)
@@ -76,14 +78,30 @@ public:
     const XArray& xN2 = dynamic_cast<const XArray&>(_varN2Field[cells]);
 
     T_Scalar two(2.0);
-    const T_Scalar _dT2 = _dT*_dT;    
-    
-    for(int c=0; c<nCells; c++)
+    const T_Scalar _dT2 = _dT*_dT;
+
+    if (_varN3Field.hasArray(cells))
     {
-        const T_Scalar rhoVbydT2 = density[c]*cellVolume0[c]/_dT2;
-	rCell[c] -= rhoVbydT2*(x[c]- two*xN1[c]
-			       + xN2[c]);
-	diag[c] -= rhoVbydT2;
+        const XArray& xN3 = dynamic_cast<const XArray&>(_varN3Field[cells]);
+	T_Scalar five(5.0);
+	T_Scalar four(4.0);
+	for(int c=0; c<nCells; c++)
+	{
+	    const T_Scalar rhoVbydT2 = density[c]*cellVolume0[c]/_dT2;
+	    rCell[c] -= rhoVbydT2*(two*x[c] - five*xN1[c] + four*xN2[c]
+				   - xN3[c]);
+	    diag[c] -= two*rhoVbydT2;
+	}
+    }
+    else
+    {
+        for(int c=0; c<nCells; c++)
+	{
+	    const T_Scalar rhoVbydT2 = density[c]*cellVolume0[c]/_dT2;
+	    rCell[c] -= rhoVbydT2*(x[c]- two*xN1[c]
+				   + xN2[c]);
+	    diag[c] -= rhoVbydT2;
+	}
     }
     
   }
@@ -92,6 +110,7 @@ private:
   const Field& _varField;
   const Field& _varN1Field;
   const Field& _varN2Field;
+  const Field& _varN3Field;
   const Field& _densityField;
   const Field& _volume0Field;
   const T_Scalar _dT;

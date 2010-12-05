@@ -317,6 +317,9 @@ public:
                                             dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
             _structureFields.deformationN2.addArray(cells,
 					    dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));            
+            if (_options.timeDiscretizationOrder > 1)
+	      _structureFields.deformationN3.addArray(cells,
+						      dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
         }
         
 
@@ -383,6 +386,12 @@ public:
           dynamic_cast<VectorT3Array&>(_structureFields.deformationN1[cells]);
         VectorT3Array& wN2 =
           dynamic_cast<VectorT3Array&>(_structureFields.deformationN2[cells]);
+        if (_options.timeDiscretizationOrder > 1)
+	{
+            VectorT3Array& wN3 =
+              dynamic_cast<VectorT3Array&>(_structureFields.deformationN3[cells]);
+            wN3 = wN2;
+	}
 	wN2 = wN1;
 	wN1 = w;
     }
@@ -441,6 +450,7 @@ public:
               _structureFields.deformation,
               _structureFields.deformationN1,
               _structureFields.deformationN2,
+              _structureFields.deformationN3,
               _structureFields.density,
 	      _structureFields.volume0,
               _options["timeStep"]));

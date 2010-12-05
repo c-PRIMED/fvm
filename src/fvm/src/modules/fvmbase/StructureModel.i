@@ -28,6 +28,7 @@ struct StructureModelOptions : public FloatVarDict<T>
   bool transient;
   bool incompressible;
   double deformationTolerance;
+  int timeDiscretizationOrder;
   LinearSolver *deformationLinearSolver;
   LinearSolver *coupledLinearSolver;
 }; 
