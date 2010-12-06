@@ -7,10 +7,12 @@ class Swig(BuildPkg):
             ver = subprocess.Popen('swig -version', \
                                    shell=True, \
                                    stdout=subprocess.PIPE).stdout.read()
-            a, b = re.findall(r'SWIG Version ([^.]*).([^.\n]*)', ver)[0]
-            if int(a) == 2:
+            ver  = re.findall(r'SWIG Version ([\d]*)\.*([\d]*)\.*([\d]*)', ver)[0]
+            if ver[2] == '': ver[2] = 0
+            a,b,c = map(int, ver)
+            if a == 2:
                 return True
-            if int(a) == 1 and int(b) >= 3:
+            if a == 1 and b == 3 and c >= 30:
                 return True
         except:
             pass
