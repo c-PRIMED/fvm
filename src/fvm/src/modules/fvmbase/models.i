@@ -31,7 +31,7 @@ using namespace std;
 %include "FlowModel.i"
 
 %include "IdealGasDensityModel.i"
-
+%include "RosselandModel.i"
 %include "StructureModel.i"
 
  //%include "CartesianElasticity.i"
@@ -39,7 +39,7 @@ using namespace std;
 %include "MovingMeshModel.i"
 
 
- //%include "OneDConduction.i"
+%include "OneDConduction.i"
 
  //%include "ShockTube.i"
 

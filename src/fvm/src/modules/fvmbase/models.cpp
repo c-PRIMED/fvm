@@ -24,6 +24,12 @@ template class FlowModel<ATYPE>;
 
 template class IdealGasDensityModel<ATYPE>;
 
+#include "RosselandModel.h"
+#include "RosselandModel_impl.h"
+
+template class RosselandModel<ATYPE>;
+
+
 #include "MovingMeshModel.h"
 
 template class MovingMeshModel<ATYPE>;
@@ -36,4 +42,7 @@ template class StructureModel<ATYPE>;
 
 #include "StructureDeformationModel.h"
 template class StructureDeformationModel<ATYPE>;
+
+#include "OneDConduction.h"
+template class OneDConduction<ATYPE>;
 
