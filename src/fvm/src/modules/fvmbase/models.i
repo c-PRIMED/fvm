@@ -17,8 +17,6 @@ using namespace std;
 %include "GeomFields.h"
 %include "FlowFields.h"
 %include "ThermalFields.h"
-%include "ElectricFields.h"
-%include "StructureFields.h"
 %include "atype.i"
 %include "Model.i"
 
@@ -26,24 +24,27 @@ using namespace std;
 
 %include "ThermalModel.i"
 
+#ifndef USING_ATYPE_PC
+
+%include "ElectricFields.h"
+%include "StructureFields.h"
 %include "ElectricModel.i"
+%include "MovingMeshModel.i"
+%include "StructureDeformationModel.i"
+%include "StructureModel.i"
+#endif
 
 %include "FlowModel.i"
 
 %include "IdealGasDensityModel.i"
 %include "RosselandModel.i"
-%include "StructureModel.i"
-
- //%include "CartesianElasticity.i"
-
-%include "MovingMeshModel.i"
 
 
-%include "OneDConduction.i"
+
+ //%include "OneDConduction.i"
 
  //%include "ShockTube.i"
 
-%include "StructureDeformationModel.i"
 
 
 #ifdef USING_ATYPE_TANGENT
@@ -53,13 +54,16 @@ typedef Vector<Tangent,3> VecTangent3;
 
 #endif
 
-
-
-%inline{
 #ifdef USING_ATYPE_PC
 
 typedef Vector< ATYPE, 3 > VecPC3;
 %template(VecPC3) Vector< ATYPE, 3 >;
+#endif
+
+%inline{
+
+#ifdef USING_ATYPE_PC
+
     boost::shared_ptr<ArrayBase> getStdDev(boost::shared_ptr<ArrayBase> abase)
     {
       Array< ATYPE >& a = dynamic_cast<Array< ATYPE >& >(*abase);
@@ -91,6 +95,6 @@ typedef Vector< ATYPE, 3 > VecPC3;
     {
       return shared_ptr<ArrayBase>(new Array< Vector<ATYPE,3> >(size));
     }
-
 }
+
 
