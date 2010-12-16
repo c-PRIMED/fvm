@@ -28,6 +28,9 @@ public:
 
 %template(FluentDataExporterA) FluentDataExporter< ATYPE_STR >;
 
-%include "NcDataWriter.i"
-%include "VTKWriter.i"
+#ifndef  USING_ATYPE_PC
 
+%include "VTKWriter.i"
+%include "NcDataWriter.i"
+
+#endif
