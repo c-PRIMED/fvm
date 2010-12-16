@@ -366,5 +366,18 @@ double stdDev(const PC<ORDER,DIM>& a)
 template<int ORDER, int DIM>
 PCSet* PC<ORDER,DIM>::_pcSet = createPCSet(ORDER,DIM);
 
+template<>
+template<int ORDER, int DIM>
+struct ArrayScalarTraits<PC< ORDER, DIM > >
+{
+  static void limit(PC<ORDER,DIM>& val, const double min, const double max)
+  {
+    if (val._data[0] < min)
+      val._data[0] = min;
+    else if (val._data[0] > max)
+      val._data[0] = max;
+  }
+};
+
 #endif
 
