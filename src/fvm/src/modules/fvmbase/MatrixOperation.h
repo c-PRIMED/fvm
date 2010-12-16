@@ -76,10 +76,10 @@ T determinant(SquareMatrix<T,3>& a){
 template<class T,int N>
 T determinant(SquareMatrix<T,N>& a, int size){
 
-    T d = 0.0;
-    T s = 1.0;
+  T d(0.0);
+  T s(1.0);
     int m, n;
-    SquareMatrix<T,N> b(0);
+    SquareMatrix<T,N> b(NumTypeTraits<T>::getZero());
     
     if (size == 1){
       d = a(0,0);
@@ -148,10 +148,10 @@ SquareMatrix<T,N>  inverse(SquareMatrix<T,N>& b, int size)
 {
    const T d = determinant(b, size);
       
-   SquareMatrix<T,N> a(0);
-   SquareMatrix<T,N> tmp(0);
-   SquareMatrix<T,N> fac(0);
-   SquareMatrix<T,N> trans(0);
+   SquareMatrix<T,N> a(NumTypeTraits<T>::getZero());
+   SquareMatrix<T,N> tmp(NumTypeTraits<T>::getZero());
+   SquareMatrix<T,N> fac(NumTypeTraits<T>::getZero());
+   SquareMatrix<T,N> trans(NumTypeTraits<T>::getZero());
    
    int p, q, m, n, i, j;
    
@@ -199,8 +199,8 @@ SquareMatrix<T,N> inverseGauss (SquareMatrix<T,N>&  a, int size)
   int i, j, k, itmp;
   T c1, pi, pi1, pj;
   T c[10];
-  SquareMatrix<T,N> b(0);
-  SquareMatrix<T,N> x(0);
+  SquareMatrix<T,N> b(NumTypeTraits<T>::getZero());
+  SquareMatrix<T,N> x(NumTypeTraits<T>::getZero());
   b = 1.0;
 
   /* Initialize the index */

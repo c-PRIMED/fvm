@@ -500,10 +500,10 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       int nnb(0);
       T scale(1.0e6);
                  
-      SquareMatrix<T,4>  Q(0);
-      SquareMatrix<T,4>  Qinv(0);
-      SquareMatrix<T,3>  QQ(0);
-      SquareMatrix<T,3>  QQinv(0);   
+      SquareMatrix<T,4>  Q(NumTypeTraits<T>::getZero());
+      SquareMatrix<T,4>  Qinv(NumTypeTraits<T>::getZero());
+      SquareMatrix<T,3>  QQ(NumTypeTraits<T>::getZero());
+      SquareMatrix<T,3>  QQinv(NumTypeTraits<T>::getZero());
         
       for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++){	
 	const int c = ibFCCol[nc];
@@ -653,13 +653,11 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
 	  {
-	    const int c = ibFCCol[nc];
 	    cellToIBCoeff[nc] /= wtSum;	    
 	  }
 
 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
 	  {
-	    const int p = ibFPCol[np];
 	    particlesToIBCoeff[np] /= wtSum;	    
 	  }
 
@@ -699,7 +697,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 
       if (is2D){
 	const int size = 6;
-	SquareMatrix<T,size>  Q(0);
+	SquareMatrix<T,size>  Q(SquareMatrix<T,size>::zero());
 	SquareMatrix<T,size>  Qinv(0);
 	//cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++) {
@@ -1059,10 +1057,10 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       T det(0);
       T scale(1e6);
      
-      SquareMatrix<T,4>  Q(0);
-      SquareMatrix<T,4>  Qinv(0);
-      SquareMatrix<T,3>  QQ(0);
-      SquareMatrix<T,3>  QQinv(0);   
+      SquareMatrix<T,4>  Q(NumTypeTraits<T>::getZero());
+      SquareMatrix<T,4>  Qinv(NumTypeTraits<T>::getZero());
+      SquareMatrix<T,3>  QQ(NumTypeTraits<T>::getZero());
+      SquareMatrix<T,3>  QQinv(NumTypeTraits<T>::getZero());
 
            
       for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
@@ -1188,8 +1186,8 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       
       if (mesh.getDimension()== 2)	{
 	const int size = 6;
-	SquareMatrix<T,size>  Q(0);
-	SquareMatrix<T,size>  Qinv(0);
+	SquareMatrix<T,size>  Q(NumTypeTraits<T>::getZero());
+	SquareMatrix<T,size>  Qinv(NumTypeTraits<T>::getZero());
 	
 	for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)  {
 	  const int c = sFCCol[nc];
@@ -1260,8 +1258,8 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       else if (mesh.getDimension()== 3)
       {
 	const int size = 10;
-	SquareMatrix<T,size>  Q(0);
-	SquareMatrix<T,size>  Qinv(0);
+	SquareMatrix<T,size>  Q(NumTypeTraits<T>::getZero());
+	SquareMatrix<T,size>  Qinv(NumTypeTraits<T>::getZero());
 	           
 	for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)	    {
 	  const int c = sFCCol[nc];
@@ -1532,22 +1530,8 @@ MeshMetricsCalculator<T>::computeGridInterpolationMatrices
   
   const CRConnectivity& faceToGrids = mesh.getConnectivity(faces, grids );
 
-  const VectorT3Array& xFaces =
-    dynamic_cast<const VectorT3Array&>(_coordField[faces]);
-
-  const VectorT3Array& xGrids =
-    dynamic_cast<const VectorT3Array&>(_coordField[grids]);
-
-  const Array<int>& FGRow = faceToGrids.getRow();
-  const Array<int>& FGCol = faceToGrids.getCol();
-  
-  //  const int nGrids = grids.getCount();
-
-  const int nFaces = faces.getCount();
   
   shared_ptr<IMatrix> gridToFaces (new IMatrix(faceToGrids));
- 
-  Array<T>& gridToFaceCoeff = gridToFaces->getCoeff(); 
 
 #if 0
   /* distance weighted */
@@ -1685,20 +1669,8 @@ MeshMetricsCalculator<T>::computeIBandSolidInterpolationMatrices
   const CRConnectivity& cellToParticles
     = mesh.getConnectivity(cells,mpmParticles);
 
-  const VectorT3Array& xCells =
-    dynamic_cast<const VectorT3Array&>(_coordField[cells]);
-
-  const VectorT3Array& xParticles =
-    dynamic_cast<const VectorT3Array&>(_coordField[mpmParticles]);
-
-  const Array<int>& CPRow = cellToParticles.getRow();
-  const Array<int>& CPCol = cellToParticles.getCol();
-  
-  const int nCells = cells.getCount();
-
   shared_ptr<IMatrix> particlesToCell(new IMatrix(cellToParticles));
 
-  Array<T>& particlesToCellCoeff = particlesToCell->getCoeff();
   /*
   for (int c=0; c<nCells; c++){
     const int nP = CPRow[c+1] - CPRow[c];

@@ -49,10 +49,10 @@ public:
 
         const int nCells = cells.getCount();
         const float stefan = 0.0000000567;
-        const T index = 1; 
-        const T a =1;
-        const T sigmas = 0;
-        const T C = 1;
+        const T index(1.); 
+        const T a(1.);
+        const T sigmas(0.);
+        const T C(1.0);
         const T gamma = 1/(3*(a+sigmas) - C*sigmas);
         for(int c=0; c<nCells; c++)
         {
