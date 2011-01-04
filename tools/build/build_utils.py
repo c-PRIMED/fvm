@@ -411,12 +411,20 @@ def python_package(name, version):
     cmd = "python -c 'import %s; print %s.__version__'" % (name, name)
     try:
         ver = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        # parse version string and convert to numbers
         ver = re.findall(r'([\d]+)', ver)
+        for i,v in enumerate(ver):
+            try:
+                ver[i] = int(v)
+            except:
+                ver[i] = 0
+
         for v1,v2 in zip(version, ver):
             if v1 > v2:
                 return False
             if v2 > v1:
                 return True
+        return True
     except:
         pass
     return False
