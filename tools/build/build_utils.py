@@ -413,6 +413,9 @@ def python_package(name, version):
         ver = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
         # parse version string and convert to numbers
         ver = re.findall(r'([\d]+)', ver)
+        if not ver:
+            return False
+        
         for i,v in enumerate(ver):
             try:
                 ver[i] = int(v)
