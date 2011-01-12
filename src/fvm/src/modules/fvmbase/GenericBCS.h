@@ -217,29 +217,22 @@ public:
 
     // the current value of flux and its Jacobians
     const X fluxInterior = -_r[c1];
-    const OffDiag dFluxdXC0 = -_assembler.getCoeff10(f);
-    const OffDiag dFluxdXC1 = _assembler.getCoeff01(f);
 
     // flux based on current boundary value
-    const X fluxBoundary = hCoeff*(_x[c1]-Xinf)*_faceAreaMag[f];
-    const Diag dXC1dXC0 = -dFluxdXC0 / (hCoeff*_faceAreaMag[f] + dFluxdXC1);
+    const X fluxBoundary = -hCoeff*(_x[c1]-Xinf)*_faceAreaMag[f];
 
-    const X dFlux = -fluxInterior-fluxBoundary;
+    const X dFlux = fluxBoundary-fluxInterior;
 
-    // setup the equation for the boundary value
-    _assembler.getCoeff10(f) = dXC1dXC0;
-    _dRdXDiag[c1] = -1;
-    _r[c1] = dFlux/(hCoeff*_faceAreaMag[f] + dFluxdXC1);
+    _r[c1] = dFlux;
 
-    // eliminate boundary value from cell equation
-    _dRdXDiag[c0] += _assembler.getCoeff01(f)*dXC1dXC0;
-    _r[c0] += _r[c1]*_assembler.getCoeff01(f);
+    // add this to complete the Jacobian wrt boundar value
+    _dRdXDiag[c1] -= hCoeff*_faceAreaMag[f];
 
     // mark this row as a "boundary" row so that we will update it
     // after the overall system is solved
     _dRdX.setBoundary(c1);
 
-    _flux[f] = -fluxBoundary;
+    _flux[f] = fluxBoundary;
     _rFlux[f] = 0;
     _dFluxdX.setCoeffL(f,NumTypeTraits<X>::getZero());
     _dFluxdX.setCoeffR(f,-hCoeff*_faceAreaMag[f]);
@@ -449,37 +442,40 @@ public:
         const X fluxB = -this->_r[c1];
         const OffDiag dFluxdXC0 = -this->_assembler.getCoeff10(f);
         const Diag dFluxdXC1 = -this->_dRdXDiag[c1];
-
+        const OffDiag dRC0dXC1 = this->_assembler.getCoeff01(f);
+        
         const VectorT3 en = this->_faceArea[f]/this->_faceAreaMag[f];
         const T xC0_dotn = dot(this->_x[c0],en);
-        const X xB = this->_x[c0] - xC0_dotn * en;
+        const X xB = this->_x[c0] - 2*xC0_dotn * en;
 
         Diag dxBdxC0;
-        dxBdxC0[0] =  1.0 - en[0]*en[0];
-        dxBdxC0[1] =  1.0 - en[1]*en[1];
-        dxBdxC0[2] =  1.0 - en[2]*en[2];
+        dxBdxC0[0] =  1.0 - 2.0*en[0]*en[0];
+        dxBdxC0[1] =  1.0 - 2.0*en[1]*en[1];
+        dxBdxC0[2] =  1.0 - 2.0*en[2]*en[2];
         
         
-        const X xc1mxB = this->_x[c1]-xB;
+        const X dXC1 = xB-this->_x[c1];
+        const X dFlux = dFluxdXC1*dXC1;
         this->_x[c1] = xB;
         
         // eliminate boundary dependency from cell equation
-        this->_dRdXDiag[c0] += dFluxdXC1*dxBdxC0;
-        this->_r[c0] -= dFluxdXC1*xc1mxB;
+        this->_r[c0] += dRC0dXC1*dXC1;
+        
         this->_assembler.getCoeff01(f) = 0;
         
         // boundary value equation
-        this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
-        this->_assembler.getCoeff10(f) = dxBdxC0[0];
+        this->_dRdXDiag[c1] = this->_dRdXDiag[c0];
+        this->_assembler.getCoeff10(f) = 0;
         this->_r[c1] = T(0);//xc0mxB;
         this->_dRdX.setBoundary(c1);
         
         //setup the equation for the boundary flux correction
-        //this->_dFluxdX.setCoeffL(f,dFluxdXC0);
-        //this->_dFluxdX.setCoeffR(f,dFluxdXC1); 
-        this->_flux[f] = fluxB - dFluxdXC1*xc1mxB;
-        this->_rFlux[f] = T_Scalar(0);
+        this->_dFluxdX.setCoeffL(f,dFluxdXC0);
+        this->_dFluxdX.setCoeffR(f,NumTypeTraits<OffDiag>::getZero());
+        this->_flux[f] = fluxB;
+        this->_rFlux[f] = dFlux;
         this->_dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+
     }
   }
 };
@@ -535,36 +531,30 @@ public:
         const X fluxB = -this->_r[c1];
         const OffDiag dFluxdXC0 = -this->_assembler.getCoeff10(f);
         const Diag dFluxdXC1 = -this->_dRdXDiag[c1];
+        const OffDiag dRC0dXC1 = this->_assembler.getCoeff01(f);
 
         const VectorT3 en = this->_faceArea[f]/this->_faceAreaMag[f];
         const T xC0_dotn = dot(this->_x[c0],en);
-        const X xB = this->_x[c0] - xC0_dotn * en;
+        const X xB = this->_x[c0] - 2.0*xC0_dotn * en;
 
-        Diag dxBdxC0;
-        dxBdxC0[0] =  1.0 - en[0]*en[0];
-        dxBdxC0[1] =  1.0 - en[1]*en[1];
-        dxBdxC0[2] =  1.0 - en[2]*en[2];
-        
-        
-        const X xc1mxB = this->_x[c1]-xB;
+        const X dXC1 = xB-this->_x[c1];
+        const X dFlux = dFluxdXC1*dXC1;
         this->_x[c1] = xB;
         
         // eliminate boundary dependency from cell equation
-        this->_dRdXDiag[c0] += dFluxdXC1*dxBdxC0;
-        this->_r[c0] += dFluxdXC1*xc1mxB;
+        this->_r[c0] += dRC0dXC1*dXC1;
+        
         this->_assembler.getCoeff01(f) = 0;
         
         // boundary value equation
-        this->_dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
-        this->_assembler.getCoeff10(f) = dxBdxC0;
-        this->_r[c1] = 0;//xc0mxB;
+        this->_dRdXDiag[c1] = this->_dRdXDiag[c0];
+        this->_assembler.getCoeff10(f) = 0;
+        this->_r[c1] = T(0);
         this->_dRdX.setBoundary(c1);
-        
-        //setup the equation for the boundary flux correction
-        //this->_dFluxdX.setCoeffL(f,dFluxdXC0);
-        //this->_dFluxdX.setCoeffR(f,dFluxdXC1); 
-        this->_flux[f] = fluxB - dFluxdXC1*xc1mxB;
-        this->_rFlux[f] = T_Scalar(0);
+
+
+        this->_dFluxdX.setCoeffL(f,dFluxdXC0);
+        this->_dFluxdX.setCoeffR(f,dFluxdXC1); 
         this->_dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
     }
   }
