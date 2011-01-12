@@ -143,13 +143,12 @@ public:
 
   void applyInterfaceBC(const int f) const
   {
-    throw;
+    // do nothing
   }
 
   void applyInterfaceBC() const
   {
-    for(int i=0; i<_faces.getCount(); i++)
-      applyInterfaceBC(i);
+    // do nothing
   }
 
   void applySymmetryBC() const
@@ -263,7 +262,7 @@ public:
                 }
                 else if (fg.groupType == "interface")
 		  {
-                    bc->bcType = "SpecifiedTraction";
+                    bc->bcType = "Interface";
 		  }
 		else if (fg.groupType == "symmetry")
 		{
@@ -558,7 +557,7 @@ public:
 
 		}
 	    }
-            else
+            else if (bc.bcType != "Interface")
               throw CException(bc.bcType + " not implemented for StructureModel");
             //cout << "force sum for " << fg.id  << " = " << fluxB << endl;  
 	    }
