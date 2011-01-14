@@ -71,7 +71,7 @@ public:
 	if (fg.groupType!="interior")
 	{
 	    discretizeFaces(mesh, faces, mfmatrix, xField, rField,
-			    true,
+			    fg.groupType!="interface",
 			    fg.groupType=="symmetry");
 	}
     }
