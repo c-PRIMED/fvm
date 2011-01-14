@@ -2723,6 +2723,9 @@ MeshPartitioner::level1_scatter_gather_cells()
 
         //create storage sites
         cellSite.setCountLevel1(gatherIndx);
+        const StorageSite& faceSite = _meshListLocal.at(id)->getFaces();
+        _meshListLocal.at(id)->eraseConnectivity(cellSite, cellSite);
+        _meshListLocal.at(id)->eraseConnectivity(cellSite, faceSite);
     }
 
    if ( _debugMode ) 

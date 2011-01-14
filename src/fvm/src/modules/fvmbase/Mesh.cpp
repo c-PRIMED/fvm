@@ -471,45 +471,63 @@ Mesh::getCellCells2() const
       //initCount
       _cellCells2->initCount();
 
-      const int ncells = this->getCells().getCount();
+      const int ncells = this->getCells().getCount() - this->getCells().getCountLevel1();
+      const int selfCount = this->getCells().getSelfCount();
+
+      const CRConnectivity& cellCells = this->getCellCells();
       multimap<int,int>::const_iterator it0;
       multimap<int,int>::const_iterator it1;
-      //loop over inner cells
+       //loop over  cells
       for ( int n = 0; n < ncells; n++ ){ 
          set<int> setCells;
-         for ( it0 = _cellCellsGlobal.equal_range(n).first; it0 != _cellCellsGlobal.equal_range(n).second; ++it0 ){
-             const int cellID1 = it0->second;
-             const int localID = _globalToLocal.find(cellID1)->second;
+         for ( int k = 0; k < cellCells.getCount(n); k++ ){
+             const int cellID1 = cellCells(n,k);
              setCells.insert( cellID1 );
-             for (  it1 = _cellCellsGlobal.equal_range(localID).first; it1 != _cellCellsGlobal.equal_range(localID).second; ++it1 ){
-                 const int cellID2 = it1->second;
-                 setCells.insert(cellID2);
+             if ( cellID1 < selfCount ){ //it means inner cells use cellCells 
+                for ( int i = 0; i < cellCells.getCount(cellID1); i++ ){
+                    const int cellID2 = cellCells(cellID1,i);
+                    setCells.insert(cellID2);
+                }
+             } else {
+                for (  it1 = _cellCellsGlobal.equal_range(cellID1).first; it1 != _cellCellsGlobal.equal_range(cellID1).second; it1++ ){
+                   const int globalCellID2 = it1->second;
+                   const int localID2 = _globalToLocal.find(globalCellID2)->second;
+                   if ( _globalToLocal.count(globalCellID2) > 0 )
+                      setCells.insert(localID2);
+                }
              }
          }
          //erase itself
-         setCells.erase( (*_localToGlobal)[n]);
+         setCells.erase(n);
          _cellCells2->addCount(n,setCells.size());
       }
       //finish count
       _cellCells2->finishCount();
       //add cellcells2
-      //loop over inner cells
+      //loop over  cells
       for ( int n = 0; n < ncells; n++ ){ 
          set<int> setCells;
-         for ( it0 = _cellCellsGlobal.equal_range(n).first; it0 != _cellCellsGlobal.equal_range(n).second; it0++ ){
-             const int cellID1 = it0->second;
-             const int localID = _globalToLocal.find(cellID1)->second;
+         for ( int k = 0; k < cellCells.getCount(n); k++ ){
+             const int cellID1 = cellCells(n,k);
              setCells.insert( cellID1 );
-             for (  it1 = _cellCellsGlobal.equal_range(localID).first; it1 != _cellCellsGlobal.equal_range(localID).second; it1++ ){
-                 const int cellID2 = it1->second;
-                 setCells.insert(cellID2);
+             if ( cellID1 < selfCount ){ //it means inner cells use cellCells 
+                for ( int i = 0; i < cellCells.getCount(cellID1); i++ ){
+                    const int cellID2 = cellCells(cellID1,i);
+                    setCells.insert(cellID2);
+                }
+             } else {
+                for (  it1 = _cellCellsGlobal.equal_range(cellID1).first; it1 != _cellCellsGlobal.equal_range(cellID1).second; it1++ ){
+                   const int globalCellID2 = it1->second;
+                   const int localID2 = _globalToLocal.find(globalCellID2)->second;
+                   if ( _globalToLocal.count(globalCellID2) > 0 )
+                      setCells.insert(localID2);
+                }
              }
          }
          //erase itself
-         setCells.erase((*_localToGlobal)[n]);
-         foreach ( const set<int>::value_type globalID, setCells ){
-             const int localCellID = _globalToLocal.find(globalID)->second;
-            _cellCells2->add(n, localCellID);
+         setCells.erase(n);
+         foreach ( const set<int>::value_type cellID, setCells ){
+             _cellCells2->add(n, cellID);
          }
       }
       //finish add

@@ -288,7 +288,7 @@ protected:
   GhostCellSiteMap   _ghostCellSiteGatherMapLevel1;
 
   shared_ptr< Array<int>  >        _localToGlobal;
-  map <int,int>        _globalToLocal;
+  mutable map <int,int>        _globalToLocal;
   multiMap             _cellCellsGlobal; //this hold cellCells information in global numbering, key is local,
                                         // values are global neighbouring and itself(global again)
  
