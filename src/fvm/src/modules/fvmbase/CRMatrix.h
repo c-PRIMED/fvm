@@ -841,6 +841,16 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
     }
   }
 
+  virtual void printRow(const int i)
+  {
+    cout << "coeff (" <<  i << "," << i << ") = " << _diag[i] << endl;
+    
+    for (int nb = _row[i]; nb<_row[i+1]; nb++)
+    {
+        const int j = _col[nb];
+        cout << "coeff (" <<  i << "," << j << ") = " << _offDiag[nb] << endl;
+    }
+  }
 
   // eliminate a_ij coefficients because of a dirichlet row j, the rhs
   // b as well as the delta_j values are required

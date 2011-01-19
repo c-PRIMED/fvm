@@ -44,6 +44,7 @@ public:
   virtual const CRConnectivity& getConnectivity( ) const {throw;}
 
   virtual void eliminateBoundaryEquations(IContainer& xB) {throw;}
+  virtual void printRow(const int nr) {throw;}
   
   virtual void *getDiagData() const {throw;}
   virtual void *getOffDiagData() const {throw;}
