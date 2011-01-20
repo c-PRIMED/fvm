@@ -133,6 +133,30 @@ public:
     return fluxB;
   }
   
+  X applyZeroDerivativeBC() const
+  {
+    X fluxTotal(NumTypeTraits<X>::getZero());
+    for(int f=0; f<_faces.getCount(); f++)
+    {
+        const int c0 = _faceCells(f,0);
+        const int c1 = _faceCells(f,1);
+        const X fluxB = -_r[c1];
+        
+        // setup the equation for the boundary value; we want xb to be equal to xc
+        
+        _r[c1] = _x[c0] - _x[c1];
+        _dRdXDiag[c1]  = -NumTypeTraits<Diag>::getUnity();
+        this->_assembler.getCoeff10(f)  = NumTypeTraits<OffDiag>::getUnity();
+
+        
+        // mark this row as a "boundary" row so that we will update it
+        // after the overall system is solved
+        _dRdX.setBoundary(c1);
+        fluxTotal += fluxB;
+    }
+    return fluxTotal;
+  }
+
   X applyNeumannBC(const FloatValEvaluator<X>& bFlux) const
   {
     X fluxB(NumTypeTraits<X>::getZero());
@@ -507,6 +531,10 @@ public:
             {
                 gbc.applySymmetryBC();
                 allNeumann = false;
+	    }
+            else if (bc.bcType == "ZeroDerivative")
+            {
+                gbc.applyZeroDerivativeBC();
 	    }
             else if (bc.bcType == "SpecifiedTraction")
             {
