@@ -93,6 +93,28 @@ public:
   Array<Coord>& getCoeffs() {return _coeffs;}
   const Array<Coord>& getCoeffs() const {return _coeffs;}
 
+  Coord& getCoeff(const int i,  const int j)
+  {
+    for (int nnb = _row[i]; nnb<_row[i+1]; nnb++)
+    {
+        if (_col[nnb] == j)
+          return _coeffs[nnb];
+    }
+    throw CException("invalid indices");
+  }
+  
+
+  const Coord& getCoeff(const int i,  const int j) const
+  {
+    for (int nnb = _row[i]; nnb<_row[i+1]; nnb++)
+    {
+        if (_col[nnb] == j)
+          return _coeffs[nnb];
+    }
+    throw CException("invalid indices");
+  }
+  
+
   class PairWiseAssembler
   {
   public:
