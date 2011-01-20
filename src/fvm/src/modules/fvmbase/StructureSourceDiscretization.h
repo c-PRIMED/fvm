@@ -126,10 +126,9 @@ public:
     const int nFaces = faces.getCount();
 
     const VGradMatrix& vgMatrix = VGradModelType::getGradientMatrix(mesh,_geomFields);
-    const CRConnectivity& vgConn = vgMatrix.getConnectivity();
-    const Array<int>& vgmRow = vgConn.getRow();
-    const Array<int>& vgmCol = vgConn.getCol();
-    const VectorT3Array& vgmCoeffs = vgMatrix.getCoeffs();
+    const CRConnectivity& cellCells = mesh.getCellCells();
+    const Array<int>& ccRow = cellCells.getRow();
+    const Array<int>& ccCol = cellCells.getCol();
 
     const int nInteriorCells = cells.getSelfCount();
     
@@ -205,12 +204,14 @@ public:
         VectorT3 s1(NumTypeTraits<VectorT3>::getZero());
         if (_fullLinearization)
         {
-            
-            for(int nnb = vgmRow[c0]; nnb<vgmRow[c0+1]; nnb++)
+            // loop over level 0 neighbors
+            for(int nnb = ccRow[c0]; nnb<ccRow[c0+1]; nnb++)
             {
-                const int nb = vgmCol[nnb];
-                
-                VectorT3 g_nb = vgmCoeffs[nnb];
+                const int nb = ccCol[nnb];
+
+                // get the coefficient from the gradient matrix that uses level 2 connectivity
+                // getting a copy rather than reference since we might modify it
+                VectorT3 g_nb = vgMatrix.getCoeff(c0,nb);
 #if 1
                 if (isSymmetry)
                 {
@@ -269,10 +270,10 @@ public:
 
             if (!isBoundary)
             {
-                for(int nnb = vgmRow[c1]; nnb<vgmRow[c1+1]; nnb++)
+                for(int nnb = ccRow[c1]; nnb<ccRow[c1+1]; nnb++)
                 {
-                    const int nb = vgmCol[nnb];
-                    const VectorT3& g_nb = vgmCoeffs[nnb];
+                    const int nb = ccCol[nnb];
+                    const VectorT3& g_nb = vgMatrix.getCoeff(c1,nb);
                     
                     Diag coeff;
                     
