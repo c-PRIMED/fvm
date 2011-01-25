@@ -151,6 +151,11 @@ public:
   
   Mesh* extractBoundaryMesh();
   Mesh* extrude(int nz, double zmax);
+
+  Mesh* createShell(const int fgId, Mesh& otherMesh, const int otherFgId);
+  bool isShell() const;
+  const StorageSite& getParentFaceGroupSite() const;
+  
   // const GhostCellSiteMap& getGhostCellSiteMap() const;
   // const StorageSite* getGhostCellSite( int id );
 

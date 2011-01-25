@@ -29,7 +29,9 @@ Mesh::Mesh(const int dimension):
   _boundaryNodeGlobalToLocalPtr(),
   _ibFaceList(),
   _numOfAssembleMesh(1),
-  _isAssembleMesh(false)
+  _isAssembleMesh(false),
+  _isShell(false),
+  _parentFaceGroupSite(0)
 {
   logCtor();
 }
@@ -53,7 +55,9 @@ Mesh::Mesh( const int dimension,
   _boundaryNodeGlobalToLocalPtr(),
   _ibFaceList(),
   _numOfAssembleMesh(1),
-  _isAssembleMesh(false)
+  _isAssembleMesh(false),
+  _isShell(false),
+  _parentFaceGroupSite(0)
 {
   int faceNodeCount = _dimension == 2 ? 2 :4;
   int totNodes      = faceNodesCoord.getLength();
@@ -132,7 +136,9 @@ Mesh::Mesh( const int dimension,
   _boundaryNodeGlobalToLocalPtr(),
   _ibFaceList(),
   _numOfAssembleMesh(1),
-  _isAssembleMesh(false)
+  _isAssembleMesh(false),
+  _isShell(false),
+  _parentFaceGroupSite(0)
 {
   int nFaces = faceNodeCount.getLength();
   int nNodes      = nodesCoord.getLength();
@@ -1248,5 +1254,166 @@ Mesh::extrude(int nz, double zmax)
   return eMesh;
 }
 
+const FaceGroup&
+Mesh::getFaceGroup(const int fgId) const
+{
+  foreach(const FaceGroupPtr fgPtr, getAllFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      if (fg.id == fgId)
+        return fg;
+  }
+  throw CException("no face group with given id");
+}
+
+Mesh*
+Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
+{
+  typedef Array<int> IntArray;
+  
+  const FaceGroup& fg = getFaceGroup(fgId);
+  const StorageSite& fgSite = fg.site;
+  StorageSite& cells = getCells();
+
+
+  const FaceGroup& otherFg = otherMesh.getFaceGroup(otherFgId);
+  const StorageSite& otherFgSite = otherFg.site;
+  StorageSite& otherCells = otherMesh.getCells();
+  
+  const CRConnectivity& faceCells = getFaceCells(fgSite);
+  const CRConnectivity& otherFaceCells = otherMesh.getFaceCells(otherFgSite);
+
+  const int count = fgSite.getSelfCount();
+
+  Mesh* shellMesh = new Mesh(_dimension);
+
+  shellMesh->_isShell = true;
+  shellMesh->_parentFaceGroupSite = &fgSite;
+  
+  StorageSite& sMeshCells = shellMesh->getCells();
+
+  // as many cells as there are faces, plus twice the number of ghost cells
+  sMeshCells.setCount( count, 2*count);
+
+
+  // we will number the cells in the shell mesh in the same order as
+  // the faces on the left mesh
+  
+  // create a mapping from the cells in the left mesh to the smesh
+  // cells using the faceCell connectivity
+  map<int, int> leftCellsToSCells;
+  for(int f=0; f<count; f++)
+  {
+      const int c0 = faceCells(f,0);
+      const int c1 = faceCells(f,1);
+      leftCellsToSCells[c0] = f;
+      leftCellsToSCells[c1] = f;
+  }
+  
+  StorageSite::ScatterMap& lScatterMap = cells.getScatterMap();
+  StorageSite::ScatterMap& rScatterMap = otherCells.getScatterMap();
+
+  shared_ptr<IntArray> L2RScatterPtr = lScatterMap[&otherCells];
+  const IntArray& L2RScatter = *L2RScatterPtr;
+  shared_ptr<IntArray> R2LScatterPtr = rScatterMap[&cells];
+  const IntArray& R2LScatter = *R2LScatterPtr;
+  
+  
+  StorageSite::GatherMap& lGatherMap = cells.getGatherMap();
+  StorageSite::GatherMap& rGatherMap = otherCells.getGatherMap();
+  
+  shared_ptr<IntArray> L2RGatherPtr = lGatherMap[&otherCells];
+  const IntArray& L2RGather = *L2RGatherPtr;
+  shared_ptr<IntArray> R2LGatherPtr = rGatherMap[&cells];
+  const IntArray& R2LGather = *R2LGatherPtr;
+  
+  
+  // we will leave the gather scatter arrays on the left and right
+  // storage sites as they are (except for changing the keys under
+  // which they appear) so here we just need to create the gather and
+  // scatter arrays for the smesh cells accordingly
+  
+  shared_ptr<IntArray> s2LScatterPtr( new IntArray(count) );
+  shared_ptr<IntArray> s2RScatterPtr( new IntArray(count) );
+
+  shared_ptr<IntArray> L2sGatherPtr( new IntArray(count) );
+  shared_ptr<IntArray> R2sGatherPtr( new IntArray(count) );
   
 
+  IntArray& s2LScatter = *s2LScatterPtr;
+  IntArray& s2RScatter = *s2RScatterPtr;
+  IntArray& L2sGather = *L2sGatherPtr;
+  IntArray& R2sGather = *R2sGatherPtr;
+
+  for(int i=0; i<count; i++)
+  {
+      // the left cell being gathered to
+      const int lcg = L2RGather[i];
+
+      // the corresponding cell in the shell mesh should be scattering to both L and R
+      s2LScatter[i] = leftCellsToSCells[lcg];
+      s2RScatter[i] = leftCellsToSCells[lcg];
+
+      // the left cell being scattered from
+      const int lcs = L2RScatter[i];
+
+      // this should be gathered in the left ghost cell of shell mesh
+      L2sGather[i] = leftCellsToSCells[lcs] + count;
+
+      // the right cell is gathered in the right ghost
+      R2sGather[i] = leftCellsToSCells[lcs] + 2*count;
+     
+  }
+
+  // set the gather scatter arrays in the smesh cells
+  sMeshCells.getScatterMap()[&cells] = s2LScatterPtr;
+  sMeshCells.getScatterMap()[&otherCells] = s2LScatterPtr;
+  sMeshCells.getGatherMap()[&cells] = L2sGatherPtr;
+  sMeshCells.getGatherMap()[&otherCells] = R2sGatherPtr;
+
+  // erase the existing arrays in left and right maps and add them
+  // with the new keys
+
+  lScatterMap.erase(&otherCells);
+  lScatterMap[&sMeshCells] = L2RScatterPtr;
+  
+  lGatherMap.erase(&otherCells);
+  lGatherMap[&sMeshCells] = L2RGatherPtr;
+  
+  rScatterMap.erase(&cells);
+  rScatterMap[&cells] = R2LScatterPtr;
+  
+  rGatherMap.erase(&cells);
+  rGatherMap[&sMeshCells] = R2LGatherPtr;
+
+  // create the cell cell connectivity for the shell mesh
+  shared_ptr<CRConnectivity> sCellCells(new CRConnectivity(sMeshCells,sMeshCells));
+  sCellCells->initCount();
+
+  // two neighbours for the first count cells, one for the rest
+  for(int i=0; i<count; i++)
+  {
+      sCellCells->addCount(i,2);
+      sCellCells->addCount(i+count,1);
+      sCellCells->addCount(i+2*count,1);
+  }
+  
+  sCellCells->finishCount();
+
+  for(int i=0; i<count; i++)
+  {
+      sCellCells->add(i,i+count);
+      sCellCells->add(i,i+2*count);
+
+      sCellCells->add(i+count,i);
+      sCellCells->add(i+2*count,i);
+  }
+
+  sCellCells->finishAdd();
+
+  SSPair key(&sMeshCells,&sMeshCells);
+
+  shellMesh->_connectivityMap[key] = sCellCells;
+
+  return shellMesh;
+}

@@ -179,7 +179,8 @@ public:
   const FaceGroupList& getAllFaceGroups() const
   {return _faceGroups;}
   
-
+  const FaceGroup& getFaceGroup(const int fgId) const;
+  
   const StorageSite& createInteriorFaceGroup(const int size);
   const StorageSite& createInterfaceGroup(const int size,const int offset, 
                                     const int id);
@@ -246,9 +247,17 @@ public:
   Mesh* extractBoundaryMesh();
   Mesh* extrude(int nz, double zmax);
 
+  Mesh* createShell(const int fgId, Mesh& otherMesh, const int otherFgId);
+  
   int getCellZoneID() const { return _cellZoneID;}
   void setCellZoneID(const int id) {_cellZoneID = id;}
   void setID(const int id) {_id = id;}
+
+  bool isShell() const {return _isShell;}
+
+  const StorageSite& getParentFaceGroupSite() const
+  {return *_parentFaceGroupSite;}
+  
 protected:
   const int _dimension;
 
@@ -297,6 +306,13 @@ protected:
   mutable shared_ptr<CRConnectivity> _cellCells2;
   mutable shared_ptr<CRConnectivity> _faceCells2;
 
+  bool _isShell;
+  // used if this is a shell mesh, points to the face group site that
+  // can be used to obtain the area of the faces that makes up the
+  // cells
+  
+  const StorageSite* _parentFaceGroupSite;
+  
   static int _lastID;
 };
 
