@@ -1390,27 +1390,36 @@ void
 MeshMetricsCalculator<T>::init()
 {
   const int numMeshes = _meshes.size();
-  for (int n=0; n<numMeshes; n++){
+  for (int n=0; n<numMeshes; n++)
+  {
       const Mesh& mesh = *_meshes[n];
-      calculateNodeCoordinates(mesh);
+      if (!mesh.isShell())
+        calculateNodeCoordinates(mesh);
   }
 
   for (int n=0; n<numMeshes; n++)
   {
       const Mesh& mesh = *_meshes[n];
-      calculateFaceAreas(mesh);
-      calculateFaceAreaMag(mesh);
-      calculateFaceCentroids(mesh);
+      if (!mesh.isShell())
+      {
+          calculateFaceAreas(mesh);
+          calculateFaceAreaMag(mesh);
+          calculateFaceCentroids(mesh);
+      }
    }
-    for (int n=0; n<numMeshes; n++){
+    for (int n=0; n<numMeshes; n++)
+    {
       const Mesh& mesh = *_meshes[n];
-      calculateCellCentroids(mesh);
+      if (!mesh.isShell())
+        calculateCellCentroids(mesh);
     }
    _coordField.syncLocal();
 
-    for (int n=0; n<numMeshes; n++){
+    for (int n=0; n<numMeshes; n++)
+    {
       const Mesh& mesh = *_meshes[n];
-      calculateCellVolumes(mesh);
+      if (!mesh.isShell())
+        calculateCellVolumes(mesh);
    }
     
     for (int n=0; n<numMeshes; n++)
@@ -1418,7 +1427,7 @@ MeshMetricsCalculator<T>::init()
         const Mesh& mesh = *_meshes[n];
         const StorageSite& cells = mesh.getCells();
         const int cellCount = cells.getCount();
-        if (cellCount > 0)
+        if (cellCount > 0 & !mesh.isShell())
         {
             shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCount()));
             *ibTypePtr = Mesh::IBTYPE_FLUID;
@@ -1445,10 +1454,13 @@ MeshMetricsCalculator<T>::recalculate()
   for (int n=0; n<numMeshes; n++)
   {
       const Mesh& mesh = *_meshes[n];
-      calculateFaceAreas(mesh);
-      calculateFaceAreaMag(mesh);
-      calculateFaceCentroids(mesh);
-      calculateCellCentroids(mesh);
+      if (!mesh.isShell())
+      {
+          calculateFaceAreas(mesh);
+          calculateFaceAreaMag(mesh);
+          calculateFaceCentroids(mesh);
+          calculateCellCentroids(mesh);
+      }
   }
 
   _volumeField.syncLocal();
@@ -1494,15 +1506,19 @@ MeshMetricsCalculator<T>::recalculate_deform()
   for (int n=0; n<numMeshes; n++)
   {
       const Mesh& mesh = *_meshes[n];
-      calculateFaceAreas(mesh);
-      calculateFaceAreaMag(mesh);
-      calculateFaceCentroids(mesh);
+      if (!mesh.isShell())
+      {
+          calculateFaceAreas(mesh);
+          calculateFaceAreaMag(mesh);
+          calculateFaceCentroids(mesh);
+      }
   }
 
   for (int n=0; n<numMeshes; n++)
   {
       const Mesh& mesh = *_meshes[n];
-      calculateCellCentroids(mesh);
+      if (!mesh.isShell())
+        calculateCellCentroids(mesh);
   }
 
   _coordField.syncLocal();
@@ -1510,7 +1526,8 @@ MeshMetricsCalculator<T>::recalculate_deform()
   for (int n=0; n<numMeshes; n++)
   {
       const Mesh& mesh = *_meshes[n];
-      calculateCellVolumes(mesh);
+      if (!mesh.isShell())
+        calculateCellVolumes(mesh);
   }
 
   _volumeField.syncLocal();
