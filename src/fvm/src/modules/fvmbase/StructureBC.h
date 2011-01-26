@@ -54,6 +54,9 @@ struct StructureModelOptions : public FloatVarDict<T>
     this->defineVar("deformationURF",T(0.7));
     this->defineVar("timeStep",T(0.1));
     this->defineVar("operatingTemperature",T(300.0));
+    this->defineVar("residualXXStress",T(0.));
+    this->defineVar("residualYYStress",T(0.));
+    this->defineVar("residualZZStress",T(0.));
 
     this->deformationTolerance=1e-4;
     this->printNormalizedResiduals = true;
@@ -69,6 +72,7 @@ struct StructureModelOptions : public FloatVarDict<T>
   double deformationTolerance;
   bool transient;
   int timeDiscretizationOrder;
+  bool residualStress;
   LinearSolver *deformationLinearSolver;
   LinearSolver *coupledLinearSolver;
 

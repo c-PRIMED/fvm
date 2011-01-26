@@ -453,7 +453,11 @@ public:
           _structureFields.deformation,
           _structureFields.eta,
 	  _structureFields.eta1,
-          _structureFields.deformationGradient));
+          _structureFields.deformationGradient,
+	  _options["residualXXStress"],
+	  _options["residualYYStress"],
+	  _options["residualZZStress"],
+	  _options.residualStress));
       
     //    shared_ptr<Discretization>
     //  bfd(new SourceDiscretization<VectorT3>

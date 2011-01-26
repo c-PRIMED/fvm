@@ -37,6 +37,10 @@ public:
 				const Field& muField,
 				const Field& lambdaField,
 				const Field& varGradientField,
+				const T& residualXXStress,
+				const T& residualYYStress,
+				const T& residualZZStress,
+				const bool& residualStress,
                                 bool fullLinearization=true)  :
     Discretization(meshes),
     _geomFields(geomFields),
@@ -44,6 +48,10 @@ public:
     _muField(muField),
     _lambdaField(lambdaField),
     _varGradientField(varGradientField),
+    _residualXXStress(residualXXStress),
+    _residualYYStress(residualYYStress),
+    _residualZZStress(residualZZStress),
+    _residualStress(residualStress),
     _fullLinearization(fullLinearization)
    {}
 
@@ -199,6 +207,12 @@ public:
 	source[2] = faceMu*(gradF[2][0]*Af[0] + gradF[2][1]*Af[1] + gradF[2][2]*Af[2])
           + faceLambda*divU*Af[2];
 
+	if(_residualStress)
+	{
+	    source[0] += _residualXXStress*Af[0];
+	    source[1] += _residualYYStress*Af[1];
+	    source[2] += _residualZZStress*Af[2];
+	}
         
         VectorT3 s0(NumTypeTraits<VectorT3>::getZero());
         VectorT3 s1(NumTypeTraits<VectorT3>::getZero());
@@ -355,6 +369,10 @@ private:
   const Field& _lambdaField;
   const Field& _varGradientField;
   const bool _fullLinearization;
+  const T _residualXXStress;
+  const T _residualYYStress;
+  const T _residualZZStress;
+  const bool _residualStress; 
 };
 
 #endif
