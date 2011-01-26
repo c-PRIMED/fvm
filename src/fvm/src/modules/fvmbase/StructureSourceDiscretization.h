@@ -126,7 +126,7 @@ public:
     const int nFaces = faces.getCount();
 
     const VGradMatrix& vgMatrix = VGradModelType::getGradientMatrix(mesh,_geomFields);
-    const CRConnectivity& cellCells = mesh.getCellCells();
+    const CRConnectivity& cellCells = vgMatrix.getConnectivity();
     const Array<int>& ccRow = cellCells.getRow();
     const Array<int>& ccCol = cellCells.getCol();
 
@@ -209,7 +209,7 @@ public:
             {
                 const int nb = ccCol[nnb];
 
-                // get the coefficient from the gradient matrix that uses level 2 connectivity
+                // get the coefficient from the gradient matrix that uses modified cellCells
                 // getting a copy rather than reference since we might modify it
                 VectorT3 g_nb = vgMatrix.getCoeff(c0,nb);
 #if 1
@@ -260,8 +260,14 @@ public:
                 
                 if (c1 != nb)
                 {
-                    OffDiag& a1_nb = matrix.getCoeff(c1,nb);
-                    a1_nb -= coeff;
+                    // if the coefficient does not exist we assume c1
+                    // is a ghost cell for which we don't want an
+                    // equation in this matrix
+                    if (matrix.hasCoeff(c1,nb))
+                    {
+                        OffDiag& a1_nb = matrix.getCoeff(c1,nb);
+                        a1_nb -= coeff;
+                    }
                 }
                 else
                   a11 -= coeff;
@@ -291,10 +297,13 @@ public:
                     }
                     
                     
-                    OffDiag& a1_nb = matrix.getCoeff(c1,nb);
-                    a1_nb -= coeff;
-                    a11 += coeff;
-                    a01 -= coeff;
+                    if (matrix.hasCoeff(c1,nb))
+                    {
+                        OffDiag& a1_nb = matrix.getCoeff(c1,nb);
+                        a1_nb -= coeff;
+                        a11 += coeff;
+                        a01 -= coeff;
+                    }
                     
                     if (c0 != nb)
                     {
