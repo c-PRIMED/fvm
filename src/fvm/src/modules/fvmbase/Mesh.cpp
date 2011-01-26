@@ -1381,7 +1381,7 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   lGatherMap[&sMeshCells] = L2RGatherPtr;
   
   rScatterMap.erase(&cells);
-  rScatterMap[&cells] = R2LScatterPtr;
+  rScatterMap[&sMeshCells] = R2LScatterPtr;
   
   rGatherMap.erase(&cells);
   rGatherMap[&sMeshCells] = R2LGatherPtr;
