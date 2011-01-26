@@ -762,7 +762,17 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
     }
     throw CException("invalid indices");
   }
-  
+
+  bool hasCoeff(const int i,  const int j)
+  {
+    for (int nnb = _row[i]; nnb<_row[i+1]; nnb++)
+    {
+        if (_col[nnb] == j)
+          return true;
+    }
+    return false;
+  }
+
   Array<Diag>& getDiag() {return _diag;}
   Array<OffDiag>& getOffDiag() {return _offDiag;}
 
