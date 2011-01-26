@@ -62,6 +62,7 @@ struct StructureModelOptions : public FloatVarDict<T>
     this->printNormalizedResiduals = true;
     this->transient = false;
     this->timeDiscretizationOrder=1;
+    this->residualStress = false;
     this->deformationLinearSolver = 0;
     this->coupledLinearSolver = 0;
 
