@@ -42,7 +42,8 @@ struct ElectricModelOptions : public FloatVarDict<T>
 template <class T>
 struct ElectricModelConstants : public FloatVarDict<T>
 {
- 
+  vector<double> electron_trapdensity;
+  vector<double> electron_trapdepth;
 };
 
 

@@ -40,6 +40,7 @@ rlog::StdioNode *stdLog;
 namespace std{
 %template(vectorStr) vector<string>;
 %template(vectorInt) vector<int>;
+%template(vectorDouble) vector<double>;
 %template(IntSet)    set<int>;
  }
 

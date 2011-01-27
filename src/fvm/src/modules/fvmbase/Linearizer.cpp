@@ -21,9 +21,10 @@ Linearizer::linearize(DiscrList& discretizations,
   for(int n=0; n<nMeshes; n++)
   {
       const Mesh& mesh = *meshes[n];
-
-      for(int nd=0; nd<nDiscretizations; nd++)
-        discretizations[nd]->discretize(mesh,matrix,x,r);
+      if (mesh.isShell() == false){
+	for(int nd=0; nd<nDiscretizations; nd++)
+	  discretizations[nd]->discretize(mesh,matrix,x,r);
+      }
   }
 }
 
