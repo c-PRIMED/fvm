@@ -31,7 +31,8 @@
 #include "ElectricUtilityFunctions.h"
 #include "DielectricOneDimColumn.h"
 #include "SquareTensor.h"
-
+#include "ElecDiagonalTensor.h"
+#include "LinearizeDielectric.h"
 
 template<class T>
 class ElectricModel<T>::Impl
@@ -42,17 +43,21 @@ public:
   typedef Vector<T,3> VectorT3;
   typedef Vector<double, 3> VectorD3;
   typedef Array<VectorT3> VectorT3Array;
-  typedef Vector<T,2> VectorT2;
-  typedef Array<VectorT2> VectorT2Array;
   
-  typedef SquareTensor<T, 2> Tensor2x2;
-  typedef Array<Tensor2x2> Tensor2x2Array;
+  typedef Vector<T,3> VectorTN;
+  typedef Array<VectorTN> VectorTNArray;
+  
+  typedef SquareTensor<T, 3> TensorNxN;
+  //typedef ElecDiagonalTensor<T, 2> TensorNxN;
+  typedef Array<TensorNxN> TensorNxNArray;
+
+  //typedef ElecOffDiagonalTensor<T, 2> OffDiag;
+
+  typedef Gradient<VectorTN> CGradType;
+  typedef Array<Gradient<VectorTN> > CGradArray;    
   
   typedef Gradient<T> PGradType;
   typedef Array<Gradient<T> > PGradArray;
-
-  typedef Gradient<VectorT2> CGradType;
-  typedef Array<Gradient<VectorT2> > CGradArray;
   
   typedef DielectricOneDimColumn<T> Column;
   typedef vector<shared_ptr<Column> > ColumnList;
@@ -79,17 +84,11 @@ public:
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
-        
-	//each mesh is initialized as type "dielectric"
-	//need to reassigned with proper types in python 
 
 	ElectricVC<T> *vc(new ElectricVC<T>());
         vc->vcType = "dielectric";
         _vcMap[mesh.getID()] = vc;
         
-	//boundary condiction is initialized
-	//need to be reassigned properly in python
-
  	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
@@ -124,6 +123,8 @@ public:
 
 	const StorageSite& faces = mesh.getFaces();
 	
+	// initialize fields for electrostatics
+
 	if (_options.electrostatics_enable){
 
 	  const int nCells = cells.getCount();
@@ -135,35 +136,22 @@ public:
 
 	  //dielectric_constant setup
 	  shared_ptr<TArray> permCell(new TArray(nCells));
-	  *permCell = vc["dielectric_constant"] * E0_SI ;
-	  //*permCell = T(1.0);
+	  //*permCell = vc["dielectric_constant"] * E0_SI ;
+	  *permCell = vc["dielectric_constant"];
 	  _electricFields.dielectric_constant.addArray(cells,permCell);
 	  
 	  //total_charge (source in Poisson equation) setup
-	  // there is no charge in air gap
 	  if ( vc.vcType == "air"){
 	    shared_ptr<TArray> saCell(new TArray(nCells));
 	    saCell->zero();
 	    _electricFields.total_charge.addArray(cells,saCell);
-	  }
-	  // there is a initial charge in dielectric
+	  }	  
 	  if ( vc.vcType == "dielectric"){
 	    shared_ptr<TArray> sdCell(new TArray(nCells));
 	    *sdCell = _options["initialTotalCharge"];
 	    _electricFields.total_charge.addArray(cells,sdCell);
 	  }
 	  
-	  if ( vc.vcType == "air"){
-	    shared_ptr<TArray> saCell(new TArray(nCells));
-	    saCell->zero();
-	    _electricFields.init_charge.addArray(cells,saCell);
-	  }
-	  // there is a initial charge in dielectric
-	  if ( vc.vcType == "dielectric"){
-	    shared_ptr<TArray> sdCell(new TArray(nCells));
-	    *sdCell = _options["initialTotalCharge"];
-	    _electricFields.init_charge.addArray(cells,sdCell);
-	  }
 	  //potential gradient setup
 	  shared_ptr<PGradArray> gradp(new PGradArray(nCells));
           gradp->zero();	
@@ -197,11 +185,19 @@ public:
 	    }
 	}
 
+	//initilize fields in charge transport models
+	/* 
+	   regarding multi trapdepth model, assume the number of trapdepth is nTrap
+	   index i = 0 to i = nTrap-1 refer to charges in traps
+	   index i = nTrap refer to charges in conduction band
+	*/
+
 	if (_options.chargetransport_enable){
 
-	  /* the following fields only used in charge transport in dielectric*/
-	  // if ( vc.vcType == "dielectric" ) {
+	  if ( vc.vcType == "dielectric" ) {
+
 	    const int nCells = cells.getCount();
+
 	    //conduction_band setup
 	    shared_ptr<TArray> cb(new TArray(nCells));
 	    cb->zero();
@@ -212,37 +208,28 @@ public:
 	    vb->zero();
 	    _electricFields.valence_band.addArray(cells, vb);
 
-	    //electron_totaltraps setup
-	    shared_ptr<TArray> tt(new TArray(nCells));
-	    *tt = _constants["electron_trapdensity"];
-	    _electricFields.electron_totaltraps.addArray(cells, tt);
-
 	    //charge density setup 
-	    //VectorT2Array containing the electron density in trap and conduction band
-	    shared_ptr<VectorT2Array> ch(new VectorT2Array(nCells));
+	    shared_ptr<VectorTNArray> ch(new VectorTNArray (nCells));
 	    ch->zero();
-	    _electricFields.charge.addArray(cells, ch);
-	    
+	    _electricFields.charge.addArray(cells, ch);	    
+
+	    if (_options.transient_enable)
+	    {
+	      _electricFields.chargeN1.addArray(cells,dynamic_pointer_cast<ArrayBase>(ch->newCopy()));
+	      if (_options.timeDiscretizationOrder > 1)
+		_electricFields.chargeN2.addArray(cells, dynamic_pointer_cast<ArrayBase>(ch->newCopy()));
+	    }
+
 	    //charge velocity
 	    shared_ptr<VectorT3Array> vcell(new VectorT3Array(nCells));
 	    vcell->zero();
 	    _electricFields.electron_velocity.addArray(cells, vcell);
-
-	    if (_options.transient_enable)
-	    {
-	      _electricFields.chargeN1.addArray(cells,
-						  dynamic_pointer_cast<ArrayBase>(ch->newCopy()));
-	      if (_options.timeDiscretizationOrder > 1)
-		_electricFields.chargeN2.addArray(cells,
-                                              dynamic_pointer_cast<ArrayBase>(ch->newCopy()));
-	    }
-	   
+	    
 	    //free_electron_capture_cross setup
-	    shared_ptr<TArray> fecr(new TArray(nCells));
+	    shared_ptr<VectorTNArray> fecr(new VectorTNArray(nCells));
 	    fecr->zero();
 	    _electricFields.free_electron_capture_cross.addArray(cells, fecr);
 
-	    
 	    // convection flux on all faces 
 	    shared_ptr<TArray> mf (new TArray(faces.getCount()));
 	    mf->zero();
@@ -275,7 +262,7 @@ public:
 	      const FaceGroup& fg = *fgPtr;
 	      const StorageSite& faces = fg.site;
 	      
-	      shared_ptr<VectorT2Array> cFlux(new VectorT2Array(faces.getCount()));
+	      shared_ptr<VectorTNArray> cFlux(new VectorTNArray(faces.getCount()));
 	      cFlux->zero();
 	      _electricFields.chargeFlux.addArray(faces,cFlux);
 	    }
@@ -284,10 +271,11 @@ public:
 	      const FaceGroup& fg = *fgPtr;
 	      const StorageSite& faces = fg.site;
 	      
-	      shared_ptr<VectorT2Array> cFlux(new VectorT2Array(faces.getCount()));
+	      shared_ptr<VectorTNArray> cFlux(new VectorTNArray(faces.getCount()));
 	      cFlux->zero();
 	      _electricFields.chargeFlux.addArray(faces,cFlux);
 	    }
+	  }
 	}
     }
     
@@ -301,6 +289,7 @@ public:
 
   /*** set up the dielectric one-D model ***/
   /*** only applied to dielectric zone ***/
+  /* currently not used
 
   void dielectricOneDimModelPrep
     (const int nXCol, const int nYCol, const int nGrid,
@@ -355,7 +344,7 @@ public:
 	const int method = 2;
 	calculateInterpolationMatrix(_columnList, method, cellCentroid);
 
-	/*	
+		
 	//test interpolation
 	TArray& transmission = dynamic_cast<TArray&> (_electricFields.transmission[cells]);
 	TArray& conduction_band = dynamic_cast< TArray&> (_electricFields.conduction_band[cells]);
@@ -370,13 +359,13 @@ public:
 	string flag = "membrane";
 	ElectronTransmissionCoefficient
              (energy, transmission, conduction_band, d_i, e_mass,flag,_columnList);
-	*/
+	
 	
 	outputColumn(_columnList);
       }
     }
   }
-
+*/
 
   ElectricBCMap& getBCMap() {return _bcMap;}
 
@@ -393,37 +382,35 @@ public:
   void updateTime()
   {
     const int numMeshes = _meshes.size();
-    for (int n=0; n<numMeshes; n++)
-    {
+    for (int n=0; n<numMeshes; n++)    {
       
         const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
 	
-	//update charge field
-	VectorT2Array& charge =
-          dynamic_cast<VectorT2Array&>(_electricFields.charge[cells]);
-        VectorT2Array& chargeN1 =
-          dynamic_cast<VectorT2Array&>(_electricFields.chargeN1[cells]);
+	VectorTNArray& charge =
+          dynamic_cast<VectorTNArray&>(_electricFields.charge[cells]);
+        VectorTNArray& chargeN1 =
+          dynamic_cast<VectorTNArray&>(_electricFields.chargeN1[cells]);
+	TArray& totalcharge = 
+	  dynamic_cast<TArray&> (_electricFields.total_charge[cells]);
 
         if (_options.timeDiscretizationOrder > 1)
         {
-            VectorT2Array& chargeN2 =
-              dynamic_cast<VectorT2Array&>(_electricFields.chargeN2[cells]);
+            VectorTNArray& chargeN2 =
+              dynamic_cast<VectorTNArray&>(_electricFields.chargeN2[cells]);
             chargeN2 = chargeN1;
         }
         chargeN1 = charge;
-
-	//update source term in electrostatics
-      	const TArray& electron_totaltraps = dynamic_cast<TArray& > (_electricFields.electron_totaltraps[cells]);
-	TArray& totalcharge = dynamic_cast<TArray&>(_electricFields.total_charge[cells]);
-	TArray& initcharge = dynamic_cast<TArray&>(_electricFields.init_charge[cells]);
+	
+	const int nTrap = _constants["nTrap"];
 	for (int c=0; c<nCells; c++){
-	  if (charge[c][0] >  electron_totaltraps[c] ){
-	    throw CException ("total charges go beyond limits!");
+	  for (int i=0; i<=nTrap; i++){
+	    totalcharge[c] += charge[c][i];
 	  }
-	  totalcharge[c] =  -(charge[c][0] + charge[c][1])*QE;
+	  totalcharge[c] *= -QE;
 	}
+
     }
   }
 
@@ -433,7 +420,7 @@ public:
     LinearSystem ls;
         
     initElectroStaticsLinearization(ls);
-        
+
     ls.initAssembly();
 
     linearizeElectroStatics(ls);
@@ -459,6 +446,7 @@ public:
     }
 
     return rNorm;
+   
   }
 
   MFRPtr solveChargeTransport()
@@ -466,7 +454,7 @@ public:
     LinearSystem ls;
         
     initChargeTransportLinearization(ls);
-        
+
     ls.initAssembly();
 
     linearizeChargeTransport(ls);
@@ -482,6 +470,7 @@ public:
     ls.postSolve();
 
     ls.updateSolution();
+
     
     return rNorm;
   }
@@ -560,7 +549,7 @@ public:
 
 	  const CRConnectivity& cellCells = mesh.getCellCells();
         
-	  shared_ptr<Matrix> m(new CRMatrix<Tensor2x2,Tensor2x2,VectorT2>(cellCells));
+	  shared_ptr<Matrix> m(new CRMatrix<TensorNxN,TensorNxN,VectorTN>(cellCells));
 
 	  ls.getMatrix().addMatrix(cIndex,cIndex,m);
 
@@ -574,10 +563,10 @@ public:
 
 	      const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-	      shared_ptr<Matrix> mft(new FluxJacobianMatrix<Tensor2x2,VectorT2>(faceCells));
+	      shared_ptr<Matrix> mft(new FluxJacobianMatrix<TensorNxN,VectorTN>(faceCells));
 	      ls.getMatrix().addMatrix(fIndex,cIndex,mft);
 
-	      shared_ptr<Matrix> mff(new DiagonalMatrix<Tensor2x2,VectorT2>(faces.getCount()));
+	      shared_ptr<Matrix> mff(new DiagonalMatrix<TensorNxN,VectorTN>(faces.getCount()));
 	      ls.getMatrix().addMatrix(fIndex,fIndex,mff);
 	    }
 
@@ -591,10 +580,10 @@ public:
 	      
 	      const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-	      shared_ptr<Matrix> mft(new FluxJacobianMatrix<Tensor2x2,VectorT2>(faceCells));
+	      shared_ptr<Matrix> mft(new FluxJacobianMatrix<TensorNxN,VectorTN>(faceCells));
 	      ls.getMatrix().addMatrix(fIndex,cIndex,mft);
 
-	      shared_ptr<Matrix> mff(new DiagonalMatrix<Tensor2x2,VectorT2>(faces.getCount()));
+	      shared_ptr<Matrix> mff(new DiagonalMatrix<TensorNxN,VectorTN>(faces.getCount()));
 	      ls.getMatrix().addMatrix(fIndex,fIndex,mff);
 	    }
 	  //}
@@ -611,7 +600,8 @@ public:
       dd(new DiffusionDiscretization<T,T,T>(_meshes,_geomFields,
                                             _electricFields.potential,
                                             _electricFields.dielectric_constant,
-                                            _electricFields.potential_gradient));
+                                            _electricFields.potential_gradient,
+					    _constants["dielectric_thickness"]));
     discretizations.push_back(dd);    
 
     shared_ptr<Discretization>
@@ -635,7 +625,29 @@ public:
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
                          ls.getX(), ls.getB());
     
+    
+
+    
     const int numMeshes = _meshes.size();
+
+    /*linearize shell mesh*/
+
+    for (int n=0; n<numMeshes; n++)
+    {
+      const Mesh& mesh = *_meshes[n];
+      if (mesh.isShell())
+	{	    
+	  LinearizeDielectric<T, T, T> lsm (_geomFields,
+					    _electricFields.dielectric_constant,
+					    _constants["dielectric_thickness"],
+					    _electricFields.potential);
+
+	  lsm.discretize(mesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	}
+    }
+
+    /* boundary and interface condition */
+
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
@@ -664,11 +676,12 @@ public:
                 const T specifiedFlux(bc["specifiedPotentialFlux"]);
                 gbc.applyNeumannBC(specifiedFlux);
             }
-	    else if ((bc.bcType == "Symmetry"))
+	    else if (bc.bcType == "Symmetry")
             {
                 T zeroFlux(NumTypeTraits<T>::getZero());
                 gbc.applyNeumannBC(zeroFlux);
             }
+	   
 	    else
               throw CException(bc.bcType + " not implemented for ElectricModel");
         }
@@ -680,7 +693,7 @@ public:
             GenericBCS<T,T,T> gbc(faces,mesh,
                                   _geomFields,
                                   _electricFields.potential,
-                                  _electricFields.potential_flux,
+                                  _electricFields.potential_flux, 
                                   ls.getMatrix(), ls.getX(), ls.getB());
 
             gbc.applyInterfaceBC();
@@ -695,60 +708,54 @@ public:
     _chargeGradientModel.compute();
     
     DiscrList discretizations;
-  
+    
+    if (_options.tunneling_enable){
+      shared_ptr<Discretization>
+	tnd(new TunnelingDiscretization<VectorTN, TensorNxN, TensorNxN>
+	    (_meshes, _geomFields,
+	     _electricFields.charge,	     
+	     _electricFields.conduction_band,
+	     _constants
+	     ));
+      discretizations.push_back(tnd);      
+    }
+    
     if (_options.injection_enable){
       shared_ptr<Discretization>
-	inj(new InjectionDiscretization<VectorT2, Tensor2x2, Tensor2x2>
+	inj(new InjectionDiscretization<VectorTN, TensorNxN, TensorNxN>
 	    (_meshes, _geomFields,
 	     _electricFields.charge,
 	     _electricFields.electric_field,
 	     _electricFields.conduction_band,
-	     _constants, 
-	     _options
+	     _constants
 	     ));
       discretizations.push_back(inj);
     }
-
-  
-     if (_options.tunneling_enable){
-      shared_ptr<Discretization>
-	tnd(new TunnelingDiscretization<VectorT2, Tensor2x2, Tensor2x2>
-	    (_meshes, _geomFields,
-	     _electricFields.charge,
-	     _electricFields.electron_totaltraps,
-	     _electricFields.conduction_band,
-	     _constants, 
-	     _options
-	     ));
-      discretizations.push_back(tnd);      
-    }
-
-
+    
     if (_options.emission_enable){
       shared_ptr<Discretization>
-	em(new EmissionDiscretization<VectorT2, Tensor2x2, Tensor2x2>
+	em(new EmissionDiscretization<VectorTN, TensorNxN, TensorNxN>
 	   (_meshes, _geomFields,
 	    _electricFields.charge,
 	    _electricFields.electric_field,
 	    _constants));
       discretizations.push_back(em);
-    }
-
+      }
+    
     if (_options.capture_enable){
       shared_ptr<Discretization>
-	capt(new CaptureDiscretization<VectorT2, Tensor2x2, Tensor2x2>
+	capt(new CaptureDiscretization<VectorTN, TensorNxN, TensorNxN>
 	   (_meshes, _geomFields,
 	    _electricFields.charge,
-	    _electricFields.electron_totaltraps,
 	    _electricFields.free_electron_capture_cross,
 	    _constants));
       discretizations.push_back(capt);
     }
    
- 
+    
     if (_options.trapbandtunneling_enable){
       shared_ptr<Discretization>
-	tbt(new TrapBandTunnelingDiscretization<VectorT2, Tensor2x2, Tensor2x2>
+	tbt(new TrapBandTunnelingDiscretization<VectorTN, TensorNxN, TensorNxN>
 	    (_meshes, _geomFields,
 	     _electricFields.charge,
 	     _electricFields.electric_field,
@@ -757,11 +764,11 @@ public:
       discretizations.push_back(tbt);
 
     }
-	    
+    
 #if 0
     if (_options.diffusion_enable){
       shared_ptr<Discretization>
-	dd(new ElecDiffusionDiscretization<VectorT2, Tensor2x2,Tensor2x2>
+	dd(new ElecDiffusionDiscretization<VectorTN, TensorNxN, TensorNxN>
 	   (_meshes,_geomFields,
 	    _electricFields.charge,
 	    _electricFields.diffusivity,
@@ -769,19 +776,21 @@ public:
       discretizations.push_back(dd);
     }
 #endif
+
     if (_options.drift_enable){
       shared_ptr<Discretization>
-	cd(new DriftDiscretization<VectorT2, Tensor2x2, Tensor2x2>
+	cd(new DriftDiscretization<VectorTN, TensorNxN, TensorNxN>
 	   (_meshes,_geomFields,
 	    _electricFields.charge,
-	    _electricFields.convectionFlux));
+	    _electricFields.convectionFlux,
+	    _constants["nTrap"]));
       discretizations.push_back(cd);
     }
-
+    
     if (_options.transient_enable)
       {
       shared_ptr<Discretization>
-	td(new TimeDerivativeDiscretization<VectorT2, Tensor2x2,Tensor2x2>
+	td(new TimeDerivativeDiscretization<VectorTN, TensorNxN, TensorNxN>
 	   (_meshes,_geomFields,
 	    _electricFields.charge,
 	    _electricFields.chargeN1,
@@ -813,14 +822,14 @@ public:
             const ElectricBC<T>& bc = *_bcMap[fg.id];
             
 
-            GenericBCS<VectorT2,Tensor2x2,Tensor2x2> gbc(faces,mesh,
+            GenericBCS<VectorTN,TensorNxN,TensorNxN> gbc(faces,mesh,
                                   _geomFields,
                                   _electricFields.charge,
                                   _electricFields.chargeFlux,
                                   ls.getMatrix(), ls.getX(), ls.getB());
 	    //dielectric charging uses fixed zero dirichlet bc
-	    VectorT2 zero;
-	    zero[0] = zero[1] = T(0);
+	    VectorTN zero(VectorTN::getZero());;
+	        
 	    //gbc.applyNonzeroDiagBC();
 	    if (bc.bcType == "Symmetry")
 	      //gbc.applyExtrapolationBC();
@@ -834,7 +843,7 @@ public:
 	  {
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
-            GenericBCS<VectorT2,Tensor2x2,Tensor2x2> gbc(faces,mesh,
+            GenericBCS<VectorTN,TensorNxN,TensorNxN> gbc(faces,mesh,
                                   _geomFields,
                                   _electricFields.charge,
                                   _electricFields.chargeFlux,
@@ -943,8 +952,8 @@ public:
       const int nCells = cells.getCount();
       const VectorT3Array& electric_field = dynamic_cast<const VectorT3Array& > (_electricFields.electric_field[cells]);
       VectorT3Array& electron_velocity = dynamic_cast<VectorT3Array& > (_electricFields.electron_velocity[cells]);
-      const T& electron_mobility = _constants["electron_mobility"];
-      const T& electron_saturation_velocity =  _constants["electron_saturation_velocity"];
+      const T electron_mobility = _constants["electron_mobility"];
+      const T electron_saturation_velocity =  _constants["electron_saturation_velocity"];
 
       // need to convert to 3D 
       for(int c=0; c<nCells; c++){
@@ -1048,22 +1057,29 @@ public:
 
     /* this gives the real initial condition for charges */
 
-    const T& membrane_workfunction = _constants["membrane_workfunction"];
-    const T& substrate_workfunction = _constants["substrate_workfunction"];
-    const T& dielectric_thickness = _constants["dielectric_thickness"];
-    const T& optical_dielectric_constant = _constants["optical_dielectric_constant"];
-    const T& dielectric_ionization = _constants["dielectric_ionization"];
-    const T& electron_trapdepth = _constants["electron_trapdepth"];
-    const T& temperature = _constants["OP_temperature"];
-    const T& electron_effmass = _constants["electron_effmass"];
-    const T& poole_frenkel_emission_frequency = _constants["poole_frenkel_emission_frequency"];
-    
-    //??? dielectric thickness ///
+    const T membrane_workfunction = _constants["membrane_workfunction"];
+    const T substrate_workfunction = _constants["substrate_workfunction"];
+    const T dielectric_thickness = _constants["dielectric_thickness"];
+    const T optical_dielectric_constant = _constants["optical_dielectric_constant"];
+    const T dielectric_ionization = _constants["dielectric_ionization"];   
+    const T temperature = _constants["OP_temperature"];
+    const T electron_effmass = _constants["electron_effmass"];
+    const T poole_frenkel_emission_frequency = _constants["poole_frenkel_emission_frequency"];
+    const int normal = _constants["normal_direction"];
+    const int nTrap = _constants["nTrap"];
+    vector<T> electron_trapdensity = _constants.electron_trapdensity;
+    vector<T> electron_trapdepth = _constants.electron_trapdepth;
+
+    if (electron_trapdensity.size() != nTrap || electron_trapdepth.size()!=nTrap){
+      throw CException ("wrong trapdepth size!");
+    }
+
     T effefield = (membrane_workfunction - substrate_workfunction) / dielectric_thickness;
 
     T alpha = sqrt(QE / (PI * E0_SI * optical_dielectric_constant));
 
     const int numMeshes = _meshes.size();
+
     for (int n=0; n<numMeshes; n++)
     {
       const Mesh& mesh = *_meshes[n];
@@ -1074,54 +1090,54 @@ public:
 	const int nCells = cells.getCount();
 
 	const VectorT3Array& cellCentroid = dynamic_cast<const VectorT3Array& > (_geomFields.coordinate[cells]);
-	const TArray& electron_totaltraps = dynamic_cast<TArray& > (_electricFields.electron_totaltraps[cells]);
-	TArray& free_electron_capture_cross = dynamic_cast<TArray&> (_electricFields.free_electron_capture_cross[cells]);
-	TArray& initcharge = dynamic_cast<TArray&>(_electricFields.init_charge[cells]);
 
-	//  charge is a VectorT2 array
-	//  charge[0] contains the electron density in traps
-	//  charge[1] contains the electron density in conduction band 
+	VectorTNArray& free_electron_capture_cross = dynamic_cast<VectorTNArray&> (_electricFields.free_electron_capture_cross[cells]);	
 
-	VectorT2Array& charge = dynamic_cast<VectorT2Array& > (_electricFields.charge[cells]);
- 	VectorT2Array& chargeN1 = dynamic_cast<VectorT2Array& > (_electricFields.chargeN1[cells]);
-        VectorT2Array* chargeN2  = 0;
+	VectorTNArray& charge = dynamic_cast<VectorTNArray& > (_electricFields.charge[cells]);
+
+ 	VectorTNArray& chargeN1 = dynamic_cast<VectorTNArray& > (_electricFields.chargeN1[cells]);
+
+        VectorTNArray* chargeN2  = 0;
+
 	if (_options.timeDiscretizationOrder > 1){
-	  chargeN2 = &(dynamic_cast<VectorT2Array& > (_electricFields.chargeN2[cells]));
+	  chargeN2 = &(dynamic_cast<VectorTNArray& > (_electricFields.chargeN2[cells]));
 	}
 
 	for(int c=0; c<nCells; c++)
 	{ 	  
-	  // need to figure out what direction to use ???//
-	  T fermilevel = -substrate_workfunction+effefield*cellCentroid[c][2];  
-	  T energy(0.);
-
-	  energy = -dielectric_ionization - electron_trapdepth;
 	  
-	  charge[c][0] = electron_totaltraps[c] * FermiFunction(energy, fermilevel, temperature);
-	  chargeN1[c][0] = charge[c][0];
-
+	  T fermilevel = -substrate_workfunction+effefield*cellCentroid[c][normal];  
+	  T energy(0.);	  
 	  
-	  if (_options.timeDiscretizationOrder > 1)
-	    (*chargeN2)[c][0] = charge[c][0];
+	  for (int i=0; i<nTrap; i++){
+	    
+	    energy = -dielectric_ionization - electron_trapdepth[i];
 
-	  energy = -dielectric_ionization;
+	    charge[c][i] = electron_trapdensity[i] * FermiFunction(energy, fermilevel, temperature);
+	    chargeN1[c][i] = charge[c][i];
 	  
-	  charge[c][1] = electron_totaltraps[c] * FermiFunction(energy, fermilevel, temperature);
-	  chargeN1[c][1] = charge[c][1];
-	  if (c == 100)
-	    cout << "init charge " << charge[100][0] << " " << charge[100][1] << endl;
+	    if (_options.timeDiscretizationOrder > 1)
+	      (*chargeN2)[c][i] = charge[c][i];
+	  
+	    energy = -dielectric_ionization;
+	  
+	    charge[c][nTrap] += electron_trapdensity[i] * FermiFunction(energy, fermilevel, temperature);
+	    chargeN1[c][nTrap] = charge[c][nTrap];
+	  
 
-	  initcharge[c] = charge[c][0] + charge[c][1];
+	    if (_options.timeDiscretizationOrder > 1)
+	      (*chargeN2)[c][nTrap] = charge[c][nTrap];
+	  }
 
-	  if (_options.timeDiscretizationOrder > 1)
-	    (*chargeN2)[c][1] = charge[c][1];
-
-	  T expt = (electron_trapdepth - alpha * sqrt(fabs(effefield))) * QE / (K_SI*temperature);
-	  T beta = exp(-expt);
-	  T velocity = sqrt(8 * K_SI * temperature / (PI * ME * electron_effmass));
-
-	  free_electron_capture_cross[c] = charge[c][0] * poole_frenkel_emission_frequency * beta;
-	  free_electron_capture_cross[c] /= (velocity*(electron_totaltraps[c]-charge[c][0])*charge[c][1]);
+	  for (int i=0; i<nTrap; i++){
+	    T expt = (electron_trapdepth[i] - alpha * sqrt(fabs(effefield))) * QE / (K_SI*temperature);
+	    T beta = exp(-expt);
+	    T velocity = sqrt(8 * K_SI * temperature / (PI * ME * electron_effmass));
+	    
+	    free_electron_capture_cross[c][i] = charge[c][i] * poole_frenkel_emission_frequency * beta;
+	    free_electron_capture_cross[c][i] /= (velocity*(electron_trapdensity[i]-charge[c][i])*charge[c][nTrap]);
+	    
+	  }
 	}
       }
     }
@@ -1166,14 +1182,6 @@ public:
 
 	mIC.multiplyAndAdd(*ibP,cP);
 	mIP.multiplyAndAdd(*ibP,sP);
-#if 0
-	const Array<int>& ibFaceList = mesh.getIBFaceList();
-	const StorageSite& faces = mesh.getFaces();
-	
-	for(int f=0; f<ibFaces.getCount();f++){
-	  (*ibP)[f] = 160.0;
-	}
-#endif
 
         _electricFields.potential.addArray(ibFaces,ibP);
     }
@@ -1292,7 +1300,7 @@ private:
   ElectricModelOptions<T> _options; 
   ElectricModelConstants<T> _constants;
   GradientModel<T> _potentialGradientModel;
-  GradientModel<VectorT2> _chargeGradientModel;
+  GradientModel<VectorTN> _chargeGradientModel;
   
   MFRPtr _initialElectroStaticsNorm;
   MFRPtr _initialChargeTransportNorm;
@@ -1332,7 +1340,7 @@ ElectricModel<T>::init()
   _impl->init();
 }
  
-
+/*
 template<class T>
 void 
 ElectricModel<T>::dielectricOneDimModelPrep(const int nXCol, const int nYCol,const int nGrid,
@@ -1349,7 +1357,7 @@ ElectricModel<T>::dielectricOneDimModelPrep(const int nXCol, const int nYCol,con
 				    corner1_1, corner1_2, corner1_3, corner1_4,
 				    corner2_1, corner2_2, corner2_3, corner2_4) ;
 }
-
+*/
 
 template<class T>
 void

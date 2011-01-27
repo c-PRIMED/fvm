@@ -258,7 +258,7 @@ SquareMatrix<T,N> inverseGauss (SquareMatrix<T,N>&  a, int size)
       }
     }
   }
-
+  //backsubstitution
   for (i = 0; i < size; i++)
   {
     x(size-1,i) = b(indx[size-1],i)/a(indx[size-1],size-1);

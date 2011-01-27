@@ -83,27 +83,31 @@ class EmissionDiscretization : public Discretization
 
     OffDiagArray& offdiag = matrix.getOffDiag();
     
-    const T_Scalar& optical_dielectric_constant = _constants["optical_dielectric_constant"];
-    const T_Scalar& electron_trapdepth = _constants["electron_trapdepth"];
-    const T_Scalar& temperature = _constants["OP_temperature"];
-    const T_Scalar& poole_frenkel_emission_frequency = _constants["poole_frenkel_emission_frequency"];
-
+    const T_Scalar optical_dielectric_constant = _constants["optical_dielectric_constant"];
+    const T_Scalar temperature = _constants["OP_temperature"];
+    const T_Scalar poole_frenkel_emission_frequency = _constants["poole_frenkel_emission_frequency"];
+    const int nTrap = _constants["nTrap"];
+    vector<T_Scalar> electron_trapdepth = _constants.electron_trapdepth;
     const T_Scalar beta = sqrt( QE / (PI * E0_SI * optical_dielectric_constant) );
 
     for(int c=0; c<nCells; c++){
       
-      T_Scalar expt = (electron_trapdepth - beta * sqrt(mag(electric_field[c]))) * QE / (K_SI * temperature);
+      for (int i=0; i<nTrap; i++){
+	
+	T_Scalar expt = (electron_trapdepth[i] - beta * sqrt(mag(electric_field[c]))) * QE / (K_SI * temperature);
 
-      if (expt < 0.0)
+	if (expt < 0.0)
 	throw CException("exponential error in Emission model");
 
-      T_Scalar fluxCoeff = cellVolume[c] * poole_frenkel_emission_frequency * exp(-expt);
+	T_Scalar fluxCoeff = cellVolume[c] * poole_frenkel_emission_frequency * exp(-expt);
+	
+	rCell[c][i] -= (fluxCoeff * xCell[c][i]);
 
-      rCell[c][0] -= (fluxCoeff * xCell[c][0]);
+	diag[c](i,i) -= fluxCoeff;
+	//diag[c][i] -= fluxCoeff;
 
-      diag[c](0,0) -= fluxCoeff;
-
-      rCell[c][1] += fluxCoeff * xCell[c][0];
+	rCell[c][nTrap] += fluxCoeff * xCell[c][i];
+      }
     }
   }
 

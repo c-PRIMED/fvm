@@ -52,20 +52,15 @@ class TunnelingDiscretization : public Discretization
 
   TunnelingDiscretization(const MeshList& meshes,
 			  const GeomFields& geomFields,
-			  const Field& varField,
-			  const Field& totaltrapsField,
+			  const Field& varField,			  
 			  const Field& conductionbandField,
-			  const ElectricModelConstants<T_Scalar>& constants,
-			  const ElectricModelOptions<T_Scalar>& options
-			 
+			  const ElectricModelConstants<T_Scalar>& constants		 
 			  ) :
     Discretization(meshes),
     _geomFields(geomFields),
-    _varField(varField),
-    _totaltrapsField(totaltrapsField),
+    _varField(varField),    
     _conductionbandField(conductionbandField),
-    _constants(constants),
-    _options(options)
+    _constants(constants)
       {}
 
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -77,9 +72,7 @@ class TunnelingDiscretization : public Discretization
 
     const StorageSite& faces = mesh.getFaces();
     
-    const int nCells = cells.getSelfCount();
-    
-    const TArray& electron_totaltraps = dynamic_cast<const TArray&> (_totaltrapsField[cells]);
+    const int nCells = cells.getSelfCount();      
 
     const TArray& conduction_band = dynamic_cast<const TArray&> (_conductionbandField[cells]);
 
@@ -107,7 +100,6 @@ class TunnelingDiscretization : public Discretization
     const T_Scalar electron_effmass = _constants["electron_effmass"];
     const T_Scalar temperature = _constants["OP_temperature"];
     const T_Scalar electron_capture_cross = _constants["electron_capture_cross"];
-    const T_Scalar electron_trapdepth = _constants["electron_trapdepth"];
     const T_Scalar voltage = _constants["voltage"];
     const T_Scalar substrate_voltage = _constants["substrate_voltage"];
     const T_Scalar membrane_voltage = _constants["membrane_voltage"];
@@ -119,6 +111,13 @@ class TunnelingDiscretization : public Discretization
     const int memID = _constants["membrane_id"];
     const int nLevel = _constants["nLevel"];
     const int normal = _constants["normal_direction"];
+    const int nTrap = _constants["nTrap"];
+
+    const vector<double> electron_trapdepth = _constants.electron_trapdepth;
+    const vector<double> electron_trapdensity = _constants.electron_trapdensity;
+
+    if (electron_trapdepth.size() != nTrap || electron_trapdensity.size()!=nTrap)
+      throw CException ("trap depth vector size error!");
 
     T_Scalar fluxCoeff(0), fermilevel(0), scatterfactor(0);
     T_Scalar sourceTunneling(0);
@@ -217,58 +216,44 @@ class TunnelingDiscretization : public Discretization
 
       for(int c=0; c<nCells; c++){
 
-	const T_Scalar stcap = electron_capture_cross * cellVolume[c]; 
+	for (int i=0; i<nTrap; i++){
 
-	const T_Scalar endiff = en - (conduction_band[c]-electron_trapdepth);
+	  const T_Scalar stcap = electron_capture_cross * cellVolume[c]; 
+
+	  const T_Scalar endiff = en - (conduction_band[c]-electron_trapdepth[i]);
 	
-	// tunneling from substrate to traps 
+	  // tunneling from substrate to traps 
 	
-	if (en-conduction_band[c] < 0){    //this condition determines tunneling only happens close to contact
+	  if (en-conduction_band[c] < 0){    //this condition determines tunneling only happens close to contact
 	    
-	  if (endiff < 0)
-	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
-	  else scatterfactor = 1.0;
+	    if (endiff < 0)
+	      scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
+	    else scatterfactor = 1.0;
 	 
-	  fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * 
-	    fermifunction * scatterfactor * energystep * QE;
+	    fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * 
+	      fermifunction * scatterfactor * energystep * QE;
 	  
-	  rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xCell[c][0])); 
-	  diag[c](0,0) -= fluxCoeff;
-	  
-	  sourceTunneling +=  (fluxCoeff * (electron_totaltraps[c] - xCell[c][0])); 
-	}
-	// tunneling from traps to substrate 
+	    rCell[c][i] += (fluxCoeff * (electron_trapdensity[i] - xCell[c][i])); 
+	    diag[c](i,i) -= fluxCoeff;
+	    //diag[c][i] -= fluxCoeff;
+	  }
+	  // tunneling from traps to substrate 
 
-	if(en - conduction_band[c] < 0){
-	  if (endiff > 0)
-	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
-	  else scatterfactor = 1.0;
+	  if(en - conduction_band[c] < 0){
+	    if (endiff > 0)
+	      scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
+	    else scatterfactor = 1.0;
 	  
-	  fluxCoeff = alpha * stcap *  transmission[c] * supplyfunction * 
-	    (1-fermifunction) * scatterfactor * energystep * QE;
+	    fluxCoeff = alpha * stcap *  transmission[c] * supplyfunction * 
+	      (1-fermifunction) * scatterfactor * energystep * QE;
 	  
-	  rCell[c][0] += (fluxCoeff * (- xCell[c][0])); 
-	  diag[c](0,0) -= fluxCoeff;	 
-	  sourceTunneling += (fluxCoeff * (- xCell[c][0]));
+	    rCell[c][i] += (fluxCoeff * (- xCell[c][i])); 
+	    diag[c](i,i) -= fluxCoeff;
+	    //diag[c][i] -= fluxCoeff;
+	  }
 	}
       }
-
     }
-    const T_Scalar timeStep = _options["timeStep"];
-    sourceTunneling *= timeStep;
-    FILE* fp = fopen("./sourcetunneling.dat", "a");
-    fprintf(fp, "%e\n", sourceTunneling);
-    fclose(fp);
-#if DEBUG
-    for (int n=0; n<nCells; n++){
-      if((*mark)[n] == 0){
-	cout << "cell  " << n << "  not covered" << endl;
-	throw CException("Not all interior cells are covered in Tunneling transmission calculation!");
-      }
-    }
-#endif  
-
-
 #if 0
     //=======================================//
     // tunneling from membrane to dielectric 
@@ -340,37 +325,40 @@ class TunnelingDiscretization : public Discretization
 	}
 
       for(int c=0; c<nCells; c++){
-
-	const T_Scalar stcap = electron_capture_cross * cellVolume[c];  
-
-	const T_Scalar endiff = en - (conduction_band[c]-electron_trapdepth);
 	
-	// tunneling from membrane to traps 
-	
-	if (en-conduction_band[c] < 0){
+	for(int i=0; i<nTrap; i++){
 
-	  if (endiff < 0)
-	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
-	  else scatterfactor = 1.0;
+	  const T_Scalar stcap = electron_capture_cross * cellVolume[c];  
+
+	  const T_Scalar endiff = en - (conduction_band[c]-electron_trapdepth[i]);
 	  
-	  fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * 
-	    fermifunction * scatterfactor * energystep * QE;
-	  
-	  rCell[c][0] += (fluxCoeff * (electron_totaltraps[c] - xCell[c][0])); 
-	  diag[c](0,0) -= fluxCoeff;
-	 }
-	  
-	// tunneling from traps to membrane
-	if(en - conduction_band[c] < 0 ){
-	  if (endiff > 0)
-	    scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
-	  else scatterfactor = 1.0;
+	  // tunneling from membrane to traps 
 	
-	  fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * 
-	    (1-fermifunction) * scatterfactor * energystep * QE;
+	  if (en-conduction_band[c] < 0){
+
+	    if (endiff < 0)
+	      scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
+	    else scatterfactor = 1.0;
 	  
-	  rCell[c][0] += (fluxCoeff * (-xCell[c][0])); 
-	  diag[c](0,0) -= fluxCoeff;
+	    fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * 
+	      fermifunction * scatterfactor * energystep * QE;
+	  
+	    rCell[c][i] += (fluxCoeff * (electron_trapdensity[i] - xCell[c][i])); 
+	    diag[c](i,i) -= fluxCoeff;
+	  }
+	  
+	  // tunneling from traps to membrane
+	  if(en - conduction_band[c] < 0 ){
+	    if (endiff > 0)
+	      scatterfactor = exp(-QE * fabs(endiff)/(K_SI*temperature));
+	    else scatterfactor = 1.0;
+	
+	    fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * 
+	      (1-fermifunction) * scatterfactor * energystep * QE;
+	  
+	    rCell[c][i] += (fluxCoeff * (-xCell[c][i])); 
+	    diag[c](i,i) -= fluxCoeff;
+	  }
 	}
       }
     }
@@ -382,10 +370,8 @@ class TunnelingDiscretization : public Discretization
  private:
   const GeomFields& _geomFields;
   const Field& _varField;
-  const Field& _totaltrapsField;
   const Field& _conductionbandField;
   const ElectricModelConstants<T_Scalar>& _constants;
-  const ElectricModelOptions<T_Scalar>& _options;
 };
 
 

@@ -7,12 +7,9 @@ ElectricFields::ElectricFields(const string baseName) :
   electric_field(baseName + ".electric_field"),
   dielectric_constant(baseName + ".dielectric_constant"),
   total_charge(baseName + ".total_charge"),
-  init_charge(baseName + ".init_charge"),
   conduction_band(baseName + ".conduction_band"),
   valence_band(baseName + ".valence_band"),
   electron_totaltraps(baseName + ".electron_totaltraps"),
-  //electron_trap(baseName + ".electron_trap"),
-  //electron_band(baseName + ".electron_band"),
   free_electron_capture_cross(baseName + ".free_electron_capture_cross"), 
   transmission(baseName + ".transmission"),
   electron_velocity(baseName + ".electron_velocity"),
@@ -25,7 +22,7 @@ ElectricFields::ElectricFields(const string baseName) :
   chargeN2(baseName + "chargeN2"),
   zero(baseName + "zero"),
   one(baseName + "one"),
-  oneD_column(baseName + "oneD_column"),
+  //oneD_column(baseName + "oneD_column"),
   force(baseName + "force")
   
 {}

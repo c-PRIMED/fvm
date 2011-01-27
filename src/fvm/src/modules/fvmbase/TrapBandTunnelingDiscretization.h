@@ -72,11 +72,11 @@ class TrapBandTunnelingDiscretization : public Discretization
     *ts = 0;
     TArray& transmission = *ts;    
     
-    const T_Scalar& electron_trapdepth = _constants["electron_trapdepth"];
-    const T_Scalar& electron_capture_cross = _constants["electron_capture_cross"];
-    const T_Scalar& electron_effmass = _constants["electron_effmass"];
-    const int& normal = _constants["normal_direction"];
-
+    const T_Scalar electron_capture_cross = _constants["electron_capture_cross"];
+    const T_Scalar electron_effmass = _constants["electron_effmass"];
+    const int normal = _constants["normal_direction"];
+    const int nTrap = _constants["nTrap"];
+    vector<T_Scalar> electron_trapdepth = _constants.electron_trapdepth;
     const T_Scalar epsilon = 1e-18;
 
     const int nMax = 200;
@@ -95,137 +95,142 @@ class TrapBandTunnelingDiscretization : public Discretization
       transmission[c] = 0.0;
     }
     
-    for(int c=0; c<nCells; c++){     
-      
-      T_Scalar en = conduction_band[c] - electron_trapdepth;
+    for(int c=0; c<nCells; c++){   
 
-      transmission[c] = 1.0;
+      for(int i=0; i<nTrap; i++){
 	
-      //-------------------------------------------------------------------------//
+	T_Scalar en = conduction_band[c] - electron_trapdepth[i];
 
-      high = low = me = c;
-
-      flag = false;        //hit the boundary or not?
-
-      count = 0;
-
-      while(flag == false && count < nMax ){
-
-	const int nbc = cellCells.getCount(me);
+	transmission[c] = 1.0;
 	
-	T_Scalar drmin = 0.0;
-	
-	int neighborUp = 0;
-	
-	for(int nc = 0; nc < nbc; nc++){
+	//-------------------------------------------------------------------------//
 
-	  const int neighbor = cellCells(me, nc);	  
-	  const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
-	  if (dr < drmin){
-	    drmin = dr;
-	    neighborUp = neighbor;
+	high = low = me = c;
+
+	flag = false;        //hit the boundary or not?
+
+	count = 0;
+
+	while(flag == false && count < nMax ){
+
+	  const int nbc = cellCells.getCount(me);
+	
+	  T_Scalar drmin = 0.0;
+	
+	  int neighborUp = 0;
+	
+	  for(int nc = 0; nc < nbc; nc++){
+
+	    const int neighbor = cellCells(me, nc);	  
+	    const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
+	    if (dr < drmin){
+	      drmin = dr;
+	      neighborUp = neighbor;
+	    }
 	  }
-	}
-	if (neighborUp < nCells) {
-	  high = neighborUp;
-	  low = me;
-	  me = high;
-	}	
-	else flag = true;
+	  if (neighborUp < nCells) {
+	    high = neighborUp;
+	    low = me;
+	    me = high;
+	  }	
+	  else flag = true;
 	 
-	T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
-	T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
-	T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
-	T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
-	T_Scalar avg = (valueMe + valueLow) / 2.0;
-	T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
+	  T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
+	  T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
+	  T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
+	  T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+	  T_Scalar avg = (valueMe + valueLow) / 2.0;
+	  T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
+	  
+	  transmission[me] = transmission[low] * exp(exponent);
 
-	transmission[me] = transmission[low] * exp(exponent);
+	  if (en - conduction_band[me] >0 ){
 
-	if (en - conduction_band[me] >0 ){
+	    foundHigh = true;
+	    idHigh = me;
+	    transmissionHigh = transmission[me];
+	    //  cout << "found high " << c <<"  " << me << "  " << transmissionHigh << endl;
+	    break;
 
-	  foundHigh = true;
-	  idHigh = me;
-	  transmissionHigh = transmission[me];
-	  //  cout << "found high " << c <<"  " << me << "  " << transmissionHigh << endl;
-	  break;
-
-	}
-	count ++;
-      }	
+	  }
+	  count ++;
+	}	
 
 #if 0 
-      //-------------------------------------------------------------------------//
+	//-------------------------------------------------------------------------//
 
-      high = low = me = c;
+	high = low = me = c;
+	
+	flag = false;
+	
+	count = 0;
       
-      flag = false;
-      
-      count = 0;
+	while(flag == false && count < nMax){
+	
+	  const int nbc = cellCells.getCount(me);
 
-      while(flag == false && count < nMax){
+	  T_Scalar drmin = 0.0;
 	
-	const int nbc = cellCells.getCount(me);
-
-	T_Scalar drmin = 0.0;
+	  int neighborUp = 0;
 	
-	int neighborUp = 0;
-	
-	for(int nc = 0; nc < nbc; nc++){
-	  const int neighbor = cellCells(me, nc);	  
-	  const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
-	  if (dr > drmin){
-	    drmin = dr;
-	    neighborUp = neighbor;
+	  for(int nc = 0; nc < nbc; nc++){
+	    const int neighbor = cellCells(me, nc);	  
+	    const T_Scalar dr = cellCentroid[me][normal] - cellCentroid[neighbor][normal];
+	    if (dr > drmin){
+	      drmin = dr;
+	      neighborUp = neighbor;
+	    }
 	  }
-	}
 
-	if (neighborUp < nCells) {
-	  high = neighborUp;
-	  low = me;
-	  me = high;
-	}	
-	else flag = true;
+	  if (neighborUp < nCells) {
+	    high = neighborUp;
+	    low = me;
+	    me = high;
+	  }	
+	  else flag = true;
 
-	T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
-	T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
-	T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
-	T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
-	T_Scalar avg = (valueMe + valueLow) / 2.0;
-	T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
-
-	transmission[me] = transmission[low] * exp(exponent);
+	  T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
+	  T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
+	  T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
+	  T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+	  T_Scalar avg = (valueMe + valueLow) / 2.0;
+	  T_Scalar exponent = factor * sqrt(avg) * fabs(dX);
+	  
+	  transmission[me] = transmission[low] * exp(exponent);
 	
-	if (en - conduction_band[me] >0 ){
-
-	  foundLow = true;
-	  idLow = me;
-	  transmissionLow = transmission[me];
-	  //cout << "found low " << c <<"  " << me << endl;
-	  break;
-	}
-	//	cout << c << " low " << low << endl; 
-	count ++;
-
-      }
-#endif
-      //-------------------------------------------------------------------------//
-
-      const T_Scalar ef = mag(electric_field[c]);
+	  if (en - conduction_band[me] >0 ){
 	    
-      const T_Scalar alpha = cellVolume[c] * QE * ef * ef * electron_capture_cross /    
-	(16 * PI*PI * HBAR_SI * electron_effmass * electron_trapdepth);
-      
-      if (foundLow == true){	
-	rCell[c][0] -= alpha * transmissionLow  * xCell[c][0];
-	diag[c](0,0) -= alpha  * transmissionLow;
-	rCell[idLow][1] += alpha * transmissionLow * xCell[c][0];
-      }
+	    foundLow = true;
+	    idLow = me;
+	    transmissionLow = transmission[me];
+	    //cout << "found low " << c <<"  " << me << endl;
+	    break;
+	  }
+	  //	cout << c << " low " << low << endl; 
+	  count ++;
+	  
+	}
+#endif
+	//-------------------------------------------------------------------------//
 
-      if (foundHigh == true){
-	rCell[c][0] -= alpha * transmissionHigh * xCell[c][0];
-	diag[c](0,0) -= alpha  *  transmissionHigh;
-	rCell[idHigh][1] += alpha * transmissionHigh * xCell[c][0];
+	const T_Scalar ef = mag(electric_field[c]);
+	
+	const T_Scalar alpha = cellVolume[c] * QE * ef * ef * electron_capture_cross /    
+	  (16 * PI*PI * HBAR_SI * electron_effmass * electron_trapdepth[i]);
+      
+	if (foundLow == true){	
+	  rCell[c][i] -= alpha * transmissionLow  * xCell[c][i];
+	  diag[c](i,i) -= alpha  * transmissionLow;
+	  //diag[c][i] -= alpha  * transmissionLow;
+	  rCell[idLow][nTrap] += alpha * transmissionLow * xCell[c][i];
+	}
+
+	if (foundHigh == true){
+	  rCell[c][i] -= alpha * transmissionHigh * xCell[c][i];
+	  diag[c](i,i) -= alpha  *  transmissionHigh;
+	  //diag[c][i] -= alpha  *  transmissionHigh;
+	  rCell[idHigh][nTrap] += alpha * transmissionHigh * xCell[c][i];
+	}
       }
     }
   }	    

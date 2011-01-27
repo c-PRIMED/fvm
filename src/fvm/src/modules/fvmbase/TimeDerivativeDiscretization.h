@@ -31,14 +31,14 @@ public:
                                Field& varN2Field,
                                const Field& densityField,
                                const T_Scalar dT) :
-    Discretization(meshes),
-    _geomFields(geomFields),
-    _varField(varField),
-    _varN1Field(varN1Field),
-    _varN2Field(varN2Field),
-    _densityField(densityField),
-    _dT(dT)
-  {}
+      Discretization(meshes),
+      _geomFields(geomFields),
+      _varField(varField),
+      _varN1Field(varN1Field),
+      _varN2Field(varN2Field),
+      _densityField(densityField),
+      _dT(dT)
+      {}
   
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
                   MultiField& xField, MultiField& rField)

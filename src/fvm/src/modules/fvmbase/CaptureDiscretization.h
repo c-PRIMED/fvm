@@ -44,17 +44,16 @@ class CaptureDiscretization : public Discretization
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef typename CCMatrix::OffDiagArray OffDiagArray;
   typedef Array<X> XArray;
+  typedef Array<Vector<T_Scalar, 3> > VectorTNArray;
 
   CaptureDiscretization(const MeshList& meshes,
 			const GeomFields& geomFields,
 			const Field& varField,
-			const Field& totaltrapsField,
 			const Field& capturecrossField,
 			const ElectricModelConstants<T_Scalar>& constants):
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
-    _totaltrapsField(totaltrapsField),
     _capturecrossField(capturecrossField),
     _constants(constants)
       {}
@@ -68,9 +67,7 @@ class CaptureDiscretization : public Discretization
 
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
-    const TArray& electron_totaltraps = dynamic_cast<const TArray&> (_totaltrapsField[cells]);
-
-    const TArray& free_electron_capture_cross = dynamic_cast<const TArray&> (_capturecrossField[cells]);
+    const VectorTNArray& free_electron_capture_cross = dynamic_cast<const VectorTNArray&> (_capturecrossField[cells]);
 
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     
@@ -84,35 +81,41 @@ class CaptureDiscretization : public Discretization
 
     OffDiagArray& offdiag = matrix.getOffDiag();
 
-    const T_Scalar& electron_effmass = _constants["electron_effmass"];
+    const T_Scalar electron_effmass = _constants["electron_effmass"];
 
-    const T_Scalar& temperature = _constants["OP_temperature"];
+    const T_Scalar temperature = _constants["OP_temperature"];
+
+    const int nTrap = _constants["nTrap"];
+
+    vector<T_Scalar> electron_trapdensity = _constants.electron_trapdensity;
     
     const T_Scalar velocity = sqrt(8.0 * K_SI * temperature / (PI * ME * electron_effmass));
     
     for(int c=0; c<nCells; c++){
       
-      T_Scalar fluxCoeff = cellVolume[c] * velocity * free_electron_capture_cross[c];
-            
-      rCell[c][0] += fluxCoeff * xCell[c][1] * (electron_totaltraps[c] - xCell[c][0]);
-      
-      diag[c](0,0) -= fluxCoeff * xCell[c][1];  
+      for (int i=0; i<nTrap; i++){
 
-      diag[c](0,1) += fluxCoeff * (electron_totaltraps[c]-xCell[c][0]);
-      
-      rCell[c][1] -= fluxCoeff * xCell[c][1] * (electron_totaltraps[c] - xCell[c][0]); 
+	T_Scalar fluxCoeff = cellVolume[c] * velocity * free_electron_capture_cross[c][i];
 
-      diag[c](1,1) -= fluxCoeff * (electron_totaltraps[c]-xCell[c][0]);
-
-      diag[c](1,0) += fluxCoeff * xCell[c][1];
-
+	rCell[c][i] += fluxCoeff * xCell[c][nTrap] * (electron_trapdensity[i] - xCell[c][i]);
+      	diag[c](i,i) -= fluxCoeff * xCell[c][nTrap];  
+	//diag[c][i] -= fluxCoeff * xCell[c][nTrap];  
+	diag[c](i,nTrap) += fluxCoeff * (electron_trapdensity[i]-xCell[c][i]);
+	//diag[c][i+nTrap] += fluxCoeff * (electron_trapdensity[i]-xCell[c][i]);
+	
+	rCell[c][nTrap] -= fluxCoeff * xCell[c][nTrap] * (electron_trapdensity[i] - xCell[c][i]); 
+	diag[c](nTrap,nTrap) -= fluxCoeff * (electron_trapdensity[i]-xCell[c][i]);
+	//diag[c][3*nTrap] -= fluxCoeff * (electron_trapdensity[i]-xCell[c][i]);
+	diag[c](nTrap,i) += fluxCoeff * xCell[c][nTrap];
+	//diag[c][2*nTrap+i] += fluxCoeff * xCell[c][nTrap];
+      }
     }    
   }
+
 
  private:
   const GeomFields& _geomFields;
   const Field& _varField;
-  const Field& _totaltrapsField;
   const Field& _capturecrossField;
   const ElectricModelConstants<T_Scalar>& _constants;
 };

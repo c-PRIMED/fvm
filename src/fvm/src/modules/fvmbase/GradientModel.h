@@ -450,8 +450,10 @@ public:
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
+     
         const Mesh& mesh = *_meshes[n];
-
+	
+	if (mesh.isShell() == false){
         const StorageSite& cells = mesh.getCells();
 
         GradMatrixType& gradMatrix = getGradientMatrix(mesh,_geomFields);
@@ -529,6 +531,7 @@ public:
 			(*gradPtr)[c1] = (*gradPtr)[c0];
 		    }
 		}
+	    }
 	    }
         }
 

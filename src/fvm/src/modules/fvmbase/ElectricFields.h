@@ -18,9 +18,8 @@ struct ElectricFields
   Field electric_field;              //potentialGradient vector; 
   Field dielectric_constant;         //permittivity;
   Field total_charge;                 //source term in Poisson equation
-                                     //which is the sum of charge[0] and charge[1]
-                                     
-  Field init_charge;                 //initial charges (not changing with time)
+                                     //which is the sum of charge[0] and charge[1]                           
+  
   Field force;
 
   //Fields in charge transport
@@ -28,8 +27,6 @@ struct ElectricFields
   Field conduction_band;
   Field valence_band;
   Field electron_totaltraps;          //number of electron traps at each cell
-  //Field electron_trap;              //electron density in traps
-  //Field electron_band;              //electron density in conduction band
   Field free_electron_capture_cross; //free electron capture cross section
   Field transmission;
   Field electron_velocity;
@@ -43,7 +40,7 @@ struct ElectricFields
   Field zero;                     //used to fill in continuityResidual
   Field one;                      //used to fill in density
  
-  Field oneD_column;              //the one dimensional columns used in dielectric chargine 1D model
+  //Field oneD_column;              //the one dimensional columns used in dielectric chargine 1D model
   
 };
 

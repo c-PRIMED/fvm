@@ -132,20 +132,22 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
   VectorT3Array& cellCentroid =  *ccPtr;
   _coordField.addArray(cells,ccPtr);
 
+  
   // for shell mesh copy cell centroids from the faces it was created from
-  if (mesh->isShell())
+  if (mesh.isShell())
   {
       const StorageSite& faces = mesh.getParentFaceGroupSite();
+      const int faceCount = faces.getCount();
       const VectorT3Array& faceCentroid =
         dynamic_cast<const VectorT3Array&>(_coordField[faces]);
       
       for(int f=0; f<faceCount; f++)
       {
-          cellCentroid[f] += faceCentroid[f];
+          cellCentroid[f] = faceCentroid[f];
       }
       return;
   }
-      
+     
   const StorageSite& faces = mesh.getFaces();
 
   const VectorT3Array& faceCentroid =
@@ -387,7 +389,7 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
   _volumeField.addArray(cells,vPtr);
 
   // for shell the volume is zero
-  if (mesh->isShell())
+  if (mesh.isShell())
     return;
 
   const VectorT3Array& faceCentroid =

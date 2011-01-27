@@ -51,16 +51,14 @@ class InjectionDiscretization : public Discretization
 			  const Field& varField,
 			  const Field& electricField,
 			  const Field& conductionbandField,
-			  const ElectricModelConstants<T_Scalar>& constants,
-			  const ElectricModelOptions<T_Scalar>& options
+			  const ElectricModelConstants<T_Scalar>& constants
 			  ) :
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
     _electricField(electricField),
     _conductionbandField(conductionbandField),
-    _constants(constants),
-    _options(options)
+    _constants(constants)
      {}
 
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -107,6 +105,7 @@ class InjectionDiscretization : public Discretization
     const int memID = _constants["membrane_id"];
     const int nLevel = _constants["nLevel"];
     const int normal = _constants["normal_direction"];
+    const int nTrap = _constants["nTrap"];
 
     T_Scalar fluxCoeff(0), fermilevel(0), scatterfactor(0);
     T_Scalar sourceInjection(0);
@@ -199,8 +198,7 @@ class InjectionDiscretization : public Discretization
 		
 		const T_Scalar dX = dielectric_thickness/nLevel;		
 		fluxCoeff = alpha * transmission[me] * supplyfunction * fermifunction * energystep * QE * cellVolume[me] / fabs(dX) ;  
-		rCell[me][1] += fluxCoeff; 
-		sourceInjection += fluxCoeff;
+		rCell[me][nTrap] += fluxCoeff; 
 		break;
 	      }
 	     
@@ -210,11 +208,6 @@ class InjectionDiscretization : public Discretization
       }
     }
 
-    const T_Scalar timeStep = _options["timeStep"];
-    sourceInjection *= timeStep;
-    FILE* fp = fopen("./sourceinjection.dat", "a");
-    fprintf(fp, "%e\n", sourceInjection);
-    fclose(fp);
 
 #if 0
     //=======================================//
@@ -304,7 +297,7 @@ class InjectionDiscretization : public Discretization
 	      
 		fluxCoeff = alpha * transmission[me] * supplyfunction * fermifunction * energystep * QE * cellVolume[me] / fabs(dX) ;
 	  
-		rCell[me][1] += fluxCoeff; 
+		rCell[me][nTrap] += fluxCoeff; 
 		//cout << "transmission " << me << " " << transmission[me] << endl;
 		
 		break;
@@ -329,7 +322,7 @@ class InjectionDiscretization : public Discretization
   const Field& _varField;
   const Field& _electricField;
   const ElectricModelConstants<T_Scalar>& _constants;
-  const ElectricModelOptions<T_Scalar>& _options;
+ 
 
 };
 

@@ -41,9 +41,7 @@ struct ElectricModelConstants : public FloatVarDict<T>
     this->defineVar("dielectric_ionization", T(3.0));              //in EV
     this->defineVar("dielectric_bandgap", T (5.0));                 // in EV
     this->defineVar("optical_dielectric_constant", T(4.0));
-    this->defineVar("dielectric_thickness", T(2.5e-7));          //in meter
-    this->defineVar("electron_trapdensity", T(1e24));             // per m^3
-    this->defineVar("electron_trapdepth", T(1.5));                // in EV
+    this->defineVar("dielectric_thickness", T(2.5e-7));          //in meter    
     this->defineVar("electron_capture_cross", T(1e-17));         //in m^-2
 
     this->defineVar("membrane_workfunction", T (5.0));              //in EV
@@ -65,7 +63,11 @@ struct ElectricModelConstants : public FloatVarDict<T>
     this->defineVar("membrane_id", int(4));                //mesh id of membrane
     this->defineVar("nLevel", int(0));                   //number of grid in normal direction
     this->defineVar("normal_direction", int(2));          //normal direction index; values: 0 1 2
+    this->defineVar("nTrap", int(1));
   }
+
+  vector<T> electron_trapdensity;
+  vector<T> electron_trapdepth;
 
 };
 

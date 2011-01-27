@@ -58,6 +58,7 @@ public:
 
   void calculateEquilibriumParameters();
 
+  /*
   void  dielectricOneDimModelPrep(const int nXCol, const int nYCol, const int nGrid,
 				  const VectorD3 corner1_1, 
 				  const VectorD3 corner1_2, 
@@ -67,11 +68,7 @@ public:
 				  const VectorD3 corner2_2, 
 				  const VectorD3 corner2_3,
 				  const VectorD3 corner2_4);
-  
-
  
-
-/*
   const int findClosestPoint(const VectorT3 point, Octree& O);
 
   boost::shared_ptr<ArrayBase> createPathAndDiscretize (
