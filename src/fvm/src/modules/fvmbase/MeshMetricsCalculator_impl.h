@@ -124,12 +124,28 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
   const int cellCount = cells.getCount();
   if (cellCount == 0)
     return;
-  
+
+      
   const int selfCellCount = cells.getSelfCount();
 
   shared_ptr<VectorT3Array> ccPtr(new VectorT3Array(cellCount));
   VectorT3Array& cellCentroid =  *ccPtr;
+  _coordField.addArray(cells,ccPtr);
 
+  // for shell mesh copy cell centroids from the faces it was created from
+  if (mesh->isShell())
+  {
+      const StorageSite& faces = mesh.getParentFaceGroupSite();
+      const VectorT3Array& faceCentroid =
+        dynamic_cast<const VectorT3Array&>(_coordField[faces]);
+      
+      for(int f=0; f<faceCount; f++)
+      {
+          cellCentroid[f] += faceCentroid[f];
+      }
+      return;
+  }
+      
   const StorageSite& faces = mesh.getFaces();
 
   const VectorT3Array& faceCentroid =
@@ -197,7 +213,6 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
 	  }
       }
   }
-  _coordField.addArray(cells,ccPtr);
 }
     
 template<class T>
@@ -367,7 +382,14 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
       
   shared_ptr<TArray> vPtr(new TArray(cellCount));
   TArray& cellVolume = *vPtr;
-      
+
+  cellVolume.zero();
+  _volumeField.addArray(cells,vPtr);
+
+  // for shell the volume is zero
+  if (mesh->isShell())
+    return;
+
   const VectorT3Array& faceCentroid =
     dynamic_cast<const VectorT3Array&>(_coordField[faces]);
   const VectorT3Array& cellCentroid =
@@ -379,7 +401,6 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
   const T dim(mesh.getDimension());
   const int faceCount = faces.getCount();
 
-  cellVolume.zero();
 
    
   for(int f=0; f<faceCount; f++)
@@ -415,7 +436,6 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
 	  }
       }
   }
-  _volumeField.addArray(cells,vPtr);
 }
   
     
@@ -1410,16 +1430,14 @@ MeshMetricsCalculator<T>::init()
     for (int n=0; n<numMeshes; n++)
     {
       const Mesh& mesh = *_meshes[n];
-      if (!mesh.isShell())
-        calculateCellCentroids(mesh);
+      calculateCellCentroids(mesh);
     }
    _coordField.syncLocal();
 
     for (int n=0; n<numMeshes; n++)
     {
       const Mesh& mesh = *_meshes[n];
-      if (!mesh.isShell())
-        calculateCellVolumes(mesh);
+      calculateCellVolumes(mesh);
    }
     
     for (int n=0; n<numMeshes; n++)
