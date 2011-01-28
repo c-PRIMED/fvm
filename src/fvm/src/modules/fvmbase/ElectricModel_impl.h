@@ -141,17 +141,16 @@ public:
 	  _electricFields.dielectric_constant.addArray(cells,permCell);
 	  
 	  //total_charge (source in Poisson equation) setup
-	  if ( vc.vcType == "air"){
-	    shared_ptr<TArray> saCell(new TArray(nCells));
-	    saCell->zero();
-	    _electricFields.total_charge.addArray(cells,saCell);
-	  }	  
 	  if ( vc.vcType == "dielectric"){
 	    shared_ptr<TArray> sdCell(new TArray(nCells));
 	    *sdCell = _options["initialTotalCharge"];
 	    _electricFields.total_charge.addArray(cells,sdCell);
 	  }
-	  
+	  else{
+	    shared_ptr<TArray> saCell(new TArray(nCells));
+	    saCell->zero();
+	    _electricFields.total_charge.addArray(cells,saCell);
+	  }
 	  //potential gradient setup
 	  shared_ptr<PGradArray> gradp(new PGradArray(nCells));
           gradp->zero();	
@@ -688,8 +687,11 @@ public:
 
         foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
         {
+	  
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
+
+	    
             GenericBCS<T,T,T> gbc(faces,mesh,
                                   _geomFields,
                                   _electricFields.potential,
