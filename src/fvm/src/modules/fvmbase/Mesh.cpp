@@ -974,7 +974,7 @@ Mesh::extrude(int nz, double zmax)
   const int eNInteriorCells = nz*myNCells;
   const int eNBoundaryCells = eNBoundaryFaces;
   
-  const int eNCells = eNInteriorCells + eNBoundaryCells;
+  //const int eNCells = eNInteriorCells + eNBoundaryCells;
   const int eNNodes = (nz+1)*myNNodes;
   
   Mesh *eMesh = new Mesh(3);
@@ -1276,12 +1276,9 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   StorageSite& cells = getCells();
 
 
-  const FaceGroup& otherFg = otherMesh.getFaceGroup(otherFgId);
-  const StorageSite& otherFgSite = otherFg.site;
   StorageSite& otherCells = otherMesh.getCells();
   
   const CRConnectivity& faceCells = getFaceCells(fgSite);
-  const CRConnectivity& otherFaceCells = otherMesh.getFaceCells(otherFgSite);
 
   const int count = fgSite.getSelfCount();
 
@@ -1309,28 +1306,73 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
       leftCellsToSCells[c0] = f;
       leftCellsToSCells[c1] = f;
   }
+
+  // since there can be more than one face group in common between the
+  // two meshes, we need to split up the existing gather scatter index
+  // arrays into two sets, one for the cells that are connected
+  // through the faces in the current face group and one for the rest.
+
   
   StorageSite::ScatterMap& lScatterMap = cells.getScatterMap();
   StorageSite::ScatterMap& rScatterMap = otherCells.getScatterMap();
 
-  shared_ptr<IntArray> L2RScatterPtr = lScatterMap[&otherCells];
-  const IntArray& L2RScatter = *L2RScatterPtr;
-  shared_ptr<IntArray> R2LScatterPtr = rScatterMap[&cells];
-  const IntArray& R2LScatter = *R2LScatterPtr;
+  shared_ptr<IntArray> L2RScatterOrigPtr = lScatterMap[&otherCells];
+  shared_ptr<IntArray> R2LScatterOrigPtr = rScatterMap[&cells];
   
   
   StorageSite::GatherMap& lGatherMap = cells.getGatherMap();
   StorageSite::GatherMap& rGatherMap = otherCells.getGatherMap();
   
-  shared_ptr<IntArray> L2RGatherPtr = lGatherMap[&otherCells];
-  const IntArray& L2RGather = *L2RGatherPtr;
-  shared_ptr<IntArray> R2LGatherPtr = rGatherMap[&cells];
-  const IntArray& R2LGather = *R2LGatherPtr;
+  shared_ptr<IntArray> L2RGatherOrigPtr = lGatherMap[&otherCells];
+  shared_ptr<IntArray> R2LGatherOrigPtr = rGatherMap[&cells];
+
+  // the new1 arrays will have the size count and the new2 ones will
+  // be the current size of the arrays - count
+
+  const int countOrig = L2RScatterOrigPtr->getLength();
+  const int count2 = countOrig - count;
+
+  shared_ptr<IntArray> L2RScatterNew1Ptr( new IntArray(count) );
+  shared_ptr<IntArray> R2LScatterNew1Ptr( new IntArray(count) );
+  shared_ptr<IntArray> L2RGatherNew1Ptr( new IntArray(count) );
+  shared_ptr<IntArray> R2LGatherNew1Ptr( new IntArray(count) );
+
+  shared_ptr<IntArray> L2RScatterNew2Ptr;
+  shared_ptr<IntArray> R2LScatterNew2Ptr;
+  shared_ptr<IntArray> L2RGatherNew2Ptr;
+  shared_ptr<IntArray> R2LGatherNew2Ptr;
+
+  if (count2 > 0)
+  {
+      L2RScatterNew2Ptr = shared_ptr<IntArray>( new IntArray(count2) );
+      R2LScatterNew2Ptr = shared_ptr<IntArray>( new IntArray(count2) );
+      L2RGatherNew2Ptr = shared_ptr<IntArray>( new IntArray(count2) );
+      R2LGatherNew2Ptr = shared_ptr<IntArray>( new IntArray(count2) );
+  }
+
+  for(int i=0, nc1=0, nc2=0; i<countOrig; i++)
+  {
+      const int lcg = (*L2RGatherOrigPtr)[i];
+      // if the left cell is in the current face groups neighbours it goes into the new1 
+      if (leftCellsToSCells.find(lcg) != leftCellsToSCells.end())
+      {
+          (*L2RScatterNew1Ptr)[nc1] = (*L2RScatterOrigPtr)[i];
+          (*R2LScatterNew1Ptr)[nc1] = (*R2LScatterOrigPtr)[i];
+          (*L2RGatherNew1Ptr)[nc1] = (*L2RGatherOrigPtr)[i];
+          (*R2LGatherNew1Ptr)[nc1] = (*R2LGatherOrigPtr)[i];
+          nc1++;
+      }
+      else
+      {
+          (*L2RScatterNew2Ptr)[nc2] = (*L2RScatterOrigPtr)[i];
+          (*R2LScatterNew2Ptr)[nc2] = (*R2LScatterOrigPtr)[i];
+          (*L2RGatherNew2Ptr)[nc2] = (*L2RGatherOrigPtr)[i];
+          (*R2LGatherNew2Ptr)[nc2] = (*R2LGatherOrigPtr)[i];
+          nc2++;
+      }
+  }        
   
-  
-  // we will leave the gather scatter arrays on the left and right
-  // storage sites as they are (except for changing the keys under
-  // which they appear) so here we just need to create the gather and
+  // create the gather and
   // scatter arrays for the smesh cells accordingly
   
   shared_ptr<IntArray> s2LScatterPtr( new IntArray(count) );
@@ -1339,29 +1381,23 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   shared_ptr<IntArray> L2sGatherPtr( new IntArray(count) );
   shared_ptr<IntArray> R2sGatherPtr( new IntArray(count) );
   
-
-  IntArray& s2LScatter = *s2LScatterPtr;
-  IntArray& s2RScatter = *s2RScatterPtr;
-  IntArray& L2sGather = *L2sGatherPtr;
-  IntArray& R2sGather = *R2sGatherPtr;
-
   for(int i=0; i<count; i++)
   {
       // the left cell being gathered to
-      const int lcg = L2RGather[i];
+      const int lcg = (*L2RGatherNew1Ptr)[i];
 
       // the corresponding cell in the shell mesh should be scattering to both L and R
-      s2LScatter[i] = leftCellsToSCells[lcg];
-      s2RScatter[i] = leftCellsToSCells[lcg];
+      (*s2LScatterPtr)[i] = leftCellsToSCells[lcg];
+      (*s2RScatterPtr)[i] = leftCellsToSCells[lcg];
 
       // the left cell being scattered from
-      const int lcs = L2RScatter[i];
+      const int lcs = (*L2RScatterNew1Ptr)[i];
 
       // this should be gathered in the left ghost cell of shell mesh
-      L2sGather[i] = leftCellsToSCells[lcs] + count;
+      (*L2sGatherPtr)[i] = leftCellsToSCells[lcs] + count;
 
       // the right cell is gathered in the right ghost
-      R2sGather[i] = leftCellsToSCells[lcs] + 2*count;
+      (*R2sGatherPtr)[i] = leftCellsToSCells[lcs] + 2*count;
      
   }
 
@@ -1371,20 +1407,28 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   sMeshCells.getGatherMap()[&cells] = L2sGatherPtr;
   sMeshCells.getGatherMap()[&otherCells] = R2sGatherPtr;
 
-  // erase the existing arrays in left and right maps and add them
-  // with the new keys
+  // replace the existing arrays in left and right maps and add the
+  // new ones
 
   lScatterMap.erase(&otherCells);
-  lScatterMap[&sMeshCells] = L2RScatterPtr;
+  if (count2 >0)
+    lScatterMap[&otherCells] = L2RScatterNew2Ptr;
+  lScatterMap[&sMeshCells] = L2RScatterNew1Ptr;
   
   lGatherMap.erase(&otherCells);
-  lGatherMap[&sMeshCells] = L2RGatherPtr;
+  if (count2 >0)
+    lGatherMap[&otherCells] = L2RGatherNew2Ptr;
+  lGatherMap[&sMeshCells] = L2RGatherNew1Ptr;
   
   rScatterMap.erase(&cells);
-  rScatterMap[&sMeshCells] = R2LScatterPtr;
+  if (count2 >0)
+    rScatterMap[&cells] = R2LScatterNew2Ptr;
+  rScatterMap[&sMeshCells] = R2LScatterNew1Ptr;
   
   rGatherMap.erase(&cells);
-  rGatherMap[&sMeshCells] = R2LGatherPtr;
+  if (count2 >0)
+    rGatherMap[&cells] = R2LGatherNew2Ptr;
+  rGatherMap[&sMeshCells] = R2LGatherNew1Ptr;
 
   // create the cell cell connectivity for the shell mesh
   shared_ptr<CRConnectivity> sCellCells(new CRConnectivity(sMeshCells,sMeshCells));
