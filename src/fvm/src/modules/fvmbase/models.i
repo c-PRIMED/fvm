@@ -32,6 +32,8 @@ using namespace std;
 %include "MovingMeshModel.i"
 %include "StructureDeformationModel.i"
 %include "StructureModel.i"
+%include "PlateFields.h"
+%include "PlateModel.i"
 #endif
 
 %include "FlowModel.i"

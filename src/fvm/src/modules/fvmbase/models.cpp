@@ -47,6 +47,11 @@ template class RosselandModel<ATYPE>;
 
 template class StructureModel<ATYPE>;
 
+#include "PlateModel.h"
+#include "PlateModel_impl.h"
+
+template class PlateModel<ATYPE>;
+
 #include "MovingMeshModel.h"
 
 template class MovingMeshModel<ATYPE>;
