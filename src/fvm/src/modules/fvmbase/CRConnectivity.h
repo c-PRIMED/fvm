@@ -165,6 +165,9 @@ public:
   const PairToColMapping&
   getPairToColMapping(const CRConnectivity& pairs) const;
   
+  void
+  clearPairToColMapping(const CRConnectivity& pairs) const;
+  
 
 private:
   CRConnectivity(const CRConnectivity&);
