@@ -731,3 +731,14 @@ CRConnectivity::createOffset(const StorageSite& newRowSite,
   return offPtr;
 }
 
+void
+CRConnectivity::clearPairToColMapping(const CRConnectivity& pairs) const
+{
+  if (_pairToColMappings.find(&pairs) != _pairToColMappings.end())
+  {
+      Array<Vector<int,2> > *pairToCol = _pairToColMappings[&pairs];
+      delete pairToCol;
+      
+      _pairToColMappings.erase(&pairs);
+  }
+}
