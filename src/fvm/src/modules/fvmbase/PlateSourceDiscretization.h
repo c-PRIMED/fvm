@@ -175,18 +175,32 @@ public:
         const VectorT3 en = Af/faceAreaMag[f];
         
         VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
-	VectorT3 dzeta = faceCentroid[f]-cellCentroid[c0];
+	VectorT3 dzeta0 = faceCentroid[f]-cellCentroid[c0];
+	VectorT3 dzeta1 = faceCentroid[f]-cellCentroid[c1];
 
+        const T diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
+        const VectorT3 secondaryCoeff = (faceArea[f]-ds*diffMetric);
+
+        const T dfx0(dzeta0[0]);
+        const T dfy0(dzeta0[1]);
+        
+        const T dfx1(dzeta1[0]);
+        const T dfy1(dzeta1[1]);
+        
         T vol0 = cellVolume[c0];
         T vol1 = cellVolume[c1];
 
         T wt0 = vol0/(vol0+vol1);
         T wt1 = vol1/(vol0+vol1);
 
+        T bwt0(wt0);
+        T bwt1(wt1);
         if (isBoundary && !isSymmetry)
         {  
             wt0 = T(1.0);
             wt1 = T(0.);
+            //bwt0 = T(0.);
+            // bwt1 = T(1.);
         }
         
         T faceD(1.0);
@@ -200,9 +214,6 @@ public:
 	T faceB0(1.0);
 	T faceB1(1.0);
 
-	T df0(0.0);
-	T df1(0.0);
-	
 	T faceNu(1.0);
 
 	D0 = ymCell[c0]*pow(tCell[c0],three)/(twelve*(one - nuCell[c0]*nuCell[c0]));
@@ -210,13 +221,9 @@ public:
 
 	G0 = _scf*ymCell[c0]*tCell[c0]/(two*(one+nuCell[c0]));
 	G1 = _scf*ymCell[c1]*tCell[c1]/(two*(one+nuCell[c1]));
-
-	df0 = dzeta[0];
-	df1 = dzeta[1];
 	
 	if(f==100)
 	{
-	    cout<<"df0 ="<<df0<<" df1 = "<<df1<<endl;
 	    cout<<"D ="<<D0<<" and "<<D1<<endl;
 	    cout<<"D ="<<G0<<" and "<<G1<<endl;
 	}
@@ -249,8 +256,8 @@ public:
 	faceG = G0*wt0 + G1*wt1;
 	faceNu = nuCell[c0]*wt0 + nuCell[c1]*wt1;
 
-	faceB0 = xCell[c0][0]*wt0 + xCell[c1][0]*wt1;
-	faceB1 = xCell[c0][1]*wt0 + xCell[c1][1]*wt1;
+	faceB0 = xCell[c0][0]*bwt0 + xCell[c1][0]*bwt1;
+	faceB1 = xCell[c0][1]*bwt0 + xCell[c1][1]*bwt1;
 
         if(f==100)
 	{
@@ -261,35 +268,98 @@ public:
 
 	VectorT3 source(NumTypeTraits<VectorT3>::getZero());
 
-        // mu*grad U ^ T + lambda * div U I
+        // primary w flux, contribution from grad w
+        
+        T wFlux = faceG*diffMetric*(xCell[c1][2]-xCell[c0][2]);
+
+        // secondary w flux
+        wFlux += faceG*(gradF[2][0]*secondaryCoeff[0] + gradF[2][0]*secondaryCoeff[1]);
+
+        // contribution from beta term
+
+        wFlux += faceG*(faceB0*Af[0]+faceB1*Af[1]);
+        
+        // source for cell 0, uses dfx0 and dfy0
 	source[0] = -faceD*((gradF[0][0]+faceNu*gradF[1][1])*Af[0]+
 			    ((one-faceNu)/two)*(gradF[0][1]+gradF[1][0])*Af[1])+
-	  faceG*df0*((gradF[2][0]+faceB0)*Af[0]+(gradF[2][1]+faceB1)*Af[1]);
+	  + dfx0*wFlux;
         
         source[1] = -faceD*(((one-faceNu)/two)*(gradF[0][1]+gradF[1][0])*Af[0]+
 			    (gradF[1][1]+faceNu*gradF[0][0])*Af[1])+
-	  faceG*df1*((gradF[2][0]+faceB0)*Af[0]+(gradF[2][1]+faceB1)*Af[1]);
+	  + dfy0*wFlux;
         
-	source[2] = -faceG*((gradF[2][0]+faceB0)*Af[0]+(gradF[2][1]+faceB1)*Af[1]);
+	source[2] = -wFlux;
 
+        // add flux to the residual of c0 
+        rCell[c0] += source;
+
+
+        // source for cell 1, uses dfx1 and dfy1
+	source[0] = -faceD*((gradF[0][0]+faceNu*gradF[1][1])*Af[0]+
+			    ((one-faceNu)/two)*(gradF[0][1]+gradF[1][0])*Af[1])+
+	  + dfx1*wFlux;
+        
+        source[1] = -faceD*(((one-faceNu)/two)*(gradF[0][1]+gradF[1][0])*Af[0]+
+			    (gradF[1][1]+faceNu*gradF[0][0])*Af[1])+
+	  + dfy1*wFlux;
+        
+	source[2] = -wFlux;
+
+        rCell[c1] -= source;
+
+
+        // linearization of wflux, primary part
+
+        a00(0,2) += -diffMetric*faceG*dfx0;
+        a00(1,2) += -diffMetric*faceG*dfy0;
+        a00(2,2) += diffMetric*faceG;
+
+        a01(0,2) += diffMetric*faceG*dfx0;
+        a01(1,2) += diffMetric*faceG*dfy0;
+        a01(2,2) += -diffMetric*faceG;
+        
+        a11(0,2) += -diffMetric*faceG*dfx1;
+        a11(1,2) += -diffMetric*faceG*dfy1;
+        a11(2,2) += diffMetric*faceG;
+
+        a10(0,2) += diffMetric*faceG*dfx1;
+        a10(1,2) += diffMetric*faceG*dfy1;
+        a10(2,2) += -diffMetric*faceG;
+        
+        
+        // linearization of beta term
 	Diag coeffPair;
 
-	coeffPair(0,0)=faceG*df0*Af[0];
-	coeffPair(0,1)=faceG*df0*Af[1];
+	coeffPair(0,0)=faceG*dfx0*Af[0];
+	coeffPair(0,1)=faceG*dfx0*Af[1];
 	coeffPair(0,2)=zero;
 
-	coeffPair(1,0)=faceG*df1*Af[0];
-	coeffPair(1,1)=faceG*df1*Af[1];
+	coeffPair(1,0)=faceG*dfy0*Af[0];
+	coeffPair(1,1)=faceG*dfy0*Af[1];
 	coeffPair(1,2)=zero;
 
 	coeffPair(2,0)=-faceG*Af[0];
 	coeffPair(2,1)=-faceG*Af[1];
 	coeffPair(2,2)=zero;
 			
-	a00 += wt0*coeffPair;
-	a01 += wt1*coeffPair;
-	a10 -= wt0*coeffPair;
-	a11 -= wt1*coeffPair;
+	a00 += bwt0*coeffPair;
+	a01 += bwt1*coeffPair;
+
+	coeffPair(0,0)=faceG*dfx1*Af[0];
+	coeffPair(0,1)=faceG*dfx1*Af[1];
+	coeffPair(0,2)=zero;
+
+	coeffPair(1,0)=faceG*dfy1*Af[0];
+	coeffPair(1,1)=faceG*dfy1*Af[1];
+	coeffPair(1,2)=zero;
+
+	coeffPair(2,0)=-faceG*Af[0];
+        coeffPair(2,1)=-faceG*Af[1];
+	coeffPair(2,2)=zero;
+			
+        
+	a10 -= bwt0*coeffPair;
+	a11 -= bwt1*coeffPair;
 	
         VectorT3 s0(NumTypeTraits<VectorT3>::getZero());
         VectorT3 s1(NumTypeTraits<VectorT3>::getZero());
@@ -314,39 +384,34 @@ public:
 		
 		coeff(0,0)=-wt0*faceD*(Af[0]*g_nb[0]+((one-faceNu)/two)*Af[1]*g_nb[1]);
 		coeff(0,1)=-wt0*faceD*(((one-faceNu)/two)*Af[1]*g_nb[0]+faceNu*Af[0]*g_nb[1]);
-		coeff(0,2)=wt0*faceG*df0*(g_nb[0]*Af[0]+g_nb[1]*Af[1]);
+		coeff(0,2)=wt0*faceG*dfx0*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		coeff(1,0)=-wt0*faceD*(((one-faceNu)/two)*Af[0]*g_nb[1]+faceNu*Af[1]*g_nb[0]);
 		coeff(1,1)=-wt0*faceD*(Af[1]*g_nb[1]+((one-faceNu)/two)*Af[0]*g_nb[0]);
-		coeff(1,2)=wt0*faceG*df1*(g_nb[0]*Af[0]+g_nb[1]*Af[1]);
+		coeff(1,2)=wt0*faceG*dfy0*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		coeff(2,0)=zero;
 		coeff(2,1)=zero;
-		coeff(2,2)=-wt0*faceG*(g_nb[0]*Af[0]+g_nb[1]*Af[1]);
+		coeff(2,2)=-wt0*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 		
-#if 0
-                if (isSymmetry)
-                {
-                    SquareTensor<T,3> R;
-                    
-                    for(int i=0;i<3;i++)
-                      for(int j=0; j<3; j++)
-                      {
-                          if (i==j)
-                            R(i,j) = 1.0 - 2*en[i]*en[j];
-                          else
-                            R(i,j) = - 2*en[i]*en[j];
-                      }
-
-                    Diag coeff1(R*coeff*R);
-                    coeff += coeff1;
-                      
-                }
-#endif
                 OffDiag& a0_nb = matrix.getCoeff(c0,nb);
 
                 a0_nb += coeff;
                 a00 -= coeff;
+
+                
+		coeff(0,0)=-wt0*faceD*(Af[0]*g_nb[0]+((one-faceNu)/two)*Af[1]*g_nb[1]);
+		coeff(0,1)=-wt0*faceD*(((one-faceNu)/two)*Af[1]*g_nb[0]+faceNu*Af[0]*g_nb[1]);
+		coeff(0,2)=wt0*faceG*dfx1*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+
+		coeff(1,0)=-wt0*faceD*(((one-faceNu)/two)*Af[0]*g_nb[1]+faceNu*Af[1]*g_nb[0]);
+		coeff(1,1)=-wt0*faceD*(Af[1]*g_nb[1]+((one-faceNu)/two)*Af[0]*g_nb[0]);
+		coeff(1,2)=wt0*faceG*dfy1*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+
+		coeff(2,0)=zero;
+		coeff(2,1)=zero;
+		coeff(2,2)=-wt0*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+		
                 a10 += coeff;
 
                 if (c1 != nb)
@@ -376,19 +441,33 @@ public:
 		    
 		    coeff(0,0)=-wt1*faceD*(Af[0]*g_nb[0]+((one-faceNu)/two)*Af[1]*g_nb[1]);
 		    coeff(0,1)=-wt1*faceD*(((one-faceNu)/two)*Af[1]*g_nb[0]+faceNu*Af[0]*g_nb[1]);
-		    coeff(0,2)=wt1*faceG*df0*(g_nb[0]*Af[0]+g_nb[1]*Af[1]);
+		    coeff(0,2)=wt1*faceG*dfx1*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		    coeff(1,0)=-wt1*faceD*(((one-faceNu)/two)*Af[0]*g_nb[1]+faceNu*Af[1]*g_nb[0]);
 		    coeff(1,1)=-wt1*faceD*(Af[1]*g_nb[1]+((one-faceNu)/two)*Af[0]*g_nb[0]);
-		    coeff(1,2)=wt1*faceG*df1*(g_nb[0]*Af[0]+g_nb[1]*Af[1]);
+		    coeff(1,2)=wt1*faceG*dfy1*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		    coeff(2,0)=zero;
 		    coeff(2,1)=zero;
-		    coeff(2,2)=-wt1*faceG*(g_nb[0]*Af[0]+g_nb[1]*Af[1]);
+		    coeff(2,2)=-wt1*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
                     OffDiag& a1_nb = matrix.getCoeff(c1,nb);
                     a1_nb -= coeff;
                     a11 += coeff;
+
+                    
+		    coeff(0,0)=-wt1*faceD*(Af[0]*g_nb[0]+((one-faceNu)/two)*Af[1]*g_nb[1]);
+		    coeff(0,1)=-wt1*faceD*(((one-faceNu)/two)*Af[1]*g_nb[0]+faceNu*Af[0]*g_nb[1]);
+		    coeff(0,2)=wt1*faceG*dfx0*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+
+		    coeff(1,0)=-wt1*faceD*(((one-faceNu)/two)*Af[0]*g_nb[1]+faceNu*Af[1]*g_nb[0]);
+		    coeff(1,1)=-wt1*faceD*(Af[1]*g_nb[1]+((one-faceNu)/two)*Af[0]*g_nb[0]);
+		    coeff(1,2)=wt1*faceG*dfy0*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+
+		    coeff(2,0)=zero;
+		    coeff(2,1)=zero;
+		    coeff(2,2)=-wt1*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+
                     a01 -= coeff;
 
                     if (c0 != nb)
@@ -411,10 +490,6 @@ public:
 	    cout<<"a11 = "<<a11<<endl;
 	    cout<<endl;
 	}
-
-        // add flux to the residual of c0 and c1
-        rCell[c0] += source;
-	rCell[c1] -= source;
 
     }
   }
