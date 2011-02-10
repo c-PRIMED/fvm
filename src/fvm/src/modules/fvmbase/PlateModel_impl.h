@@ -723,6 +723,104 @@ public:
     }
   }
 
+  #if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
+  
+  void dumpMatrix(const string fileBase)
+  {
+    LinearSystem ls;
+    initDeformationLinearization(ls);
+    ls.initAssembly();
+    linearizeDeformation(ls);
+    ls.initSolve();
+    
+    MultiFieldMatrix& mfmatrix = ls.getMatrix();
+    MultiField& b = ls.getB();
+
+    const Mesh& mesh = *_meshes[0];
+    const StorageSite& cells = mesh.getCells();
+    
+    MultiField::ArrayIndex vIndex(&_plateFields.deformation,&cells);
+
+    VVMatrix& matrix =
+      dynamic_cast<VVMatrix&>(mfmatrix.getMatrix(vIndex,vIndex));
+
+    VVDiagArray& diag = matrix.getDiag();
+    VVDiagArray& coeff = matrix.getOffDiag();
+
+    VectorT3Array& rCell = dynamic_cast<VectorT3Array&>(b[vIndex]);
+
+    const CRConnectivity& cr = matrix.getConnectivity();
+
+    const Array<int>& row = cr.getRow();
+    const Array<int>& col = cr.getCol();
+    
+    const int nCells = cells.getSelfCount();
+
+    const int dimension = 3;
+
+    const int dim2 = dimension*dimension;
+    
+    int nFlatRows = dimension*nCells;
+
+    int nFlatCoeffs = nCells*dim2;
+
+    for(int i=0; i<nCells; i++)
+      for(int jp=row[i]; jp<row[i+1]; jp++)
+      {
+          const int j = col[jp];
+          if (j<nCells) nFlatCoeffs += dim2;
+      }
+    
+    string matFileName = fileBase + ".mat";
+    FILE *matFile = fopen(matFileName.c_str(),"wb");
+    
+    fprintf(matFile,"%%%%MatrixMarket matrix coordinate real general\n");
+    fprintf(matFile,"%d %d %d\n", nFlatRows,nFlatRows,nFlatCoeffs);
+
+    for(int i=0; i<nCells; i++)
+    {
+        for(int ndr=0; ndr<dimension; ndr++)
+          for(int ndc=0; ndc<dimension; ndc++)
+          {
+              const int nfr = i*dimension + ndr;
+              const int nfc = i*dimension + ndc;
+              T ap = diag[i](ndr,ndc);
+              //if (fabs(ap) < 1.0) ap =0.;
+              fprintf(matFile,"%d %d %22.15le\n", nfr+1, nfc+1, ap);
+          }
+        
+        for(int jp=row[i]; jp<row[i+1]; jp++)
+        {
+            const int j = col[jp];
+            if (j<nCells)
+            {
+                for(int ndr=0; ndr<dimension; ndr++)
+                  for(int ndc=0; ndc<dimension; ndc++)
+                  {
+                      const int nfr = i*dimension + ndr;
+                      const int nfc = j*dimension + ndc;
+                      T anb = coeff[jp](ndr,ndc);
+                      //if (fabs(anb) < 1.0) anb =0.;
+                      fprintf(matFile,"%d %d %22.15le\n", nfr+1, nfc+1, anb);
+                  }
+            }
+        }
+    }
+    
+    fclose(matFile);
+
+    string rhsFileName = fileBase + ".rhs";
+    FILE *rhsFile = fopen(rhsFileName.c_str(),"wb");
+    
+    for(int i=0; i<nCells; i++)
+      for(int nd=0; nd < dimension; nd++)
+            fprintf(rhsFile,"%22.15le\n",-rCell[i][nd]);
+
+    fclose(rhsFile);
+  }
+#endif
+
+
 private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
@@ -797,3 +895,9 @@ PlateModel<T>::updateTime()
 }
 
 
+  template<class T>
+  void
+  PlateModel<T>::dumpMatrix(const string fileBase)
+  {
+    _impl->dumpMatrix(fileBase);
+  }
