@@ -41,6 +41,7 @@ public:
 
   void updateTime();
 
+  void dumpMatrix(const string fileBase);
 private:
   shared_ptr<Impl> _impl;
 };
