@@ -192,6 +192,7 @@ public:
 	const VGradType gradF = (vGradCell[c0]*wt0 + vGradCell[c1]*wt1);
 
 	VectorT3 source(NumTypeTraits<VectorT3>::getZero());
+	VectorT3 residualSource(NumTypeTraits<VectorT3>::getZero());
         const T divU = (gradF[0][0] + gradF[1][1] + gradF[2][2]);
 
         const T diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
@@ -209,9 +210,9 @@ public:
 
 	if(_residualStress)
 	{
-	    source[0] += _residualXXStress*Af[0];
-	    source[1] += _residualYYStress*Af[1];
-	    source[2] += _residualZZStress*Af[2];
+	    residualSource[0] = _residualXXStress*Af[0];
+	    residualSource[1] = _residualYYStress*Af[1];
+	    residualSource[2] = _residualZZStress*Af[2];
 	}
         
         VectorT3 s0(NumTypeTraits<VectorT3>::getZero());
@@ -345,6 +346,13 @@ public:
         // add flux to the residual of c0 and c1
         rCell[c0] += source;
 	rCell[c1] -= source;
+
+	// add flux due to residual Stress to the residual of c0 and c1
+	if (!isBoundary)
+	{
+	    rCell[c0] += residualSource;
+	    rCell[c1] -= residualSource;
+	} 
 
         // for Jacobian, use 2*mu + lambda as the diffusivity
         const T faceDiffusivity = faceMu;

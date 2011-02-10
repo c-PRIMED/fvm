@@ -884,6 +884,12 @@ public:
           tractionZ[n][2] = wgPlusTranspose[2][2]*eta[n]+
 	    (wg[0][0]+wg[1][1]+wg[2][2])*eta1[n];	  
 
+	  if(_options.residualStress)
+	  {
+	      tractionX[n][0] += _options["residualXXStress"];
+	      tractionY[n][1] += _options["residualYYStress"];
+	      tractionZ[n][2] += _options["residualZZStress"];
+	  }
       }
   }
 
