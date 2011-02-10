@@ -43,13 +43,24 @@ def esbgkTecplotFile(meshes, macroFields,filename ):
 
   coords = []
   coords.append( meshes[n].getNodeCoordinates().asNumPyArray() )
-     
-     
+
+  TxxFields=[]
+  TxxFields.append(macroFields.Txx[cellSites[n]].asNumPyArray())  
+  TyyFields=[]
+  TyyFields.append(macroFields.Tyy[cellSites[n]].asNumPyArray())   
+  TzzFields=[]
+  TzzFields.append(macroFields.Tzz[cellSites[n]].asNumPyArray())
+  TxyFields=[]
+  TxyFields.append(macroFields.Txy[cellSites[n]].asNumPyArray())
+  TxzFields=[]
+  TxzFields.append(macroFields.Txz[cellSites[n]].asNumPyArray())
+  TyzFields=[]
+  TyzFields.append(macroFields.Tyz[cellSites[n]].asNumPyArray())
   #filename = "quadrature" + ".plt"
   f = open(filename, 'w')
 
   f.write("Title = \" tecplot out file\" \n")
-  f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\n")
+  f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\"Txx\",\"Tyy\",\"Tzz\",\"Txy\",\"Txz\",\"Tyz\",\n")
   #f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\n")
   title_name = "nmesh" + str(n)
   ncell  = cellSites[n].getSelfCount()
@@ -57,7 +68,7 @@ def esbgkTecplotFile(meshes, macroFields,filename ):
   zone_name = "Zone T = " + "\"" + title_name +  "\"" +      \
                  " N = " + str( nodeSites[n].getCount() ) +     \
 		 " E = " + str( ncell ) +  \
-		 " DATAPACKING = BLOCK, VARLOCATION = ([4-11]=CELLCENTERED), " + \
+		 " DATAPACKING = BLOCK, VARLOCATION = ([4-17]=CELLCENTERED), " + \
 		 " ZONETYPE=FEQUADRILATERAL \n"
   f.write( zone_name )
   #write x
@@ -133,12 +144,46 @@ def esbgkTecplotFile(meshes, macroFields,filename ):
           f.write("\n")
   f.write("\n")	 
 
+  for i in range(0,ncell):
+      f.write( str(TxxFields[n][i]) + "    ")
+      if ( i % 5  == 4 ):
+          f.write("\n")
+  f.write("\n")	 
+
+  for i in range(0,ncell):
+      f.write( str(TyyFields[n][i]) + "    ")
+      if ( i % 5  == 4 ):
+          f.write("\n")
+  f.write("\n")
+
+  for i in range(0,ncell):
+      f.write( str(TzzFields[n][i]) + "    ")
+      if ( i % 5  == 4 ):
+          f.write("\n")
+  f.write("\n")
+
+  for i in range(0,ncell):
+      f.write( str(TxyFields[n][i]) + "    ")
+      if ( i % 5  == 4 ):
+          f.write("\n")
+  f.write("\n")
+  for i in range(0,ncell):
+      f.write( str(TxzFields[n][i]) + "    ")
+      if ( i % 5  == 4 ):
+          f.write("\n")
+  f.write("\n")
+  for i in range(0,ncell):
+      f.write( str(TyzFields[n][i]) + "    ")
+      if ( i % 5  == 4 ):
+          f.write("\n")
+  f.write("\n")
+  
   #connectivity
   for i in range(0,ncell):
       nnodes_per_cell = cellNodes[n].getCount(i)
       for node in range(0,nnodes_per_cell):
           f.write( str(cellNodes[n](i,node)+1) + "     ")
-  f.write("\n")
+      f.write("\n")
   	    
   f.write("\n")	  
      

@@ -14,6 +14,7 @@ MacroFields::MacroFields(const string baseName) :
   Txz(baseName +".Txz"),
   Tyz(baseName +".Tyz"),
   coeff(baseName +".coeff"),
-  coeffg(baseName +".coeffg")
+  coeffg(baseName +".coeffg"),
+  Entropy(baseName +"Entropy")
 {}
 

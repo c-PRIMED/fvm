@@ -73,7 +73,7 @@ class KineticModel : public Model
     _dsfEqPtr(_meshes,_quadrature),
     _dsfEqPtrES(_meshes,_quadrature)
     {     
-      
+     
       const int numMeshes = _meshes.size();
       for (int n=0; n<numMeshes; n++)
 	{
@@ -85,16 +85,19 @@ class KineticModel : public Model
 	}
       init(); 
       SetBoundaryConditions();
+      
       //weightedMaxwellian(1.0,0.00,0.00,1.0,1.0);
       InitializeMacroparameters();
       initializeMaxwellian();
       
       ComputeMacroparameters(); //calculate density,velocity,temperature
-      
+    
       ComputeCollisionfrequency(); //calculate viscosity, collisionFrequency
       initializeMaxwellianEq(); //equilibrium distribution
-      //EquilibriumDistributionBGK();
       
+      //EquilibriumDistributionBGK();
+      callBoundaryConditions();
+     
     }
     
     
@@ -106,7 +109,8 @@ class KineticModel : public Model
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount(); 
-	double pi(3.1416);
+	const double pi(3.14159);
+	TArray& Entropy = dynamic_cast<TArray&>(_macroFields.Entropy[cells]);  
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);  
 	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
 	
@@ -132,12 +136,14 @@ class KineticModel : public Model
 	    v[c][0]=0.0;
 	    v[c][1]=0.0;
 	    v[c][2]=0.0;
-	    
+	    //if(_options.fgamma>0){
 	    //BGK
 	    coeff[c][0]=1.0/pow(pi,1.5);
 	    coeff[c][1]=1.0;
 	    coeff[c][2]=0.0;coeff[c][3]=0.0;coeff[c][4]=0.0;
-	    
+	    //}
+Entropy[c]=0.0;
+	    //if(_options.fgamma ==2){
 	    //ESBGK
 	    coeffg[c][0]=coeff[c][0];
 	    coeffg[c][1]=coeff[c][1];
@@ -149,7 +155,7 @@ class KineticModel : public Model
 	    coeffg[c][7]=0.0;
 	    coeffg[c][8]=0.0;
 	    coeffg[c][9]=0.0;	
-	    
+	    //}
 	   
 
 	    temperature[c]=1.0;
@@ -175,9 +181,10 @@ class KineticModel : public Model
 	
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getSelfCount();  //only interior
 	
 	
+	TArray& Entropy = dynamic_cast<TArray&>(_macroFields.Entropy[cells]);
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
 	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
 	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
@@ -198,8 +205,12 @@ class KineticModel : public Model
 	    v[c][1]=0.0;
 	    v[c][2]=0.0;
 	    temperature[c]=0.0;   
+	    Entropy[c]=0.0;
 	  }	
-	
+	const T rho_init=_options["rho_init"]; 
+const T T_init=_options["T_init"]; 
+const T R=8314.0/_options["molecularWeight"];
+T u_init=pow(2.0*R*T_init,0.5);
 	for(int j=0;j<N123;j++){
 	  
 	  Field& fnd = *_dsfPtr.dsf[j];
@@ -211,7 +222,9 @@ class KineticModel : public Model
 	    v[c][0]= v[c][0]+(cx[j]*f[c])*dcxyz[j];
 	    v[c][1]= v[c][1]+(cy[j]*f[c])*dcxyz[j];
 	    v[c][2]= v[c][2]+(cz[j]*f[c])*dcxyz[j];
-	    temperature[c]= temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
+	   Entropy[c]=Entropy[c]+f[c]*dcxyz[j]*(1-log(pow(6.26068E-34,3.0)*f[c]/pow(40.0E-26/6.023,4)*rho_init/pow(u_init,3.0)));
+
+		 temperature[c]= temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
 					    +pow(cz[j],2.0))*f[c]*dcxyz[j];
 	    
 	  }
@@ -249,7 +262,7 @@ class KineticModel : public Model
       {	
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getSelfCount();
 	
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
@@ -268,7 +281,7 @@ class KineticModel : public Model
 	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
 	const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
 	
-	T Pr=_options["Prandtl"];
+	const double Pr=_options.Prandtl;
 	//cout <<"Prandlt" <<Pr<<endl;
 	
 	//initialize density,velocity,temperature to zero    
@@ -280,7 +293,7 @@ class KineticModel : public Model
 	    Txy[c]=0.0;
 	    Txz[c]=0.0;
 	    Tyz[c]=0.0;
-	  }	
+	  }
 	for(int j=0;j<N123;j++){
 	  
 	  Field& fnd = *_dsfPtr.dsf[j];
@@ -291,10 +304,9 @@ class KineticModel : public Model
 	    Txx[c]=Txx[c]+pow(cx[j]-v[c][0],2)*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
 	    Tyy[c]=Tyy[c]+pow(cy[j]-v[c][1],2)*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j] ;
 	    Tzz[c]=Tzz[c]+pow(cz[j]-v[c][2],2)*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
-	    Txy[c]=Txy[c]+(cx[j]-v[c][0])*(cy[j]-v[c][1])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
-	    Txz[c]=Txz[c]+(cx[j]-v[c][0])*(cz[j]-v[c][2])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
-	    Tyz[c]=Tyz[c]+(cy[j]-v[c][1])*(cz[j]-v[c][2])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
-	    
+	    Txy[c]=Txy[c]+(cx[j])*(cy[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
+	    Txz[c]=Txz[c]+(cx[j])*(cz[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
+	    Tyz[c]=Tyz[c]+(cy[j])*(cz[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];  
 	  }
 	}
 		
@@ -343,7 +355,7 @@ class KineticModel : public Model
 
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getSelfCount();
 	
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
 	TArray& viscosity = dynamic_cast<TArray&>(_macroFields.viscosity[cells]);
@@ -352,13 +364,18 @@ class KineticModel : public Model
 	TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
 	for(int c=0; c<nCells;c++)
 	  {
-	    viscosity[c]= muref*pow(temperature[c]/ Tmuref,mu_w); // viscosity power law
-	    collisionFrequency[c]=density[c]*temperature[c]/(muref/mu0*pow(temperature[c]/ Tmuref*T_init, mu_w))  ;
+	    viscosity[c]= muref*pow(temperature[c]*T_init/ Tmuref,mu_w); // viscosity power law
+	    collisionFrequency[c]=density[c]*temperature[c]/viscosity[c]*mu0;//(muref/mu0*pow(temperature[c]/ Tmuref*T_init, mu_w))  ;
 	  }
+	if(_options.fgamma==2){
+	  for(int c=0; c<nCells;c++)
+	    {collisionFrequency[c]=_options.Prandtl*collisionFrequency[c];}
+	}
+	
       }
   }
-      
-
+  
+  
   void initializeMaxwellianEq()
   {
     const int numMeshes = _meshes.size();
@@ -385,10 +402,13 @@ class KineticModel : public Model
 	    fEq[c]=density[c]/pow((pi*temperature[c]),1.5)*
 	      exp(-(pow((cx[j]-v[c][0]),2.0)+pow((cy[j]-v[c][1]),2.0)+
 		    pow((cz[j]-v[c][2]),2.0))/temperature[c]);
+	
 	  } 
 	  
-	}
-	if(_options.fgamma==2){
+	} 
+	
+	
+	//if(_options.fgamma==2){
 	  for(int j=0;j< numFields;j++){
 	    Field& fndEqES = *_dsfEqPtrES.dsf[j];
 	    TArray& fEqES = dynamic_cast< TArray&>(fndEqES[cells]);
@@ -398,8 +418,8 @@ class KineticModel : public Model
 		      pow((cz[j]-v[c][2]),2.0))/temperature[c]);
 	    } 
 	    
-	  }
-	}
+	    }
+	  //}
 	
       }
   }
@@ -415,7 +435,7 @@ class KineticModel : public Model
 	const int sizeC=5;
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getSelfCount();
 	
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
@@ -460,26 +480,28 @@ class KineticModel : public Model
 	    
 	    //solve Ax=b for x 
 	    //p=GE_elim(fjac,p,3);
-	    VectorT5 pvec1;
+	    VectorT5 xvec;
 	    fjacinv=inverseGauss(fjac,sizeC);
 	     
 	    //if(c==20){cout<<"fjac " <<fjac(1,1) << endl;}
 	    
 	    for (int row=0;row<sizeC;row++){ 
-	      pvec1[row]=0.0;
+	      xvec[row]=0.0;
 	      for (int col=0;col<sizeC;col++){
-		pvec1[row]+=fjacinv(row,col)*pvec[col];}
+		xvec[row]+=fjacinv(row,col)*pvec[col];}
 	    }
 	    //check for convergence, update
 	    
 	    T errx=0.;
 	    for (int row=0;row<sizeC;row++){
-	      errx +=fabs(pvec1[row]);
-	      coeff[c][row]+= pvec1[row];
+	      errx +=fabs(xvec[row]);
+	      coeff[c][row]+= xvec[row];
 	    }
 	    
-	    
-	    //if (c==0) {cout << "BGK-CELL " <<c << " c0 "<< coeff[c][0]<<"  c1 " <<coeff[c][1]<< " c2 "<< coeff[c][2]<< " c3 "<< coeff[c][3] << " c4 "<< coeff[c][4]<<endl;}
+	    /*
+	    if (c==_options.printCellNumber) { cout <<"trial" <<trial <<endl;
+	      cout << "BGK-CELL " <<c << " c0 "<< coeff[c][0]<<"  c1 " <<coeff[c][1]<< " c2 "<< coeff[c][2]<< " c3 "<< coeff[c][3] << " c4 "<< coeff[c][4]<<endl;}
+	    */
 	    if(errx <= tolx)
 	      break;
 	    
@@ -499,7 +521,7 @@ class KineticModel : public Model
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getSelfCount();
 	const double pi(3.14159);
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
@@ -585,7 +607,7 @@ class KineticModel : public Model
   
   void NewtonsMethodESBGK(const int ktrial)
   {
-    //cout<< "Inside Newons Method" <<endl;
+    // cout<< "Inside Newtons Method" <<endl;
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
@@ -594,7 +616,7 @@ class KineticModel : public Model
 	const int sizeC=10;
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getSelfCount();
 	
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	
@@ -610,71 +632,88 @@ class KineticModel : public Model
 	VectorT10Array& coeffg = dynamic_cast<VectorT10Array&>(_macroFields.coeffg[cells]);
 	
 	for(int c=0; c<nCells;c++){
-
 	  for (int trial=0;trial<ktrial;trial ++){
-
-	  SquareMatrix<T,sizeC> fjac(0);
-	  SquareMatrix<T,sizeC> fjacinv(0);
-	  Vector<T,sizeC> fvec;
-	  fvec[0]=density[c];
-	  fvec[1]=density[c]*v[c][0];
-	  fvec[2]=density[c]*v[c][1];
-	  fvec[3]=density[c]*v[c][2];
-	  fvec[4]=density[c]*(pow(v[c][0],2)+Txx[c]); 
-	  fvec[5]=density[c]*(pow(v[c][1],2)+Tyy[c]);
-	  fvec[6]=density[c]*(pow(v[c][2],2)+Tzz[c]);
-	  fvec[7]=density[c]*(v[c][0]*v[c][1]+Txy[c]);
-	  fvec[8]=density[c]*(v[c][0]*v[c][2]+Txz[c]);
-	  fvec[9]=density[c]*(v[c][1]*v[c][2]+Tyz[c]);
-	  //calculate Jacobian
-	  //if (c==0){cout <<"Txx,yy,zz"<<Txx[c]<<Tyy[c]<<Tzz[c]<<endl;}
-	  setJacobianESBGK(fjac,fvec,coeffg[c],v[c],c);
-	  
-	  // if (c==0){
-	  //  cout << "CELL "<< c << " cg0 "<< coeffg[c][0]<< " cg1 "<< coeffg[c][1]<<"  cg2 " <<coeffg[c][2] <<"  cg3 " <<coeffg[c][3] <<endl; 
-	  //  cout << " cg4 "<< coeffg[c][4]<< " cg5 "<< coeffg[c][5]<<"  cg6 " <<coeffg[c][6] <<"  cg7 " <<coeffg[c][7] <<endl;
-	  //  cout << " cg8 "<< coeffg[c][8]<< " cg9 "<< coeffg[c][9]<< endl;}
-	  
-	  //solve using GaussElimination
-	  T errf=0.; //and Jacobian matrix in fjac.
-	  for (int row=0;row<sizeC;row++){errf+=fabs(fvec[row]);}
-	  
-	  if(errf <= tolf)
-	    break;
-	  Vector<T,sizeC> pvec;
-	  for (int row=0;row<sizeC;row++){pvec[row]=-fvec[row];
-	    // if(c==0){cout <<"Newton row " << row <<"pvec "<<fvec[row]<<endl;}
-	  }
-	  
-	  
-	  //solve Ax=b for x 
-	  //p=GE_elim(fjac,p,3);
-	  Vector<T,sizeC> pvec1; 
-	  fjacinv=inverseGauss(fjac,sizeC);
-	  for (int row=0;row<sizeC;row++){ 
-	    pvec1[row]=0.0;
-	    for (int col=0;col<sizeC;col++){
-	      pvec1[row]+=fjacinv(row,col)*pvec[col];
-	      // if(c==0){cout << "Newton row,col "<<row<<col << "fjac "<<fjac(row,col)<<endl;}
-	    }
-	  }
-	  //check for convergence, update
-	  T errx=0.;//%Check root convergence.
-	  for (int row=0;row<sizeC;row++){
-	    errx +=fabs(pvec[row]);
-	    coeffg[c][row]+= pvec[row];
-	  }
-	  //if (c==0){
-	  //cout << "CELL "<< c << " cg0 "<< coeffg[c][0]<< " cg1 "<< coeffg[c][1]<<"  cg2 " <<coeffg[c][2] <<"  cg3 " <<coeffg[c][3] <<endl; 
-	  //cout << " cg4 "<< coeffg[c][4]<< " cg5 "<< coeffg[c][5]<<"  cg6 " <<coeffg[c][6] <<"  cg7 " <<coeffg[c][7] <<endl;
-	  //cout << " cg8 "<< coeffg[c][8]<< " cg9 "<< coeffg[c][9]<< endl;}
-	  if(errx <= tolx)
-	    break;
+	    SquareMatrix<T,sizeC> fjac(0);
+	    SquareMatrix<T,sizeC> fjacinv(0);
+	    Vector<T,sizeC> fvec;
+	    // if (c==_options.printCellNumber){cout <<"trial" <<trial <<endl;}
 	    
-	  
-	  
+	    fvec[0]=density[c];
+	    fvec[1]=density[c]*v[c][0];
+	    fvec[2]=density[c]*v[c][1];
+	    fvec[3]=density[c]*v[c][2];
+	    fvec[4]=density[c]*(pow(v[c][0],2)+Txx[c]); 
+	    fvec[5]=density[c]*(pow(v[c][1],2)+Tyy[c]);
+	    fvec[6]=density[c]*(pow(v[c][2],2)+Tzz[c]);
+	    fvec[7]=density[c]*(v[c][0]*v[c][1]+Txy[c]);
+	    fvec[8]=density[c]*(v[c][0]*v[c][2]+Txz[c]);
+	    fvec[9]=density[c]*(v[c][1]*v[c][2]+Tyz[c]);
+	    
+	    //calculate Jacobian
+	    setJacobianESBGK(fjac,fvec,coeffg[c],v[c],c);
+	    
+	    
+	    //solve using GaussElimination
+	    T errf=0.; //and Jacobian matrix in fjac.
+	    for (int row=0;row<sizeC;row++){errf+=fabs(fvec[row]);}
+	    if(errf <= tolf)
+	      break;
+	    Vector<T,sizeC> pvec;
+	    for (int row=0;row<sizeC;row++){pvec[row]=-fvec[row];}
+	    
+	    
+	    //solve Ax=b for x 
+	    //p=GE_elim(fjac,p,3);
+	    Vector<T,sizeC> xvec; 
+	    fjacinv=inverseGauss(fjac,sizeC);
+	    for (int row=0;row<sizeC;row++){ 
+	      xvec[row]=0.0;
+	      for (int col=0;col<sizeC;col++){
+		xvec[row]+=fjacinv(row,col)*pvec[col];
+	      
+	      }
+	    }
+	    /*
+	    if (c==_options.printCellNumber){
+	      cout << " cg0 "<<coeffg[c][0]<<" cg1 "<<coeffg[c][1]<<"  cg2 "<<coeffg[c][2] << endl;
+	      cout <<" cg3 " <<coeffg[c][3]<< " cg4 "<<coeffg[c][4]<<" cg5 "<<coeffg[c][5]<<"  cg6 "<<coeffg[c][6] << endl;
+	      cout <<" cg7 " <<coeffg[c][7]<< " cg8 "<<coeffg[c][8]<<" cg9 "<<coeffg[c][9]<<endl;
+	    
+	          
+	    //cout << " fvec-ESBGK " << fvec[4] <<fvec[5]<<fvec[6]<<fvec[7]<<fvec[8]<<fvec[9] <<endl;
+	    FILE * pFile;
+	    pFile = fopen("fvecfjac.dat","wa");  
+	    //fprintf(pFile,"%s %d \n","trial",trial);
+	    for (int mat_col=0;mat_col<sizeC;mat_col++){fprintf(pFile,"%12.4E",fvec[mat_col]);} 
+	    fprintf(pFile,"\n");
+	    for (int mat_row=0;mat_row<sizeC;mat_row++){
+	      for (int mat_col=0;mat_col<sizeC;mat_col++){
+		  fprintf(pFile,"%12.4E",fjac(mat_row,mat_col));}
+	      fprintf(pFile,"\n");} 
+	    // fprintf(pFile,"done \n");
+	    //inverse
+	    for (int mat_row=0;mat_row<sizeC;mat_row++){
+	      for (int mat_col=0;mat_col<sizeC;mat_col++){
+		fprintf(pFile,"%12.4E",fjacinv(mat_row,mat_col));}
+	      fprintf(pFile,"\n");} 
+	    //solution
+	    for (int mat_col=0;mat_col<sizeC;mat_col++){
+	      fprintf(pFile,"%12.4E",pvec[mat_col]);} 
+	      }	
+	    */
+	    
+	    //check for convergence, update
+	    T errx=0.;//%Check root convergence.
+	    for (int row=0;row<sizeC;row++){
+	      errx +=fabs(xvec[row]);
+	      coeffg[c][row]+= xvec[row];
+	    }
+	    //if (c==_options.printCellNumber){cout <<"errx "<<errx<<endl;}
+	    if(errx <= tolx)
+	      break;
+	    
 	  }
-	 
+	  
 	}
       }
   }
@@ -687,7 +726,7 @@ class KineticModel : public Model
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getSelfCount();
 
 
 	const VectorT5Array& coeff = dynamic_cast<const VectorT5Array&>(_macroFields.coeff[cells]);
@@ -712,11 +751,11 @@ class KineticModel : public Model
 	const int numFields= _quadrature.getDirCount(); 
 	
 	
-	//call Newtons Method
+	//cout <<"calling Newtons Method"<<endl;//call Newtons Method
 	//const int ktrial(1);
 	NewtonsMethodESBGK(ktrial);
-	//int cellno=_options.printCellNumber;
-	//if (n==0){cout << " coeffs-ESBGK " << coeffg[cellno][0] <<" cx^2  " <<coeffg[cellno][1] <<" cx  " <<coeffg[cellno][2] <<" cxcy  " <<coeffg[cellno][7] <<endl;}
+	//cout <<"called Newtons Method"<<endl;
+
 	//calculate perturbed maxwellian for BGK
 	
 	for(int j=0;j< numFields;j++){
@@ -752,9 +791,9 @@ class KineticModel : public Model
       T Cc1=cx[j]-v[0];
       T Cc2=cy[j]-v[1];
       T Cc3=cz[j]-v[2];
-      T Econst=xn[0]*exp(-xn[1]*pow(Cc1,2)+xn[2]*Cc1-xn[3]*pow(Cc2,2)
-			 + xn[4]*Cc2-xn[5]*pow(Cc3,2)+xn[6]*Cc3
-			 + xn[7]*cx[j]*cy[j]+xn[8]*cx[j]*cz[j]+xn[9]*cy[j]*cz[j])*wts[j];     
+      T Econst=xn[0]*exp(-xn[1]*pow(Cc1,2)+xn[2]*Cc1-xn[3]*pow(Cc2,2)+ xn[4]*Cc2
+			 -xn[5]*pow(Cc3,2)+xn[6]*Cc3
+			 +xn[7]*cx[j]*cy[j]+xn[8]*cx[j]*cz[j]+xn[9]*cy[j]*cz[j])*wts[j];     
       
       for (int row=0;row<10;row++){
 	fvec[row]+= -Econst*malphaESBGK(j,row); //smm
@@ -813,7 +852,10 @@ class KineticModel : public Model
 	    f[c]=density[c]/pow((pi*temperature[c]),1.5)*
 	      exp(-(pow((cx[j]-v[c][0]),2.0)+pow((cy[j]-v[c][1]),2.0)+
 		    pow((cz[j]-v[c][2]),2.0))/temperature[c]);
+	    
+	   
 	  }
+	  
 	  if (_options.transient)
 	    {
 	      Field& fnd1 = *_dsfPtr1.dsf[j];
@@ -976,9 +1018,14 @@ class KineticModel : public Model
 	_macroFields.Tyz.addArray(cells,tempyzCell);
 
 	
+
+        shared_ptr<TArray> EntropyCell(new TArray(cells.getCount()));
+        *EntropyCell = 0.0;
+        _macroFields.Entropy.addArray(cells,EntropyCell);
       }
     _niters  =0;
     _initialKmodelNorm = MFRPtr();
+    //_initialKmodelvNorm = MFRPtr();
   
   }
   
@@ -1002,22 +1049,25 @@ class KineticModel : public Model
 		KineticBC<T> *bc(new KineticBC<T>());
 		
 		_bcMap[fg.id] = bc;
-		if ((fg.groupType == "NoSlipWall"))
-		  {
-		      bc->bcType = "WallBC";
-		  }	
-		else if((fg.groupType == "wall"))
+		 if((fg.groupType == "wall"))
 		  {
 		      bc->bcType = "WallBC";
 		  }
-		else if ((fg.groupType == "velocity-inlet"))
+		else if (fg.groupType == "velocity-inlet")
 		  {
-		    bc->bcType = "WallBC";
+		    bc->bcType = "InletBC";
 		  }
-		else if ((fg.groupType == "pressure-inlet") ||
-			 (fg.groupType == "pressure-outlet"))
+		else if (fg.groupType == "pressure-inlet")
 		  {
-		    bc->bcType = "PressureBC";
+		    bc->bcType = "PressureInletBC";
+		  }
+		else if (fg.groupType == "pressure-outlet")
+		  {
+		    bc->bcType = "PressureOutletBC";
+		  }
+		else if (fg.groupType == "velocity-inlet")
+		  {
+		    bc->bcType = "VelocityInletBC";
 		  }
 		else if ((fg.groupType == "symmetry"))
 		  {
@@ -1127,7 +1177,7 @@ class KineticModel : public Model
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
 			 ls.getX(), ls.getB());
 
-    // boundary cnoditions
+    // boundary conditions
       const int numMeshes = _meshes.size();
       for (int n=0; n<numMeshes; n++)
       {
@@ -1155,42 +1205,33 @@ class KineticModel : public Model
             const TArray& faceAreaMag = dynamic_cast<const TArray &>(areaMagField[faces]);
 	    const Field& areaField = _geomFields.area;
 	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
-	    if (bc.bcType == "WallBC") 
-	    {
+	    if (( bc.bcType == "CopyBC")) 
+	      {
+		for(int f=0; f< nFaces; f++)
+		  {
+		    gkbc.applyExtrapolationBC(f);
+		  }
+	      }
+	    //if ((bc.bcType == "WallBC")||(bc.bcType=="PressureInletBC")|| (bc.bcType=="PressureOutletBC")|| (bc.bcType=="VelocityInletBC"))
+	    else{
 	      for(int f=0; f< nFaces; f++)
 		{
 		  const VectorT3 en = faceArea[f]/faceAreaMag[f];
 		  const T c_dot_en = cx[direction]*en[0]+cy[direction]*en[1]+cz[direction]*en[2];
-	      
+		  
 		  if(c_dot_en >T_Scalar(0.0)){
 		    //outgoing direction - extrapolation bc
-		   
 		    gkbc.applyExtrapolationBC(f);
 		  } 
 		  else
 		    //incoming direction - dirchlet bc
 		    {
 		      const int c1= faceCells(f,1);// boundary cell
-		      //printf("%d \n",c1); values are 110-129
 		      T bvalue =dsf[c1];
 		      gkbc.applyDirichletBC(f,bvalue);
 		    }
 		}
-	    }
-
-	    else if ( bc.bcType == "CopyBC") 
-	      {
-		for(int f=0; f< nFaces; f++)
-		  {
-		    //const int c1= faceCells(f,1);// boundary cell
-		    // T bvalue =dsf[c1];
-		    // gkbc.applyDirichletBC(f,bvalue);
-		        
-		      gkbc.applyExtrapolationBC(f);
-		    
-		  }
-	      }
-	    
+	    }  
 	    
 	    
 	  }
@@ -1225,14 +1266,10 @@ class KineticModel : public Model
 
 	ComputeMacroparameters();	//update macroparameters
         ComputeCollisionfrequency();
-	if (_options.fgamma==2){ 
-	  initializeMaxwellianEq();}
-	else{
-	  EquilibriumDistributionBGK();}
+	if (_options.fgamma==0){initializeMaxwellianEq();}
+	else{ EquilibriumDistributionBGK();}
 	
-	if (_options.fgamma==2){ 
-	  //ComputeMacroparametersESBGK();
-	  EquilibriumDistributionESBGK();}
+	if (_options.fgamma==2){EquilibriumDistributionESBGK();}
 	
       }
   }
@@ -1254,7 +1291,7 @@ class KineticModel : public Model
 	    
 	    const KineticBC<T>& bc = *_bcMap[fg.id];
 	    
-	    KineticBoundaryConditions<T,T,T> kbc(faces, mesh,_geomFields,_quadrature,_dsfPtr);
+	    KineticBoundaryConditions<T,T,T> kbc(faces, mesh,_geomFields,_quadrature,_macroFields,_dsfPtr);
 	    
 	    FloatValEvaluator<VectorT3>
 	      bVelocity(bc.getVal("specifiedXVelocity"),
@@ -1264,18 +1301,39 @@ class KineticModel : public Model
 	    FloatValEvaluator<T>
 	      bTemperature(bc.getVal("specifiedTemperature"),
 			   faces);
+	    FloatValEvaluator<T>
+	      bPressure(bc.getVal("specifiedPressure"),
+			   faces);
 
 	    if (bc.bcType == "WallBC")
-	      {
+	      {	
+		//cout <<"applying wallbc"<<endl;
 		kbc.applyDiffuseWallBC(bVelocity,bTemperature);
+		//cout <<"applied"<<endl;
 	      }
 	    else if(bc.bcType=="SymmetryBC")
 	      {
+		//cout <<"applying specularbc"<<endl;
 		kbc.applySpecularWallBC();
+		//cout <<"applied"<<endl;
 	      } 
 	    else if(bc.bcType=="CopyBC")
 	      {
-		kbc.applyCopyWallBC();
+		kbc.applyZeroGradientBC();
+	      }
+	    else if(bc.bcType=="PressureInletBC")
+	      {
+		//cout <<"applying pressureinlet"<<endl;
+		kbc.applyPressureInletBC(bTemperature,bPressure);
+		//cout <<"applied"<<endl;
+	     } 
+	    else if(bc.bcType=="VelocityInletBC")
+	       {
+		kbc.applyVelocityInletBC(bTemperature,bVelocity);
+	     }
+	    else if(bc.bcType=="PressureOutletBC")
+	      {
+	    	kbc.applyPressureOutletBC(bTemperature,bPressure);
 	      }
 	    
 	  }
@@ -1288,9 +1346,10 @@ class KineticModel : public Model
     for(int n=0; n<niter; n++)  
       {
 	const int N123 =_quadrature.getDirCount();
-	//T rNorm0=0.0;
 	MFRPtr rNorm;
-       	//const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+	//MFRPtr vNorm;
+       	//const TArray& cx= dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	//const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
 	for(int direction=0; direction<N123;direction++)
 	  {
 	    LinearSystem ls;
@@ -1301,8 +1360,6 @@ class KineticModel : public Model
 	    
 	    //const T* kNorm=_options.getKineticLinearSolver().solve(ls);
 	     MFRPtr kNorm(_options.getKineticLinearSolver().solve(ls));
-	    //printf("%d \n", *iNorm); 
-	    //cout <<  *kNorm << endl;
 	    
 	     
 	     if (!rNorm)
@@ -1315,8 +1372,11 @@ class KineticModel : public Model
                  Field& fnd = *_dsfPtr.dsf[direction];
                  
                  ArrayBase& rArray0 = (*rNorm)[fn0];
-                 ArrayBase& rArrayd = (*kNorm)[fnd]; //*dcxyz[direction];
-                 rArray0 += rArrayd;
+                 ArrayBase& rArrayd = (*kNorm)[fnd];//*wts[direction];
+                 rArray0 += rArrayd;//*wts[direction];
+		 
+		 // ArrayBase& vArray0 = (*vNorm)[fn0];
+		 //vArray0 += rArrayd;//*cx[direction]*wts[direction];
              }
 
 	     ls.postSolve();
@@ -1325,30 +1385,36 @@ class KineticModel : public Model
 	     _options.getKineticLinearSolver().cleanup();
 	    
 	  }
-	//cout <<  *rNorm << endl;
 
-	//ComputeMacroparameters();
-	//ComputeCollisionfrequency();	
-	//_dsfEqPtr.initializeMaxwellian(_macroFields,_dsfEqPtr);
-	//initializeMaxwellianEq();
 	
 	
 	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm;
+	//if (!_initialKmodelvNorm) _initialKmodelvNorm = vNorm;
 	if (_niters < 5)
         {
              _initialKmodelNorm->setMax(*rNorm);
+	     //_initialKmodelvNorm->setMax(*vNorm);
             
         } 
  
-	MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));
+	MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));	
+	//MFRPtr vnormRatio((*vNorm)/(*_initialKmodelvNorm));
 	//if ( MPI::COMM_WORLD.Get_rank() == 0 )
-	{cout << _niters << ": " << *rNorm << endl; }
+	{cout << _niters << ": " << *rNorm <<endl; }
 
 	_niters++;
-	if (*rNorm < _options.absoluteTolerance ||
-	    *normRatio < _options.relativeTolerance)
+	if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance ))
+	  // && (*vNorm < _options.absoluteTolerance)) &&(*vnormRatio < _options.relativeTolerance ))
 	  break;
-		    
+	
+	callBoundaryConditions();
+	ComputeMacroparameters();	//update macroparameters
+        ComputeCollisionfrequency();
+	if (_options.fgamma==0){initializeMaxwellianEq();}
+	else{ EquilibriumDistributionBGK();}
+	
+	if (_options.fgamma==2){EquilibriumDistributionESBGK();}	    
+
       }
 
 
@@ -1356,7 +1422,69 @@ class KineticModel : public Model
     //itoa(n,filename,10);
     //_dsfPtr.OutputDsf(_dsfPtr,filename);
   }
-  
+
+  void advance_dir(const int niter)
+  {
+    const int N123 =_quadrature.getDirCount();
+   
+    MFRPtr rNorm;
+    for(int direction=0; direction<N123;direction++)
+      {
+
+	for(int n=0; n<niter; n++)  
+	  {
+	    LinearSystem ls;
+	    initKineticModelLinearization(ls, direction);
+	    ls.initAssembly();
+	    linearizeKineticModel(ls,direction);
+	    ls.initSolve();
+	    
+	    //const T* kNorm=_options.getKineticLinearSolver().solve(ls);
+	    MFRPtr kNorm(_options.getKineticLinearSolver().solve(ls));
+	   
+	    if (!rNorm)
+	      rNorm = kNorm;
+	    else
+	      {
+		// find the array for the 0the direction residual and
+		// add the current residual to it
+		Field& fn0 = *_dsfPtr.dsf[0];
+		Field& fnd = *_dsfPtr.dsf[direction];
+                
+		ArrayBase& rArray0 = (*rNorm)[fn0];
+		ArrayBase& rArrayd = (*kNorm)[fnd];//*wts[direction];
+		rArray0 = rArrayd;//*wts[direction];
+		
+	      }
+	    ls.postSolve();
+	    ls.updateSolution();
+	    
+	    _options.getKineticLinearSolver().cleanup();
+	      
+	    
+	    if (!_initialKmodelNorm) _initialKmodelNorm = rNorm;
+	    
+	    if (_niters < 5)
+	      {
+		_initialKmodelNorm->setMax(*rNorm);	
+	      } 
+	    
+	    MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));	
+	    
+	    if(direction ==_options["printDirectionNumber"]){cout << _niters << ": " << *kNorm <<endl; }
+	    
+	   
+	    _niters++;
+	    if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance ))
+	      // && (*vNorm < _options.absoluteTolerance)) &&(*vnormRatio < _options.relativeTolerance ))
+	      break;
+	  
+	    
+	  }
+	  
+      }
+  }
+
   void OutputDsfBLOCK(const char* filename)
   {
     FILE * pFile;
@@ -1461,6 +1589,7 @@ class KineticModel : public Model
   int _niters;
 
   MFRPtr _initialKmodelNorm;
+  //MFRPtr _initialKmodelvNorm;
   shared_ptr<Field> _previousVelocity;
   shared_ptr<Field> _KmodelApField;
 };

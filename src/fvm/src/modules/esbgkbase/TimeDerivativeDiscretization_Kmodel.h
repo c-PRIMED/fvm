@@ -87,7 +87,7 @@ public:
 	
 	for(int c=0; c<nCells; c++)
 	  {
-	    const T_Scalar fbydT = cellVolume[c]/_dT/pow(_nonDimLength,3);
+	    const T_Scalar fbydT = cellVolume[c]/_dT; //pow(_nonDimLength,3);
 	    rCell[c] -= fbydT*(onePointFive*x[c]- two*xN1[c]
 			       + pointFive*xN2[c]);
 	    diag[c] -= fbydT*onePointFive;
@@ -99,7 +99,7 @@ public:
       {
 	for(int c=0; c<nCells; c++)
 	  {
-	    const T_Scalar fbydT = cellVolume[c]/_dT/pow(_nonDimLength,3);
+	    const T_Scalar fbydT = cellVolume[c]/_dT; //pow(_nonDimLength,3);
 	    rCell[c] -= fbydT*(x[c]- xN1[c]);
 	    diag[c] -= fbydT;
 	  }

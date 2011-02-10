@@ -50,8 +50,12 @@ class Quadrature
 
   int getDirCount() const {return N123;}
   int getNVCount()const {return _NV;}
-   int getNthetaCount()const {return _Ntheta;}
- int getNphiCount()const {return _Nphi;}
+  int getNthetaCount()const {return _Ntheta;}
+  int getNphiCount()const {return _Nphi;}
+  T get_dcx()const{return _dcx;}
+  T get_dcy()const{return _dcy;}
+  T get_dcz() const{return _dcz;}
+
    // bool printCx;
   /**
    * cartesian-type member taking in 5 argumetns
@@ -104,6 +108,8 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       dcx=(cxmax-cxmin)/(N1-1.0);
       dcy=(cymax-cymin)/(N2-1.0);  
       dcz=(czmax-czmin)/(N3-1.0);
+
+      _dcx=dcx;_dcy=dcy;_dcz=dcz;
       absci1[0]=cxmin;absci2[0]=cymin; absci3[0]=czmin;
       wts1[0]=dcx;	wts2[0]=dcy;	wts3[0]=dcz;
       for  (int j3=1;j3<N3;j3++){
@@ -425,6 +431,9 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
   int _NV;
   int _Ntheta;
   int _Nphi;
+  T _dcx;
+  T _dcy;
+  T _dcz;
 };
 
 

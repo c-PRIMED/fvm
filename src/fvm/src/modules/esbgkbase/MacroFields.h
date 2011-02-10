@@ -21,6 +21,7 @@ struct MacroFields
   Field Tyz;
   Field coeff;
   Field coeffg;
+  Field Entropy;
 };
 
 #endif
