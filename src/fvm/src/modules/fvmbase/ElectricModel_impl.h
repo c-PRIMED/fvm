@@ -136,8 +136,8 @@ public:
 
 	  //dielectric_constant setup
 	  shared_ptr<TArray> permCell(new TArray(nCells));
-	  //*permCell = vc["dielectric_constant"] * E0_SI ;
-	  *permCell = vc["dielectric_constant"];
+	  *permCell = vc["dielectric_constant"] * E0_SI ;
+	  //*permCell = vc["dielectric_constant"];
 	  _electricFields.dielectric_constant.addArray(cells,permCell);
 	  
 	  //total_charge (source in Poisson equation) setup
