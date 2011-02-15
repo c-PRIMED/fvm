@@ -326,7 +326,20 @@ public:
         a10(1,2) += diffMetric*faceG*dfy1;
         a10(2,2) += -diffMetric*faceG;
         
-        
+        // linearization of wflux, primary part
+
+        a00(0,0) += diffMetric*faceD;
+        a00(1,1) += diffMetric*faceD;
+
+        a01(0,0) += -diffMetric*faceD;
+        a01(1,1) += -diffMetric*faceD;
+
+        a11(0,0) += diffMetric*faceD;
+        a11(1,1) += diffMetric*faceD;
+
+        a10(0,0) += -diffMetric*faceD;
+        a10(1,1) += -diffMetric*faceD;   
+
         // linearization of beta term
 	Diag coeffPair;
 
@@ -382,12 +395,12 @@ public:
 #endif
                 Diag coeff;
 		
-		coeff(0,0)=-wt0*faceD*(Af[0]*g_nb[0]+((one-faceNu)/two)*Af[1]*g_nb[1]);
+		coeff(0,0)=-wt0*faceD*(-((one+faceNu)/two)*Af[1]*g_nb[1]);
 		coeff(0,1)=-wt0*faceD*(((one-faceNu)/two)*Af[1]*g_nb[0]+faceNu*Af[0]*g_nb[1]);
 		coeff(0,2)=wt0*faceG*dfx0*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		coeff(1,0)=-wt0*faceD*(((one-faceNu)/two)*Af[0]*g_nb[1]+faceNu*Af[1]*g_nb[0]);
-		coeff(1,1)=-wt0*faceD*(Af[1]*g_nb[1]+((one-faceNu)/two)*Af[0]*g_nb[0]);
+		coeff(1,1)=-wt0*faceD*(-((one+faceNu)/two)*Af[0]*g_nb[0]);
 		coeff(1,2)=wt0*faceG*dfy0*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		coeff(2,0)=zero;
@@ -400,12 +413,12 @@ public:
                 a00 -= coeff;
 
                 
-		coeff(0,0)=-wt0*faceD*(Af[0]*g_nb[0]+((one-faceNu)/two)*Af[1]*g_nb[1]);
+		coeff(0,0)=-wt0*faceD*(-((one+faceNu)/two)*Af[1]*g_nb[1]);
 		coeff(0,1)=-wt0*faceD*(((one-faceNu)/two)*Af[1]*g_nb[0]+faceNu*Af[0]*g_nb[1]);
 		coeff(0,2)=wt0*faceG*dfx1*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		coeff(1,0)=-wt0*faceD*(((one-faceNu)/two)*Af[0]*g_nb[1]+faceNu*Af[1]*g_nb[0]);
-		coeff(1,1)=-wt0*faceD*(Af[1]*g_nb[1]+((one-faceNu)/two)*Af[0]*g_nb[0]);
+		coeff(1,1)=-wt0*faceD*(-((one+faceNu)/two)*Af[0]*g_nb[0]);
 		coeff(1,2)=wt0*faceG*dfy1*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		coeff(2,0)=zero;
@@ -439,12 +452,12 @@ public:
 
 		    Diag coeff;
 		    
-		    coeff(0,0)=-wt1*faceD*(Af[0]*g_nb[0]+((one-faceNu)/two)*Af[1]*g_nb[1]);
+		    coeff(0,0)=-wt1*faceD*(-((one+faceNu)/two)*Af[1]*g_nb[1]);
 		    coeff(0,1)=-wt1*faceD*(((one-faceNu)/two)*Af[1]*g_nb[0]+faceNu*Af[0]*g_nb[1]);
 		    coeff(0,2)=wt1*faceG*dfx1*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		    coeff(1,0)=-wt1*faceD*(((one-faceNu)/two)*Af[0]*g_nb[1]+faceNu*Af[1]*g_nb[0]);
-		    coeff(1,1)=-wt1*faceD*(Af[1]*g_nb[1]+((one-faceNu)/two)*Af[0]*g_nb[0]);
+		    coeff(1,1)=-wt1*faceD*(-((one+faceNu)/two)*Af[0]*g_nb[0]);
 		    coeff(1,2)=wt1*faceG*dfy1*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		    coeff(2,0)=zero;
@@ -456,12 +469,12 @@ public:
                     a11 += coeff;
 
                     
-		    coeff(0,0)=-wt1*faceD*(Af[0]*g_nb[0]+((one-faceNu)/two)*Af[1]*g_nb[1]);
+		    coeff(0,0)=-wt1*faceD*(-((one+faceNu)/two)*Af[1]*g_nb[1]);
 		    coeff(0,1)=-wt1*faceD*(((one-faceNu)/two)*Af[1]*g_nb[0]+faceNu*Af[0]*g_nb[1]);
 		    coeff(0,2)=wt1*faceG*dfx0*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		    coeff(1,0)=-wt1*faceD*(((one-faceNu)/two)*Af[0]*g_nb[1]+faceNu*Af[1]*g_nb[0]);
-		    coeff(1,1)=-wt1*faceD*(Af[1]*g_nb[1]+((one-faceNu)/two)*Af[0]*g_nb[0]);
+		    coeff(1,1)=-wt1*faceD*(-((one+faceNu)/two)*Af[0]*g_nb[0]);
 		    coeff(1,2)=wt1*faceG*dfy0*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
 		    coeff(2,0)=zero;
