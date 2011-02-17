@@ -193,6 +193,9 @@ IBManager::markIBType(Mesh& fluidMesh)
   const int nCells = cells.getSelfCount();
   const int nCellsTotal = cells.getCount();
 
+  cout << "cell self count " << nCells << endl;
+  cout << "cell total count " << nCellsTotal << endl;
+
   Array<bool> isFluidCell(nCellsTotal);
   isFluidCell = false;
 
@@ -286,7 +289,8 @@ IBManager::markIBType(Mesh& fluidMesh)
           if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN)
             cellIBType[c1] = cellIBType[c0];
       }      
-  } 
+  }
+
 }
 
 void
@@ -308,7 +312,7 @@ IBManager::markIBTypePlus(Mesh& fluidMesh)
       else if (cellIBType[c] == Mesh::IBTYPE_BOUNDARY)
         nBoundary++;
       else{
-	throw CException("invalid ib type");
+	//throw CException("invalid ib type");
 	}	
   }
 

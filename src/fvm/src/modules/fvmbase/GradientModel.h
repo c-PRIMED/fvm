@@ -455,9 +455,9 @@ public:
 	
 	if (mesh.isShell() == false){
         const StorageSite& cells = mesh.getCells();
-
+	
         GradMatrixType& gradMatrix = getGradientMatrix(mesh,_geomFields);
-
+	
         const XArray& var = dynamic_cast<const XArray&>(_varField[cells]);
         shared_ptr<GradArray> gradPtr = gradMatrix.getGradient(var);
         _gradientField.addArray(cells,gradPtr);
@@ -469,15 +469,18 @@ public:
         if (nIBFaces > 0)
         {
             const Array<int>& ibFaceList = mesh.getIBFaceList();
+            
             const CRConnectivity& faceCells = mesh.getAllFaceCells();
+            
             const IntArray& ibType =
               dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+            
             GradientMatrixAssembler& assembler =
               gradMatrix.getPairWiseAssembler(faceCells);
+              
             const XArray& varIB =
               dynamic_cast<const XArray&>(_varField[ibFaces]);
-            
-            
+       
             for (int nf=0; nf<nIBFaces; nf++)
             {
                 const int f = ibFaceList[nf];
@@ -534,7 +537,6 @@ public:
 	    }
 	    }
         }
-
     }
 
     _gradientField.syncLocal();

@@ -76,8 +76,7 @@ typedef Vector<double,3> VecD3;
 %include "SpikeStorage.i"
 
 
-%include "Octree.i"
-%include "Grid.i"
+
 
 %include "MeshAssembler.i"
 %include "MeshDismantler.i"

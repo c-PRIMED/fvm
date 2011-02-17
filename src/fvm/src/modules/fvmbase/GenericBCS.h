@@ -280,7 +280,6 @@ public:
 
   void applyInterfaceBC() const
   {
-    cout << "number of interface faces  " << _faces.getCount() << endl;
     for(int i=0; i<_faces.getCount(); i++)
       applyInterfaceBC(i);
   }

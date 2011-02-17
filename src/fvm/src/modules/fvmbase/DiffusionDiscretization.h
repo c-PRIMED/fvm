@@ -105,7 +105,7 @@ public:
 	      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
 	    CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
 	    
-	    cout << "doing dielectric interface " << endl;
+	    //cout << "doing dielectric interface " << endl;
 
 	    for(int f=0; f<nFaces; f++)
 	      {
@@ -139,11 +139,12 @@ public:
 
 		diag[c0] -= diffCoeff;
 		diag[c1] -= diffCoeff;
+		/*
 		cout << " c0 and c1 " << c0 << " " << c1 << endl;
 		cout << " diffcell " << diffCell[c0] << " " << diffCell[c1] << " " << faceDiffusivity << endl;
 		cout << " diffmetric  " << diffMetric << endl;
 		cout << "diffCoeff  " << diffCoeff << endl;
-
+		*/
 	      }
 	  }
 
