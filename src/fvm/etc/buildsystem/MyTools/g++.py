@@ -40,7 +40,7 @@ def generate(env):
     else:
         env['CXX'] = 'c++'
 
-    env['CCFLAGS'] = env['CXXFLAGS']
+    #env['CCFLAGS'] = env['CXXFLAGS']
 
     env['SHCXXFLAGS'] = CLVar('$CXXFLAGS -fPIC')
 
