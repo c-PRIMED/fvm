@@ -51,14 +51,14 @@ srcBase = ['CException.cpp',
 env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal'])
 
 
-env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase'])
+env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase', 'cgal'])
 
 
 env.createSwigModule('fvmbaseExt',sources=['baseExt.i'],
                      deplibs=['fvmbase','rlog', 'cgal'])
 
 env.createATypedSwigModule('models_atyped',sources=['models.i'],
-                     deplibs=['models_atyped','fvmbase','rlog'])
+                     deplibs=['models_atyped','fvmbase','rlog', 'cgal'])
 
 #env.createExe('testUQTK',['testUQTK.cpp'],
 #              deplibs=['fvmbase','uqtk'])
