@@ -1214,7 +1214,10 @@ private:
        MPI::Request::Waitall( count, request_send );
 #endif
 
-
+#ifndef FVM_PARALLEL
+       const StorageSite&    site      = _conn.getRowSite();
+       const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+#endif
        //globaltolocal 
        const StorageSite::GatherMap& gatherMapLevel0 = site.getGatherMap();
        const map<int,int>&   globalToLocal = _conn. getGlobalToLocalMapper();
