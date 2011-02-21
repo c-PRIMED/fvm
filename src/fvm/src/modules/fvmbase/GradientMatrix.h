@@ -576,7 +576,7 @@ private:
     void syncValues()
     {
 
-       #ifdef FVM_PARALLEL
+#ifdef FVM_PARALLEL
           //SENDING
           const int  request_size = get_request_size();
           MPI::Request   request_send[ request_size ];
@@ -619,6 +619,11 @@ private:
           MPI::Request::Waitall( count, request_send );
 #endif
 
+
+#ifndef FVM_PARALLEL
+          const StorageSite&    site      = _mesh.getCells();
+          const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+#endif
           //replacing values
           const map<int,int>&   globalToLocal = _mesh.getGlobalToLocal();
           foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
@@ -666,7 +671,7 @@ private:
     }
  
 
-
+#ifdef FVM_PARALLEL
     void CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name )
     {
        if ( MPI::COMM_WORLD.Get_rank() == procID ){
@@ -682,6 +687,7 @@ private:
        }
 
      }
+#endif
 
   virtual void printRow(const int i) const
   {
