@@ -69,7 +69,6 @@ public:
   void  syncScatter(const ArrayIndex& i);
   void syncGather(const ArrayIndex& i);
   void sync();
-  void syncLevel1();
   
 private:
 
@@ -79,7 +78,10 @@ private:
   void syncGatherLevel1(const ArrayIndex& i);
 
   int  get_request_size();
-  int  get_request_size_level1();
+  int  get_request_size_scatter_level1();
+  int  get_request_size_gather_level1();
+
+  void syncLevel1();
 
 
   int _length;
