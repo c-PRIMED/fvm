@@ -74,6 +74,32 @@ public:
     void isCleanup(bool clean_up) { _cleanup = clean_up;  }
     void isDebug  (bool debug   ) { _cleanup = false;
                                     _debugMode = debug;     }
+    //this need to be public since it will be called by python script
+    void DEBUG_compute_elem_dist();
+    void DEBUG_parmetis_mesh();
+    void DEBUG_fiedler_partition();
+    void DEBUG_elem_connectivity();
+    void DEBUG_map_part_elms();
+    void DEBUG_count_elems_part();
+    void DEBUG_exchange_part_elems();
+    void DEBUG_mapBounIDAndCell();
+    void DEBUG_resize_elem();
+    void DEBUG_CRConnectivity_cellParts();
+    void DEBUG_CRConnectivity_faceParts();
+    void DEBUG_interfaces();
+    void DEBUG_faceCells_faceNodes();
+    void DEBUG_non_interior_cells();
+    void DEBUG_preserve_cell_order();
+    void DEBUG_order_faceCells_faceNodes();
+    void DEBUG_coordinates();
+    void DEBUG_exchange_interface_meshes();
+    void DEBUG_mesh();
+    void DEBUG_local_global();
+    void DEBUG_cellcells_global();
+    void DEBUG_globalCellID_procID_map();
+    void DEBUG_gatherCellsLevel1_partID_map();
+    void DEBUG_level1_scatter_gather_cells();
+    void DEBUG_CRConnectivity_cellCells2();
 
 private:
 
@@ -136,31 +162,7 @@ private:
    void CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name );
    void CRConnectivityPrintFile( const CRConnectivity& conn, const string& name );
 
-   void DEBUG_compute_elem_dist();
-   void DEBUG_parmetis_mesh();
-   void DEBUG_fiedler_partition();
-   void DEBUG_elem_connectivity();
-   void DEBUG_map_part_elms();
-   void DEBUG_count_elems_part();
-   void DEBUG_exchange_part_elems();
-   void DEBUG_mapBounIDAndCell();
-   void DEBUG_resize_elem();
-   void DEBUG_CRConnectivity_cellParts();
-   void DEBUG_CRConnectivity_faceParts();
-   void DEBUG_interfaces();
-   void DEBUG_faceCells_faceNodes();
-   void DEBUG_non_interior_cells();
-   void DEBUG_preserve_cell_order();
-   void DEBUG_order_faceCells_faceNodes();
-   void DEBUG_coordinates();
-   void DEBUG_exchange_interface_meshes();
-   void DEBUG_mesh();
-   void DEBUG_local_global();
-   void DEBUG_cellcells_global();
-   void DEBUG_globalCellID_procID_map();
-   void DEBUG_gatherCellsLevel1_partID_map();
-   void DEBUG_level1_scatter_gather_cells();
-   void DEBUG_CRConnectivity_cellCells2();
+
 
    void  debug_file_open( const string& fname );
    void  debug_file_close();

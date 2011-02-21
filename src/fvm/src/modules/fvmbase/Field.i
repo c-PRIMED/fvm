@@ -14,7 +14,6 @@ public:
 
 
   void syncLocal();
-  void syncLocalLevel1();
 
   const string getName() const;
 

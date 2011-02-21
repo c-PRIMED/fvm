@@ -56,6 +56,10 @@ public:
   
   typedef shared_ptr< Array<double> >  ArrayDblePtr;
   typedef  SpikeMatrix< Diag, OffDiag, X> T_SpikeMtrx;
+
+  typedef pair<const StorageSite*, const StorageSite*> EntryIndex;
+  typedef map<EntryIndex, shared_ptr<ArrayBase> > GhostArrayMap;
+
   /**
    * Embedded class used for easy (ie. no search) access to matrix
    * entries for the special case of face based finite volume
@@ -123,6 +127,7 @@ public:
     _isBoundary(_conn.getRowDim()),
     _spikeMtrx()
   {
+  
     logCtor();
     _isBoundary = false;
   }
@@ -160,6 +165,7 @@ public:
             const int j = _col[nb];
             y[nr] += _offDiag[nb]*x[j];
         }
+
     }
   }
 
@@ -183,6 +189,7 @@ public:
             y[nr] += _offDiag[nb]*x[j];
         }
     }
+
   }
 
   /**
@@ -290,6 +297,7 @@ public:
         }
         xnew[nr] = -sum/_diag[nr];
     }
+
   }
 
   virtual void iluSolve(IContainer& xB, const IContainer& bB, const IContainer&) const
@@ -334,6 +342,7 @@ public:
 
     for(int nr=0; nr<nRows; nr++)
     {
+
         r[nr] = b[nr] + _diag[nr]*x[nr];
         for (int nb = _row[nr]; nb<_row[nr+1]; nb++)
         {
@@ -350,6 +359,7 @@ public:
 
   virtual void solveBoundary(IContainer& xB, IContainer& bB, IContainer&) const
   {
+
     XArray& x = dynamic_cast<XArray&>(xB);
     const XArray& b = dynamic_cast<const XArray&>(bB);
     
@@ -819,7 +829,6 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
   void eliminateRow(const int j, Array<X>& b )
   {
     const Diag& a_jj = _diag[j];
-
     // loop over neighbours of j to determine the rows that will change
     for (int nb = _row[j]; nb<_row[j+1]; nb++)
     {
@@ -845,13 +854,96 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
         }
        
         b[i] -= a_ij*(b[j]/a_jj);
-
         a_ij = NumTypeTraits<OffDiag>::getZero();
 
     }
+
+
   }
 
-  virtual void printRow(const int i)
+  // eliminate row j from the linear system. This only works for
+  // boundary rows because of the special connectivity pattern. We
+  // also assume that the connectivity is symmetric. The rhs b is required. 
+  //this addition elimination is necessary if you have ghost cells which is 
+  //real boundary on the other partition or mesh
+  
+  void eliminateRowGhost(Array<X>& b)
+  {
+    
+     const StorageSite& site = _conn.getRowSite();
+     const int nRowsInterior = site.getSelfCount();
+     const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+     //looping gathermap indices
+     foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+        const StorageSite&  oSite = *mpos.first;
+        EntryIndex e(&oSite,&site);
+        const Array<int>& recv_counts     = dynamic_cast< const Array<int>& > (*_recvCounts [e]);
+        const Array<int>& recv_indices    = dynamic_cast< const Array<int>& > (*_recvIndices [e]);
+        const Array<OffDiag>& recv_values_crmtrx = dynamic_cast< const Array<OffDiag>& > (*_recvValuesCRMtrx[e]);
+        const Array<X>&       recv_values_b = dynamic_cast< const Array<X>& > (*_recvValuesB[e]);
+
+        //row and col
+        Array<int> row( recv_counts.getLength()+1);
+        row[0] = 0;
+        for ( int i = 1; i < recv_counts.getLength()+1; i++ ){
+           row[i] = row[i-1] + recv_counts[i-1] - 1;
+        }
+  
+        Array<int> boundaryPtr( recv_counts.getLength()); 
+        boundaryPtr[0] = 0;
+        for ( int i = 1; i < recv_counts.getLength(); i++ ){
+           boundaryPtr[i] = boundaryPtr[i-1] + recv_counts[i-1];
+        }
+        //col and offDiag
+        Array<int> col( row[recv_counts.getLength()] );
+        Array<OffDiag> offDiag( row[recv_counts.getLength()] );
+        int indx = 0;
+        int jj = 0;
+        for ( int i=0; i<recv_counts.getLength(); i++ ){
+           indx++; //skip first
+           for ( int j=1; j<recv_counts[i]; j++ ){
+                col[jj]     = recv_indices[indx];
+                offDiag[jj] = recv_values_crmtrx[indx];
+                jj++; indx++;
+           }
+        }
+
+        //over boundary cells on ghost
+        for ( int rc = 0; rc < recv_counts.getLength(); rc++ ){
+           const int pIndx = boundaryPtr[rc]; //point where the boundary location in recv_indices or recv_values_crmtrx
+           const int j = recv_indices[pIndx];
+           const OffDiag& a_jj = recv_values_crmtrx[pIndx];
+           // loop over neighbours of j to determine the rows that will change
+           for (int nb = row[rc]; nb<row[rc+1]; nb++)
+           {
+              const int i = col[nb];
+              if ( i < nRowsInterior ){
+                 OffDiag& a_ij = getCoeff(i,j);
+                 // for the ith row we need to find the indices k for which the
+                 // entries will change. we do this by again going through
+                 // neighbors of j
+                 for (int nb2 = row[rc]; nb2<row[rc+1]; nb2++)
+                 {
+                    const int k =  col[nb2];
+                    const OffDiag& a_jk = offDiag[nb2];
+
+                    if (i!=k)
+                    {
+                       OffDiag& a_ik = getCoeff(i,k);
+                       a_ik -= a_ij*(a_jk/a_jj);
+                    }
+                    else
+                       _diag[i] -= a_ij*(a_jk/a_jj);
+                 }
+                 b[i] -= a_ij*(recv_values_b[rc]/a_jj);
+                 a_ij = NumTypeTraits<OffDiag>::getZero();
+              }
+           }
+        }
+    }
+  }
+
+  virtual void printRow(const int i) const
   {
     cout << "coeff (" <<  i << "," << i << ") = " << _diag[i] << endl;
     
@@ -895,9 +987,463 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
     for(int nr=nRowsInterior; nr<nRowsExtra; nr++)
       if (_isBoundary[nr])
         eliminateRow(nr,b);
+
+     //syncing coefficients from other processors (or other mesh) to eliminate equations
+     const StorageSite& site = _conn.getRowSite();
+     if (b.getLength() == site.getCountLevel1() && site.getCountLevel1() != site.getCount() ){
+        syncBndryCoeffs(b);
+        eliminateRowGhost(b); 
+     }
   }
 
 private:
+
+    void syncBndryCoeffs( const Array<X>& b )
+    {
+       //create recvCounts buffer
+       createScatterGatherCountsBuffer();
+       //syn counts
+       syncCounts();
+       //create recvindices buffer
+       createScatterGatherIndicesBuffer();
+       //sync indices 
+       syncIndices();
+       //create crmtrx buffer
+       createScatterGatherValuesCRMtrxBuffer();
+       //sync values crmtrx
+       syncValuesCRMtrx();
+       //create b buffer
+       createScatterGatherValuesBBuffer(b);
+       //sync values b
+       syncValuesB();
+    }
+
+    //fill countArray (both mesh and partition) and only gatherArray for mesh
+    void    createScatterGatherCountsBuffer()
+    {
+       //SENDING allocation and filling
+       const StorageSite& site     = _conn.getRowSite();
+       const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite&  oSite = *mpos.first;
+           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+           const Array<int>& scatterArray = *mpos.second;
+           int boundaryCount = 0;
+           vector<int> cellCellsCount;
+           for (int i = 0; i < scatterArray.getLength(); i++){
+              const int cellID = scatterArray[i];
+              if ( _isBoundary[cellID] ){
+                 boundaryCount++; 
+                 cellCellsCount.push_back( _conn.getCount( scatterArray[i] )+1 ); //adding itself
+              }
+           }
+            
+           //key site
+           EntryIndex e(&site,&oSite);
+           //allocate array
+           _sendCounts[e] = shared_ptr< Array<int>   > ( new Array<int> (boundaryCount) ); 
+           //fill send array
+           Array<int>& sendArray = dynamic_cast< Array<int>& > ( *_sendCounts[e] );
+           for( int i = 0; i < boundaryCount; i++ ){
+              sendArray[i] = cellCellsCount[i];
+           }
+       }
+       //RECIEVING allocation (filling will be done by MPI Communication)
+       const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+          const StorageSite&  oSite = *mpos.first;
+          EntryIndex e(&oSite,&site);
+          //mesh interface can be done know
+          if (oSite.getGatherProcID() == - 1) {
+             *_recvCounts[e] = *_sendCounts[e];
+          } 
+       }
+    }
+
+ void syncCounts()
+    {
+#ifdef FVM_PARALLEL
+       //SENDING
+       const int  request_size = get_request_size();
+       MPI::Request   request_send[ request_size ];
+       MPI::Request   request_recv[ request_size ];
+       int indxSend = 0;
+       int indxRecv = 0;
+       const StorageSite&    site      = _conn.getRowSite();
+       const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite&  oSite = *mpos.first;
+           EntryIndex e(&site,&oSite);
+           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+           ArrayBase& sendArray = *_sendCounts[e];
+           //loop over surround indices and itself
+           int to_where  = oSite.getGatherProcID();
+          //many interior partiton is not going to have any boundary in cellCell2 so no need to send the data
+           if ( to_where != -1 ){  
+              int mpi_tag = oSite.getTag();
+              request_send[indxSend++] =  
+                   MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+           }
+       }
+       //RECIEVING
+       //getting values from other meshes to fill g
+       const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+          const StorageSite&  oSite = *mpos.first;
+          //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+          EntryIndex e(&oSite,&site);
+          int from_where       = oSite.getGatherProcID();
+          if ( from_where != -1 ){
+             int mpi_tag = oSite.getTag();
+             MPI::Status recv_status;
+             while ( !(recv_status.Get_source() == from_where && recv_status.Get_tag() == mpi_tag) ){
+                if ( MPI::COMM_WORLD.Iprobe(from_where, mpi_tag, recv_status) ){
+                   const int recv_count = recv_status.Get_count( MPI::INT );
+                   _recvCounts[e] = shared_ptr< Array<int> > ( new Array<int> (recv_count) ); 
+                   ArrayBase& recvArray = *_recvCounts[e];
+                   request_recv[indxRecv++] =  
+                                            MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+                }
+             }
+          }
+       }
+
+       int count  = get_request_size();
+       MPI::Request::Waitall( count, request_recv );
+       MPI::Request::Waitall( count, request_send );
+#endif
+
+    }
+
+    //fill scatterArray (both mesh and partition) and only gatherArray for mesh
+    void    createScatterGatherIndicesBuffer()
+    {
+       //SENDING allocation and filling
+       const StorageSite& site     = _conn.getRowSite();
+       const Array<int>&   localToGlobal = _conn.getLocalToGlobalMap();
+       const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite&  oSite = *mpos.first;
+           const Array<int>& scatterArray = *mpos.second;
+           //loop over surround indices and itself for sizing
+           EntryIndex e(&site,&oSite);
+           const Array<int>& send_counts = dynamic_cast< const Array<int>& > (*_sendCounts[e]);
+           //allocate array
+           int sendSize = 0;
+           for ( int i = 0; i < send_counts.getLength(); i++ ){
+              sendSize += send_counts[i];
+           }
+           _sendIndices[e] = shared_ptr< Array<int> > ( new Array<int> (sendSize) ); 
+           //fill send array
+           Array<int>& sendArray = dynamic_cast< Array<int>&   > ( *_sendIndices[e] );
+           int indx = 0;
+           for( int i = 0; i < scatterArray.getLength(); i++ ){
+              const int cellID = scatterArray[i];
+              if ( _isBoundary[cellID] ){
+                 sendArray[indx++] = localToGlobal[cellID];
+                 for ( int j = 0; j < _conn.getCount(cellID); j++ ){
+                    sendArray[indx] = localToGlobal[ _conn(cellID,j) ];
+                    indx++;
+                 }
+              }
+           }
+       }
+       //RECIEVING allocation (filling will be done by MPI Communication)
+       const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+          const StorageSite&  oSite = *mpos.first;
+          EntryIndex e(&oSite,&site);
+          const Array<int>& recvCounts   =  dynamic_cast< const Array<int>& > (*_recvCounts[e]);
+          int recvSize = 0;
+          for ( int i = 0; i < recvCounts.getLength(); i++ ){
+             recvSize += recvCounts[i];
+          }
+          //allocate array
+          _recvIndices[e] = shared_ptr< Array<int> > ( new Array<int>     (recvSize) ); 
+          //mesh interface can be done know
+          if ( oSite.getGatherProcID() == - 1) {
+             *_recvIndices[e] = *_sendIndices[e];
+          } 
+       }
+
+    }
+
+
+  void syncIndices()
+    {
+
+#ifdef FVM_PARALLEL
+       //SENDING
+       const int  request_size = get_request_size();
+       MPI::Request   request_send[ request_size ];
+       MPI::Request   request_recv[ request_size ];
+       int indxSend = 0;
+       int indxRecv = 0;
+       const StorageSite&    site      = _conn.getRowSite();
+       const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite&  oSite = *mpos.first;
+           EntryIndex e(&site,&oSite);
+           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+           ArrayBase& sendArray = *_sendIndices[e];
+           //loop over surround indices and itself
+           int to_where  = oSite.getGatherProcID();
+           if ( to_where != -1 ){
+              int mpi_tag = oSite.getTag();
+              request_send[indxSend++] =  
+                   MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+           }
+       }
+       //RECIEVING
+       //getting values from other meshes to fill g
+       const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+          const StorageSite&  oSite = *mpos.first;
+          EntryIndex e(&oSite,&site);
+          ArrayBase& recvArray = *_recvIndices[e];
+          int from_where       = oSite.getGatherProcID();
+          if ( from_where != -1 ){
+             int mpi_tag = oSite.getTag();
+             request_recv[indxRecv++] =  
+                    MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+          }
+       }
+
+       int count  = get_request_size();
+       MPI::Request::Waitall( count, request_recv );
+       MPI::Request::Waitall( count, request_send );
+#endif
+
+
+       //globaltolocal 
+       const StorageSite::GatherMap& gatherMapLevel0 = site.getGatherMap();
+       const map<int,int>&   globalToLocal = _conn. getGlobalToLocalMapper();
+       const int selfCount     = site.getSelfCount();
+       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+          const StorageSite&  oSite = *mpos.first;
+          EntryIndex e(&oSite,&site);
+          Array<int>& recv_indices = dynamic_cast< Array<int>&   > (*_recvIndices[e]);
+          for( int i=0; i < recv_indices.getLength(); i++ ){
+              const int localID = globalToLocal.find( recv_indices[i] )->second;
+                 recv_indices[i] = localID;
+          }
+       }
+
+    }
+
+    //fill scatterArray (both mesh and partition) and only gatherArray for mesh
+    void    createScatterGatherValuesCRMtrxBuffer()
+    {
+       //SENDING allocation and filling
+       const StorageSite& site     = _conn.getRowSite();
+       const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite&  oSite = *mpos.first;
+           const Array<int>& scatterArray = *mpos.second;
+           //loop over surround indices and itself for sizing
+           EntryIndex e(&site,&oSite);
+           //decide allocation size
+           const Array<int>& send_counts = dynamic_cast< const Array<int>& > (*_sendCounts[e]);
+           int sendSize = 0;
+           for ( int i = 0; i < send_counts.getLength(); i++ ){
+              sendSize += send_counts[i];
+           }
+           //allocate array
+           _sendValuesCRMtrx[e]  = shared_ptr< Array<OffDiag> > ( new Array<OffDiag> (sendSize) );
+           //fill send array
+           Array<OffDiag>& valueArray = dynamic_cast< Array<OffDiag>& > ( *_sendValuesCRMtrx[e]  );
+           int indx = 0;
+           for( int i = 0; i < scatterArray.getLength(); i++ ){
+              const int ii = scatterArray[i];
+              if ( _isBoundary[ii] ){
+                 valueArray[indx++] = DiagToOffDiag(_diag[ii]);
+                 for ( int j = 0; j < _conn.getCount(ii); j++ ){
+                    const int jj = _conn(ii,j);
+                    valueArray[indx] = getCoeff(ii,jj);
+                    indx++;
+                 }
+              }
+           }
+       }
+       //RECIEVING allocation (filling will be done by MPI Communication)
+       const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+          const StorageSite&  oSite = *mpos.first;
+          EntryIndex e(&oSite,&site);
+          //get recvSize
+          const Array<int>& recvCounts   =  dynamic_cast< const Array<int>& > (*_recvCounts[e]);
+          int recvSize = 0;
+          for ( int i = 0; i < recvCounts.getLength(); i++ ){
+             recvSize += recvCounts[i];
+           }
+          //allocate array
+          _recvValuesCRMtrx[e] = shared_ptr< Array<OffDiag> > ( new Array<OffDiag> (recvSize) );
+          //mesh interface can be done know
+          if ( oSite.getGatherProcID() == - 1) {
+             *_recvValuesCRMtrx[e] = *_sendValuesCRMtrx[e];
+          } 
+       }
+
+    }
+
+    //sending values
+    void syncValuesCRMtrx()
+    {
+       #ifdef FVM_PARALLEL
+          //SENDING
+          const int  request_size = get_request_size();
+          MPI::Request   request_send[ request_size ];
+          MPI::Request   request_recv[ request_size ];
+          int indxSend = 0;
+          int indxRecv = 0;
+          const StorageSite&    site      = _conn.getRowSite();
+          const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+          foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+             const StorageSite&  oSite = *mpos.first;
+             EntryIndex e(&site,&oSite);
+             //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+             ArrayBase& sendArray = *_sendValuesCRMtrx[e];
+             //loop over surround indices and itself
+             int to_where  = oSite.getGatherProcID();
+             if ( to_where != -1 ){
+                int mpi_tag = oSite.getTag();
+                request_send[indxSend++] =  
+                    MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+             }
+          }
+          //RECIEVING
+          //getting values from other meshes to fill g
+          const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+          foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+             const StorageSite&  oSite = *mpos.first;
+             //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+             EntryIndex e(&oSite,&site);
+             ArrayBase& recvArray = *_recvValuesCRMtrx[e];
+             int from_where       = oSite.getGatherProcID();
+             if ( from_where != -1 ){
+                int mpi_tag = oSite.getTag();
+                request_recv[indxRecv++] =  
+                      MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+             }
+          }
+
+          int count  = get_request_size();
+          MPI::Request::Waitall( count, request_recv );
+          MPI::Request::Waitall( count, request_send );
+#endif
+
+    }
+
+    //fill scatterArray (both mesh and partition) and only gatherArray for mesh
+    void    createScatterGatherValuesBBuffer(const XArray& B)
+    {
+       //SENDING allocation and filling
+       const StorageSite& site     = _conn.getRowSite();
+       const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite&  oSite = *mpos.first;
+           const Array<int>& scatterArray = *mpos.second;
+           //loop over surround indices and itself for sizing
+           EntryIndex e(&site,&oSite);
+           //decide allocation size
+           const Array<int>& send_counts = dynamic_cast< const Array<int>& > (*_sendCounts[e]);
+           int sendSize = send_counts.getLength();
+           //allocate array
+           _sendValuesB[e]  = shared_ptr< Array<X> > ( new Array<X> (sendSize) );
+           //fill send array
+           XArray& bArray = dynamic_cast< Array<X>& > ( *_sendValuesB[e]  );
+           int indx = 0;
+           for( int i = 0; i < scatterArray.getLength(); i++ ){
+              const int ii = scatterArray[i];
+              if ( _isBoundary[ii] ){
+                 bArray[indx++] = B[ii];
+              }
+           }
+       }
+       //RECIEVING allocation (filling will be done by MPI Communication)
+       const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+       foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+          const StorageSite&  oSite = *mpos.first;
+          EntryIndex e(&oSite,&site);
+          //get recvSize
+          const Array<int>& recvCounts  =  dynamic_cast< const Array<int>& > (*_recvCounts[e]);
+          int recvSize = recvCounts.getLength();
+          //allocate array
+          _recvValuesB[e] = shared_ptr< Array<X> > ( new Array<X> (recvSize) );
+          //mesh interface can be done know
+          if ( oSite.getGatherProcID() == - 1) {
+             *_recvValuesB[e] = *_sendValuesB[e];
+          } 
+       }
+
+    }
+
+    //sending values
+    void syncValuesB()
+    {
+       #ifdef FVM_PARALLEL
+          //SENDING
+          const int  request_size = get_request_size();
+          MPI::Request   request_send[ request_size ];
+          MPI::Request   request_recv[ request_size ];
+          int indxSend = 0;
+          int indxRecv = 0;
+          const StorageSite&    site      = _conn.getRowSite();
+          const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+          foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+             const StorageSite&  oSite = *mpos.first;
+             EntryIndex e(&site,&oSite);
+             //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+             ArrayBase& sendArray = *_sendValuesB[e];
+             //loop over surround indices and itself
+             int to_where  = oSite.getGatherProcID();
+             if ( to_where != -1 ){
+                int mpi_tag = oSite.getTag();
+                request_send[indxSend++] =  
+                    MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+             }
+          }
+          //RECIEVING
+          //getting values from other meshes to fill g
+          const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+          foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+             const StorageSite&  oSite = *mpos.first;
+             //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+             EntryIndex e(&oSite,&site);
+             ArrayBase& recvArray = *_recvValuesB[e];
+             int from_where       = oSite.getGatherProcID();
+             if ( from_where != -1 ){
+                int mpi_tag = oSite.getTag();
+                request_recv[indxRecv++] =  
+                      MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+             }
+          }
+
+          int count  = get_request_size();
+          MPI::Request::Waitall( count, request_recv );
+          MPI::Request::Waitall( count, request_send );
+#endif
+
+    }
+
+    int  get_request_size()
+    {
+        int indx =  0;
+        const StorageSite& site = _conn.getRowSite();
+        const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+        foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+           const StorageSite&  oSite = *mpos.first;
+           //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+           if ( oSite.getGatherProcID() != -1 )
+              indx++;
+        }
+        return indx;
+    }
+
+
+
+
+
 
   // computes the level 0 (i.e. with no additional non zero entries)
   // incomplete LU factorization
@@ -1095,6 +1641,16 @@ private:
   
   mutable shared_ptr<T_SpikeMtrx>  _spikeMtrx;
   
+  GhostArrayMap   _sendCounts;
+  GhostArrayMap   _recvCounts;
+  GhostArrayMap   _sendIndices;
+  GhostArrayMap   _recvIndices;
+  GhostArrayMap   _sendValuesCRMtrx;
+  GhostArrayMap   _recvValuesCRMtrx;  
+  GhostArrayMap   _sendValuesB;
+  GhostArrayMap   _recvValuesB;  
+  map<int,int>    _ghostCellBoundayMap;
+
  
 };
 

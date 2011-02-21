@@ -105,7 +105,7 @@ MeshAssembler::setInterfaceNodes()
       const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();
       //looop over  interfaces
       for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
-           int id = faceGroupList[i]->id;
+           int id = -faceGroupList[i]->id;
            set<int>&  nodes   = _interfaceNodesSet[n][id];
            //loop over faces to fill nodes
            const StorageSite& site = faceGroupList[i]->site;
@@ -287,7 +287,7 @@ MeshAssembler::setFaceCells()
           const Array<int>& localToGlobal = *_localCellToGlobal[n];
           //loop over interfaces 
           for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
-               int faceGroupID = faceGroupList[i]->id;
+               int faceGroupID = -faceGroupList[i]->id;
                //pass only if it is not in faceGroupSet
                if ( faceGroupSet.count( faceGroupID) == 0 ){
                    faceGroupSet.insert( faceGroupID );
@@ -377,7 +377,7 @@ MeshAssembler::setFaceNodes()
          const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();
          const Array<int>& localToGlobal = *_localNodeToGlobal[n];
          for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
-               int faceGroupID = faceGroupList[i]->id;
+               int faceGroupID = -faceGroupList[i]->id;
                //pass only if it is not in faceGroupSet
                if ( faceGroupSet.count( faceGroupID) == 0 ){
                    faceGroupSet.insert( faceGroupID );
@@ -444,7 +444,7 @@ MeshAssembler::getInnerNodesCount(){
     //loop over interface faces to reset 
      const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();  
      for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
-           int id = faceGroupList[i]->id;
+           int id = -faceGroupList[i]->id;
            set<int>&  nodes   = _interfaceNodesSet[n][id];
            foreach ( const set<int>::value_type node, nodes )
                nodeArray[ node] = -1;  //reseting again, we want to seperate inner/boundary nodes than interface nodes
@@ -468,7 +468,7 @@ MeshAssembler::getInterfaceNodesDuplicatedCount()
       const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();
       //looop over  interfaces
       for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
-           int id = faceGroupList[i]->id;
+           int id = -faceGroupList[i]->id;
            set<int>&  nodes   = _interfaceNodesSet[n][id];
            nInterfaceNodes += nodes.size();
       }
@@ -495,7 +495,7 @@ MeshAssembler::getInterfaceNodesCount()
       const Array<Mesh::VecD3>& coord = mesh.getNodeCoordinates();
       //looop over  interfaces
       for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
-           int id = faceGroupList[i]->id;
+           int id = -faceGroupList[i]->id;
            set<int>&  nodes   = _interfaceNodesSet[n][id];
            foreach ( const set<int>::value_type node, nodes ){
               interfaceNodeValues[indx] = coord[node];
@@ -532,7 +532,7 @@ MeshAssembler::getInterfaceNodesCount()
       const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();
       //looop over  interfaces
       for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){
-           int id = faceGroupList[i]->id;
+           int id = -faceGroupList[i]->id;
            set<int>&  nodes   = _interfaceNodesSet[n][id];
            foreach ( const set<int>::value_type node, nodes ){
               _localInterfaceNodesToGlobalMap[n][node] = globalIndx[indx];

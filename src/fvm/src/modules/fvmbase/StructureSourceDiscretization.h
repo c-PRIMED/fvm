@@ -71,7 +71,7 @@ public:
     }
     */
         
-    // boundaries
+    // boundaries and interfaces
     foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
     {
         const FaceGroup& fg = *fgPtr;
@@ -317,8 +317,9 @@ public:
                         OffDiag& a1_nb = matrix.getCoeff(c1,nb);
                         a1_nb -= coeff;
                         a11 += coeff;
-                        a01 -= coeff;
                     }
+                    a01 -= coeff;
+                    
                     
                     if (c0 != nb)
                     {

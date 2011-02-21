@@ -838,7 +838,7 @@ MeshDismantler::partitionInterfaceMappers()
      //loop over interfaces (only partition interfaces)
      for ( int i = 0; i < interfaceGroupCount; i++ ) {
          //get key for f
-         int interfaceID = faceGroupList[i]->id;
+         int interfaceID = -faceGroupList[i]->id;
          //mappers in Storagesite is held by the same storage site, so this site 
          //can be used to in scatterMap and gatherMap
          const StorageSite& interfaceSite = faceGroupList[i]->site;

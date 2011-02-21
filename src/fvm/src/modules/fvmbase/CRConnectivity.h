@@ -152,12 +152,23 @@ public:
    * 
    */
 
+  void resizeLocalToGlobalMap( int size ) 
+  {
+     _localToGlobalMap = shared_ptr< Array<int> > ( new Array<int>(size) );
+  }
+
   const Array<int>& getRow() const {return *_row;}
   const Array<int>& getCol() const {return *_col;}
+  Array<int>& getCol() {return *_col;}
+
   //@}
+
 
   const Array<int>& getGlobalToLocalMap() const {return *_globalToLocalMap;}
   const Array<int>& getLocalToGlobalMap() const {return *_localToGlobalMap;}
+
+  const map<int,int>& getGlobalToLocalMapper() const {return _globalToLocalMapper;}
+  map<int,int>& getGlobalToLocalMapper()           {return _globalToLocalMapper;}
   
   shared_ptr<Array<int> > getGlobalToLocalMapPtr() {return _globalToLocalMap;}
   shared_ptr<Array<int> > getLocalToGlobalMapPtr() {return _localToGlobalMap;}
@@ -178,6 +189,7 @@ private:
   shared_ptr<Array<int> > _row;
   shared_ptr<Array<int> > _col;
   shared_ptr<Array<int> > _globalToLocalMap;
+  map<int,int>            _globalToLocalMapper;
   shared_ptr<Array<int> > _localToGlobalMap;
   mutable map<const CRConnectivity*, PairToColMapping*> _pairToColMappings;
 };

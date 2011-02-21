@@ -8,6 +8,7 @@ StorageSite::StorageSite(const int selfCount, const int nGhost,
   _selfCount(selfCount),
   _offset(offset),
   _parent(parent),
+  _countLevel1(_count),
   _scatterProcID(-1),
   _gatherProcID(-1),
   _tag(-1)

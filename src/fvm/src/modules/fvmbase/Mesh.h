@@ -46,6 +46,7 @@ public:
 
   typedef vector<int>  vecList;
   typedef multimap<int,int> multiMap;
+  typedef map<int,int> mapInt;
 
   typedef pair<const StorageSite*, const StorageSite*> SSPair;
   typedef map<SSPair,shared_ptr<CRConnectivity> > ConnectivityMap;
@@ -229,6 +230,8 @@ public:
   bool isMergedMesh() const { return _isAssembleMesh;}
   int  getNumOfAssembleMesh() const { return _numOfAssembleMesh;}
  
+  void uniqueFaceCells();
+
 
   void setIBFaces(shared_ptr<Array<int> > faceList) {_ibFaceList = faceList;}
 

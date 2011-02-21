@@ -37,6 +37,7 @@ public:
   {
     _count = selfCount+nGhost;
     _selfCount = selfCount;
+    _countLevel1 = _count;
   }
 
 
@@ -55,9 +56,8 @@ public:
   CommonMap &  getCommonMap ()  { return _commonMap; }
 
   //methods for Level1 layer creation
-  void setCountLevel1( const int count ) {
-    _countLevel1 = count - _count;
-    _count = count;
+  void setCountLevel1( const int countLevel1 ) {
+    _countLevel1 = countLevel1;
   }
   int getCountLevel1() const {return _countLevel1;}
   const ScatterMap&  getScatterMapLevel1() const { return _scatterMapLevel1;}

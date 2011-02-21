@@ -1,4 +1,8 @@
 #include <set>
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "Mesh.h"
 #include "StorageSite.h"
 #include "CRConnectivity.h"
@@ -6,6 +10,8 @@
 #include <cassert>
 #include "KSearchTree.h"
 #include "GeomFields.h"
+
+
 
 #define epsilon 1e-6
 
@@ -217,6 +223,8 @@ Mesh::Mesh( const int dimension,
   
   SSPair key2(&faceSite,&cellSite);
   _connectivityMap[key2] = faceCells;
+
+
 
   logCtor();
 }
@@ -477,7 +485,7 @@ Mesh::getCellCells2() const
       //initCount
       _cellCells2->initCount();
 
-      const int ncells = this->getCells().getCount() - this->getCells().getCountLevel1();
+      const int ncells = this->getCells().getCountLevel1();
       const int selfCount = this->getCells().getSelfCount();
 
       const CRConnectivity& cellCells = this->getCellCells();
@@ -539,6 +547,48 @@ Mesh::getCellCells2() const
       //finish add
       _cellCells2->finishAdd();
 
+     //unique numbering for cells to
+    {
+       const int ncount = _cellCells2->getRowSite().getCountLevel1();
+       const Array<int>& row = _cellCells2->getRow();
+       Array<int>& col = _cellCells2->getCol();
+       for( int i = 0; i < ncount; i++ ){
+          for ( int j = row[i]; j < row[i+1]; j++ ){
+             const int globalID = (*_localToGlobal)[ col[j] ];
+             col[j] = _globalToLocal[globalID];
+          }
+       }
+     }
+     //uniqing numberinf for face cells
+     {
+        CRConnectivity& faceCells = (const_cast<Mesh *>(this))->getAllFaceCells();
+        const int nfaces = faceCells.getRowSite().getCount();
+        const Array<int>& row = faceCells.getRow();
+        Array<int>& col = faceCells.getCol();
+        for( int i = 0; i < nfaces; i++ ){
+           for ( int j = row[i]; j < row[i+1]; j++ ){
+              const int globalID = (*_localToGlobal)[ col[j] ];
+              col[j] = _globalToLocal[globalID];
+           }
+        }
+        const StorageSite& cellSite = this->getCells();
+        this->eraseConnectivity(cellSite,cellSite);
+     }
+
+
+      //get mappers to update cellCell2 localToGlobalMap and globalToLocalMapper
+      map<int,int>& globalToLocalMapper = _cellCells2->getGlobalToLocalMapper();
+      foreach( const  mapInt::value_type& mpos, _globalToLocal ){
+         globalToLocalMapper[mpos.first] = mpos.second;
+      }
+
+      //localToGlobal need to be first created
+      _cellCells2->resizeLocalToGlobalMap( this->getCells().getCountLevel1() );
+      Array<int>& localToGlobal = *(_cellCells2->getLocalToGlobalMapPtr());
+      for ( int i = 0; i < localToGlobal.getLength(); i++ ){
+         localToGlobal[i] = (*_localToGlobal)[i];
+      }
+
 #endif
 
 #ifndef FVM_PARALLEL
@@ -576,10 +626,34 @@ Mesh::setFaceNodes(shared_ptr<CRConnectivity> faceNodes)
 void
 Mesh::setFaceCells(shared_ptr<CRConnectivity> faceCells)
 {
+
+
   SSPair key(&_faces,&_cells);
   _connectivityMap[key] = faceCells;
+
+
 }
 
+
+void
+Mesh::uniqueFaceCells()
+{
+     //uniqing numberinf for face cells
+     {
+        CRConnectivity& faceCells = (const_cast<Mesh *>(this))->getAllFaceCells();
+        const int nfaces = faceCells.getRowSite().getCount();
+        const Array<int>& row = faceCells.getRow();
+        Array<int>& col = faceCells.getCol();
+        for( int i = 0; i < nfaces; i++ ){
+           for ( int j = row[i]; j < row[i+1]; j++ ){
+              const int globalID = (*_localToGlobal)[ col[j] ];
+              col[j] = _globalToLocal[globalID];
+           }
+        }
+        const StorageSite& cellSite = this->getCells();
+        this->eraseConnectivity(cellSite,cellSite);
+     }
+}
 
 const Array<int>&
 Mesh::getIBFaceList() const
@@ -636,7 +710,7 @@ Mesh::createCellColor()
 void
 Mesh::createLocalGlobalArray()
 {
-   _localToGlobal  = shared_ptr< Array<int> > ( new Array<int>( _cells.getCount() ) );
+   _localToGlobal  = shared_ptr< Array<int> > ( new Array<int>( _cells.getCountLevel1() ) );
    *_localToGlobal  = -1;
 }
 

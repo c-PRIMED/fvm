@@ -40,7 +40,7 @@ public:
   bool hasArray(const StorageSite& s) const;
   
   void syncLocal();
-  void syncLocalLevel1();
+  
 
   const string getName() const {return _name;}
 
@@ -56,7 +56,10 @@ private:
   void  syncScatterLevel1(const StorageSite& site);
   void  syncGatherLevel1(const StorageSite& site);
   int  get_request_size();
-  int  get_request_size_level1();
+  int  get_request_size_scatter_level1();
+  int  get_request_size_gather_level1();
+
+  void syncLocalLevel1();
 
 
   //ArrayBase& getGhostArray(const StorageSite&);

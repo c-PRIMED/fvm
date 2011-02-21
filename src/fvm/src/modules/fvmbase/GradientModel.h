@@ -108,14 +108,15 @@ public:
     const StorageSite& faces = mesh.getFaces();
     
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
-    const CRConnectivity& cellCells = mesh.getCellCells();
     
     const int cellCount = cells.getSelfCount();
     const int faceCount = faces.getSelfCount();
       
-    GradMatrixType* gMPtr(new GradMatrixType(cellCells));
+    GradMatrixType* gMPtr(new GradMatrixType(mesh));
     GradMatrixType& gM = *gMPtr;
     GradientMatrixAssembler& assembler = gM.getPairWiseAssembler(faceCells);
+
+    const CRConnectivity& cellCells = gM.getConnectivity();
     
     VectorT3Array& coeffs = gM.getCoeffs();
     
@@ -255,6 +256,9 @@ public:
         }
     }
 
+    //sync
+    gMPtr->sync();
+
     return shared_ptr<GradientMatrixBase>(gMPtr);
   }
 
@@ -266,15 +270,17 @@ public:
     const StorageSite& faces = mesh.getFaces();
     
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
-    const CRConnectivity& cellCells = mesh.getCellCells();
+   
     const CRConnectivity& cellFaces = mesh.getCellFaces();
 
     const int cellCount = cells.getSelfCount();
     const int faceCount = faces.getSelfCount();
       
-    GradMatrixType* gMPtr(new GradMatrixType(cellCells));
+    GradMatrixType* gMPtr(new GradMatrixType(mesh));
     GradMatrixType& gM = *gMPtr;
     GradientMatrixAssembler& assembler = gM.getPairWiseAssembler(faceCells);
+
+    const CRConnectivity& cellCells = gM.getConnectivity();
     
     VectorT3Array& coeffs = gM.getCoeffs();
     
@@ -340,7 +346,6 @@ public:
             Iyy += ds[1]*ds[1];
             Ixy += ds[0]*ds[1];
         }
-    
 
         const T_Scalar det = Ixx*Iyy-Ixy*Ixy;
         //T_Scalar det = 0;
@@ -407,6 +412,8 @@ public:
             assembler.getCoeff10(f)= T_Scalar(-0.5)*faceArea[f]/cellVolume[c1];
         }
     }
+    //sync
+    gMPtr->sync();
 
     return shared_ptr<GradientMatrixBase>(gMPtr);
   }
@@ -540,6 +547,7 @@ public:
     }
 
     _gradientField.syncLocal();
+
   }
 
 private:

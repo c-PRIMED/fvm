@@ -356,28 +356,24 @@ MultiField::syncScatterLevel1(const ArrayIndex& i)
 
   const  ArrayBase& thisArray  = *_arrays[_arrayMap[i]];
   const  StorageSite& thisSite = *i.second;
+  if ( thisArray.getLength() == thisSite.getCountLevel1() ){
+     const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMapLevel1();
 
-  const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMapLevel1();
+     foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
+     {
+        const StorageSite& oSite = *mpos.first;
 
-  foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
-  {
-      const StorageSite& oSite = *mpos.first;
+        ArrayIndex oIndex(i.first,&oSite);
+        // arrays are stored with (Sender,receiver) as the key
+        EntryIndex eIndex(i,oIndex);
+        const Array<int>& fromIndices = *(mpos.second);
+        if (_ghostArraysLevel1.find(eIndex) == _ghostArraysLevel1.end()){
+          _ghostArraysLevel1[eIndex] = thisArray.newSizedClone(fromIndices.getLength());
+        }
 
-      ArrayIndex oIndex(i.first,&oSite);
-
-      // skip if the other site is not in this Multifield
-      //if (!hasArray(oIndex))
-      //  continue;
-      
-      // arrays are stored with (Sender,receiver) as the key
-      EntryIndex eIndex(i,oIndex);
-      const Array<int>& fromIndices = *(mpos.second);
-      if (_ghostArraysLevel1.find(eIndex) == _ghostArraysLevel1.end()){
-        _ghostArraysLevel1[eIndex] = thisArray.newSizedClone(fromIndices.getLength());
-      }
-
-      ArrayBase& ghostArray = *_ghostArraysLevel1[eIndex];
-      thisArray.scatter(ghostArray,fromIndices);
+        ArrayBase& ghostArray = *_ghostArraysLevel1[eIndex];
+        thisArray.scatter(ghostArray,fromIndices);
+     }
   }
 
 }
@@ -412,20 +408,22 @@ MultiField::createSyncGatherArraysLevel1(const ArrayIndex& i)
 
   ArrayBase& thisArray = *_arrays[_arrayMap[i]];
   const StorageSite& thisSite = *i.second;
+  
+  if ( thisArray.getLength() == thisSite.getCountLevel1() ){
+     const StorageSite::GatherMap& gatherMap = thisSite.getGatherMapLevel1();
 
-  const StorageSite::GatherMap& gatherMap = thisSite.getGatherMapLevel1();
+     foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+     {
+        const StorageSite& oSite = *mpos.first;
 
-  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
-  {
-      const StorageSite& oSite = *mpos.first;
+        ArrayIndex oIndex(i.first,&oSite);
+        EntryIndex eIndex(oIndex,i);
 
-      ArrayIndex oIndex(i.first,&oSite);
-      EntryIndex eIndex(oIndex,i);
-
-     const Array<int>& toIndices = *(mpos.second);
-      if (_ghostArraysLevel1.find(eIndex) == _ghostArraysLevel1.end()){
-         _ghostArraysLevel1[eIndex]  = thisArray.newSizedClone(toIndices.getLength());
-      }
+        const Array<int>& toIndices = *(mpos.second);
+        if (_ghostArraysLevel1.find(eIndex) == _ghostArraysLevel1.end()){
+          _ghostArraysLevel1[eIndex]  = thisArray.newSizedClone(toIndices.getLength());
+        }
+     }
   }
 
 }
@@ -462,20 +460,22 @@ MultiField::syncGatherLevel1(const ArrayIndex& i)
   ArrayBase& thisArray = *_arrays[_arrayMap[i]];
   const StorageSite& thisSite = *i.second;
 
-  const StorageSite::GatherMap& gatherMap = thisSite.getGatherMapLevel1();
+  if ( thisArray.getLength() == thisSite.getCountLevel1() ){
+     const StorageSite::GatherMap& gatherMap = thisSite.getGatherMapLevel1();
  
-  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
-  {
-      const StorageSite& oSite = *mpos.first;
-      ArrayIndex oIndex(i.first,&oSite);
+     foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+     {
+        const StorageSite& oSite = *mpos.first;
+        ArrayIndex oIndex(i.first,&oSite);
 
-      const Array<int>& toIndices = *(mpos.second);
-      EntryIndex eIndex(oIndex,i);
+        const Array<int>& toIndices = *(mpos.second);
+        EntryIndex eIndex(oIndex,i);
 
-      if (_ghostArraysLevel1.find(eIndex) != _ghostArraysLevel1.end()){	
-          const ArrayBase& ghostArray = *_ghostArraysLevel1[eIndex];
-          thisArray.gather(ghostArray,toIndices);
-      }
+        if (_ghostArraysLevel1.find(eIndex) != _ghostArraysLevel1.end()){	
+           const ArrayBase& ghostArray = *_ghostArraysLevel1[eIndex];
+           thisArray.gather(ghostArray,toIndices);
+        }  
+     }
   }
 
 }
@@ -541,6 +541,9 @@ MultiField::sync()
   foreach(ArrayIndex i, _arrayIndices)
     syncGather(i);
 
+  //syncLevel1
+  syncLevel1();
+
 }
 
 
@@ -576,17 +579,21 @@ MultiField::syncLevel1()
 #ifdef FVM_PARALLEL
   //this communication is based on assumption that MPI communication will be only done inside the same field
   //SENDING
-   MPI::Request   request_send[ get_request_size() ];
-   MPI::Request   request_recv[ get_request_size() ];
+   int countScatter   = get_request_size_scatter_level1();
+   int countGather    = get_request_size_gather_level1();
+   MPI::Request   request_send[ countScatter ];
+   MPI::Request   request_recv[ countGather  ];
    int sendIndx = 0;
    int recvIndx = 0;
    foreach ( ArrayIndex i, _arrayIndices ){
        const  StorageSite& thisSite = *i.second;
        const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMapLevel1();
-       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
-           const StorageSite& oSite = *mpos.first;
-           ArrayIndex oIndex(i.first,&oSite);
-          // arrays are stored with (Sender,receiver) as the key
+       const ArrayBase& thisArray = *_arrays[_arrayMap[i]];
+       if ( thisArray.getLength() == thisSite.getCountLevel1() ){
+          foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+             const StorageSite& oSite = *mpos.first;
+             ArrayIndex oIndex(i.first,&oSite);
+             // arrays are stored with (Sender,receiver) as the key
              EntryIndex eIndex(i,oIndex);
              ArrayBase& sendArray = *_ghostArraysLevel1[eIndex];
              int to_where  = oSite.getGatherProcID();
@@ -595,29 +602,28 @@ MultiField::syncLevel1()
                 request_send[sendIndx++] =  
                        MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
              }
-       }
+          }
 
-  
-     //RECIEVING
-      const StorageSite::GatherMap& gatherMap = thisSite.getGatherMapLevel1();
-      foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
-           const StorageSite& oSite = *mpos.first;
-           ArrayIndex oIndex(i.first,&oSite);
-             EntryIndex eIndex(oIndex,i);
-             ArrayBase& recvArray = *_ghostArraysLevel1[eIndex];
-             int from_where  = oSite.getGatherProcID();
-             if ( from_where != -1 ){
-                 int mpi_tag = oSite.getTag();
-                 request_recv[recvIndx++] =  
-                       MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
-             }
-      }
-
+         //RECIEVING
+         const StorageSite::GatherMap& gatherMap = thisSite.getGatherMapLevel1();
+         foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+            const StorageSite& oSite = *mpos.first;
+            ArrayIndex oIndex(i.first,&oSite);
+            EntryIndex eIndex(oIndex,i);
+            ArrayBase& recvArray = *_ghostArraysLevel1[eIndex];
+            int from_where  = oSite.getGatherProcID();
+            if ( from_where != -1 ){
+               int mpi_tag = oSite.getTag();
+               request_recv[recvIndx++] =  
+                     MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+           }
+         }
+ 
+     }
    }
 
-   int count   = get_request_size_level1();
-   MPI::Request::Waitall( count, request_recv );
-   MPI::Request::Waitall( count, request_send );
+   MPI::Request::Waitall( countGather, request_recv );
+   MPI::Request::Waitall( countScatter , request_send );
 
 #endif
 
@@ -628,21 +634,45 @@ MultiField::syncLevel1()
 
 
 int
-MultiField::get_request_size_level1()
+MultiField::get_request_size_scatter_level1()
 {
    int indx = 0;
    foreach ( ArrayIndex i, _arrayIndices ){
        const  StorageSite& thisSite = *i.second;
        const StorageSite::ScatterMap& scatterMap = thisSite.getScatterMapLevel1();
-       foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
-           const StorageSite& oSite = *mpos.first;
-           ArrayIndex oIndex(i.first,&oSite);
-          // arrays are stored with (Sender,receiver) as the key
-           if ( oSite.getGatherProcID() != -1 )
-              indx++;
+       const ArrayBase& thisArray = *_arrays[_arrayMap[i]];
+       if ( thisArray.getLength() == thisSite.getCountLevel1() ){
+          foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+             const StorageSite& oSite = *mpos.first;
+             ArrayIndex oIndex(i.first,&oSite);
+             // arrays are stored with (Sender,receiver) as the key
+             if ( oSite.getGatherProcID() != -1 )
+               indx++;
+          }
        }
     }
    return indx;
 
 }
 
+int
+MultiField::get_request_size_gather_level1()
+{
+   int indx = 0;
+   foreach ( ArrayIndex i, _arrayIndices ){
+       const  StorageSite& thisSite = *i.second;
+       const StorageSite::GatherMap& gatherMap = thisSite.getGatherMapLevel1();
+       const ArrayBase& thisArray = *_arrays[_arrayMap[i]];
+       if ( thisArray.getLength() == thisSite.getCountLevel1() ){
+          foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+             const StorageSite& oSite = *mpos.first;
+             ArrayIndex oIndex(i.first,&oSite);
+             // arrays are stored with (Sender,receiver) as the key
+             if ( oSite.getGatherProcID() != -1 )
+                indx++;
+          }
+       }
+    }
+   return indx;
+
+}

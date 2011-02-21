@@ -121,7 +121,6 @@ MeshPartitioner::partition()
 void 
 MeshPartitioner::mesh()
 {
-
     CRConnectivity_cellParts();
     CRConnectivity_faceParts();
     interfaces();
@@ -137,7 +136,7 @@ MeshPartitioner::mesh()
     globalCellID_procID_map();
     gatherCellsLevel1_partID_map();
     level1_scatter_gather_cells();
-    DEBUG_CRConnectivity_cellCells2();
+    set_local_global();
  
 }
 
@@ -971,7 +970,10 @@ MeshPartitioner::mesh_setup()
            int interfaceID = *it_set;
            int size = int(_interfaceMap.at(id).count( interfaceID ) );
            int offset = _interfaceOffsets.at(id)[ interfaceID ];
-           _meshListLocal.at(id)->createInterfaceGroup( size, offset, interfaceID );
+//            _meshListLocal.at(id)->createInterfaceGroup( size, offset, interfaceID );
+//        structural solver complained and thought that it is boundayr so we assign as -
+//         but this interface id might be used in meshassembly and meshdismantler
+           _meshListLocal.at(id)->createInterfaceGroup( size, offset, -interfaceID );
             shared_ptr<StorageSite> siteGather ( new StorageSite(size) );
             shared_ptr<StorageSite> siteScatter( new StorageSite(size) );
             siteGather->setScatterProcID( _procID );
@@ -2135,6 +2137,8 @@ MeshPartitioner::global_offset()
 
 }
 
+//this function might be called to sync global number of level0 and level1.
+//Since MeshListLocal might have level0 or level1 cells, users are responsible to specify correct value of level
 void 
 MeshPartitioner::set_local_global()
 {
@@ -2146,7 +2150,7 @@ MeshPartitioner::set_local_global()
     for ( int id = 0; id < nmesh; id++ ){
        const StorageSite* site = &_meshListLocal[id]->getCells();
        MultiField::ArrayIndex ai( cellField.get(), site );
-       shared_ptr<Array<int> > cIndex(new Array<int>(site->getCount()));
+       shared_ptr<Array<int> > cIndex(new Array<int>(site->getCountLevel1()));
        *cIndex = -1;
        cellMultiField->addArray(ai,cIndex);
     }
@@ -2183,6 +2187,7 @@ MeshPartitioner::set_local_global()
 
     //sync opeartion
     cellMultiField->sync();
+
     //create localToGlobal array and assign it in Mesh
     for ( int id = 0; id < nmesh; id++ ){
        Mesh& mesh = *_meshListLocal.at(id);
@@ -2612,48 +2617,78 @@ MeshPartitioner::level1_scatter_gather_cells()
 
       for ( int id = 0; id < _nmesh; id++ ){
 
-        //we prepare sendArrays to other processor
-         map<int, vector<int> > sendArrays; //key=sending procs, value = scatter cells on other cells to this processor
+         //we prepare gatherArrays to other processor
+         map<int, vector<int> > gatherArrays; //key=sending procs, value = scatter cells on other cells to this processor
          foreach( const IntMap::value_type& mpos, _gatherCellsLevel1PartIDMap ){
             const int globalID = mpos.first;
             const int partID   = mpos.second; //this is where is going to be sent
-            sendArrays[partID].push_back( globalID );
+            gatherArrays[partID].push_back( globalID );
+         }
+
+         vector<int> gatherProcs;
+         //create a vector holding receiver processor
+         foreach( const VectorMap::value_type& pos, gatherArrays){
+            gatherProcs.push_back( pos.first);
+         }
+
+         //globalSendProcess is holding number of sending processro for each processor
+         Array<int> globalGatherProcsCount( _nPart.at(id) );
+         int gatherProcsCount = gatherArrays.size();
+         MPI::COMM_WORLD.Allgather(&gatherProcsCount, 1, MPI::INT, globalGatherProcsCount.getData(), 1, MPI::INT);
+
+         Array<int> offsets( _nPart.at(id) );
+        //form offsets
+        offsets[0]  = 0;
+        for ( int p = 1; p < int(_nPart.at(id)); p++ ){
+           offsets[p]  = globalGatherProcsCount[p-1]  + offsets[p-1];
+        } 
+        //get global buffer size
+        int globalBufferSize = 0;
+        for ( int i = 0; i < globalGatherProcsCount.getLength(); i++ ){
+           globalBufferSize += globalGatherProcsCount[i];
+        }
+        Array<int> globalGatherProcs( globalBufferSize );
+        //gathering partial partions for _row and _col
+        MPI::COMM_WORLD.Allgatherv(&gatherProcs[0], gatherProcs.size(), MPI::INT, globalGatherProcs.getData(), 
+                                 (const int *) globalGatherProcsCount.getData(), (const int *)offsets.getData(), MPI::INT);
+
+         //now preparing scatterProcs 
+         list<int> scatterProcs;
+         for ( int i = 0; i < _nPart.at(id); i++ ){
+            for ( int j = 0; j < globalGatherProcsCount[i]; j++ ){
+                 const int gatherProcID = globalGatherProcs[ offsets[i]+j];
+                 if ( _procID == gatherProcID ) //if it is sending me then this is included in recvProcs
+                      scatterProcs.push_back( i );
+             }
          }
 
 
          //MPI SENDING
-         MPI::Request   request_send[ sendArrays.size() ];
-         MPI::Request   request_recv[ sendArrays.size() ];
+         MPI::Request   request_send[ gatherArrays.size() ];
          int indxSend = 0;
          int indxRecv = 0;
-         foreach( const VectorMap::value_type pos, sendArrays){
+         foreach(const VectorMap::value_type pos, gatherArrays){
             int to_where = pos.first;
-            int count = int( sendArrays[to_where].size() );
+            int count = int( gatherArrays[to_where].size() );
             int send_tag = 112233;
             request_send[indxSend++] =  
-                     MPI::COMM_WORLD.Isend( &sendArrays[to_where][0], count, MPI::INT, to_where, send_tag );
+                     MPI::COMM_WORLD.Isend( &gatherArrays[to_where][0], count, MPI::INT, to_where, send_tag );
          }
 
-         //MPI RECEIVING
-         map<int, vector<int> > recvArrays;   //key=recv procs, value = gather cells
-         list<int> recvProcs;
-         //create a list holding receiver processor
-         foreach( const VectorMap::value_type& pos, sendArrays){
-            recvProcs.push_back( pos.first);
-         }
 
+         map<int, vector<int> > scatterArrays;   //key=recv procs, value = gather cells
          list<int>::iterator it;
-         while ( !recvProcs.empty() ){
-            for( it = recvProcs.begin(); it != recvProcs.end(); ++it ){
+         while ( !scatterProcs.empty() ){
+            for( it = scatterProcs.begin(); it != scatterProcs.end(); ++it ){
                int from_where = *it; //whereever it sends data has to get another data from there
                int recv_tag = 112233;
                MPI::Status recv_status;
                if( MPI::COMM_WORLD.Iprobe(from_where, recv_tag, recv_status) ){
                   //find receive buffer size
-                  int recv_count = recv_status.Get_count( MPI::INT );
+                  int scatter_count = recv_status.Get_count( MPI::INT );
                   //recv arrays allocation
-                  recvArrays[from_where].resize( recv_count);
-                  recvProcs.remove(from_where);
+                  scatterArrays[from_where].resize( scatter_count);
+                  scatterProcs.remove(from_where);
                   break;	
                }	
             }
@@ -2662,63 +2697,77 @@ MeshPartitioner::level1_scatter_gather_cells()
 
          //RECIEVING
          //getting values from other meshes to fill g
-         foreach( const VectorMap::value_type& pos, sendArrays){
+         MPI::Request   request_recv[ scatterArrays.size() ];
+         foreach( const VectorMap::value_type& pos, scatterArrays){
             int from_where = pos.first; //whereever it sends data has to get another data from there
-            int recv_count = int(recvArrays[from_where].size());
+            int recv_count = int(scatterArrays[from_where].size());
             int recv_tag = 112233;
             request_recv[indxRecv++] =  
-                     MPI::COMM_WORLD.Irecv( &recvArrays[from_where][0], recv_count, MPI::INT, from_where, recv_tag );
+                     MPI::COMM_WORLD.Irecv( &scatterArrays[from_where][0], recv_count, MPI::INT, from_where, recv_tag );
          }
 
-         int count  = sendArrays.size();
-         MPI::Request::Waitall( count, request_recv );
-         MPI::Request::Waitall( count, request_send );
+         int countScatter  = scatterArrays.size();
+         int countGather   = gatherArrays.size();
+         MPI::Request::Waitall( countScatter, request_recv );
+         MPI::Request::Waitall( countGather, request_send );
 
 
         StorageSite::ScatterMap & cellScatterMapLevel1 = _meshListLocal.at(id)->getCells().getScatterMapLevel1();
         StorageSite::GatherMap  & cellGatherMapLevel1  = _meshListLocal.at(id)->getCells().getGatherMapLevel1();
         map<int,int>&  globalToLocal = _meshListLocal.at(id)->getGlobalToLocal();
         StorageSite& cellSite = _meshListLocal.at(id)->getCells();
-        int gatherIndx = cellSite.getCount(); 
-        //create scatter and gather ghost sites level1
-        foreach ( const VectorMap::value_type& pos, recvArrays ){
-           const int gatherProcID = pos.first;
-           const vector<int>& recv_array = pos.second;
-           const int scatterSize  = int( recv_array.size() );
+        //create scatter ghost sites level1
+        foreach ( const VectorMap::value_type& pos, scatterArrays ){
+           const int toProcID = pos.first;
+           const vector<int>& scatter_array = pos.second;
+           const int scatterSize  = int( scatter_array.size() );
            //scatter Arrays
            ArrayIntPtr from_indices = ArrayIntPtr( new Array<int>( scatterSize ) );
-           //copy recv_array to from_indices
+           //copy scatter_array to from_indices
            for ( int i = 0; i < scatterSize; i++ ){
-               (*from_indices)[i] = globalToLocal[ recv_array[i] ];
+               (*from_indices)[i] = globalToLocal[ scatter_array[i] ];
            }
+
+           //create scatter  sites
+           shared_ptr<StorageSite> siteScatter( new StorageSite(scatterSize) );
+ 
+           siteScatter->setScatterProcID( _procID );
+           siteScatter->setGatherProcID ( toProcID );
+  
+ 
+           int packed_info = (std::max(_procID,toProcID) << 16 ) | ( std::min(_procID,toProcID) );
+           siteScatter->setTag( packed_info );	
+           Mesh::PartIDMeshIDPair  pairID = make_pair<int,int>(toProcID, id);
+           _meshListLocal.at(id)->createGhostCellSiteScatterLevel1( pairID, siteScatter );
+            cellScatterMapLevel1[ siteScatter.get() ] = from_indices;
+        }
+
+        int gatherIndx = cellSite.getCount(); 
+       //create  gather ghost sites level1
+        foreach ( const VectorMap::value_type& pos, gatherArrays ){
+           const int fromProcID = pos.first;
+           const vector<int>& gather_array = pos.second;
+           const int gatherSize  = int( gather_array.size() );
            //gather Arrays
-           const vector<int>& send_array = sendArrays[gatherProcID];
-           const int gatherSize  = int( send_array.size() );
            ArrayIntPtr to_indices = ArrayIntPtr( new Array<int>( gatherSize ) );
-          //copy send_array to to_indices
+          //copy gather_array to to_indices
            for ( int i = 0; i < gatherSize; i++ ){
                (*to_indices)[i]  = gatherIndx;
-               globalToLocal[send_array[i]] = gatherIndx;
+               globalToLocal[gather_array[i]] = gatherIndx;
                gatherIndx++;
            }
 
-           //create scatter and ghost sites
-           shared_ptr<StorageSite> siteScatter( new StorageSite(scatterSize) );
+           //create gather and ghost sites
            shared_ptr<StorageSite> siteGather ( new StorageSite(gatherSize ) );
  
-           siteScatter->setScatterProcID( _procID );
-           siteScatter->setGatherProcID ( gatherProcID );
-  
            siteGather->setScatterProcID( _procID );
-           siteGather->setGatherProcID ( gatherProcID );
+           siteGather->setGatherProcID ( fromProcID );
  
-           int packed_info = (std::max(_procID,gatherProcID) << 16 ) | ( std::min(_procID,gatherProcID) );
-           siteScatter->setTag( packed_info );	
-           Mesh::PartIDMeshIDPair  pairID = make_pair<int,int>(gatherProcID, id);
-           _meshListLocal.at(id)->createGhostCellSiteScatterLevel1( pairID, siteScatter );
-           _meshListLocal.at(id)->createGhostCellSiteGatherLevel1 ( pairID, siteScatter );
-            cellScatterMapLevel1[ siteScatter.get() ] = from_indices;
-            cellGatherMapLevel1 [ siteScatter.get() ] = to_indices;
+           int packed_info = (std::max(fromProcID, _procID) << 16 ) | ( std::min(fromProcID, _procID) );
+           siteGather->setTag( packed_info );	
+           Mesh::PartIDMeshIDPair  pairID = make_pair<int,int>(fromProcID, id);
+           _meshListLocal.at(id)->createGhostCellSiteGatherLevel1 ( pairID, siteGather );
+            cellGatherMapLevel1 [ siteGather.get() ] = to_indices;
         }
 
         //create storage sites
@@ -2726,6 +2775,8 @@ MeshPartitioner::level1_scatter_gather_cells()
         const StorageSite& faceSite = _meshListLocal.at(id)->getFaces();
         _meshListLocal.at(id)->eraseConnectivity(cellSite, cellSite);
         _meshListLocal.at(id)->eraseConnectivity(cellSite, faceSite);
+        //uniquie
+        _meshListLocal.at(id)->uniqueFaceCells();
     }
 
    if ( _debugMode ) 

@@ -1,3 +1,7 @@
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "Mesh.h"
 
 #include "NumType.h"
@@ -24,6 +28,7 @@
 #include "GenericIBDiscretization.h"
 #include "StressTensor.h"
 #include "SquareTensor.h"
+
 
 
 template<class X, class Diag, class OffDiag>
@@ -321,7 +326,7 @@ public:
         const StorageSite& cells = mesh.getCells();
 	//        const StorageSite& faces = mesh.getFaces();
 
-        shared_ptr<VectorT3Array> sCell(new VectorT3Array(cells.getCount()));
+        shared_ptr<VectorT3Array> sCell(new VectorT3Array(cells.getCountLevel1()));
 
         VectorT3 initialDeformation;
         initialDeformation[0] = _options["initialXDeformation"];
@@ -346,15 +351,15 @@ public:
         }
         
 
-        shared_ptr<TArray> rhoCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> rhoCell(new TArray(cells.getCountLevel1()));
         *rhoCell = vc["density"];
         _structureFields.density.addArray(cells,rhoCell);
 
-        shared_ptr<TArray> etaCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> etaCell(new TArray(cells.getCountLevel1()));
         *etaCell = vc["eta"];
         _structureFields.eta.addArray(cells,etaCell);
 
-        shared_ptr<TArray> eta1Cell(new TArray(cells.getCount()));
+        shared_ptr<TArray> eta1Cell(new TArray(cells.getCountLevel1()));
         *eta1Cell = vc["eta1"];
         _structureFields.eta1.addArray(cells,eta1Cell);
 
@@ -496,7 +501,9 @@ public:
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
                          ls.getX(), ls.getB());
+
     bool allNeumann = true;
+
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
@@ -520,6 +527,7 @@ public:
                                                     ls.getMatrix(), ls.getX(), ls.getB());
 	    
             VectorT3 fluxB(NumTypeTraits<VectorT3>::getZero());
+
 	    if (bc.bcType == "SpecifiedDeformation")
             {
 	        FloatValEvaluator<VectorT3>
@@ -584,7 +592,6 @@ public:
 			     faces);
                 for(int f=0; f<nFaces; f++)
 		{
-		    
                     fluxB += gbc.applyNeumannBC(f,bDistForce[f]);
 
 		}
@@ -609,7 +616,14 @@ public:
 	}
 	*/
     }
-                
+
+
+#ifdef FVM_PARALLEL
+     int count = 1;
+     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &allNeumann, count, MPI::BOOL, MPI::LAND);
+#endif
+
+
     if(allNeumann)
     {
         const Mesh& mesh = *_meshes[0];
@@ -650,11 +664,9 @@ public:
     ls.initAssembly();
     linearizeDeformation(ls);
     ls.initSolve();    
-    
     //AMG solver(ls);
     MFRPtr rNorm = _options.getDeformationLinearSolver().solve(ls);
     if (!_initialDeformationNorm) _initialDeformationNorm = rNorm;
-        
     _options.getDeformationLinearSolver().cleanup();
     ls.postSolve();
     ls.updateSolution();
@@ -680,7 +692,7 @@ public:
           (sField[sIndex]);
 	const T deformationURF(_options["deformationURF"]);
 
-	const int nCells = cells.getCount();
+	const int nCells = cells.getCountLevel1();
 	for(int c=0;c<nCells;c++)
 	{
 	    w[c] += ww[c];

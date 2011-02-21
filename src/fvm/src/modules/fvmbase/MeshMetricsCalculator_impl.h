@@ -121,7 +121,7 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
   const StorageSite& cells = mesh.getCells();
 
   
-  const int cellCount = cells.getCount();
+  const int cellCount = cells.getCountLevel1();
   if (cellCount == 0)
     return;
 
@@ -378,7 +378,7 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
   const StorageSite& faces = mesh.getFaces();
   const StorageSite& cells = mesh.getCells();
 
-  const int cellCount = cells.getCount();
+  const int cellCount = cells.getCountLevel1();
   if (cellCount == 0)
     return;
       
@@ -1446,16 +1446,16 @@ MeshMetricsCalculator<T>::init()
     {
         const Mesh& mesh = *_meshes[n];
         const StorageSite& cells = mesh.getCells();
-        const int cellCount = cells.getCount();
+        const int cellCount = cells.getCountLevel1();
         if (cellCount > 0 & !mesh.isShell())
         {
-            shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCount()));
+            shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCountLevel1()));
             *ibTypePtr = Mesh::IBTYPE_FLUID;
             _geomFields.ibType.addArray(cells,ibTypePtr);
 
             if (_transient)
             {
-                shared_ptr<IntArray> ibTypeN1Ptr(new IntArray(cells.getCount()));
+                shared_ptr<IntArray> ibTypeN1Ptr(new IntArray(cells.getCountLevel1()));
                 *ibTypeN1Ptr = Mesh::IBTYPE_FLUID;
                 _geomFields.ibTypeN1.addArray(cells,ibTypeN1Ptr);
             }
@@ -1498,7 +1498,7 @@ MeshMetricsCalculator<T>::updateTime()
       {
           const Mesh& mesh = *_meshes[n];
           const StorageSite& cells = mesh.getCells();
-          const int cellCount = cells.getCount();
+          const int cellCount = cells.getCountLevel1();
           if (cellCount > 0)
           {
               IntArray& ibTypeN1 = dynamic_cast<IntArray&>(_geomFields.ibTypeN1[cells]);
