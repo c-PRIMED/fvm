@@ -87,7 +87,8 @@ LinearSystem::createCoarse(const int groupSize, const double weightRatioThreshol
           if (sitesCoarsenedWithField.find(site) == sitesCoarsenedWithField.end())
           {
               sitesCoarsenedWithField[site] = fieldIndex;
-              shared_ptr<Array<int> > cIndex(new Array<int>(site->getCount()));
+              const ArrayBase& bi = (*_b)[ai];
+              shared_ptr<Array<int> > cIndex(new Array<int>(bi.getLength()));
               _coarseIndex.addArray(ai,cIndex);
 
           }
