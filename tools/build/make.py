@@ -99,8 +99,8 @@ def main():
     if cmd and not '_MEMOSA_MAKE' in os.environ:
         cmd = ';'.join(cmd)
         os.environ['_MEMOSA_MAKE'] = '1'
-        os.system("/bin/bash -l -c '%s;%s'" %(cmd, ' '.join(sys.argv)))
-        sys.exit(0)
+        ret = os.system("/bin/bash -l -c '%s;%s'" %(cmd, ' '.join(sys.argv)))
+        sys.exit(ret>>8)
 
     bld = Build(cname, sdir, make_path)
 
@@ -170,7 +170,7 @@ def main():
     bld.done()
 
     # TESTING
-    if options.test and not pbs.start(bld, cname) and not moab.start(bld, cname):
+    if build_failed==0 and options.test and not pbs.start(bld, cname) and not moab.start(bld, cname):
         test_start_time = time.time()
         open(bld.logdir + '/StartTestTime', 'w').write(str(test_start_time))
         testing.run_all_tests(bld)
@@ -190,6 +190,8 @@ def main():
     else:
         del os.environ['PYTHONPATH']
     build_utils.fix_path('PATH', bld.bindir, 1, 1)
+
+    sys.exit(build_failed)
 
 if __name__ == "__main__":
     main()
