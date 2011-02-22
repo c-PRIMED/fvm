@@ -145,8 +145,7 @@ class BuildPkg(Build):
 
     def test(self, tst):
         self.state = 'testing'
-        self.logfile = os.path.join(self.logdir, self.name + "-test.xml")
-        remove_file(self.logfile)
+        self.logfile = os.path.join(self.logdir, 'testing', self.name)
         pmess("TEST", self.name, self.blddir)
         ok, errs = self._test(tst)
         if errs:

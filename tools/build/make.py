@@ -30,6 +30,7 @@ Otherwise, the build system will look for one in the same directory as 'make.py'
 
 from build import Build
 from optparse import OptionParser
+from shutil import rmtree
 import build_utils
 import config
 import testing
@@ -52,6 +53,7 @@ def main():
     parser.set_defaults(verbose=0)
     parser.add_option("--build", action="store_true")
     parser.add_option("--test", action="store_true")
+    parser.add_option("--jtest", action="store_true")
     parser.add_option("--update", action="store_true")
     parser.add_option("--submit", action="store_true")
     parser.add_option("--all", action="store_true")
@@ -66,6 +68,9 @@ def main():
 
     make_path = os.path.abspath(os.path.dirname(os.path.realpath(sys.argv[0])))
     cwd = os.getcwd()
+
+    if options.jtest:
+        options.test = True
 
     if options.nightly:
         options.update = options.test = options.submit = True
@@ -171,11 +176,18 @@ def main():
 
     # TESTING
     if build_failed==0 and options.test and not pbs.start(bld, cname) and not moab.start(bld, cname):
+        testdir = os.path.join(bld.logdir, 'testing')
+        rmtree(testdir, True)
+        os.mkdir(testdir)
         test_start_time = time.time()
-        open(bld.logdir + '/StartTestTime', 'w').write(str(test_start_time))
-        testing.run_all_tests(bld)
+        open(os.path.join(testdir, 'StartTestTime'), 'w').write(str(test_start_time))
+        if options.jtest:
+            ttype = 'jtest'
+        else:
+            ttype = 'dash'
+        testing.run_all_tests(bld, ttype)
         test_end_time = time.time()
-        open(bld.logdir + '/EndTestTime', 'w').write(str(test_end_time))
+        open(os.path.join(testdir, 'EndTestTime'), 'w').write(str(test_end_time))
 
     # SUBMIT
     if options.submit:

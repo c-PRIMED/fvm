@@ -14,6 +14,61 @@ from build_utils import *
 from subprocess import Popen, PIPE, STDOUT
 from xml.sax.saxutils import escape
 
+class JTest:
+    def __init__(self):
+        print "JTEST INIT"
+
+    def print_results(self):
+        print "TESTS FINISHED. I should be printing something now."
+
+    def test_exec(self, cmd):
+        print "Executing %s" % cmd
+        p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
+        res = p.stdout.read()
+        rc = p.wait()
+        return rc, res
+
+    #run all the tests in a file. return number of errors
+    def run_tests(self, pname, fname, logdir):
+        print "run_tests %s %s %s" % (pname, fname, logdir)
+        errs = ok = 0
+        #f = open(logfile, 'a')
+        for line in open(fname):
+            if line[0] == '\n' or line[0] == '#': continue
+            pdir = logdir
+            if not os.path.isdir(pdir):
+                try:
+                    os.makedirs(pdir)
+                except:
+                    fatal("error creating directory " + pdir)
+            tname = line.split()[0]
+            if line.find('TESTDIR') >= 0:
+                pdir = os.path.join(pdir, tname)
+                line = line.replace('TESTDIR', pdir)
+                if not os.path.isdir(pdir):
+                    try:
+                        os.makedirs(pdir)
+                    except:
+                        fatal("error creating directory " + pdir)
+            line = line.replace('TESTOUT', os.path.join(pdir, tname + '.dat'))
+            line = line.split()
+
+            # force nosetests --with-xunit
+            if line[1] == 'nosetests':
+                xfile = os.path.join(logdir, '%s-test.xml' % tname)
+                print 'xfile=%s' % xfile
+                line[1] = 'nosetests --nologcapture --with-xunit --xunit-file=%s' % xfile
+
+            cmd = ' '.join(line[1:])
+            verbose(1, "Test %s: %s" % (tname, cmd))
+            print "Test %s: %s" % (tname, cmd)
+            t = time.time()
+            err, result_text = self.test_exec(cmd)
+            t = time.time() - t
+            #f.write(ostr)
+        #f.close()
+        return ok, errs
+
 
 class Test:
     def __init__(self):
@@ -79,6 +134,7 @@ class Test:
 
     #run all the tests in a file. return number of errors
     def run_tests(self, pname, fname, logfile):
+        logfile = logfile + '-test.xml'
         errs = ok = 0
         f = open(logfile, 'a')
         for line in open(fname):
@@ -148,7 +204,7 @@ def do_tests(tst, pname, startdir, logfile):
         errs += _errs
     return ok, errs
 
-def run_all_tests(bld):
+def run_all_tests(bld, ttype):
     # run any before commands
     run_commands('Testing', 'before')
 
@@ -164,8 +220,10 @@ def run_all_tests(bld):
     set_python_path(bld.blddir)
 
     # Create Test Object to hold and display results
-    tst = Test()
-
+    if ttype == 'dash':
+        tst = Test()
+    else:
+        tst = JTest()
     # test each package
     for p in bld.packages:
         if not p.is_pkg:
