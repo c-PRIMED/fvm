@@ -15,11 +15,9 @@
 
 class GradientMatrixBase
 {
-
+ public:
   typedef pair<const StorageSite*, const StorageSite*> EntryIndex;
   typedef map<EntryIndex, shared_ptr<ArrayBase> > GhostArrayMap;
-
-public:
   GradientMatrixBase() {}
   virtual ~GradientMatrixBase() {}
 };
@@ -706,6 +704,7 @@ private:
   Array<Coord> _coeffs;
   shared_ptr<StorageSite> _newSite;
   mutable map<const CRConnectivity*,PairWiseAssembler*> _pairWiseAssemblers;
+
   GhostArrayMap   _sendCounts;
   GhostArrayMap   _recvCounts;
   GhostArrayMap   _sendIndices;
