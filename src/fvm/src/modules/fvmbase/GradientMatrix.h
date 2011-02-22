@@ -13,6 +13,8 @@
 #include "StorageSite.h"
 #include "Gradient.h"
 
+foo
+
 class GradientMatrixBase
 {
  public:
