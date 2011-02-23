@@ -99,12 +99,15 @@ class JTest:
                 ts = self.dom.getElementsByTagName("testsuite")[0]
                 tc = self.dom.createElement('testcase')
                 tc.setAttribute('classname', pname)
-                tc.setAttribute('name', tname)
-                #FIXME
-                tc.setAttribute('time', '.1')
+                tc.setAttribute('name', '%s.%s' % (pname,tname))
+                tc.setAttribute('time', str(t))
+                if err:
+                    f = self.dom.createElement('failure')
+                    f.setAttribute('type', 'unknown')
+                    f.setAttribute('message', result_text)
+                    tc.appendChild(f)
                 ts.appendChild(tc)
         return ok, errs
-
 
 class Test:
     def __init__(self):
