@@ -40,19 +40,27 @@ class JTest:
         fp.write(dom.toxml())
         fp.close
 
+    def get_dom(self, pname, logdir):
+        xmlname = os.path.join(logdir, "%s-test.xml" % pname)
+        try:
+            dom = xml.dom.minidom.parse(xmlname)
+        except IOError:
+            dom = xml.dom.minidom.parseString('<testsuite />')
+        return dom
+
     #run all the tests in a file. return number of errors
     def run_tests(self, pname, fname, logdir):
         print "run_tests %s %s %s" % (pname, fname, logdir)
+        pdir = logdir
+        if not os.path.isdir(pdir):
+            try:
+                os.makedirs(pdir)
+            except:
+                fatal("error creating directory " + pdir)
+
         errs = ok = 0
-        #f = open(logfile, 'a')
         for line in open(fname):
             if line[0] == '\n' or line[0] == '#': continue
-            pdir = logdir
-            if not os.path.isdir(pdir):
-                try:
-                    os.makedirs(pdir)
-                except:
-                    fatal("error creating directory " + pdir)
             tname = line.split()[0]
             if line.find('TESTDIR') >= 0:
                 pdir = os.path.join(pdir, tname)
@@ -67,19 +75,29 @@ class JTest:
 
             # force nosetests --with-xunit
             if line[1] == 'nosetests':
+                nose = True
                 xfile = os.path.join(logdir, '%s-test.xml' % tname)
                 print 'xfile=%s' % xfile
                 line[1] = 'nosetests --nologcapture --with-xunit --xunit-file=%s' % xfile
-
+            else:
+                nose = False
             cmd = ' '.join(line[1:])
             verbose(1, "Test %s: %s" % (tname, cmd))
             print "Test %s: %s" % (tname, cmd)
             t = time.time()
             err, result_text = self.test_exec(cmd)
             t = time.time() - t
-            self.fix_nose_xml(xfile, pname)
-            #f.write(ostr)
-        #f.close()
+            if nose:
+                self.fix_nose_xml(xfile, pname)
+            else:
+                # add testcase to the dom
+                ts = self.dom.getElementsByTagName("testsuite")[0]
+                tc = self.dom.createElement('testcase')
+                tc.setAttribute('classname', pname)
+                tc.setAttribute('name', tname)
+                #FIXME
+                tc.setAttribute('time', '1000')
+                ts.appendChild(tc)
         return ok, errs
 
 
@@ -208,13 +226,28 @@ def find_tests(startdir):
                 yield root
 
 # run all the tests in a directory.  return number of errors
-def do_tests(tst, pname, startdir, logfile):
+def do_tests(tst, pname, startdir, logdir):
+    if isinstance(tst, JTest):
+        tst.dom = tst.get_dom(pname, logdir)
     errs = ok = 0
+
+    ran_tests = False
     for root in find_tests(startdir):
+        ran_tests = True
         os.chdir(root)
-        _ok, _errs = tst.run_tests(pname, os.path.join(root, 'TESTS'), logfile)
+        _ok, _errs = tst.run_tests(pname, os.path.join(root, 'TESTS'), logdir)
         ok += _ok
         errs += _errs
+    if isinstance(tst, JTest) and ran_tests:
+        ts = tst.dom.getElementsByTagName("testsuite")[0]
+        ts.setAttribute('tests', str(ok+errs))
+        ts.setAttribute('errors', '0')
+        ts.setAttribute('failures', str(errs))
+        ts.setAttribute('skip', '0')
+        xmlname = os.path.join(logdir, "%s-test.xml" % pname)
+        fp = open(xmlname, 'w')
+        fp.write(tst.dom.toxml())
+        fp.close
     return ok, errs
 
 def run_all_tests(bld, ttype):
