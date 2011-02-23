@@ -13,6 +13,7 @@ from build_packages import *
 from build_utils import *
 from subprocess import Popen, PIPE, STDOUT
 from xml.sax.saxutils import escape
+import xml.dom.minidom
 
 class JTest:
     def __init__(self):
@@ -27,6 +28,17 @@ class JTest:
         res = p.stdout.read()
         rc = p.wait()
         return rc, res
+
+    def fix_nose_xml(self, fname, pname):
+        dom = xml.dom.minidom.parse(fname)
+        ts = dom.getElementsByTagName("testsuite")[0]
+        cases = dom.getElementsByTagName("testcase")
+        for case in cases:
+            cls = case.getAttribute("classname")
+            case.setAttribute("classname", "%s.%s" % (pname,cls))
+        fp = open(fname, 'w')
+        fp.write(dom.toxml())
+        fp.close
 
     #run all the tests in a file. return number of errors
     def run_tests(self, pname, fname, logdir):
@@ -65,6 +77,7 @@ class JTest:
             t = time.time()
             err, result_text = self.test_exec(cmd)
             t = time.time() - t
+            self.fix_nose_xml(xfile, pname)
             #f.write(ostr)
         #f.close()
         return ok, errs
