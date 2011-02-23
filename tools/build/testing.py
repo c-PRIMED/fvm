@@ -101,7 +101,7 @@ class JTest:
                 tc = self.dom.createElement('testcase')
                 tc.setAttribute('classname', pname)
                 #tc.setAttribute('name', '%s.%s' % (pname,tname))
-                tc.setAttribute('name', tname)
+                tc.setAttribute('name', '%s.%s' % (pname,tname))
                 tc.setAttribute('time', str(t))
                 if err:
                     f = self.dom.createElement('failure')
