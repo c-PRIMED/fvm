@@ -17,13 +17,15 @@ import xml.dom.minidom
 
 class JTest:
     def __init__(self):
-        print "JTEST INIT"
+        self.ok = 0
+        self.errs = 0
 
     def print_results(self):
-        print "TESTS FINISHED. I should be printing something now."
+        print '='*40
+        print "PASSED  %d" % (self.ok)
+        print "FAILED  %d" % (self.errs)
 
     def test_exec(self, cmd):
-        print "Executing %s" % cmd
         p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
         res = p.stdout.read()
         rc = p.wait()
@@ -50,7 +52,6 @@ class JTest:
 
     #run all the tests in a file. return number of errors
     def run_tests(self, pname, fname, logdir):
-        print "run_tests %s %s %s" % (pname, fname, logdir)
         pdir = logdir
         if not os.path.isdir(pdir):
             try:
@@ -77,21 +78,21 @@ class JTest:
             if line[1] == 'nosetests':
                 nose = True
                 xfile = os.path.join(logdir, '%s-test.xml' % tname)
-                print 'xfile=%s' % xfile
                 line[1] = 'nosetests --nologcapture --with-xunit --xunit-file=%s' % xfile
             else:
                 nose = False
             cmd = ' '.join(line[1:])
             verbose(1, "Test %s: %s" % (tname, cmd))
-            print "Test %s: %s" % (tname, cmd)
             t = time.time()
             err, result_text = self.test_exec(cmd)
             t = time.time() - t
             if err:
                 verbose_warn("%s Failed" % tname)
                 errs += 1
+                self.errs += 1
             else:
                 ok += 1
+                self.ok += 1
             if nose:
                 self.fix_nose_xml(xfile, pname)
             else:
@@ -99,7 +100,8 @@ class JTest:
                 ts = self.dom.getElementsByTagName("testsuite")[0]
                 tc = self.dom.createElement('testcase')
                 tc.setAttribute('classname', pname)
-                tc.setAttribute('name', '%s.%s' % (pname,tname))
+                #tc.setAttribute('name', '%s.%s' % (pname,tname))
+                tc.setAttribute('name', tname)
                 tc.setAttribute('time', str(t))
                 if err:
                     f = self.dom.createElement('failure')
@@ -244,7 +246,6 @@ def do_tests(tst, pname, startdir, logdir):
         _ok, _errs = tst.run_tests(pname, os.path.join(root, 'TESTS'), logdir)
         ok += _ok
         errs += _errs
-    print "ok=%s errs=%s" % (ok, errs)
     if isinstance(tst, JTest) and (ok or errs):
         ts = tst.dom.getElementsByTagName("testsuite")[0]
         ts.setAttribute('tests', str(ok+errs))
