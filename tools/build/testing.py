@@ -63,7 +63,7 @@ class JTest:
             if line[0] == '\n' or line[0] == '#': continue
             tname = line.split()[0]
             if line.find('TESTDIR') >= 0:
-                pdir = os.path.join(pdir, tname)
+                pdir = os.path.join(logdir, tname)
                 line = line.replace('TESTDIR', pdir)
                 if not os.path.isdir(pdir):
                     try:
@@ -87,6 +87,11 @@ class JTest:
             t = time.time()
             err, result_text = self.test_exec(cmd)
             t = time.time() - t
+            if err:
+                verbose_warn("%s Failed" % tname)
+                errs += 1
+            else:
+                ok += 1
             if nose:
                 self.fix_nose_xml(xfile, pname)
             else:
@@ -96,7 +101,7 @@ class JTest:
                 tc.setAttribute('classname', pname)
                 tc.setAttribute('name', tname)
                 #FIXME
-                tc.setAttribute('time', '1000')
+                tc.setAttribute('time', '.1')
                 ts.appendChild(tc)
         return ok, errs
 
@@ -231,14 +236,13 @@ def do_tests(tst, pname, startdir, logdir):
         tst.dom = tst.get_dom(pname, logdir)
     errs = ok = 0
 
-    ran_tests = False
     for root in find_tests(startdir):
-        ran_tests = True
         os.chdir(root)
         _ok, _errs = tst.run_tests(pname, os.path.join(root, 'TESTS'), logdir)
         ok += _ok
         errs += _errs
-    if isinstance(tst, JTest) and ran_tests:
+    print "ok=%s errs=%s" % (ok, errs)
+    if isinstance(tst, JTest) and (ok or errs):
         ts = tst.dom.getElementsByTagName("testsuite")[0]
         ts.setAttribute('tests', str(ok+errs))
         ts.setAttribute('errors', '0')
