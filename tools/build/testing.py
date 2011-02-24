@@ -61,6 +61,7 @@ class JTest:
         for line in open(fname):
             if line[0] == '\n' or line[0] == '#': continue
             tname = line.split()[0]
+            pdir=''
             if line.find('TESTDIR') >= 0 or line.find('TESTOUT') >= 0:
                 pdir = os.path.join(logdir, tname)
                 if not os.path.isdir(pdir):
