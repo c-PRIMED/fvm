@@ -52,7 +52,12 @@ class JTest:
 
     #run all the tests in a file. return number of errors
     def run_tests(self, pname, fname, logdir):
-        pdir = logdir
+        if not os.path.isdir(logdir):
+            try:
+                os.makedirs(logdir)
+            except:
+                fatal("error creating directory " + logdir)
+        pdir = os.path.join(logdir, tname)
         if not os.path.isdir(pdir):
             try:
                 os.makedirs(pdir)
@@ -64,13 +69,7 @@ class JTest:
             if line[0] == '\n' or line[0] == '#': continue
             tname = line.split()[0]
             if line.find('TESTDIR') >= 0:
-                pdir = os.path.join(logdir, tname)
                 line = line.replace('TESTDIR', pdir)
-                if not os.path.isdir(pdir):
-                    try:
-                        os.makedirs(pdir)
-                    except:
-                        fatal("error creating directory " + pdir)
             line = line.replace('TESTOUT', os.path.join(pdir, tname + '.dat'))
             line = line.split()
 
