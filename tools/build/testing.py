@@ -57,19 +57,18 @@ class JTest:
                 os.makedirs(logdir)
             except:
                 fatal("error creating directory " + logdir)
-        pdir = os.path.join(logdir, tname)
-        if not os.path.isdir(pdir):
-            try:
-                os.makedirs(pdir)
-            except:
-                fatal("error creating directory " + pdir)
-
         errs = ok = 0
         for line in open(fname):
             if line[0] == '\n' or line[0] == '#': continue
             tname = line.split()[0]
-            if line.find('TESTDIR') >= 0:
-                line = line.replace('TESTDIR', pdir)
+            if line.find('TESTDIR') >= 0 or line.find('TESTOUT') >= 0:
+                pdir = os.path.join(logdir, tname)
+                if not os.path.isdir(pdir):
+                    try:
+                        os.makedirs(pdir)
+                    except:
+                        fatal("error creating directory " + pdir)
+            line = line.replace('TESTDIR', pdir)
             line = line.replace('TESTOUT', os.path.join(pdir, tname + '.dat'))
             line = line.split()
 
