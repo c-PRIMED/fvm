@@ -173,7 +173,7 @@ SquareMatrix<T,N>  inverse(SquareMatrix<T,N>& b, int size)
 	   }
 	 }
        }
-       fac(q,p)=pow(-1,q+p)*determinant(tmp,size-1);
+       fac(q,p)=pow(-1.0,q+p)*determinant(tmp,size-1);
      }
    }
   
