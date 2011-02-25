@@ -109,122 +109,6 @@ class JTest:
                 ts.appendChild(tc)
         return ok, errs
 
-class Test:
-    def __init__(self):
-        self.errs = self.ok = 0
-        self.unit_errs = self.unit_ok = 0
-        self.test_types = {}
-        self.test_desc = {'./ptest.py': 'FVM Complex Parallel Solver Tests',
-                          './testCellMark': 'TestCellMark',
-                          'lammps_cmp.py': 'Full Lammps Test Runs',
-                          'mpmtest.py': 'Full MPM Test Runs',
-                          }
-
-    def test_exec(self, cmd):
-        #print "Executing %s" % cmd
-        p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
-        res = p.stdout.read()
-        rc = p.wait()
-
-        cmd = cmd.split()[0].strip("\"")
-        if cmd in self.test_types:
-            self.test_types[cmd] += 1
-        else:
-            self.test_types[cmd] = 1
-
-        if cmd == 'nosetests':
-            ok = bad = 0
-            tests = re.compile(r'Ran (.*) tests').findall(res)
-            if tests:
-                ok = int(tests[0])
-            fails = re.compile(r'failures=(.*)\)').findall(res)
-            if fails:
-                bad = int(fails[0])
-            else:
-                fails = re.compile(r'errors=(.*)\)').findall(res)
-                if fails:
-                    bad = int(fails[0])
-            self.unit_ok += ok
-            self.unit_errs += bad
-        else:
-            if rc == 0:
-                self.ok += 1
-            else:
-                self.errs += 1
-
-        return rc, res
-
-    def print_results(self):
-        print '='*40
-        print "PASSED  %d" % (self.ok + self.unit_ok)
-        print "FAILED  %d" % (self.errs + self.unit_errs)
-        print "\nTest Breakdown by type:"
-        for t in self.test_types:
-            if t == 'nosetests':
-                print "%5d  unit tests consisting of" % self.test_types[t]
-                print "       %5d PASSED" % self.unit_ok
-                print "       %5d FAILED" % self.unit_errs
-            else:
-                if t in self.test_desc:
-                    desc = self.test_desc[t]
-                else:
-                    desc = t
-                print "%5d  %s" % (self.test_types[t], desc)
-
-    #run all the tests in a file. return number of errors
-    def run_tests(self, pname, fname, logfile):
-        logfile = logfile + '-test.xml'
-        errs = ok = 0
-        f = open(logfile, 'a')
-        for line in open(fname):
-            if line[0] == '\n' or line[0] == '#': continue
-            pdir = os.path.join(os.path.dirname(logfile), pname)
-            if not os.path.isdir(pdir):
-                try:
-                    os.makedirs(pdir)
-                except:
-                    fatal("error creating directory " + pdir)
-            tname = line.split()[0]
-            if line.find('TESTDIR') >= 0:
-                pdir = os.path.join(pdir, tname)
-                line = line.replace('TESTDIR', pdir)
-                if not os.path.isdir(pdir):
-                    try:
-                        os.makedirs(pdir)
-                    except:
-                        fatal("error creating directory " + pdir)
-
-            outfile = os.path.join(pdir, tname + '.dat')
-            line = line.replace('TESTOUT', outfile)
-            line = line.split()
-            cmd = ' '.join(line[1:])
-            verbose(1, "Test %s: %s" % (tname, cmd))
-            ostr = "\t<Name>%s</Name>\n" % tname
-            ostr += "\t<Path>%s</Path>\n" % os.path.dirname(fname)
-            ostr += "\t<FullName>%s</FullName>\n" % tname
-            ostr += "\t<FullCommandLine>%s</FullCommandLine>\n" % escape(cmd)
-            ostr += "\t<Results>\n"
-            t = time.time()
-            err, result_text = self.test_exec(cmd)
-            t = time.time() - t
-            ostr += "\t\t<NamedMeasurement type=\"numeric/double\" name=\"Execution Time\"><Value>%s</Value></NamedMeasurement>\n" % t
-            ostr += "\t\t<Measurement><Value>"
-            # nosetests puts in an escape sequence we need to strip
-            # before xml quoting.
-            result_text = escape(result_text.rstrip("\x1b[?1034h"))
-            ostr += result_text
-            ostr += "</Value></Measurement></Results>"
-            if err:
-                verbose_warn("%s Failed" % tname)
-                ostr = "<Test Status=\"failed\">\n" + ostr
-                errs += 1
-            else:
-                ostr = "<Test Status=\"passed\">\n" + ostr
-                ok += 1
-            ostr += "</Test>\n"
-            f.write(ostr)
-        f.close()
-        return ok, errs
 
 # generator that finds all the test files under a directory.
 def find_tests(startdir):
@@ -235,16 +119,14 @@ def find_tests(startdir):
 
 # run all the tests in a directory.  return number of errors
 def do_tests(tst, pname, startdir, logdir):
-    if isinstance(tst, JTest):
-        tst.dom = tst.get_dom(pname, logdir)
+    tst.dom = tst.get_dom(pname, logdir)
     errs = ok = 0
-
     for root in find_tests(startdir):
         os.chdir(root)
         _ok, _errs = tst.run_tests(pname, os.path.join(root, 'TESTS'), logdir)
         ok += _ok
         errs += _errs
-    if isinstance(tst, JTest) and (ok or errs):
+    if ok or errs:
         ts = tst.dom.getElementsByTagName("testsuite")[0]
         ts.setAttribute('tests', str(ok+errs))
         ts.setAttribute('errors', '0')
@@ -256,7 +138,7 @@ def do_tests(tst, pname, startdir, logdir):
         fp.close
     return ok, errs
 
-def run_all_tests(bld, ttype):
+def run_all_tests(bld):
     # run any before commands
     run_commands('Testing', 'before')
 
@@ -272,10 +154,8 @@ def run_all_tests(bld, ttype):
     set_python_path(bld.blddir)
 
     # Create Test Object to hold and display results
-    if ttype == 'dash':
-        tst = Test()
-    else:
-        tst = JTest()
+    tst = JTest()
+
     # test each package
     for p in bld.packages:
         if not p.is_pkg:

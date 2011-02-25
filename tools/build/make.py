@@ -53,7 +53,6 @@ def main():
     parser.set_defaults(verbose=0)
     parser.add_option("--build", action="store_true")
     parser.add_option("--test", action="store_true")
-    parser.add_option("--jtest", action="store_true")
     parser.add_option("--update", action="store_true")
     parser.add_option("--submit", action="store_true")
     parser.add_option("--all", action="store_true")
@@ -69,8 +68,6 @@ def main():
     make_path = os.path.abspath(os.path.dirname(os.path.realpath(sys.argv[0])))
     cwd = os.getcwd()
 
-    if options.jtest:
-        options.test = True
 
     if options.nightly:
         options.update = options.test = options.submit = True
@@ -181,11 +178,7 @@ def main():
         os.mkdir(testdir)
         test_start_time = time.time()
         open(os.path.join(testdir, 'StartTestTime'), 'w').write(str(test_start_time))
-        if options.jtest:
-            ttype = 'jtest'
-        else:
-            ttype = 'dash'
-        testing.run_all_tests(bld, ttype)
+        testing.run_all_tests(bld)
         test_end_time = time.time()
         open(os.path.join(testdir, 'EndTestTime'), 'w').write(str(test_end_time))
 
