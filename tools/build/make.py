@@ -173,14 +173,7 @@ def main():
 
     # TESTING
     if build_failed==0 and options.test and not pbs.start(bld, cname) and not moab.start(bld, cname):
-        testdir = os.path.join(bld.logdir, 'testing')
-        rmtree(testdir, True)
-        os.mkdir(testdir)
-        test_start_time = time.time()
-        open(os.path.join(testdir, 'StartTestTime'), 'w').write(str(test_start_time))
         testing.run_all_tests(bld)
-        test_end_time = time.time()
-        open(os.path.join(testdir, 'EndTestTime'), 'w').write(str(test_end_time))
 
     # SUBMIT
     if options.submit:

@@ -8,7 +8,7 @@
 Functions for running tests
 """
 
-import re
+import re, shutil
 from build_packages import *
 from build_utils import *
 from subprocess import Popen, PIPE, STDOUT
@@ -119,6 +119,7 @@ def find_tests(startdir):
 
 # run all the tests in a directory.  return number of errors
 def do_tests(tst, pname, startdir, logdir):
+    shutil.rmtree(logdir, True)
     tst.dom = tst.get_dom(pname, logdir)
     errs = ok = 0
     for root in find_tests(startdir):
@@ -139,6 +140,12 @@ def do_tests(tst, pname, startdir, logdir):
     return ok, errs
 
 def run_all_tests(bld):
+    testdir = os.path.join(bld.logdir, 'testing')
+    try:
+        os.mkdir(testdir)
+    except OSError:
+        pass
+
     # run any before commands
     run_commands('Testing', 'before')
 

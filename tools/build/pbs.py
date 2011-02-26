@@ -30,7 +30,23 @@ def start(bp, cname):
 
 # write pbs batch file and submit it
 def qsub(bp, cname):
-
+    savelist = ['comment', # Gives time run and host name
+                'job_state', # 'F', 'Q' , 'R' , 'X' for finished with errors
+                'Exit_status', # 0 = normal, 271 for resources exceeded
+                # resources used
+                'resources_used.mem',  # string '280864kb'
+                'resources_used.vmem', # string '280864kb'
+                'resources_used.walltime', # string HH:MM:SS
+                # resources requested
+                'queue', # queue name
+                'Resource_List.walltime', # string HH:MM:SS
+                'Submit_arguments', # PBS file name. Useful for resubmitting
+                ]
+    state_name = {'F': 'Finished',
+                  'Q': 'Queued',
+                  'R': 'Running',
+                  'X': 'Exited with error'
+                  }
     # first remove any old results
     os.system('/bin/rm -f run_tests.pbs.*')
 
@@ -74,18 +90,6 @@ def qsub(bp, cname):
 
         st = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         saved_line = ''
-        savelist = ['comment', # Gives time run and host name
-                    'job_state', # 'F', 'Q' , 'R' , 'X' for finished with errors
-                    'Exit_status', # 0 = normal, 271 for resources exceeded
-                    # resources used
-                    'resources_used.mem',  # string '280864kb'
-                    'resources_used.vmem', # string '280864kb'
-                    'resources_used.walltime', # string HH:MM:SS
-                    # resources requested
-                    'queue', # queue name
-                    'Resource_List.walltime', # string HH:MM:SS
-                    'Submit_arguments', # PBS file name. Useful for resubmitting
-                    ]
 
         errline = st.stderr.read()
         if errline.startswith('qstat: Unknown Job Id'):
@@ -120,7 +124,7 @@ def qsub(bp, cname):
         try:
             if d['job_state'] != state:
                 state = d['job_state']
-                print "State: %s" % state
+                print "State: %s" % state_name[state]
             if d['job_state'] == 'F' or d['job_state'] == 'X':
                 break
         except KeyError:
