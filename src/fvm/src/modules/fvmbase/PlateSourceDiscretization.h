@@ -272,12 +272,12 @@ public:
 
         // source for cell 0, uses dfx0 and dfy0
         source[0] = -faceD*((faceNu*gradF[1][1])*Af[0]+
-                            ((one-faceNu)/two)*(gradF[1][0])*Af[1]-
-                            ((one+faceNu)/two)*(gradF[0][1])*Af[1])+
+                            ((one-faceNu)/two)*(gradF[0][1])*Af[1]-
+                            ((one+faceNu)/two)*(gradF[1][0])*Af[1])+
           + dfx0*wFlux + MxFlux;
 
-        source[1] = -faceD*(((one-faceNu)/two)*(gradF[0][1])*Af[0]-
-			    ((one+faceNu)/two)*(gradF[1][0])*Af[0]+
+        source[1] = -faceD*(((one-faceNu)/two)*(gradF[1][0])*Af[0]-
+			    ((one+faceNu)/two)*(gradF[0][1])*Af[0]+
 			    (faceNu*gradF[0][0])*Af[1])+
 	  + dfy0*wFlux + MyFlux ;
     
@@ -289,12 +289,12 @@ public:
 
         // source for cell 1, uses dfx1 and dfy1
 	source[0] = -faceD*((faceNu*gradF[1][1])*Af[0]+
-			    ((one-faceNu)/two)*(gradF[1][0])*Af[1]-
-			    ((one+faceNu)/two)*(gradF[0][1])*Af[1])+
+			    ((one-faceNu)/two)*(gradF[0][1])*Af[1]-
+			    ((one+faceNu)/two)*(gradF[1][0])*Af[1])+
 	  + dfx1*wFlux + MxFlux;
         
-        source[1] = -faceD*(((one-faceNu)/two)*(gradF[0][1])*Af[0]-
-			    ((one+faceNu)/two)*(gradF[1][0])*Af[0]+
+        source[1] = -faceD*(((one-faceNu)/two)*(gradF[1][0])*Af[0]-
+			    ((one+faceNu)/two)*(gradF[0][1])*Af[0]+
 			    (faceNu*gradF[0][0])*Af[1])+
 	  + dfy1*wFlux + MyFlux ;
         
