@@ -30,12 +30,21 @@ public:
   
   GradientMatrix(const Mesh& mesh) :
     _mesh(mesh),
+#ifdef FVM_PARALLEL
+    _conn(),
     _row(0),
     _col(0),
+#else
+    _conn(mesh.getCellCells()),
+    _row(_conn.getRow()),
+    _col(_conn.getCol()),
+#endif
     _coeffs(_col.getLength()),
     _pairWiseAssemblers()
   {
+#ifdef FVM_PARALLEL
      init();
+#endif
   }
 
   virtual ~GradientMatrix()
@@ -51,7 +60,7 @@ public:
     shared_ptr<GradArray> gradXPtr(new GradArray(x.getLength()));
     GradArray& gradX = *gradXPtr;
     
-    const int nRows = _conn->getRowSite().getSelfCount();
+    const int nRows = getConnectivity().getRowSite().getSelfCount();
     for(int nr=0; nr<nRows; nr++)
     {
         gradX[nr].zero();
@@ -98,9 +107,13 @@ public:
     }
   }
   
+#ifdef FVM_PARALLEL
 
   const CRConnectivity& getConnectivity() const {return *_conn;}
-
+#else
+  const CRConnectivity& getConnectivity() const {return _conn;}
+#endif
+  
   Array<Coord>& getCoeffs() {return _coeffs;}
   const Array<Coord>& getCoeffs() const {return _coeffs;}
 
@@ -126,12 +139,6 @@ public:
     throw CException("invalid indices");
   }
 
-
-  void sync()
-  {
-       createScatterGatherValuesBuffer();
-       syncValues();
-  }
 
 
 
@@ -166,13 +173,23 @@ public:
     {
         _pairWiseAssemblers[&pairs] =
           new PairWiseAssembler(_coeffs,
-                                _conn->getPairToColMapping(pairs));
+                                getConnectivity().getPairToColMapping(pairs));
     }
     return *_pairWiseAssemblers[&pairs];
   }
   
+#ifdef FVM_PARALLEL
+
+  void sync()
+  {
+    createScatterGatherValuesBuffer();
+       syncValues();
+  }
+#endif
+  
 private:
 
+#ifdef FVM_PARALLEL
 
    void init()
    {
@@ -237,7 +254,6 @@ private:
         _newSite = shared_ptr<StorageSite> ( new StorageSite(selfCount, nghost) );
          //constructing new CRConnecitvity;
         _conn = shared_ptr< CRConnectivity> ( new CRConnectivity( *_newSite, *_newSite) );
-
     }
  
 
@@ -302,7 +318,6 @@ private:
        }
        //finish add
        conn.finishAdd();
-
     }
 
     int getNumBounCells()
@@ -358,7 +373,6 @@ private:
 
  void syncCounts()
     {
-#ifdef FVM_PARALLEL
        //SENDING
        const int  request_size = get_request_size();
        MPI::Request   request_send[ request_size ];
@@ -400,7 +414,6 @@ private:
        int count  = get_request_size();
        MPI::Request::Waitall( count, request_recv );
        MPI::Request::Waitall( count, request_send );
-#endif
 
     }
 
@@ -453,14 +466,11 @@ private:
              *_recvIndices[e] = *_sendIndices[e];
           } 
        }
-
     }
 
 
   void syncIndices()
     {
-
-#ifdef FVM_PARALLEL
        //SENDING
        const int  request_size = get_request_size();
        MPI::Request   request_send[ request_size ];
@@ -500,7 +510,6 @@ private:
        int count  = get_request_size();
        MPI::Request::Waitall( count, request_recv );
        MPI::Request::Waitall( count, request_send );
-#endif
 
     }
 
@@ -567,14 +576,11 @@ private:
              *_recvValues[e] = *_sendValues [e];
           } 
        }
-
     }
 
     //sending values
     void syncValues()
     {
-
-#ifdef FVM_PARALLEL
           //SENDING
           const int  request_size = get_request_size();
           MPI::Request   request_send[ request_size ];
@@ -615,7 +621,6 @@ private:
           int count  = get_request_size();
           MPI::Request::Waitall( count, request_recv );
           MPI::Request::Waitall( count, request_send );
-#endif
 
 
 #ifndef FVM_PARALLEL
@@ -668,8 +673,6 @@ private:
        _col = col;
     }
  
-
-#ifdef FVM_PARALLEL
     void CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name )
     {
        if ( MPI::COMM_WORLD.Get_rank() == procID ){
@@ -698,20 +701,28 @@ private:
   }
 
   const Mesh&   _mesh;
+#ifdef FVM_PARALLEL
   shared_ptr< CRConnectivity> _conn;
   Array<int> _row;
   Array<int> _col;
+#else
+  const CRConnectivity& _conn;
+  const Array<int>& _row;
+  const Array<int>& _col;
+#endif
+  
   Array<Coord> _coeffs;
-  shared_ptr<StorageSite> _newSite;
   mutable map<const CRConnectivity*,PairWiseAssembler*> _pairWiseAssemblers;
 
+#ifdef FVM_PARALLEL
+  shared_ptr<StorageSite> _newSite;
   GhostArrayMap   _sendCounts;
   GhostArrayMap   _recvCounts;
   GhostArrayMap   _sendIndices;
   GhostArrayMap   _recvIndices;
   GhostArrayMap   _sendValues;
   GhostArrayMap   _recvValues;
-
+#endif
 };
 
 
