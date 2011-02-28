@@ -14,7 +14,7 @@
 #include "Vector.h"
 #include "VectorTranspose.h"
 #include "DiffusionDiscretization.h"
-#include "TimeDerivativeStructureDiscretization.h"
+#include "TimeDerivativePlateDiscretization.h"
 #include "PlateSourceDiscretization.h"
 #include "SourceDiscretization.h"
 #include "Underrelaxer.h"
@@ -82,7 +82,7 @@ public:
     _dRdX.eliminateDirichlet(c1,_r,dXC1);
     _x[c1] = bValue;
     _r[c1] = NumTypeTraits<X>::getZero();
-    _dRdX.setDirichlet(c1);
+   
     return fluxB;
   }
 
@@ -474,7 +474,7 @@ public:
 
     discretizations.push_back(sd);
     //discretizations.push_back(bfd);
-    /*    
+        
     if (_options.transient)
     {
         shared_ptr<Discretization>
@@ -486,12 +486,13 @@ public:
               _plateFields.deformationN2,
               _plateFields.deformationN3,
               _plateFields.density,
+	      _plateFields.thickness,
 	      _plateFields.volume0,
               _options["timeStep"]));
         
         discretizations.push_back(td);
     }
-    */ 
+   
     /*
     shared_ptr<Discretization>
       ibm(new GenericIBDiscretization<VectorT3,DiagTensorT3,T>
