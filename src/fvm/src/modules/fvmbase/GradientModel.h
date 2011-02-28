@@ -256,9 +256,11 @@ public:
         }
     }
 
+#ifdef FVM_PARALLEL
     //sync
     gMPtr->sync();
-
+#endif
+    
     return shared_ptr<GradientMatrixBase>(gMPtr);
   }
 
@@ -271,7 +273,6 @@ public:
     
     const CRConnectivity& faceCells = mesh.getAllFaceCells();
    
-    const CRConnectivity& cellFaces = mesh.getCellFaces();
 
     const int cellCount = cells.getSelfCount();
     const int faceCount = faces.getSelfCount();
@@ -412,8 +413,11 @@ public:
             assembler.getCoeff10(f)= T_Scalar(-0.5)*faceArea[f]/cellVolume[c1];
         }
     }
+
+#ifdef FVM_PARALLEL
     //sync
     gMPtr->sync();
+#endif
 
     return shared_ptr<GradientMatrixBase>(gMPtr);
   }
