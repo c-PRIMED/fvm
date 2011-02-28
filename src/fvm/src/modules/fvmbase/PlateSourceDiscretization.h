@@ -71,10 +71,6 @@ public:
     for(int c=0; c<cells.getSelfCount(); c++)
     {
         rCell[c][2]-=forceCell[c]*cellVolume[c];
-	if(c==0)
-	{
-	    cout<<"rCell = "<<rCell[c][2]<<endl;
-	}
     }
 
     const StorageSite& iFaces = mesh.getInteriorFaceGroup().site;
@@ -221,12 +217,6 @@ public:
 
 	G0 = _scf*ymCell[c0]*tCell[c0]/(two*(one+nuCell[c0]));
 	G1 = _scf*ymCell[c1]*tCell[c1]/(two*(one+nuCell[c1]));
-	
-	if(f==100)
-	{
-	    cout<<"D ="<<D0<<" and "<<D1<<endl;
-	    cout<<"D ="<<G0<<" and "<<G1<<endl;
-	}
 
         Diag& a00 = diag[c0];
         Diag& a11 = diag[c1];
@@ -259,11 +249,6 @@ public:
 	faceB0 = xCell[c0][0]*bwt0 + xCell[c1][0]*bwt1;
 	faceB1 = xCell[c0][1]*bwt0 + xCell[c1][1]*bwt1;
 
-        if(f==100)
-	{
-            cout<<faceD<<" "<<faceG<<" "<<faceNu<<endl;
-	}
-
 	const VGradType gradF = (vGradCell[c0]*wt0 + vGradCell[c1]*wt1);
 
 	VectorT3 source(NumTypeTraits<VectorT3>::getZero());
@@ -279,15 +264,23 @@ public:
 
         wFlux += faceG*(faceB0*Af[0]+faceB1*Af[1]);
         
+	// primary MxFlux
+	T MxFlux = -faceD*diffMetric*(xCell[c1][0]-xCell[c0][0]);
+
+	// primary MyFlux
+	T MyFlux = -faceD*diffMetric*(xCell[c1][1]-xCell[c0][1]);
+
         // source for cell 0, uses dfx0 and dfy0
-	source[0] = -faceD*((gradF[0][0]+faceNu*gradF[1][1])*Af[0]+
-			    ((one-faceNu)/two)*(gradF[0][1]+gradF[1][0])*Af[1])+
-	  + dfx0*wFlux;
-        
-        source[1] = -faceD*(((one-faceNu)/two)*(gradF[0][1]+gradF[1][0])*Af[0]+
-			    (gradF[1][1]+faceNu*gradF[0][0])*Af[1])+
-	  + dfy0*wFlux;
-        
+        source[0] = -faceD*((faceNu*gradF[1][1])*Af[0]+
+                            ((one-faceNu)/two)*(gradF[1][0])*Af[1]-
+                            ((one+faceNu)/two)*(gradF[0][1])*Af[1])+
+          + dfx0*wFlux + MxFlux;
+
+        source[1] = -faceD*(((one-faceNu)/two)*(gradF[0][1])*Af[0]-
+			    ((one+faceNu)/two)*(gradF[1][0])*Af[0]+
+			    (faceNu*gradF[0][0])*Af[1])+
+	  + dfy0*wFlux + MyFlux ;
+    
 	source[2] = -wFlux;
 
         // add flux to the residual of c0 
@@ -295,13 +288,15 @@ public:
 
 
         // source for cell 1, uses dfx1 and dfy1
-	source[0] = -faceD*((gradF[0][0]+faceNu*gradF[1][1])*Af[0]+
-			    ((one-faceNu)/two)*(gradF[0][1]+gradF[1][0])*Af[1])+
-	  + dfx1*wFlux;
+	source[0] = -faceD*((faceNu*gradF[1][1])*Af[0]+
+			    ((one-faceNu)/two)*(gradF[1][0])*Af[1]-
+			    ((one+faceNu)/two)*(gradF[0][1])*Af[1])+
+	  + dfx1*wFlux + MxFlux;
         
-        source[1] = -faceD*(((one-faceNu)/two)*(gradF[0][1]+gradF[1][0])*Af[0]+
-			    (gradF[1][1]+faceNu*gradF[0][0])*Af[1])+
-	  + dfy1*wFlux;
+        source[1] = -faceD*(((one-faceNu)/two)*(gradF[0][1])*Af[0]-
+			    ((one+faceNu)/two)*(gradF[1][0])*Af[0]+
+			    (faceNu*gradF[0][0])*Af[1])+
+	  + dfy1*wFlux + MyFlux ;
         
 	source[2] = -wFlux;
 
@@ -436,10 +431,6 @@ public:
 		{
                     a11 -= coeff;
 		}
-		if(f==100)
-		  {
-		    cout<<"coeff "<<coeff<<endl;
-		  }
             }
 
 
@@ -494,16 +485,6 @@ public:
                 }
             }
         }
-	if(c0==0)
-	{
-
-	    cout<<"a00 = "<<a00<<endl;
-	    cout<<"a01 = "<<a01<<endl;
-	    cout<<"a10 = "<<a10<<endl;
-	    cout<<"a11 = "<<a11<<endl;
-	    cout<<endl;
-	}
-
     }
   }
     
