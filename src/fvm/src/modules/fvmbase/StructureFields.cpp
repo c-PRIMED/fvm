@@ -6,6 +6,7 @@ StructureFields::StructureFields(const string baseName) :
   deformationFlux(baseName + ".deformationFlux"),
   eta(baseName + ".eta"),
   eta1(baseName + ".eta1"),
+  alpha(baseName + ".alpha"),
   density(baseName + ".density"),
   deformationN1(baseName + ".deformationN1"),
   deformationN2(baseName + ".deformationN2"),
@@ -13,6 +14,7 @@ StructureFields::StructureFields(const string baseName) :
   tractionX(baseName + ".tractionX"),
   tractionY(baseName + ".tractionY"),
   tractionZ(baseName + ".tractionZ"),
+  temperature(baseName + ".temperature"),
   bodyForce(baseName + ".bodyForce"),
   volume0(baseName + ".volume0")
 {}

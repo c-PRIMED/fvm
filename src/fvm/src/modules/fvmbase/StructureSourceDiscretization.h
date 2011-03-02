@@ -36,7 +36,10 @@ public:
 				Field& varField,
 				const Field& muField,
 				const Field& lambdaField,
+				const Field& alphaField,
 				const Field& varGradientField,
+				const Field& temperatureField,
+                                const T& referenceTemperature,
 				const T& residualXXStress,
 				const T& residualYYStress,
 				const T& residualZZStress,
@@ -47,7 +50,10 @@ public:
     _varField(varField),
     _muField(muField),
     _lambdaField(lambdaField),
+    _alphaField(alphaField),
     _varGradientField(varGradientField),
+    _temperatureField(temperatureField),
+    _referenceTemperature(referenceTemperature),
     _residualXXStress(residualXXStress),
     _residualYYStress(residualYYStress),
     _residualZZStress(residualZZStress),
@@ -125,6 +131,12 @@ public:
     const TArray& lambdaCell =
       dynamic_cast<const TArray&>(_lambdaField[cells]);
 
+    const TArray& alphaCell =
+      dynamic_cast<const TArray&>(_alphaField[cells]);
+
+    const TArray& temperatureCell =
+      dynamic_cast<const TArray&>(_temperatureField[cells]);
+
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,
                                                              cVarIndex));
     CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
@@ -139,6 +151,9 @@ public:
     const Array<int>& ccCol = cellCells.getCol();
 
     const int nInteriorCells = cells.getSelfCount();
+
+    const T two(2.0);
+    const T three(3.0);
     
     for(int f=0; f<nFaces; f++)
     {
@@ -164,6 +179,8 @@ public:
         
         T faceMu(1.0);
 	T faceLambda(1.0);
+        T faceAlpha(1.0);
+        T faceTemperature(1.0);
 
         Diag& a00 = diag[c0];
         Diag& a11 = diag[c1];
@@ -174,20 +191,28 @@ public:
        	{
             faceMu = muCell[c1];
 	    faceLambda = lambdaCell[c1];
+	    faceAlpha = alphaCell[c1];
+            faceTemperature = temperatureCell[c1];
 	}
         else if (vol1 == 0.)
 	{
             faceMu = muCell[c0];
 	    faceLambda = lambdaCell[c0];
+	    faceAlpha = alphaCell[c0];
+            faceTemperature = temperatureCell[c0];
 	}
         else
 	{
             faceMu = harmonicAverage(muCell[c0],muCell[c1]);
 	    faceLambda = harmonicAverage(lambdaCell[c0],lambdaCell[c1]);
+	    faceAlpha = harmonicAverage(alphaCell[c0],alphaCell[c1]);
+            faceTemperature = harmonicAverage(temperatureCell[c0],temperatureCell[c1]);
 	}
 
         faceMu = muCell[c0]*wt0 + muCell[c1]*wt1;
         faceLambda = lambdaCell[c0]*wt0 + lambdaCell[c1]*wt1;
+        faceAlpha = alphaCell[c0]*wt0 + alphaCell[c1]*wt1;
+        faceTemperature = temperatureCell[c0]*wt0 + temperatureCell[c1]*wt1;
         
 	const VGradType gradF = (vGradCell[c0]*wt0 + vGradCell[c1]*wt1);
 
@@ -207,6 +232,8 @@ public:
         
 	source[2] = faceMu*(gradF[2][0]*Af[0] + gradF[2][1]*Af[1] + gradF[2][2]*Af[2])
           + faceLambda*divU*Af[2];
+
+        source -= (three*faceLambda+two*faceMu)*faceAlpha*(faceTemperature-_referenceTemperature)*Af;
 
 	if(_residualStress)
 	{
@@ -376,12 +403,15 @@ private:
   Field& _varField;
   const Field& _muField;
   const Field& _lambdaField;
+  const Field& _alphaField;
   const Field& _varGradientField;
-  const bool _fullLinearization;
+  const Field& _temperatureField;
+  const T _referenceTemperature;
   const T _residualXXStress;
   const T _residualYYStress;
   const T _residualZZStress;
-  const bool _residualStress; 
+  const bool _residualStress;
+  const bool _fullLinearization; 
 };
 
 #endif

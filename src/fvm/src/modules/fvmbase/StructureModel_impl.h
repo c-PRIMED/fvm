@@ -363,6 +363,14 @@ public:
         *eta1Cell = vc["eta1"];
         _structureFields.eta1.addArray(cells,eta1Cell);
 
+        shared_ptr<TArray> alphaCell(new TArray(cells.getCount()));
+        *alphaCell = vc["alpha"];
+        _structureFields.alpha.addArray(cells,alphaCell);
+
+        shared_ptr<TArray> tCell(new TArray(cells.getCount()));
+        *tCell = _options["operatingTemperature"];
+        _structureFields.temperature.addArray(cells,tCell);
+
         // compute values of deformation flux
 
         // store deformation flux at interfaces
@@ -458,7 +466,10 @@ public:
           _structureFields.deformation,
           _structureFields.eta,
 	  _structureFields.eta1,
+	  _structureFields.alpha,
           _structureFields.deformationGradient,
+          _structureFields.temperature,
+          _options["operatingTemperature"],
 	  _options["residualXXStress"],
 	  _options["residualYYStress"],
 	  _options["residualZZStress"],
@@ -871,6 +882,12 @@ public:
 
       const TArray& eta = dynamic_cast<const TArray&>(_structureFields.eta[cells]);
       const TArray& eta1 = dynamic_cast<const TArray&>(_structureFields.eta1[cells]);
+      const TArray& alpha = dynamic_cast<const TArray&>(_structureFields.alpha[cells]);
+
+      const TArray& temperature = dynamic_cast<const TArray&>(_structureFields.temperature[cells]);
+      
+      const T two(2.0);
+      const T three(3.0);
       
       for(int n=0; n<nCells; n++)
       {
@@ -902,6 +919,12 @@ public:
 	      tractionY[n][1] += _options["residualYYStress"];
 	      tractionZ[n][2] += _options["residualZZStress"];
 	  }
+
+          tractionX[n][0] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+          tractionY[n][1] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+          if(mesh.getDimension()==3)
+            tractionZ[n][2] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+
       }
   }
 

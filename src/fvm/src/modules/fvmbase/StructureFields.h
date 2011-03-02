@@ -13,6 +13,7 @@ struct StructureFields
   Field deformationFlux;
   Field eta;
   Field eta1;
+  Field alpha;
   Field density;
   Field deformationN1;
   Field deformationN2;
@@ -20,6 +21,7 @@ struct StructureFields
   Field tractionX;
   Field tractionY;
   Field tractionZ;
+  Field temperature;
   Field bodyForce;
   Field volume0;
 };
