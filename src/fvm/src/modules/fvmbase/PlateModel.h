@@ -40,6 +40,7 @@ public:
   bool advance(const int niter);
 
   void updateTime();
+  void getMoment(const Mesh& mesh);
 
   void dumpMatrix(const string fileBase);
 private:

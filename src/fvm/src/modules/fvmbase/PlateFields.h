@@ -9,6 +9,7 @@ struct PlateFields
   PlateFields(const string baseName);
 
   Field deformation;
+  Field moment;
   Field deformationGradient;
   Field deformationFlux;
   Field ym;

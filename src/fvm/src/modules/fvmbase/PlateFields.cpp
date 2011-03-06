@@ -2,6 +2,7 @@
 
 PlateFields::PlateFields(const string baseName) :
   deformation(baseName + ".deformation"),
+  moment(baseName + ".moment"),
   deformationGradient(baseName + ".deformationGradient"),
   deformationFlux(baseName + ".deformationFlux"),
   ym(baseName + ".ym"),

@@ -724,6 +724,43 @@ public:
     }
   }
 
+  void getMoment(const Mesh& mesh)
+  {
+    const StorageSite& cells = mesh.getCells();
+
+    const int nCells = cells.getSelfCount();
+
+    shared_ptr<VectorT3Array> momentPtr(new VectorT3Array(nCells));
+    momentPtr->zero();
+    _plateFields.moment.addArray(cells,momentPtr);
+    VectorT3Array& moment = *momentPtr;
+
+    _deformationGradientModel.compute();
+
+      const VGradArray& wGrad =
+        dynamic_cast<const VGradArray&>(_plateFields.deformationGradient[cells]);
+
+      const TArray& ym = dynamic_cast<const TArray&>(_plateFields.ym[cells]);
+      const TArray& nu = dynamic_cast<const TArray&>(_plateFields.nu[cells]);
+
+      const TArray& thickness = dynamic_cast<const TArray&>(_plateFields.thickness[cells]);
+      
+      const T one(1.0);
+      const T two(2.0);
+      const T three(3.0);
+      const T twelve(12.0);
+      
+      for(int n=0; n<nCells; n++)
+      {
+	  T cellD = ym[n]*pow(thickness[n],three)/(twelve*(one - pow(nu[n],two)));
+          const VGradType& wg = wGrad[n];
+          
+          moment[n][0] = cellD*(wg[0][0]+nu[n]*wg[1][1]);
+	  moment[n][1] = cellD*(wg[1][1]+nu[n]*wg[0][0]);
+	  moment[n][2] = cellD*((one-nu[n])/two)*(wg[1][0]+wg[0][1]);
+      }
+  }
+
   #if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
   
   void dumpMatrix(const string fileBase)
@@ -895,6 +932,12 @@ PlateModel<T>::updateTime()
   _impl->updateTime();
 }
 
+template<class T>
+void
+PlateModel<T>::getMoment(const Mesh& mesh)
+{
+  return  _impl->getMoment(mesh);
+}
 
   template<class T>
   void
