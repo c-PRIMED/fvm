@@ -20,20 +20,20 @@
       gatherArray[8] = 43
  meshID = 1   procID = 4  neighProcID = 2 Tag = 65537 : 
       gatherArray[0] = 20
-      gatherArray[1] = 21
+      gatherArray[1] = 22
       gatherArray[2] = 22
-      gatherArray[3] = 23
+      gatherArray[3] = 21
       gatherArray[4] = 24
       gatherArray[5] = 25
-      gatherArray[6] = 26
+      gatherArray[6] = 25
  meshID = 1   procID = 4  neighProcID = 3 Tag = 65536 : 
       gatherArray[0] = 34
  meshID = 1   procID = 4  neighProcID = 3 Tag = 65537 : 
       gatherArray[0] = 27
       gatherArray[1] = 28
-      gatherArray[2] = 29
+      gatherArray[2] = 28
       gatherArray[3] = 30
-      gatherArray[4] = 31
+      gatherArray[4] = 30
       gatherArray[5] = 32
       gatherArray[6] = 33
  meshID = 0   procID = 4  neighProcID = 2 Tag = 0 : 
@@ -46,7 +46,7 @@
       gatherArray[6] = 302
       gatherArray[7] = 303
       gatherArray[8] = 304
-      gatherArray[9] = 305
+      gatherArray[9] = 304
       gatherArray[10] = 306
       gatherArray[11] = 307
       gatherArray[12] = 308
@@ -55,35 +55,35 @@
       gatherArray[15] = 311
       gatherArray[16] = 312
       gatherArray[17] = 313
-      gatherArray[18] = 314
+      gatherArray[18] = 313
       gatherArray[19] = 315
       gatherArray[20] = 316
       gatherArray[21] = 317
       gatherArray[22] = 318
-      gatherArray[23] = 319
+      gatherArray[23] = 318
       gatherArray[24] = 320
  meshID = 0   procID = 4  neighProcID = 3 Tag = 0 : 
-      gatherArray[0] = 321
+      gatherArray[0] = 322
       gatherArray[1] = 322
       gatherArray[2] = 323
-      gatherArray[3] = 324
+      gatherArray[3] = 323
       gatherArray[4] = 325
       gatherArray[5] = 326
-      gatherArray[6] = 327
-      gatherArray[7] = 328
+      gatherArray[6] = 321
+      gatherArray[7] = 329
       gatherArray[8] = 329
-      gatherArray[9] = 330
+      gatherArray[9] = 329
       gatherArray[10] = 331
       gatherArray[11] = 332
       gatherArray[12] = 333
-      gatherArray[13] = 334
-      gatherArray[14] = 335
+      gatherArray[13] = 328
+      gatherArray[14] = 336
       gatherArray[15] = 336
       gatherArray[16] = 337
-      gatherArray[17] = 338
+      gatherArray[17] = 335
       gatherArray[18] = 339
-      gatherArray[19] = 340
+      gatherArray[19] = 341
       gatherArray[20] = 341
-      gatherArray[21] = 342
+      gatherArray[21] = 340
       gatherArray[22] = 343
       gatherArray[23] = 344

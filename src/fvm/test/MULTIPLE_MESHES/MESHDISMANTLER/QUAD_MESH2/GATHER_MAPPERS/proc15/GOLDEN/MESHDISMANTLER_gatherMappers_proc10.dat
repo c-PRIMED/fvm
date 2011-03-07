@@ -28,10 +28,10 @@
       gatherArray[1] = 115
       gatherArray[2] = 116
       gatherArray[3] = 117
-      gatherArray[4] = 118
-      gatherArray[5] = 119
+      gatherArray[4] = 117
+      gatherArray[5] = 120
       gatherArray[6] = 120
-      gatherArray[7] = 121
+      gatherArray[7] = 119
       gatherArray[8] = 122
       gatherArray[9] = 123
       gatherArray[10] = 124
@@ -42,9 +42,9 @@
       gatherArray[2] = 128
       gatherArray[3] = 129
       gatherArray[4] = 130
-      gatherArray[5] = 131
+      gatherArray[5] = 132
       gatherArray[6] = 132
-      gatherArray[7] = 133
+      gatherArray[7] = 131
       gatherArray[8] = 134
       gatherArray[9] = 135
       gatherArray[10] = 136

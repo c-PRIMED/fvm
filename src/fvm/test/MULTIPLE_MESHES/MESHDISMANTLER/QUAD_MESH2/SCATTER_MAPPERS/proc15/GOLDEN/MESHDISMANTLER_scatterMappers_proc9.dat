@@ -1,44 +1,44 @@
  meshID = 1   procID = 9  neighProcID = 4 Tag = 65537 : 
-      scatterArray[0] = 3
+      scatterArray[0] = 6
       scatterArray[1] = 5
  meshID = 1   procID = 9  neighProcID = 5 Tag = 65537 : 
       scatterArray[0] = 2
-      scatterArray[1] = 0
-      scatterArray[2] = 0
-      scatterArray[3] = 3
+      scatterArray[1] = 4
+      scatterArray[2] = 4
+      scatterArray[3] = 6
  meshID = 1   procID = 9  neighProcID = 10 Tag = 65537 : 
-      scatterArray[0] = 6
+      scatterArray[0] = 0
       scatterArray[1] = 1
-      scatterArray[2] = 0
+      scatterArray[2] = 4
  meshID = 1   procID = 9  neighProcID = 11 Tag = 65537 : 
-      scatterArray[0] = 6
+      scatterArray[0] = 0
  meshID = 1   procID = 9  neighProcID = 12 Tag = 65537 : 
-      scatterArray[0] = 4
+      scatterArray[0] = 3
       scatterArray[1] = 5
  meshID = 0   procID = 9  neighProcID = 8 Tag = 0 : 
-      scatterArray[0] = 3
-      scatterArray[1] = 3
+      scatterArray[0] = 0
+      scatterArray[1] = 0
       scatterArray[2] = 1
-      scatterArray[3] = 16
-      scatterArray[4] = 18
-      scatterArray[5] = 18
-      scatterArray[6] = 15
-      scatterArray[7] = 4
-      scatterArray[8] = 27
-      scatterArray[9] = 26
-      scatterArray[10] = 27
-      scatterArray[11] = 25
-      scatterArray[12] = 11
+      scatterArray[3] = 9
+      scatterArray[4] = 6
+      scatterArray[5] = 6
+      scatterArray[6] = 10
+      scatterArray[7] = 13
+      scatterArray[8] = 17
+      scatterArray[9] = 14
+      scatterArray[10] = 17
+      scatterArray[11] = 18
+      scatterArray[12] = 19
  meshID = 0   procID = 9  neighProcID = 10 Tag = 0 : 
       scatterArray[0] = 1
-      scatterArray[1] = 0
-      scatterArray[2] = 8
-      scatterArray[3] = 33
-      scatterArray[4] = 9
-      scatterArray[5] = 39
-      scatterArray[6] = 32
-      scatterArray[7] = 39
-      scatterArray[8] = 72
-      scatterArray[9] = 69
-      scatterArray[10] = 70
-      scatterArray[11] = 38
+      scatterArray[1] = 5
+      scatterArray[2] = 4
+      scatterArray[3] = 22
+      scatterArray[4] = 23
+      scatterArray[5] = 26
+      scatterArray[6] = 27
+      scatterArray[7] = 26
+      scatterArray[8] = 60
+      scatterArray[9] = 61
+      scatterArray[10] = 62
+      scatterArray[11] = 63

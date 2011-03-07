@@ -47,12 +47,12 @@
       gatherArray[1] = 125
       gatherArray[2] = 126
       gatherArray[3] = 127
-      gatherArray[4] = 128
+      gatherArray[4] = 129
       gatherArray[5] = 129
       gatherArray[6] = 130
       gatherArray[7] = 131
       gatherArray[8] = 132
-      gatherArray[9] = 133
+      gatherArray[9] = 128
       gatherArray[10] = 134
       gatherArray[11] = 135
       gatherArray[12] = 136

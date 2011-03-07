@@ -52,7 +52,7 @@
       gatherArray[0] = 86
       gatherArray[1] = 87
       gatherArray[2] = 88
-      gatherArray[3] = 89
+      gatherArray[3] = 88
       gatherArray[4] = 90
       gatherArray[5] = 91
       gatherArray[6] = 92
@@ -73,16 +73,16 @@
       gatherArray[6] = 92
       gatherArray[7] = 93
       gatherArray[8] = 94
-      gatherArray[9] = 95
+      gatherArray[9] = 94
  meshID = 1   procID = 2  neighProcID = 1 Tag = 65537 : 
-      gatherArray[0] = 100
+      gatherArray[0] = 101
       gatherArray[1] = 101
       gatherArray[2] = 102
       gatherArray[3] = 103
       gatherArray[4] = 104
       gatherArray[5] = 105
       gatherArray[6] = 106
-      gatherArray[7] = 107
+      gatherArray[7] = 100
       gatherArray[8] = 108
       gatherArray[9] = 109
       gatherArray[10] = 110
@@ -94,7 +94,7 @@
       gatherArray[1] = 97
       gatherArray[2] = 98
       gatherArray[3] = 99
-      gatherArray[4] = 100
+      gatherArray[4] = 99
       gatherArray[5] = 101
       gatherArray[6] = 102
       gatherArray[7] = 103
@@ -103,7 +103,7 @@
  meshID = 0   procID = 2  neighProcID = 0 Tag = 0 : 
       gatherArray[0] = 86
       gatherArray[1] = 87
-      gatherArray[2] = 88
+      gatherArray[2] = 87
       gatherArray[3] = 89
       gatherArray[4] = 90
       gatherArray[5] = 91
@@ -117,26 +117,26 @@
  meshID = 2   procID = 2  neighProcID = 0 Tag = 131074 : 
       gatherArray[0] = 85
       gatherArray[1] = 86
-      gatherArray[2] = 87
+      gatherArray[2] = 86
       gatherArray[3] = 88
       gatherArray[4] = 89
-      gatherArray[5] = 90
+      gatherArray[5] = 89
       gatherArray[6] = 91
       gatherArray[7] = 92
-      gatherArray[8] = 93
+      gatherArray[8] = 92
       gatherArray[9] = 94
       gatherArray[10] = 95
       gatherArray[11] = 96
-      gatherArray[12] = 97
+      gatherArray[12] = 96
  meshID = 0   procID = 2  neighProcID = 1 Tag = 0 : 
       gatherArray[0] = 99
-      gatherArray[1] = 100
+      gatherArray[1] = 101
       gatherArray[2] = 101
       gatherArray[3] = 102
       gatherArray[4] = 103
       gatherArray[5] = 104
       gatherArray[6] = 105
-      gatherArray[7] = 106
+      gatherArray[7] = 100
       gatherArray[8] = 107
       gatherArray[9] = 108
       gatherArray[10] = 109

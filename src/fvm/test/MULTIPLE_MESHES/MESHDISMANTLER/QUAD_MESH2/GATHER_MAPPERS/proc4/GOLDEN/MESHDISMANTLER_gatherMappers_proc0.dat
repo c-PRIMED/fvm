@@ -33,20 +33,20 @@
       gatherArray[4] = 32
       gatherArray[5] = 33
  meshID = 0   procID = 0  neighProcID = 1 Tag = 0 : 
-      gatherArray[0] = 375
+      gatherArray[0] = 376
       gatherArray[1] = 376
-      gatherArray[2] = 377
+      gatherArray[2] = 375
       gatherArray[3] = 378
       gatherArray[4] = 379
       gatherArray[5] = 380
-      gatherArray[6] = 381
+      gatherArray[6] = 380
       gatherArray[7] = 382
-      gatherArray[8] = 383
+      gatherArray[8] = 384
       gatherArray[9] = 384
-      gatherArray[10] = 385
+      gatherArray[10] = 383
       gatherArray[11] = 386
       gatherArray[12] = 387
-      gatherArray[13] = 388
+      gatherArray[13] = 387
       gatherArray[14] = 389
       gatherArray[15] = 390
       gatherArray[16] = 391

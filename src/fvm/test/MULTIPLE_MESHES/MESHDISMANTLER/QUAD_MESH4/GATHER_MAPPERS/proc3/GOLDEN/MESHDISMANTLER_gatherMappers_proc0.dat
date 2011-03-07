@@ -81,9 +81,9 @@
  meshID = 1   procID = 0  neighProcID = 1 Tag = 65537 : 
       gatherArray[0] = 85
       gatherArray[1] = 86
-      gatherArray[2] = 87
+      gatherArray[2] = 88
       gatherArray[3] = 88
-      gatherArray[4] = 89
+      gatherArray[4] = 87
       gatherArray[5] = 90
  meshID = 3   procID = 0  neighProcID = 1 Tag = 196611 : 
       gatherArray[0] = 85
@@ -95,11 +95,11 @@
       gatherArray[6] = 91
       gatherArray[7] = 92
       gatherArray[8] = 93
-      gatherArray[9] = 94
+      gatherArray[9] = 93
  meshID = 1   procID = 0  neighProcID = 2 Tag = 65537 : 
       gatherArray[0] = 91
       gatherArray[1] = 92
-      gatherArray[2] = 93
+      gatherArray[2] = 92
       gatherArray[3] = 94
       gatherArray[4] = 95
       gatherArray[5] = 96
@@ -112,7 +112,7 @@
       gatherArray[12] = 103
       gatherArray[13] = 104
  meshID = 3   procID = 0  neighProcID = 2 Tag = 196611 : 
-      gatherArray[0] = 95
+      gatherArray[0] = 96
       gatherArray[1] = 96
       gatherArray[2] = 97
       gatherArray[3] = 98
@@ -120,25 +120,25 @@
       gatherArray[5] = 100
       gatherArray[6] = 101
       gatherArray[7] = 102
-      gatherArray[8] = 103
+      gatherArray[8] = 95
       gatherArray[9] = 104
  meshID = 0   procID = 0  neighProcID = 1 Tag = 0 : 
       gatherArray[0] = 85
       gatherArray[1] = 86
-      gatherArray[2] = 87
+      gatherArray[2] = 86
       gatherArray[3] = 88
       gatherArray[4] = 89
-      gatherArray[5] = 90
+      gatherArray[5] = 89
       gatherArray[6] = 91
       gatherArray[7] = 92
  meshID = 2   procID = 0  neighProcID = 1 Tag = 131074 : 
       gatherArray[0] = 85
       gatherArray[1] = 86
       gatherArray[2] = 87
-      gatherArray[3] = 88
+      gatherArray[3] = 87
       gatherArray[4] = 89
       gatherArray[5] = 90
-      gatherArray[6] = 91
+      gatherArray[6] = 90
       gatherArray[7] = 92
       gatherArray[8] = 93
       gatherArray[9] = 94
@@ -146,7 +146,7 @@
       gatherArray[11] = 96
  meshID = 0   procID = 0  neighProcID = 2 Tag = 0 : 
       gatherArray[0] = 93
-      gatherArray[1] = 94
+      gatherArray[1] = 93
       gatherArray[2] = 95
       gatherArray[3] = 96
       gatherArray[4] = 97
@@ -160,15 +160,15 @@
       gatherArray[12] = 105
  meshID = 2   procID = 0  neighProcID = 2 Tag = 131074 : 
       gatherArray[0] = 97
-      gatherArray[1] = 98
+      gatherArray[1] = 97
       gatherArray[2] = 99
-      gatherArray[3] = 100
+      gatherArray[3] = 99
       gatherArray[4] = 101
       gatherArray[5] = 102
-      gatherArray[6] = 103
-      gatherArray[7] = 104
+      gatherArray[6] = 102
+      gatherArray[7] = 102
       gatherArray[8] = 105
       gatherArray[9] = 106
       gatherArray[10] = 107
-      gatherArray[11] = 108
+      gatherArray[11] = 103
       gatherArray[12] = 109

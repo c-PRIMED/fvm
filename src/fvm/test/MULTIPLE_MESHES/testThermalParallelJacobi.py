@@ -341,16 +341,15 @@ if options.time:
     part_mesh_start[0] = MPI.Wtime()
 
 #partMesh constructor and setTypes
-part_mesh = fvmparallel.PartMesh( meshes, npartVec, etypeVec );
+part_mesh = fvmparallel.MeshPartitioner( meshes, npartVec, etypeVec );
 part_mesh.setWeightType(2);
 part_mesh.setNumFlag(0);
  
 #actions
 part_mesh.partition()
 part_mesh.mesh()
-#part_mesh.mesh_debug()
 part_meshes = part_mesh.meshList()
-
+ 
 #dismantling mesh
 multi_mesher = fvmbaseExt.MeshDismantler( part_meshes )
 #meshes = multi_mesher.debug_print()
@@ -461,9 +460,12 @@ tmodel.init()
 #print "nmesh = ", nmesh,  "procID = ", MPI.COMM_WORLD.Get_rank() 
 #import ddd
 
-tSolver.redirectPrintToFile( "convergence.dat" )
-tmodel.advance(1)
 tSolver.redirectPrintToScreen()
+
+tSolver.redirectPrintToFile("convergence.dat")
+tmodel.advance(1)
+
+
 #dumpTecplotFile( nmesh, meshes, options.type)
 
 if options.time:

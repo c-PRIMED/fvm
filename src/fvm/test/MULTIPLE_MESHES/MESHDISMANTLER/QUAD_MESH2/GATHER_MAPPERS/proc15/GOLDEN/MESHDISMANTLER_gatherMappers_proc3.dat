@@ -17,9 +17,9 @@
  meshID = 1   procID = 3  neighProcID = 5 Tag = 65536 : 
       gatherArray[0] = 10
  meshID = 1   procID = 3  neighProcID = 6 Tag = 65537 : 
-      gatherArray[0] = 11
+      gatherArray[0] = 12
       gatherArray[1] = 12
-      gatherArray[2] = 13
+      gatherArray[2] = 11
  meshID = 0   procID = 3  neighProcID = 1 Tag = 0 : 
       gatherArray[0] = 97
       gatherArray[1] = 98
@@ -32,12 +32,12 @@
       gatherArray[5] = 104
       gatherArray[6] = 105
       gatherArray[7] = 106
-      gatherArray[8] = 107
+      gatherArray[8] = 106
       gatherArray[9] = 108
       gatherArray[10] = 109
-      gatherArray[11] = 110
+      gatherArray[11] = 111
       gatherArray[12] = 111
-      gatherArray[13] = 112
+      gatherArray[13] = 110
  meshID = 0   procID = 3  neighProcID = 4 Tag = 0 : 
       gatherArray[0] = 113
       gatherArray[1] = 114
@@ -50,7 +50,7 @@
  meshID = 0   procID = 3  neighProcID = 5 Tag = 0 : 
       gatherArray[0] = 121
       gatherArray[1] = 122
-      gatherArray[2] = 123
+      gatherArray[2] = 122
       gatherArray[3] = 124
       gatherArray[4] = 125
-      gatherArray[5] = 126
+      gatherArray[5] = 125

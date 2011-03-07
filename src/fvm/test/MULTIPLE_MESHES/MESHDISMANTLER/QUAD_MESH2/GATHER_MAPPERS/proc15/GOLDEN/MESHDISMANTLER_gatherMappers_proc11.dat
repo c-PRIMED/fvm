@@ -35,4 +35,4 @@
       gatherArray[7] = 115
  meshID = 0   procID = 11  neighProcID = 14 Tag = 0 : 
       gatherArray[0] = 116
-      gatherArray[1] = 117
+      gatherArray[1] = 116

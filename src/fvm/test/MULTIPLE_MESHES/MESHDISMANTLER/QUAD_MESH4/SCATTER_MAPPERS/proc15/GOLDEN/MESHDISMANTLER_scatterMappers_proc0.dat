@@ -3,7 +3,7 @@
       scatterArray[1] = 0
       scatterArray[2] = 2
  meshID = 1   procID = 0  neighProcID = 2 Tag = 65537 : 
-      scatterArray[0] = 4
+      scatterArray[0] = 2
       scatterArray[1] = 5
       scatterArray[2] = 8
       scatterArray[3] = 8
@@ -11,8 +11,8 @@
       scatterArray[5] = 13
       scatterArray[6] = 15
  meshID = 3   procID = 0  neighProcID = 2 Tag = 196611 : 
-      scatterArray[0] = 4
-      scatterArray[1] = 8
+      scatterArray[0] = 5
+      scatterArray[1] = 9
       scatterArray[2] = 13
  meshID = 3   procID = 0  neighProcID = 3 Tag = 196611 : 
       scatterArray[0] = 1
@@ -20,23 +20,23 @@
       scatterArray[0] = 0
       scatterArray[1] = 1
       scatterArray[2] = 0
-      scatterArray[3] = 4
+      scatterArray[3] = 2
  meshID = 3   procID = 0  neighProcID = 4 Tag = 196611 : 
       scatterArray[0] = 1
-      scatterArray[1] = 5
-      scatterArray[2] = 5
-      scatterArray[3] = 10
-      scatterArray[4] = 10
+      scatterArray[1] = 4
+      scatterArray[2] = 4
+      scatterArray[3] = 8
+      scatterArray[4] = 8
       scatterArray[5] = 12
       scatterArray[6] = 16
  meshID = 0   procID = 0  neighProcID = 1 Tag = 0 : 
-      scatterArray[0] = 3
+      scatterArray[0] = 2
       scatterArray[1] = 5
       scatterArray[2] = 8
  meshID = 2   procID = 0  neighProcID = 1 Tag = 131074 : 
       scatterArray[0] = 0
       scatterArray[1] = 1
-      scatterArray[2] = 3
+      scatterArray[2] = 2
  meshID = 0   procID = 0  neighProcID = 2 Tag = 0 : 
       scatterArray[0] = 8
       scatterArray[1] = 10
@@ -44,15 +44,15 @@
       scatterArray[3] = 14
       scatterArray[4] = 16
  meshID = 2   procID = 0  neighProcID = 2 Tag = 131074 : 
-      scatterArray[0] = 5
-      scatterArray[1] = 7
-      scatterArray[2] = 7
-      scatterArray[3] = 14
+      scatterArray[0] = 3
+      scatterArray[1] = 4
+      scatterArray[2] = 4
+      scatterArray[3] = 10
  meshID = 0   procID = 0  neighProcID = 3 Tag = 0 : 
       scatterArray[0] = 0
       scatterArray[1] = 1
-      scatterArray[2] = 3
+      scatterArray[2] = 2
  meshID = 2   procID = 0  neighProcID = 3 Tag = 131074 : 
       scatterArray[0] = 0
-      scatterArray[1] = 2
-      scatterArray[2] = 10
+      scatterArray[1] = 5
+      scatterArray[2] = 11

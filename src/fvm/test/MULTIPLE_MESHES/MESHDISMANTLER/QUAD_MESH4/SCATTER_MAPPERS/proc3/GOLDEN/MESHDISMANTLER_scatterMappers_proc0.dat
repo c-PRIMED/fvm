@@ -8,15 +8,15 @@
       scatterArray[6] = 43
       scatterArray[7] = 34
       scatterArray[8] = 25
-      scatterArray[9] = 15
-      scatterArray[10] = 13
+      scatterArray[9] = 16
+      scatterArray[10] = 7
    meshID = 0   otherside MeshID = 3 : 
-      scatterArray[0] = 13
-      scatterArray[1] = 11
-      scatterArray[2] = 9
-      scatterArray[3] = 7
-      scatterArray[4] = 5
-      scatterArray[5] = 3
+      scatterArray[0] = 7
+      scatterArray[1] = 6
+      scatterArray[2] = 5
+      scatterArray[3] = 4
+      scatterArray[4] = 3
+      scatterArray[5] = 2
       scatterArray[6] = 1
       scatterArray[7] = 0
    meshID = 1   otherside MeshID = 0 : 
@@ -27,16 +27,16 @@
       scatterArray[4] = 46
       scatterArray[5] = 38
       scatterArray[6] = 30
-      scatterArray[7] = 21
+      scatterArray[7] = 22
       scatterArray[8] = 14
-      scatterArray[9] = 2
+      scatterArray[9] = 7
       scatterArray[10] = 0
    meshID = 1   otherside MeshID = 2 : 
-      scatterArray[0] = 11
-      scatterArray[1] = 9
-      scatterArray[2] = 7
-      scatterArray[3] = 5
-      scatterArray[4] = 3
+      scatterArray[0] = 6
+      scatterArray[1] = 5
+      scatterArray[2] = 4
+      scatterArray[3] = 3
+      scatterArray[4] = 2
       scatterArray[5] = 1
       scatterArray[6] = 0
    meshID = 2   otherside MeshID = 1 : 
@@ -45,21 +45,21 @@
       scatterArray[2] = 38
       scatterArray[3] = 29
       scatterArray[4] = 20
-      scatterArray[5] = 2
+      scatterArray[5] = 10
       scatterArray[6] = 0
    meshID = 2   otherside MeshID = 3 : 
-      scatterArray[0] = 17
-      scatterArray[1] = 15
-      scatterArray[2] = 13
-      scatterArray[3] = 11
-      scatterArray[4] = 9
-      scatterArray[5] = 7
-      scatterArray[6] = 5
-      scatterArray[7] = 3
+      scatterArray[0] = 9
+      scatterArray[1] = 8
+      scatterArray[2] = 7
+      scatterArray[3] = 6
+      scatterArray[4] = 5
+      scatterArray[5] = 4
+      scatterArray[6] = 3
+      scatterArray[7] = 2
       scatterArray[8] = 1
       scatterArray[9] = 0
    meshID = 3   otherside MeshID = 0 : 
-      scatterArray[0] = 17
+      scatterArray[0] = 9
       scatterArray[1] = 19
       scatterArray[2] = 29
       scatterArray[3] = 39
@@ -70,14 +70,14 @@
    meshID = 3   otherside MeshID = 2 : 
       scatterArray[0] = 0
       scatterArray[1] = 1
-      scatterArray[2] = 3
-      scatterArray[3] = 5
-      scatterArray[4] = 7
-      scatterArray[5] = 9
-      scatterArray[6] = 11
-      scatterArray[7] = 13
-      scatterArray[8] = 15
-      scatterArray[9] = 17
+      scatterArray[2] = 2
+      scatterArray[3] = 3
+      scatterArray[4] = 4
+      scatterArray[5] = 5
+      scatterArray[6] = 6
+      scatterArray[7] = 7
+      scatterArray[8] = 8
+      scatterArray[9] = 9
  meshID = 1   procID = 0  neighProcID = 1 Tag = 65537 : 
       scatterArray[0] = 69
       scatterArray[1] = 77
@@ -87,7 +87,7 @@
       scatterArray[5] = 84
  meshID = 3   procID = 0  neighProcID = 1 Tag = 196611 : 
       scatterArray[0] = 0
-      scatterArray[1] = 2
+      scatterArray[1] = 10
       scatterArray[2] = 20
       scatterArray[3] = 30
       scatterArray[4] = 40
@@ -97,10 +97,10 @@
       scatterArray[8] = 70
       scatterArray[9] = 80
  meshID = 1   procID = 0  neighProcID = 2 Tag = 65537 : 
-      scatterArray[0] = 11
+      scatterArray[0] = 6
       scatterArray[1] = 13
-      scatterArray[2] = 27
-      scatterArray[3] = 27
+      scatterArray[2] = 21
+      scatterArray[3] = 21
       scatterArray[4] = 29
       scatterArray[5] = 37
       scatterArray[6] = 45
@@ -132,7 +132,7 @@
       scatterArray[6] = 73
       scatterArray[7] = 79
  meshID = 2   procID = 0  neighProcID = 1 Tag = 131074 : 
-      scatterArray[0] = 17
+      scatterArray[0] = 9
       scatterArray[1] = 19
       scatterArray[2] = 19
       scatterArray[3] = 28
@@ -146,8 +146,8 @@
       scatterArray[11] = 80
  meshID = 0   procID = 0  neighProcID = 2 Tag = 0 : 
       scatterArray[0] = 0
-      scatterArray[1] = 16
-      scatterArray[2] = 16
+      scatterArray[1] = 8
+      scatterArray[2] = 8
       scatterArray[3] = 17
       scatterArray[4] = 26
       scatterArray[5] = 35

@@ -1,56 +1,56 @@
    meshID = 0   otherside MeshID = 1 : 
-      scatterArray[0] = 81
-      scatterArray[1] = 78
-      scatterArray[2] = 77
-      scatterArray[3] = 85
+      scatterArray[0] = 62
+      scatterArray[1] = 63
+      scatterArray[2] = 66
+      scatterArray[3] = 67
    meshID = 1   otherside MeshID = 0 : 
       scatterArray[0] = 5
-      scatterArray[1] = 0
+      scatterArray[1] = 4
       scatterArray[2] = 1
-      scatterArray[3] = 2
+      scatterArray[3] = 0
  meshID = 1   procID = 3  neighProcID = 2 Tag = 65537 : 
-      scatterArray[0] = 4
+      scatterArray[0] = 2
       scatterArray[1] = 5
  meshID = 1   procID = 3  neighProcID = 4 Tag = 65537 : 
       scatterArray[0] = 3
-      scatterArray[1] = 4
+      scatterArray[1] = 2
  meshID = 1   procID = 3  neighProcID = 5 Tag = 65536 : 
-      scatterArray[0] = 2
+      scatterArray[0] = 0
  meshID = 1   procID = 3  neighProcID = 6 Tag = 65537 : 
       scatterArray[0] = 3
-      scatterArray[1] = 2
+      scatterArray[1] = 0
       scatterArray[2] = 1
  meshID = 0   procID = 3  neighProcID = 1 Tag = 0 : 
-      scatterArray[0] = 39
-      scatterArray[1] = 25
+      scatterArray[0] = 26
+      scatterArray[1] = 29
  meshID = 0   procID = 3  neighProcID = 2 Tag = 0 : 
-      scatterArray[0] = 12
-      scatterArray[1] = 13
-      scatterArray[2] = 14
-      scatterArray[3] = 11
-      scatterArray[4] = 15
-      scatterArray[5] = 32
-      scatterArray[6] = 24
-      scatterArray[7] = 31
-      scatterArray[8] = 17
-      scatterArray[9] = 15
-      scatterArray[10] = 81
-      scatterArray[11] = 80
-      scatterArray[12] = 39
-      scatterArray[13] = 36
+      scatterArray[0] = 6
+      scatterArray[1] = 5
+      scatterArray[2] = 10
+      scatterArray[3] = 9
+      scatterArray[4] = 25
+      scatterArray[5] = 19
+      scatterArray[6] = 16
+      scatterArray[7] = 20
+      scatterArray[8] = 24
+      scatterArray[9] = 25
+      scatterArray[10] = 62
+      scatterArray[11] = 65
+      scatterArray[12] = 26
+      scatterArray[13] = 27
  meshID = 0   procID = 3  neighProcID = 4 Tag = 0 : 
-      scatterArray[0] = 89
-      scatterArray[1] = 90
-      scatterArray[2] = 88
-      scatterArray[3] = 91
-      scatterArray[4] = 95
-      scatterArray[5] = 93
-      scatterArray[6] = 96
+      scatterArray[0] = 81
+      scatterArray[1] = 78
+      scatterArray[2] = 82
+      scatterArray[3] = 85
+      scatterArray[4] = 88
+      scatterArray[5] = 87
+      scatterArray[6] = 91
       scatterArray[7] = 92
  meshID = 0   procID = 3  neighProcID = 5 Tag = 0 : 
-      scatterArray[0] = 85
-      scatterArray[1] = 84
-      scatterArray[2] = 86
-      scatterArray[3] = 94
-      scatterArray[4] = 86
-      scatterArray[5] = 94
+      scatterArray[0] = 67
+      scatterArray[1] = 68
+      scatterArray[2] = 94
+      scatterArray[3] = 95
+      scatterArray[4] = 94
+      scatterArray[5] = 95

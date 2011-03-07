@@ -92,14 +92,14 @@ if options.time:
     part_mesh_start[0] = MPI.Wtime()
 
 #partMesh constructor and setTypes
-part_mesh = fvmparallel.PartMesh( meshes, npartVec, etypeVec );
+part_mesh = fvmparallel.MeshPartitioner( meshes, npartVec, etypeVec );
 part_mesh.setWeightType(2);
 part_mesh.setNumFlag(0);
  
 #actions
 part_mesh.partition()
 part_mesh.mesh()
-#part_mesh.mesh_debug()
+#part_mesh.isDebug(1)
 part_meshes = part_mesh.meshList()
 
 #dismantling mesh
