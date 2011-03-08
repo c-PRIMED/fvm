@@ -36,6 +36,7 @@ using namespace std;
 %include "StructureModel.i"
 %include "PlateFields.h"
 %include "PlateModel.i"
+%include "PlateDeformationModel.i"
 #endif
 
 %include "FlowModel.i"

@@ -68,4 +68,7 @@ template class MovingMeshModel<ATYPE>;
 #include "StructureDeformationModel.h"
 template class StructureDeformationModel<ATYPE>;
 
+#include "PlateDeformationModel.h"
+template class PlateDeformationModel<ATYPE>;
+
 #endif
