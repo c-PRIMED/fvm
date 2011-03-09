@@ -248,7 +248,7 @@ public:
                        const GeomFields& geomFields);
 
   Mesh* extractBoundaryMesh();
-  Mesh* extrude(int nz, double zmax);
+  Mesh* extrude(int nz, double zmax, bool boundaryOnly=false);
 
   Mesh* createShell(const int fgId, Mesh& otherMesh, const int otherFgId);
   
