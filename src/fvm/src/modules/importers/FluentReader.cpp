@@ -456,6 +456,8 @@ void FluentReader::read(const int pass)
         break;
         
       case 39:
+      case 45:
+        
       {
           int zoneId;
           char zoneName[256], zoneType[80];
