@@ -23,6 +23,7 @@ struct PlateFields
   Field tractionZ;
   Field thickness;
   Field force;
+  Field acceleration;
   Field bodyForce;
   Field volume0;
 };

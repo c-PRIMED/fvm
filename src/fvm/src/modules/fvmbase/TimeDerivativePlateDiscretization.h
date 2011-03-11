@@ -32,6 +32,7 @@ public:
 					Field& varN3Field,
 					const Field& densityField,
 				        const Field& thicknessField,
+				        Field& accelerationField,
 					const Field& volume0Field,
 				        const bool& variableTimeStep,
 				        const T_Scalar dT,
@@ -45,6 +46,7 @@ public:
     _varN3Field(varN3Field),
     _densityField(densityField),
     _thicknessField(thicknessField),
+    _accelerationField(accelerationField),
     _volume0Field(volume0Field),
     _variableTimeStep(variableTimeStep),
     _dT(dT),
@@ -81,7 +83,9 @@ public:
     
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
 
-    
+    TArray& acceleration =
+      dynamic_cast<TArray&>(_accelerationField[cells]);    
+
     const int nCells = cells.getSelfCount();
 
 
@@ -103,6 +107,7 @@ public:
 	    for(int c=0; c<nCells; c++)
 	    {
 		const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
+		const T_Scalar rhobydT2 = density[c]/_dT2;
 		const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
 		  pow(thickness[c],three)/(twelve*_dT2);
 		rCell[c][0] += rhoVH3by12dT2*(two*x[c][0] - five*xN1[c][0] + four*xN2[c][0]
@@ -114,6 +119,8 @@ public:
 		rCell[c][2] += rhoVHbydT2*(two*x[c][2] - five*xN1[c][2] + four*xN2[c][2]
 					   - xN3[c][2]);
 		(diag[c])(2,2) += two*rhoVHbydT2;
+		acceleration[c] = rhobydT2*(two*x[c][2] - five*xN1[c][2] + four*xN2[c][2]
+					      - xN3[c][2]);
 	    }
 	}
 	else
@@ -121,6 +128,7 @@ public:
 	    for(int c=0; c<nCells; c++)
 	    {
 		const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
+		const T_Scalar rhobydT2 = density[c]/_dT2;
 		const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
 		  pow(thickness[c],three)/(twelve*_dT2);
 		
@@ -134,6 +142,8 @@ public:
 		rCell[c][2] += rhoVHbydT2*(x[c][2]- two*xN1[c][2]
 					   + xN2[c][2]);
 		(diag[c])(2,2) += rhoVHbydT2;
+		acceleration[c] = rhobydT2*(x[c][2]- two*xN1[c][2]
+					      + xN2[c][2]);
 	    }
 	}
     }
@@ -153,6 +163,7 @@ public:
             for(int c=0; c<nCells; c++)
 	    {
                 const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
+		const T_Scalar rhobydT2 = density[c]/_dT2;
                 const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
                   pow(thickness[c],three)/(twelve*_dT2);
                 rCell[c][0] += rhoVH3by12dT2*(c1*x[c][0] + c2*xN1[c][0] + c3*xN2[c][0]
@@ -164,6 +175,8 @@ public:
                 rCell[c][2] += rhoVHbydT2*(c1*x[c][2] + c2*xN1[c][2] + c3*xN2[c][2]
                                            + c4*xN3[c][2]);
                 (diag[c])(2,2) += c1*rhoVHbydT2;
+		acceleration[c] = rhobydT2*(c1*x[c][2] + c2*xN1[c][2] + c3*xN2[c][2]
+					      + c4*xN3[c][2]);
 	    }
 	}
         else
@@ -174,6 +187,7 @@ public:
             for(int c=0; c<nCells; c++)
 	    {
                 const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
+		const T_Scalar rhobydT2 = density[c]/_dT2;
                 const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
                   pow(thickness[c],three)/(twelve*_dT2);
 
@@ -187,6 +201,8 @@ public:
                 rCell[c][2] += rhoVHbydT2*(c1*x[c][2] + c2*xN1[c][2]
                                            + c3*xN2[c][2]);
                 (diag[c])(2,2) += c1*rhoVHbydT2;
+		acceleration[c] = rhobydT2*(c1*x[c][2] + c2*xN1[c][2]
+					      + c3*xN2[c][2]);
 	    }
 	}
     }
@@ -199,6 +215,7 @@ private:
   const Field& _varN3Field;
   const Field& _densityField;
   const Field& _thicknessField;
+  Field& _accelerationField;
   const Field& _volume0Field;
   const bool _variableTimeStep;
   const T_Scalar _dT;

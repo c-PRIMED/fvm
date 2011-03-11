@@ -16,6 +16,7 @@ PlateFields::PlateFields(const string baseName) :
   tractionZ(baseName + ".tractionZ"),
   thickness(baseName + ".thickness"),
   force(baseName + ".force"),
+  acceleration(baseName + ".acceleration"),
   bodyForce(baseName + ".bodyForce"),
   volume0(baseName + ".volume0")
 {}

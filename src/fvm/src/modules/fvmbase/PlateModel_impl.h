@@ -371,6 +371,10 @@ public:
         thicknessCell->zero();
         _plateFields.thickness.addArray(cells,thicknessCell);
 
+        shared_ptr<TArray> accelerationCell(new TArray(cells.getCount()));
+        accelerationCell->zero();
+        _plateFields.acceleration.addArray(cells,accelerationCell);
+
         // compute values of deformation flux
 
         // store deformation flux at interfaces
@@ -500,6 +504,7 @@ public:
               _plateFields.deformationN3,
               _plateFields.density,
 	      _plateFields.thickness,
+	      _plateFields.acceleration,
 	      _plateFields.volume0,
 	      _options.variableTimeStep,
               _options["timeStep"],
