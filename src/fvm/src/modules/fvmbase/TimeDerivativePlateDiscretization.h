@@ -33,7 +33,10 @@ public:
 					const Field& densityField,
 				        const Field& thicknessField,
 					const Field& volume0Field,
-					const T_Scalar dT) :
+				        const bool& variableTimeStep,
+				        const T_Scalar dT,
+				        const T_Scalar dTN1,
+				        const T_Scalar dTN2) :
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
@@ -43,7 +46,10 @@ public:
     _densityField(densityField),
     _thicknessField(thicknessField),
     _volume0Field(volume0Field),
-    _dT(dT)
+    _variableTimeStep(variableTimeStep),
+    _dT(dT),
+    _dTN1(dTN1),
+    _dTN2(dTN2)
   {}
   
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -86,49 +92,105 @@ public:
     T_Scalar three(3.0);
     T_Scalar twelve(12.0);
     const T_Scalar _dT2 = _dT*_dT;
-
-    if (_varN3Field.hasArray(cells))
+    
+    if(!_variableTimeStep)
     {
-        const XArray& xN3 = dynamic_cast<const XArray&>(_varN3Field[cells]);
-	T_Scalar five(5.0);
-	T_Scalar four(4.0);
-	for(int c=0; c<nCells; c++)
+	if (_varN3Field.hasArray(cells))
 	{
-	    const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
-            const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
-              pow(thickness[c],three)/(twelve*_dT2);
-	    rCell[c][0] += rhoVH3by12dT2*(two*x[c][0] - five*xN1[c][0] + four*xN2[c][0]
-				     - xN3[c][0]);
-	    (diag[c])(0,0) += two*rhoVH3by12dT2;
-            rCell[c][1] += rhoVH3by12dT2*(two*x[c][1] - five*xN1[c][1] + four*xN2[c][1]
-					- xN3[c][1]);
-            (diag[c])(1,1) += two*rhoVH3by12dT2;
-	    rCell[c][2] += rhoVHbydT2*(two*x[c][2] - five*xN1[c][2] + four*xN2[c][2]
-				   - xN3[c][2]);
-	    (diag[c])(2,2) += two*rhoVHbydT2;
+	    const XArray& xN3 = dynamic_cast<const XArray&>(_varN3Field[cells]);
+	    T_Scalar five(5.0);
+	    T_Scalar four(4.0);
+	    for(int c=0; c<nCells; c++)
+	    {
+		const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
+		const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
+		  pow(thickness[c],three)/(twelve*_dT2);
+		rCell[c][0] += rhoVH3by12dT2*(two*x[c][0] - five*xN1[c][0] + four*xN2[c][0]
+					      - xN3[c][0]);
+		(diag[c])(0,0) += two*rhoVH3by12dT2;
+		rCell[c][1] += rhoVH3by12dT2*(two*x[c][1] - five*xN1[c][1] + four*xN2[c][1]
+					      - xN3[c][1]);
+		(diag[c])(1,1) += two*rhoVH3by12dT2;
+		rCell[c][2] += rhoVHbydT2*(two*x[c][2] - five*xN1[c][2] + four*xN2[c][2]
+					   - xN3[c][2]);
+		(diag[c])(2,2) += two*rhoVHbydT2;
+	    }
+	}
+	else
+	{
+	    for(int c=0; c<nCells; c++)
+	    {
+		const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
+		const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
+		  pow(thickness[c],three)/(twelve*_dT2);
+		
+		rCell[c][0] += rhoVH3by12dT2*(x[c][0]- two*xN1[c][0]
+					      + xN2[c][0]);
+		(diag[c])(0,0) += rhoVH3by12dT2;
+		rCell[c][1] += rhoVH3by12dT2*(x[c][1]- two*xN1[c][1]
+					      + xN2[c][1]);
+		(diag[c])(1,1) += rhoVH3by12dT2;
+		
+		rCell[c][2] += rhoVHbydT2*(x[c][2]- two*xN1[c][2]
+					   + xN2[c][2]);
+		(diag[c])(2,2) += rhoVHbydT2;
+	    }
 	}
     }
     else
     {
-        for(int c=0; c<nCells; c++)
+        T_Scalar a = (_dT + _dTN1)/_dT;
+	T_Scalar b = (_dT + _dTN1 + _dTN2)/_dT;
+	T_Scalar one(1.0);
+        if (_varN3Field.hasArray(cells))
 	{
-	    const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
-	    const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
-	      pow(thickness[c],three)/(twelve*_dT2);
-	    
-	    rCell[c][0] += rhoVH3by12dT2*(x[c][0]- two*xN1[c][0]
-				   + xN2[c][0]);
-	    (diag[c])(0,0) += rhoVH3by12dT2;
-            rCell[c][1] += rhoVH3by12dT2*(x[c][1]- two*xN1[c][1]
-                                   + xN2[c][1]);
-            (diag[c])(1,1) += rhoVH3by12dT2;
-	    
-            rCell[c][2] += rhoVHbydT2*(x[c][2]- two*xN1[c][2]
-                                   + xN2[c][2]);
-            (diag[c])(2,2) += rhoVHbydT2;
+	    T_Scalar c1 = (two*a*b*(pow(a,two)-pow(b,two))+two*b*(pow(b,two)-one)-two*a*(pow(a,two)-one))/
+	      (a*b*(a-one)*(b-one)*(a-b));
+	    T_Scalar c2 = -two*(a+b)/((a-1)*(b-1));
+	    T_Scalar c3 = -two*(b+one)/(a*(a-b)*(a-one));
+	    T_Scalar c4 = two*(a+one)/(b*(a-b)*(b-one));
+	    cout<<"Values ="<<a<<" "<<b<<" "<<c1<<" "<<c2<<" "<<c3<<" "<<c4<<endl;
+            const XArray& xN3 = dynamic_cast<const XArray&>(_varN3Field[cells]);
+            for(int c=0; c<nCells; c++)
+	    {
+                const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
+                const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
+                  pow(thickness[c],three)/(twelve*_dT2);
+                rCell[c][0] += rhoVH3by12dT2*(c1*x[c][0] + c2*xN1[c][0] + c3*xN2[c][0]
+                                              + c4*xN3[c][0]);
+                (diag[c])(0,0) += c1*rhoVH3by12dT2;
+                rCell[c][1] += rhoVH3by12dT2*(c1*x[c][1] + c2*xN1[c][1] + c3*xN2[c][1]
+                                              + c4*xN3[c][1]);
+                (diag[c])(1,1) += c1*rhoVH3by12dT2;
+                rCell[c][2] += rhoVHbydT2*(c1*x[c][2] + c2*xN1[c][2] + c3*xN2[c][2]
+                                           + c4*xN3[c][2]);
+                (diag[c])(2,2) += c1*rhoVHbydT2;
+	    }
+	}
+        else
+	{
+	    T_Scalar c1 = two/a;
+	    T_Scalar c2 = -two/(a-one);
+	    T_Scalar c3 = two/(a*(a-one));
+            for(int c=0; c<nCells; c++)
+	    {
+                const T_Scalar rhoVHbydT2 = density[c]*cellVolume0[c]*thickness[c]/_dT2;
+                const T_Scalar rhoVH3by12dT2 = density[c]*cellVolume0[c]*
+                  pow(thickness[c],three)/(twelve*_dT2);
+
+                rCell[c][0] += rhoVH3by12dT2*(c1*x[c][0] + c2*xN1[c][0]
+                                              + c3*xN2[c][0]);
+                (diag[c])(0,0) += c1*rhoVH3by12dT2;
+                rCell[c][1] += rhoVH3by12dT2*(c1*x[c][1] + c2*xN1[c][1]
+                                              + c3*xN2[c][1]);
+                (diag[c])(1,1) += c1*rhoVH3by12dT2;
+
+                rCell[c][2] += rhoVHbydT2*(c1*x[c][2] + c2*xN1[c][2]
+                                           + c3*xN2[c][2]);
+                (diag[c])(2,2) += c1*rhoVHbydT2;
+	    }
 	}
     }
-    
   }
 private:
   const GeomFields& _geomFields;
@@ -139,7 +201,10 @@ private:
   const Field& _densityField;
   const Field& _thicknessField;
   const Field& _volume0Field;
+  const bool _variableTimeStep;
   const T_Scalar _dT;
+  const T_Scalar _dTN1;
+  const T_Scalar _dTN2;
 };
 
 #endif

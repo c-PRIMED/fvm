@@ -30,6 +30,7 @@ struct PlateModelOptions : public FloatVarDict<T>
   double deformationTolerance;
   int timeDiscretizationOrder;
   double scf;
+  bool variableTimeStep;
   LinearSolver *deformationLinearSolver;
 }; 
 

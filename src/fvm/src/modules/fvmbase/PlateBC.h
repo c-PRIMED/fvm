@@ -45,6 +45,9 @@ struct PlateModelOptions : public FloatVarDict<T>
     this->transient = false;
     this->timeDiscretizationOrder=1;
     this->scf=1.0; //lateral shear correction factor
+    this->variableTimeStep = false;
+    this->timeStepN1=0.1;
+    this->timeStepN2=0.1;
     this->deformationLinearSolver = 0;
 
     this->incompressible = true;
@@ -55,6 +58,9 @@ struct PlateModelOptions : public FloatVarDict<T>
   bool transient;
   int timeDiscretizationOrder;
   double scf;
+  bool variableTimeStep;
+  double timeStepN1;
+  double timeStepN2;
   LinearSolver *deformationLinearSolver;
 
   bool incompressible;

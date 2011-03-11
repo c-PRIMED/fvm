@@ -343,6 +343,11 @@ public:
             if (_options.timeDiscretizationOrder > 1)
 	      _plateFields.deformationN3.addArray(cells,
 						      dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
+	    if(_options.variableTimeStep)
+	    {
+		_options.timeStepN1 = _options["timeStep"];
+		_options.timeStepN2 = _options["timeStep"];
+	    }
         }
         
 
@@ -425,6 +430,14 @@ public:
 	}
 	wN2 = wN1;
 	wN1 = w;
+	if(_options.variableTimeStep)
+	{
+	    if (_options.timeDiscretizationOrder > 1)
+	    {
+		_options.timeStepN2 = _options.timeStepN1;
+	    }
+	    _options.timeStepN1 = _options["timeStep"];
+	}
     }
   }
 
@@ -488,7 +501,10 @@ public:
               _plateFields.density,
 	      _plateFields.thickness,
 	      _plateFields.volume0,
-              _options["timeStep"]));
+	      _options.variableTimeStep,
+              _options["timeStep"],
+	      _options.timeStepN1,
+	      _options.timeStepN2));
         
         discretizations.push_back(td);
     }
