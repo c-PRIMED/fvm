@@ -149,7 +149,6 @@ public:
 	    T_Scalar c2 = -two*(a+b)/((a-1)*(b-1));
 	    T_Scalar c3 = -two*(b+one)/(a*(a-b)*(a-one));
 	    T_Scalar c4 = two*(a+one)/(b*(a-b)*(b-one));
-	    cout<<"Values ="<<a<<" "<<b<<" "<<c1<<" "<<c2<<" "<<c3<<" "<<c4<<endl;
             const XArray& xN3 = dynamic_cast<const XArray&>(_varN3Field[cells]);
             for(int c=0; c<nCells; c++)
 	    {
