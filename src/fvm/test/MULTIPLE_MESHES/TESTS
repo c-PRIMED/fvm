@@ -1,24 +1,14 @@
-MULTIPLE_MESHES2_QUAD_PROCS1_JACOBISOLVER    ./ptest.py  --np 1   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc1    --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS2_JACOBISOLVER    ./ptest.py  --np 2   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc2    --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS3_JACOBISOLVER    ./ptest.py  --np 3   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc3    --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS4_JACOBISOLVER    ./ptest.py  --np 4   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc4    --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS5_JACOBISOLVER    ./ptest.py  --np 5   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc5    --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS11_JACOBISOLVER   ./ptest.py  --np 11  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc11   --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS23_JACOBISOLVER   ./ptest.py  --np 23  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc23   --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS37_JACOBISOLVER   ./ptest.py  --np 37  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc37   --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS73_JACOBISOLVER   ./ptest.py  --np 73  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc73   --outdir TESTDIR 
-MULTIPLE_MESHES2_QUAD_PROCS96_JACOBISOLVER   ./ptest.py  --np 96  --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc96   --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS1_JACOBISOLVER    ./ptest.py  --np 1   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc1    --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS2_JACOBISOLVER    ./ptest.py  --np 2   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc2    --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS3_JACOBISOLVER    ./ptest.py  --np 3   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc3    --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS4_JACOBISOLVER    ./ptest.py  --np 4   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc4    --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS5_JACOBISOLVER    ./ptest.py  --np 5   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc5    --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS11_JACOBISOLVER   ./ptest.py  --np 11  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc11   --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS23_JACOBISOLVER   ./ptest.py  --np 23  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc23   --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS37_JACOBISOLVER   ./ptest.py  --np 37  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc37   --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS73_JACOBISOLVER   ./ptest.py  --np 73  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc73   --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS96_JACOBISOLVER   ./ptest.py  --np 96  --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc96   --outdir TESTDIR 
-MULTIPLE_MESHES4_QUAD_PROCS123_JACOBISOLVER  ./ptest.py  --np 123 --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc123  --outdir TESTDIR 
+MESHASSEMBLER_MESHES2_FACECELLS              ./ptest.py  --np 1 --script testMeshAssemblerFaceCells.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/FACE_CELLS           --outdir TESTDIR
+MESHASSEMBLER_MESHES4_FACECELLS              ./ptest.py  --np 1 --script testMeshAssemblerFaceCells.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/FACE_CELLS           --outdir TESTDIR
+MESHASSEMBLER_MESHES2_GLOBALCELL_TO_MEHSID   ./ptest.py  --np 1 --script testMeshAssemblerGlobalCellToMeshID.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/GLOBALCELL_TO_MEHSID --outdir TESTDIR
+MESHASSEMBLER_MESHES4_GLOBALCELL_TO_MEHSID   ./ptest.py  --np 1 --script testMeshAssemblerGlobalCellToMeshID.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/GLOBALCELL_TO_MEHSID --outdir TESTDIR
+MESHASSEMBLER_MESHES2_LOCALNODE_TO_GLOBAL    ./ptest.py  --np 1 --script  testMeshAssemblerLocalNodeToGlobal.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/LOCALNODE_TO_GLOBAL --outdir TESTDIR
+MESHASSEMBLER_MESHES4_LOCALNODE_TO_GLOBAL    ./ptest.py  --np 1 --script  testMeshAssemblerLocalNodeToGlobal.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/LOCALNODE_TO_GLOBAL --outdir TESTDIR
+MESHASSEMBLER_MESHES2_SITES                  ./ptest.py  --np 1 --script  testMeshAssemblerSites.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/SITES --outdir TESTDIR
+MESHASSEMBLER_MESHES4_SITES                  ./ptest.py  --np 1 --script  testMeshAssemblerSites.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/SITES --outdir TESTDIR
+MESHASSEMBLER_MESHES2_SYNC_LOCAL_TO_GLOBAL   ./ptest.py  --np 1 --script  testMeshAssemblerSyncLocalToGlobal.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/SYNC_LOCAL_TO_GLOBAL  --outdir TESTDIR
+MESHASSEMBLER_MESHES4_SYNC_LOCAL_TO_GLOBAL   ./ptest.py  --np 1 --script  testMeshAssemblerSyncLocalToGlobal.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/SYNC_LOCAL_TO_GLOBAL --outdir TESTDIR
+
 MULTIPLE_MESHES2_QUAD_PROCS1_CELLSITE     ./ptest.py  --np 1   --script testMultiMeshesDismantlerCellSite.py --type=quad --in ../c2s_1600.cas          --golden MESHDISMANTLER/QUAD_MESH2/CELL_SITE/proc1    --outdir TESTDIR 
 MULTIPLE_MESHES2_QUAD_PROCS2_CELLSITE     ./ptest.py  --np 2   --script testMultiMeshesDismantlerCellSite.py --type=quad --in ../c2s_1600.cas          --golden MESHDISMANTLER/QUAD_MESH2/CELL_SITE/proc2    --outdir TESTDIR 
 MULTIPLE_MESHES2_QUAD_PROCS3_CELLSITE     ./ptest.py  --np 3   --script testMultiMeshesDismantlerCellSite.py --type=quad --in ../c2s_1600.cas          --golden MESHDISMANTLER/QUAD_MESH2/CELL_SITE/proc3    --outdir TESTDIR 
@@ -127,22 +117,6 @@ MULTIPLE_MESHES4_QUAD_P3_GATHERS ./ptest.py  --np 3  --script testMultiMeshesDis
 MULTIPLE_MESHES4_QUAD_P4_GATHERS ./ptest.py --np 4  --script testMultiMeshesDismantlerGatherMappers.py --type=quad --in ../quad_multiple_mesh4.cas   --golden MESHDISMANTLER/QUAD_MESH4/GATHER_MAPPERS/proc4    --outdir TESTDIR 
 MULTIPLE_MESHES4_QUAD_P5_GATHERS  ./ptest.py  --np 5  --script testMultiMeshesDismantlerGatherMappers.py --type=quad --in ../quad_multiple_mesh4.cas  --golden MESHDISMANTLER/QUAD_MESH4/GATHER_MAPPERS/proc5    --outdir TESTDIR 
 MULTIPLE_MESHES4_QUAD_P15_GATHERS  ./ptest.py  --np 15 --script testMultiMeshesDismantlerGatherMappers.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHDISMANTLER/QUAD_MESH4/GATHER_MAPPERS/proc15   --outdir TESTDIR 
-MESHASSEMBLER_MESHES2_FACECELLS              ./ptest.py  --np 1 --script testMeshAssemblerFaceCells.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/FACE_CELLS           --outdir TESTDIR
-MESHASSEMBLER_MESHES4_FACECELLS              ./ptest.py  --np 1 --script testMeshAssemblerFaceCells.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/FACE_CELLS           --outdir TESTDIR
-MESHASSEMBLER_MESHES2_GLOBALCELL_TO_MEHSID   ./ptest.py  --np 1 --script testMeshAssemblerGlobalCellToMeshID.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/GLOBALCELL_TO_MEHSID --outdir TESTDIR
-MESHASSEMBLER_MESHES4_GLOBALCELL_TO_MEHSID   ./ptest.py  --np 1 --script testMeshAssemblerGlobalCellToMeshID.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/GLOBALCELL_TO_MEHSID --outdir TESTDIR
-MESHASSEMBLER_MESHES2_LOCALNODE_TO_GLOBAL    ./ptest.py  --np 1 --script  testMeshAssemblerLocalNodeToGlobal.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/LOCALNODE_TO_GLOBAL --outdir TESTDIR
-MESHASSEMBLER_MESHES4_LOCALNODE_TO_GLOBAL    ./ptest.py  --np 1 --script  testMeshAssemblerLocalNodeToGlobal.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/LOCALNODE_TO_GLOBAL --outdir TESTDIR
-MESHASSEMBLER_MESHES2_SITES                  ./ptest.py  --np 1 --script  testMeshAssemblerSites.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/SITES --outdir TESTDIR
-MESHASSEMBLER_MESHES4_SITES                  ./ptest.py  --np 1 --script  testMeshAssemblerSites.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/SITES --outdir TESTDIR
-MESHASSEMBLER_MESHES2_SYNC_LOCAL_TO_GLOBAL   ./ptest.py  --np 1 --script  testMeshAssemblerSyncLocalToGlobal.py --type=quad --in ../c2s_1600.cas            --golden MESHASSEMBLER/QUAD_MESH2/SYNC_LOCAL_TO_GLOBAL  --outdir TESTDIR
-MESHASSEMBLER_MESHES4_SYNC_LOCAL_TO_GLOBAL   ./ptest.py  --np 1 --script  testMeshAssemblerSyncLocalToGlobal.py --type=quad --in ../quad_multiple_mesh4.cas --golden MESHASSEMBLER/QUAD_MESH4/SYNC_LOCAL_TO_GLOBAL --outdir TESTDIR
 
-
-
-
-
-
-
-
-
+MULTIPLE_MESHES2_QUAD_PROCS1_JACOBISOLVER    ./ptest.py  --np 1   --script testThermalParallelJacobi.py --type=quad --in ../c2s_1600.cas              --golden SOLVER_JACOBI/QUAD_MESH2/proc1    --outdir TESTDIR 
+MULTIPLE_MESHES4_QUAD_PROCS1_JACOBISOLVER    ./ptest.py  --np 1   --script testThermalParallelJacobi.py --type=quad --in ../quad_multiple_mesh4.cas   --golden SOLVER_JACOBI/QUAD_MESH4/proc1    --outdir TESTDIR 
