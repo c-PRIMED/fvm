@@ -7,9 +7,9 @@
       gatherArray[0] = 10
       gatherArray[1] = 11
  meshID = 1   procID = 12  neighProcID = 11 Tag = 65537 : 
-      gatherArray[0] = 13
+      gatherArray[0] = 12
       gatherArray[1] = 13
-      gatherArray[2] = 12
+      gatherArray[2] = 14
  meshID = 1   procID = 12  neighProcID = 13 Tag = 65537 : 
       gatherArray[0] = 15
  meshID = 1   procID = 12  neighProcID = 14 Tag = 65537 : 
@@ -17,41 +17,41 @@
       gatherArray[1] = 17
       gatherArray[2] = 18
  meshID = 0   procID = 12  neighProcID = 7 Tag = 0 : 
-      gatherArray[0] = 103
-      gatherArray[1] = 104
-      gatherArray[2] = 105
-      gatherArray[3] = 106
+      gatherArray[0] = 112
+      gatherArray[1] = 113
+      gatherArray[2] = 114
+      gatherArray[3] = 115
  meshID = 0   procID = 12  neighProcID = 8 Tag = 0 : 
-      gatherArray[0] = 108
-      gatherArray[1] = 108
-      gatherArray[2] = 110
-      gatherArray[3] = 110
-      gatherArray[4] = 111
-      gatherArray[5] = 112
-      gatherArray[6] = 107
-      gatherArray[7] = 107
-      gatherArray[8] = 116
-      gatherArray[9] = 116
-      gatherArray[10] = 115
-      gatherArray[11] = 118
-      gatherArray[12] = 109
+      gatherArray[0] = 116
+      gatherArray[1] = 117
+      gatherArray[2] = 118
+      gatherArray[3] = 119
+      gatherArray[4] = 120
+      gatherArray[5] = 121
+      gatherArray[6] = 122
+      gatherArray[7] = 123
+      gatherArray[8] = 124
+      gatherArray[9] = 125
+      gatherArray[10] = 126
+      gatherArray[11] = 127
+      gatherArray[12] = 128
  meshID = 0   procID = 12  neighProcID = 11 Tag = 0 : 
-      gatherArray[0] = 120
-      gatherArray[1] = 121
-      gatherArray[2] = 122
-      gatherArray[3] = 123
-      gatherArray[4] = 124
-      gatherArray[5] = 125
-      gatherArray[6] = 126
-      gatherArray[7] = 127
-      gatherArray[8] = 128
-      gatherArray[9] = 129
+      gatherArray[0] = 129
+      gatherArray[1] = 130
+      gatherArray[2] = 131
+      gatherArray[3] = 132
+      gatherArray[4] = 133
+      gatherArray[5] = 134
+      gatherArray[6] = 135
+      gatherArray[7] = 136
+      gatherArray[8] = 137
+      gatherArray[9] = 138
  meshID = 0   procID = 12  neighProcID = 14 Tag = 0 : 
-      gatherArray[0] = 130
-      gatherArray[1] = 131
-      gatherArray[2] = 132
-      gatherArray[3] = 133
-      gatherArray[4] = 134
-      gatherArray[5] = 135
-      gatherArray[6] = 136
-      gatherArray[7] = 137
+      gatherArray[0] = 139
+      gatherArray[1] = 140
+      gatherArray[2] = 141
+      gatherArray[3] = 142
+      gatherArray[4] = 143
+      gatherArray[5] = 144
+      gatherArray[6] = 145
+      gatherArray[7] = 146
