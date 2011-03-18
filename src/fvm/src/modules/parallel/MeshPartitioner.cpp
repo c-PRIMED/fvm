@@ -137,6 +137,9 @@ MeshPartitioner::mesh()
     gatherCellsLevel1_partID_map();
     level1_scatter_gather_cells();
     set_local_global();
+    if (  _meshList.at(0)->isMergedMesh() ){
+       setMeshColors();
+    }
  
 }
 
@@ -993,10 +996,6 @@ MeshPartitioner::mesh_setup()
        _meshListLocal.at(id)->setCoordinates( _coord.at(id)            );
        _meshListLocal.at(id)->setFaceNodes  ( _faceNodesOrdered.at(id) );
        _meshListLocal.at(id)->setFaceCells  ( _faceCellsOrdered.at(id) );
-        if (  _meshList.at(id)->isMergedMesh() ){
-            setMeshColors();
-        }
-
     }
 
 }
@@ -1029,9 +1028,11 @@ MeshPartitioner::setMeshColors()
        colorLocal[i] = colorLocal[ acrossCellID ];
     }
 
-    //colorOtherLocal loop first over inner cells to color them
-    for ( int i = 0; i <  cellSite.getCount(); i++ ){
-        int glblID = localToGlobalMappers.find(i)->second;
+    //colorOtherLocal loop first over inner cells to color them, this color ghost cell according to their real location
+    colorOtherLocal.resize( cellSite.getCountLevel1() );
+    const Array<int>& localToGlobal = _meshListLocal.at(0)->getLocalToGlobal(); 
+    for ( int i = 0; i <  cellSite.getCountLevel1(); i++ ){
+        int glblID = localToGlobal[i]; 
         colorOtherLocal[i] = colorGlbl[ glblID ];
     }
 
@@ -2164,9 +2165,12 @@ MeshPartitioner::set_local_global()
        MultiField::ArrayIndex ai( cellField.get(), site );
        Array<int>&  localCell = dynamic_cast< Array<int>& >( (*cellMultiField)[ai] ); 
        //global numbering inner cells
-       const int selfCount = site->getSelfCount();
-       for ( int i = 0; i < selfCount; i++ )
+       const int selfCount = site->getSelfCount(); 
+       const  map<int,int>&  localToGlobalMappers = _localToGlobalMappers.at(0);
+       for ( int i = 0; i < selfCount; i++ ){
           localCell[i] = offset + i;
+	  localCell[i] = localToGlobalMappers.find(i)->second;
+       }	  
        //update offset 
        offset += selfCount;
        //loop over boundaries and global number boundary cells
@@ -2177,7 +2181,8 @@ MeshPartitioner::set_local_global()
           const int iend = ibeg + bounGroupList[i]->site.getCount();
           int indx=0;
           for ( int ii = ibeg; ii < iend; ii++ ){
-             localCell[ faceCells(ii,1)] = offset + indx;
+	     const int cellID = faceCells(ii,1);
+             localCell[ cellID] =localToGlobalMappers.find(cellID)->second ;
              indx++;
           }
           //update offset
@@ -2772,16 +2777,33 @@ MeshPartitioner::level1_scatter_gather_cells()
 
         //create storage sites
         cellSite.setCountLevel1(gatherIndx);
+	
         const StorageSite& faceSite = _meshListLocal.at(id)->getFaces();
         _meshListLocal.at(id)->eraseConnectivity(cellSite, cellSite);
         _meshListLocal.at(id)->eraseConnectivity(cellSite, faceSite);
+	
         //uniquie
-        _meshListLocal.at(id)->uniqueFaceCells();
+	if ( !_meshList.at(0)->isMergedMesh() )
+           _meshListLocal.at(id)->uniqueFaceCells();
+	
+	_meshListLocal.at(id)->createScatterGatherCountsBuffer();
+	_meshListLocal.at(id)->syncCounts();
+	_meshListLocal.at(id)->recvScatterGatherCountsBufferLocal();
+
+	_meshListLocal.at(id)->createScatterGatherIndicesBuffer();
+	_meshListLocal.at(id)->syncIndices();
+	_meshListLocal.at(id)->recvScatterGatherIndicesBufferLocal();
+	
+	_meshListLocal.at(id)->createCellCellsGhostExt();
+	
     }
+
+
 
    if ( _debugMode ) 
       DEBUG_level1_scatter_gather_cells();
  }
+
 //scatter levels debugger
 void 
 MeshPartitioner::DEBUG_level1_scatter_gather_cells()

@@ -94,6 +94,11 @@ private:
    void  meshInterfaceMappers();
    void  getScatterArrays(const Array<int>& scatterArray, EntryVecMap& scatterArrayLocal, const StorageSite& site );
    void  getGatherArrays (const Array<int>& gatherArray , EntryVecMap& gatherArrayLocal , const StorageSite& site );
+   
+   void set_local_global();
+   int  global_offset();
+   
+   void setCellCellsGhostExt();
 
 
    void  debug_file_open( const string& fname );
@@ -136,6 +141,7 @@ private:
 
    ofstream   _debugFile;
    int        _procID;
+   int        _nPart;
 
    int _nmesh;
    MeshList _meshList;  

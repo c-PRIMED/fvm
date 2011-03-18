@@ -39,6 +39,7 @@ Mesh::Mesh(const int dimension):
   _isShell(false),
   _parentFaceGroupSite(0)
 {
+  _cells.setMesh(this);
   logCtor();
 }
 
@@ -1545,3 +1546,394 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
 
   return shellMesh;
 }
+
+
+
+ 
+#ifdef FVM_PARALLEL
+void 
+Mesh::createCellCellsGhostExt()
+{
+   createRowColSiteCRConn();
+   countCRConn();
+   addCRConn();
+   //CRConnectivityPrint(this->getCellCellsGhostExt(), 0, "cellCells");
+}
+  
+//fill countArray (both mesh and partition) and only gatherArray for mesh
+void
+Mesh::createScatterGatherCountsBuffer()
+{
+    //SENDING allocation and filling
+    const StorageSite& site     = this->getCells();
+    const CRConnectivity& cellCells = this->getCellCells();
+    const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+    foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+        const StorageSite&  oSite = *mpos.first;
+        //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+        const Array<int>& scatterArray = *mpos.second;
+        //key site
+        EntryIndex e(&site,&oSite);
+        //allocate array
+        _sendCounts[e] = shared_ptr< Array<int>   > ( new Array<int> (scatterArray.getLength()) ); 
+        //fill send array
+        Array<int>& sendArray = dynamic_cast< Array<int>& > ( *_sendCounts[e] );
+        for( int i = 0; i < scatterArray.getLength(); i++ ){
+            const int cellID = scatterArray[i];
+            sendArray[i] = cellCells.getCount(cellID);
+        }
+    }
+                     	     
+
+    //RECIEVING allocation (filling will be done by MPI Communication)
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+    const StorageSite&  oSite = *mpos.first;
+    const Array<int>& gatherArray = *mpos.second;
+    //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+    EntryIndex e(&oSite,&site);
+    //allocate array
+       _recvCounts[e] = shared_ptr< Array<int> > ( new Array<int> (gatherArray.getLength()) ); 
+    }
+       
+ }
+
+//fill countArray (both mesh and partition) and only gatherArray for mesh
+void
+Mesh::recvScatterGatherCountsBufferLocal()
+{
+   const StorageSite& site     = this->getCells();
+   const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+   foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+      const StorageSite&  oSite = *mpos.first;
+      //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+      EntryIndex e(&oSite,&site);
+      //allocate array
+      //mesh interface can be done know
+      if ( oSite.getGatherProcID() == - 1) {
+	   const Mesh& otherMesh = oSite.getMesh();
+          *_recvCounts[e] = otherMesh.getSendCounts(e);
+      } 
+   }
+}
+
+
+
+void
+Mesh::syncCounts()
+{
+    //SENDING
+    const int  request_size = get_request_size();
+    MPI::Request   request_send[ request_size ];
+    MPI::Request   request_recv[ request_size ];
+    int indxSend = 0;
+    int indxRecv = 0;
+    const StorageSite&    site      = this->getCells();
+    const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+    foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+        const StorageSite&  oSite = *mpos.first;
+        EntryIndex e(&site,&oSite);
+        //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+        ArrayBase& sendArray = *_sendCounts[e];
+
+        //loop over surround indices and itself
+        int to_where  = oSite.getGatherProcID();
+        if ( to_where != -1 ){
+           int mpi_tag = oSite.getTag();
+           request_send[indxSend++] =  
+                 MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+        }
+     }
+     //RECIEVING
+     //getting values from other meshes to fill g
+     const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+     foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+        const StorageSite&  oSite = *mpos.first;
+        //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+        EntryIndex e(&oSite,&site);
+        ArrayBase& recvArray = *_recvCounts[e];
+        int from_where       = oSite.getGatherProcID();
+        if ( from_where != -1 ){
+           int mpi_tag = oSite.getTag();
+           request_recv[indxRecv++] =  
+                  MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+        }
+     }
+
+     int count  = get_request_size();
+     MPI::Request::Waitall( count, request_recv );
+     MPI::Request::Waitall( count, request_send );
+
+}
+
+
+//fill scatterArray (both mesh and partition) and only gatherArray for mesh
+void    
+Mesh::createScatterGatherIndicesBuffer()
+{
+    //SENDING allocation and filling
+    const StorageSite& site     = this->getCells();
+    const CRConnectivity& cellCells = this->getCellCells();
+    const Array<int>&   localToGlobal = this->getLocalToGlobal();
+    const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+    foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+        const StorageSite&  oSite = *mpos.first;
+        const Array<int>& scatterArray = *mpos.second;
+        //loop over surround indices and itself for sizing
+        EntryIndex e(&site,&oSite);
+        //allocate array
+        int sendSize = 0;
+        for ( int i = 0; i < scatterArray.getLength(); i++ ){
+           sendSize += cellCells.getCount( scatterArray[i] );
+        }
+        _sendIndices[e] = shared_ptr< Array<int>   > ( new Array<int> (sendSize) ); 
+        //fill send array
+        Array<int>& sendArray = dynamic_cast< Array<int>&   > ( *_sendIndices[e] );
+        int indx = 0;
+        for( int i = 0; i < scatterArray.getLength(); i++ ){
+           const int cellID = scatterArray[i];
+           for ( int j = 0; j < cellCells.getCount(cellID); j++ ){
+              sendArray[indx] = localToGlobal[ cellCells(cellID,j) ];
+              indx++;
+           }
+        }
+    }
+    //RECIEVING allocation (filling will be done by MPI Communication)
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+       const StorageSite&  oSite = *mpos.first;
+       EntryIndex e(&oSite,&site);
+       const Array<int>& recvCounts   =  dynamic_cast< const Array<int>& > (*_recvCounts[e]);
+       int recvSize = 0;
+       for ( int i = 0; i < recvCounts.getLength(); i++ ){
+           recvSize += recvCounts[i];
+       }
+       //allocate array
+       _recvIndices[e] = shared_ptr< Array<int> > ( new Array<int>     (recvSize) ); 
+    }
+} 
+
+//fill scatterArray (both mesh and partition) and only gatherArray for mesh
+void
+Mesh::recvScatterGatherIndicesBufferLocal()
+{
+    //RECIEVING allocation (filling will be done by MPI Communication)
+    const StorageSite& site     = this->getCells();
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+       const StorageSite&  oSite = *mpos.first;
+       EntryIndex e(&oSite,&site);
+       //mesh interface can be done know
+       if ( oSite.getGatherProcID() == - 1) {
+          const Mesh& otherMesh = oSite.getMesh();
+          *_recvIndices[e] = otherMesh.getSendIndices(e);
+       } 
+    }
+}
+
+void
+Mesh::syncIndices()
+{
+    //SENDING
+    const int  request_size = get_request_size();
+    MPI::Request   request_send[ request_size ];
+    MPI::Request   request_recv[ request_size ];
+    int indxSend = 0;
+    int indxRecv = 0;
+    const StorageSite&    site      = this->getCells();
+    const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+    foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+        const StorageSite&  oSite = *mpos.first;
+        EntryIndex e(&site,&oSite);
+        //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+        ArrayBase& sendArray = *_sendIndices[e];
+        //loop over surround indices and itself
+        int to_where  = oSite.getGatherProcID();
+        if ( to_where != -1 ){
+           int mpi_tag = oSite.getTag();
+           request_send[indxSend++] =  
+                MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+        }
+    }
+    //RECIEVING
+    //getting values from other meshes to fill g
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+        const StorageSite&  oSite = *mpos.first;
+        EntryIndex e(&oSite,&site);
+        ArrayBase& recvArray = *_recvIndices[e];
+        int from_where       = oSite.getGatherProcID();
+        if ( from_where != -1 ){
+           int mpi_tag = oSite.getTag();
+           request_recv[indxRecv++] =  
+                  MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+        }
+     }
+
+     int count  = get_request_size();
+     MPI::Request::Waitall( count, request_recv );
+     MPI::Request::Waitall( count, request_send );
+
+}
+
+////////////////////////PRIVATE METHODS////////////////////////////
+void 
+Mesh::createRowColSiteCRConn()
+{ 
+    //counting interface counts
+    //counting interfaces
+    set<int> interfaceCells;
+    const Array<int>& localToGlobal = this->getLocalToGlobal();
+    const map<int,int>& globalToLocal = this->getGlobalToLocal();
+    const StorageSite& site = this->getCells();
+    const int originalCount = site.getCount();
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+    int countLevel0 = 0;
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+       const StorageSite&  oSite = *mpos.first;
+       const Array<int>& gatherArray = dynamic_cast< const Array<int>& > (*mpos.second);
+       countLevel0 += gatherArray.getLength();
+       EntryIndex e(&oSite,&site);
+       const Array<int>  & recv_indices = dynamic_cast< const Array<int>& > (*_recvIndices[e]);
+       const Array<int>  & recv_counts  = dynamic_cast< const Array<int>& > (*_recvCounts [e]);
+       //loop over gatherArray
+       int indx = 0;
+       for ( int i = 0; i < gatherArray.getLength(); i++ ){
+          const int nnb = recv_counts[i]; //give getCount() 
+          for ( int nb = 0; nb < nnb; nb++ ){
+              const int localID = globalToLocal.find( recv_indices[indx] )->second;
+              if ( localID >= originalCount ){
+                 interfaceCells.insert( recv_indices[indx] );
+              }
+              indx++;
+           }
+        }
+     }
+     const int selfCount   = site.getSelfCount();
+     const int countLevel1 = int(interfaceCells.size());
+     //ghost cells = sum of boundary and interfaces
+     const int nghost = getNumBounCells() +  countLevel0 + countLevel1;
+     _cellSiteGhostExt  = shared_ptr<StorageSite> ( new StorageSite(selfCount, nghost) );
+     //constructing new CRConnecitvity;
+     _cellCellsGhostExt = shared_ptr< CRConnectivity> ( new CRConnectivity( *_cellSiteGhostExt, *_cellSiteGhostExt) );
+}
+ 
+
+void
+Mesh::countCRConn()
+{
+    CRConnectivity& conn = *_cellCellsGhostExt;
+    conn.initCount();
+    const StorageSite& site = this->getCells();
+    const CRConnectivity& cellCells = this->getCellCells();
+    int ncount = site.getSelfCount() + getNumBounCells();
+    //loop over old connectivity (inner + boundary) 
+    for ( int i = 0; i < ncount; i++ ){
+       conn.addCount(i, cellCells.getCount(i) );
+    }
+    // now interfaces
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+       const StorageSite&  oSite = *mpos.first;
+       const Array<int>& gatherArray = dynamic_cast< const Array<int>& > (*mpos.second);
+       EntryIndex e(&oSite,&site);
+       const Array<int>& recv_counts = dynamic_cast< const Array<int>& > (*_recvCounts [e]);
+       //loop over gatherArray
+       for ( int i = 0; i < gatherArray.getLength(); i++ ){
+          conn.addCount(gatherArray[i], recv_counts[i] );
+       }
+    }
+    //finishCount
+    conn.finishCount();
+}
+
+void 
+Mesh::addCRConn()
+{
+    CRConnectivity& conn = *_cellCellsGhostExt;
+    const StorageSite& site = this->getCells();
+    const CRConnectivity& cellCells =this->getCellCells();
+    int ncount = site.getSelfCount() + getNumBounCells();
+    //first inner
+    //loop over olde connectivity (inner + boundary) 
+    for ( int i = 0; i < ncount; i++ ){
+       for ( int j = 0; j < cellCells.getCount(i); j++ ){
+          conn.add(i, cellCells(i,j));
+        }
+    }
+    
+    //CRConnectivityPrint( cellCells, 0, "cellCellsBeforeGhostExt");
+    
+    // now interfaces
+    const map<int,int>& globalToLocal = this->getGlobalToLocal();
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+       const StorageSite&  oSite = *mpos.first;
+       const Array<int>& gatherArray = dynamic_cast< const Array<int>& > (*mpos.second);
+       EntryIndex e(&oSite,&site);
+       const Array<int>& recv_counts  = dynamic_cast< const Array<int>& > (*_recvCounts [e]);
+       const Array<int>& recv_indices = dynamic_cast< const Array<int>& > (*_recvIndices[e]);
+       //loop over gatherArray
+       int indx = 0;
+       for ( int i = 0; i < gatherArray.getLength(); i++ ){
+          const int ncount = recv_counts[i];
+          for ( int j = 0; j < ncount; j++ ){
+             const int addCell = globalToLocal.find( recv_indices[indx] )->second;
+             conn.add(gatherArray[i], addCell);
+             indx++;
+          }
+       }
+    }
+    //finish add
+    conn.finishAdd();
+}
+
+int 
+Mesh::getNumBounCells()
+{
+    //boundary information has been stored
+    const FaceGroupList&  boundaryFaceGroups = this->getBoundaryFaceGroups();
+    int nBounElm = 0;
+    for ( int bounID = 0; bounID < int(boundaryFaceGroups.size()); bounID++){
+        nBounElm += boundaryFaceGroups.at(bounID)->site.getCount();
+    }
+    return nBounElm; 
+}
+
+
+int
+Mesh::get_request_size()
+{
+    int indx =  0;
+    const StorageSite& site = this->getCells();
+    const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+    foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+        const StorageSite&  oSite = *mpos.first;
+        //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+        if ( oSite.getGatherProcID() != -1 )
+           indx++;
+    }
+    return indx;
+}
+ 
+ 
+void
+Mesh::CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name )
+{
+    if ( MPI::COMM_WORLD.Get_rank() == procID ){
+        cout <<  name << " :" << endl;
+        const Array<int>& row = conn.getRow();
+        const Array<int>& col = conn.getCol();
+        for ( int i = 0; i < row.getLength()-1; i++ ){
+           cout << " i = " << i << ",    ";
+           for ( int j = row[i]; j < row[i+1]; j++ )
+              cout << col[j] << "  ";
+           cout << endl;
+        }
+    }
+}
+
+
+
+
+#endif

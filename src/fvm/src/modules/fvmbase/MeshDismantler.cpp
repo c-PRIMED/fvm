@@ -39,13 +39,13 @@ MeshDismantler::init()
   _cellFaces = _mesh.getAllFaceCells().getTranspose();
 #ifdef FVM_PARALLEL
    _procID = MPI::COMM_WORLD.Get_rank();
+   _nPart = MPI::COMM_WORLD.Get_size();
 #endif
    //number of meshes
    _nmesh = _mesh.getNumOfAssembleMesh();
    //giving mesh ids
-   int id = 9;
    int dim = _mesh.getDimension();
-   //construct meshes
+   //construct meshes	
    for ( int n = 0; n < _nmesh; n++ )
       _meshList.push_back( new Mesh( dim) );
 
@@ -61,7 +61,21 @@ MeshDismantler::init()
    setCoord();
    setMesh();
    setMappers();
-   //debug_print();
+   set_local_global();
+
+   for ( int n = 0; n < _nmesh; n++ ){
+      const StorageSite& cellSite = _meshList.at(n)->getCells();
+      const StorageSite& faceSite = _meshList.at(n)->getFaces();
+      _meshList.at(n)->eraseConnectivity(cellSite, cellSite);
+      _meshList.at(n)->eraseConnectivity(cellSite, faceSite);
+      //uniquie
+      _meshList.at(n)->uniqueFaceCells();
+   }  
+
+   
+   setCellCellsGhostExt();
+
+
 }
 
 //setting storagesite for cells
@@ -98,6 +112,42 @@ MeshDismantler::setCellsSite()
     for ( int id = 0; id < _nmesh; id++ )
          _cellSite.push_back( StorageSitePtr( new StorageSite(siteSelfCount[id], siteGhostCount[id] ) ) );
 
+    //we will first identify newly emerged cellcell2 cells
+    vector< set<int> >  gatherCells(_nmesh);
+    for ( int n = 0; n < faceSite.getCount(); n++ ){
+       int cell1 = faceCells(n,0);
+       int cell2 = faceCells(n,1);
+       //check if they are different colors, if so, it is mesh boundary, increment ghostCount for both meshes
+       if ( color[ cell1 ] != color[ cell2 ] ){
+          gatherCells[ color[cell1] ].insert(cell2);
+          gatherCells[ color[cell2] ].insert(cell1);
+       }
+    }
+    //now loop over gather cells and check its global cellCells connectivity
+    const multimap<int,int>& cellCellsGlobal = _mesh.getCellCellsGlobal();
+    const map<int,int>&      globalToLocal   = _mesh.getGlobalToLocal();
+    for ( int id = 0; id < _nmesh; id++ ){
+      const set<int>& cells = gatherCells[id];
+      set<int> cells2; //storing cellCells2 cells
+      int countLevel1 = _cellSite[id]->getCount();
+      //loop over gather cells
+      foreach(const set<int>::value_type& mpos, cells){
+          int cellID = mpos;
+	  multimap<int,int>::const_iterator it;
+          for ( it = cellCellsGlobal.equal_range(cellID).first; it != cellCellsGlobal.equal_range(cellID).second; it++ ){
+	     const int localID = globalToLocal.find(it->second)->second;
+	     //if it is not gathercells, we accep it, and color[localID] make sure that it doesn't pick inner cells 
+	     //and cells2 make sure that this is not counted twice
+	     if ( cells.count(localID) == 0 &&  color[localID] != id && cells2.count(localID) == 0){
+	        countLevel1++;
+		cells2.insert(localID);
+             }
+          }
+      }
+      //update countLevel1
+      // _cellSite[id]->setCountLevel1(countLevel1);
+   }
+    
 
 }
 
@@ -198,9 +248,9 @@ MeshDismantler::setFaceCells()
 
      faceCellsInit( localCellID );
      faceCellsAddInteriorFaces      ( localFaceID );
-     faceCellsAddPartitionInterfaces( localFaceID, localCellID );
-     faceCellsAddMeshInterfaces     ( localFaceID, localCellID );
      faceCellsAddBoundaryInterfaces ( localFaceID, localCellID );
+     faceCellsAddMeshInterfaces     ( localFaceID, localCellID );
+     faceCellsAddPartitionInterfaces( localFaceID, localCellID );
      faceCellsFinishAdd();
 
 }
@@ -251,7 +301,6 @@ MeshDismantler::faceCellsAddInteriorFaces( vector<int>& faceID )
 void
 MeshDismantler::faceCellsAddPartitionInterfaces( vector<int>& faceID, vector<int>& localCellID )
 {
-     _globalToLocalFaces.resize( _nmesh );
      //add partition interfaces
      int cellSelfCount  = _mesh.getCells().getSelfCount();
      int interfaceCount = _mesh.getInterfaceGroupCount();
@@ -267,7 +316,7 @@ MeshDismantler::faceCellsAddPartitionInterfaces( vector<int>& faceID, vector<int
          //filling faceOffset and ID
          for ( int id = 0; id < _nmesh; id++ ){
            _interfaceOffset[id].push_back( faceID[id]                );
-           _interfaceID    [id].push_back( interfaceGroupList[i]->id );
+           _interfaceID    [id].push_back( -interfaceGroupList[i]->id );
          }
 
          for ( int n = nBeg; n < nEnd; n++ ){
@@ -352,7 +401,7 @@ MeshDismantler::faceCellsAddMeshInterfaces(vector<int>& faceID, vector<int>& loc
                    int cell1  = faceCells(glblFaceID,0);
                    int cell2  = faceCells(glblFaceID,1);
                    int meshID1 = _globalCellToMeshID[cell1];
-                   int meshID2 = _globalCellToMeshID[cell2];
+//                   int meshID2 = _globalCellToMeshID[cell2];
                    if ( id == meshID1 ){
                      _faceCells.at(id)->add( faceID[id], _globalCellToLocal[cell1]  );
                      _faceCells.at(id)->add( faceID[id],  localCellID[id]);
@@ -375,6 +424,7 @@ MeshDismantler::faceCellsAddMeshInterfaces(vector<int>& faceID, vector<int>& loc
 void 
 MeshDismantler::faceCellsAddBoundaryInterfaces( vector<int>& faceID, vector<int>& localCellID )
 {
+    _globalToLocalFaces.resize( _nmesh );
      int cellSelfCount  = _mesh.getCells().getSelfCount();
      int boundaryCount  = _mesh.getBoundaryGroupCount();
      const CRConnectivity& faceCells = _mesh.getAllFaceCells();
@@ -433,9 +483,9 @@ MeshDismantler::setFaceNodes()
     vector<int> faceID(_nmesh,0); //track local mesh face ids
     faceNodesInit();
     faceNodesAddInteriorFaces      ( faceID );
-    faceNodesAddPartitionInterfaces( faceID );
-    faceNodesAddMeshInterfaces     ( faceID );
     faceNodesAddBoundaryInterfaces ( faceID );
+    faceNodesAddMeshInterfaces     ( faceID );
+    faceNodesAddPartitionInterfaces( faceID );
     faceNodesFinishAdd();
 }
 
@@ -718,10 +768,10 @@ MeshDismantler::setMesh()
 {
     //interior face group
     createInteriorFaceGroup();
-    //interface group
-    createInterFaceGroup();
     //boundary face group
     createBoundaryFaceGroup();
+    //interface group
+    createInterFaceGroup();
     //setting coordinates
     createCoords();
     //setting faceNodes CRConnecitivty
@@ -743,6 +793,7 @@ MeshDismantler::setSites()
        faceSite.setCount( _faceSite.at(id)->getCount() );
        int nGhost = _cellSite.at(id)->getCount()-_cellSite.at(id)->getSelfCount();
        cellSite.setCount( _cellSite.at(id)->getSelfCount(), nGhost );
+       cellSite.setCountLevel1( _cellSite.at(id)->getCountLevel1() );
        nodeSite.setCount( _nodeSite.at(id)->getCount() );
    }
 }
@@ -819,8 +870,8 @@ MeshDismantler::createFaceCells()
 void
 MeshDismantler::setMappers()
 {
-      partitionInterfaceMappers();
-      meshInterfaceMappers();
+       partitionInterfaceMappers();
+       meshInterfaceMappers();
 
 }
 
@@ -829,8 +880,8 @@ void
 MeshDismantler::partitionInterfaceMappers()
 {
      //mappers
-     const StorageSite::ScatterMap scatterMap = _mesh.getCells().getScatterMap();
-     const StorageSite::GatherMap  gatherMap  = _mesh.getCells().getGatherMap ();
+     const StorageSite::ScatterMap& scatterMap = _mesh.getCells().getScatterMap();
+     const StorageSite::GatherMap&  gatherMap  = _mesh.getCells().getGatherMap ();
      //interfaceList
      const FaceGroupList& faceGroupList = _mesh.getInterfaceGroups();
      //interfacecount
@@ -950,9 +1001,6 @@ MeshDismantler::getGatherArrays(const Array<int>& gatherArray, EntryVecMap& gath
 }
 
 
-
-
-
 //mesh interfaces
 void
 MeshDismantler::meshInterfaceMappers()
@@ -994,6 +1042,157 @@ MeshDismantler::meshInterfaceMappers()
 
 }
 
+//filling mesh localToGlobal and globalToLocal
+void 
+MeshDismantler::set_local_global()
+{
+    const int nmesh = int( _meshList.size() );
+    //creating cellID MultiField to use sync() operation
+    shared_ptr<MultiField>  cellMultiField = shared_ptr<MultiField>( new MultiField()    );
+    shared_ptr<Field>       cellField      = shared_ptr<Field>     ( new Field("globalcellID") );
+ 
+    for ( int id = 0; id < nmesh; id++ ){
+       const StorageSite* site = &_meshList[id]->getCells();
+       MultiField::ArrayIndex ai( cellField.get(), site );
+       shared_ptr<Array<int> > cIndex(new Array<int>(site->getCountLevel1()));
+       *cIndex = -1;
+       cellMultiField->addArray(ai,cIndex);
+    }
+
+    //global numbering 
+    const int globalOffset = global_offset();
+    int offset = globalOffset;
+    for ( int id = 0; id < nmesh; id++ ){
+       const Mesh&    mesh = *_meshList.at(id);
+       const StorageSite* site = &_meshList[id]->getCells();
+       MultiField::ArrayIndex ai( cellField.get(), site );
+       Array<int>&  localCell = dynamic_cast< Array<int>& >( (*cellMultiField)[ai] ); 
+       //global numbering inner cells
+       const int selfCount = site->getSelfCount();
+       for ( int i = 0; i < selfCount; i++ )
+          localCell[i] = offset + i;
+       //update offset 
+       offset += selfCount;
+       //loop over boundaries and global number boundary cells
+       const FaceGroupList&  bounGroupList = mesh.getBoundaryFaceGroups();
+       const CRConnectivity& faceCells  = mesh.getAllFaceCells();
+       for ( int i = 0; i < mesh.getBoundaryGroupCount(); i++ ){
+          const int ibeg = bounGroupList[i]->site.getOffset();
+          const int iend = ibeg + bounGroupList[i]->site.getCount();
+          int indx=0;
+          for ( int ii = ibeg; ii < iend; ii++ ){
+             localCell[ faceCells(ii,1)] = offset + indx;
+             indx++;
+          }
+          //update offset
+          offset += iend-ibeg;
+       }
+       
+    }
+
+    //sync opeartion
+    cellMultiField->sync();
+
+    //create localToGlobal array and assign it in Mesh
+    for ( int id = 0; id < nmesh; id++ ){
+       Mesh& mesh = *_meshList.at(id);
+       mesh.createLocalGlobalArray();
+       const StorageSite* site = &_meshList[id]->getCells();
+       MultiField::ArrayIndex ai( cellField.get(), site );
+       const Array<int>&  localCell = dynamic_cast< const Array<int>& >( (*cellMultiField)[ai] ); 
+       Array<int>& localToGlobal = mesh.getLocalToGlobal();
+       for ( int i = 0; i < localCell.getLength(); i++ ){
+          localToGlobal[i] = localCell[i];
+          assert( localCell[i] != -1 );
+       }
+
+       //copying GlobalToLocal
+       map<int,int>& globalToLocal = mesh.getGlobalToLocal();
+       for ( int i = 0; i < localCell.getLength(); i++ ){
+          globalToLocal[ localToGlobal[i] ] = i;
+       }
+    }
+
+}
+
+
+
+//get offset value for global numbering for each partition
+int
+MeshDismantler::global_offset()
+{
+   const int nmesh = int( _meshList.size() );
+   int count = 0;
+   //get offsets for 
+   for ( int id = 0; id < nmesh; id++ ){
+      const Mesh&    mesh = *_meshList.at(id);
+      const StorageSite& cellSite = mesh.getCells();
+      const FaceGroupList&  bounGroupList = mesh.getBoundaryFaceGroups();
+      int bounCount = 0;
+      for ( int i = 0; i < mesh.getBoundaryGroupCount(); i++ )
+         bounCount += bounGroupList[i]->site.getCount();
+      const int selfCount = cellSite.getSelfCount();
+      count += selfCount + bounCount;
+   }
+   
+   
+    //allocation holding each partiton offset
+    int *counts = new int[ _nPart ];
+   //MPI calls allgather to know offsets
+   MPI::COMM_WORLD.Allgather( &count, 1, MPI::INT, counts, 1, MPI::INT);
+   
+   //compute offsets for each partition
+   int offset = 0;
+   for ( int i = 0; i < _procID; i++ )
+      offset += counts[i];
+
+   //delete allocation counts
+   delete [] counts;
+   return offset;
+
+}
+
+
+   
+void
+MeshDismantler::setCellCellsGhostExt()
+{
+    //create sendCounts
+    for (int n=0; n<_nmesh; n++ ){
+       Mesh& mesh = *_meshList[n];
+       mesh.createScatterGatherCountsBuffer();
+       //partitioner interfaces
+       mesh.syncCounts();
+     }  
+
+    for (int n=0; n<_nmesh; n++ ){
+       Mesh& mesh = *_meshList[n];
+       //mesh interfaces
+       mesh.recvScatterGatherCountsBufferLocal();
+    }
+    
+    
+    //create indices
+    for (int n=0; n<_nmesh; n++ ){
+       Mesh& mesh = *_meshList[n];
+       mesh.createScatterGatherIndicesBuffer();
+       //partitioner interfaces
+       mesh.syncIndices();
+    }       
+    
+    for (int n=0; n<_nmesh; n++ ){
+       Mesh& mesh = *_meshList[n];
+       //mesh interfaces
+       mesh.recvScatterGatherIndicesBufferLocal();
+    }
+
+    //creaet cellCellsGhostExt
+    for (int n=0; n<_nmesh; n++ ){
+       Mesh& mesh = *_meshList[n];
+       //mesh interfaces
+       mesh.createCellCellsGhostExt();
+    }
+}
 
 void  
 MeshDismantler::debug_print()
@@ -1015,7 +1214,8 @@ MeshDismantler::debug_cell_site()
 {
     debug_file_open("cellSite");
     for ( int id = 0; id < _nmesh; id++ )
-        _debugFile <<"meshid = " << id <<  "   selfCount = " << _cellSite.at(id)->getSelfCount() << "   count = " << _cellSite.at(id)->getCount() << endl;
+        _debugFile <<"meshid = " << id <<  "   selfCount = " << _cellSite.at(id)->getSelfCount() << "   count = " << _cellSite.at(id)->getCount() <<
+                     "   countLevel1 = " << _cellSite.at(id)->getCountLevel1() <<endl;
     debug_file_close();
 }
 

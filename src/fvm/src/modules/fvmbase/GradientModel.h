@@ -111,7 +111,6 @@ public:
     
     const int cellCount = cells.getSelfCount();
     const int faceCount = faces.getSelfCount();
-      
     GradMatrixType* gMPtr(new GradMatrixType(mesh));
     GradMatrixType& gM = *gMPtr;
     GradientMatrixAssembler& assembler = gM.getPairWiseAssembler(faceCells);
@@ -256,11 +255,6 @@ public:
         }
     }
 
-#ifdef FVM_PARALLEL
-    //sync
-    gMPtr->sync();
-#endif
-    
     return shared_ptr<GradientMatrixBase>(gMPtr);
   }
 
@@ -414,10 +408,6 @@ public:
         }
     }
 
-#ifdef FVM_PARALLEL
-    //sync
-    gMPtr->sync();
-#endif
 
     return shared_ptr<GradientMatrixBase>(gMPtr);
   }
@@ -458,7 +448,9 @@ public:
   
   void compute()
   {
+ 
     const int numMeshes = _meshes.size();
+
     for (int n=0; n<numMeshes; n++)
     {
      
@@ -471,6 +463,7 @@ public:
 	
         const XArray& var = dynamic_cast<const XArray&>(_varField[cells]);
         shared_ptr<GradArray> gradPtr = gradMatrix.getGradient(var);
+
         _gradientField.addArray(cells,gradPtr);
 
         // fix values in cells adjacent to IB Faces
@@ -549,7 +542,37 @@ public:
 	    }
         }
     }
-
+    
+    
+    //create values
+    for (int n=0; n<numMeshes; n++ ){
+       const Mesh& mesh = *_meshes[n];
+       if (mesh.isShell() == false){
+          GradMatrixType& gradMatrix = getGradientMatrix(mesh,_geomFields);
+          gradMatrix.createScatterGatherValuesBuffer();
+          //partitioner interfaces
+          gradMatrix.syncValues();
+       }  
+    }       
+    
+//skipping for multiple meshes, we have to fixe it,    
+#if 0    
+    for (int n=0; n<numMeshes; n++ ){
+       const Mesh& mesh = *_meshes[n];
+       if (mesh.isShell() == false){
+          GradMatrixType& gradMatrix = getGradientMatrix(mesh,_geomFields);
+          //mesh interfaces
+          gradMatrix.recvScatterGatherValuesBufferLocal();
+       }   
+    }
+     
+#endif            
+    
+    typedef map<const Mesh*, shared_ptr<GradientMatrixBase> > gradType;
+    foreach( const gradType::value_type& mpos, _gradientMatricesMap){
+       GradientMatrixBase& gMtrxBase = *mpos.second;
+       gMtrxBase.syncLocal();
+    }
     _gradientField.syncLocal();
 
   }

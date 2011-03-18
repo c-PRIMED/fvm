@@ -9,6 +9,7 @@
 #include <cassert>
 
 class OneToOneIndexMap;
+class Mesh;
 
 class StorageSite
 {
@@ -18,6 +19,7 @@ public:
   typedef map<  const StorageSite*, shared_ptr< Array<int> >  > ScatterMap;
   typedef map<  const StorageSite*, shared_ptr< Array<int> >  > GatherMap;
   typedef map<  const StorageSite*, shared_ptr< Array<int> >  > CommonMap;
+  typedef map<  const StorageSite*, const Mesh* >        MeshMap;
   //finally cellcell2 keep information in global numbering
   //field or multifield 
   typedef map<  const StorageSite*, map<int,int> >   scatterIndex;  
@@ -45,7 +47,9 @@ public:
   void setScatterProcID( int proc_id ) { _scatterProcID = proc_id; }
   void setGatherProcID(  int proc_id ) { _gatherProcID  = proc_id; }
   void setTag( int tag) { _tag = tag;}
-
+   
+  void setMesh( const Mesh* mesh) { _meshMap[this] = mesh; }
+  const Mesh& getMesh() const { return *_meshMap[this]; }
 
   const ScatterMap&  getScatterMap() const { return _scatterMap;}
   const  GatherMap&   getGatherMap() const { return  _gatherMap;}
@@ -87,6 +91,8 @@ private:
   ScatterMap         _scatterMap;
   GatherMap          _gatherMap;
   CommonMap          _commonMap;
+  
+  mutable MeshMap            _meshMap;
 
   int _countLevel1;
   ScatterMap         _scatterMapLevel1;

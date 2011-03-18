@@ -52,6 +52,8 @@ public:
   typedef map<SSPair,shared_ptr<CRConnectivity> > ConnectivityMap;
   typedef pair<int,int>    PartIDMeshIDPair; //other Partition ID, other MeshID (always)
   typedef map< PartIDMeshIDPair, shared_ptr<StorageSite> > GhostCellSiteMap;
+  typedef pair<const StorageSite*, const StorageSite*> EntryIndex;
+  typedef map<EntryIndex, shared_ptr<ArrayBase> > GhostArrayMap;
 
   enum
     {
@@ -229,7 +231,28 @@ public:
 
   bool isMergedMesh() const { return _isAssembleMesh;}
   int  getNumOfAssembleMesh() const { return _numOfAssembleMesh;}
+  
+  
+  void createScatterGatherCountsBuffer();
+  void recvScatterGatherCountsBufferLocal();
+  void syncCounts();
+  
+  void createScatterGatherIndicesBuffer();
+  void recvScatterGatherIndicesBufferLocal();
+  void syncIndices();
+  
+  const CRConnectivity& getCellCellsGhostExt() const { return *_cellCellsGhostExt;}
+
+  const ArrayBase&      getSendCounts ( const EntryIndex& e ) const { return *_sendCounts[e];}
+  const ArrayBase&      getSendIndices( const EntryIndex& e ) const { return *_sendIndices[e];}
+
+  const ArrayBase&      getRecvCounts ( const EntryIndex& e ) const { return *_recvCounts[e];}
+  const ArrayBase&      getRecvIndices( const EntryIndex& e ) const { return *_recvIndices[e];}
+  
+  
  
+  void  createCellCellsGhostExt();
+   
   void uniqueFaceCells();
 
 
@@ -262,6 +285,8 @@ public:
   {return *_parentFaceGroupSite;}
   
 protected:
+   
+  
   const int _dimension;
 
   // used for persistence etc. Each mesh we create has a unique ID
@@ -298,6 +323,18 @@ protected:
 
   GhostCellSiteMap   _ghostCellSiteScatterMapLevel1;
   GhostCellSiteMap   _ghostCellSiteGatherMapLevel1;
+  
+  mutable GhostArrayMap   _sendCounts;
+  mutable GhostArrayMap   _recvCounts;
+  mutable GhostArrayMap   _sendIndices;
+  mutable GhostArrayMap   _recvIndices;
+
+  shared_ptr<StorageSite> _cellSiteGhostExt;
+  shared_ptr<CRConnectivity> _cellCellsGhostExt;
+  
+  
+  
+  
 
   shared_ptr< Array<int>  >        _localToGlobal;
   mutable map <int,int>        _globalToLocal;
@@ -317,6 +354,19 @@ protected:
   const StorageSite* _parentFaceGroupSite;
   
   static int _lastID;
+  
+private:
+  void createRowColSiteCRConn();
+  void countCRConn();
+  void addCRConn();
+  int  getNumBounCells();
+  int  get_request_size();
+  void CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name );
+      
+  
+  
+  
+  
 };
 
 typedef vector<Mesh*> MeshList;
