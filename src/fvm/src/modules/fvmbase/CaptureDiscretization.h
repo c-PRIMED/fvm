@@ -79,7 +79,7 @@ class CaptureDiscretization : public Discretization
        
     DiagArray& diag = matrix.getDiag();
 
-    OffDiagArray& offdiag = matrix.getOffDiag();
+    //OffDiagArray& offdiag = matrix.getOffDiag();
 
     const T_Scalar electron_effmass = _constants["electron_effmass"];
 

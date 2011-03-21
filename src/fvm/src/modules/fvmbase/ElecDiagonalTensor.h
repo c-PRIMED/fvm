@@ -214,7 +214,7 @@ public:
 
   static double doubleMeasure(const ElecDiagonalTensor& x)
   {
-   
+      return 0.0;
   }
 
   static ElecDiagonalTensor getNegativeUnity()

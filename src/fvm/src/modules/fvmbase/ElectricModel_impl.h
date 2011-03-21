@@ -536,7 +536,7 @@ public:
     {
         const Mesh& mesh = *_meshes[n];
 
-	const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
+	//const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
 	
 	//if (vc.vcType == "dielectric"){
         
@@ -1072,7 +1072,7 @@ public:
     vector<T> electron_trapdensity = _constants.electron_trapdensity;
     vector<T> electron_trapdepth = _constants.electron_trapdepth;
 
-    if (electron_trapdensity.size() != nTrap || electron_trapdepth.size()!=nTrap){
+    if (int(electron_trapdensity.size()) != nTrap || int(electron_trapdepth.size()) != nTrap){
       throw CException ("wrong trapdepth size!");
     }
 
@@ -1177,8 +1177,8 @@ public:
         const TArray& cP =
           dynamic_cast<const TArray&>(_electricFields.potential[cells]);
 
-	const Array<T>& cellToIBCoeff = mIC.getCoeff();
-	const Array<T>& particlesToIBCoeff = mIP.getCoeff();
+	//const Array<T>& cellToIBCoeff = mIC.getCoeff();
+	//const Array<T>& particlesToIBCoeff = mIP.getCoeff();
 	
 	ibP->zero();
 
@@ -1213,8 +1213,8 @@ public:
     const TArray& solidFaceAreaMag =
       dynamic_cast<const TArray&>(_geomFields.areaMag[solidFaces]);
 
-    const VectorT3Array& solidFaceCoordinate =
-      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[solidFaces]);
+    //const VectorT3Array& solidFaceCoordinate =
+    //  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[solidFaces]);
 
        
     const int numMeshes = _meshes.size();
@@ -1404,6 +1404,7 @@ bool
 ElectricModel<T>::advance(const int niter)
 {
   _impl->advance(niter);
+  return true;
 }
 
 template<class T>

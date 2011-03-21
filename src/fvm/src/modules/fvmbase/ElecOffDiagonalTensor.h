@@ -165,7 +165,7 @@ public:
 
   static double doubleMeasure(const ElecOffDiagonalTensor& x)
   {
-   
+     return 0.0;  
   }
 
   static ElecOffDiagonalTensor getNegativeUnity()

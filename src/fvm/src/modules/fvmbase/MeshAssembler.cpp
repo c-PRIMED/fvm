@@ -101,7 +101,7 @@ MeshAssembler::setInterfaceNodes()
    for ( unsigned int n = 0; n < _meshList.size(); n++ ){
       const Mesh& mesh = *(_meshList.at(n));
       const CRConnectivity& faceNodes = mesh.getAllFaceNodes();
-      const CRConnectivity& faceCells = mesh.getAllFaceCells();	
+      //const CRConnectivity& faceCells = mesh.getAllFaceCells();	
       const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();
       //looop over  interfaces
       for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ ){

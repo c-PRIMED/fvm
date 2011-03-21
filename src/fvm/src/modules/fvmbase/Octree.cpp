@@ -384,7 +384,6 @@ const int Octree::getNode(const VectorT3 coordinate,  double& shortestDistance)
 {
   static int node;
   double distance;
-  double closest;
   VectorT3 dR;
 
   //if it is a leaf, search all data in this leaf to find out the best distance

@@ -7,7 +7,6 @@
 %include "std_string.i"
 %import "Mesh.i"
 using namespace std;
-%template(IntVector) vector<int>;
 
 
 class MeshPartitioner{

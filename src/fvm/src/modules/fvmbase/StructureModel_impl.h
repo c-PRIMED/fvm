@@ -110,7 +110,7 @@ public:
   X applyNeumannBC(const int f,
                       const X& specifiedFlux) const
   {
-    const int c0 = _faceCells(f,0);
+    //const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
     const X fluxB = -_r[c1];
 
@@ -701,7 +701,7 @@ public:
 	  (_structureFields.deformation[cells]);
         const VectorT3Array& ww = dynamic_cast<const VectorT3Array&>
           (sField[sIndex]);
-	const T deformationURF(_options["deformationURF"]);
+        //const T deformationURF(_options["deformationURF"]);
 
 	const int nCells = cells.getCountLevel1();
 	for(int c=0;c<nCells;c++)

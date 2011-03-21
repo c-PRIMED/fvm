@@ -167,7 +167,7 @@ public:
     }
   
     const Array<int>& row = cellCells.getRow();
-    const Array<int>& col = cellCells.getCol();
+    //const Array<int>& col = cellCells.getCol();
     
     for(int nc=0; nc<cellCount; nc++)
     {
@@ -201,8 +201,8 @@ public:
             {
                 // make a copy
                 VectorT3 ds(coeffs[inb]);
-                const int j = col[inb];
-		T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);
+                //const int j = col[inb];
+		//T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);
                 coeffs[inb][0] = (Kxx*ds[0] + Kxy*ds[1] + Kxz*ds[2]);
                 coeffs[inb][1] = (Kxy*ds[0] + Kyy*ds[1] + Kyz*ds[2]);
                 coeffs[inb][2] = (Kxz*ds[0] + Kyz*ds[1] + Kzz*ds[2]);
@@ -327,7 +327,7 @@ public:
     }
 
     const Array<int>& row = cellCells.getRow();
-    const Array<int>& col = cellCells.getCol();
+    //const Array<int>& col = cellCells.getCol();
     
     for(int nc=0; nc<cellCount; nc++)
     {
@@ -354,8 +354,8 @@ public:
                 // make a copy
                 VectorT3 ds(coeffs[inb]);
 
-                const int j = col[inb];
-                T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);          
+                //const int j = col[inb];
+                //T_Scalar dsMag = mag(cellCentroid[j]-cellCentroid[nc]);          
 	
                 coeffs[inb][0] = (Kxx*ds[0] + Kxy*ds[1]);
                 coeffs[inb][1] = (Kxy*ds[0] + Kyy*ds[1]);

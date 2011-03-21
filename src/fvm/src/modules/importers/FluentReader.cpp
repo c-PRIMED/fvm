@@ -880,7 +880,7 @@ FluentReader::getMeshList()
       Mesh *mesh = cz.mesh;
       StorageSite& thisSite = mesh->getCells();
 
-      StorageSite& thisNodes = mesh->getNodes();
+      //StorageSite& thisNodes = mesh->getNodes();
       
       foreach(const GhostCellMapsMap::value_type& pos2, cz.ghostCellMaps)
       {

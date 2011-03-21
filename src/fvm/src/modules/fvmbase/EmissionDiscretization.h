@@ -81,7 +81,7 @@ class EmissionDiscretization : public Discretization
        
     DiagArray& diag = matrix.getDiag();
 
-    OffDiagArray& offdiag = matrix.getOffDiag();
+    //OffDiagArray& offdiag = matrix.getOffDiag();
     
     const T_Scalar optical_dielectric_constant = _constants["optical_dielectric_constant"];
     const T_Scalar temperature = _constants["OP_temperature"];

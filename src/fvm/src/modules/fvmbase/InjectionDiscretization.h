@@ -68,7 +68,7 @@ class InjectionDiscretization : public Discretization
     
     const int nCells = cells.getSelfCount();
 
-    const VectorT3Array& electric_field = dynamic_cast<const VectorT3Array&> (_electricField[cells]);
+    //const VectorT3Array& electric_field = dynamic_cast<const VectorT3Array&> (_electricField[cells]);
     
     const TArray& conduction_band = dynamic_cast<const TArray&> (_conductionbandField[cells]);
 
@@ -78,37 +78,37 @@ class InjectionDiscretization : public Discretization
 
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     
-    CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
+    //CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
      
     const VectorT3Array& cellCentroid = 
       dynamic_cast<const VectorT3Array& > (_geomFields.coordinate[cells]);
     
-    const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]);
+    //const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]);
     
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
     
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
        
-    DiagArray& diag = matrix.getDiag();
+    //DiagArray& diag = matrix.getDiag();
 
-    OffDiagArray& offdiag = matrix.getOffDiag();
+    //OffDiagArray& offdiag = matrix.getOffDiag();
 
     const T_Scalar dielectric_thickness = _constants["dielectric_thickness"];
     const T_Scalar electron_effmass = _constants["electron_effmass"];
     const T_Scalar temperature = _constants["OP_temperature"];
-    const T_Scalar substrate_voltage = _constants["substrate_voltage"];
-    const T_Scalar membrane_voltage = _constants["membrane_voltage"];
+    //const T_Scalar substrate_voltage = _constants["substrate_voltage"];
+    //const T_Scalar membrane_voltage = _constants["membrane_voltage"];
     const T_Scalar fermilevelsubstrate = -_constants["substrate_workfunction"] - _constants["substrate_voltage"];
-    const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - _constants["membrane_voltage"];
+    //const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - _constants["membrane_voltage"];
     const int subID = _constants["substrate_id"];
-    const int memID = _constants["membrane_id"];
+    //const int memID = _constants["membrane_id"];
     const int nLevel = _constants["nLevel"];
     const int normal = _constants["normal_direction"];
     const int nTrap = _constants["nTrap"];
 
-    T_Scalar fluxCoeff(0), fermilevel(0), scatterfactor(0);
-    T_Scalar sourceInjection(0);
+    T_Scalar fluxCoeff(0), fermilevel(0); // scatterfactor(0);
+    //T_Scalar sourceInjection(0);
     const T_Scalar alpha = 4.0 * PI * (electron_effmass*ME) / pow(H_SI, 3.0);
     //const T_Scalar energystep =  fabs(substrate_voltage - membrane_voltage) / nLevel;
     const T_Scalar energystep = 0.01;
@@ -191,7 +191,7 @@ class InjectionDiscretization : public Discretization
 	    }
 	    //--------------------------------------------------------------------------------------------
 	    for(int l=0; l < nLevel; l++){
-	      int low = indices[l];
+	      //int low = indices[l];
 	      int me = indices[l+1];
 	      //injection occurs where the sign of (en-conductionband) switches. 
 	      if ((en-conduction_band[me]) > 0) {
@@ -318,9 +318,9 @@ class InjectionDiscretization : public Discretization
 
  private:
   const GeomFields& _geomFields;
-  const Field& _conductionbandField;
   const Field& _varField;
   const Field& _electricField;
+  const Field& _conductionbandField;
   const ElectricModelConstants<T_Scalar>& _constants;
  
 

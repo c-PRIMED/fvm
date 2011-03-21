@@ -154,7 +154,7 @@ public:
     const Array<int>& ccRow = cellCells.getRow();
     const Array<int>& ccCol = cellCells.getCol();
 
-    const int nInteriorCells = cells.getSelfCount();
+    //const int nInteriorCells = cells.getSelfCount();
 
     const T zero(0.0);
     const T one(1.0);

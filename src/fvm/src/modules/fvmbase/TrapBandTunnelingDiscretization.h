@@ -77,7 +77,7 @@ class TrapBandTunnelingDiscretization : public Discretization
     const int normal = _constants["normal_direction"];
     const int nTrap = _constants["nTrap"];
     vector<T_Scalar> electron_trapdepth = _constants.electron_trapdepth;
-    const T_Scalar epsilon = 1e-18;
+    //const T_Scalar epsilon = 1e-18;
 
     const int nMax = 200;
     

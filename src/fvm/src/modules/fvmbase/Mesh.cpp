@@ -1783,7 +1783,7 @@ Mesh::createRowColSiteCRConn()
     //counting interface counts
     //counting interfaces
     set<int> interfaceCells;
-    const Array<int>& localToGlobal = this->getLocalToGlobal();
+    //const Array<int>& localToGlobal = this->getLocalToGlobal();
     const map<int,int>& globalToLocal = this->getGlobalToLocal();
     const StorageSite& site = this->getCells();
     const int originalCount = site.getCount();

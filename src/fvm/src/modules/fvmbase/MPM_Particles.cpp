@@ -309,7 +309,6 @@ const shared_ptr<Array<int> > MPM::readTypes(const char *file)
 {
     FILE *fp;
     int nMPM;
-    double vx=0, vy=0, vz=0;
     double x=0, y=0, z=0;
     int t=0;
     fp=fopen(file,"r");
@@ -337,7 +336,6 @@ const shared_ptr<Array<double> > MPM::readTemperatures(const char *file)
 {
     FILE *fp;
     int nMPM;
-    double vx=0, vy=0, vz=0;
     double x=0, y=0, z=0;
     int t=0;
     double temperature=0.0;

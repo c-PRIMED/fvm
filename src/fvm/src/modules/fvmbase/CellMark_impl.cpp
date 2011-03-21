@@ -30,7 +30,7 @@ void CellMark_Impl(Mesh& mesh, const GeomFields& geomFields, const string fileBa
           dynamic_cast<const VecD3Array&> (geomFields.coordinate[faces]);
    
    
-    const int writeOption = 1;
+    const int writeOption = 0;
     /***************************************************************************************/
     //---build up Octree for cell centroid---//
     

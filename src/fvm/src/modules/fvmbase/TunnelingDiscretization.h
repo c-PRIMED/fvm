@@ -70,7 +70,7 @@ class TunnelingDiscretization : public Discretization
 
     const StorageSite& cells = mesh.getCells();
 
-    const StorageSite& faces = mesh.getFaces();
+    //const StorageSite& faces = mesh.getFaces();
     
     const int nCells = cells.getSelfCount();      
 
@@ -100,15 +100,15 @@ class TunnelingDiscretization : public Discretization
     const T_Scalar electron_effmass = _constants["electron_effmass"];
     const T_Scalar temperature = _constants["OP_temperature"];
     const T_Scalar electron_capture_cross = _constants["electron_capture_cross"];
-    const T_Scalar voltage = _constants["voltage"];
-    const T_Scalar substrate_voltage = _constants["substrate_voltage"];
-    const T_Scalar membrane_voltage = _constants["membrane_voltage"];
+    //const T_Scalar voltage = _constants["voltage"];
+    //const T_Scalar substrate_voltage = _constants["substrate_voltage"];
+    //const T_Scalar membrane_voltage = _constants["membrane_voltage"];
     const T_Scalar fermilevelsubstrate = -_constants["substrate_workfunction"] - _constants["substrate_voltage"];
-    const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - _constants["membrane_voltage"];
-    const T_Scalar& dielectric_ionization = _constants["dielectric_ionization"];
+    //const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - _constants["membrane_voltage"];
+    //const T_Scalar& dielectric_ionization = _constants["dielectric_ionization"];
 
     const int subID = _constants["substrate_id"];
-    const int memID = _constants["membrane_id"];
+    //const int memID = _constants["membrane_id"];
     const int nLevel = _constants["nLevel"];
     const int normal = _constants["normal_direction"];
     const int nTrap = _constants["nTrap"];
@@ -116,11 +116,11 @@ class TunnelingDiscretization : public Discretization
     const vector<double> electron_trapdepth = _constants.electron_trapdepth;
     const vector<double> electron_trapdensity = _constants.electron_trapdensity;
 
-    if (electron_trapdepth.size() != nTrap || electron_trapdensity.size()!=nTrap)
+    if (int(electron_trapdepth.size()) != nTrap || int(electron_trapdensity.size()) != nTrap)
       throw CException ("trap depth vector size error!");
 
     T_Scalar fluxCoeff(0), fermilevel(0), scatterfactor(0);
-    T_Scalar sourceTunneling(0);
+    //T_Scalar sourceTunneling(0);
 
     for(int c=0; c < cells.getCount(); c++){
       transmission[c] = 0.0;
@@ -177,7 +177,7 @@ class TunnelingDiscretization : public Discretization
 		T_Scalar dX = cellCentroid[me][normal] - cellCentroid[low][normal];
 		T_Scalar factor = -2.0/HBAR_SI * sqrt(2.0*electron_effmass*ME*QE);
 		T_Scalar valueMe = PositiveValueOf( conduction_band[me] - en);
-		T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
+		//T_Scalar valueLow = PositiveValueOf( conduction_band[low] - en);
 		//T_Scalar avg = (valueMe + valueLow) / 2.0;
 		T_Scalar avg = valueMe;
 		T_Scalar exponent = factor * sqrt(avg) * fabs(dX);

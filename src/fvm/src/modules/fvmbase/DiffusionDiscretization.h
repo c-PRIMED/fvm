@@ -101,8 +101,8 @@ public:
 	      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);    
 	    const TArray& faceAreaMag =
 	      dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
-	    const VectorT3Array& faceCentroid =
-	      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
+	    //const VectorT3Array& faceCentroid =
+	    //  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
 	    CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
 	    
 	    //cout << "doing dielectric interface " << endl;
@@ -112,8 +112,8 @@ public:
 		const int c0 = faceCells(f,0);
 		const int c1 = faceCells(f,1);
 
-		T_Scalar vol0 = cellVolume[c0];
-		T_Scalar vol1 = cellVolume[c1];
+		//T_Scalar vol0 = cellVolume[c0];
+		//T_Scalar vol1 = cellVolume[c1];
         
 		VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
 		T_Scalar dsMag = mag(ds);
@@ -127,8 +127,8 @@ public:
 		const T_Scalar diffMetric = sign * faceAreaMag[f] / (dsMag + 0.5* _thickness);
 		const T_Scalar diffCoeff = faceDiffusivity*diffMetric;
                 
-		const T_Scalar volume = faceAreaMag[f] * _thickness;
-		const T_Scalar src = 1.0;
+		//const T_Scalar volume = faceAreaMag[f] * _thickness;
+		//const T_Scalar src = 1.0;
 		const X dFlux = diffCoeff*(xCell[c1]-xCell[c0]);
 		
 		rCell[c0] += dFlux;

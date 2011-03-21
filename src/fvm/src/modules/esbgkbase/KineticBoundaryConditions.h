@@ -156,7 +156,7 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
     const XArray& cx = dynamic_cast<const XArray&>(*_quadrature.cxPtr);
     const XArray& cy = dynamic_cast<const XArray&>(*_quadrature.cyPtr);
     const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr);
-    const int N1 = _quadrature.getNVCount();
+    //const int N1 = _quadrature.getNVCount();
     const int N2 = _quadrature.getNthetaCount();
     const int N3 = _quadrature.getNphiCount();
     const X dcx =  _quadrature.get_dcx();
@@ -354,9 +354,9 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
     const XArray& cx = dynamic_cast<const XArray&>(*_quadrature.cxPtr);
     const XArray& cy = dynamic_cast<const XArray&>(*_quadrature.cyPtr);
     const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr); 
-    const XArray& wts = dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
+    //const XArray& wts = dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
     XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
-    XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]); 
+    //XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]); 
     XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);   
     VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
     

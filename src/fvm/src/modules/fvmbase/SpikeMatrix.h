@@ -121,7 +121,7 @@ private:
   void setMatrix()
   {
      //forming A
-     const int  nr = 2 * _bandwidth + 1;
+     //const int  nr = 2 * _bandwidth + 1;
      const int  nc = _ncells;
      //diagonal filling
      for ( int i = 0; i < nc; i++ )

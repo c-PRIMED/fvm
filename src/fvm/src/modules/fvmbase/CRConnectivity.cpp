@@ -1,9 +1,6 @@
 #include "CRConnectivity.h"
 #include "CException.h"
 #include "StorageSite.h"
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
 #include <map>
 #include <set>
 
@@ -613,7 +610,6 @@ CRConnectivity::getLocalizedSubset(const StorageSite& newRowSite,
 void
 CRConnectivity::reorder( const Array<int>& indices ) 
 {
-  const Array<int>& myRow = *_row;
   Array<int>& myCol       = *_col;
 
   for ( int i = 0; i < myCol.getLength(); i++ )

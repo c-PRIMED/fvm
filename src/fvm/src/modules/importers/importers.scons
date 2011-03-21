@@ -13,4 +13,4 @@ env.createSwigModule('importers',sources=['FluentReader.i'],
                      deplibs=['fvmbase','importers','exporters','rlog'])
 
 env.createExe('testLinearSolver',['testLinearSolver.cpp'],
-              deplibs=['fvmbase','importers','exporters', 'rlog'])
+              deplibs=['fvmbase','importers','exporters', 'rlog', 'cgal'])

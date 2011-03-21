@@ -646,9 +646,8 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       
       //if matrix is singular, use distance weighted interpolation
       else {
-	//cout << "warning: IBM interpolation switched to distance weighted method for face " << n << endl;
-	//cout << "ibface  " << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
-	wtSum = 0.0;
+	cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
+	cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
 	  {	  
           const int c = ibFCCol[nc];
@@ -1447,7 +1446,7 @@ MeshMetricsCalculator<T>::init()
         const Mesh& mesh = *_meshes[n];
         const StorageSite& cells = mesh.getCells();
         const int cellCount = cells.getCountLevel1();
-        if (cellCount > 0 & !mesh.isShell())
+        if ( (cellCount > 0) && (!mesh.isShell()) )
         {
             shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCountLevel1()));
             *ibTypePtr = Mesh::IBTYPE_FLUID;

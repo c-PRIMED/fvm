@@ -693,8 +693,6 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
 
    const map<int,IntArrayPtr>& localToGlobalMap = mergeLS.getLocalToGlobal();
 
-   const Array<int>& globalToProc  = mergeLS.getGlobalToProc();
-   const Array<int>& globalToLocal = mergeLS.getGlobalToLocal();
    const Array<int>& selfCounts    = mergeLS.getSelfCounts();
 
    const map< int, IntArrayPtr >&  rowMap = mergeLS.getLocalConnRow();
@@ -704,7 +702,6 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
    const map<int, ArrayDblePtr> &  diagMap   =  mergeLS.getDiag();
    const map<int, ArrayDblePtr> & offDiagMap =  mergeLS.getOffDiag();
 
-   const MPI::Intracomm& comm = mergeLS.getComm();
    const set<int>& group = mergeLS.getGroup();
 
    shared_ptr<CRMatrix> mergeMatrix( new CRMatrix(conn) );
@@ -1219,9 +1216,7 @@ private:
        const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
 #endif
        //globaltolocal 
-       const StorageSite::GatherMap& gatherMapLevel0 = site.getGatherMap();
        const map<int,int>&   globalToLocal = _conn. getGlobalToLocalMapper();
-       const int selfCount     = site.getSelfCount();
        foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
           const StorageSite&  oSite = *mpos.first;
           EntryIndex e(&oSite,&site);

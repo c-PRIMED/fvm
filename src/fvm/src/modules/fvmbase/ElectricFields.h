@@ -20,7 +20,6 @@ struct ElectricFields
   Field total_charge;                 //source term in Poisson equation
                                      //which is the sum of charge[0] and charge[1]                           
   
-  Field force;
 
   //Fields in charge transport
 
@@ -40,6 +39,7 @@ struct ElectricFields
   Field zero;                     //used to fill in continuityResidual
   Field one;                      //used to fill in density
  
+  Field force;
   //Field oneD_column;              //the one dimensional columns used in dielectric chargine 1D model
   
 };

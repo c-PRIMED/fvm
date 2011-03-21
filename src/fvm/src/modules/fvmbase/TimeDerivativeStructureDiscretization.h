@@ -53,8 +53,8 @@ public:
     const TArray& density =
       dynamic_cast<const TArray&>(_densityField[cells]);
 
-    const TArray& cellVolume =
-      dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+    //const TArray& cellVolume =
+    //  dynamic_cast<const TArray&>(_geomFields.volume[cells]);
     
     const TArray& cellVolume0 =
       dynamic_cast<const TArray&>(_volume0Field[cells]);

@@ -110,8 +110,8 @@ public:
     const VectorT3Array& cellCentroid =
       dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
 
-    const VectorT3Array& faceCentroid =
-      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
+    //const VectorT3Array& faceCentroid =
+    //  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
 
 
     const TArray& cellVolume =
@@ -150,7 +150,7 @@ public:
     const Array<int>& ccRow = cellCells.getRow();
     const Array<int>& ccCol = cellCells.getCol();
 
-    const int nInteriorCells = cells.getSelfCount();
+    //const int nInteriorCells = cells.getSelfCount();
 
     const T two(2.0);
     const T three(3.0);

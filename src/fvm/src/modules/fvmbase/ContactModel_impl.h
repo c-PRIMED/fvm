@@ -45,8 +45,8 @@ class ContactModel<T>::Impl
      const VectorT3Array& solidFaceCentroid =
        dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[solidFaces]);
 
-     const VectorT3Array& solidFaceArea =
-      dynamic_cast<const VectorT3Array&>(_geomFields.area[solidFaces]);
+     //const VectorT3Array& solidFaceArea =
+     // dynamic_cast<const VectorT3Array&>(_geomFields.area[solidFaces]);
 
      const TArray& solidFaceAreaMag =
       dynamic_cast<const TArray&>(_geomFields.areaMag[solidFaces]);

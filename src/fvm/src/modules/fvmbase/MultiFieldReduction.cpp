@@ -212,7 +212,6 @@ MultiFieldReduction::sync()
 #ifdef FVM_PARALLEL
    ArrayMap::const_iterator it;
    for ( it = _arrays.begin(); it != _arrays.end(); it++ ){
-        const Field& field = *(it->first);
          ArrayBase&  myArray = *(it->second);
          int count = myArray.getDataSize() / sizeof(double); 
          MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, myArray.getData(), count, MPI::DOUBLE, MPI::SUM);

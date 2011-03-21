@@ -69,7 +69,7 @@ public:
     
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
 
-    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+    //const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
 
     const int nTrap = _nTrap;
 
