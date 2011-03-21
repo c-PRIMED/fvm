@@ -171,10 +171,11 @@ public:
     return *_pairWiseAssemblers[&pairs];
   }
   
-#ifdef FVM_PARALLEL
+
     //fill scatterArray (both mesh and partition) and only gatherArray for mesh
     void    createScatterGatherValuesBuffer()
     {
+#ifdef FVM_PARALLEL
        //SENDING allocation and filling
        const StorageSite& site     = _mesh.getCells();
        const CRConnectivity& cellCells = _mesh.getCellCells(); 
@@ -216,11 +217,13 @@ public:
           //allocate array
           _recvValues [e] = shared_ptr< Array<Coord> > ( new Array<Coord> (recvSize) );
        }
+#endif
     }
     
        //fill scatterArray (both mesh and partition) and only gatherArray for mesh
     void    recvScatterGatherValuesBufferLocal()
     {
+#ifdef FVM_PARALLEL
        //RECIEVING allocation (filling will be done by MPI Communication)
        const StorageSite& site     = _mesh.getCells();
        const StorageSite::GatherMap& gatherMap = site.getGatherMap();
@@ -233,11 +236,13 @@ public:
              *_recvValues[e] = *_sendValues [e];
           } 
        }
+#endif
     }
 
     //sending values
     void syncValues()
     {
+#ifdef FVM_PARALLEL
           //SENDING
           const int  request_size = get_request_size();
           MPI::Request   request_send[ request_size ];
@@ -310,10 +315,10 @@ public:
              }
           }
 
-
+#endif
     }
 
-#endif
+
 
 
 

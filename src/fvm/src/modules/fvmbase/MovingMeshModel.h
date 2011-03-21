@@ -257,7 +257,7 @@ public:
 	      const T onepointfive(1.5);
 	      const T onesixth(1./6.);
 	      const T onethird(1./3.);
-	      T temp;
+	      T temp(0.);
 	      for(int i=0;i<nNodes;i++)
 	      {
 		  VectorT3 dr = (nodeCoord[i] - nodeCoordN1[i]);

@@ -1550,20 +1550,22 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
 
 
  
-#ifdef FVM_PARALLEL
 void 
 Mesh::createCellCellsGhostExt()
 {
+#ifdef FVM_PARALLEL
    createRowColSiteCRConn();
    countCRConn();
    addCRConn();
    //CRConnectivityPrint(this->getCellCellsGhostExt(), 0, "cellCells");
+#endif   
 }
   
 //fill countArray (both mesh and partition) and only gatherArray for mesh
 void
 Mesh::createScatterGatherCountsBuffer()
 {
+#ifdef FVM_PARALLEL
     //SENDING allocation and filling
     const StorageSite& site     = this->getCells();
     const CRConnectivity& cellCells = this->getCellCells();
@@ -1595,13 +1597,14 @@ Mesh::createScatterGatherCountsBuffer()
     //allocate array
        _recvCounts[e] = shared_ptr< Array<int> > ( new Array<int> (gatherArray.getLength()) ); 
     }
-       
+#endif       
  }
 
 //fill countArray (both mesh and partition) and only gatherArray for mesh
 void
 Mesh::recvScatterGatherCountsBufferLocal()
 {
+#ifdef FVM_PARALLEL
    const StorageSite& site     = this->getCells();
    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
@@ -1615,6 +1618,7 @@ Mesh::recvScatterGatherCountsBufferLocal()
           *_recvCounts[e] = otherMesh.getSendCounts(e);
       } 
    }
+#endif   
 }
 
 
@@ -1622,6 +1626,7 @@ Mesh::recvScatterGatherCountsBufferLocal()
 void
 Mesh::syncCounts()
 {
+#ifdef FVM_PARALLEL
     //SENDING
     const int  request_size = get_request_size();
     MPI::Request   request_send[ request_size ];
@@ -1664,6 +1669,8 @@ Mesh::syncCounts()
      MPI::Request::Waitall( count, request_recv );
      MPI::Request::Waitall( count, request_send );
 
+#endif
+
 }
 
 
@@ -1671,6 +1678,7 @@ Mesh::syncCounts()
 void    
 Mesh::createScatterGatherIndicesBuffer()
 {
+#ifdef FVM_PARALLEL
     //SENDING allocation and filling
     const StorageSite& site     = this->getCells();
     const CRConnectivity& cellCells = this->getCellCells();
@@ -1711,12 +1719,14 @@ Mesh::createScatterGatherIndicesBuffer()
        //allocate array
        _recvIndices[e] = shared_ptr< Array<int> > ( new Array<int>     (recvSize) ); 
     }
+#endif
 } 
 
 //fill scatterArray (both mesh and partition) and only gatherArray for mesh
 void
 Mesh::recvScatterGatherIndicesBufferLocal()
 {
+#ifdef FVM_PARALLEL
     //RECIEVING allocation (filling will be done by MPI Communication)
     const StorageSite& site     = this->getCells();
     const StorageSite::GatherMap& gatherMap = site.getGatherMap();
@@ -1729,11 +1739,13 @@ Mesh::recvScatterGatherIndicesBufferLocal()
           *_recvIndices[e] = otherMesh.getSendIndices(e);
        } 
     }
+#endif    
 }
 
 void
 Mesh::syncIndices()
 {
+#ifdef FVM_PARALLEL
     //SENDING
     const int  request_size = get_request_size();
     MPI::Request   request_send[ request_size ];
@@ -1773,6 +1785,7 @@ Mesh::syncIndices()
      int count  = get_request_size();
      MPI::Request::Waitall( count, request_recv );
      MPI::Request::Waitall( count, request_send );
+#endif     
 
 }
 
@@ -1920,6 +1933,7 @@ Mesh::get_request_size()
 void
 Mesh::CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name )
 {
+#ifdef FVM_PARALLEL
     if ( MPI::COMM_WORLD.Get_rank() == procID ){
         cout <<  name << " :" << endl;
         const Array<int>& row = conn.getRow();
@@ -1931,9 +1945,6 @@ Mesh::CRConnectivityPrint( const CRConnectivity& conn, int procID, const string&
            cout << endl;
         }
     }
+#endif    
 }
 
-
-
-
-#endif
