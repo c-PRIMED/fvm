@@ -5,6 +5,7 @@
 using namespace std;
 
 %include "FloatVarDict.i"
+%include "Model.i"
 
 template <class T>
 struct ThermalBC : public FloatVarDict<T>

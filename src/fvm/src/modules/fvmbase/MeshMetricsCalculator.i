@@ -1,10 +1,12 @@
 %{
 #include "MeshMetricsCalculator.h"
 #include "atype.h"
+#include "Model.h"
 %}
 
 using namespace std;
 
+%include "Model.i"
 
 template<class T>
 class MeshMetricsCalculator : public Model

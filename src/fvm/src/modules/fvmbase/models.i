@@ -19,10 +19,8 @@ using namespace std;
 %include "ThermalFields.h"
 %include "ContactFields.h"
 %include "atype.i"
-%include "Model.i"
 
 %include "MeshMetricsCalculator.i"
-
 %include "ThermalModel.i"
 %include "ContactModel.i"
 
