@@ -110,4 +110,43 @@ CAVITY_HEXA10K_PROCS17_JACOBISOLVER ./ptest.py  --np 17 --script testThermalPara
 CAVITY_HEXA10K_PROCS29_JACOBISOLVER ./ptest.py  --np 29 --script testThermalParallelJacobi.py --type=hexa --in ../cav_hexa.cas --golden SOLVER_JACOBI/HEXA_10K/proc29  --outdir TESTDIR
 CAVITY_HEXA10K_PROCS47_JACOBISOLVER ./ptest.py  --np 47 --script testThermalParallelJacobi.py --type=hexa --in ../cav_hexa.cas --golden SOLVER_JACOBI/HEXA_10K/proc47  --outdir TESTDIR
 
+STRUCTURAL_PROCS1_QUAD25_JACOBISOLVER   ./ptest.py  --np 1  --script beamTest.py --type=quad --in ../parallel0.cas --golden STRUCTURAL_SOLVER_JACOBI/QUAD25/proc1   --outdir TESTDIR
+STRUCTURAL_PROCS2_QUAD25_JACOBISOLVER   ./ptest.py  --np 2  --script beamTest.py --type=quad --in ../parallel0.cas --golden STRUCTURAL_SOLVER_JACOBI/QUAD25/proc2   --outdir TESTDIR
+STRUCTURAL_PROCS3_QUAD25_JACOBISOLVER   ./ptest.py  --np 3  --script beamTest.py --type=quad --in ../parallel0.cas --golden STRUCTURAL_SOLVER_JACOBI/QUAD25/proc3   --outdir TESTDIR
+STRUCTURAL_PROCS4_QUAD25_JACOBISOLVER   ./ptest.py  --np 4  --script beamTest.py --type=quad --in ../parallel0.cas --golden STRUCTURAL_SOLVER_JACOBI/QUAD25/proc4   --outdir TESTDIR
+STRUCTURAL_PROCS5_QUAD25_JACOBISOLVER   ./ptest.py  --np 5  --script beamTest.py --type=quad --in ../parallel0.cas --golden STRUCTURAL_SOLVER_JACOBI/QUAD25/proc5   --outdir TESTDIR
+STRUCTURAL_PROCS8_QUAD25_JACOBISOLVER   ./ptest.py  --np 8  --script beamTest.py --type=quad --in ../parallel0.cas --golden STRUCTURAL_SOLVER_JACOBI/QUAD25/proc8   --outdir TESTDIR
+STRUCTURAL_PROCS9_QUAD25_JACOBISOLVER   ./ptest.py  --np 9  --script beamTest.py --type=quad --in ../parallel0.cas --golden STRUCTURAL_SOLVER_JACOBI/QUAD25/proc9   --outdir TESTDIR
+STRUCTURAL_PROCS10_QUAD25_JACOBISOLVER  ./ptest.py  --np 10 --script beamTest.py --type=quad --in ../parallel0.cas --golden STRUCTURAL_SOLVER_JACOBI/QUAD25/proc10  --outdir TESTDIR
+
+
+STRUCTURAL_PROCS1_TRI_JACOBISOLVER   ./ptest.py  --np 1  --script beamTest.py --type=tri --in ../parallel_1_tria.cas --golden STRUCTURAL_SOLVER_JACOBI/TRI/proc1   --outdir TESTDIR
+STRUCTURAL_PROCS2_TRI_JACOBISOLVER   ./ptest.py  --np 2  --script beamTest.py --type=tri --in ../parallel_1_tria.cas --golden STRUCTURAL_SOLVER_JACOBI/TRI/proc2   --outdir TESTDIR
+STRUCTURAL_PROCS3_TRI_JACOBISOLVER   ./ptest.py  --np 3  --script beamTest.py --type=tri --in ../parallel_1_tria.cas --golden STRUCTURAL_SOLVER_JACOBI/TRI/proc3   --outdir TESTDIR
+STRUCTURAL_PROCS4_TRI_JACOBISOLVER   ./ptest.py  --np 4  --script beamTest.py --type=tri --in ../parallel_1_tria.cas --golden STRUCTURAL_SOLVER_JACOBI/TRI/proc4   --outdir TESTDIR
+STRUCTURAL_PROCS5_TRI_JACOBISOLVER   ./ptest.py  --np 5  --script beamTest.py --type=tri --in ../parallel_1_tria.cas --golden STRUCTURAL_SOLVER_JACOBI/TRI/proc5   --outdir TESTDIR
+STRUCTURAL_PROCS8_TRI_JACOBISOLVER   ./ptest.py  --np 8  --script beamTest.py --type=tri --in ../parallel_1_tria.cas --golden STRUCTURAL_SOLVER_JACOBI/TRI/proc8   --outdir TESTDIR
+STRUCTURAL_PROCS9_TRI_JACOBISOLVER   ./ptest.py  --np 9  --script beamTest.py --type=tri --in ../parallel_1_tria.cas --golden STRUCTURAL_SOLVER_JACOBI/TRI/proc9   --outdir TESTDIR
+STRUCTURAL_PROCS10_TRI_JACOBISOLVER  ./ptest.py  --np 10 --script beamTest.py --type=tri --in ../parallel_1_tria.cas --golden STRUCTURAL_SOLVER_JACOBI/TRI/proc10  --outdir TESTDIR
+
+
+STRUCTURAL_PROCS1_HEXA_JACOBISOLVER   ./ptest.py  --np 1  --script beamTest3D.py --type=hexa --in ../parallel3d_hexa.cas --golden STRUCTURAL_SOLVER_JACOBI/HEXA/proc1   --outdir TESTDIR
+STRUCTURAL_PROCS2_HEXA_JACOBISOLVER   ./ptest.py  --np 2  --script beamTest3D.py --type=hexa --in ../parallel3d_hexa.cas --golden STRUCTURAL_SOLVER_JACOBI/HEXA/proc2   --outdir TESTDIR
+STRUCTURAL_PROCS3_HEXA_JACOBISOLVER   ./ptest.py  --np 3  --script beamTest3D.py --type=hexa --in ../parallel3d_hexa.cas --golden STRUCTURAL_SOLVER_JACOBI/HEXA/proc3   --outdir TESTDIR
+STRUCTURAL_PROCS4_HEXA_JACOBISOLVER   ./ptest.py  --np 4  --script beamTest3D.py --type=hexa --in ../parallel3d_hexa.cas --golden STRUCTURAL_SOLVER_JACOBI/HEXA/proc4   --outdir TESTDIR
+STRUCTURAL_PROCS5_HEXA_JACOBISOLVER   ./ptest.py  --np 5  --script beamTest3D.py --type=hexa --in ../parallel3d_hexa.cas --golden STRUCTURAL_SOLVER_JACOBI/HEXA/proc5   --outdir TESTDIR
+STRUCTURAL_PROCS8_HEXA_JACOBISOLVER   ./ptest.py  --np 8  --script beamTest3D.py --type=hexa --in ../parallel3d_hexa.cas --golden STRUCTURAL_SOLVER_JACOBI/HEXA/proc8   --outdir TESTDIR
+STRUCTURAL_PROCS9_HEXA_JACOBISOLVER   ./ptest.py  --np 9  --script beamTest3D.py --type=hexa --in ../parallel3d_hexa.cas --golden STRUCTURAL_SOLVER_JACOBI/HEXA/proc9   --outdir TESTDIR
+STRUCTURAL_PROCS10_HEXA_JACOBISOLVER  ./ptest.py  --np 10 --script beamTest3D.py --type=hexa --in ../parallel3d_hexa.cas --golden STRUCTURAL_SOLVER_JACOBI/HEXA/proc10  --outdir TESTDIR
+
+STRUCTURAL_PROCS1_TETRA_JACOBISOLVER   ./ptest.py  --np 1  --script beamTest3D.py --type=tetra --in ../parallel3d_tet.cas --golden STRUCTURAL_SOLVER_JACOBI/TETRA/proc1   --outdir TESTDIR
+STRUCTURAL_PROCS2_TETRA_JACOBISOLVER   ./ptest.py  --np 2  --script beamTest3D.py --type=tetra --in ../parallel3d_tet.cas --golden STRUCTURAL_SOLVER_JACOBI/TETRA/proc2   --outdir TESTDIR
+STRUCTURAL_PROCS3_TETRA_JACOBISOLVER   ./ptest.py  --np 3  --script beamTest3D.py --type=tetra --in ../parallel3d_tet.cas --golden STRUCTURAL_SOLVER_JACOBI/TETRA/proc3   --outdir TESTDIR
+STRUCTURAL_PROCS4_TETRA_JACOBISOLVER   ./ptest.py  --np 4  --script beamTest3D.py --type=tetra --in ../parallel3d_tet.cas --golden STRUCTURAL_SOLVER_JACOBI/TETRA/proc4   --outdir TESTDIR
+STRUCTURAL_PROCS5_TETRA_JACOBISOLVER   ./ptest.py  --np 5  --script beamTest3D.py --type=tetra --in ../parallel3d_tet.cas --golden STRUCTURAL_SOLVER_JACOBI/TETRA/proc5   --outdir TESTDIR
+STRUCTURAL_PROCS8_TETRA_JACOBISOLVER   ./ptest.py  --np 8  --script beamTest3D.py --type=tetra --in ../parallel3d_tet.cas --golden STRUCTURAL_SOLVER_JACOBI/TETRA/proc8   --outdir TESTDIR
+STRUCTURAL_PROCS9_TETRA_JACOBISOLVER   ./ptest.py  --np 9  --script beamTest3D.py --type=tetra --in ../parallel3d_tet.cas --golden STRUCTURAL_SOLVER_JACOBI/TETRA/proc9   --outdir TESTDIR
+STRUCTURAL_PROCS10_TETRA_JACOBISOLVER  ./ptest.py  --np 10 --script beamTest3D.py --type=tetra --in ../parallel3d_tet.cas --golden STRUCTURAL_SOLVER_JACOBI/TETRA/proc10  --outdir TESTDIR
+
+
 
