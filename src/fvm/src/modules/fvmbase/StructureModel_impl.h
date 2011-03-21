@@ -631,7 +631,9 @@ public:
 
 #ifdef FVM_PARALLEL
      int count = 1;
-     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &allNeumann, count, MPI::INT, MPI::LAND);
+     int allNeumannInt = int( allNeumann);
+     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &allNeumannInt, count, MPI::INT, MPI::PROD);
+     allNeumann = bool(allNeumannInt);
 #endif
 
 
