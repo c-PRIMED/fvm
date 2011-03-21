@@ -11,6 +11,9 @@ struct PlateBC : public FloatVarDict<T>
       this->defineVar("specifiedXRotation",T(0.0));
       this->defineVar("specifiedYRotation",T(0.0));
       this->defineVar("specifiedZDeformation",T(0.0));
+      this->defineVar("specifiedXShear",T(0.0));
+      this->defineVar("specifiedYShear",T(0.0));
+      this->defineVar("specifiedZShear",T(0.0));
   }
   string bcType;
 };

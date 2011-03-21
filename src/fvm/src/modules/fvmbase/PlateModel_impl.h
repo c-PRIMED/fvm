@@ -68,7 +68,9 @@ public:
     _areaMagField(geomFields.areaMag),
     _faceAreaMag(dynamic_cast<const TArray&>(_areaMagField[_faces])),
     _areaField(geomFields.area),
-    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces]))
+    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces])),
+    _faceCoord(dynamic_cast<const VectorT3Array&>(geomFields.coordinate[_faces])),
+    _cellCoord(dynamic_cast<const VectorT3Array&>(geomFields.coordinate[_cells]))
   {}
   
   X applyDirichletBC(int f, const X& bValue) const
@@ -102,6 +104,38 @@ public:
     return fluxB;
   }
   
+  X applyCantileverBC(const int f,
+		      const X& specifiedFlux) const
+  {
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1);
+    const X fluxB = -_r[c1];
+
+    VectorT3 dzeta1 = _faceCoord[f]-_cellCoord[c1];
+
+    // the current value of flux and its Jacobians
+    X dFlux;
+    dFlux[0]= (-(specifiedFlux[0]*_faceArea[f][0] + 
+		 specifiedFlux[1]*_faceArea[f][1])*dzeta1[0]) 
+      - fluxB[0];
+    dFlux[1]= (-(specifiedFlux[0]*_faceArea[f][0] +
+                 specifiedFlux[1]*_faceArea[f][1])*dzeta1[1])
+      - fluxB[1];
+    dFlux[2]= (specifiedFlux[0]*_faceArea[f][0] +
+	       specifiedFlux[1]*_faceArea[f][1])
+      - fluxB[2];
+
+    // setup the equation for the boundary value; the coefficients
+    // are already computed so just need to set the rhs
+    _r[c1] = dFlux;
+
+    // _dRdX.eliminate(c1,_r);
+    // mark this row as a "boundary" row so that we will update it
+    // after the overall system is solved
+    _dRdX.setBoundary(c1);
+    return fluxB;
+  }
+
   X applyNeumannBC(const int f,
                       const X& specifiedFlux) const
   {
@@ -231,6 +265,8 @@ protected:
   const TArray& _faceAreaMag;
   const Field& _areaField;
   const VectorT3Array& _faceArea;
+  const VectorT3Array& _faceCoord;
+  const VectorT3Array& _cellCoord;
 };
 
 template<class T>
@@ -593,17 +629,17 @@ public:
 
 		}
 	    }
-            else if (bc.bcType == "SpecifiedDistForce")
+            else if (bc.bcType == "SpecifiedShear")
 	    {
                 FloatValEvaluator<VectorT3>
-                  bDistForce(bc.getVal("specifiedXDistForce"),
-			     bc.getVal("specifiedYDistForce"),
-			     bc.getVal("specifiedZDistForce"),
-			     faces);
+                  bShear(bc.getVal("specifiedXShear"),
+			 bc.getVal("specifiedYShear"),
+			 bc.getVal("specifiedZShear"),
+			 faces);
                 for(int f=0; f<nFaces; f++)
 		{
-		    
-                    fluxB += gbc.applyNeumannBC(f,bDistForce[f]);
+		        
+                    fluxB += gbc.applyCantileverBC(f,bShear[f]);
 
 		}
 	    }
