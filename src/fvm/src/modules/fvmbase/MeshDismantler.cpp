@@ -1139,7 +1139,9 @@ MeshDismantler::global_offset()
     //allocation holding each partiton offset
     int *counts = new int[ _nPart ];
    //MPI calls allgather to know offsets
+#ifdef FVM_PARALLEL   
    MPI::COMM_WORLD.Allgather( &count, 1, MPI::INT, counts, 1, MPI::INT);
+#endif   
    
    //compute offsets for each partition
    int offset = 0;
