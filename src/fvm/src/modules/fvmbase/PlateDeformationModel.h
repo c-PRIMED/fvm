@@ -134,12 +134,11 @@ public:
   // update node coordinates and face velocity for the boundary mesh
   // corresponding to the given mesh
   void updateBoundaryMesh(const Mesh& mesh, Mesh& bMesh,
-                          Field& velocityField,
-                          const double timeStep)
+			  const double thickness)
   {
     // update node coords
     const StorageSite& bMeshNodes = bMesh.getNodes();
-    
+    const int nBNodes = bMeshNodes.getCount();
     
     const StorageSite& nodes = mesh.getNodes();
 
@@ -151,22 +150,23 @@ public:
 
     VectorT3Array& bMeshCoord = bMesh.getNodeCoordinates();
 
-    const Array<int>& myNodeIndices =
-      *(bMeshNodes.getCommonMap().find(&nodes)->second);
-    const Array<int>& bNodeIndices =
-      *(nodes.getCommonMap().find(&bMeshNodes)->second);
-
-    const int nCommon = myNodeIndices.getLength();
-    for(int n=0; n<nCommon; n++)
+    // the node x,y coordinates keep the same; 
+    // z coordinate gets updated by beam node coodinate;
+    for(int n=0; n<nBNodes/2; n++)
     {
-        bNodeCoord[bNodeIndices[n]] = nodeCoord[myNodeIndices[n]];
-        bMeshCoord[bNodeIndices[n]] = nodeCoord[myNodeIndices[n]];
+        bNodeCoord[n][2] = -thickness/2 + nodeCoord[n][2];
+        bMeshCoord[n][2] = -thickness/2 + nodeCoord[n][2];
     }
    
+    for(int n=nBNodes/2; n<nBNodes; n++)
+    {
+        bNodeCoord[n][2] = thickness/2 + nodeCoord[n-nBNodes/2][2];
+        bMeshCoord[n][2] = thickness/2 + nodeCoord[n-nBNodes/2][2];
+    }
 
 
     // update face velocity
-    
+    /*
     const StorageSite& bMeshFaces = bMesh.getFaces();
 
     shared_ptr<VectorT3Array>
@@ -205,7 +205,7 @@ public:
                  bMeshFaceCount++;
             }
         }
-    }
+	}*/
   }
   
   
