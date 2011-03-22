@@ -107,7 +107,7 @@ public:
   X applyCantileverBC(const int f,
 		      const X& specifiedFlux) const
   {
-    const int c0 = _faceCells(f,0);
+    //const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
     const X fluxB = -_r[c1];
 
