@@ -711,7 +711,8 @@ Mesh::createCellColor()
 void
 Mesh::createLocalGlobalArray()
 {
-   _localToGlobal  = shared_ptr< Array<int> > ( new Array<int>( _cells.getCountLevel1() ) );
+   _localToGlobal      = shared_ptr< Array<int> > ( new Array<int>( _cells.getCountLevel1() ) );
+   _localToGlobalNodes = shared_ptr< Array<int> > ( new Array<int>( _nodes.getCount() ) );
    *_localToGlobal  = -1;
 }
 

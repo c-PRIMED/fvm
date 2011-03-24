@@ -220,8 +220,12 @@ public:
   Array<int>& getCellColorsOther() { return *_cellColorOther;}
   const Array<int>& getCellColorsOther() const { return *_cellColorOther;}
 
+  Array<int>&        getLocalToGlobalNodes(){ return *_localToGlobalNodes;}
+  const Array<int>&  getLocalToGlobalNodes() const { return *_localToGlobalNodes;}
+
   Array<int>&        getLocalToGlobal(){ return *_localToGlobal;}
   const Array<int>&  getLocalToGlobal() const { return *_localToGlobal;}
+
   map<int,int>&        getGlobalToLocal(){ return _globalToLocal;}
   const map<int,int>&  getGlobalToLocal() const { return _globalToLocal;}
 
@@ -335,7 +339,7 @@ protected:
   
   
   
-
+  shared_ptr< Array<int>  >        _localToGlobalNodes;
   shared_ptr< Array<int>  >        _localToGlobal;
   mutable map <int,int>        _globalToLocal;
   multiMap             _cellCellsGlobal; //this hold cellCells information in global numbering, key is local,

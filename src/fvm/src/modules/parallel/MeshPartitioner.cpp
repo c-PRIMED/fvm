@@ -2795,6 +2795,30 @@ MeshPartitioner::level1_scatter_gather_cells()
 	_meshListLocal.at(id)->recvScatterGatherIndicesBufferLocal();
 	
 	_meshListLocal.at(id)->createCellCellsGhostExt();
+
+        //adding Mesh classes new data structure to keep track of globalID nodes (consisten with fluent case file)
+        const StorageSite& nodes = _meshListLocal.at(0)->getNodes();
+        Array<int>&   localToGlobalNodes = _meshListLocal.at(0)->getLocalToGlobalNodes();
+        //updating this
+        for ( int i = 0; i < nodes.getCount(); i++ ){
+             localToGlobalNodes[i] = (*_partNodes.at(0))(_procID,i);
+        }
+
+//         const Array<Mesh::VecD3>& coordFluent = _meshList.at(0)->getNodeCoordinates();
+//         const Array<Mesh::VecD3>& coordPart   = _meshListLocal.at(0)->getNodeCoordinates();
+//         if ( _procID == 0 ) 
+//            coordFluent.print(cout);      
+//         cout << endl;	
+//         cout << endl;
+//         if ( _procID == 1 ){
+//            coordPart.print(cout);
+//            localToGlobalNodes.print(cout);
+//            cout << endl;
+//            CRConnectivityPrint(*_partNodes.at(0),_procID,"partNodes");	
+//         }
+  
+/*        const Array<int>& localToGlobalNodes = _faceNodesGlobal.at(0)->getLocalToGlobalMap();
+        localToGlobalNodes.print(cout);*/
 	
     }
 
