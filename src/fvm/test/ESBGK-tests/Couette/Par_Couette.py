@@ -105,7 +105,7 @@ metricsCalculator.init()
 #user options
 numTsteps = 100
 numIter=1
-output_interval =50
+output_interval =20
 output_Coeff=100
 timestep=0.5e-1;
 cellno=8   #print coeffs for BGK and ESBGK &distribution function
