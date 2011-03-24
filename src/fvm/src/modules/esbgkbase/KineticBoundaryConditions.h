@@ -56,7 +56,9 @@ class KineticBoundaryConditions
     KineticModelOptions<X>&   getOptions() {return _options;}  
   void applyDiffuseWallBC(int f,const VectorX3&  WallVelocity,const X& WallTemperature) const
   {
-    const double pi(3.14159);
+    
+    const double pi=_options.pi;
+    const double epsilon=_options.epsilon_ES;
     
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1); ///changed
@@ -95,13 +97,13 @@ class KineticBoundaryConditions
 	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
 	const X wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
 	const X fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
-	if (c_dot_en -wallV_dot_en > T_Scalar(0.0))
+	if (c_dot_en -wallV_dot_en < T_Scalar(epsilon)) //incoming
 	  {
-	    Nmr = Nmr + dsf[c0]*dcxyz[j];
+	    Dmr = Dmr + fwall*dcxyz[j];
 	  }
 	else
 	  {
-	    Dmr = Dmr + fwall*dcxyz[j];
+	   Nmr = Nmr + dsf[c0]*dcxyz[j];
 	  }	
       }
     const X nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
@@ -114,18 +116,17 @@ class KineticBoundaryConditions
 	const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
 	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];	
 	const X wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
-	if (c_dot_en-wallV_dot_en < T_Scalar(0.0))
+
+	if (c_dot_en-wallV_dot_en < T_Scalar(epsilon))
 	  {
 	    dsf[c1] = nwall/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
-	    // dsf[c0]=dsf[c1];  // change value of fluid boundary-cell
+	    //dsf[c0]=dsf[c1];  // change value of fluid boundary-cell
 	  }
 	else
 	  dsf[c1]=dsf[c0];  
-	
-	//	if(c1==115 && j==_options["printDirectionNumber"])cout<<"j"<<j<<" cy"  <<cy[j]<< "fc0m1 "<< dsf[c0-1] << " fc0 " << dsf[c0]<< " fc1 " <<dsf[c1]<<endl;
       }  
     
-    //if(c1==115)cout<< "wall: density " << nwall << " velocity " <<v[c0][0]<<endl;
+   
    
   }
 
@@ -168,6 +169,8 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 	const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
 	const X  c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
 	
+	Field& fndw = *_dsfPtr.dsf[j];
+	XArray& dsfw = dynamic_cast<XArray&>(fndw[_cells]);
 	if(c_dot_en < T_Scalar(0.0)) //incoming molecules to interior
 	  {
 	    const X cx_incident = cx[j] - 2.0*c_dot_en*en[0];
@@ -178,40 +181,25 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 	    const X j_incident = int((cy_incident-cy[0])/dcy+0.5);
 	    const X k_incident = int((cz_incident-cz[0])/dcz+0.5);
 	    const int direction_incident = k_incident+N3*j_incident+N3*N2*i_incident;
-	 /*
-		if(c0 == 9){
-		cout << j<<" dir_incident "<<direction_incident << endl;
-	    //	cout << "ix " <<ix_incident<<" iy "<<jx_incident<<" iz "<<kx_incident <<endl;
-		cout << cx[j]<<" cx_inci "<<cx[direction_incident]<<endl;
-	    	cout << cy[j]<<" cy_inci "<<cy[direction_incident]<<endl;}
-	*/
-	    Field& fndw = *_dsfPtr.dsf[j];
-	    XArray& dsfw = dynamic_cast<XArray&>(fndw[_cells]);
+	
 	    
 	    Field& fnd = *_dsfPtr.dsf[direction_incident];
 	    const XArray& dsf = dynamic_cast<const XArray&>(fnd[_cells]);
 	    
 	    dsfw[c1] = dsf[c0]; //write into boundary
+	    dsfw[c0] = dsfw[c1]; //change value of fluid cell
 	  }
+	else{
+	  dsfw[c1]=dsfw[c0];}
       }
     
-    // change value of fluid boundary-cell
-    for (int j=0; j<numDirections; j++){
-      const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
-      const X  c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
-      Field& fnd = *_dsfPtr.dsf[j];
-      XArray& dsf = dynamic_cast<XArray&>(fnd[_cells]);
-      if(c_dot_en < T_Scalar(0.0)) //incoming molecules to interior
-	dsf[c0]=dsf[c1];
-      else
-	dsf[c1]=dsf[c0];
-      
-    }
-      
+        
   }   
 
   void applySpecularWallBC() const
   {
+    for (int i=0; i<_faces.getCount();i++)
+      applySpecularWallBC(i);
     for (int i=0; i<_faces.getCount();i++)
       applySpecularWallBC(i);
   }
@@ -242,8 +230,8 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
   
   void applyPressureInletBC(int f,const X& inletTemperature,const X& inletPressure)  const
   {
-    const double pi(3.14159);
-     
+    
+   const double pi=_options.pi;  
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
     
@@ -295,16 +283,31 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 		   uwallnew=uwallnew+cx[j]*dsf[c0]*wts[j];
 		 }
 	       else {uwallnew=uwallnew+cx[j]*dsf[c1]*wts[j];}
+	     } 
+	   else if (abs(en[1]) == T_Scalar(1.0)) 
+	     {
+	       if( c_dot_en > T_Scalar(0.0))
+		 {
+		   uwallnew=uwallnew+cy[j]*dsf[c0]*wts[j];
+		 }
+	       else {uwallnew=uwallnew+cy[j]*dsf[c1]*wts[j];}
+	     }  
+	   else if (abs(en[2]) == T_Scalar(1.0)) 
+	     {
+	       if( c_dot_en > T_Scalar(0.0))
+		 {
+		   uwallnew=uwallnew+cz[j]*dsf[c0]*wts[j];
+		 }
+	       else {uwallnew=uwallnew+cz[j]*dsf[c1]*wts[j];}
 	     }
       }
     if (abs(en[0]) == T_Scalar(1.0))     
       v[c1][0]=uwallnew/nin;
-    // else if (abs(en[1]) == T_Scalar(1.0)) //incoming  {vwallnew=vwallnew+cy[j]*dsf[c1]*wts[j];}
-      // v[c1][1]=uwallnew/nin;
-    //else if(abs(en[2]) == T_Scalar(1.0))     
-    // {v[c1][2]=uwallnew/nin;//uwall=uwall+relax*(uwallnew-uwall);
-    // }
-   
+    else if (abs(en[1]) == T_Scalar(1.0)) //incoming  {vwallnew=vwallnew+cy[j]*dsf[c1]*wts[j];}
+      v[c1][1]=uwallnew/nin;
+    else if(abs(en[2]) == T_Scalar(1.0))     
+      v[c1][2]=uwallnew/nin;//uwall=uwall+relax*(uwallnew-uwall);
+    
     //update f
     for (int j=0; j<numDirections; j++)
       {
@@ -320,9 +323,6 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 	else{dsf[c1]=dsf[c0];}//outgoing
 	
       }
-    
-    if (c1 == 105)
-      cout << "inlet: pressure  "<<pressure[c0] << endl;
     
 }
   
@@ -341,8 +341,8 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 
  void applyVelocityInletBC(int f,const X& inletTemperature,const VectorX3& inletVelocity)  const
   {
-    const double pi(3.14159);
-     
+   
+     const double pi=_options.pi;
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
     
@@ -354,9 +354,7 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
     const XArray& cx = dynamic_cast<const XArray&>(*_quadrature.cxPtr);
     const XArray& cy = dynamic_cast<const XArray&>(*_quadrature.cyPtr);
     const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr); 
-    //const XArray& wts = dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
     XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
-    //XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]); 
     XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);   
     VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
     
@@ -382,7 +380,7 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 	if (c_dot_en< T_Scalar(0.0))
 	  {
 	    dsf[c1] = nin/pow(pi*Tin,1.5)*exp(-(pow(cx[j]-v[c1][0],2.0)+pow(cy[j]-v[c1][1],2.0)+pow(cz[j]-v[c1][2],2.0))/Tin);
-	    dsf[c0] = dsf[c1];// change value of fluid boundary-cell
+	    //dsf[c0] = dsf[c1];// change value of fluid boundary-cell
 	  }
 	else{dsf[c1]=dsf[c0];}//outgoing
 	
@@ -404,7 +402,8 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
   //outlet Boundary Condition
   void applyPressureOutletBC(int f,const X& outletTemperature,const X& outletPressure) const
   { 
-    const double pi(3.14159);
+   
+    const double pi=_options.pi;
     const int c0 = _faceCells(f,0);
     const int c1 = _faceCells(f,1);
     
@@ -428,23 +427,23 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
     X nout =density[c0];
     
     if (Pcell > Pout){
-    const X avel2 =gamma*Pcell/density[c0]; //velcotiy of sound square
-    nout =density[c0]-(Pcell-Pout)/avel2;
-    
-    if(abs(en[0])==T_Scalar(1.0))
-      { X ubulk=pow(pow(v[c0][0],2.0)+pow(v[c0][1],2.0),0.5);
-	v[c1][0] = v[c0][0]/ubulk*(ubulk+(Pcell-Pout)/(pow(2.0*avel2,0.5)*density[c0]));} //exit velocity 
-    //v[c1][0]=v[c0][0]+(pressure[c0]-Pout)/(pow(2.0*avel2,0.5)*density[c0]); //exit velocity
-    //else if(abs(en[1])==T_Scalar(1.0))
-    // v[c1][1] = v[c0][1]+(pressure[c0]-Pout)/(pow(2.0*avel2,0.5)*density[c0]); //exit velocity
-    //if(abs(en[0])==T_Scalar(1.0))
-    //  v[c1][2] = v[c0][2]+(pressure[c0]-Pout)/(pow(2.0*avel2,0.5)*density[c0]); //exit velocity
-       
-    density[c1]=nout; pressure[c1]=Pout; //update macroPr
-    temperature[c1]=Pout/nout;
+      const X avel2 =gamma*Pcell/density[c0]; //velcotiy of sound square
+      nout =density[c0]-(Pcell-Pout)/avel2;
+      X ubulk=pow(pow(v[c0][0],2.0)+pow(v[c0][1],2.0)+pow(v[c0][2],2.0),0.5);
+      X ucoeff=1.0/ubulk*(ubulk+(Pcell-Pout)/(pow(2.0*avel2,0.5)*density[c0]));
+      if(abs(en[0])==T_Scalar(1.0))
+	v[c1][0] = v[c0][0]*ucoeff; 
+      //v[c1][0]=v[c0][0]+(pressure[c0]-Pout)/(pow(2.0*avel2,0.5)*density[c0]); //exit velocity
+      else if(abs(en[1])==T_Scalar(1.0))
+	v[c1][1] = v[c0][1]*ucoeff;
+      else if(abs(en[2])==T_Scalar(1.0))
+	v[c1][2] = v[c0][2]*ucoeff;
+      
+      density[c1]=nout; pressure[c1]=Pout; //update macroPr
+      temperature[c1]=Pout/nout;
     }
     else{
-     
+      
       density[c1]=density[c0];
       pressure[c1]=pressure[c0];
       temperature[c1]=temperature[c0];
@@ -465,10 +464,6 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 	
       }
     
-    if(c1==125){
-      cout << "outlet: velocity " <<v[c0][0]<< " pressure "<<pressure[c0]<< endl;
-      //cout<< "outlet:  velocity " <<v[c1][0]<<" density " << nout << endl;
-    }
     
 }
 

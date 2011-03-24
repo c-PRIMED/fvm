@@ -60,11 +60,9 @@ struct KineticModelOptions : public FloatVarDict<T>
     this ->defineVar("muref",T(2.117e-5)); //Argon
     
     
-    this->defineVar("pi",T(3.1416));
-    
     this->Tolerance=1e-4;
     this->printNormalizedResiduals = true;
-    this->transient = true;
+    this->transient = false;
     //this->ESBGK_fgamma = false; 
     
     this->fgamma=2;
@@ -81,6 +79,8 @@ struct KineticModelOptions : public FloatVarDict<T>
     this->absoluteTolerance=1e-22; 
 
     this->BoltzmannConstant=1.38e-23;
+    this->epsilon_ES=1e-50;
+    this->pi=acos(-1.0);//3.14159;
 
     //used in Newton's Method for Equilibrium distribution function
     this->defineVar("ToleranceX",T(1e-8));
@@ -95,6 +95,9 @@ struct KineticModelOptions : public FloatVarDict<T>
 
   double relativeTolerance;
   double absoluteTolerance;
+
+  double epsilon_ES;
+  double pi;
   
   //double ToleranceX;
   //double ToleranceF;
@@ -115,7 +118,7 @@ struct KineticModelOptions : public FloatVarDict<T>
     {
         LinearSolver* ls(new AMG());
         ls->relativeTolerance = 1e-5;
-        ls->nMaxIterations = 20;
+        ls->nMaxIterations = 100;
         ls->verbosity=0;
         this->KineticLinearSolver = ls;
     }

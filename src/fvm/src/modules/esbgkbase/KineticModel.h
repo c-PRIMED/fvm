@@ -109,7 +109,8 @@ class KineticModel : public Model
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount(); 
-	const double pi(3.14159);
+	//	const double pi(3.14159);
+	const double pi=_options.pi;
 	TArray& Entropy = dynamic_cast<TArray&>(_macroFields.Entropy[cells]);  
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);  
 	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
@@ -384,8 +385,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
-	double pi(3.14159);
-	
+	//double pi(3.14159);
+	const double pi=_options.pi;
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
@@ -522,7 +523,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getSelfCount();
-	const double pi(3.14159);
+	//	const double pi(3.14159);
+	const double pi=_options.pi;
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
 	
@@ -834,8 +836,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
-	double pi(3.14159);
-	
+	//double pi(3.14159);
+	const double pi=_options.pi;
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
@@ -884,8 +886,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
-	double pi(acos(-1.0));
-	
+	//double pi(acos(-1.0));
+	const double pi=_options.pi;
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
 	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
@@ -1204,7 +1206,14 @@ T u_init=pow(2.0*R*T_init,0.5);
 	    const Field& areaMagField = _geomFields.areaMag;
             const TArray& faceAreaMag = dynamic_cast<const TArray &>(areaMagField[faces]);
 	    const Field& areaField = _geomFields.area;
-	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]); 
+	     
+	    FloatValEvaluator<VectorT3>
+	      bVelocity(bc.getVal("specifiedXVelocity"),
+			bc.getVal("specifiedYVelocity"),
+			bc.getVal("specifiedZVelocity"),
+			faces);
+
 	    if (( bc.bcType == "CopyBC")) 
 	      {
 		for(int f=0; f< nFaces; f++)
@@ -1218,18 +1227,20 @@ T u_init=pow(2.0*R*T_init,0.5);
 		{
 		  const VectorT3 en = faceArea[f]/faceAreaMag[f];
 		  const T c_dot_en = cx[direction]*en[0]+cy[direction]*en[1]+cz[direction]*en[2];
-		  
-		  if(c_dot_en >T_Scalar(0.0)){
-		    //outgoing direction - extrapolation bc
-		    gkbc.applyExtrapolationBC(f);
-		  } 
-		  else
+		  const VectorT3  WallVelocity = bVelocity[f];
+		  const T uwall = WallVelocity[0]; const T vwall = WallVelocity[1];
+		  const T wwall = WallVelocity[2]; const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+		  if(c_dot_en -wallV_dot_en < T_Scalar(0.0))
 		    //incoming direction - dirchlet bc
-		    {
-		      const int c1= faceCells(f,1);// boundary cell
+		    { const int c1= faceCells(f,1);// boundary cell
 		      T bvalue =dsf[c1];
 		      gkbc.applyDirichletBC(f,bvalue);
 		    }
+		  else{
+		    //outgoing direction - extrapolation bc
+		    gkbc.applyExtrapolationBC(f);
+		  } 
+		  
 		}
 	    }  
 	    
@@ -1350,6 +1361,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	//MFRPtr vNorm;
        	//const TArray& cx= dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	//const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+
+	//callBoundaryConditions();
 	for(int direction=0; direction<N123;direction++)
 	  {
 	    LinearSystem ls;
@@ -1410,9 +1423,9 @@ T u_init=pow(2.0*R*T_init,0.5);
 	callBoundaryConditions();
 	ComputeMacroparameters();	//update macroparameters
         ComputeCollisionfrequency();
+	//update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
 	if (_options.fgamma==0){initializeMaxwellianEq();}
 	else{ EquilibriumDistributionBGK();}
-	
 	if (_options.fgamma==2){EquilibriumDistributionESBGK();}	    
 
       }

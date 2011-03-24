@@ -128,7 +128,7 @@ class DistFunctFields
 	  const StorageSite& cells = mesh.getCells();
 	  const int nCells = cells.getCount();
 	  double pi(3.14159);
-	  
+	 
 	  const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	  const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
 	  const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
@@ -243,8 +243,7 @@ class DistFunctFields
  private:
   const MeshList _meshes;
   const Quadrature<T> _quadrature;
-  //FlowBCMap _bcMap;
-  //FlowVCMap _vcMap;
+  //KineticModelOptions<T> _options;
 };
  
 
