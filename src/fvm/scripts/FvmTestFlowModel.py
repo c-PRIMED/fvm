@@ -82,7 +82,7 @@ if atype == 'tangent':
 flowFields =  fvm.models.FlowFields('flow')
 fmodel = fvm.models.FlowModelA(geomFields,flowFields,meshes)
 
-reader.importFlowBCs(fmodel)
+reader.importFlowBCs(fmodel,meshes)
 #fmodel.printBCs()
 
 momSolver = fvmbaseExt.AMG()

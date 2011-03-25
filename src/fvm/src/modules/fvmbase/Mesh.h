@@ -1,6 +1,11 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
+
 #include "Array.h"
 
 #include "StorageSite.h"
@@ -245,7 +250,16 @@ public:
   void recvScatterGatherIndicesBufferLocal();
   void syncIndices();
   
-  const CRConnectivity& getCellCellsGhostExt() const { return *_cellCellsGhostExt;}
+  const CRConnectivity& getCellCellsGhostExt() const { 
+#ifdef FVM_PARALLEL
+      int numProcs = MPI::COMM_WORLD.Get_rank();
+      if ( numProcs > 1 )
+          return *_cellCellsGhostExt;
+      else
+          return this->getCellCells();
+#endif      
+  
+  }
 
   const ArrayBase&      getSendCounts ( const EntryIndex& e ) const { return *_sendCounts[e];}
   const ArrayBase&      getSendIndices( const EntryIndex& e ) const { return *_sendIndices[e];}

@@ -1,8 +1,4 @@
 #include <set>
-#ifdef FVM_PARALLEL
-#include <mpi.h>
-#endif
-
 #include "Mesh.h"
 #include "StorageSite.h"
 #include "CRConnectivity.h"
