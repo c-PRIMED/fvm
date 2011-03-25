@@ -1886,8 +1886,10 @@ void
 MeshPartitioner::construct_mesh( int id )
 {
         int dim = _meshList.at(id)->getDimension();
+	int cellZoneId = _meshList.at(id)->getCellZoneID();
         Mesh *pmesh = new Mesh(dim);
         pmesh->setID(_procID);
+	pmesh->setCellZoneID(cellZoneId);
         _meshListLocal.push_back( pmesh   );
 
         StorageSite& faceSite = _meshListLocal.at(id)->getFaces();
