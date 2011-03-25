@@ -252,7 +252,7 @@ public:
   
   const CRConnectivity& getCellCellsGhostExt() const { 
 #ifdef FVM_PARALLEL
-      int numProcs = MPI::COMM_WORLD.Get_rank();
+      int numProcs = MPI::COMM_WORLD.Get_size();
       if ( numProcs > 1 )
           return *_cellCellsGhostExt;
       else
