@@ -2802,10 +2802,27 @@ MeshPartitioner::level1_scatter_gather_cells()
         //adding Mesh classes new data structure to keep track of globalID nodes (consisten with fluent case file)
         const StorageSite& nodes = _meshListLocal.at(0)->getNodes();
         Array<int>&   localToGlobalNodes = _meshListLocal.at(0)->getLocalToGlobalNodes();
-        //updating this
+        //updating localToGlobal
         for ( int i = 0; i < nodes.getCount(); i++ ){
              localToGlobalNodes[i] = (*_partNodes.at(0))(_procID,i);
         }
+        //find boundary nodes
+        set<int>& boundaryNodeSet = _meshListLocal.at(id)->getBoundaryNodesSet();
+        foreach(const FaceGroupPtr fgPtr, _meshListLocal.at(id)->getBoundaryFaceGroups() ){
+           const FaceGroup& fg = *fgPtr;
+           const StorageSite& faces = fg.site;
+           const int nFaces = faces.getCount();
+           const CRConnectivity& faceNodes = _meshListLocal.at(id)->getFaceNodes(faces);
+           for(int f=0; f<nFaces; f++){
+              const int nFaceNodes = faceNodes.getCount(f);
+              for(int nn=0; nn<nFaceNodes; nn++){
+                 const int n=faceNodes(f,nn);
+                 boundaryNodeSet.insert(n);
+              }
+           } 
+        }
+
+        
 
 //         const Array<Mesh::VecD3>& coordFluent = _meshList.at(0)->getNodeCoordinates();
 //         const Array<Mesh::VecD3>& coordPart   = _meshListLocal.at(0)->getNodeCoordinates();

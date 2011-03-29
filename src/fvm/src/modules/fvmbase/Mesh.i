@@ -6,6 +6,7 @@
 
 %include "std_vector.i"
 %include "std_map.i"
+%include "std_set.i"
 
 
 using namespace std;
@@ -158,6 +159,14 @@ public:
   
   // const GhostCellSiteMap& getGhostCellSiteMap() const;
   // const StorageSite* getGhostCellSite( int id );
+  //const Array<int>&  getLocalToGlobalNodes() const;
+  %extend{
+    boost::shared_ptr<ArrayBase> getLocalToGlobalNodes()
+    {
+      return self->getLocalToGlobalNodesPtr();
+    }
+  }
+  const set<int>&  getBoundaryNodesSet() const;
 
   %extend
   {

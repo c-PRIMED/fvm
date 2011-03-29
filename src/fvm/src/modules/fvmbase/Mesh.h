@@ -15,6 +15,7 @@
 #include "MPM_Particles.h"
 #include <vector>
 #include <map>
+#include <set>
 
 class CRConnectivity;
 class GeomFields;
@@ -227,6 +228,7 @@ public:
 
   Array<int>&        getLocalToGlobalNodes(){ return *_localToGlobalNodes;}
   const Array<int>&  getLocalToGlobalNodes() const { return *_localToGlobalNodes;}
+  shared_ptr< Array<int> > getLocalToGlobalNodesPtr()  { return _localToGlobalNodes;}
 
   Array<int>&        getLocalToGlobal(){ return *_localToGlobal;}
   const Array<int>&  getLocalToGlobal() const { return *_localToGlobal;}
@@ -240,7 +242,10 @@ public:
 
   bool isMergedMesh() const { return _isAssembleMesh;}
   int  getNumOfAssembleMesh() const { return _numOfAssembleMesh;}
-  
+
+  const set<int>&  getBoundaryNodesSet() const { return _boundaryNodesSet;}
+  set<int>&  getBoundaryNodesSet() { return _boundaryNodesSet;}
+
   
   void createScatterGatherCountsBuffer();
   void recvScatterGatherCountsBufferLocal();
@@ -352,11 +357,9 @@ protected:
   shared_ptr<StorageSite> _cellSiteGhostExt;
   shared_ptr<CRConnectivity> _cellCellsGhostExt;
   
-  
-  
-  
-  shared_ptr< Array<int>  >        _localToGlobalNodes;
-  shared_ptr< Array<int>  >        _localToGlobal;
+  set<int>                     _boundaryNodesSet; //store local number of boundary nodes  
+  shared_ptr< Array<int>  >    _localToGlobalNodes;
+  shared_ptr< Array<int>  >    _localToGlobal;
   mutable map <int,int>        _globalToLocal;
   multiMap             _cellCellsGlobal; //this hold cellCells information in global numbering, key is local,
                                         // values are global neighbouring and itself(global again)
