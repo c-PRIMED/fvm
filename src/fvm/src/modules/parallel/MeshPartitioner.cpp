@@ -32,7 +32,7 @@
 
 
 MeshPartitioner::MeshPartitioner( const MeshList &mesh_list, vector<int> nPart,  vector<int> eType ):
-_meshList(mesh_list), _nPart(nPart), _eType(eType), _options(0)
+_meshList(mesh_list), _nPart(nPart), _eType(eType), _options(0), _bMesh(NULL)
 {
    if ( !MPI::Is_initialized() )  MPI::Init();
    init();
@@ -96,6 +96,7 @@ MeshPartitioner::~MeshPartitioner()
    for ( it_mesh = _meshListLocal.begin(); it_mesh != _meshListLocal.end(); it_mesh++)
         delete *it_mesh;
   
+   if ( _bMesh ) delete  _bMesh;
 }
 
 
@@ -2829,6 +2830,147 @@ MeshPartitioner::level1_scatter_gather_cells()
    if ( _debugMode ) 
       DEBUG_level1_scatter_gather_cells();
  }
+
+
+
+void
+MeshPartitioner::extractBoundaryMesh()
+{
+  const Mesh& mesh = *_meshList.at(0);
+  Mesh& meshLocal = *_meshListLocal.at(0);
+  const StorageSite& nodes = mesh.getNodes();
+  StorageSite& nodesLocal = meshLocal.getNodes();
+  const Array<Mesh::VecD3>& coords = mesh.getNodeCoordinates();
+
+  const int nodeCount = nodes.getCount();
+  Array<int> globalToLocalNodes(nodeCount);
+
+  globalToLocalNodes = -1;
+  int bMeshNodeCount=0;
+  int bMeshFaceCount=0;
+  foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      if (fg.groupType!="interior")
+      {
+          const int nFaces = faces.getCount();
+          const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+          for(int f=0; f<nFaces; f++)
+          {
+              const int nFaceNodes = faceNodes.getCount(f);
+              for(int nn=0; nn<nFaceNodes; nn++)
+              {
+                  const int n=faceNodes(f,nn);
+                  if (globalToLocalNodes[n] == -1)
+                  {
+                      globalToLocalNodes[n] = bMeshNodeCount++;
+                  }
+              }
+          }
+          bMeshFaceCount += nFaces;
+      }
+  }
+
+  _bMesh = new Mesh(mesh.getDimension());
+
+  StorageSite& bMeshFaces = _bMesh->getFaces();
+  StorageSite& bMeshNodes = _bMesh->getNodes();
+  bMeshFaces.setCount( bMeshFaceCount );
+  bMeshNodes.setCount( bMeshNodeCount );
+  
+  _bMesh->createBoundaryFaceGroup(bMeshFaceCount,0,0,"wall");
+  
+  //setting coordinates
+  shared_ptr< Array<Mesh::VecD3> > bMeshCoordPtr( new Array< Mesh::VecD3 > ( bMeshNodeCount ) );
+
+  shared_ptr<Mesh::IntArray> myCommonNodes(new Mesh::IntArray(bMeshNodeCount));
+  shared_ptr<Mesh::IntArray> otherCommonNodes(new Mesh::IntArray(bMeshNodeCount));
+
+  for(int n=0; n<nodeCount; n++)
+  {
+      const int nLocal = globalToLocalNodes[n];
+      if (nLocal >=0)
+      {
+          (*bMeshCoordPtr)[nLocal] = coords[n];
+          (*myCommonNodes)[nLocal] = nLocal;
+          (*otherCommonNodes)[nLocal] = n;
+      }
+  }
+  nodesLocal.getCommonMap()[&bMeshNodes] = myCommonNodes;
+  bMeshNodes.getCommonMap()[&nodesLocal] = otherCommonNodes;
+         
+  _bMesh->setCoordinates( bMeshCoordPtr );
+  
+  //faceNodes constructor
+  shared_ptr<CRConnectivity> bFaceNodes( new CRConnectivity(bMeshFaces,
+                                                            bMeshNodes) );
+  
+  bFaceNodes->initCount();
+
+  bMeshFaceCount=0;
+  
+  foreach(FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+  {
+      FaceGroup& fg = *fgPtr;
+      StorageSite& faces = const_cast<StorageSite&>(fg.site);
+      if (fg.groupType!="interior")
+      {
+          const int nFaces = faces.getCount();
+          const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+
+          shared_ptr<Mesh::IntArray> myCommonFaces(new Mesh::IntArray(nFaces));
+          shared_ptr<Mesh::IntArray> otherCommonFaces(new Mesh::IntArray(nFaces));
+
+          for(int f=0; f<nFaces; f++)
+          {
+              const int nFaceNodes = faceNodes.getCount(f);
+              bFaceNodes->addCount(bMeshFaceCount,nFaceNodes);
+              (*myCommonFaces)[f] = bMeshFaceCount;
+              (*otherCommonFaces)[f] = f;
+              bMeshFaceCount++;
+          }
+
+          faces.getCommonMap()[&bMeshFaces] = myCommonFaces;
+          bMeshFaces.getCommonMap()[&faces] = otherCommonFaces;
+      }
+  }
+
+  bFaceNodes->finishCount();
+  bMeshFaceCount=0;
+
+  foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+  {
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      if (fg.groupType!="interior")
+      {
+          const int nFaces = faces.getCount();
+          const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+          for(int f=0; f<nFaces; f++)
+          {
+              const int nFaceNodes = faceNodes.getCount(f);
+              for(int nn=0; nn<nFaceNodes; nn++)
+              {
+                  const int n=faceNodes(f,nn);
+                  const int nLocal = globalToLocalNodes[n];
+                  bFaceNodes->add(bMeshFaceCount,nLocal);
+              }
+              bMeshFaceCount++;
+          }
+      }
+  }
+  
+  bFaceNodes->finishAdd();
+  //setting faceNodes
+  Mesh::SSPair key(&bMeshFaces,&bMeshNodes);
+  Mesh::ConnectivityMap& connectivityMap = _bMesh->getConnectivityMap();
+  connectivityMap[key] = bFaceNodes;
+  //_bMesh->_connectivityMap[key] = bFaceNodes;
+
+}
+
+
 
 //scatter levels debugger
 void 

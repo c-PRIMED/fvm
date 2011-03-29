@@ -58,7 +58,9 @@ public:
     void fiedler_order( const string& fname );
 
     void mesh();
-    const MeshList&  meshList() const { return _meshListLocal;};
+    const MeshList&  meshList() const { return _meshListLocal; }
+    void  extractBoundaryMesh();
+    const Mesh& getBoundaryMesh() const { return *_bMesh; }
 
 
     void debug_print();
@@ -269,6 +271,7 @@ private:
    bool  _debugMode;
    ofstream   _debugFile;
    vector< Mesh* >  _meshListLocal;  //all is for you
+   Mesh*  _bMesh; //this is boundary mesh of whole object
 };
 
 #endif

@@ -301,6 +301,8 @@ public:
 
   const StorageSite& getParentFaceGroupSite() const
   {return *_parentFaceGroupSite;}
+
+  ConnectivityMap&  getConnectivityMap() {return _connectivityMap;}
   
 protected:
    

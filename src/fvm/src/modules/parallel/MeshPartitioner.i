@@ -25,6 +25,9 @@ public:
     void fiedler_order( const string& fname );
     void mesh();
     const MeshList&  meshList();
+
+    void  extractBoundaryMesh();
+    const Mesh& getBoundaryMesh();
     void dumpTecplot();
     void mesh_xdmfplot();
     void isCleanup(bool clean_up);
