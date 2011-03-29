@@ -2899,6 +2899,14 @@ MeshPartitioner::extractBoundaryMesh()
   }
   nodesLocal.getCommonMap()[&bMeshNodes] = myCommonNodes;
   bMeshNodes.getCommonMap()[&nodesLocal] = otherCommonNodes;
+  //filling scatter index (global to local)
+  map<int,int>& scatterIndex = nodesLocal.getScatterIndex()[&bMeshNodes];
+  for ( int n = 0; n < bMeshNodeCount; n++ ){
+     const int nodeID = (*otherCommonNodes)[n];
+     scatterIndex[nodeID] = n;
+  }
+
+
          
   _bMesh->setCoordinates( bMeshCoordPtr );
   

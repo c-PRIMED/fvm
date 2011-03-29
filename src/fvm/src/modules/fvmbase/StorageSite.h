@@ -22,7 +22,7 @@ public:
   typedef map<  const StorageSite*, const Mesh* >        MeshMap;
   //finally cellcell2 keep information in global numbering
   //field or multifield 
-  typedef map<  const StorageSite*, map<int,int> >   scatterIndex;  
+  typedef map<  const StorageSite*, map<int,int> >   ScatterIndex;  
 
 
 
@@ -51,13 +51,15 @@ public:
   void setMesh( const Mesh* mesh) { _meshMap[this] = mesh; }
   const Mesh& getMesh() const { return *_meshMap[this]; }
 
-  const ScatterMap&  getScatterMap() const { return _scatterMap;}
-  const  GatherMap&   getGatherMap() const { return  _gatherMap;}
-  const CommonMap &  getCommonMap () const { return _commonMap; }
+  const ScatterMap&   getScatterMap   () const { return _scatterMap;}
+  const  GatherMap&   getGatherMap    () const { return  _gatherMap;}
+  const CommonMap &   getCommonMap    () const { return _commonMap; }
+  const ScatterIndex&  getScatterIndex () const { return _scatterIndex; }
 
-  ScatterMap&  getScatterMap()  { return _scatterMap;}
-  GatherMap &  getGatherMap ()  { return _gatherMap; }
-  CommonMap &  getCommonMap ()  { return _commonMap; }
+  ScatterMap &  getScatterMap   ()  { return _scatterMap;}
+  GatherMap  &  getGatherMap    ()  { return _gatherMap; }
+  CommonMap  &  getCommonMap    ()  { return _commonMap; }
+  ScatterIndex&  getScatterIndex ()  { return _scatterIndex; }
 
   //methods for Level1 layer creation
   void setCountLevel1( const int countLevel1 ) {
@@ -91,6 +93,7 @@ private:
   ScatterMap         _scatterMap;
   GatherMap          _gatherMap;
   CommonMap          _commonMap;
+  ScatterIndex       _scatterIndex;
   
   mutable MeshMap            _meshMap;
 
