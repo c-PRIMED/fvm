@@ -1,0 +1,8 @@
+%module phononbaseExt
+%{
+#include "Field.h"
+  %}
+
+%import "std_string.i"
+%import "Field.i"
+%include "PhononMacro.i"

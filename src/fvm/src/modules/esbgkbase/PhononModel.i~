@@ -1,0 +1,8 @@
+%{
+#include "PhononModel.h"
+#include "Models.h"
+  %}
+
+%include "PhononMacro.h"
+
+%template(PhononMacroA) PhononMacro< ATYPE_STR >;
