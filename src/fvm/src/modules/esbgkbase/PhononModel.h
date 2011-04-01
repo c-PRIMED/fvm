@@ -88,15 +88,15 @@ class PhononModel : public Model
 
 	for (int k=0;k<numK;k++)  //kspace loop beg
 	  {
-	    Tkvol& kv=*(_kspace.getkvolptr(k));
+	    Tkvol& kv=_kspace.getkvol(k);
 	    const int numM=kv.getmodenum();	    
 
 	    for (int m=0;m<numM;m++) //mode loop beg
 	      {
 		//initialize each phonon mode
-		Tmode mode=kv.getmode(m);
+		Tmode& mode=kv.getmode(m);
 		T cp=mode.getcp();
-		Field& efield=*(mode.getfieldptr());
+		Field& efield=mode.getfield();
 		shared_ptr<Tarray> evar(new Tarray(numcells));
 	    
 		const T einit=cp*(Tinit-Tref)/DK3;
@@ -151,7 +151,7 @@ class PhononModel : public Model
        const Mesh& mesh = *_meshes[n];
        const StorageSite& cells = mesh.getCells();
        
-       Field& fnd = *mode.getfieldptr();
+       Field& fnd = mode.getfield();
        //const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
        
        MultiField::ArrayIndex vIndex(&fnd,&cells); //dsf is in 1 direction

@@ -1,7 +1,0 @@
-%{
-#include "pmode.h"
-  %}
-
-%include "pmode.h"
-
-%template(pmodeA) pmode< ATYPE_STR >;

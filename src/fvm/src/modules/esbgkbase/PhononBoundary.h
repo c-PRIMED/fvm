@@ -72,15 +72,15 @@ class PhononBoundary
     for (int k=0;k<numK;k++)
       {
 
-	Xkvol& kv=*(_kspace.getkvolptr(k));
+	Xkvol& kv=_kspace.getkvol(k);
 	X dk3=kv.getdk3();
 	int numM=kv.getmodenum();
 
 	for (int m=0;m<numM;m++) //mode loop beg
 	  {
 	    
-	    Xmode& mode=*(kv.getmodeptr(m));
-	    Field& efield=*(mode.getfieldptr());
+	    Xmode& mode=kv.getmode(m);
+	    Field& efield=mode.getfield();
 	    VectorT3 vg = mode.getv();     // phonon group velocity
 	    XArray& e_val = dynamic_cast< XArray&>(efield[_cells]);  // e"
 	    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];  //normal unit vector to face
@@ -101,14 +101,14 @@ class PhononBoundary
     for (int k=0;k<numK;k++)
       {
 	
-	Xkvol& kv=*(_kspace.getkvolptr(k));
+	Xkvol& kv=_kspace.getkvol(k);
 	int numM=kv.getmodenum();
 
 	for (int m=0;m<numM;m++) //mode loop beg
 	  {
 	    
-	    Xmode& mode=*(kv.getmodeptr(m));
-	    Field& efield=*(mode.getfieldptr());
+	    Xmode& mode=kv.getmode(m);
+	    Field& efield=mode.getfield();
 	    VectorT3 vg = mode.getv();     // phonon group velocity
 	    XArray& e_val = dynamic_cast< XArray&>(efield[_cells]);  // e"
 	    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];  //normal unit vector to face
@@ -149,16 +149,16 @@ class PhononBoundary
  
     for (int k=0;k<numK;k++)
       {
-	Xkvol& kv=*(_kspace.getkvolptr(k));
+	Xkvol& kv=_kspace.getkvol(k);
 	int numM=kv.getmodenum();
      
 	for (int m=0;m<numM;m++) //mode loop beg
 	  {
 	    X Tref=_options["Tref"];
-	    Xmode* mode=kv.getmodeptr(m);
-	    Field& efield=*(mode->getfieldptr());
-	    VectorT3 vg = mode->getv();
-	    X cp=mode->getcp();
+	    Xmode& mode=kv.getmode(m);
+	    Field& efield=mode.getfield();
+	    VectorT3 vg = mode.getv();
+	    X cp=mode.getcp();
 	    XArray& e_val = dynamic_cast< XArray&>(efield[_cells]);  // e"
 	    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];  //normal unit vector to face
 	    const X vg_dot_en = vg[0]*en[0]+vg[1]*en[1]+vg[2]*en[2];

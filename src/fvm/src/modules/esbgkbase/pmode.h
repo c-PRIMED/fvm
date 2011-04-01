@@ -12,38 +12,21 @@ class pmode
 {
   
  public:
-
+  
   typedef Vector<T,3> Tvec;
-  /*
-  pmode()
-    {
-      //const std::string name="edoubleprime";
-      _efield=*(new Field("edoubleprime"));
-    };
-
-  pmode(Tvec vg,T cp,T tau,T omega)
-    {
-      _vg=vg;
-      _cp=cp;
-      _tau=tau;
-      _omega=omega;
-      _efield=*(new Field("edoubleprime"));
-    };
-  */
-  pmode(Tvec vg,T cp,T tau)
-    {
-      _vg=vg;
-      _cp=cp;
-      _tau=tau;
-      _omega=1.;     //
-      _efield=new Field("edoubleprime");
-    };
+  
+ pmode(Tvec vg,T cp,T tau):
+  _vg(vg),
+    _cp(cp),
+    _tau(tau),
+    _efield("edoubleprime")
+      {}
   
   Tvec getv(){return _vg;}
   T getcp() {return _cp;}
   T gettau() {return _tau;}
   T getomega() {return _omega;}
-  Field* getfieldptr() {return _efield;}
+  Field& getfield() {return _efield;}
   
  private:
   
@@ -60,7 +43,7 @@ class pmode
   T _omega;
 
   //field for e"
-  Field* _efield;
+  Field _efield;
   
 };
 
