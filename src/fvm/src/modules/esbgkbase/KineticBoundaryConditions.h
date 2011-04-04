@@ -187,7 +187,7 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 	    const XArray& dsf = dynamic_cast<const XArray&>(fnd[_cells]);
 	    
 	    dsfw[c1] = dsf[c0]; //write into boundary
-	    dsfw[c0] = dsfw[c1]; //change value of fluid cell
+	    //dsfw[c0] = dsfw[c1]; //change value of fluid cell
 	  }
 	else{
 	  dsfw[c1]=dsfw[c0];}

@@ -132,19 +132,17 @@ class KineticModel : public Model
 	for(int c=0; c<nCells;c++)
 	  {
 	    density[c] =1.0;
-	    //v[c][0]=(19-c%20)*0.0297*1.05/20; //100points
-	    //v[c][0]=(scNy-0.5-c%scNy)*0.0297*(1.0+1.0/scNy)/scNy; //10points
 	    v[c][0]=0.0;
 	    v[c][1]=0.0;
 	    v[c][2]=0.0;
-	    //if(_options.fgamma>0){
+	    if(_options.fgamma>0){
 	    //BGK
 	    coeff[c][0]=1.0/pow(pi,1.5);
 	    coeff[c][1]=1.0;
 	    coeff[c][2]=0.0;coeff[c][3]=0.0;coeff[c][4]=0.0;
-	    //}
+	    }
 Entropy[c]=0.0;
-	    //if(_options.fgamma ==2){
+            if(_options.fgamma ==2){
 	    //ESBGK
 	    coeffg[c][0]=coeff[c][0];
 	    coeffg[c][1]=coeff[c][1];
@@ -156,7 +154,7 @@ Entropy[c]=0.0;
 	    coeffg[c][7]=0.0;
 	    coeffg[c][8]=0.0;
 	    coeffg[c][9]=0.0;	
-	    //}
+	    }
 	   
 
 	    temperature[c]=1.0;
@@ -182,7 +180,7 @@ Entropy[c]=0.0;
 	
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();  //only interior
+	const int nCells = cells.getCount();  //only interior
 	
 	
 	TArray& Entropy = dynamic_cast<TArray&>(_macroFields.Entropy[cells]);
@@ -244,9 +242,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 	  temperature[c]=temperature[c]/(1.5*density[c]);  
 	  pressure[c]=density[c]*temperature[c];
 	}
-	//cout << "T,0 " << temperature[0]<<endl;
 
-	//cout<<"rho0 "<<density[0]<<endl;
 	
 	
       }
@@ -263,7 +259,7 @@ T u_init=pow(2.0*R*T_init,0.5);
       {	
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
@@ -356,7 +352,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
 	TArray& viscosity = dynamic_cast<TArray&>(_macroFields.viscosity[cells]);
@@ -408,8 +404,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	  
 	} 
 	
-	
-	//if(_options.fgamma==2){
+	/*
+	if(_options.fgamma==2){
 	  for(int j=0;j< numFields;j++){
 	    Field& fndEqES = *_dsfEqPtrES.dsf[j];
 	    TArray& fEqES = dynamic_cast< TArray&>(fndEqES[cells]);
@@ -420,7 +416,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	    } 
 	    
 	    }
-	  //}
+	 }
+	*/
 	
       }
   }
@@ -436,7 +433,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const int sizeC=5;
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
@@ -522,13 +519,13 @@ T u_init=pow(2.0*R*T_init,0.5);
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	//	const double pi(3.14159);
 	const double pi=_options.pi;
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
 	
-	//initialize coeff,coeffg
+	//initialize coeff
 	VectorT5Array& coeff = dynamic_cast<VectorT5Array&>(_macroFields.coeff[cells]);
 	for(int c=0; c<nCells;c++){
 	  coeff[c][0]=density[c]/pow((pi*temperature[c]),1.5);
@@ -618,7 +615,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const int sizeC=10;
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 	
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	
@@ -728,7 +725,7 @@ T u_init=pow(2.0*R*T_init,0.5);
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getSelfCount();
+	const int nCells = cells.getCount();
 
 
 	const VectorT5Array& coeff = dynamic_cast<const VectorT5Array&>(_macroFields.coeff[cells]);
@@ -859,6 +856,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	  }
 	  
 	  if (_options.transient)
+	    //updateTime();
+	    
 	    {
 	      Field& fnd1 = *_dsfPtr1.dsf[j];
 	      TArray& f1 = dynamic_cast< TArray&>(fnd1[cells]);
@@ -873,6 +872,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 		    f2[c] = f[c];
 		}
 	    } 
+	    
 	  
 	}
       }
@@ -1075,9 +1075,9 @@ T u_init=pow(2.0*R*T_init,0.5);
 		  {
 		    bc->bcType = "SymmetryBC";
 		    }
-		else if((fg.groupType =="copy "))
+		else if((fg.groupType =="zero-gradient "))
 		  {
-		      bc->bcType = "CopyBC";
+		      bc->bcType = "ZeroGradBC";
 		  }
 		else
 		  throw CException("KineticModel: unknown face group type "
@@ -1214,7 +1214,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 			bc.getVal("specifiedZVelocity"),
 			faces);
 
-	    if (( bc.bcType == "CopyBC")) 
+	    if (( bc.bcType == "ZeroGradBC")) 
 	      {
 		for(int f=0; f< nFaces; f++)
 		  {
@@ -1328,7 +1328,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 		kbc.applySpecularWallBC();
 		//cout <<"applied"<<endl;
 	      } 
-	    else if(bc.bcType=="CopyBC")
+	    else if(bc.bcType=="ZeroGradBC")
 	      {
 		kbc.applyZeroGradientBC();
 	      }
@@ -1363,6 +1363,10 @@ T u_init=pow(2.0*R*T_init,0.5);
 	//const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
 
 	//callBoundaryConditions();
+   	  _macroFields.velocity.syncLocal();
+ 	  _macroFields.temperature.syncLocal();
+  	  _macroFields.density .syncLocal();
+
 	for(int direction=0; direction<N123;direction++)
 	  {
 	    LinearSystem ls;
@@ -1389,7 +1393,7 @@ T u_init=pow(2.0*R*T_init,0.5);
                  rArray0 += rArrayd;//*wts[direction];
 		 
 		 // ArrayBase& vArray0 = (*vNorm)[fn0];
-		 //vArray0 += rArrayd;//*cx[direction]*wts[direction];
+		 // vArray0 += rArrayd;//*cx[direction]*wts[direction];
              }
 
 	     ls.postSolve();
@@ -1406,18 +1410,17 @@ T u_init=pow(2.0*R*T_init,0.5);
 	if (_niters < 5)
         {
              _initialKmodelNorm->setMax(*rNorm);
-	     //_initialKmodelvNorm->setMax(*vNorm);
+	     // _initialKmodelvNorm->setMax(*vNorm);
             
         } 
  
 	MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));	
-	//MFRPtr vnormRatio((*vNorm)/(*_initialKmodelvNorm));
+	//	MFRPtr vnormRatio((*vNorm)/(*_initialKmodelvNorm));
 	//if ( MPI::COMM_WORLD.Get_rank() == 0 )
 	{cout << _niters << ": " << *rNorm <<endl; }
 
 	_niters++;
-	if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance ))
-	  // && (*vNorm < _options.absoluteTolerance)) &&(*vnormRatio < _options.relativeTolerance ))
+	if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance )) //&& ((*vNorm < _options.absoluteTolerance)||(*vnormRatio < _options.relativeTolerance )))
 	  break;
 	
 	callBoundaryConditions();
@@ -1441,8 +1444,10 @@ T u_init=pow(2.0*R*T_init,0.5);
     const int N123 =_quadrature.getDirCount();
    
     MFRPtr rNorm;
+	  
     for(int direction=0; direction<N123;direction++)
       {
+
 
 	for(int n=0; n<niter; n++)  
 	  {
@@ -1488,12 +1493,12 @@ T u_init=pow(2.0*R*T_init,0.5);
 	    
 	   
 	    _niters++;
-	    if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance ))
-	      // && (*vNorm < _options.absoluteTolerance)) &&(*vnormRatio < _options.relativeTolerance ))
+	    if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance )) 
 	      break;
 	  
 	    
 	  }
+
 	  
       }
   }
@@ -1602,7 +1607,7 @@ T u_init=pow(2.0*R*T_init,0.5);
   int _niters;
 
   MFRPtr _initialKmodelNorm;
-  //MFRPtr _initialKmodelvNorm;
+  MFRPtr _initialKmodelvNorm;
   shared_ptr<Field> _previousVelocity;
   shared_ptr<Field> _KmodelApField;
 };
