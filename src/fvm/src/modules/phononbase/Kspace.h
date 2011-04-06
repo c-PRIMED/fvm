@@ -22,9 +22,11 @@ class Kspace
 
  Kspace(T tau,T vgmag,T cp,int ntheta,int nphi) :
   _length(ntheta*nphi),
-    _Kmesh()
+    _Kmesh(),
+    _totvol(0.),
+    _Covertau(0.)
       { //makes gray, isotropic kspace  
-	unsigned int i=0;
+	
 	const double pi=3.141592653;
 	T theta;
 	T phi;
@@ -45,10 +47,11 @@ class Kspace
 		Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode(vg,cp,tau));
 		Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeptr,dk3));
 		_Kmesh.push_back(volptr);
-		i++;
+		_Covertau+=cp/tau*dk3;
+		_totvol+=dk3;
 	      }
 	  }
-	//this->findDK3();
+	_Covertau=_Covertau/_totvol;
       }
   
   //void setvol(int n,Tkvol k) {*_Kmesh[n]=k;}
@@ -58,23 +61,17 @@ class Kspace
   {
     return (_Kmesh[0]->getmodenum())*_length;
   }
-  void findDK3()
-  {
-    _totvol=0.;
-    for(int i=0;i<_length;i++)
-      {
-	Tkvol& vol=getkvol(i);
-	_totvol+=vol.getdk3();
-      }
-  }
   T getDK3() const {return _totvol;}
+  T getCovertau() const {return _Covertau;}
 
  private:
 
+  Kspace(const Kspace&);
   //num volumes
   int _length;
   Volvec _Kmesh;
   T _totvol;    //total Kspace volume
+  T _Covertau;
   
 
 };

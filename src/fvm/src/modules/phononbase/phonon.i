@@ -10,7 +10,6 @@
 %import "ArrayBase.i"
 %import "Field.i"
 %import "Vector.i"
- //%import "Discretization.h"
 
 using namespace std;
 
@@ -19,5 +18,3 @@ using namespace std;
 %include "Kspace.i"
 %include "PhononModel.i"
 %include "PhononBoundary.i"
- //%include "PhononCollisionDiscretization.i"
- //%include "PhononConvectionDiscretization.i"

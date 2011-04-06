@@ -53,7 +53,7 @@ public:
 
     // should there be some other checks ?
     //if (!_convectingFluxField.hasArray(faces))
-    //  return;
+   
 
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     CCMatrix& matrix =

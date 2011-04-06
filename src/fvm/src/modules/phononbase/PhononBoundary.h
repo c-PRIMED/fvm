@@ -14,6 +14,9 @@
 #include "FluxJacobianMatrix.h"
 #include "DiagonalMatrix.h"
 #include "GeomFields.h"
+#include "pmode.h"
+#include "Kspace.h"
+#include "kvol.h"
 
 template<class X>
 class PhononBoundary
@@ -40,7 +43,7 @@ class PhononBoundary
 		const Mesh& mesh,
 		const GeomFields& geomFields,
 		const Xkspace& kspace,
-		PhononModelOptions<X> opts):
+		PhononModelOptions<X>& opts):
   
   _faces(faces),
     _cells(mesh.getCells()),
@@ -51,10 +54,10 @@ class PhononBoundary
     _areaField(geomFields.area),
     _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces])),
     _options(opts),
-    _kspace(kspace)
-    
+    _kspace(kspace)  
   {}
-  // KineticModelOptions<X>&   getOptions() {return _options;}  
+
+  PhononModelOptions<X>&   getOptions() {return _options;}  
 
   void applyReflectingWall(int f,const X refl) const
   {
@@ -110,7 +113,7 @@ class PhononBoundary
 	    Xmode& mode=kv.getmode(m);
 	    Field& efield=mode.getfield();
 	    VectorT3 vg = mode.getv();     // phonon group velocity
-	    XArray& e_val = dynamic_cast< XArray&>(efield[_cells]);  // e"
+	    XArray& e_val = dynamic_cast<XArray&>(efield[_cells]);  // e"
 	    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];  //normal unit vector to face
 	    const X vg_dot_en = vg[0]*en[0]+vg[1]*en[1]+vg[2]*en[2];
 	    
@@ -157,12 +160,12 @@ class PhononBoundary
 	    X Tref=_options["Tref"];
 	    Xmode& mode=kv.getmode(m);
 	    Field& efield=mode.getfield();
-	    VectorT3 vg = mode.getv();
+	    VectorX3 vg = mode.getv();
 	    X cp=mode.getcp();
 	    XArray& e_val = dynamic_cast< XArray&>(efield[_cells]);  // e"
-	    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];  //normal unit vector to face
+	    const VectorX3 en = _faceArea[f]/_faceAreaMag[f];  //normal unit vector to face
 	    const X vg_dot_en = vg[0]*en[0]+vg[1]*en[1]+vg[2]*en[2];
-
+	    	          
 	    if (vg_dot_en > T_Scalar(0.0))
 	      {
 		e_val[c1]=e_val[c0];
@@ -171,7 +174,7 @@ class PhononBoundary
 	      {
 		e_val[c1]=cp*(Twall-Tref)/DK3;
 	      }
-
+	    
 	  } //mode loop end	
       }
   }
@@ -221,8 +224,8 @@ class PhononBoundary
   const TArray& _faceAreaMag;
   const Field& _areaField;
   const VectorT3Array& _faceArea;
-  PhononModelOptions<X> _options;
-  Xkspace _kspace;
+  PhononModelOptions<X>& _options;
+  const Xkspace& _kspace;
 };
   
 #endif

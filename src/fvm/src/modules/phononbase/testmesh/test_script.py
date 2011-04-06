@@ -25,28 +25,30 @@ def usage():
     print "Output will be in filebase-prism.dat if it is not specified."
     sys.exit(1)
 
-print "reading",fileBase+".cas"
 reader = FluentCase(fileBase+".cas")
 reader.read();
-print "read mesh"
 meshes = reader.getMeshList()
-print "got meshlist"
 geomFields =  fvm.models.GeomFields('geom')
-print "got geomfields"
 metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
-print "metrics finished"
 
-K_space=pa.KspaceA(1,1,1,1,2)
-print "made k_space"
-K_space.findDK3()
+K_space=pa.KspaceA(1,1,1,2,4)
 pmacro=pext.PhononMacro("e_dubprime")
-print "made pmacro"
 
 pmodel=pa.PhononModelA(meshes,geomFields,K_space,pmacro)
-print "made pmodel"
-pmodel.init()
-print "initialized"
-#raw_input("paused")
+popts=pmodel.getOptions()
+bcMap=pmodel.getBCs()
+
+rightbc=bcMap[2]
+rightbc.bcType="temperature"
+leftbc=bcMap[4]
+leftbc.bcType="temperature"
+topbc=bcMap[6]
+topbc.bcType="temperature"
+botbc=bcMap[5]
+botbc.bcType="temperature"
+
 pmodel.callBoundaryConditions()
-print "BCs finished"
+pmodel.printTemp()
+pmodel.advance(100)
+pmodel.printTemp()

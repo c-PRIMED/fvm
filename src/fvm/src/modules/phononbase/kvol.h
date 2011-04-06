@@ -31,6 +31,7 @@ class kvol
 
  private:
 
+  kvol(const kvol&);
   //weight factor (1/m3)
   T _dk3;
 
