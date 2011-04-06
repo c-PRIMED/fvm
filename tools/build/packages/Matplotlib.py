@@ -4,9 +4,8 @@ class Matplotlib(BuildPkg):
     requires = ['numpy']
 
     def _installed(self):
-        # 0.99 is good. 1.0 has a problem when plotting
-        if python_package('matplotlib', [0,99]) \
-            and not python_package('matplotlib', [1,0]):
+        # need 1.0.1
+        if python_package('matplotlib', [1,0,1]):
             return True
         return False
 
