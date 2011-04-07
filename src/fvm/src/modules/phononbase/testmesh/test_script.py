@@ -32,7 +32,7 @@ geomFields =  fvm.models.GeomFields('geom')
 metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
 
-K_space=pa.KspaceA(1,1,1,2,4)
+K_space=pa.KspaceA(0.1,1,1,2,4)
 pmacro=pext.PhononMacro("e_dubprime")
 
 pmodel=pa.PhononModelA(meshes,geomFields,K_space,pmacro)
@@ -49,6 +49,6 @@ botbc=bcMap[5]
 botbc.bcType="temperature"
 
 pmodel.callBoundaryConditions()
-pmodel.printTemp()
-pmodel.advance(100)
-pmodel.printTemp()
+#pmodel.printTemp()
+pmodel.advance(1000)
+#pmodel.printTemp()

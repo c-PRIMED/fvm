@@ -147,7 +147,7 @@ class PhononModel : public Model
 	      {	
      
 		FloatValEvaluator<T>
-		  bReflection(bc.getVal("specifiedreflection"),faces);
+		  bReflection(bc.getVal("specifiedReflection"),faces);
 
 		pbc.applyReflectingWall(bReflection);
 	      }
