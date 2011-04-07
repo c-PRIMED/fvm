@@ -825,6 +825,15 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
   
   void eliminateRow(const int j, Array<X>& b )
   {
+    // in case of problems with an immersed boundary, we might call
+    // this function also for interior rows that are marked as
+    // Dirichlet but in that case we don't need to do anything since
+    // the off diagonal entries are all zero
+    const int nRowsInterior = _conn.getRowSite().getSelfCount();
+    const bool isInterior = (j<nRowsInterior);
+
+    if (isInterior) return;
+    
     const Diag& a_jj = _diag[j];
     // loop over neighbours of j to determine the rows that will change
     for (int nb = _row[j]; nb<_row[j+1]; nb++)
