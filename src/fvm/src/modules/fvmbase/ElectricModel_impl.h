@@ -103,9 +103,9 @@ public:
             {
                 bc->bcType = "Symmetry";
             }
-	    else
-              throw CException("ElectricModel: unknown face group type "
-                               + fg.groupType);
+	    //else
+            //  throw CException("ElectricModel: unknown face group type "
+            //                   + fg.groupType);
         }
     }
   }
@@ -655,7 +655,7 @@ public:
         {
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
-
+	    const int nFaces = faces.getCount();
             const ElectricBC<T>& bc = *_bcMap[fg.id];
             
 
@@ -667,8 +667,11 @@ public:
 
             if (bc.bcType == "SpecifiedPotential")
             {
-                const T bT(bc["specifiedPotential"]);
-                gbc.applyDirichletBC(bT);
+            	FloatValEvaluator<T> bT(bc.getVal("specifiedPotential"), faces);
+                for(int f=0; f<nFaces; f++)
+		{
+                    gbc.applyDirichletBC(f, bT[f]);
+		}
             }
             else if (bc.bcType == "SpecifiedPotentialFlux")
             {

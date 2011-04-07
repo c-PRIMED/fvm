@@ -134,7 +134,9 @@ public:
   // update node coordinates and face velocity for the boundary mesh
   // corresponding to the given mesh
   void updateBoundaryMesh(const Mesh& mesh, Mesh& bMesh,
-			  const double thickness)
+			  const double thickness, 
+			  const double timeStep, 
+			  Field& velocityField)
   {
     // update node coords
     const StorageSite& bMeshNodes = bMesh.getNodes();
@@ -166,7 +168,7 @@ public:
 
 
     // update face velocity
-    /*
+    
     const StorageSite& bMeshFaces = bMesh.getFaces();
 
     shared_ptr<VectorT3Array>
@@ -178,34 +180,58 @@ public:
       dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
     VectorT3Array& wN1 =
       dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacementN1[nodes]);
+    
+    const StorageSite& cells = mesh.getCells();
+    const int nLocalCells = cells.getSelfCount();
+    const int nCells = cells.getCount();
+    
+    for (int c=0; c<nLocalCells; c++){
+        const CRConnectivity& cellNodes = mesh.getCellNodes();
+	const int nCellNodes = cellNodes.getCount(c);
+	VectorT3 vf(VectorT3::getZero());
+	for (int n=0; n<nCellNodes; n++){
+	  const int node = cellNodes(c, n);
+	  VectorT3 vn = (w[node]-wN1[node])/timeStep;
+	  vf += vn;
+	}
+	vf /= nCellNodes;
+	
+	(*bVelocity)[c] = vf;
+	(*bVelocity)[c+nLocalCells] = vf;
+    }
 
-    int bMeshFaceCount=0;
+    for (int c=nLocalCells; c<nCells; c++){
+        const CRConnectivity& cellNodes = mesh.getCellNodes();
+	const int nCellNodes = cellNodes.getCount(c);
+	VectorT3 vf(VectorT3::getZero());
+	for (int n=0; n<nCellNodes; n++){
+	  const int node = cellNodes(c, n);
+	  VectorT3 vn = (w[node]-wN1[node])/timeStep;
+	  vf += vn;
+	}
+	vf /= nCellNodes;
+	
+	(*bVelocity)[c+nLocalCells] = vf;
+    }
+    
 
-    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
-    {
-        const FaceGroup& fg = *fgPtr;
-        const StorageSite& faces = fg.site;
-        if (fg.groupType!="interior")
-        {
-            const int nFaces = faces.getCount();
-            const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
-            for(int f=0; f<nFaces; f++)
-            {
-                const int nFaceNodes = faceNodes.getCount(f);
-                VectorT3 vf(VectorT3::getZero());
-                
-                for(int nn=0; nn<nFaceNodes; nn++)
-                {
-                    const int node = faceNodes(f,nn);
-                    VectorT3 vn = (w[node] - wN1[node])/timeStep;
-                    vf += vn;
-                }
-                vf /= nFaceNodes;
-                (*bVelocity)[bMeshFaceCount] = vf;
-                 bMeshFaceCount++;
-            }
-        }
-	}*/
+    double maxVel = 0;
+    int index = 0;
+    for(int f=0; f<bMeshFaces.getCount(); f++)
+      {  
+	double velMag = (*bVelocity)[f][0]*(*bVelocity)[f][0]+(*bVelocity)[f][1]*(*bVelocity)[f][1]+
+	  (*bVelocity)[f][2]*(*bVelocity)[f][2];
+	if (velMag > maxVel){
+	  maxVel = velMag;
+	  index = f;
+	}
+      }
+        	    
+    const VectorT3Array& faceCentroid = 
+      dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[bMeshFaces]);
+    cout << "max velocity is at "  << index << endl;
+    cout << faceCentroid[index] << endl;
+   
   }
   
   
