@@ -852,8 +852,11 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
             
             if (i!=k)
             {
-                OffDiag& a_ik = getCoeff(i,k);
-                a_ik -= DiagToOffDiag(a_ij*(a_jk/a_jj));
+                if (hasCoeff(i,k))
+                {
+                    OffDiag& a_ik = getCoeff(i,k);
+                    a_ik -= DiagToOffDiag(a_ij*(a_jk/a_jj));
+                }
             }
             else
               _diag[i] -= a_ij*(a_jk/a_jj);
