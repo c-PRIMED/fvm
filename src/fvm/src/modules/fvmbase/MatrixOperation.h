@@ -190,86 +190,103 @@ SquareMatrix<T,N>  inverse(SquareMatrix<T,N>& b, int size)
    }
    return a;
 }
-
+/* 
+taken from http://www.physics.unlv.edu/~pang/cp_c.html 4.4
+*/
 template<class T, int N>
 SquareMatrix<T,N> inverseGauss (SquareMatrix<T,N>&  a, int size)
 {
   
   int indx[10];
-  int i, j, k, itmp;
-  T c1, pi, pi1, pj;
   T c[10];
   SquareMatrix<T,N> b(NumTypeTraits<T>::getZero());
   SquareMatrix<T,N> x(NumTypeTraits<T>::getZero());
-  b = 1.0;
+  
+  b = 1.0; //identity matrix 
+  /*
+    for (int i = 0; i < size; i++)
+    cout <<i<<" a-matrix "<<a(i,0)<< " "<< a(i,1)<< "   " <<a(i,2)<< " "<< a(i,3)<< "   " <<a(i,4)<<endl;		       
+  */
 
-  /* Initialize the index */
-  for (i = 0; i < size; i++)
-  {
-    indx[i] = i;
-  }
+ /* Initialize the index */
+  for (int i = 0; i < size; i++){indx[i] = i;}
+  
   /* Find the rescaling factors, one from each row */ 
-  for (i = 0; i < size; i++)
+  for (int i = 0; i < size; i++)
   {
-    c1 = 0;
-    for (j = 0; j < size; j++)
-    {
-      if (fabs(a(i,j)) > c1) 
-	c1 = fabs(a(i,j));
-    }
+    T c1 = 0;
+    for (int j = 0; j < size; j++)
+      {
+	if (fabs(a(i,j)) > c1) 
+	  c1 = fabs(a(i,j));
+      }
     c[i] = c1;
   }
+ 
+  
   /* Search the pivoting (largest) element from each column */ 
-  for (j = 0; j < size-1; j++)
+  for (int j = 0; j < size-1; j++)
   {
-    pi1 = 0;
-    for (i = j; i < size; i++)
+    T pi1 = 0.0; 
+    int pk=j;
+    int  itmp;
+    T pi;
+    for (int i = j; i < size; i++)
     {
       pi = fabs(a(indx[i],j))/c[indx[i]];
       if (pi > pi1)
       {
         pi1 = pi;
-        k = i;
+        pk = i;
       }
     }
     /* Interchange the rows via indx[] to record pivoting order */
     itmp = indx[j];
-    indx[j] = indx[k];
-    indx[k] = itmp;
-    for (i = j+1; i < size; i++)
+    indx[j] = indx[pk];
+    indx[pk] = itmp;
+    for (int i = j+1; i < size; i++)
     {
+      T pj;
       pj = a(indx[i],j)/a(indx[j],j);
       /* Record pivoting ratios below the diagonal */
       a(indx[i],j) = pj;
       /* Modify other elements accordingly */
-      for (k = j+1; k < size; k++)
+      for (int k = j+1; k < size; k++)
       {
         a(indx[i],k) = a(indx[i],k)-pj*a(indx[j],k);
       }
     }
   }
-  for (i = 0; i < size-1; i++)
+
+  /*
+  cout <<"indx  "<< "  re-scaling" <<endl;
+  for (int i = 0; i < size; i++)cout<< indx[i]<<" -  "<<c[i] <<endl;
+  for (int i = 0; i < size; i++)
+    cout <<i<<" an-matrix "<<a(i,0)<< " "<< a(i,1)<< "   " <<a(i,2)<< " "<< a(i,3)<< "   " <<a(i,4)<<endl;	
+  */
+
+  for (int i = 0; i < size-1; i++)
   {
-    for (j = i+1; j < size; j++)
+    for (int j = i+1; j < size; j++)
     {
-      for (k = 0; k < size; k++)
+      for (int k = 0; k < size; k++)
       {
         b(indx[j],k) = b(indx[j],k)-a(indx[j],i)*b(indx[i],k);
       }
     }
   }
   //backsubstitution
-  for (i = 0; i < size; i++)
+  for (int col = 0; col < size; col++)
   {
-    x(size-1,i) = b(indx[size-1],i)/a(indx[size-1],size-1);
-    for (j = size-2; j >= 0; j = j-1)
+    x(size-1,col) = b(indx[size-1],col)/a(indx[size-1],size-1);
+    for (int j = size-2; j >= 0; j = j-1)
     {
-      x(j,i) = b(indx[j],i);
-      for (k = j+1; k < size; k++)
+      x(j,col) = b(indx[j],col);
+      for (int k = j+1; k < size; k++)
       {
-        x(j,i) = x(j,i)-a(indx[j],k)*x(k,i);
+        x(j,col) = x(j,col)-a(indx[j],k)*x(k,col);
       }
-      x(j,i) = x(j,i)/a(indx[j],j);
+      x(j,col) = x(j,col)/a(indx[j],j);
     }
   }
   return x;

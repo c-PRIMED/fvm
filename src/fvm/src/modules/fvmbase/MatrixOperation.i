@@ -33,6 +33,6 @@ template<class T, int N>
 SquareMatrix<T,N>  inverse(SquareMatrix<T,N>& b, int size);
 
 
-%template(SquareMatrixA) SquareMatrix<double, 2>;
-%template(inverseGaussA) inverseGauss<double, 2>;
-%template(inverseA) inverse<double, 2>;
+%template(SquareMatrixA) SquareMatrix<double, 10>;
+%template(inverseGaussA) inverseGauss<double, 10>;
+%template(inverseA) inverse<double, 3>;
