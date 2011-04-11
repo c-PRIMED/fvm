@@ -15,7 +15,7 @@
 #include "SpikeSolver.h"
 #include "ArrayBase.h"
 #include "Array.h"
-
+#include "MatrixOperation.h"
 #include <signal.h>
 #include <fenv.h>
   
@@ -84,6 +84,7 @@ typedef Vector<double,3> VecD3;
 %include "AABB.i"
 %include "KSearchTree.i"
 %include "IBManager.i"
+%include "MatrixOperation.i"
 
 #ifdef FVM_PARALLEL
 
