@@ -72,7 +72,7 @@ public:
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
 
     
-    const int nCells = cells.getSelfCount();
+    const int nCells = cells.getSelfCount();//getSelfCount();
 
     //cout << "cellVolume" << cellVolume[0] << endl ;
     if (_Order > 1)

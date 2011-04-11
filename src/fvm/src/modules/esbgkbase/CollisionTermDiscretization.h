@@ -55,7 +55,7 @@ public:
     TArray& rCell = dynamic_cast<TArray&>(rField[cVarIndex]);   
     
     const XArray& nue = dynamic_cast<const XArray&>(_collisionFrequency[cells]);
-    const int nCells = cells.getSelfCount();
+    const int nCells = cells.getSelfCount(); //getSelfCount()
     
     //cout << nue[0] << " " << nue[100] << " " << nue[50] << endl ;
     for(int c=0; c<nCells; c++)

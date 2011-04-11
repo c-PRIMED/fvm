@@ -207,9 +207,9 @@ Entropy[c]=0.0;
 	    Entropy[c]=0.0;
 	  }	
 	const T rho_init=_options["rho_init"]; 
-const T T_init=_options["T_init"]; 
-const T R=8314.0/_options["molecularWeight"];
-T u_init=pow(2.0*R*T_init,0.5);
+	const T T_init=_options["T_init"]; 
+	const T R=8314.0/_options["molecularWeight"];
+	T u_init=pow(2.0*R*T_init,0.5);
 	for(int j=0;j<N123;j++){
 	  
 	  Field& fnd = *_dsfPtr.dsf[j];
@@ -349,7 +349,8 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const T nondim_length=1.0;
 	*/
 	const T mu0=rho_init*R* T_init*nondim_length/pow(2*R* T_init,0.5);  
-
+	//const T mu0=rho_init*nondim_length*pow(2*R* T_init,0.5);
+	  
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
@@ -361,12 +362,13 @@ T u_init=pow(2.0*R*T_init,0.5);
 	TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
 	for(int c=0; c<nCells;c++)
 	  {
-	    viscosity[c]= muref*pow(temperature[c]*T_init/ Tmuref,mu_w); // viscosity power law
-	    collisionFrequency[c]=density[c]*temperature[c]/viscosity[c]*mu0;//(muref/mu0*pow(temperature[c]/ Tmuref*T_init, mu_w))  ;
+	    viscosity[c]= muref/mu0*pow(temperature[c]*T_init/ Tmuref,mu_w); // viscosity power law
+	    collisionFrequency[c]=density[c]*temperature[c]/viscosity[c];//*mu0;
 	  }
+	
 	if(_options.fgamma==2){
 	  for(int c=0; c<nCells;c++)
-	    {collisionFrequency[c]=_options.Prandtl*collisionFrequency[c];}
+	    collisionFrequency[c]=_options.Prandtl*collisionFrequency[c];
 	}
 	
       }
@@ -427,7 +429,7 @@ T u_init=pow(2.0*R*T_init,0.5);
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {		
-	//cout << "inside NewtonsMethod" <<endl;
+	//cout << " NewtonsMethod" <<endl;
 	const T tolx=_options["ToleranceX"];
 	const T tolf=_options["ToleranceF"];
 	const int sizeC=5;
@@ -440,8 +442,9 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
     	
 	VectorT5Array& coeff = dynamic_cast<VectorT5Array&>(_macroFields.coeff[cells]);
-	
+	//cout << "inside NewtonsMethod" <<endl;
 	for(int c=0; c<nCells;c++){
+	  //cout << "NS BGK "<<c <<endl;
 	  for (int trial=0;trial<ktrial;trial ++){
 	    SquareMatrix<T,sizeC> fjac(0);
 	    SquareMatrix<T,sizeC> fjacinv(0);
@@ -459,13 +462,6 @@ T u_init=pow(2.0*R*T_init,0.5);
 	    
 	    setJacobianBGK(fjac,fvec,coeff[c],v[c],c);
 	    
-	    
-	    /*
-	    if(c==0){
-	      cout << "ktrial"<< trial <<endl;
-	      cout << "fj  " <<fjac(1,1) <<endl;
-	      cout << "fv  " <<fvec[1] <<endl;}
-	    */
 	    //solve using GE or inverse
 	    T errf=0.;
 	    for (int row=0;row<sizeC;row++){errf+=fabs(fvec[row]);}
@@ -474,14 +470,15 @@ T u_init=pow(2.0*R*T_init,0.5);
 	      break;
 	    VectorT5 pvec;
 	    for (int row=0;row<sizeC;row++){pvec[row]=-fvec[row];}//rhs
-	    
-	    
+	    //cout <<"        trial"<<trial<<endl;
+	    //{cout<<"fjac " <<fjac(1,1) << " "<< fjac(2,2) <<" " <<fjac(3,1)<< " " <<endl;}
+
 	    //solve Ax=b for x 
 	    //p=GE_elim(fjac,p,3);
 	    VectorT5 xvec;
 	    fjacinv=inverseGauss(fjac,sizeC);
 	     
-	    //if(c==20){cout<<"fjac " <<fjac(1,1) << endl;}
+	    
 	    
 	    for (int row=0;row<sizeC;row++){ 
 	      xvec[row]=0.0;
@@ -541,8 +538,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 	const int numFields= _quadrature.getDirCount(); 
 	
 	//call Newtons Method
-	//const int ktrial(5);
-	//cout << "calling Newtons method" <<endl;
+	
 	NewtonsMethodBGK(ktrial);
 	//int cellno=_options.printCellNumber;
 	//if (n==0){cout << " coeffs-BGK " << coeff[cellno][0] <<" cx^2  " <<coeff[cellno][1] <<" cx  " <<coeff[cellno][2] <<endl;}
@@ -631,6 +627,7 @@ T u_init=pow(2.0*R*T_init,0.5);
 	VectorT10Array& coeffg = dynamic_cast<VectorT10Array&>(_macroFields.coeffg[cells]);
 	
 	for(int c=0; c<nCells;c++){
+	  // {cout <<"NM:ES" <<c <<endl;}
 	  for (int trial=0;trial<ktrial;trial ++){
 	    SquareMatrix<T,sizeC> fjac(0);
 	    SquareMatrix<T,sizeC> fjacinv(0);
@@ -1363,10 +1360,12 @@ T u_init=pow(2.0*R*T_init,0.5);
 	//const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
 
 	//callBoundaryConditions();
-   	  _macroFields.velocity.syncLocal();
- 	  _macroFields.temperature.syncLocal();
-  	  _macroFields.density .syncLocal();
-
+   	
+	/*
+	_macroFields.velocity.syncLocal();
+	_macroFields.temperature.syncLocal();
+	_macroFields.density .syncLocal();
+	*/
 	for(int direction=0; direction<N123;direction++)
 	  {
 	    LinearSystem ls;

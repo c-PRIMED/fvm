@@ -200,8 +200,7 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
   {
     for (int i=0; i<_faces.getCount();i++)
       applySpecularWallBC(i);
-    for (int i=0; i<_faces.getCount();i++)
-      applySpecularWallBC(i);
+   
   }
 
  
