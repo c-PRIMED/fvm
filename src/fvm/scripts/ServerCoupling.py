@@ -140,11 +140,11 @@ class ServerCoupling:
                 bc['specifiedYForce'] = self.bForceYField
                 bc['specifiedZForce'] = self.bForceZField
 
-    def _del_(self):
+    def __del__(self):
          if ( self.procID == 0 ):
 	     MPI.Close_port(self.portName)
-         MPI.SERVER_COMM_CLIENT.Barrier()
-	 MPI.SERVER_COMM_CLIENT.Disconnect()
+         self.SERVER_COMM_CLIENT.Barrier()
+	 self.SERVER_COMM_CLIENT.Disconnect()
 	 self.PARENT.Barrier()
 	 self.PARENT.Disconnect()
 
