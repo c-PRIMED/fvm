@@ -17,7 +17,7 @@ class StorageSite
   typedef map< const StorageSite*, boost::shared_ptr< Array<int> > > ScatterMap;
   typedef map< const StorageSite*, boost::shared_ptr< Array<int> > > GatherMap;
   typedef map< const StorageSite*, boost::shared_ptr< Array<int> > > CommonMap;
-
+  typedef map<  const StorageSite*, map<int,int> >   ScatterIndex;  
 public:
   int getCount() const;
   int getSelfCount() const;
@@ -37,6 +37,15 @@ public:
       }
       return boost::shared_ptr<ArrayBase>();
     }
+  }
+
+  %extend{
+    std::map<int,int>   getGlobalToLocal( const StorageSite& other ){
+         StorageSite::ScatterIndex scatterIndex = self->getScatterIndex();
+         return scatterIndex.find(&other)->second;
+    }
+        
+
   }
   
 private:
@@ -159,14 +168,20 @@ public:
   
   // const GhostCellSiteMap& getGhostCellSiteMap() const;
   // const StorageSite* getGhostCellSite( int id );
-  //const Array<int>&  getLocalToGlobalNodes() const;
   %extend{
     boost::shared_ptr<ArrayBase> getLocalToGlobalNodes()
     {
+      boost::shared_ptr<ArrayBase> local = self->getLocalToGlobalNodesPtr();
       return self->getLocalToGlobalNodesPtr();
+
     }
   }
   const set<int>&  getBoundaryNodesSet() const;
+  void setCommonFacesMap( const Mesh& bMesh );
+  const map<int,int>& getCommonFacesMap() const;
+  boost::shared_ptr<ArrayBase> getNodeCoordinatesPtr();   
+  void setNodeRepeationArrayCoupling(const Mesh& bMesh);
+  boost::shared_ptr< ArrayBase > getUpdatedNodesCoordCoupling(const GeomFields& geomField, const Mesh& bMesh);
 
   %extend
   {
@@ -184,6 +199,14 @@ public:
     {
       std::vector<FaceGroup*> v;
       const FaceGroupList& fgs = self->getAllFaceGroups();
+      foreach(FaceGroupPtr fg, fgs)
+        v.push_back(fg.get());
+      return v;
+    }
+    std::vector<FaceGroup*> getBoundaryFaceGroups()
+    {
+      std::vector<FaceGroup*> v;
+      const FaceGroupList& fgs = self->getBoundaryFaceGroups();
       foreach(FaceGroupPtr fg, fgs)
         v.push_back(fg.get());
       return v;

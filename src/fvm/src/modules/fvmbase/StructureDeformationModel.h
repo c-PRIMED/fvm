@@ -204,6 +204,48 @@ public:
     }
   }
   
+
+  // update node coordinates and face velocity for the boundary mesh
+  // corresponding to the given mesh
+  void updateBoundaryMesh(const Mesh& mesh, Mesh& bMesh,
+                          Field& velocityField, const map<int,int>& commonFacesMap,
+                          const double timeStep)
+  {
+    // update face velocity
+    const StorageSite& bMeshFaces = bMesh.getFaces();
+    shared_ptr<VectorT3Array>
+      bVelocity(new VectorT3Array(bMeshFaces.getCount()));
+      bVelocity->zero();
+
+    velocityField.addArray(bMeshFaces,bVelocity);
+  
+    const StorageSite& nodes = mesh.getNodes();
+    VectorT3Array& w =
+      dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
+    VectorT3Array& wN1 =
+      dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacementN1[nodes]);
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups()){
+       const FaceGroup& fg = *fgPtr;
+       const StorageSite& faces = fg.site;
+       const int nFaces = faces.getCount();
+       const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+       for(int f=0; f<nFaces; f++){
+          const int faceID = f + faces.getOffset();
+          const int nFaceNodes = faceNodes.getCount(f);
+          VectorT3 vf(VectorT3::getZero());
+              
+          for(int nn=0; nn<nFaceNodes; nn++){
+             const int node = faceNodes(f,nn);
+             VectorT3 vn = (w[node] - wN1[node])/timeStep;
+             vf += vn;
+          }
+          vf /= nFaceNodes;
+          (*bVelocity)[ commonFacesMap.find(faceID)->second ] = vf;
+       }
+    }
+  } 
+
   
   const ArrayBase& getCommon(const StorageSite& site, const StorageSite& osite)
   {

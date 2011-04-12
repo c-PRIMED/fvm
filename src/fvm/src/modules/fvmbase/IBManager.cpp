@@ -5,6 +5,10 @@
 #include "GradientModel.h"
 #include <stack>
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 
 
 IBManager::IBManager(GeomFields& geomFields,
@@ -88,7 +92,33 @@ void IBManager::update()
       createIBInterpolationStencil(fluidMesh,fluidCellsTree,solidMeshKSearchTree);
       findNearestCellForSolidFaces(fluidMesh,fluidCellsTree,solidFacesNearestCell);
   }
-  
+
+
+#ifdef FVM_PARALLEL
+    vector<doubleIntStruct>  solidFacesNearestCellMPI(solidMeshFaces.getCount());
+    const int procID = MPI::COMM_WORLD.Get_rank();
+    const int faceCount = solidMeshFaces.getCount();
+    for( int i = 0; i < faceCount; i++ ){
+       const Mesh& mesh = *solidFacesNearestCell[i].mesh;
+       const int meshID = mesh.getID();
+       const int tag = (std::max(procID, meshID) << 16 ) | ( std::min(procID,meshID) );
+       const double val = solidFacesNearestCell[i].distanceSquared;
+       solidFacesNearestCellMPI[i].VALUE = val;
+       solidFacesNearestCellMPI[i].TAG   = tag;
+    } 
+    //mpi comminuction
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &solidFacesNearestCellMPI[0], faceCount, MPI::DOUBLE_INT, MPI::MINLOC);
+    //now update solidFAcesNearestCell
+    for ( int i = 0; i < faceCount; i++ ){
+       const Mesh* meshThis = solidFacesNearestCell[i].mesh;
+       const int meshIDThis = meshThis->getID();
+       const int tagThis = (std::max(procID, meshIDThis) << 16 ) | ( std::min(procID,meshIDThis) );
+       if ( tagThis != solidFacesNearestCellMPI[i].TAG ){
+            solidFacesNearestCell[i].mesh = NULL;
+       }
+    }
+#endif
+
   for (int n=0; n<numFluidMeshes; n++)
   {
       Mesh& fluidMesh = *_fluidMeshes[n];

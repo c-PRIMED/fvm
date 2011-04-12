@@ -29,6 +29,14 @@ NearestCell
   set<int> neighbors;
 };
 
+struct   
+doubleIntStruct{
+   double VALUE;
+   int TAG;
+};
+
+
+
 class IBManager
 {
 public:

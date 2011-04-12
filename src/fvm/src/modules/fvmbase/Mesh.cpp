@@ -6,6 +6,7 @@
 #include <cassert>
 #include "KSearchTree.h"
 #include "GeomFields.h"
+#include <fstream>
 
 
 
@@ -708,8 +709,138 @@ void
 Mesh::createLocalGlobalArray()
 {
    _localToGlobal      = shared_ptr< Array<int> > ( new Array<int>( _cells.getCountLevel1() ) );
-   _localToGlobalNodes = shared_ptr< Array<int> > ( new Array<int>( _nodes.getCount() ) );
    *_localToGlobal  = -1;
+}
+
+void
+Mesh::createLocalToGlobalNodesArray()
+{
+   _localToGlobalNodes = shared_ptr< Array<int> > ( new Array<int>( _nodes.getCount() ) );
+   *_localToGlobalNodes  = -1;
+}
+
+
+void 
+Mesh::setNodeRepeationArrayCoupling(const Mesh& bMesh)
+{
+   const StorageSite& nodes = this->getNodes();
+   const StorageSite& boundaryNodes = bMesh.getNodes();
+   const map<int,int>&  globalToLocal = nodes.getScatterIndex().find(&boundaryNodes)->second;
+   //create repeatNodes array
+   _repeatNodes = shared_ptr< Array<int> > ( new Array<int> ( boundaryNodes.getCount() ) );
+   *_repeatNodes = 0;
+   foreach( const set<int>::value_type& node, _boundaryNodesSet ){
+      const int globalNodeID = (*_localToGlobalNodes)[node]; //from local parition mesh to global number
+      const int localNodeID  = globalToLocal.find(globalNodeID)->second; //from global node id to local id in boundary mesh
+      (*_repeatNodes)[localNodeID] = 1;  //this fill local partitionin mesh 
+   }
+   
+   //global reduction to find repeating nodes 
+#ifdef FVM_PARALLEL
+   MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, _repeatNodes->getData(),_repeatNodes->getLength(), MPI::INT, MPI::SUM);
+#endif
+
+//    if ( MPI::COMM_WORLD.Get_rank() == 0 )
+//    for( int i = 0; i < _repeatNodes->getLength(); i++ ){
+//       if ( (*_repeatNodes)[i] > 1 )
+//       cout << "repeatNodes[" << i << "] = " << (*_repeatNodes)[i] << endl;
+//    }
+
+
+
+
+}
+
+shared_ptr< ArrayBase >
+Mesh::getUpdatedNodesCoordCoupling(const GeomFields& geomField, const Mesh& bMesh)
+{
+    const StorageSite& nodes = this->getNodes();
+    const StorageSite& boundaryNodes = bMesh.getNodes();
+    const map<int,int>&  globalToLocal = nodes.getScatterIndex().find(&boundaryNodes)->second;
+    const Array<VecD3>& fieldCoord = dynamic_cast< const Array<VecD3>& > (geomField.coordinate[nodes]);
+    shared_ptr< ArrayBase> returnCoord = geomField.coordinate[nodes].newSizedClone( boundaryNodes.getCount() );
+    Array<VecD3>& coord = dynamic_cast< Array<VecD3>& > ( *returnCoord );
+    coord.zero();
+
+    foreach( const set<int>::value_type node, _boundaryNodesSet ){
+       const int globalNodeID = (*_localToGlobalNodes)[node];
+       const int localNodeID  = globalToLocal.find(globalNodeID)->second;	
+       coord[localNodeID]   = fieldCoord[node] / double( (*_repeatNodes)[localNodeID] );  //this fill local partitionin mesh 
+    }
+   //global reduction to find repeating nodes 
+// #ifdef FVM_PARALLEL
+//    const int count = coord.getLength() * 3;
+//    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, coord.getData(), count, MPI::DOUBLE, MPI::SUM);
+// #endif
+    return returnCoord;
+}	
+
+
+//getting map from this mesh to given mesh
+void
+Mesh::setCommonFacesMap( const Mesh& bMesh )
+{
+  //loop over local faces 
+  const StorageSite& nodes = this->getNodes();
+  const StorageSite& boundaryNodes = bMesh.getNodes();
+  const map<int,int>&  globalToLocal = nodes.getScatterIndex().find(&boundaryNodes)->second;
+
+   const CRConnectivity& faceNodes = this->getAllFaceNodes();
+   const CRConnectivity& faceNodesBMesh = bMesh.getAllFaceNodes();
+   shared_ptr<CRConnectivity> nodeFacesBMeshPtr = faceNodesBMesh.getTranspose();
+   const CRConnectivity& nodeFacesBMesh = *nodeFacesBMeshPtr;
+
+   foreach(const FaceGroupPtr fgPtr, this->getBoundaryFaceGroups()){
+      const FaceGroup& fg = *fgPtr;
+      const StorageSite& faces = fg.site;
+      const int nFaces = faces.getCount();
+     
+      for(int f=0; f<nFaces; f++){
+         const int faceID = f + faces.getOffset();
+         const int nFaceNodes = faceNodes.getCount(faceID);
+         set<int> comp; //vector to store localIds of bMesh 
+         vector<int> nodeList(nFaceNodes,0);
+         for(int nn=0; nn<nFaceNodes; nn++){
+            //get local node number
+            const int n=faceNodes(faceID,nn);
+            const int globalNodeID = (*_localToGlobalNodes)[n];
+            const int localNodeID  = globalToLocal.find(globalNodeID)->second;	 //localID boundary mesh
+            comp.insert(localNodeID);
+            nodeList[nn] = localNodeID;
+         }
+         //now get corresponding faceID to boundaryMeshFaceID
+         //loop over nodeFaces on boundaryMesh
+         for( int i = 0; i < nFaceNodes; i++ ){
+            bool breakUpperLoop = false;
+            const int nfaces = nodeFacesBMesh.getCount(nodeList[i]);
+            //loop over faces around nodes of boundary mesh
+            for ( int j = 0; j < nfaces; j++ ){
+               const int localFaceID  = nodeFacesBMesh(nodeList[i],j); //localFaceID boundary mesh
+               //check if this face is connected to our comp vector
+               const int nnodes = faceNodesBMesh.getCount(localFaceID);
+               vector<bool> matchingNodes(nFaceNodes,false);
+               for ( int k = 0; k < nnodes; k++ ){
+                  const int nodeID = faceNodesBMesh(localFaceID,j);
+                  if ( comp.count(nodeID) == 1 ){ //this means if this node is in search sets
+                     matchingNodes[k] = true;
+                  }
+               }
+               //checking if matchinNodes bools are all true
+               if ( find(matchingNodes.begin(), matchingNodes.end(), false) == matchingNodes.end() ){
+                  _commonFacesMap[faceID] = localFaceID;
+                  _commonFacesMapOther[localFaceID] = faceID;
+                  breakUpperLoop = true;
+                  break;
+               }
+            }
+            if ( breakUpperLoop ){
+               break;
+            }
+         }
+      }
+   }
+  
+  
 }
 
 
@@ -1945,3 +2076,29 @@ Mesh::CRConnectivityPrint( const CRConnectivity& conn, int procID, const string&
 #endif    
 }
 
+void 
+Mesh::CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID)
+{
+#ifdef FVM_PARALLEL
+    if ( MPI::COMM_WORLD.Get_rank() == procID ){
+       ofstream   debugFile;
+       stringstream ss(stringstream::in | stringstream::out);
+       ss <<  procID;
+       string  fname = name +  ss.str() + ".dat";
+       debugFile.open( fname.c_str() );
+       ss.str("");
+
+      debugFile <<  name << " :" << endl;
+      debugFile << endl;
+      const Array<int>& row = conn.getRow();
+      const Array<int>& col = conn.getCol();
+      for ( int i = 0; i < row.getLength()-1; i++ ){
+         debugFile << " i = " << i << ",    ";
+         for ( int j = row[i]; j < row[i+1]; j++ )
+            debugFile << col[j] << "  ";
+         debugFile << endl;
+      }
+      debugFile << endl;
+   }
+#endif
+}

@@ -41,6 +41,8 @@ public:
   //  bool advanceCoupled(const int niter);
 
   void updateTime();
+  void updateForceOnBoundary(const StorageSite& faceSite, const ArrayBase& bforceA, const map<int,int>& commonFacesMap, 
+                             ArrayBase& fxA, ArrayBase& fyA, ArrayBase& fzA);
 
   //  Vector<T,3> getPressureIntegral(const Mesh& mesh, const int faceGroupID);
   //  Vector<T,3> getPVIntegral(const Field& velCoeff, const Mesh& mesh, const int faceGroupID);

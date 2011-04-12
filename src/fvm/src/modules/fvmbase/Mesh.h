@@ -212,7 +212,7 @@ public:
 
   const Array<VecD3>& getNodeCoordinates() const {return *_coordinates;}
   Array<VecD3>& getNodeCoordinates() {return *_coordinates;}
-  //  ArrayBase* getNodeCoordinates() {return &(*_coordinates);}
+  shared_ptr<ArrayBase> getNodeCoordinatesPtr() {return _coordinates;}
 
   void setNumOfAssembleMesh( int nmesh ){ _numOfAssembleMesh = nmesh; }
 
@@ -226,9 +226,10 @@ public:
   Array<int>& getCellColorsOther() { return *_cellColorOther;}
   const Array<int>& getCellColorsOther() const { return *_cellColorOther;}
 
-  Array<int>&        getLocalToGlobalNodes(){ return *_localToGlobalNodes;}
-  const Array<int>&  getLocalToGlobalNodes() const { return *_localToGlobalNodes;}
   shared_ptr< Array<int> > getLocalToGlobalNodesPtr()  { return _localToGlobalNodes;}
+  const map<int,int> getGlobalToLocalNodes() const { return _globalToLocalNodes;}
+  map<int,int> getGlobalToLocalNodes()    { return _globalToLocalNodes;}
+
 
   Array<int>&        getLocalToGlobal(){ return *_localToGlobal;}
   const Array<int>&  getLocalToGlobal() const { return *_localToGlobal;}
@@ -245,6 +246,8 @@ public:
 
   const set<int>&  getBoundaryNodesSet() const { return _boundaryNodesSet;}
   set<int>&  getBoundaryNodesSet() { return _boundaryNodesSet;}
+  const map<int,int>& getCommonFacesMap() const { return _commonFacesMap;}
+  const map<int,int>& getCommonFacesMapOther() const { return _commonFacesMapOther;}
 
   
   void createScatterGatherCountsBuffer();
@@ -288,6 +291,13 @@ public:
 
   void createCellColor();
   void createLocalGlobalArray();
+  void createLocalToGlobalNodesArray();
+
+  void                      setNodeRepeationArrayCoupling(const Mesh& bMesh);
+  shared_ptr< ArrayBase >   getUpdatedNodesCoordCoupling(const GeomFields& geomField, const Mesh& bMesh);
+
+  void setCommonFacesMap( const Mesh& bMesh );
+
 
   void findCommonNodes(Mesh& other);
   void findCommonFaces(StorageSite& faces, StorageSite& otherFaces,
@@ -356,11 +366,16 @@ protected:
 
   shared_ptr<StorageSite> _cellSiteGhostExt;
   shared_ptr<CRConnectivity> _cellCellsGhostExt;
+
   
+  map<int,int>                 _commonFacesMap;    //key=localFaceID, value = corresponding boundaryMehsFace
+  map<int,int>                 _commonFacesMapOther;//key=boundaryMeshFace(sitting in this process), value=localFaceID
   set<int>                     _boundaryNodesSet; //store local number of boundary nodes  
+  shared_ptr< Array<int>  >    _repeatNodes;
   shared_ptr< Array<int>  >    _localToGlobalNodes;
   shared_ptr< Array<int>  >    _localToGlobal;
   mutable map <int,int>        _globalToLocal;
+  mutable map <int,int>        _globalToLocalNodes;
   multiMap             _cellCellsGlobal; //this hold cellCells information in global numbering, key is local,
                                         // values are global neighbouring and itself(global again)
  
@@ -385,6 +400,8 @@ private:
   int  getNumBounCells();
   int  get_request_size();
   void CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name );
+  void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID);
+
       
   
   

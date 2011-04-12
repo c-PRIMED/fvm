@@ -930,6 +930,27 @@ public:
       }
   }
 
+void updateForceOnBoundary(const StorageSite& faceSite, const ArrayBase& bforceA, const map<int,int>& commonFacesMap, 
+                           ArrayBase& fxA, ArrayBase& fyA, ArrayBase& fzA)
+{
+    //bforce came from fluid+elec side
+    const VectorT3Array& bforce = dynamic_cast<const VectorT3Array&>(bforceA);
+    //following will be updated
+    TArray& fx = dynamic_cast<TArray&> (fxA);
+    TArray& fy = dynamic_cast<TArray&> (fyA);
+    TArray& fz = dynamic_cast<TArray&> (fzA);
+    const int offset = faceSite.getOffset();
+    for (int i = 0; i < faceSite.getCount(); i++ ){
+        const int faceID = i + offset; //localface ID
+        //commonFacesMap will get right index in bforce
+        const int indx = commonFacesMap.find(faceID)->second;
+        fx[i] = bforce[indx][0];
+        fy[i] = bforce[indx][1];
+        fz[i] = bforce[indx][2];
+    }
+        
+}
+
   /*
   VectorT3 getMomentumFluxIntegralonIBFaces(const Mesh& mesh)
   {
@@ -1125,6 +1146,15 @@ StructureModel<T>::updateTime()
   _impl->updateTime();
 }
 
+template<class T>
+void
+StructureModel<T>::updateForceOnBoundary(const StorageSite& faceSite, const ArrayBase& bforceA, const map<int,int>& commonFacesMap, 
+                           ArrayBase& fxA, ArrayBase& fyA, ArrayBase& fzA)
+
+{
+  _impl->updateForceOnBoundary(faceSite, bforceA, commonFacesMap, fxA, fyA, fzA);
+;
+}
 /*template<class T>
 void
 FlowModel<T>::printPressureIntegrals()

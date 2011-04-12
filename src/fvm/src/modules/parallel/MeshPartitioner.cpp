@@ -2800,11 +2800,16 @@ MeshPartitioner::level1_scatter_gather_cells()
 	_meshListLocal.at(id)->createCellCellsGhostExt();
 
         //adding Mesh classes new data structure to keep track of globalID nodes (consisten with fluent case file)
-        const StorageSite& nodes = _meshListLocal.at(0)->getNodes();
-        Array<int>&   localToGlobalNodes = _meshListLocal.at(0)->getLocalToGlobalNodes();
+        _meshListLocal.at(id)->createLocalToGlobalNodesArray();
+        const StorageSite& nodes = _meshListLocal.at(id)->getNodes();
+        Array<int>&      localToGlobalNodes = *_meshListLocal.at(id)->getLocalToGlobalNodesPtr();
+        //map<int,int>&    globalToLocalNodes = _meshListLocal.at(id)->getGlobalToLocalNodes();
+
         //updating localToGlobal
         for ( int i = 0; i < nodes.getCount(); i++ ){
-             localToGlobalNodes[i] = (*_partNodes.at(0))(_procID,i);
+             const int globalID = (*_partNodes.at(id))(_procID,i);
+             localToGlobalNodes[i] = globalID;
+             //globalToLocalNodes[globalID] = i;
         }
         //find boundary nodes
         set<int>& boundaryNodeSet = _meshListLocal.at(id)->getBoundaryNodesSet();
@@ -2822,7 +2827,6 @@ MeshPartitioner::level1_scatter_gather_cells()
            } 
         }
 
-        
 
 //         const Array<Mesh::VecD3>& coordFluent = _meshList.at(0)->getNodeCoordinates();
 //         const Array<Mesh::VecD3>& coordPart   = _meshListLocal.at(0)->getNodeCoordinates();
@@ -2858,6 +2862,8 @@ MeshPartitioner::extractBoundaryMesh()
   const StorageSite& nodes = mesh.getNodes();
   StorageSite& nodesLocal = meshLocal.getNodes();
   const Array<Mesh::VecD3>& coords = mesh.getNodeCoordinates();
+//   map<int,int>& globalToLocalNodesFromLocalMesh= meshLocal.getGlobalToLocalNodes();
+//   map<int,int>& g
 
   const int nodeCount = nodes.getCount();
   Array<int> globalToLocalNodes(nodeCount);
@@ -2865,28 +2871,21 @@ MeshPartitioner::extractBoundaryMesh()
   globalToLocalNodes = -1;
   int bMeshNodeCount=0;
   int bMeshFaceCount=0;
-  foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
-  {
+  foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups()){
       const FaceGroup& fg = *fgPtr;
       const StorageSite& faces = fg.site;
-      if (fg.groupType!="interior")
-      {
-          const int nFaces = faces.getCount();
-          const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
-          for(int f=0; f<nFaces; f++)
-          {
-              const int nFaceNodes = faceNodes.getCount(f);
-              for(int nn=0; nn<nFaceNodes; nn++)
-              {
-                  const int n=faceNodes(f,nn);
-                  if (globalToLocalNodes[n] == -1)
-                  {
-                      globalToLocalNodes[n] = bMeshNodeCount++;
-                  }
+      const int nFaces = faces.getCount();
+      const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+      for(int f=0; f<nFaces; f++){
+          const int nFaceNodes = faceNodes.getCount(f);
+          for(int nn=0; nn<nFaceNodes; nn++){
+              const int n=faceNodes(f,nn);
+              if (globalToLocalNodes[n] == -1){
+                 globalToLocalNodes[n] = bMeshNodeCount++;
               }
           }
-          bMeshFaceCount += nFaces;
       }
+      bMeshFaceCount += nFaces;
   }
 
   _bMesh = new Mesh(mesh.getDimension());
@@ -2903,7 +2902,6 @@ MeshPartitioner::extractBoundaryMesh()
 
   shared_ptr<Mesh::IntArray> myCommonNodes(new Mesh::IntArray(bMeshNodeCount));
   shared_ptr<Mesh::IntArray> otherCommonNodes(new Mesh::IntArray(bMeshNodeCount));
-
   for(int n=0; n<nodeCount; n++)
   {
       const int nLocal = globalToLocalNodes[n];
@@ -2935,55 +2933,44 @@ MeshPartitioner::extractBoundaryMesh()
 
   bMeshFaceCount=0;
   
-  foreach(FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
-  {
+  foreach(FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups()){
       FaceGroup& fg = *fgPtr;
       StorageSite& faces = const_cast<StorageSite&>(fg.site);
-      if (fg.groupType!="interior")
-      {
-          const int nFaces = faces.getCount();
-          const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+      const int nFaces = faces.getCount();
+      const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
 
-          shared_ptr<Mesh::IntArray> myCommonFaces(new Mesh::IntArray(nFaces));
-          shared_ptr<Mesh::IntArray> otherCommonFaces(new Mesh::IntArray(nFaces));
+      shared_ptr<Mesh::IntArray> myCommonFaces(new Mesh::IntArray(nFaces));
+      shared_ptr<Mesh::IntArray> otherCommonFaces(new Mesh::IntArray(nFaces));
 
-          for(int f=0; f<nFaces; f++)
-          {
-              const int nFaceNodes = faceNodes.getCount(f);
-              bFaceNodes->addCount(bMeshFaceCount,nFaceNodes);
-              (*myCommonFaces)[f] = bMeshFaceCount;
-              (*otherCommonFaces)[f] = f;
-              bMeshFaceCount++;
-          }
-
-          faces.getCommonMap()[&bMeshFaces] = myCommonFaces;
-          bMeshFaces.getCommonMap()[&faces] = otherCommonFaces;
+      for(int f=0; f<nFaces; f++){
+         const int nFaceNodes = faceNodes.getCount(f);
+         bFaceNodes->addCount(bMeshFaceCount,nFaceNodes);
+         (*myCommonFaces)[f] = bMeshFaceCount;
+         (*otherCommonFaces)[f] = f;
+         bMeshFaceCount++;
       }
+
+      faces.getCommonMap()[&bMeshFaces] = myCommonFaces;
+      bMeshFaces.getCommonMap()[&faces] = otherCommonFaces;
   }
 
   bFaceNodes->finishCount();
   bMeshFaceCount=0;
 
-  foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
-  {
-      const FaceGroup& fg = *fgPtr;
-      const StorageSite& faces = fg.site;
-      if (fg.groupType!="interior")
-      {
-          const int nFaces = faces.getCount();
-          const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
-          for(int f=0; f<nFaces; f++)
-          {
-              const int nFaceNodes = faceNodes.getCount(f);
-              for(int nn=0; nn<nFaceNodes; nn++)
-              {
-                  const int n=faceNodes(f,nn);
-                  const int nLocal = globalToLocalNodes[n];
-                  bFaceNodes->add(bMeshFaceCount,nLocal);
-              }
-              bMeshFaceCount++;
-          }
-      }
+  foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups()){
+     const FaceGroup& fg = *fgPtr;
+     const StorageSite& faces = fg.site;
+     const int nFaces = faces.getCount();
+     const CRConnectivity& faceNodes = mesh.getFaceNodes(faces);
+     for(int f=0; f<nFaces; f++){
+        const int nFaceNodes = faceNodes.getCount(f);
+        for(int nn=0; nn<nFaceNodes; nn++){
+           const int n=faceNodes(f,nn);
+           const int nLocal = globalToLocalNodes[n];
+           bFaceNodes->add(bMeshFaceCount,nLocal);
+        }
+        bMeshFaceCount++;
+     }
   }
   
   bFaceNodes->finishAdd();
