@@ -15,6 +15,7 @@ import time
 from numpy import *
 from mpi4py  import MPI
 from optparse import OptionParser
+import tecplotEntireDomain 
 
 
 from FluentCase import FluentCase
@@ -280,6 +281,7 @@ numIterations = 10
 reader = FluentCase(args[0])
 reader.read()
 fluent_meshes = reader.getMeshList()
+#import debug
 
 nmesh = 1
 npart = [MPI.COMM_WORLD.Get_size()]
@@ -300,15 +302,18 @@ if options.time:
     part_mesh_start[0] = MPI.Wtime()
 
 #partMesh constructor and setTypes
-part_mesh = fvmparallel.PartMesh( fluent_meshes, npart, etype );
+part_mesh = fvmparallel.MeshPartitioner( fluent_meshes, npart, etype );
 part_mesh.setWeightType(0);
 part_mesh.setNumFlag(0);
 
 #actions
+part_mesh.isCleanup(1)
+#part_mesh.fiedler_order("ipermutation26.txt")
+part_mesh.isDebug(1)
 part_mesh.partition()
 part_mesh.mesh()
-#part_mesh.mesh_debug()
 meshes = part_mesh.meshList()
+reader = 0
 if options.time:
     part_mesh_end[0] = MPI.Wtime()
     part_mesh_time[0] = part_mesh_end[0] - part_mesh_start[0]
@@ -317,8 +322,8 @@ if options.time:
     solver_start   = zeros(1, dtype='d')
     solver_end     = zeros(1, dtype='d')
     solver_time    = zeros(1, dtype='d')
-    solver_maxtime = zeros(1,dtype='d')
-    solver_mintime = zeros(1,dtype='d')
+    solver_maxtime = zeros(1, dtype='d')
+    solver_mintime = zeros(1, dtype='d')
     solver_start[0] = MPI.Wtime()
 
 geomFields =  fvm.models.GeomFields('geom')
@@ -350,39 +355,49 @@ if 6 in bcMap:
    bc6.bcType = 'SpecifiedTemperature'
    bc6.setVar('specifiedTemperature',0)
 
-## set viscosity and density, this is done per mesh since each mesh has its own VC object
-#vcMap = tmodel.getVCMap()
-#for vc in vcMap.values():
+# set viscosity and density, this is done per mesh since each mesh has its own VC object
+vcMap = tmodel.getVCMap()
+for vc in vcMap.values():
 #    vc.setVar('density',1.0)
-#    vc.setVar('thermalConductivity',1.0)
+    vc.setVar('thermalConductivity',1.0)
 
 #########################
+conn =meshes[0].getCellCells() 
+semi_bandwidth = 6 
+#spike_storage = fvmbaseExt.SpikeStorage(conn, semi_bandwidth) 
+#pc = fvmbaseExt.SpikeSolver(spike_storage)
+#pc = fvmbaseExt.JacobiSolver()
+#pc = fvmbaseExt.ILU0Solver()
 pc = fvmbaseExt.AMG()
 #pc.setMergeLEvelSize(40000)
-pc.verbosity=3
+#pc.verbosity=3
 
 tSolver = fvmbaseExt.BCGStab()
+#tSolver = fvmbaseExt.JacobiSolver()
 tSolver.preconditioner=pc
-tSolver.relativeTolerance = 1e-10
+tSolver.relativeTolerance = 1e-4
 tSolver.nMaxIterations = 200000
 tSolver.verbosity=3
 
 
 #####################
-#tSolver = fvmbaseExt.AMG()
-#tSolver.relativeTolerance = 1e-4
-#tSolver.nMaxIterations = 200000
-#tSolver.maxCoarseLevels=20
-#tSolver.verbosity=3
+tSolver = fvmbaseExt.AMG()
+#tSolver.smootherType = fvmbaseExt.AMG.JACOBI
+tSolver.relativeTolerance = 1e-9
+tSolver.nMaxIterations = 200000
+tSolver.maxCoarseLevels=20
+tSolver.verbosity=3
 #tSolver.setMergeLevelSize(40000)
 
 toptions = tmodel.getOptions()
 toptions.linearSolver = tSolver
 
-#import debug
 tmodel.init()
-#print "nmesh = ", nmesh,  "procID = ", MPI.COMM_WORLD.Get_rank() 
 tmodel.advance(1)
+print options.type
+tecplotEntireDomain.dumpTecplotEntireDomain(nmesh,  meshes, fluent_meshes, options.type, thermalFields)  
+#dumpTecplotFile( nmesh, meshes, options.type)
+#tmodel.dumpMatrix("cav26_fiedler")
 
 if options.time:
     solver_end[0] = MPI.Wtime()
@@ -392,6 +407,5 @@ if options.time:
     if MPI.COMM_WORLD.Get_rank() == 0:
         dumpMPITimeProfile(part_mesh_maxtime, part_mesh_mintime, solver_maxtime, solver_mintime)
 
-#dumpTecplotFile( nmesh, meshes, options.type)
 #if options.xdmf:
 #    dumpXdmfFile( nmesh, meshes, options.type)
