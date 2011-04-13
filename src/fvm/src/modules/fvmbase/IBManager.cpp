@@ -46,10 +46,11 @@ void IBManager::update()
   int nIter=0;
   int nFound=0;
 
+
   // repeat till we find no more fluid cells
   do
   {
-
+      nFound = 0;
       _geomFields.ibType.syncLocal();
       
       for (int n=0; n<numFluidMeshes; n++)
@@ -58,8 +59,15 @@ void IBManager::update()
           
           nFound += markFluid(fluidMesh);
       }
+#ifdef FVM_PARALLEL
+     MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &nFound, 1, MPI::INT, MPI::SUM );
+     if ( MPI::COMM_WORLD.Get_rank() == 0 ) 
+        cout << "iteration " << nIter << ": found " << nFound << " fluid cells " << endl;
+#endif
 
+#ifndef FVM_PARALLEL
       cout << "iteration " << nIter << ": found " << nFound << " fluid cells " << endl;
+#endif
 
       nIter++;
   } 
