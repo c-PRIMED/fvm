@@ -231,6 +231,7 @@ public:
   map<int,int> getGlobalToLocalNodes()    { return _globalToLocalNodes;}
 
 
+  shared_ptr< ArrayBase >        getLocalToGlobalPtr(){ return _localToGlobal;}
   Array<int>&        getLocalToGlobal(){ return *_localToGlobal;}
   const Array<int>&  getLocalToGlobal() const { return *_localToGlobal;}
 

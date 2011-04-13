@@ -182,8 +182,9 @@ public:
   boost::shared_ptr<ArrayBase> getNodeCoordinatesPtr();   
   void setNodeRepeationArrayCoupling(const Mesh& bMesh);
   boost::shared_ptr< ArrayBase > getUpdatedNodesCoordCoupling(const GeomFields& geomField, const Mesh& bMesh);
+  boost::shared_ptr< ArrayBase >   getLocalToGlobalPtr(){ return _localToGlobal;} 
 
-  %extend
+ %extend
   {
     int getNumberOfCells() {return self->getCells().getCount();}
 
@@ -219,6 +220,7 @@ public:
           return fg.get();
       return 0;
     }
+    
   }
   //  const FaceGroup&  getFaceGroup(const int i) const;
   
