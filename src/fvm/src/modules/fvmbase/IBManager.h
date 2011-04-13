@@ -57,7 +57,8 @@ public:
 private:
 
   void markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB);
-  void markIBType(Mesh& fluidMesh);
+  int markFluid(Mesh& fluidMesh);
+  int markSolid(Mesh& fluidMesh);
   void markIBTypePlus(Mesh& fluidMesh);
   void createIBFaces(Mesh& fluidMesh);
   void createIBInterpolationStencil(Mesh& mesh,
