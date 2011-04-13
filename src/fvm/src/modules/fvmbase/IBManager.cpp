@@ -42,17 +42,38 @@ void IBManager::update()
       markIntersections(fluidMesh, sMeshesAABB);
   }
 
-  _geomFields.ibType.syncLocal();
-  
+
+  int nIter=0;
+  int nFound=0;
+
+  // repeat till we find no more fluid cells
+  do
+  {
+
+      _geomFields.ibType.syncLocal();
+      
+      for (int n=0; n<numFluidMeshes; n++)
+      {
+          Mesh& fluidMesh = *_fluidMeshes[n];
+          
+          nFound += markFluid(fluidMesh);
+      }
+
+      cout << "iteration " << nIter << ": found " << nFound << " fluid cells " << endl;
+
+      nIter++;
+  } 
+  while(nFound > 0);
+
+  nFound=0;
   for (int n=0; n<numFluidMeshes; n++)
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
 
-      markIBType(fluidMesh);
+      nFound += markSolid(fluidMesh);
   }
 
-  _geomFields.ibType.syncLocal();
-
+      
   for (int n=0; n<numFluidMeshes; n++)
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
@@ -211,100 +232,11 @@ IBManager::markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB)
           }
       }
   }
-}
 
-void
-IBManager::markIBType(Mesh& fluidMesh)
-{
-  const StorageSite& cells = fluidMesh.getCells();
 
-  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
-
-  const int nCells = cells.getSelfCount();
-  const int nCellsTotal = cells.getCount();
-
-  cout << "cell self count " << nCells << endl;
-  cout << "cell total count " << nCellsTotal << endl;
-
-  Array<bool> isFluidCell(nCellsTotal);
-  isFluidCell = false;
-
-  foreach(const FaceGroupPtr fgPtr, fluidMesh.getBoundaryFaceGroups())
-  {
-      const FaceGroup& fg = *fgPtr;
-      const StorageSite& faces = fg.site;
-      
-      const CRConnectivity& faceCells = fluidMesh.getFaceCells(faces);
-      const int nFaces = faces.getCount();
-      for(int f=0; f<nFaces; f++)
-      {
-          const int c0 = faceCells(f,0);
-          if (cellIBType[c0] == Mesh::IBTYPE_UNKNOWN)
-            isFluidCell[c0] = true;
-      }
-  }
- 
-  const CRConnectivity& cellCells = fluidMesh.getCellCells();
-
-         
-  int ibGroup=-1;
-  map<int, int> ibGroupToIBType;
+  // mark all cells adjacent to the boundaries as fluid unless they
+  // have been found to be IBTYPE_BOUNDARY in the loop above
   
-  for(int c=0; c<nCells; c++)
-  {
-      if (cellIBType[c] == Mesh::IBTYPE_UNKNOWN)
-      {
-          ibGroup++;
-          // create a new group for  cell c and then set the group to be
-          // the same for all the unmarked cells we can recursively reach
-          // through the neighbours list.
-          
-          cellIBType[c] = ibGroup;
-          
-          stack<int> cellsToCheck;
-          cellsToCheck.push(c);
-          
-           
-          while(!cellsToCheck.empty())
-          {
-              int c_nb = cellsToCheck.top();
-              if (isFluidCell[c_nb] &&
-                  ibGroupToIBType.find(ibGroup) == ibGroupToIBType.end())
-                ibGroupToIBType[ibGroup] = Mesh::IBTYPE_FLUID;
-              
-              cellsToCheck.pop();
-              const int nNeighbors = cellCells.getCount(c_nb);
-              for(int nn=0; nn<nNeighbors; nn++)
-              {
-                  const int neighbor = cellCells(c_nb,nn);
-                  if (cellIBType[neighbor] == Mesh::IBTYPE_UNKNOWN)
-                  {
-                      cellIBType[neighbor] = ibGroup;
-                      cellsToCheck.push(neighbor);
-                  }
-              }
-              
-          }
-      }
-  }
-
-  for(int c=0; c<nCellsTotal; c++)
-  {
-      if (cellIBType[c] >=0)
-      {
-          map<int,int>::const_iterator pos =
-            ibGroupToIBType.find(cellIBType[c]);
-          if (pos != ibGroupToIBType.end())
-          {
-              cellIBType[c] = pos->second;
-          }
-          else
-            cellIBType[c] = Mesh::IBTYPE_SOLID;
-      }
-  }
-
-  // mark any ungrouped boundary cells to be of the same type as the
-  // interior
   foreach(const FaceGroupPtr fgPtr, fluidMesh.getBoundaryFaceGroups())
   {
       const FaceGroup& fg = *fgPtr;
@@ -316,12 +248,102 @@ IBManager::markIBType(Mesh& fluidMesh)
       {
           const int c0 = faceCells(f,0);
           const int c1 = faceCells(f,1);
-          if (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN)
-            cellIBType[c1] = cellIBType[c0];
-      }      
+          
+          if ((cellIBType[c0] == Mesh::IBTYPE_UNKNOWN) &&
+              (cellIBType[c1] == Mesh::IBTYPE_UNKNOWN))
+          {
+              cellIBType[c1] = Mesh::IBTYPE_FLUID;
+              cellIBType[c0] = Mesh::IBTYPE_FLUID;
+          }
+          else
+          {
+              cellIBType[c1] = Mesh::IBTYPE_BOUNDARY;
+          }
+      }
+  }
+  
+}
+
+
+int
+IBManager::markFluid(Mesh& fluidMesh)
+{
+
+  const StorageSite& cells = fluidMesh.getCells();
+
+  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+
+
+  const int nCellsTotal = cells.getCount();
+
+  int nFound=0;
+
+ 
+  const CRConnectivity& cellCells = fluidMesh.getCellCells();
+
+
+  // loop over all cells including externals and if they are of type
+  // fluid mark any other cells that are unknown but can be reached
+  // from there
+  
+  for(int c=0; c<nCellsTotal; c++)
+  {
+      if (cellIBType[c] == Mesh::IBTYPE_FLUID)
+      {
+          
+          stack<int> cellsToCheck;
+          cellsToCheck.push(c);
+          
+           
+          while(!cellsToCheck.empty())
+          {
+              int c_nb = cellsToCheck.top();
+              cellsToCheck.pop();
+              const int nNeighbors = cellCells.getCount(c_nb);
+              for(int nn=0; nn<nNeighbors; nn++)
+              {
+                  const int neighbor = cellCells(c_nb,nn);
+                  if (cellIBType[neighbor] == Mesh::IBTYPE_UNKNOWN)
+                  {
+                      cellIBType[neighbor] = Mesh::IBTYPE_FLUID;
+                      nFound++;
+                      cellsToCheck.push(neighbor);
+                  }
+              }
+              
+          }
+      }
   }
 
+  return nFound;
 }
+
+int
+IBManager::markSolid(Mesh& fluidMesh)
+{
+
+  const StorageSite& cells = fluidMesh.getCells();
+
+  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+
+
+  const int nCellsTotal = cells.getCount();
+
+  int nFound=0;
+
+  //everything that is not marked is solid  
+  for(int c=0; c<nCellsTotal; c++)
+  {
+      if (cellIBType[c] == Mesh::IBTYPE_UNKNOWN)
+      {
+          cellIBType[c] = Mesh::IBTYPE_SOLID;
+          nFound++;
+      }
+  }
+
+  return nFound;
+}
+
 
 void
 IBManager::markIBTypePlus(Mesh& fluidMesh)
@@ -331,7 +353,7 @@ IBManager::markIBTypePlus(Mesh& fluidMesh)
   int nBoundary=0;
   StorageSite& cells = fluidMesh.getCells();
   const int nCellsTotal = cells.getCount();
-  IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+  const IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
   for(int c=0; c<nCellsTotal; c++)
   {
