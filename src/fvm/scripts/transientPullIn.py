@@ -104,7 +104,7 @@ class problemDescription():
         globalTime = 0
         globalCount = 0
         timeStep = 2e-7
-        saveFrequency = 10
+        saveFrequency = 2
         initialTransient = False
         probeIndex = 3240
         
@@ -177,27 +177,7 @@ class problemDescription():
         #--------------Timestep Loop --------------------------#
 
         for n in range(0, numIterations):                
-            #------data output-----------------------#
-            #writeProbeData()
-            
-            if (n%saveFrequency == 0):
-                writer = exporters.VTKWriterA(self.geomFields,self.fluidMeshes,
-                                    "trans-elecfield-" + str(n) + ".vtk",
-                                    "fix-fix beam",
-                                    False,0)
-                writer.init()
-                writer.writeScalarField(self.elecFields.potential,"potential")
-                writer.writeVectorField(self.elecFields.electric_field,"potentialgradient")
-                writer.finish()
 
-                writer1 = exporters.VTKWriterA(self.geomFields,self.solidMeshes,
-                                              "trans-structural-" + str(n) + ".vtk",
-                                              "Disk",
-                                              False,0)
-                writer1.init()
-                writer1.writeVectorField(self.plateFields.deformation,"Deformation")
-                writer1.finish()
-            #    checkMarking(globalCount)
             # --------------- update IBM -------------------------#
             print "***       update IBM  at globalCount %i           ***" % globalCount            
             
@@ -285,12 +265,25 @@ class problemDescription():
             self.pmodel.updateTime()
             #saveVTK(n)
             #writeTrace()
+            if (n%saveFrequency == 0):
+                writer = exporters.VTKWriterA(self.geomFields,self.fluidMeshes,
+                                              "trans-elecfield-" + str(n) + ".vtk",
+                                              "fix-fix beam",
+                                              False,0)
+                writer.init()
+                writer.writeScalarField(self.elecFields.potential,"potential")
+                writer.writeVectorField(self.elecFields.electric_field,"potentialgradient")
+                writer.finish()
+
+                writer1 = exporters.VTKWriterA(self.geomFields,self.solidMeshes,
+                                              "trans-structural-" + str(n) + ".vtk",
+                                              "Disk",
+                                              False,0)
+                writer1.init()
+                writer1.writeVectorField(self.plateFields.deformation,"Deformation")
+                writer1.finish())
+
         t2 = time.time()
-
-        #checkMarking(globalCount)
-
-        #probeFile.close()
-        #traceFile.close()
         print  '\nsolution time = %f' % (t2-t1)
 
 

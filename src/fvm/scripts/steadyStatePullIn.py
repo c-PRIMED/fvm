@@ -99,12 +99,12 @@ class problemDescription():
             
     def solveModels(self, appliedVoltage):
         print "--Solving Models--"
-        
+        maxdeformation = []
         numIterations = 200
         globalTime = 0
         globalCount = 0
         timeStep = 2e-7
-        saveFrequency = 10
+        saveFrequency = 2
         initialTransient = False
         probeIndex = 3240
         
@@ -177,26 +177,6 @@ class problemDescription():
         #--------------Timestep Loop --------------------------#
 
         for n in range(0, numIterations):                
-            #------data output-----------------------#
-            #writeProbeData()
-            
-            if (n%saveFrequency == 0):
-                writer = exporters.VTKWriterA(self.geomFields,self.fluidMeshes,
-                                    "elecfield-" + str(n) + ".vtk",
-                                    "fix-fix beam",
-                                    False,0)
-                writer.init()
-                writer.writeScalarField(self.elecFields.potential,"potential")
-                writer.writeVectorField(self.elecFields.electric_field,"potentialgradient")
-                writer.finish()
-
-                writer1 = exporters.VTKWriterA(self.geomFields,self.solidMeshes,
-                                              "structural-" + str(n) + ".vtk",
-                                              "Disk",
-                                              False,0)
-                writer1.init()
-                writer1.writeVectorField(self.plateFields.deformation,"Deformation")
-                writer1.finish()
             #    checkMarking(globalCount)
             # --------------- update IBM -------------------------#
             print "***       update IBM  at globalCount %i           ***" % globalCount            
@@ -277,21 +257,44 @@ class problemDescription():
             #solidBoundaryMetricsCalculator = models.MeshMetricsCalculatorA(geomFields,solidBoundaryMeshes)
             #solidBoundaryMetricsCalculator.init()
             self.solidBoundaryMetricsCalculator.recalculate_deform() 
-            
 
+            cell = self.solidMeshes[0].getCells()
+            test = self.plateFields.deformation[cell]
+            deform = test.asNumPyArray()
+            def_min = deform.min(axis=0)
+            def_min_z = def_min[2]
+            maxdeformation.append(def_min_z)
+
+            if (n!=0):           
+                if ((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n] < 1e-3):
+                    print "Convergence reached"
+                    break
             # -----------------update time --------------------------#
             globalTime += timeStep
             globalCount += 1
             #self.pmodel.updateTime()
             #saveVTK(n)
-            #writeTrace()
+            #writeTrace(
+            if (n%saveFrequency == 0):
+                writer = exporters.VTKWriterA(self.geomFields,self.fluidMeshes,
+                                              "elecfield-" + str(n) + ".vtk",
+                                              "fix-fix beam",
+                                              False,0)
+                writer.init()
+                writer.writeScalarField(self.elecFields.potential,"potential")
+                writer.writeVectorField(self.elecFields.electric_field,"potentialgradient")
+                writer.finish()
+
+                writer1 = exporters.VTKWriterA(self.geomFields,self.solidMeshes,
+                                               "structural-" + str(n) + ".vtk",
+                                               "Disk",
+                                               False,0)
+                writer1.init()
+                writer1.writeVectorField(self.plateFields.deformation,"Deformation")
+                writer1.finish()
         t2 = time.time()
-
-        #checkMarking(globalCount)
-
-        #probeFile.close()
-        #traceFile.close()
         print  '\nsolution time = %f' % (t2-t1)
+        return maxdeformation[n]
 
 
 
