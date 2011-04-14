@@ -54,7 +54,7 @@ class ServerCoupling:
 	 coordA = self.solidMesh.getUpdatedNodesCoordCoupling(self.geomField, self.solidBoundaryMesh)
 	 coord = coordA.asNumPyArray()
 	 self.nfaces = len(coord)
-         self.dumpSolidBoundaryCoord(coord,MPI.COMM_WORLD.Get_rank())
+         #self.dumpSolidBoundaryCoord(coord,MPI.COMM_WORLD.Get_rank())
 	 recvbuf = coord.copy() 
 	 #sending coordinate to client side as summing
          self.SERVER_COMM_CLIENT.Allreduce( [coord, MPI.DOUBLE], [recvbuf,MPI.DOUBLE], op=MPI.SUM)
