@@ -265,19 +265,19 @@ class problemDescription():
             def_min_z = def_min[2]
             maxdeformation.append(def_min_z)
 
-            if (n!=0):           
-                if ((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n] < 1e-3):
+            if (n!=0):
+                print abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n])
+                if (abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n]) < 1e-4):
                     print "Convergence reached"
                     break
+
             # -----------------update time --------------------------#
             globalTime += timeStep
             globalCount += 1
-            #self.pmodel.updateTime()
-            #saveVTK(n)
-            #writeTrace(
+
             if (n%saveFrequency == 0):
                 writer = exporters.VTKWriterA(self.geomFields,self.fluidMeshes,
-                                              "elecfield-" + str(n) + ".vtk",
+                                              "elecfield-"+ str(appliedVoltage) + "V-" + str(n) + ".vtk",
                                               "fix-fix beam",
                                               False,0)
                 writer.init()
@@ -286,7 +286,7 @@ class problemDescription():
                 writer.finish()
 
                 writer1 = exporters.VTKWriterA(self.geomFields,self.solidMeshes,
-                                               "structural-" + str(n) + ".vtk",
+                                               "structural-" + str(appliedVoltage) + "V-" +str(n) + ".vtk",
                                                "Disk",
                                                False,0)
                 writer1.init()
