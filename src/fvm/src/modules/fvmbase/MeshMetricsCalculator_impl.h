@@ -1106,7 +1106,7 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       if (nnb < 4)
       {
 	printf("only %i solid neighbors to interpolate!\n ", nnb);
-	throw CException("Not enough solid points in Solid LLS interpolation!");
+	//throw CException("Not enough solid points in Solid LLS interpolation!");
       }
       //symetric matrix
       for(int i=0; i<4; i++)
