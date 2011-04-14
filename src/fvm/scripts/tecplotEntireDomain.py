@@ -49,7 +49,6 @@ def dumpTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, tFields):
   for n in range(0,nmesh):
      thermalFields.append( tFields.temperature[cellSitesLocal[n]].asNumPyArray() )    
 	   
-  print "2222222222"
   #opening global Array 
   thermalFieldGlobal = []
   for n in range(0,nmesh):
@@ -60,10 +59,12 @@ def dumpTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, tFields):
     tFieldGlobal  = thermalFieldGlobal[n]
     tFieldLocal   = thermalFields[n]
     #fill local part of cells
+    selfCount = cellSitesLocal[n].getSelfCount()
     for i in range(0,selfCount):
        globalID               = localToGlobal[i]
        tFieldGlobal[globalID] = tFieldLocal[i]
-  
+    MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE, [tFieldGlobal,MPI.DOUBLE], op=MPI.SUM)
+    
   if MPI.COMM_WORLD.Get_rank() == 0:
      file_name = "temp" + ".dat"
      f = open(file_name, 'w')
