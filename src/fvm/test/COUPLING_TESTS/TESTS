@@ -1,0 +1,10 @@
+SOLID1__ELEC1_COUPLING    ./ptest.py  --np 1  --script mainCantilever2D_solid1_elec1.py    --golden SOLID_ELEC_COUPLING/QUAD/solid1_elec1   
+SOLID1__ELEC2_COUPLING    ./ptest.py  --np 1  --script mainCantilever2D_solid1_elec2.py    --golden SOLID_ELEC_COUPLING/QUAD/solid1_elec2   
+SOLID1__ELEC3_COUPLING    ./ptest.py  --np 1  --script mainCantilever2D_solid1_elec3.py    --golden SOLID_ELEC_COUPLING/QUAD/solid1_elec3   
+SOLID1__ELEC4_COUPLING    ./ptest.py  --np 1  --script mainCantilever2D_solid1_elec4.py    --golden SOLID_ELEC_COUPLING/QUAD/solid1_elec4   
+SOLID1__ELEC8_COUPLING    ./ptest.py  --np 1  --script mainCantilever2D_solid1_elec8.py    --golden SOLID_ELEC_COUPLING/QUAD/solid1_elec8   
+SOLID1__ELEC16_COUPLING   ./ptest.py  --np 1  --script mainCantilever2D_solid1_elec16.py   --golden SOLID_ELEC_COUPLING/QUAD/solid1_elec16  
+SOLID1__ELEC32_COUPLING   ./ptest.py  --np 1  --script mainCantilever2D_solid1_elec32.py   --golden SOLID_ELEC_COUPLING/QUAD/solid1_elec32  
+
+
+
