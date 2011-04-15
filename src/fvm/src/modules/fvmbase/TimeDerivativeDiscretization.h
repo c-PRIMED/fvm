@@ -22,7 +22,7 @@ public:
 
   typedef Array<X> XArray;
   typedef Array<T_Scalar> TArray;
-
+  typedef Array<int> IntArray;
 
   TimeDerivativeDiscretization(const MeshList& meshes,
                                const GeomFields& geomFields,
@@ -119,6 +119,25 @@ public:
 		
 	        diag[c] -= rhoVbydT;
 		
+            }
+	}
+        else if (_geomFields.ibTypeN1.hasArray(cells))
+	{
+
+	    const IntArray& ibTypeN1 =
+	      dynamic_cast<const IntArray&>(_geomFields.ibTypeN1[cells]);
+	    const IntArray& ibType =
+	      dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+	    for(int c=0; c<nCells; c++)
+            {	    
+	        const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
+
+                if (ibTypeN1[c] == Mesh::IBTYPE_FLUID &&
+                    (ibType[c] == Mesh::IBTYPE_FLUID))
+                  rCell[c] -= rhoVbydT*(x[c]  - xN1[c]);
+                else if (ibType[c] == Mesh::IBTYPE_FLUID)
+                  rCell[c] -= rhoVbydT*(x[c] );
+	        diag[c] -= rhoVbydT;
             }
 	}
         else
