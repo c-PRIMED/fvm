@@ -38,7 +38,10 @@ public:
 
   // do the specified number of iterations, return true if converged 
   bool advance(const int niter);
-  //  bool advanceCoupled(const int niter);
+  void advanceExplicit(const int nsteps, const double deltaT);
+  void initExplicitAdvance();
+  void finishExplicitAdvance();
+
 
   void updateTime();
   void updateForceOnBoundary(const StorageSite& faceSite, const ArrayBase& bforceA, const map<int,int>& commonFacesMap, 

@@ -55,11 +55,14 @@ public:
 
   
   StructureBCS(const StorageSite& faces,
-             const Mesh& mesh,
-             const GeomFields& geomFields,
-             Field& varField,
-             MultiFieldMatrix& matrix,
-             MultiField& xField, MultiField& rField) :
+               const Mesh& mesh,
+               const GeomFields& geomFields,
+               Field& varField,
+               MultiFieldMatrix& matrix,
+               MultiField& xField,
+               MultiField& rField,
+               const bool explicitMode
+               ) :
     _faces(faces),
     _cells(mesh.getCells()),
     _faceCells(mesh.getFaceCells(_faces)),
@@ -73,7 +76,8 @@ public:
     _areaMagField(geomFields.areaMag),
     _faceAreaMag(dynamic_cast<const TArray&>(_areaMagField[_faces])),
     _areaField(geomFields.area),
-    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces]))
+    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces])),
+    _explicitMode(explicitMode)
   {}
   
   X applyDirichletBC(int f, const X& bValue) const
@@ -84,10 +88,11 @@ public:
     
     const X dXC1 = bValue - _x[c1];
 
-    _dRdX.eliminateDirichlet(c1,_r,dXC1);
+    _dRdX.eliminateDirichlet(c1,_r,dXC1, _explicitMode);
     _x[c1] = bValue;
     _r[c1] = NumTypeTraits<X>::getZero();
-    _dRdX.setDirichlet(c1);
+    if (!_explicitMode)
+      _dRdX.setDirichlet(c1);
     return fluxB;
   }
 
@@ -236,6 +241,7 @@ protected:
   const TArray& _faceAreaMag;
   const Field& _areaField;
   const VectorT3Array& _faceArea;
+  const bool _explicitMode;
 };
 
 template<class T>
@@ -455,64 +461,8 @@ public:
     }
   }
 
-  void linearizeDeformation(LinearSystem& ls)
+  void applyBC(LinearSystem& ls, bool explicitMode)
   {
-    _deformationGradientModel.compute();
-    DiscrList discretizations;
-            
-    shared_ptr<Discretization>
-      sd(new StructureSourceDiscretization<T,DiagTensorT3,DiagTensorT3>
-         (_meshes,_geomFields,
-          _structureFields.deformation,
-          _structureFields.eta,
-	  _structureFields.eta1,
-	  _structureFields.alpha,
-          _structureFields.deformationGradient,
-          _structureFields.temperature,
-          _options["operatingTemperature"],
-	  _options["residualXXStress"],
-	  _options["residualYYStress"],
-	  _options["residualZZStress"],
-	  _options.residualStress));
-      
-    //    shared_ptr<Discretization>
-    //  bfd(new SourceDiscretization<VectorT3>
-    //     (_meshes,_geomFields,
-    //    _structureFields.deformation,
-    //    _structureFields.bodyForce));
-
-    discretizations.push_back(sd);
-    //discretizations.push_back(bfd);
-    
-    if (_options.transient)
-    {
-        shared_ptr<Discretization>
-          td(new TimeDerivativeStructureDiscretization
-	     <VectorT3,DiagTensorT3,DiagTensorT3>
-             (_meshes,_geomFields,
-              _structureFields.deformation,
-              _structureFields.deformationN1,
-              _structureFields.deformationN2,
-              _structureFields.deformationN3,
-              _structureFields.density,
-	      _structureFields.volume0,
-              _options["timeStep"]));
-        
-        discretizations.push_back(td);
-    }
- 
-    /*
-    shared_ptr<Discretization>
-      ibm(new GenericIBDiscretization<VectorT3,DiagTensorT3,T>
-	  (_meshes,_geomFields,_structureFields.deformation));
-      
-    discretizations.push_back(ibm);
-    */
-    Linearizer linearizer;
-
-    linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
-                         ls.getX(), ls.getB());
-
     bool allNeumann = true;
 
     const int numMeshes = _meshes.size();
@@ -535,7 +485,8 @@ public:
             StructureBCS<VectorT3,DiagTensorT3,DiagTensorT3> gbc(faces,mesh,
                                                     _geomFields,
                                                     _structureFields.deformation,
-                                                    ls.getMatrix(), ls.getX(), ls.getB());
+                                                                 ls.getMatrix(), ls.getX(), ls.getB(),
+                                                                 explicitMode);
 	    
             VectorT3 fluxB(NumTypeTraits<VectorT3>::getZero());
 
@@ -637,7 +588,7 @@ public:
 #endif
 
 
-    if(allNeumann)
+    if(allNeumann && !explicitMode)
     {
         const Mesh& mesh = *_meshes[0];
 	const StorageSite& cells = mesh.getCells();
@@ -653,6 +604,70 @@ public:
         w[0] = T(0);
         vvMatrix.setDirichlet(0);
     }
+
+  }
+
+  
+  void linearizeDeformation(LinearSystem& ls, bool explicitMode)
+  {
+    _deformationGradientModel.compute();
+    DiscrList discretizations;
+            
+    shared_ptr<Discretization>
+      sd(new StructureSourceDiscretization<T,DiagTensorT3,DiagTensorT3>
+         (_meshes,_geomFields,
+          _structureFields.deformation,
+          _structureFields.eta,
+	  _structureFields.eta1,
+	  _structureFields.alpha,
+          _structureFields.deformationGradient,
+          _structureFields.temperature,
+          _options["operatingTemperature"],
+	  _options["residualXXStress"],
+	  _options["residualYYStress"],
+	  _options["residualZZStress"],
+	  _options.residualStress));
+      
+    //    shared_ptr<Discretization>
+    //  bfd(new SourceDiscretization<VectorT3>
+    //     (_meshes,_geomFields,
+    //    _structureFields.deformation,
+    //    _structureFields.bodyForce));
+
+    discretizations.push_back(sd);
+    //discretizations.push_back(bfd);
+    
+    if (_options.transient && !explicitMode)
+    {
+        shared_ptr<Discretization>
+          td(new TimeDerivativeStructureDiscretization
+	     <VectorT3,DiagTensorT3,DiagTensorT3>
+             (_meshes,_geomFields,
+              _structureFields.deformation,
+              _structureFields.deformationN1,
+              _structureFields.deformationN2,
+              _structureFields.deformationN3,
+              _structureFields.density,
+	      _structureFields.volume0,
+              _options["timeStep"]));
+        
+        discretizations.push_back(td);
+    }
+ 
+    /*
+    shared_ptr<Discretization>
+      ibm(new GenericIBDiscretization<VectorT3,DiagTensorT3,T>
+	  (_meshes,_geomFields,_structureFields.deformation));
+      
+    discretizations.push_back(ibm);
+    */
+    Linearizer linearizer;
+
+    linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
+                         ls.getX(), ls.getB());
+
+    if (!explicitMode)
+      applyBC(ls,explicitMode);
 
 #if 0
     shared_ptr<Discretization>
@@ -675,7 +690,7 @@ public:
     LinearSystem ls;
     initDeformationLinearization(ls);
     ls.initAssembly();
-    linearizeDeformation(ls);
+    linearizeDeformation(ls,false);
     ls.initSolve();    
     //AMG solver(ls);
     MFRPtr rNorm = _options.getDeformationLinearSolver().solve(ls);
@@ -687,6 +702,66 @@ public:
     return rNorm;
   }
 
+  void initExplicitAdvance()
+  {
+    this->_lsK = shared_ptr<LinearSystem>(new LinearSystem());
+    LinearSystem& ls = *(this->_lsK);
+    initDeformationLinearization(ls);
+    ls.initAssembly();
+    linearizeDeformation(ls,true);
+    // add delta explicitly since we won't be calling initSolve
+    ls.replaceDelta(dynamic_pointer_cast<MultiField>(ls.getX().newClone()));
+    ls.replaceResidual(dynamic_pointer_cast<MultiField>(ls.getX().newClone()));
+    
+  }
+  
+  void finishExplicitAdvance()
+  {
+    this->_lsK = shared_ptr<LinearSystem>();
+  }
+
+  void advanceExplicit(const int nSteps, const double deltaT)
+  {
+    const int nMeshes = this->_meshes.size();
+    LinearSystem& ls = *(this->_lsK);
+    
+    TimeDerivativeStructureDiscretization
+      <VectorT3,DiagTensorT3,DiagTensorT3>
+      td(_meshes,_geomFields,
+         _structureFields.deformation,
+         _structureFields.deformationN1,
+         _structureFields.deformationN2,
+         _structureFields.deformationN3,
+         _structureFields.density,
+         _structureFields.volume0,
+         deltaT);
+    
+        
+    for(int n=0; n<nSteps; n++)
+    {
+
+        ls.getMatrix().multiply(ls.getB(), ls.getX());
+
+        
+        applyBC(ls, true);
+
+        ls.getDelta().zero();
+
+        for(int n=0; n<nMeshes; n++)
+        {
+            const Mesh& mesh = *(this->_meshes[n]);
+            td.explicitAdvance(mesh,ls.getX(),ls.getB(),ls.getDelta());
+        }
+
+        // this will update the boundary delta's
+        ls.postSolve();
+
+        ls.updateSolution();
+
+        updateTime();
+    }
+  }
+  
   void postStructureSolve(LinearSystem& ls)
   {
     MultiField& sField = ls.getDelta();
@@ -1069,6 +1144,7 @@ private:
 //  MFRPtr _initialCoupledNorm;
   int _niters;
 
+  shared_ptr<LinearSystem> _lsK;
   //  shared_ptr<Field> _previousVelocity;
   //  shared_ptr<Field> _momApField;
 
@@ -1129,22 +1205,20 @@ StructureModel<T>::advance(const int niter)
   return _impl->advance(niter);
 }
 
-/*
 template<class T>
-bool
-StructureModel<T>::advanceCoupled(const int niter)
+void
+StructureModel<T>::advanceExplicit(const int nsteps, const double deltaT)
 {
-  return _impl->advanceCoupled(niter);
+  _impl->advanceExplicit(nsteps,deltaT);
 }
-*/
-
 
 template<class T>
 void
-StructureModel<T>::updateTime()
+StructureModel<T>::initExplicitAdvance()
 {
-  _impl->updateTime();
+  return _impl->initExplicitAdvance();
 }
+
 
 template<class T>
 void
@@ -1155,13 +1229,21 @@ StructureModel<T>::updateForceOnBoundary(const StorageSite& faceSite, const Arra
   _impl->updateForceOnBoundary(faceSite, bforceA, commonFacesMap, fxA, fyA, fzA);
 ;
 }
-/*template<class T>
+
+template<class T>
 void
-FlowModel<T>::printPressureIntegrals()
+StructureModel<T>::finishExplicitAdvance()
 {
-  _impl->printPressureIntegrals();
+  return _impl->finishExplicitAdvance();
 }
-*/
+
+
+template<class T>
+void
+StructureModel<T>::updateTime()
+{
+  _impl->updateTime();
+}
 
 
 template<class T>
@@ -1171,27 +1253,6 @@ StructureModel<T>::printDeformationFluxIntegrals()
   _impl->printDeformationFluxIntegrals();
 }
 
-/*template<class T>
-void
-FlowModel<T>::printMassFluxIntegrals()
-{
-  _impl->printMassFluxIntegrals();
-}
-
-template<class T>
-Vector<T,3>
-FlowModel<T>::getPressureIntegral(const Mesh& mesh, const int faceGroupId)
-{
- return  _impl->getPressureIntegral(mesh,faceGroupId);
-}
-
-template<class T>
-Vector<T,3>
-FlowModel<T>::getPVIntegral(const Field& velCoeff,const Mesh& mesh, const int faceGroupId)
-{
-  return  _impl->getPVIntegral(velCoeff,mesh,faceGroupId);
-}
-*/
 
 template<class T>
 Vector<T,3>
@@ -1213,39 +1274,6 @@ StructureModel<T>::getTraction(const Mesh& mesh)
 {
   return  _impl->getTraction(mesh);
 }
-
-/*
-template<class T>
-Vector<T,3>
-FlowModel<T>::getPressureIntegralonIBFaces(const Mesh& mesh)
-{
- return  _impl->getPressureIntegralonIBFaces(mesh);
-}
-
-
-template<class T>
-Vector<T,3>
-StructureModel<T>::getMomentumFluxIntegralonIBFaces(const Mesh& mesh)
-{
- return  _impl->getDeformationFluxIntegralonIBFaces(mesh);
-}
-
-
-template<class T>
-void
-FlowModel<T>::computeIBFaceVelocity(const StorageSite& particles)
-{
-  return _impl->computeIBFaceVelocity(particles);
-}
-
-
-template<class T>
-void
-FlowModel<T>::computeIBandSolidVelocity(const StorageSite& particles)
-{
-  return _impl->computeIBandSolidVelocity(particles);
-}
-*/
 
 
 template<class T>

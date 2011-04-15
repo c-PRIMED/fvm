@@ -156,7 +156,7 @@ public:
     XArray& y = dynamic_cast<XArray&>(yB);
     const XArray& x = dynamic_cast<const XArray&>(xB);
     
-    const int nRows = _conn.getRowSite().getSelfCount();
+    const int nRows = _conn.getRowSite().getCount();
     for(int nr=0; nr<nRows; nr++)
     {
         y[nr] = _diag[nr]*x[nr];
@@ -179,7 +179,7 @@ public:
     XArray& y = dynamic_cast<XArray&>(yB);
     const XArray& x = dynamic_cast<const XArray&>(xB);
     
-    const int nRows = _conn.getRowSite().getSelfCount();
+    const int nRows = _conn.getRowSite().getCount();
     for(int nr=0; nr<nRows; nr++)
     {
         y[nr] += _diag[nr]*x[nr];
@@ -965,7 +965,8 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
 
   // eliminate a_ij coefficients because of a dirichlet row j, the rhs
   // b as well as the delta_j values are required
-  void eliminateDirichlet(const int j, Array<X>& b, const X& delta_j )
+  void eliminateDirichlet(const int j, Array<X>& b, const X& delta_j,
+                          const bool explicitMode=false)
   {
     for (int nb = _row[j]; nb<_row[j+1]; nb++)
     {
@@ -974,8 +975,8 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
        
         b[i] += a_ij*delta_j;
 
-        a_ij = NumTypeTraits<OffDiag>::getZero();
-
+        if (!explicitMode)
+          a_ij = NumTypeTraits<OffDiag>::getZero();
     }
   }
   
