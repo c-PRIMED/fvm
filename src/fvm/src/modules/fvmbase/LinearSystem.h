@@ -39,6 +39,7 @@ public:
 
   void replaceDelta(shared_ptr<MultiField> newDelta) {_delta=newDelta;}
   void replaceB(shared_ptr<MultiField> newB) {_b=newB;}
+  void replaceResidual(shared_ptr<MultiField> newR) {_residual=newR;}
   
   void setCoarseningField(const Field& f) {_coarseningField=&f;}
 
