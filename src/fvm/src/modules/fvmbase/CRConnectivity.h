@@ -62,6 +62,8 @@ public:
   const StorageSite& getColSite() const {return *_colSite;}
 
   shared_ptr<CRConnectivity> getTranspose() const;
+  shared_ptr<CRConnectivity> getMultiTranspose(const int varSize) const;
+
   shared_ptr<CRConnectivity> multiply(const CRConnectivity& b,
                                       const bool implicitDiagonal) const;
   
@@ -133,6 +135,16 @@ public:
   int& operator()(const int i, const int j)
   {
     return (*_col)[(*_row)[i]+j];
+  }
+
+  int getCoeffPosition(const int i,  const int j) const
+  {
+    for (int nnb = (*_row)[i]; nnb<(*_row)[i+1]; nnb++)
+    {
+        if ((*_col)[nnb] == j)
+          return nnb;
+    }
+    throw CException("invalid indices");
   }
 
   /**

@@ -45,23 +45,24 @@ srcBase = ['CException.cpp',
            'KSearchTree.cpp',
            'IBManager.cpp',
 	   'SpikeStorage.cpp',
-	   'ContactFields.cpp'
+	   'ContactFields.cpp',
+           'DirectSolver.cpp',
            ]
 
-env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal'])
+env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal', 'umfpack'])
 
 
 env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase', 'cgal'])
 
 
 env.createSwigModule('fvmbaseExt',sources=['baseExt.i'],
-                     deplibs=['fvmbase','rlog', 'cgal'])
+                     deplibs=['fvmbase','rlog', 'cgal','umfpack'])
 
 env.createATypedSwigModule('models_atyped',sources=['models.i'],
                      deplibs=['models_atyped','fvmbase','rlog', 'cgal'])
 
-#env.createExe('testUQTK',['testUQTK.cpp'],
-#              deplibs=['fvmbase','uqtk'])
+env.createExe('testUQTK',['testUQTK.cpp'],
+              deplibs=['fvmbase','uqtk'])
 
 #env.createExe('testOneDConduction',['testOneDConduction.cpp'],
 #              deplibs=['fvmbase','uqtk'])

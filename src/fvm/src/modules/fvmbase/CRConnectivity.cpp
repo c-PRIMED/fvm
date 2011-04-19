@@ -88,6 +88,77 @@ CRConnectivity::getTranspose() const
   return trPtr;
 }
 
+// returns a transpose connectivity for a "flattened" matrix, ie. a
+// connectivity matrix where each row is made of varSize number of
+// separate rows
+
+shared_ptr<CRConnectivity>
+CRConnectivity::getMultiTranspose(const int varSize) const
+{
+  shared_ptr<CRConnectivity> trPtr(new CRConnectivity(*_colSite,*_rowSite));
+  CRConnectivity& tr = *trPtr;
+
+  tr._rowDim *= varSize;
+  tr._colDim *= varSize;
+  
+  tr.initCount();
+
+  const Array<int>& myRow = *_row;
+  const Array<int>& myCol = *_col;
+
+  for(int i=0; i<_rowDim; i++)
+  {
+      for(int ndr=0; ndr<varSize; ndr++)
+      {
+          const int nfr = i*varSize + ndr;
+          tr.addCount(nfr, varSize);
+      }
+      
+      for(int jp=myRow[i]; jp<myRow[i+1]; jp++)
+      {
+          const int j = myCol[jp];
+
+          for(int ndr=0; ndr<varSize; ndr++)
+            for(int ndc=0; ndc<varSize; ndc++)
+            {
+                const int nfr = i*varSize + ndr;
+                const int nfc = j*varSize + ndc;
+                tr.addCount(nfc, 1);
+            }
+      }
+  }
+  
+  tr.finishCount();
+
+  for(int i=0; i<_rowDim; i++)
+  {
+      for(int ndr=0; ndr<varSize; ndr++)
+        for(int ndc=0; ndc<varSize; ndc++)
+        {
+            const int nfr = i*varSize + ndr;
+            const int nfc = i*varSize + ndc;
+            tr.add(nfc, nfr);
+        }
+      
+      for(int jp=myRow[i]; jp<myRow[i+1]; jp++)
+      {
+          const int j = myCol[jp];
+
+          for(int ndr=0; ndr<varSize; ndr++)
+            for(int ndc=0; ndc<varSize; ndc++)
+            {
+                const int nfr = i*varSize + ndr;
+                const int nfc = j*varSize + ndc;
+                tr.add(nfc, nfr);
+            }
+      }
+  }
+
+  tr.finishAdd();
+  return trPtr;
+}
+
+
 shared_ptr<CRConnectivity>
 CRConnectivity::multiply(const CRConnectivity& b, const bool implicitDiagonal) const
 {

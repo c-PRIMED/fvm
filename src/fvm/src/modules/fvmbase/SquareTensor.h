@@ -386,6 +386,48 @@ inverse(const SquareTensor<T,3>& a)
   
 }
 
+
+template<int N>
+void setFlatCoeffs(Array<double>& flatCoeffs,
+                   const CRConnectivity& flatConnectivity,
+                   const Array<SquareTensor<double,N> >& diag,
+                   const Array<SquareTensor<double,N> >& offDiag,
+                   const CRConnectivity& connectivity)
+{
+    const Array<int>& myRow = connectivity.getRow();
+    const Array<int>& myCol = connectivity.getCol();
+    const int rowDim = connectivity.getRowDim();
+    
+    for(int i=0; i<rowDim; i++)
+    {
+        for(int ndr=0; ndr<N; ndr++)
+          for(int ndc=0; ndc<N; ndc++)
+          {
+              const int nfr = i*N + ndr;
+              const int nfc = i*N + ndc;
+
+              const int fp = flatConnectivity.getCoeffPosition(nfc,nfr);
+              flatCoeffs[fp] = diag[i](ndr,ndc);
+          }
+      
+        for(int jp=myRow[i]; jp<myRow[i+1]; jp++)
+        {
+            const int j = myCol[jp];
+            
+            for(int ndr=0; ndr<N; ndr++)
+              for(int ndc=0; ndc<N; ndc++)
+              {
+                  const int nfr = i*N + ndr;
+                  const int nfc = j*N + ndc;
+                  const int fp = flatConnectivity.getCoeffPosition(nfc,nfr);
+                  flatCoeffs[fp] = offDiag[jp](ndr,ndc);
+            }
+      }
+  }
+}
+
+
+
 /*
 template<class T>
 SquareTensor<T,10>

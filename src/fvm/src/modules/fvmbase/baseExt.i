@@ -11,6 +11,7 @@
 #include "CG.h"
 #include "ILU0Solver.h"
 #include "JacobiSolver.h"
+#include "DirectSolver.h"
 #include "SpikeStorage.h"
 #include "SpikeSolver.h"
 #include "ArrayBase.h"
@@ -72,6 +73,7 @@ typedef Vector<double,3> VecD3;
 %include "BCGStab.i"
 %include "CG.i"
 %include "JacobiSolver.i"
+%include "DirectSolver.i"
 %include "SpikeSolver.i"
 %include "SpikeStorage.i"
 

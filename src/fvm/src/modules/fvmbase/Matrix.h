@@ -52,6 +52,7 @@ public:
   virtual int   getOffDiagDataSize() const {throw;}
   virtual shared_ptr<Matrix> createMergeMatrix( const LinearSystemMerger& mergeLS ) { throw;}
 
+  virtual void setFlatMatrix(Matrix& fmg) const {throw;}
   
   virtual shared_ptr<CRConnectivity>
   createCoarseConnectivity(const IContainer& coarseIndex,

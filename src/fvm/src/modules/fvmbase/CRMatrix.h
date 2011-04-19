@@ -23,6 +23,48 @@ X DiagToOffDiag(const X& x)
   return x;
 }
 
+// helper function to set coefficients of a flattened matrix
+// corresponding to a given CRMatrix. The default version is not
+// implemented but we do define the versions we need i.e. for a scalar
+// matrix and for a SquareTensor one (see SquareTensor.h). This function gets used
+// to create the matrix for use in the DirectSolver.
+
+template<class T_Diag, class T_OffDiag>
+void setFlatCoeffs(Array<double>& flatCoeffs,
+                   const CRConnectivity& flatConnectivity,
+                   const Array<T_Diag>& diag,
+                   const Array<T_OffDiag>& offDiag,
+                   const CRConnectivity& connectivity)
+{
+  throw CException("not implemented");
+}
+                   
+
+void setFlatCoeffs(Array<double>& flatCoeffs,
+                   const CRConnectivity& flatConnectivity,
+                   Array<double>& diag,
+                   Array<double>& offDiag,
+                   const CRConnectivity& connectivity)
+{
+    const Array<int>& myRow = connectivity.getRow();
+    const Array<int>& myCol = connectivity.getCol();
+    const int rowDim = connectivity.getRowDim();
+    
+    for(int i=0; i<rowDim; i++)
+    {
+        const int fp = flatConnectivity.getCoeffPosition(i,i);
+        flatCoeffs[fp] = diag[i];
+      
+        for(int jp=myRow[i]; jp<myRow[i+1]; jp++)
+        {
+            const int j = myCol[jp];
+
+            // the flat matrix uses compressed col format so swap i,j
+            const int fp = flatConnectivity.getCoeffPosition(j,i);
+            flatCoeffs[fp] = offDiag[jp];
+        }
+    }
+}
 
 /**
  * Sparse matrix stored using a compressed row format. The sparsity
@@ -1006,6 +1048,13 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
      }
   }
 
+  virtual void setFlatMatrix(Matrix& fmg) const
+  {
+    CRMatrix<double,double,double>& fm = dynamic_cast<CRMatrix<double,double,double>& >(fmg);
+    setFlatCoeffs(fm.getOffDiag(), fm.getConnectivity(),
+                  getDiag(), getOffDiag(), getConnectivity());
+  }
+  
 private:
 
     void syncBndryCoeffs( const Array<X>& b )
