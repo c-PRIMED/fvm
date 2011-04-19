@@ -1,5 +1,5 @@
 
-#include <umfpack/umfpack.h>
+#include <umfpack.h>
 
 #include "DirectSolver.h"
 #include "CRMatrix.h"
