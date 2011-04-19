@@ -2,22 +2,23 @@ from build_packages import *
 import glob
 
 class Fvm(BuildPkg):
-    requires = ['scons', 'rlog', 'swig', 'nose', 'netcdf', 'boost', 'cgal']
-    
+    requires = ['scons', 'rlog', 'swig', 'nose', 'netcdf', 'boost', 'cgal',
+                'umfpack']
+
     def add_required(self, deps):
         x = config('fvm', 'parallel')
         if x != '' and eval(x):
             deps += ['mpi4py', 'parmetis']
         return deps
-        
+
     def status(self):
         x = config('fvm', 'parallel')
         if x != '' and eval(x):
             par = 'parallel'
         else:
-            par = 'serial'        
+            par = 'serial'
         return '%s-%s' % (par, config('fvm', 'version'))
-    
+
     # from fvm sources
     def get_arch(self):
         if sys.platform == 'linux2':
@@ -42,7 +43,7 @@ class Fvm(BuildPkg):
         except:
             pass
         return vers
-    def _configure(self):            
+    def _configure(self):
         pdir = os.path.join(self.sdir, "packages")
         self.sys_log("/bin/mkdir -p %s" % pdir)
         pdir = os.path.join(pdir, self.get_arch())
@@ -80,7 +81,7 @@ class Fvm(BuildPkg):
 
         # install scripts
         os.chdir(os.path.join(self.sdir, "scripts"))
-        self.sys_log("install *.py %s" % self.bindir)     
+        self.sys_log("install *.py %s" % self.bindir)
         return 0
 
     def _clean(self):
