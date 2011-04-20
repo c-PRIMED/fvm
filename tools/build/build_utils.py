@@ -295,9 +295,16 @@ def copytree(src, dst, ctype):
             os.symlink(srcname, dstname)
 
 def set_python_path(dir):
-    py = find_executable('python')
+    #py = find_executable('python')
     ver = os.popen("/bin/bash -c 'python -V 2>&1'").readline()
-    a, b = re.compile(r'Python ([^.]*).([^.\n]*)').findall(ver)[0]
+    try:
+        a, b = re.compile(r'Python ([^.]*).([^.\n]*)').findall(ver)[0]
+    except:
+        print "Unable to determine python version."
+        print "ver=%s" % ver
+        
+        sys.exit(2)
+        
     libpath = os.path.join(dir, 'lib')
     pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a, b), 'site-packages')
     pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a, b), 'site-packages')
