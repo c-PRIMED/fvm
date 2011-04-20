@@ -36,7 +36,6 @@ srcBase = ['CException.cpp',
 	   'ElectricFields.cpp',
 	   'StorageSiteMerger.cpp',
            'LinearSystemMerger.cpp',
-           #'PC.cpp',
            'MeshAssembler.cpp',
 	   'MeshDismantler.cpp',
            'ILU0Solver.cpp',
@@ -61,8 +60,3 @@ env.createSwigModule('fvmbaseExt',sources=['baseExt.i'],
 env.createATypedSwigModule('models_atyped',sources=['models.i'],
                      deplibs=['models_atyped','fvmbase','rlog', 'cgal'])
 
-env.createExe('testUQTK',['testUQTK.cpp'],
-              deplibs=['fvmbase','uqtk'])
-
-#env.createExe('testOneDConduction',['testOneDConduction.cpp'],
-#              deplibs=['fvmbase','uqtk'])
