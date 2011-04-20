@@ -11,10 +11,10 @@ template class MeshMetricsCalculator<ATYPE>;
 template class ThermalModel<ATYPE>;
 
 #ifndef USING_ATYPE_PC
+
 #include "ElectricModel.h"
 #include "ElectricModel_impl.h"
 template class ElectricModel<ATYPE>;
-
 #endif
 
 #ifndef USING_ATYPE_PC
@@ -23,7 +23,6 @@ template class ElectricModel<ATYPE>;
 template class ContactModel<ATYPE>;
 
 #endif
-
 
 #include "FlowModel.h"
 #include "FlowModel_impl.h"
@@ -40,21 +39,20 @@ template class IdealGasDensityModel<ATYPE>;
 
 template class RosselandModel<ATYPE>;
 
+#include "KeModel.h"
+#include "KeModel_impl.h"
 
 
-//#include "OneDConduction.h"
+template class KeModel<ATYPE>;
 
-//template class OneDConduction<ATYPE>;
 
-//#include "ShockTube.h"
-//template class ShockTube<ATYPE>;
 
 #ifndef USING_ATYPE_PC
+
 #include "StructureModel.h"
 #include "StructureModel_impl.h"
 
 template class StructureModel<ATYPE>;
-
 #include "PlateModel.h"
 #include "PlateModel_impl.h"
 
@@ -62,8 +60,8 @@ template class PlateModel<ATYPE>;
 
 #include "MovingMeshModel.h"
 
-template class MovingMeshModel<ATYPE>;
 
+template class MovingMeshModel<ATYPE>;
 
 #include "StructureDeformationModel.h"
 template class StructureDeformationModel<ATYPE>;
@@ -72,3 +70,8 @@ template class StructureDeformationModel<ATYPE>;
 template class PlateDeformationModel<ATYPE>;
 
 #endif
+
+#include "OneDConduction.h"
+template class OneDConduction<ATYPE>;
+
+

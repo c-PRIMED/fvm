@@ -24,6 +24,8 @@ struct FlowFields
   Field tractionZ;
   Field stress;
   Field force;
+  Field eddyviscosity;
+  Field totalviscosity;
 };
 
 #endif

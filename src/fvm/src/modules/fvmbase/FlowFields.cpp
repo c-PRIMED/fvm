@@ -16,6 +16,8 @@ FlowFields::FlowFields(const string baseName) :
   tractionY(baseName + ".tractionY"),
   tractionZ(baseName + ".tractionZ"),
   stress(baseName + ".stress"),
-  force(baseName + ".force")
+  force(baseName + ".force"),
+  eddyviscosity(baseName + ".eddyviscosity"),
+  totalviscosity(baseName + ".totalviscosity")
 {}
 

@@ -17,12 +17,20 @@ using namespace std;
 %include "GeomFields.h"
 %include "FlowFields.h"
 %include "ThermalFields.h"
+
+%include "KeFields.h"
+
 %include "ContactFields.h"
+
 %include "atype.i"
 
 %include "MeshMetricsCalculator.i"
 %include "ThermalModel.i"
+
+%include "KeModel.i"
+
 %include "ContactModel.i"
+
 
 #ifndef USING_ATYPE_PC
 
@@ -41,7 +49,7 @@ using namespace std;
 
 %include "IdealGasDensityModel.i"
 %include "RosselandModel.i"
-
+%include "KeModel.i"
 
 
  //%include "OneDConduction.i"
