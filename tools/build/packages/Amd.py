@@ -9,3 +9,9 @@ class Amd(BuildPkg):
         shutil.move(self.sdir, newdir)
         self.sdir = newdir
         self.bdir = newdir
+        idir = os.path.join(self.blddir, "include")
+        return self.sys_log("INSTALL_LIB=%s INSTALL_INCLUDE=%s make install" % (self.libdir, idir))        
+    def _build(self):
+        idir = os.path.join(self.blddir, "include")
+        return self.sys_log("INSTALL_LIB=%s INSTALL_INCLUDE=%s make" % (self.libdir, idir))
+            
