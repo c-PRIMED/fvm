@@ -56,8 +56,8 @@ env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase', 
 
 
 env.createSwigModule('fvmbaseExt',sources=['baseExt.i'],
-                     deplibs=['fvmbase','rlog', 'cgal','umfpack'])
+                     deplibs=['fvmbase','rlog', 'cgal','umfpack', 'blas'])
 
 env.createATypedSwigModule('models_atyped',sources=['models.i'],
-                     deplibs=['models_atyped','fvmbase','rlog', 'cgal'])
+                     deplibs=['models_atyped','fvmbase','rlog', 'cgal', 'blas'])
 

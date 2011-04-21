@@ -12,6 +12,6 @@ deps += ['fvmparallel']
 
 env.createSwigModule('fvmparallel',sources=['Partitioner.i'],deplibs=deps)
                      
-deps += ['importers', 'exporters']
+deps += ['importers', 'exporters', 'blas']
 
 env.createExe('pFVM',['pFVM.cpp'], deps)
