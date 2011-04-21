@@ -31,6 +31,7 @@ public:
                           const Field& velocityField,
                           Field& muField,
                           Field& dissipationField,
+                          Field& densityField,
                           const Field& gradientField) :
 
       Discretization(meshes),
@@ -39,6 +40,7 @@ public:
       _velocityField(velocityField),
       _muField(muField),
       _dissipationField(dissipationField),
+      _densityField(densityField),
       _gradientField(gradientField)
 
    {}
@@ -59,6 +61,9 @@ public:
 
     const TArray& eCell =
       dynamic_cast<TArray&>(_dissipationField[cells]);
+
+    const TArray & rhoCell =
+      dynamic_cast<const TArray&>(_densityField[cells]);
 
   
     TArray& rCell =
@@ -84,7 +89,7 @@ public:
          {
            vgSquare[i][j] =  vg[i][j]*vg[i][j] ;
            vgSquare[i][j] += vg[i][j]*vg[j][i];
-           source = vgSquare[i][j]*muCell[n]-eCell[n];
+           source = vgSquare[i][j]*muCell[n]-eCell[n]*rhoCell[n];
          }
         rCell[n] -=source*cellVolume[n];
     }
@@ -96,6 +101,7 @@ private:
   const  Field& _velocityField;
   Field& _muField;
   Field& _dissipationField;
+  Field& _densityField;
   const Field& _gradientField;
 
 };

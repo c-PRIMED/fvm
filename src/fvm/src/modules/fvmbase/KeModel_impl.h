@@ -423,6 +423,7 @@ public:
           _flowFields.velocity,
 	  _flowFields.eddyviscosity,
           _keFields.dissipation,
+          _flowFields.density,
           _flowFields.velocityGradient));
     discretizations.push_back(sd);
    
@@ -633,6 +634,7 @@ public:
           _flowFields.velocity,
           _flowFields.eddyviscosity,
           _keFields.energy,
+          _flowFields.density,
           _flowFields.velocityGradient));
     discretizations1.push_back(sd);
 
@@ -757,6 +759,9 @@ public:
      TArray& tmuCell =
       dynamic_cast<TArray&>(_flowFields.totalviscosity[cells]);
 
+    const TArray & rhoCell =
+      dynamic_cast<const TArray&>(_flowFields.density[cells]);
+
     const TArray& eCell =
       dynamic_cast<const TArray&>(_keFields.dissipation[cells]);
 
@@ -783,7 +788,7 @@ public:
 
     for(int c=0; c<nCells; c++)
     {
-        muCell[c] = (cmuCell[c]*kCell[c]*kCell[c])/eCell[c];
+        muCell[c] = (cmuCell[c]*kCell[c]*kCell[c]*rhoCell[c])/eCell[c];
         c1Cell[c] = muCell[c]/sigmakCell[c];
         c2Cell[c] = muCell[c]/sigmaeCell[c];
         tmuCell[c] = muCell[c] + lmuCell[c];
