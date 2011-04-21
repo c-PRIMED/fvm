@@ -35,6 +35,9 @@ public:
                             Field& muField,
                             Field& energyField,
                             Field& densityField,
+                            Field& sourcedField,
+                            Field& sourcecField,
+                            Field& sourcepField,
                             const Field& gradientField) :
 
       Discretization(meshes),
@@ -44,6 +47,10 @@ public:
       _muField(muField),
       _energyField(energyField),
       _densityField(densityField),
+      _sourcedField(sourcedField),
+      _sourcecField(sourcecField),
+      _sourcepField(sourcepField),
+
       _gradientField(gradientField)
 
    {}
@@ -70,6 +77,17 @@ public:
     const TArray & rhoCell =
       dynamic_cast<const TArray&>(_densityField[cells]);
 
+    TArray& sourceCell =
+      dynamic_cast<TArray&>(_sourcedField[cells]);
+
+    TArray& sourcecCell =
+      dynamic_cast<TArray&>(_sourcecField[cells]);
+
+    TArray& sourcepCell =
+      dynamic_cast<TArray&>(_sourcepField[cells]);
+
+
+
 
     TArray& rCell = 
       dynamic_cast<TArray&>(rField[cVarIndex]);
@@ -78,9 +96,9 @@ public:
    //   dynamic_cast<const TArray&>(xField[cVarIndex]);
 
     const int nCells = cells.getCount();
-    T source(NumTypeTraits<T>::getZero());
-    T sourcec(NumTypeTraits<T>::getZero());
-    T sourcep(NumTypeTraits<T>::getZero());
+ //   T source(NumTypeTraits<T>::getZero());
+  //  T sourcec(NumTypeTraits<T>::getZero());
+   // T sourcep(NumTypeTraits<T>::getZero());
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
@@ -98,13 +116,13 @@ public:
 
              vgSquare[i][j] =  vg[i][j]*vg[i][j] ;
              vgSquare[i][j] += vg[i][j]*vg[j][i];
-             source = (vgSquare[i][j]*muCell[n]*eCell[n]*1.44)/kCell[n]-(1.92*eCell[n]*eCell[n]*rhoCell[n])/kCell[n] ;
-             sourcec = source - ((vgSquare[i][j]*muCell[n]*1.44)/kCell[n]-(1.92*2*eCell[n]*rhoCell[n])/kCell[n])*eCell[n];
-             sourcep = (vgSquare[i][j]*muCell[n]*1.44)/kCell[n]-(1.92*2*eCell[n]*rhoCell[n])/kCell[n];
+             sourceCell[n] = (vgSquare[i][j]*muCell[n]*eCell[n]*1.44)/kCell[n]-(1.92*eCell[n]*eCell[n]*rhoCell[n])/kCell[n] ;
+             sourcecCell[n] = sourceCell[n] - ((vgSquare[i][j]*muCell[n]*1.44)/kCell[n]-(1.92*2*eCell[n]*rhoCell[n])/kCell[n])*eCell[n];
+             sourcepCell[n] = (vgSquare[i][j]*muCell[n]*1.44)/kCell[n]-(1.92*2*eCell[n]*rhoCell[n])/kCell[n];
 
            }
-        rCell[n] -=sourcec*cellVolume[n];
-        diag[n] +=cellVolume[n]*sourcep;
+        rCell[n] -=sourcecCell[n]*cellVolume[n];
+        diag[n] +=cellVolume[n]*sourcepCell[n];
     }
 }
 
@@ -116,6 +134,9 @@ private:
   Field& _muField;
   Field& _energyField;
   Field& _densityField;
+  Field& _sourcedField;
+  Field& _sourcecField;
+  Field& _sourcepField;
   const Field& _gradientField;
 
 };

@@ -17,7 +17,12 @@ KeFields::KeFields(const string baseName) :
   energyN2(baseName + ".energyN2"),
 //  density(baseName + ".density"),
   dissipationN1(baseName + ".dissipationN1"),
-  dissipationN2(baseName + ".dissipationN2")
+  dissipationN2(baseName + ".dissipationN2"),
+  sourcek(baseName + ".sourcek"),
+  sourced(baseName + ".sourced"),
+  sourcec(baseName + ".sourcec"),
+  sourcep(baseName + ".sourcep")
+
 
 
 {}

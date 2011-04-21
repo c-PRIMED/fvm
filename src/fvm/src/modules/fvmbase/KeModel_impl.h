@@ -120,6 +120,26 @@ public:
         *kCell = vc["InitialEnergy"];
         _keFields.energy.addArray(cells,kCell);
 
+        shared_ptr<TArray> sourcekCell(new TArray(cells.getCount()));
+        *sourcekCell = T(1.0);
+        _keFields.sourcek.addArray(cells,sourcekCell);
+
+        shared_ptr<TArray> sourcedCell(new TArray(cells.getCount()));
+        *sourcedCell = T(1.0);
+        _keFields.sourced.addArray(cells,sourcedCell);
+
+        shared_ptr<TArray> sourcecCell(new TArray(cells.getCount()));
+        *sourcecCell = T(1.0);
+        _keFields.sourcec.addArray(cells,sourcecCell);
+
+        shared_ptr<TArray> sourcepCell(new TArray(cells.getCount()));
+        *sourcepCell = T(1.0);
+        _keFields.sourcep.addArray(cells,sourcepCell);
+
+
+
+
+
 	//dissipation(e)
         shared_ptr<TArray> eCell(new TArray(cells.getCount()));
         *eCell = vc["InitialDissipation"];
@@ -424,6 +444,7 @@ public:
 	  _flowFields.eddyviscosity,
           _keFields.dissipation,
           _flowFields.density,
+          _keFields.sourcek,
           _flowFields.velocityGradient));
     discretizations.push_back(sd);
    
@@ -635,6 +656,9 @@ public:
           _flowFields.eddyviscosity,
           _keFields.energy,
           _flowFields.density,
+          _keFields.sourced,
+          _keFields.sourcec,
+          _keFields.sourcep,
           _flowFields.velocityGradient));
     discretizations1.push_back(sd);
 

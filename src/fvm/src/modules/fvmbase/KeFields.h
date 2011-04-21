@@ -26,6 +26,10 @@ struct KeFields
   //Field density;
   Field dissipationN1;
   Field dissipationN2;
+  Field sourcek;   // S of energy
+  Field sourced;  // S of dissipation
+  Field sourcec;  //Sc after linearization
+  Field sourcep;  //Sp after linearization
 };
 
 #endif

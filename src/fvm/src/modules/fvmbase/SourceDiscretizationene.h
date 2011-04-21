@@ -32,6 +32,7 @@ public:
                           Field& muField,
                           Field& dissipationField,
                           Field& densityField,
+                          Field& sourcekField,
                           const Field& gradientField) :
 
       Discretization(meshes),
@@ -41,6 +42,7 @@ public:
       _muField(muField),
       _dissipationField(dissipationField),
       _densityField(densityField),
+      _sourcekField(sourcekField),
       _gradientField(gradientField)
 
    {}
@@ -65,6 +67,9 @@ public:
     const TArray & rhoCell =
       dynamic_cast<const TArray&>(_densityField[cells]);
 
+    TArray & sourceCell =
+      dynamic_cast<TArray&>(_sourcekField[cells]);
+
   
     TArray& rCell =
       dynamic_cast<TArray&>(rField[cVarIndex]);
@@ -75,7 +80,7 @@ public:
 
   
     const int nCells = cells.getCount();  
-    T source(NumTypeTraits<T>::getZero());
+   // T source(NumTypeTraits<T>::getZero());
 
 
     for(int n=0; n<nCells; n++)
@@ -89,9 +94,9 @@ public:
          {
            vgSquare[i][j] =  vg[i][j]*vg[i][j] ;
            vgSquare[i][j] += vg[i][j]*vg[j][i];
-           source = vgSquare[i][j]*muCell[n]-eCell[n]*rhoCell[n];
+           sourceCell[n] = vgSquare[i][j]*muCell[n]-eCell[n]*rhoCell[n];
          }
-        rCell[n] -=source*cellVolume[n];
+        rCell[n] +=sourceCell[n]*cellVolume[n];
     }
 }
 private:
@@ -102,6 +107,7 @@ private:
   Field& _muField;
   Field& _dissipationField;
   Field& _densityField;
+  Field& _sourcekField;
   const Field& _gradientField;
 
 };
