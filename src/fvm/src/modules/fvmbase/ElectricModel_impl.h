@@ -34,6 +34,10 @@
 #include "ElecDiagonalTensor.h"
 #include "LinearizeDielectric.h"
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 template<class T>
 class ElectricModel<T>::Impl
 {
@@ -880,16 +884,28 @@ public:
 	    
 	  MFRPtr eNormRatio((*eNorm)/(*_initialElectroStaticsNorm));
 
+#ifndef FVM_PARALLEL
 	  if (_options.printNormalizedResiduals)
 	    cout << _niters << ": " << *eNormRatio << ";" <<  endl;
 	  else
 	    cout << _niters << ": " << *eNorm << ";" <<  endl;
+#endif
 
-	  if (*eNormRatio < _options.electrostaticsTolerance ) 
-	    {
+#ifdef FVM_PARALLEL
+     if ( MPI::COMM_WORLD.Get_rank() == ){
+	  if (_options.printNormalizedResiduals)
+	    cout << _niters << ": " << *eNormRatio << ";" <<  endl;
+	  else
+	    cout << _niters << ": " << *eNorm << ";" <<  endl;
+     }
+#endif
+
+	  if (*eNormRatio < _options.electrostaticsTolerance ) {
 	      flag1 = true;
 	      break;
-	    }	  
+	  }
+
+	  
 	}
     }
 

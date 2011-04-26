@@ -401,7 +401,7 @@ private:
   int  getNumBounCells();
   int  get_request_size();
   void CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name );
-  void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID);
+  void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const;
 
       
   

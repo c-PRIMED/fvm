@@ -478,6 +478,7 @@ Mesh::getCellCells2() const
   if (!_cellCells2)
   { 
 #ifdef FVM_PARALLEL
+    if ( MPI::COMM_WORLD.Get_size() > 1 ) {
       //CRConnectivity constructor
       _cellCells2 = shared_ptr<CRConnectivity> ( new CRConnectivity(this->getCells(), this->getCells()) );
       //initCount
@@ -587,6 +588,11 @@ Mesh::getCellCells2() const
          localToGlobal[i] = (*_localToGlobal)[i];
       }
 
+  } else {  //if it is a one processor, we want to call this version, otherwise, couplingplate has trouble
+       const CRConnectivity& cellCells = getCellCells();
+       _cellCells2 = cellCells.multiply(cellCells, true);
+  }
+
 #endif
 
 #ifndef FVM_PARALLEL
@@ -597,6 +603,7 @@ Mesh::getCellCells2() const
 
 
   }
+
   return *_cellCells2;
 }
 
@@ -2077,7 +2084,7 @@ Mesh::CRConnectivityPrint( const CRConnectivity& conn, int procID, const string&
 }
 
 void 
-Mesh::CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID)
+Mesh::CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const
 {
 #ifdef FVM_PARALLEL
     if ( MPI::COMM_WORLD.Get_rank() == procID ){
