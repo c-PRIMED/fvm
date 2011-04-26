@@ -892,7 +892,7 @@ public:
 #endif
 
 #ifdef FVM_PARALLEL
-     if ( MPI::COMM_WORLD.Get_rank() == ){
+     if ( MPI::COMM_WORLD.Get_rank() == 0 ){
 	  if (_options.printNormalizedResiduals)
 	    cout << _niters << ": " << *eNormRatio << ";" <<  endl;
 	  else
