@@ -58,14 +58,13 @@ class ClientCoupling:
      
      def update(self, ModelList, FieldList):
         for model in ModelList:
-           model.computeSolidSurfaceForce(self.solidBoundaryMesh.getFaces())
+           model.computeSolidSurfaceForcePerUnitArea(self.solidBoundaryMesh.getFaces())
         
 	self.force[:,:] = 0.0        
         for field in FieldList:
            forceA = field.force[self.solidBoundaryMesh.getFaces()]
 	   force  = forceA.asNumPyArray()
 	   self.force += force
-
         #sending stress to serverside	    
         self.CLIENT_COMM_SERVER.Allreduce( [self.force, MPI.DOUBLE], [self.recvForcebuf, MPI.DOUBLE], op=MPI.SUM)
 
