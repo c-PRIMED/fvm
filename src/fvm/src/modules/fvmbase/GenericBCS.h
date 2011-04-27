@@ -405,8 +405,8 @@ public:
         const int c1 = this->_faceCells(f,1);
         
         // the current value of flux and its Jacobians
-        const X fluxB = -this->_r[c1];
-        const OffDiag dFluxdXC0 = -this->_assembler.getCoeff10(f);
+        //const X fluxB = -this->_r[c1];
+        //const OffDiag dFluxdXC0 = -this->_assembler.getCoeff10(f);
         const Diag dFluxdXC1 = -this->_dRdXDiag[c1];
 
         const X xB = this->_x[c0];
