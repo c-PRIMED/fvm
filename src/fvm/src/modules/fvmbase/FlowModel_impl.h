@@ -299,6 +299,14 @@ public:
     }
   }
 
+  const Field& getViscosityField() const
+  {
+    if (_options.turbulent)
+      return _flowFields.totalviscosity;
+    else
+      return _flowFields.viscosity;
+  }
+  
   void computeIBFaceVelocity(const StorageSite& particles)
   {
     typedef CRMatrixTranspose<T,T,T> IMatrix;
@@ -550,8 +558,7 @@ public:
       dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,T>
          (_meshes,_geomFields,
           _flowFields.velocity,
-          _flowFields.totalviscosity,
-          //_flowFields.viscosity,
+          getViscosityField(),
           _flowFields.velocityGradient));
 
     shared_ptr<Discretization>
@@ -1713,9 +1720,8 @@ public:
     const TArray& pCell =
       dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
 
-    const TArray& mu = dynamic_cast<const TArray&>(_flowFields.totalviscosity[cells]);
+    const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);
 
-    //const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
 
     boost::shared_ptr<StressTensorArray> stressTensorPtr( new StressTensorArray(nCells));
     StressTensorArray& stressTensor = *stressTensorPtr;
@@ -1770,9 +1776,8 @@ public:
 
     const TArray& pCell =
       dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
-    const TArray& mu = dynamic_cast<const TArray&>(_flowFields.totalviscosity[cells]);
 
-   // const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
+    const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);
       
     for(int n=0; n<nCells; n++)
     {
@@ -1830,12 +1835,7 @@ public:
         const TArray& pCell =
           dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
 
-       const TArray& mu = 
-         dynamic_cast<const TArray&>(_flowFields.totalviscosity[cells]);
-
-        
-  //      const TArray& mu =
-   //       dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
+       const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);
         
         //const FlowVC<T>& vc = *_vcMap[mesh.getID()];
             

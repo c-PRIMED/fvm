@@ -58,12 +58,14 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->coupledLinearSolver = 0;
 
     this->incompressible = true;
+    this->turbulent = false;
   }
   
   bool printNormalizedResiduals;
   double momentumTolerance;
   double continuityTolerance;
   bool transient;
+  bool turbulent;
   bool correctVelocity;
   int timeDiscretizationOrder;
   LinearSolver *momentumLinearSolver;
