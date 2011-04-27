@@ -121,7 +121,7 @@ CRConnectivity::getMultiTranspose(const int varSize) const
           for(int ndr=0; ndr<varSize; ndr++)
             for(int ndc=0; ndc<varSize; ndc++)
             {
-                const int nfr = i*varSize + ndr;
+                //const int nfr = i*varSize + ndr;
                 const int nfc = j*varSize + ndc;
                 tr.addCount(nfc, 1);
             }
