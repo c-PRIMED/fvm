@@ -110,8 +110,8 @@ public:
     const VectorT3Array& cellCentroid =
       dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
 
-    //const VectorT3Array& faceCentroid =
-    //  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
+    const VectorT3Array& faceCentroid =
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
 
 
     const TArray& cellVolume =
@@ -150,7 +150,7 @@ public:
     const Array<int>& ccRow = cellCells.getRow();
     const Array<int>& ccCol = cellCells.getCol();
 
-    //const int nInteriorCells = cells.getSelfCount();
+    const int nInteriorCells = cells.getSelfCount();
 
     const T two(2.0);
     const T three(3.0);
@@ -376,11 +376,9 @@ public:
 	rCell[c1] -= source;
 
 	// add flux due to residual Stress to the residual of c0 and c1
-	if (!isBoundary)
-	{
-	    rCell[c0] += residualSource;
-	    rCell[c1] -= residualSource;
-	} 
+	rCell[c0] += residualSource;
+	rCell[c1] -= residualSource;
+     
 
         // for Jacobian, use 2*mu + lambda as the diffusivity
         const T faceDiffusivity = faceMu;
