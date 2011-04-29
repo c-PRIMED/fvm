@@ -92,37 +92,44 @@ public:
     TArray& rCell = 
       dynamic_cast<TArray&>(rField[cVarIndex]);
 
-   // const TArray& xCell =
-   //   dynamic_cast<const TArray&>(xField[cVarIndex]);
 
     const int nCells = cells.getCount();
- //   T source(NumTypeTraits<T>::getZero());
-  //  T sourcec(NumTypeTraits<T>::getZero());
-   // T sourcep(NumTypeTraits<T>::getZero());
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
 
     DiagArray& diag = matrix.getDiag();
-
+    T x; T y; T dx; T dy; T sum; T ds;
+    T onePointfour(1.44);
+    T onePointnine(1.92);
+    T two(2.0);
     for(int n=0; n<nCells; n++)
     {
         const VGradType& vg = vGrad[n];
         VGradType vgSquare = vGrad[n];
-
+         x = (muCell[n]*eCell[n]*onePointfour)/kCell[n];
+         y = (onePointnine*eCell[n]*eCell[n]*rhoCell[n])/kCell[n];
+         dx = x/eCell[n];
+         dy = (y*two)/eCell[n];
+        
         for(int i=0;i<3;i++)
+        {
           for(int j=0;j<3;j++)
            {
+           vgSquare[i][j] =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
+           sum += vgSquare[i][j];
 
-             vgSquare[i][j] =  vg[i][j]*vg[i][j] ;
-             vgSquare[i][j] += vg[i][j]*vg[j][i];
-             sourceCell[n] = (vgSquare[i][j]*muCell[n]*eCell[n]*1.44)/kCell[n]-(1.92*eCell[n]*eCell[n]*rhoCell[n])/kCell[n] ;
-             sourcecCell[n] = sourceCell[n] - ((vgSquare[i][j]*muCell[n]*1.44)/kCell[n]-(1.92*2*eCell[n]*rhoCell[n])/kCell[n])*eCell[n];
-             sourcepCell[n] = (vgSquare[i][j]*muCell[n]*1.44)/kCell[n]-(1.92*2*eCell[n]*rhoCell[n])/kCell[n];
-
+        //     vgSquare[i][j] =  vg[i][j]*vg[i][j] ;
+          //   vgSquare[i][j] += vg[i][j]*vg[j][i];
            }
-        rCell[n] -=sourcecCell[n]*cellVolume[n];
-        diag[n] +=cellVolume[n]*sourcepCell[n];
+        }
+        //cout<<sum;
+        sourceCell[n] = sum*x-y ;
+        ds = sum*dx-dy;
+        sourcecCell[n] = sourceCell[n]- ds*eCell[n];
+        sourcepCell[n] = ds;
+        rCell[n] +=sourcecCell[n]*cellVolume[n];
+        diag[n] -=cellVolume[n]*sourcepCell[n];
     }
 }
 

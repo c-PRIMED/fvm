@@ -74,28 +74,28 @@ public:
     TArray& rCell =
       dynamic_cast<TArray&>(rField[cVarIndex]);
    
-   // const TArray& xCell = 
-    //  dynamic_cast<const TArray&>(xField[cVarIndex]);
-
-
   
     const int nCells = cells.getCount();  
-   // T source(NumTypeTraits<T>::getZero());
 
-
+    T sum;
     for(int n=0; n<nCells; n++)
     {
         const VGradType& vg = vGrad[n];
-        VGradType vgSquare = vGrad[n];        
+        VGradType vgSquare = vGrad[n]; 
+        T x = eCell[n]*rhoCell[n];       
 
         for(int i=0;i<3;i++)
+        {
          for(int j=0;j<3;j++)
       
          {
-           vgSquare[i][j] =  vg[i][j]*vg[i][j] ;
-           vgSquare[i][j] += vg[i][j]*vg[j][i];
-           sourceCell[n] = vgSquare[i][j]*muCell[n]-eCell[n]*rhoCell[n];
+           vgSquare[i][j] =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
+           sum += vgSquare[i][j];
+           //vgSquare[i][j] += vg[i][j]*vg[j][i];
+          // sourceCell[n] = vgSquare[i][j]*muCell[n]-x;
          }
+        }
+        sourceCell[n] = sum*muCell[n]-x;
         rCell[n] +=sourceCell[n]*cellVolume[n];
     }
 }
