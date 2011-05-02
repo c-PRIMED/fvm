@@ -30,3 +30,4 @@ Time	pkgs/time-1.7.tar.gz
 Amd		pkgs/AMD.tar.gz
 Ufconfig		pkgs/UFconfig.tar.gz
 Umfpack			pkgs/UMFPACK.tar.gz
+Sphinx	pkgs/sphinx.tgz
