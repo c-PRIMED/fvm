@@ -238,7 +238,7 @@ IBManager::markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB)
                   nIntersections++;
               }
           }
-      }
+       }
   }
 
 
@@ -263,7 +263,7 @@ IBManager::markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB)
               cellIBType[c1] = Mesh::IBTYPE_FLUID;
               cellIBType[c0] = Mesh::IBTYPE_FLUID;
           }
-          else
+          else if (cellIBType[c0] == Mesh::IBTYPE_BOUNDARY)
           {
               cellIBType[c1] = Mesh::IBTYPE_BOUNDARY;
           }
@@ -303,7 +303,7 @@ IBManager::markFluid(Mesh& fluidMesh)
           cellsToCheck.push(c);
           
            
-          while(!cellsToCheck.empty())
+           while(!cellsToCheck.empty())
           {
               int c_nb = cellsToCheck.top();
               cellsToCheck.pop();
