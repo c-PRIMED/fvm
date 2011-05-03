@@ -77,13 +77,13 @@ public:
   
     const int nCells = cells.getCount();  
 
-    T sum;
+    
     for(int n=0; n<nCells; n++)
     {
         const VGradType& vg = vGrad[n];
         VGradType vgSquare = vGrad[n]; 
         T x = eCell[n]*rhoCell[n];       
-
+        T sum = 0;
         for(int i=0;i<3;i++)
         {
          for(int j=0;j<3;j++)
@@ -91,8 +91,6 @@ public:
          {
            vgSquare[i][j] =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
            sum += vgSquare[i][j];
-           //vgSquare[i][j] += vg[i][j]*vg[j][i];
-          // sourceCell[n] = vgSquare[i][j]*muCell[n]-x;
          }
         }
         sourceCell[n] = sum*muCell[n]-x;

@@ -99,7 +99,7 @@ public:
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
 
     DiagArray& diag = matrix.getDiag();
-    T x; T y; T dx; T dy; T sum; T ds;
+    T x; T y; T dx; T dy; T ds;
     T onePointfour(1.44);
     T onePointnine(1.92);
     T two(2.0);
@@ -111,7 +111,7 @@ public:
          y = (onePointnine*eCell[n]*eCell[n]*rhoCell[n])/kCell[n];
          dx = x/eCell[n];
          dy = (y*two)/eCell[n];
-        
+         T sum = 0; 
         for(int i=0;i<3;i++)
         {
           for(int j=0;j<3;j++)
