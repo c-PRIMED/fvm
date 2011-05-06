@@ -131,12 +131,7 @@ public:
   }
 
 
-  // update node coordinates and face velocity for the boundary mesh
-  // corresponding to the given mesh
-  void updateBoundaryMesh(const Mesh& mesh, Mesh& bMesh,
-			  const double thickness, 
-			  const double timeStep, 
-			  Field& velocityField)
+  void updateBoundaryMesh(const Mesh& mesh, Mesh& bMesh, const double thickness)
   {
     // update node coords
     const StorageSite& bMeshNodes = bMesh.getNodes();
@@ -151,7 +146,6 @@ public:
       dynamic_cast<VectorT3Array&>(_geomFields.coordinate[bMeshNodes]);
 
     VectorT3Array& bMeshCoord = bMesh.getNodeCoordinates();
-
     // the node x,y coordinates keep the same; 
     // z coordinate gets updated by beam node coodinate;
     for(int n=0; n<nBNodes/2; n++)
@@ -165,10 +159,18 @@ public:
         bNodeCoord[n][2] = thickness/2 + nodeCoord[n-nBNodes/2][2];
         bMeshCoord[n][2] = thickness/2 + nodeCoord[n-nBNodes/2][2];
     }
+  }
 
+  
+  void updateBoundaryMesh(const Mesh& mesh, Mesh& bMesh,
+			  const double thickness, 
+			  const double timeStep, 
+			  Field& velocityField)
+  {
+    updateBoundaryMesh(mesh, bMesh, thickness);
 
     // update face velocity
-    
+    const StorageSite& nodes = mesh.getNodes();
     const StorageSite& bMeshFaces = bMesh.getFaces();
 
     shared_ptr<VectorT3Array>
@@ -212,25 +214,8 @@ public:
 	vf /= nCellNodes;
 	
 	(*bVelocity)[c+nLocalCells] = vf;
-    }
-    
+    }  
 
-    double maxVel = 0;
-    int index = 0;
-    for(int f=0; f<bMeshFaces.getCount(); f++)
-      {  
-	double velMag = (*bVelocity)[f][0]*(*bVelocity)[f][0]+(*bVelocity)[f][1]*(*bVelocity)[f][1]+
-	  (*bVelocity)[f][2]*(*bVelocity)[f][2];
-	if (velMag > maxVel){
-	  maxVel = velMag;
-	  index = f;
-	}
-      }
-        	    
-    const VectorT3Array& faceCentroid = 
-      dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[bMeshFaces]);
-    cout << "max velocity is at "  << index << endl;
-    cout << faceCentroid[index] << endl;
    
   }
   
