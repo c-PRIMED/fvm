@@ -24,6 +24,7 @@ struct PlateFields
   Field thickness;
   Field force;
   Field acceleration;
+  Field velocity;
   Field bodyForce;
   Field volume0;
 };

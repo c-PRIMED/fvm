@@ -410,6 +410,10 @@ public:
         shared_ptr<TArray> accelerationCell(new TArray(cells.getCount()));
         accelerationCell->zero();
         _plateFields.acceleration.addArray(cells,accelerationCell);
+        
+        shared_ptr<VectorT3Array> velCell(new VectorT3Array(cells.getCount()));
+        velCell->zero();
+        _plateFields.velocity.addArray(cells,velCell);
 
         // compute values of deformation flux
 
@@ -713,8 +717,31 @@ public:
     ls.postSolve();
     ls.updateSolution();
     //postPlateSolve(ls);
+    calculatePlateVelocity();
     return rNorm;
   }
+
+  void calculatePlateVelocity()
+  {
+    const int numMeshes = _meshes.size();
+    for(int n=0;n<numMeshes;n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getCount();
+	const VectorT3Array& w =
+	  dynamic_cast<const VectorT3Array&>(_plateFields.deformation[cells]);
+	const VectorT3Array& wN1 =
+	  dynamic_cast<const VectorT3Array&>(_plateFields.deformationN1[cells]);
+	VectorT3Array& velocity =
+	  dynamic_cast<VectorT3Array&>(_plateFields.velocity[cells]);
+	const T timeStep = _options["timeStep"];
+	for (int c=0; c<nCells; c++){
+	    velocity[c] = (w[c]-wN1[c])/timeStep;
+	}
+    }
+  }
+	
 
   void postPlateSolve(LinearSystem& ls)
   {
