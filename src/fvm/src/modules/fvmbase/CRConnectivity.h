@@ -49,6 +49,12 @@ class CRConnectivity
 {
 public:
   typedef Array<Vector<int,2> > PairToColMapping;
+
+  enum CRTYPE
+    {
+      CELLCELL1 = 1,
+      CELLCELL2 = 2
+    };
   
   CRConnectivity(const StorageSite& rowSite, const StorageSite& colSite);
   ~CRConnectivity();
@@ -190,6 +196,14 @@ public:
   
   void
   clearPairToColMapping(const CRConnectivity& pairs) const;
+
+  void setConnType( CRTYPE type ){
+      _connType = type;
+  }
+
+  const CRTYPE& getConnType() const { 
+      return _connType;
+  }
   
 
 private:
@@ -204,6 +218,7 @@ private:
   map<int,int>            _globalToLocalMapper;
   shared_ptr<Array<int> > _localToGlobalMap;
   mutable map<const CRConnectivity*, PairToColMapping*> _pairToColMappings;
+  CRTYPE  _connType;
 };
 
 #endif
