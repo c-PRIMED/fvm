@@ -593,6 +593,9 @@ Mesh::getCellCells2() const
        _cellCells2 = cellCells.multiply(cellCells, true);
   }
 
+   //set enum as CELLCELL2
+  _cellCells2->setConnType(CRConnectivity::CELLCELL2);
+
 #endif
 
 #ifndef FVM_PARALLEL

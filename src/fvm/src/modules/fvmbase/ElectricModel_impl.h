@@ -131,7 +131,7 @@ public:
 
 	if (_options.electrostatics_enable){
 
-	  const int nCells = cells.getCount();
+	  const int nCells = cells.getCountLevel1();
 	
 	  //initial potential setup
 	  shared_ptr<TArray> pCell(new TArray(nCells));
@@ -199,7 +199,7 @@ public:
 
 	  if ( vc.vcType == "dielectric" ) {
 
-	    const int nCells = cells.getCount();
+	    const int nCells = cells.getCountLevel1();
 
 	    //conduction_band setup
 	    shared_ptr<TArray> cb(new TArray(nCells));
@@ -239,23 +239,23 @@ public:
 	    _electricFields.convectionFlux.addArray(faces, mf);
 
 	    //diffusivity 
-	    shared_ptr<TArray> diffCell(new TArray(cells.getCount()));
+	    shared_ptr<TArray> diffCell(new TArray(cells.getCountLevel1()));
 	    const T diffCoeff = _constants["electron_mobility"] * K_SI * _constants["OP_temperature"] / QE;
 	    *diffCell = diffCoeff;
 	    _electricFields.diffusivity.addArray(cells,diffCell);
 	
 	    //create a zero field
-	    shared_ptr<TArray> zeroCell(new TArray(cells.getCount()));
+	    shared_ptr<TArray> zeroCell(new TArray(cells.getCountLevel1()));
 	    *zeroCell = T(0.0);
 	    _electricFields.zero.addArray(cells,zeroCell);
 	    
 	    //create a one field
-	    shared_ptr<TArray> oneCell(new TArray(cells.getCount()));
+	    shared_ptr<TArray> oneCell(new TArray(cells.getCountLevel1()));
 	    *oneCell = T(1.0);
 	    _electricFields.one.addArray(cells,oneCell);
 
 	    //initial charge gradient array
-	    shared_ptr<CGradArray> gradC(new CGradArray(cells.getCount()));
+	    shared_ptr<CGradArray> gradC(new CGradArray(cells.getCountLevel1()));
 	    gradC->zero();
 	    _electricFields.chargeGradient.addArray(cells,gradC);
         
@@ -389,7 +389,7 @@ public:
       
         const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getCountLevel1();
 	
 	VectorTNArray& charge =
           dynamic_cast<VectorTNArray&>(_electricFields.charge[cells]);
@@ -950,7 +950,7 @@ public:
     {
       const Mesh& mesh = *_meshes[n];
       const StorageSite& cells = mesh.getCells();
-      const int nCells = cells.getCount();
+      const int nCells = cells.getCountLevel1();
       VectorT3Array& electric_field = dynamic_cast<VectorT3Array& > (_electricFields.electric_field[cells]);
       const PGradArray& potential_gradient = dynamic_cast<const PGradArray& > (_electricFields.potential_gradient[cells]);
 
@@ -970,7 +970,7 @@ public:
     {
       const Mesh& mesh = *_meshes[n];
       const StorageSite& cells = mesh.getCells();
-      const int nCells = cells.getCount();
+      const int nCells = cells.getCountLevel1();
       const VectorT3Array& electric_field = dynamic_cast<const VectorT3Array& > (_electricFields.electric_field[cells]);
       VectorT3Array& electron_velocity = dynamic_cast<VectorT3Array& > (_electricFields.electron_velocity[cells]);
       const T electron_mobility = _constants["electron_mobility"];
@@ -1046,7 +1046,7 @@ public:
         
       const StorageSite& cells = mesh.getCells(); 
       
-      const int nCells = cells.getCount();
+      const int nCells = cells.getCountLevel1();
       
       const T& dielectric_ionization = _constants["dielectric_ionization"];
       const T& dielectric_bandgap = _constants["dielectric_bandgap"];
@@ -1108,7 +1108,7 @@ public:
       if (vc.vcType == "dielectric"){
 
 	const StorageSite& cells = mesh.getCells(); 
-	const int nCells = cells.getCount();
+	const int nCells = cells.getCountLevel1();
 
 	const VectorT3Array& cellCentroid = dynamic_cast<const VectorT3Array& > (_geomFields.coordinate[cells]);
 

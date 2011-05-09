@@ -133,7 +133,7 @@ public:
         const StorageSite& cells = mesh.getCells();
         const StorageSite& faces = mesh.getFaces();
 
-        shared_ptr<VectorT3Array> vCell(new VectorT3Array(cells.getCount()));
+        shared_ptr<VectorT3Array> vCell(new VectorT3Array(cells.getCountLevel1()));
 
         VectorT3 initialVelocity;
         initialVelocity[0] = _options["initialXVelocity"];
@@ -153,7 +153,7 @@ public:
 
         }
         
-        shared_ptr<TArray> pCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> pCell(new TArray(cells.getCountLevel1()));
         shared_ptr<TArray> pFace(new TArray(faces.getCount()));
         *pCell = _options["initialPressure"];
         *pFace = _options["initialPressure"];
@@ -161,19 +161,19 @@ public:
         _flowFields.pressure.addArray(faces,pFace);
 
 
-        shared_ptr<TArray> rhoCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> rhoCell(new TArray(cells.getCountLevel1()));
         *rhoCell = vc["density"];
         _flowFields.density.addArray(cells,rhoCell);
 
-        shared_ptr<TArray> muCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> muCell(new TArray(cells.getCountLevel1()));
         *muCell = vc["viscosity"];
         _flowFields.viscosity.addArray(cells,muCell);
 
-        shared_ptr<PGradArray> gradp(new PGradArray(cells.getCount()));
+        shared_ptr<PGradArray> gradp(new PGradArray(cells.getCountLevel1()));
         gradp->zero();
         _flowFields.pressureGradient.addArray(cells,gradp);
 
-        shared_ptr<TArray> ci(new TArray(cells.getCount()));
+        shared_ptr<TArray> ci(new TArray(cells.getCountLevel1()));
         ci->zero();
         _flowFields.continuityResidual.addArray(cells,ci);
 
@@ -462,7 +462,7 @@ public:
         const Mesh& mesh = *_meshes[n];
 
         const StorageSite& cells = mesh.getCells();
-     	const int nCells = cells.getCount();
+     	const int nCells = cells.getCountLevel1();
 	
 	GeomFields::SSPair key2(&cells,&particles);
         const IMatrix& mIP =
@@ -833,7 +833,7 @@ public:
 
     const T pressureURF(_options["pressureURF"]);
       
-    const int nCells = cells.getCount();
+    const int nCells = cells.getCountLevel1();
     for(int c=0; c<nCells; c++)
     {
         p[c] += pressureURF*(pp[c]-_referencePP);
@@ -852,7 +852,7 @@ public:
 
     const T velocityURF(_options["velocityURF"]);
       
-    const int nCells = cells.getCount();
+    const int nCells = cells.getCountLevel1();
     for(int c=0; c<nCells; c++)
     {
         V[c] += velocityURF*Vp[c];

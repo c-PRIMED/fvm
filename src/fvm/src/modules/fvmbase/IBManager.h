@@ -70,7 +70,9 @@ private:
                                vector<NearestCell>& nearest);
   
   void createSolidInterpolationStencil(Mesh& mesh,
-                                       vector<NearestCell>& nearest);                                       
+                                       vector<NearestCell>& nearest);
+  void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const;
+
   GeomFields& _geomFields;
   Mesh& _solidBoundaryMesh;
   const MeshList _fluidMeshes;

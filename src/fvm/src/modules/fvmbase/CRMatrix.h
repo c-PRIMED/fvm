@@ -1041,11 +1041,16 @@ createMergeMatrix( const LinearSystemMerger& mergeLS )
         eliminateRow(nr,b);
 
      //syncing coefficients from other processors (or other mesh) to eliminate equations
-     const StorageSite& site = _conn.getRowSite();
-     if (b.getLength() == site.getCountLevel1() && site.getCountLevel1() != site.getCount() ){
+     //const StorageSite& site = _conn.getRowSite();
+     //if (b.getLength() == site.getCountLevel1() && site.getCountLevel1() != site.getCount() ){
+#ifdef FVM_PARALLEL
+    //skip nprocs == 1
+     if ( _conn.getConnType() == CRConnectivity::CELLCELL2 && MPI::COMM_WORLD.Get_size()  > 1 ){
         syncBndryCoeffs(b);
         eliminateRowGhost(b); 
      }
+
+#endif
   }
 
   virtual void setFlatMatrix(Matrix& fmg) const

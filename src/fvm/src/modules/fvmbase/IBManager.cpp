@@ -4,6 +4,8 @@
 #include "Mesh.h"
 #include "GradientModel.h"
 #include <stack>
+#include <iostream>
+#include <fstream>
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
@@ -80,6 +82,7 @@ void IBManager::update()
 
       nFound += markSolid(fluidMesh);
   }
+  _geomFields.ibType.syncLocal();  
 
       
   for (int n=0; n<numFluidMeshes; n++)
@@ -98,8 +101,7 @@ void IBManager::update()
 
   vector<NearestCell> solidFacesNearestCell(solidMeshFaces.getCount());
   
-  for (int n=0; n<numFluidMeshes; n++)
-  {
+  for (int n=0; n<numFluidMeshes; n++) {
       Mesh& fluidMesh = *_fluidMeshes[n];
 
       const StorageSite& cells = fluidMesh.getCells();
@@ -121,7 +123,6 @@ void IBManager::update()
       createIBInterpolationStencil(fluidMesh,fluidCellsTree,solidMeshKSearchTree);
       findNearestCellForSolidFaces(fluidMesh,fluidCellsTree,solidFacesNearestCell);
   }
-
 
 #ifdef FVM_PARALLEL
     vector<doubleIntStruct>  solidFacesNearestCellMPI(solidMeshFaces.getCount());
@@ -335,7 +336,7 @@ IBManager::markSolid(Mesh& fluidMesh)
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
 
-  const int nCellsTotal = cells.getCount();
+  const int nCellsTotal = cells.getSelfCount();
 
   int nFound=0;
 
@@ -360,7 +361,7 @@ IBManager::markIBTypePlus(Mesh& fluidMesh)
   int nSolid=0;
   int nBoundary=0;
   StorageSite& cells = fluidMesh.getCells();
-  const int nCellsTotal = cells.getCount();
+  const int nCellsTotal = cells.getCountLevel1();
   const IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
   for(int c=0; c<nCellsTotal; c++)
@@ -372,7 +373,7 @@ IBManager::markIBTypePlus(Mesh& fluidMesh)
       else if (cellIBType[c] == Mesh::IBTYPE_BOUNDARY)
         nBoundary++;
       else{
-	//throw CException("invalid ib type");
+	throw CException("invalid ib type");
 	}	
   }
 
@@ -381,6 +382,7 @@ IBManager::markIBTypePlus(Mesh& fluidMesh)
        << nBoundary << " boundary cells " << endl;
 
 }
+
 void
 IBManager::createIBFaces(Mesh& fluidMesh)
 {
@@ -495,9 +497,9 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   shared_ptr<CRConnectivity> ibFaceToSolid
     (new CRConnectivity(ibFaces,solidMeshFaces));
 
-  const CRConnectivity& cellCells = mesh.getCellCells();
+  //const CRConnectivity& cellCells  = mesh.getCellCells();
+  const CRConnectivity& cellCells2 = mesh.getCellCells2();
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
-
 
   vector<NearestCell> nearestCellForIBFace(nIBFaces);
 
@@ -525,17 +527,26 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
 
       nc.neighbors.insert(fluidNeighbors[0]);
 
+      const int c = fluidNeighbors[0];
+      const int neighborCount = cellCells2.getCount(c);
+      for(int nnb=0; nnb<neighborCount; nnb++) {
+          const int c_nb = cellCells2(c,nnb);
+          if (cellIBType[c_nb] == Mesh::IBTYPE_FLUID)
+              nc.neighbors.insert(c_nb);
+      }
+      
+#if 0
       int nLayers=0;
       // repeat till we have the required number but also protect
       // against infinite loop by capping the max number of layers
-      while( ((int)nc.neighbors.size() < fluidNeighborsPerIBFace) &&
-             (nLayers < 10))
-      {
-          addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
-          nLayers++;
+      while( ((int)nc.neighbors.size() < fluidNeighborsPerIBFace) && (nLayers < 10)) {
+            addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
+            nLayers++;
       }
+      
       if (nLayers == 10) 
         throw CException("not enough fluid cells for IB face interpolation");
+#endif
 
       ibFaceToCells->addCount(f,nc.neighbors.size());
 
@@ -559,6 +570,12 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   }
   
   ibFaceToCells->finishAdd();
+#ifdef FVM_PARALLEL
+#if 0
+  CRConnectivityPrintFile( *ibFaceToCells, "ibFaceToCells", MPI::COMM_WORLD.Get_rank() );
+  CRConnectivityPrintFile( *ibFaceToSolid, "ibFaceToSolid", MPI::COMM_WORLD.Get_rank() );
+#endif
+#endif
 
   mesh.setConnectivity(ibFaces,cells,ibFaceToCells);
   mesh.setConnectivity(ibFaces,solidMeshFaces,ibFaceToSolid);
@@ -614,7 +631,8 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
 
   const int nSolidFaces = solidMeshFaces.getCount();
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
-  const CRConnectivity& cellCells = mesh.getCellCells();
+  //const CRConnectivity& cellCells  = mesh.getCellCells();
+  const CRConnectivity& cellCells2 = mesh.getCellCells2();
   
 
   shared_ptr<CRConnectivity> solidFacesToCells
@@ -629,19 +647,26 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
       {
           const int c = nc.cell;
           nc.neighbors.insert(c);
-          
-          int nLayers=0;
 
+          const int neighborCount = cellCells2.getCount(c);
+          for(int nnb=0; nnb<neighborCount; nnb++) {
+              const int c_nb = cellCells2(c,nnb);
+              if (cellIBType[c_nb] == Mesh::IBTYPE_FLUID)
+                 nc.neighbors.insert(c_nb);
+          }
+
+#if 0
+          int nLayers=0;
           // repeat till we have the required number but also protect
           // against infinite loop by capping the max number of layers
-          while( ((int)nc.neighbors.size() < fluidNeighborsPerSolidFace) &&
-                 (nLayers < 10))
-          {
-              addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
-              nLayers++;
-          }
+          while( ((int)nc.neighbors.size() < fluidNeighborsPerIBFace) && (nLayers < 10)) {
+             addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
+             nLayers++;
+	  }
+
           //if (nLayers == 10)
           //  throw CException("not enough fluid cells for solid face interpolation");
+#endif	  
           solidFacesToCells->addCount(f,nc.neighbors.size());
       }
   }
@@ -662,5 +687,38 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
   
   solidFacesToCells->finishAdd();
   mesh.setConnectivity(solidMeshFaces,cells,solidFacesToCells);
+#ifdef FVM_PARALLEL
+#if 0
+  CRConnectivityPrintFile( *solidFacesToCells, "solidFacesToCells", MPI::COMM_WORLD.Get_rank() );
+#endif
+#endif 
 
+}
+
+
+void 
+IBManager::CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const
+{
+#ifdef FVM_PARALLEL
+    if ( MPI::COMM_WORLD.Get_rank() == procID ){
+       ofstream   debugFile;
+       stringstream ss(stringstream::in | stringstream::out);
+       ss <<  procID;
+       string  fname = name +  ss.str() + ".dat";
+       debugFile.open( fname.c_str() );
+       ss.str("");
+
+      debugFile <<  name << " :" << endl;
+      debugFile << endl;
+      const Array<int>& row = conn.getRow();
+      const Array<int>& col = conn.getCol();
+      for ( int i = 0; i < row.getLength()-1; i++ ){
+         debugFile << " i = " << i << ",    ";
+         for ( int j = row[i]; j < row[i+1]; j++ )
+            debugFile << col[j] << "  ";
+         debugFile << endl;
+      }
+      debugFile << endl;
+   }
+#endif
 }

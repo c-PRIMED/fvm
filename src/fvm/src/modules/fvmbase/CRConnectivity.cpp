@@ -14,7 +14,8 @@ CRConnectivity::CRConnectivity(const StorageSite& rowSite,
   _col(),
   _globalToLocalMap(),
   _localToGlobalMap(),
-  _pairToColMappings()
+  _pairToColMappings(),
+  _connType(CELLCELL1)
 {
   logCtorVerbose("from rowSite and colSite of dimensions (%dx%d)" ,
                  _rowDim,_colDim);
