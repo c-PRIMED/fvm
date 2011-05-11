@@ -717,7 +717,8 @@ public:
     ls.postSolve();
     ls.updateSolution();
     //postPlateSolve(ls);
-    calculatePlateVelocity();
+    if (_options.transient)
+      calculatePlateVelocity();
     return rNorm;
   }
 
