@@ -5,7 +5,7 @@
 import pdb
 import sys
 from math import *
-sys.setdlopenflags(0x100|0x2)
+#sys.setdlopenflags(0x100|0x2)
 
 import fvm.fvmbaseExt as fvmbaseExt
 import fvm.importers as importers
@@ -15,6 +15,7 @@ from FluentCase import FluentCase
 from fvm.fvmbaseExt import VecD3
 import time
 from mpi4py  import MPI
+import numpy as np
 
 class problemDescription():
  
@@ -23,6 +24,7 @@ class problemDescription():
         self.beam_thickness = beamThickness
         beamReader = FluentCase(beamMesh)
         beamReader.read();
+        print "read solid mesh"
         self.solidMeshes = beamReader.getMeshList()
         self.geomFields =  models.GeomFields('geom')
         self.solidMetricsCalculator = models.MeshMetricsCalculatorA(self.geomFields,self.solidMeshes)
@@ -96,21 +98,20 @@ class problemDescription():
             bc = bcMap[bcId]
             bc.bcType = "SpecifiedPotential"
             bc['specifiedPotential'] = potential
-            
-    def solveModels(self, appliedVoltage):
+    def initializeModels(self):
         print "--Solving Models--"
-        maxdeformation = []
-        numIterations = 200
-        globalTime = 0
-        globalCount = 0
-        timeStep = 2e-7
-        saveFrequency = 2
+        self.maxdeformation = []
+        self.numIterations = 30
+        self.globalTime = 0
+        self.globalCount = 0
+        self.timeStep = 3600
+        self.saveFrequency = 2
         initialTransient = False
-        probeIndex = 3240
+        self.probeIndex = 3240
         
         pc = fvmbaseExt.AMG()
         pc.verbosity=0
-        defSolver = fvmbaseExt.BCGStab()
+        defSolver = fvmbaseExt.DirectSolver()
         defSolver.preconditioner = pc
         defSolver.relativeTolerance = 1e-6
         defSolver.absoluteTolerance = 1.e-15
@@ -119,13 +120,13 @@ class problemDescription():
 
         poptions = self.pmodel.getOptions()
         poptions.deformationLinearSolver = defSolver
-        poptions.deformationTolerance=1.0e-3
+        poptions.deformationTolerance=1.0e-6
         poptions.setVar("deformationURF",1.0)
         poptions.printNormalizedResiduals=True
         poptions.timeDiscretizationOrder = 2
-        poptions.transient=False
+        poptions.transient=True
         poptions.scf = 5./6.
-        poptions.setVar('timeStep',timeStep)
+        poptions.setVar('timeStep',self.timeStep)
 
         ### elec solver ###
 
@@ -133,9 +134,9 @@ class problemDescription():
         epc.verbosity=0
         elecSolver = fvmbaseExt.BCGStab()
         elecSolver.preconditioner = epc
-        elecSolver.relativeTolerance = 1e-3
+        elecSolver.relativeTolerance = 1e-6
         elecSolver.nMaxIterations = 1000
-        elecSolver.maxCoarseLevels=20
+        elecSolver.maxCoarseLevels=30
         elecSolver.verbosity=0
 
         eoptions = self.emodel.getOptions()
@@ -153,8 +154,9 @@ class problemDescription():
 
         self.pmodel.init()
         self.emodel.init()
-        self.dmodel.init()
-        
+        self.dmodel.init()            
+    def solveModels(self, appliedVoltage):
+        maxdeformation = []
         ibManager = fvmbaseExt.IBManager(self.geomFields,
                                      self.solidBoundaryMeshes[0],
                                      self.fluidMeshes)
@@ -174,27 +176,28 @@ class problemDescription():
         ibManager.fluidNeighborsPerSolidFace = 6
         t1 = time.time()
   
+        traceFile = open(("tracefile-%e.dat" % appliedVoltage), "w")
         #--------------Timestep Loop --------------------------#
 
-        for n in range(0, numIterations):                
+        for n in range(0, self.numIterations):                
             #    checkMarking(globalCount)
             # --------------- update IBM -------------------------#
-            print "***       update IBM  at globalCount %i           ***" % globalCount            
+            print "***       update IBM  at globalCount %i           ***" % self.globalCount            
             
             ibManager.update()
             self.fluidMetricsCalculator.computeIBInterpolationMatrices(sbMeshFaces)
             self.fluidMetricsCalculator.computeSolidInterpolationMatrices(sbMeshFaces)        
 
             #------------solve electrostatics--------#
-            print "***    solving electric model  at globalCount %i  ***" % globalCount
+            print "***    solving electric model  at globalCount %i  ***" % self.globalCount
             for i in range(0, 20):
                 self.emodel.computeIBFacePotential(sbMeshFaces)
                 self.emodel.advance(1)
                    
                 self.emodel.computeSolidSurfaceForcePerUnitArea(sbMeshFaces)
-            #saveVTK(n)
+            
             #------------update force on beam  ----------#
-            print "***     update force at globalCount %i             ***" % globalCount
+            print "***     update force at globalCount %i             ***" % self.globalCount
             
             sbElecForce = self.elecFields.force[sbMeshFaces].asNumPyArray()
             
@@ -227,7 +230,7 @@ class problemDescription():
             
             #pdb.set_trace()
             #------------solve structure-------------#
-            print "***  solving structure model at globalCount %i   ***" % globalCount
+            print "***  solving structure model at globalCount %i   ***" % self.globalCount
             self.pmodel.advance(1)
             self.dmodel.calculateNodeDisplacement()
             self.dmodel.deformPlate()
@@ -259,23 +262,38 @@ class problemDescription():
             self.solidBoundaryMetricsCalculator.recalculate_deform() 
 
             cell = self.solidMeshes[0].getCells()
-            test = self.plateFields.deformation[cell]
-            deform = test.asNumPyArray()
-            def_min = deform.min(axis=0)
-            def_min_z = def_min[2]
-            maxdeformation.append(def_min_z)
-
+            
+            deform = self.plateFields.deformation[cell].asNumPyArray()           
+            temp = np.array(deform[:])
+            val = 0.e0
+            
+            for i in range(len(temp)):
+                temp2 = temp[i]
+                if (temp2[2] < val):
+                    val = temp2[2]
+            
+            maxdeformation.append(val)
+            print maxdeformation[n]
+            
+            traceFile.write("%i %e\n" %(n, maxdeformation[n]))
+            traceFile.flush()
+            if (abs(maxdeformation[n] ) > 1.7e-6):
+                traceFile.write("Pull In")
+                traceFile.flush()
+                break
             if (n!=0):
+                #print maxdeformation[n]
+                
                 print abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n])
-                if (abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n]) < 1e-4):
+                if (abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n]) < 1e-3):
                     print "Convergence reached"
                     break
 
             # -----------------update time --------------------------#
-            globalTime += timeStep
-            globalCount += 1
+            self.globalTime += self.timeStep
+            self.globalCount += 1
 
-            if (n%saveFrequency == 0):
+            if (n%self.saveFrequency == 0):
                 writer = exporters.VTKWriterA(self.geomFields,self.fluidMeshes,
                                               "elecfield-"+ str(appliedVoltage) + "V-" + str(n) + ".vtk",
                                               "fix-fix beam",
@@ -294,6 +312,7 @@ class problemDescription():
                 writer1.finish()
         t2 = time.time()
         print  '\nsolution time = %f' % (t2-t1)
+        traceFile.close()
         return maxdeformation[n]
 
 
