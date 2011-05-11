@@ -2,7 +2,7 @@
 #define _PHONONBOUNDARY_H_
 
 #include "Mesh.h"
-
+#include <math.h>
 #include "NumType.h"
 #include "Array.h"
 #include "Vector.h"
@@ -37,13 +37,14 @@ class PhononBoundary
   typedef Kspace<X> Xkspace;
   typedef kvol<X> Xkvol;
   typedef pmode<X> Xmode;
- 
-
+  typedef typename Xmode::Refl_pair Refl_pair;
+  
  PhononBoundary(const StorageSite& faces,
 		const Mesh& mesh,
 		const GeomFields& geomFields,
 		const Xkspace& kspace,
-		PhononModelOptions<X>& opts):
+		PhononModelOptions<X>& opts,
+		const int fg_id):
   
   _faces(faces),
     _cells(mesh.getCells()),
@@ -54,7 +55,8 @@ class PhononBoundary
     _areaField(geomFields.area),
     _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces])),
     _options(opts),
-    _kspace(kspace)  
+    _kspace(kspace), 
+    _fg_id(fg_id)
   {}
 
   PhononModelOptions<X>&   getOptions() {return _options;}  
@@ -87,12 +89,18 @@ class PhononBoundary
 	    VectorT3 vg = mode.getv();     // phonon group velocity
 	    XArray& e_val = dynamic_cast< XArray&>(efield[_cells]);  // e"
 	    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];  //normal unit vector to face
+	    const VectorT3 sn = vg/sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
+	    const X sn_dot_en = sn[0]*en[0]+sn[1]*en[1]+sn[2]*en[2];
 	    const X vg_dot_en = vg[0]*en[0]+vg[1]*en[1]+vg[2]*en[2];
   
-	    if (vg_dot_en > T_Scalar(0.0))
+	    if (sn_dot_en > T_Scalar(0.0))
 	      {
-		tot_in = tot_in + e_val[c0]*dk3;
-		tot_dk3=tot_dk3 + dk3;
+		tot_in+=e_val[c0]*dk3*vg_dot_en;
+		tot_dk3+=vg_dot_en*dk3;
+	      }
+	    else
+	      {
+		e_val[c1]=0.;
 	      }
 
 	  } //mode loop end	
@@ -119,12 +127,25 @@ class PhononBoundary
 	    
 	    if (vg_dot_en > T_Scalar(0.0))
 	      {
+		
+		Refl_pair& rpairs=mode.getReflpair(_fg_id);
+		X w1=rpairs.first.first;
+		X w2=rpairs.second.first;
+		int k1=rpairs.first.second;
+		int k2=rpairs.second.second;
+		Xmode& mode1=_kspace.getkvol(k1).getmode(m);
+		Xmode& mode2=_kspace.getkvol(k2).getmode(m);
+		Field& field1=mode1.getfield();
+		Field& field2=mode2.getfield();
+		XArray& e_val1=dynamic_cast<XArray&>(field1[_cells]);
+		XArray& e_val2=dynamic_cast<XArray&>(field2[_cells]);
+		e_val1[c1]+=refl*w1*e_val[c0];
+		e_val2[c1]+=refl*w2*e_val[c0];
 		e_val[c1]=e_val[c0];    // upwinded value
 	      }
 	    else
 	      {
-		e_val[c1]=diff_refl;  // diffusely reflected value
-		// still need to add specularly reflected portion
+		e_val[c1]+=(1-refl)*diff_refl;  // diffusely reflected value
 	      }
 	  } //mode loop end	
       }
@@ -148,7 +169,6 @@ class PhononBoundary
 
     // sum up energy incoming to boundary (from domain)
     int numK=_kspace.getlength();
-    X DK3=_kspace.getDK3();
  
     for (int k=0;k<numK;k++)
       {
@@ -157,11 +177,9 @@ class PhononBoundary
      
 	for (int m=0;m<numM;m++) //mode loop beg
 	  {
-	    X Tref=_options["Tref"];
 	    Xmode& mode=kv.getmode(m);
 	    Field& efield=mode.getfield();
 	    VectorX3 vg = mode.getv();
-	    X cp=mode.getcp();
 	    XArray& e_val = dynamic_cast< XArray&>(efield[_cells]);  // e"
 	    const VectorX3 en = _faceArea[f]/_faceAreaMag[f];  //normal unit vector to face
 	    const X vg_dot_en = vg[0]*en[0]+vg[1]*en[1]+vg[2]*en[2];
@@ -172,7 +190,7 @@ class PhononBoundary
 	      }
 	    else
 	      {
-		e_val[c1]=cp*(Twall-Tref)/DK3;
+		e_val[c1]=mode.calce0(Twall);
 	      }
 	    
 	  } //mode loop end	
@@ -226,6 +244,7 @@ class PhononBoundary
   const VectorT3Array& _faceArea;
   PhononModelOptions<X>& _options;
   const Xkspace& _kspace;
+  const int _fg_id;
 };
   
 #endif
