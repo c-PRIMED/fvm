@@ -28,21 +28,19 @@ struct PhononModelOptions : public FloatVarDict<T>
     this->printNormalizedResiduals = true;
     this->transient = false;
     this->timeDiscretizationOrder=1;
-    this->constantcp=true;
-    this->constanttau=true;
     this->PhononLinearSolver=0;
-    this->absTolerance=1e-6;
+    this->absTolerance=1e-8;
     this->relTolerance=1-4;
+    this->showResidual=5;
   }
   
   bool printNormalizedResiduals;
   bool transient;
   int timeDiscretizationOrder;
-  bool constantcp;
-  bool constanttau;
   LinearSolver* PhononLinearSolver;
   double absTolerance;
   double relTolerance;
+  int showResidual;
 
 #ifndef SWIG
   LinearSolver& getPhononLinearSolver()
