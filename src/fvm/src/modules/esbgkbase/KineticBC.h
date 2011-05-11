@@ -16,7 +16,7 @@ struct KineticBC : public FloatVarDict<T>
       this->defineVar("specifiedPressure",T(1.0));
       this->defineVar("specifiedDensity",T(1.0));
       this->defineVar("specifiedTemperature",T(1.0));
-      this->defineVar("accomodationCoefficient",T(1.0));
+      this->defineVar("accommodationCoefficient",T(1.0));
   }
   string bcType;
 };
@@ -53,20 +53,28 @@ struct KineticModelOptions : public FloatVarDict<T>
 
     this->defineVar("operatingPressure",T(101325.0));
     this->defineVar("operatingTemperature",T(300.0));
-    this->defineVar("molecularWeight",T(40.0));
 
+    this->defineVar("molecularWeight",T(40.0));
     this ->defineVar("Tmuref",T(273.15));
-    this ->defineVar("mu_w",T(0.81));
-    this ->defineVar("muref",T(2.117e-5)); //Argon
+    this ->defineVar("muref",T(2.117e-5));  
+    this ->defineVar("mu_w",T(0.81));  
+    this->Prandtl=2.0/3.0; 
+    this->SpHeatRatio=5.0/3.0; 
+    // Argon  2.117e-5,0.81
+    // Helium 1.865e-5,0.66
+    // Air  1.7116e-5, 0.74
+    // Nitrogen 1.781e-5,
     
+    // Argon, Helium Pr=2/3, gamma=5/3
+    // Air, Nitrogen Pr=3/4, gamma=7/5
     
     this->Tolerance=1e-4;
     this->printNormalizedResiduals = true;
     this->transient = false;
    
     this->fgamma=2;
-    this->Prandtl=2.0/3.0; 
-    this->SpHeatRatio=5.0/3.0; 
+   
+
     this->timeDiscretizationOrder=1;
     this->KineticLinearSolver = 0;
    
@@ -78,6 +86,7 @@ struct KineticModelOptions : public FloatVarDict<T>
     this->absoluteTolerance=1e-22; 
 
     this->BoltzmannConstant=1.38e-23;
+    this->Planck=6.26068E-34;
     this->epsilon_ES=1e-50;
     this->pi=acos(-1.0);//3.14159;
 
@@ -91,6 +100,7 @@ struct KineticModelOptions : public FloatVarDict<T>
   bool transient;
  
   double BoltzmannConstant;
+  double Planck;
 
   double relativeTolerance;
   double absoluteTolerance;
@@ -98,13 +108,10 @@ struct KineticModelOptions : public FloatVarDict<T>
   double epsilon_ES;
   double pi;
   
-  //double ToleranceX;
-  //double ToleranceF;
   int NewtonsMethod_ktrial;
   int timeDiscretizationOrder;
   LinearSolver *KineticLinearSolver;
   int printCellNumber;
-  //int printDirectionNumber;
   int fgamma;
   
   double Prandtl;

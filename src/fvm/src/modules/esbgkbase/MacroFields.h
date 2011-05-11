@@ -22,6 +22,10 @@ struct MacroFields
   Field coeff;
   Field coeffg;
   Field Entropy;
+  Field EntropyGenRate;
+  Field EntropyGenRate_Collisional;
+  Field force;
+  Field Stress;
 };
 
 #endif

@@ -320,8 +320,9 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	{ double pi=3.14159;
 	  double dh2=2*pi/(N2); //number of intervals=no. of ordinates
 	  for (int j2=0;j2<N2;j2++){
-	    absci2[j2]= dh2*j2;
+	    absci2[j2]= dh2*j2+dh2/2.0; //no points on axes
 	    wts2[j2]=dh2;
+	    //cout<<"j2= "<<j2<<" absci2= "<<absci2[j2]<<endl;
 	  }
 	}break;
       case 1:  //three-eights for theta
@@ -350,10 +351,13 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       case 0: //constant difference for Phi
 	{
 	  double pi=3.14159;
-	  double dh3=pi/(N3-1); //number of intervals < number of ordinates
+	  //double dh3=pi/(N3-1); //number of intervals < number of ordinates (old)
+	  double dh3=pi/N3;
 	  for (int j3=0;j3<N3;j3++){
-	    absci3[j3]= dh3*(j3);
-	    wts3[j3]=dh3*sin(absci3[j3]);
+	    //absci3[j3]= dh3*(j3); //old
+	    absci3[j3]= dh3*(j3+0.5); //no points on axes
+	    wts3[j3]=dh3*sin(absci3[j3]); 
+	  
 	  }
 	}break;
       case 1: //three-eights for phi
@@ -408,13 +412,13 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	 }
        }
        // for (int j=10;j<21;j++){cout << j <<" : "<<cx[j] << " , " << dcxyz[j] <<endl; };cout<<endl;
-       /* 
+        
       FILE * pFile;
       pFile = fopen ("cxyz.txt","w");
       for(int j=0;j<N123;j++){	  
-	fprintf(pFile,"%12.6f %12.6f %12.6f %12.6f \n", cx[j],cy[j],cz[j],dcxyz[j]);}
+	fprintf(pFile,"%d %12.6E %12.6E %12.6E %12.6E \n", j,cx[j],cy[j],cz[j],dcxyz[j]);}
       fclose (pFile);
-       */
+       
     }
   
  

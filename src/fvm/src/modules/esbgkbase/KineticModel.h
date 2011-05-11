@@ -2,7 +2,9 @@
 #define _KINETICMODEL_H_
 
 #include <stdio.h>
-#include <math.h>
+#include <map>
+#include <cmath>
+#include <vector>
 #include "Model.h"
 
 #include "Array.h"
@@ -34,20 +36,26 @@
 #include "MatrixOperation.h"
 #include "NumType.h"
 
+#include "StressTensor.h"
+
 template<class T>
 class KineticModel : public Model
 {
  public:
   typedef typename NumTypeTraits<T>:: T_Scalar T_Scalar;
+  typedef Array<int> IntArray;
   typedef Array<T> TArray;
   typedef  Array2D<T> TArray2D;
   typedef Vector<T,3> VectorT3; 
   typedef Array<VectorT3> VectorT3Array;
+  typedef Array<StressTensor<T> > StressTensorArray;
   typedef  std::vector<Field*> stdVectorField;
   typedef  DistFunctFields<T> TDistFF;
 
   typedef Vector<T,5> VectorT5; 
   typedef Array<VectorT5> VectorT5Array;
+  typedef Vector<T,6> VectorT6; 
+  typedef Array<VectorT6> VectorT6Array;
   typedef Vector<T,10> VectorT10; 
   typedef Array<VectorT10> VectorT10Array;
   //typedef SquareMatrix<T,5> SqMatrix5;
@@ -61,7 +69,7 @@ class KineticModel : public Model
   //MacroFields& macroFields;
   
   KineticModel(const MeshList& meshes, const GeomFields& geomFields, MacroFields& macroFields, const Quadrature<T>& quad):
-    //KineticModel(const MeshList& meshes, FlowFields& ffields, const Quadrature<T>& quad):
+    //KineticModel(const MeshList& meshes, FlowFields& ffields, const Quadrature<T>& quad)
     
     Model(meshes),
     _geomFields(geomFields),
@@ -84,6 +92,7 @@ class KineticModel : public Model
 	  _vcMap[mesh.getID()] = vc;
 	}
       init(); 
+      //cout <<" initialized "<<endl;
       SetBoundaryConditions();
       
       //weightedMaxwellian(1.0,0.00,0.00,1.0,1.0);
@@ -96,7 +105,7 @@ class KineticModel : public Model
       initializeMaxwellianEq(); //equilibrium distribution
       
       //EquilibriumDistributionBGK();
-      callBoundaryConditions();
+      //callBoundaryConditions();
      
     }
     
@@ -137,11 +146,11 @@ class KineticModel : public Model
 	    v[c][2]=0.0;
 	    if(_options.fgamma>0){
 	    //BGK
-	    coeff[c][0]=1.0/pow(pi,1.5);
-	    coeff[c][1]=1.0;
-	    coeff[c][2]=0.0;coeff[c][3]=0.0;coeff[c][4]=0.0;
+	      coeff[c][0]=density[c]/pow((pi*temperature[c]),1.5);
+	      coeff[c][1]=1/temperature[c];
+	      coeff[c][2]=0.0;coeff[c][3]=0.0;coeff[c][4]=0.0;
 	    }
-Entropy[c]=0.0;
+	    Entropy[c]=0.0;
             if(_options.fgamma ==2){
 	    //ESBGK
 	    coeffg[c][0]=coeff[c][0];
@@ -180,10 +189,9 @@ Entropy[c]=0.0;
 	
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();  //only interior
+	const int nCells = cells.getCount();  //
 	
 	
-	TArray& Entropy = dynamic_cast<TArray&>(_macroFields.Entropy[cells]);
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
 	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
 	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
@@ -193,8 +201,9 @@ Entropy[c]=0.0;
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
 	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-	const TArray& dcxyz= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+	const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
 	
+	VectorT6Array& stress = dynamic_cast<VectorT6Array&>(_macroFields.Stress[cells]);
 	
 	//initialize density,velocity,temperature to zero    
 	for(int c=0; c<nCells;c++)
@@ -204,28 +213,27 @@ Entropy[c]=0.0;
 	    v[c][1]=0.0;
 	    v[c][2]=0.0;
 	    temperature[c]=0.0;   
-	    Entropy[c]=0.0;
+	    stress[c][0]=0.0;stress[c][1]=0.0;stress[c][2]=0.0;
+	    stress[c][3]=0.0;stress[c][4]=0.0;stress[c][5]=0.0;
+
 	  }	
-	const T rho_init=_options["rho_init"]; 
-	const T T_init=_options["T_init"]; 
-	const T R=8314.0/_options["molecularWeight"];
-	T u_init=pow(2.0*R*T_init,0.5);
+
+
 	for(int j=0;j<N123;j++){
 	  
 	  Field& fnd = *_dsfPtr.dsf[j];
 	  const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
-	  //fprintf(pFile,"%12.6f %E %E \n",dcxyz[j],f[0],density[0]+dcxyz[j]*f[0]);
+	  
+	  //fprintf(pFile,"%d %12.6f %E %E %E %E \n",j,dcxyz[j],cx[j],cy[j],f[80],density[80]+dcxyz[j]*f[80]);
 	  
 	  for(int c=0; c<nCells;c++){
-	    density[c] = density[c]+dcxyz[j]*f[c];
-	    v[c][0]= v[c][0]+(cx[j]*f[c])*dcxyz[j];
-	    v[c][1]= v[c][1]+(cy[j]*f[c])*dcxyz[j];
-	    v[c][2]= v[c][2]+(cz[j]*f[c])*dcxyz[j];
-	   Entropy[c]=Entropy[c]+f[c]*dcxyz[j]*(1-log(pow(6.26068E-34,3.0)*f[c]/pow(40.0E-26/6.023,4)*rho_init/pow(u_init,3.0)));
-
-		 temperature[c]= temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
-					    +pow(cz[j],2.0))*f[c]*dcxyz[j];
-	    
+	    density[c] = density[c]+wts[j]*f[c];
+	    v[c][0]= v[c][0]+(cx[j]*f[c])*wts[j];
+	    v[c][1]= v[c][1]+(cy[j]*f[c])*wts[j];
+	    v[c][2]= v[c][2]+(cz[j]*f[c])*wts[j];
+	    temperature[c]= temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
+					   +pow(cz[j],2.0))*f[c]*wts[j];
+	   
 	  }
 	  
 	}
@@ -242,10 +250,24 @@ Entropy[c]=0.0;
 	  temperature[c]=temperature[c]/(1.5*density[c]);  
 	  pressure[c]=density[c]*temperature[c];
 	}
-
+	
+	//Find Pxx,Pyy,Pzz,Pxy,Pyz,Pzx, etc in field	
+	
+	for(int j=0;j<N123;j++){	  
+	  Field& fnd = *_dsfPtr.dsf[j];
+	  const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);	  
+	  for(int c=0; c<nCells;c++){
+	    stress[c][0] +=pow((cx[j]-v[c][0]),2.0)*f[c]*wts[j];
+	    stress[c][1] +=pow((cy[j]-v[c][1]),2.0)*f[c]*wts[j];
+	    stress[c][2] +=pow((cz[j]-v[c][2]),2.0)*f[c]*wts[j];
+	    stress[c][3] +=(cx[j]-v[c][0])*(cy[j]-v[c][1])*f[c]*wts[j];
+	    stress[c][4] +=(cy[j]-v[c][1])*(cz[j]-v[c][2])*f[c]*wts[j];
+	    stress[c][5] +=(cz[j]-v[c][2])*(cx[j]-v[c][0])*f[c]*wts[j];
+	    
+	  }}
 	
 	
-      }
+      }// end of loop over nmeshes
     //fclose(pFile);
   }
 
@@ -315,7 +337,7 @@ Entropy[c]=0.0;
 	  Txz[c]=Txz[c]/density[c];
 	  Tyz[c]=Tyz[c]/density[c];
 	}
-	//if (n==0){cout << "ESBGK-" <<"Txx "<< Txx[0]<<" Tyy "<<Tyy[0]<<" Tzz "<<Tzz[0]<<endl;}
+
      }
   }
   
@@ -339,17 +361,9 @@ Entropy[c]=0.0;
 	const T muref= _options["muref"];
 	const T R=8314.0/_options["molecularWeight"];
 	const T nondim_length=_options["nonDimLength"];
-	/*
-	const T rho_init=9.98e-7; 
-	const T T_init= 273.15;
-	const T mu_w=0.81;
-	const T Tmuref=273.15;
-	const T muref=2.117e-5;
-	const T R=8314.0/40.0;
-	const T nondim_length=1.0;
-	*/
+
 	const T mu0=rho_init*R* T_init*nondim_length/pow(2*R* T_init,0.5);  
-	//const T mu0=rho_init*nondim_length*pow(2*R* T_init,0.5);
+	
 	  
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
@@ -362,8 +376,8 @@ Entropy[c]=0.0;
 	TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
 	for(int c=0; c<nCells;c++)
 	  {
-	    viscosity[c]= muref/mu0*pow(temperature[c]*T_init/ Tmuref,mu_w); // viscosity power law
-	    collisionFrequency[c]=density[c]*temperature[c]/viscosity[c];//*mu0;
+	    viscosity[c]= muref*pow(temperature[c]*T_init/ Tmuref,mu_w); // viscosity power law
+	    collisionFrequency[c]=density[c]*temperature[c]/viscosity[c]*mu0;
 	  }
 	
 	if(_options.fgamma==2){
@@ -374,6 +388,58 @@ Entropy[c]=0.0;
       }
   }
   
+  
+  void EntropyGeneration()  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const T rho_init=_options["rho_init"]; 
+	const T T_init= _options["T_init"]; 
+	const T molwt=_options["molecularWeight"]*1E-26/6.023;
+	const T R=8314.0/molwt;
+	const T u_init=pow(2.0*R*T_init,0.5);
+	const T Planck=_options.Planck;
+	const T h3bm4u3=pow(Planck,3)/ pow(molwt,4)*rho_init/pow(u_init,3);
+		
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getCount();
+	const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);	
+	TArray& Entropy = dynamic_cast<TArray&>(_macroFields.Entropy[cells]);
+	TArray& EntropyGenRate_Collisional = dynamic_cast<TArray&>(_macroFields.EntropyGenRate_Collisional[cells]);
+	TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
+	for(int c=0; c<nCells;c++){ 
+	  Entropy[c]=0.0;EntropyGenRate_Collisional[c]=0.0;
+	}
+	const int num_directions = _quadrature.getDirCount(); 
+	if (_options.fgamma ==2){
+	  for(int j=0;j<num_directions;j++){
+	    Field& fnd = *_dsfPtr.dsf[j];
+	    Field& feqES = *_dsfEqPtrES.dsf[j]; //for fgamma_2
+	    const TArray& f = dynamic_cast<const TArray&>(fnd[cells]); 
+	    const TArray& fgam = dynamic_cast<const TArray&>(feqES[cells]);
+	    for(int c=0; c<nCells;c++){
+	      Entropy[c]=Entropy[c]+f[c]*wts[j]*(1-log(h3bm4u3*f[c]));
+	      EntropyGenRate_Collisional[c]+=(f[c]-fgam[c])*collisionFrequency[c]*(1-log(h3bm4u3*f[c]))*wts[j];
+	    }
+	  }
+	}
+	else{
+	  for(int j=0;j<num_directions;j++){
+	    Field& fnd = *_dsfPtr.dsf[j];
+	    Field& feq = *_dsfEqPtr.dsf[j];
+	    const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
+	    const TArray& fgam = dynamic_cast<const TArray&>(feq[cells]);
+	    for(int c=0; c<nCells;c++){
+	      Entropy[c]=Entropy[c]+f[c]*wts[j]*(1-log(h3bm4u3*f[c]));
+	      EntropyGenRate_Collisional[c]+=(f[c]-fgam[c])*collisionFrequency[c]*(1-log(h3bm4u3*f[c]))*wts[j];
+	    }
+	  }
+	}
+	
+	
+      }
+  }
   
   void initializeMaxwellianEq()
   {
@@ -421,6 +487,7 @@ Entropy[c]=0.0;
 	 }
 	*/
 	
+	
       }
   }
   
@@ -442,9 +509,9 @@ Entropy[c]=0.0;
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
     	
 	VectorT5Array& coeff = dynamic_cast<VectorT5Array&>(_macroFields.coeff[cells]);
-	//cout << "inside NewtonsMethod" <<endl;
+	
 	for(int c=0; c<nCells;c++){
-	  //cout << "NS BGK "<<c <<endl;
+	  
 	  for (int trial=0;trial<ktrial;trial ++){
 	    SquareMatrix<T,sizeC> fjac(0);
 	    SquareMatrix<T,sizeC> fjacinv(0);
@@ -458,8 +525,8 @@ Entropy[c]=0.0;
 	    fvec[2]=density[c]*v[c][1];
 	    fvec[3]=density[c]*v[c][2];
 	    fvec[4]=1.5*density[c]*temperature[c]+density[c]*(pow(v[c][0],2)+pow(v[c][1],2)+pow(v[c][2],2.0));
-	    //calculate Jacobian
 	    
+	  
 	    setJacobianBGK(fjac,fvec,coeff[c],v[c],c);
 	    
 	    //solve using GE or inverse
@@ -470,15 +537,14 @@ Entropy[c]=0.0;
 	      break;
 	    VectorT5 pvec;
 	    for (int row=0;row<sizeC;row++){pvec[row]=-fvec[row];}//rhs
-	    //cout <<"        trial"<<trial<<endl;
-	    //{cout<<"fjac " <<fjac(1,1) << " "<< fjac(2,2) <<" " <<fjac(3,1)<< " " <<endl;}
+	  
 
 	    //solve Ax=b for x 
 	    //p=GE_elim(fjac,p,3);
 	    VectorT5 xvec;
 	    fjacinv=inverseGauss(fjac,sizeC);
-	     
 	    
+	   
 	    
 	    for (int row=0;row<sizeC;row++){ 
 	      xvec[row]=0.0;
@@ -493,10 +559,7 @@ Entropy[c]=0.0;
 	      coeff[c][row]+= xvec[row];
 	    }
 	    
-	    /*
-	    if (c==_options.printCellNumber) { cout <<"trial" <<trial <<endl;
-	      cout << "BGK-CELL " <<c << " c0 "<< coeff[c][0]<<"  c1 " <<coeff[c][1]<< " c2 "<< coeff[c][2]<< " c3 "<< coeff[c][3] << " c4 "<< coeff[c][4]<<endl;}
-	    */
+	  
 	    if(errx <= tolx)
 	      break;
 	    
@@ -517,13 +580,15 @@ Entropy[c]=0.0;
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
-	//	const double pi(3.14159);
-	const double pi=_options.pi;
-	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
-	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
+	
+	//const double pi=_options.pi;
+	//const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
+	//const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
 	
 	//initialize coeff
 	VectorT5Array& coeff = dynamic_cast<VectorT5Array&>(_macroFields.coeff[cells]);
+	
+	/*
 	for(int c=0; c<nCells;c++){
 	  coeff[c][0]=density[c]/pow((pi*temperature[c]),1.5);
 	  coeff[c][1]=1/temperature[c];
@@ -531,6 +596,7 @@ Entropy[c]=0.0;
 	  coeff[c][3]=0.0;
 	  coeff[c][4]=0.0;	    
 	}
+	*/
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
@@ -540,11 +606,8 @@ Entropy[c]=0.0;
 	//call Newtons Method
 	
 	NewtonsMethodBGK(ktrial);
-	//int cellno=_options.printCellNumber;
-	//if (n==0){cout << " coeffs-BGK " << coeff[cellno][0] <<" cx^2  " <<coeff[cellno][1] <<" cx  " <<coeff[cellno][2] <<endl;}
 
 	//calculate perturbed maxwellian for BGK
-	//const VectorT5Array& coeff = dynamic_cast<const VectorT5Array&>(_macroFields.coeff[cells]);
 	for(int j=0;j< numFields;j++){
 	  Field& fndEq = *_dsfEqPtr.dsf[j];
 	  TArray& fEq = dynamic_cast< TArray&>(fndEq[cells]);
@@ -581,7 +644,7 @@ Entropy[c]=0.0;
 	
 	//fvec[row]=tvec[row]+fvec[row];               //mma  
       }
-      //if (c==20){cout<< "E,malpha " << Econst<<malphaBGK(j,0)<<"fvec" << fvec[0]<<endl;}
+     
       mexp[0]=-Econst/xn[0];
       mexp[1]=Econst*Cconst;
       mexp[2]=-Econst*(cx[j]-v[0]);
@@ -725,9 +788,10 @@ Entropy[c]=0.0;
 	const int nCells = cells.getCount();
 
 
-	const VectorT5Array& coeff = dynamic_cast<const VectorT5Array&>(_macroFields.coeff[cells]);
+	//const VectorT5Array& coeff = dynamic_cast<const VectorT5Array&>(_macroFields.coeff[cells]);
 	//initialize coeffg
 	VectorT10Array& coeffg = dynamic_cast<VectorT10Array&>(_macroFields.coeffg[cells]);
+	/*
 	for(int c=0; c<nCells;c++){
 	  coeffg[c][0]=coeff[c][0];
 	  coeffg[c][1]=coeff[c][1];
@@ -740,19 +804,14 @@ Entropy[c]=0.0;
 	  coeffg[c][8]=0.0;
 	  coeffg[c][9]=0.0;	    
 	}
+	*/
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
 	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
 	const int numFields= _quadrature.getDirCount(); 
 	
-	
-	//cout <<"calling Newtons Method"<<endl;//call Newtons Method
-	//const int ktrial(1);
 	NewtonsMethodESBGK(ktrial);
-	//cout <<"called Newtons Method"<<endl;
-
-	//calculate perturbed maxwellian for BGK
 	
 	for(int j=0;j< numFields;j++){
 	  Field& fndEqES = *_dsfEqPtrES.dsf[j];
@@ -793,7 +852,6 @@ Entropy[c]=0.0;
       
       for (int row=0;row<10;row++){
 	fvec[row]+= -Econst*malphaESBGK(j,row); //smm
-	//	if (c==0 && j<10){cout <<"dir row"<< j << row << fvec[row] <<endl;}
       }
       
       mexp[0]=-Econst/xn[0];
@@ -830,7 +888,7 @@ Entropy[c]=0.0;
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
-	//double pi(3.14159);
+
 	const double pi=_options.pi;
 	const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[cells]);
 	const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[cells]);
@@ -920,6 +978,7 @@ Entropy[c]=0.0;
   KineticVCMap& getVCMap()  {return _vcMap;}
   
   KineticModelOptions<T>&   getOptions() {return _options;}
+  const map<int, vector<int> >&  getFaceReflectionArrayMap() const { return _faceReflectionArrayMap;}
   
   void init()
   {
@@ -932,26 +991,27 @@ Entropy[c]=0.0;
         
         const StorageSite& cells = mesh.getCells();
 	
-        shared_ptr<VectorT3Array> vCell(new VectorT3Array(cells.getCount()));
-
+	const int nCells = cells.getCount();
+	shared_ptr<VectorT3Array> vCell(new VectorT3Array(nCells));
+	
         VectorT3 initialVelocity;
         initialVelocity[0] = _options["initialXVelocity"];
         initialVelocity[1] = _options["initialYVelocity"];
         initialVelocity[2] = _options["initialZVelocity"];
         *vCell = initialVelocity;
         _macroFields.velocity.addArray(cells,vCell);
-
+	
         
-        shared_ptr<TArray> pCell(new TArray(cells.getCount()));
+	shared_ptr<TArray> pCell(new TArray(nCells));
         *pCell = _options["operatingPressure"];
         _macroFields.pressure.addArray(cells,pCell);
-     
-
-        shared_ptr<TArray> rhoCell(new TArray(cells.getCount()));
+	
+	
+        shared_ptr<TArray> rhoCell(new TArray(nCells));
         *rhoCell = vc["density"];
         _macroFields.density.addArray(cells,rhoCell);
 
-        shared_ptr<TArray> muCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> muCell(new TArray(nCells));
         *muCell = vc["viscosity"];
         _macroFields.viscosity.addArray(cells,muCell);
 
@@ -967,8 +1027,8 @@ Entropy[c]=0.0;
 	//coeffs for perturbed BGK distribution function
 	shared_ptr<VectorT5Array> coeffCell(new VectorT5Array(cells.getCount()));
         VectorT5 initialCoeff;
-        initialCoeff[0] = 1.0;//vc["density"]/pow(_options["pi"]*_options["operatingTemperature"],1.5);
-        initialCoeff[1] = 1.0;//1/_options["operatingTemperature"];
+        initialCoeff[0] = 1.0;
+        initialCoeff[1] = 1.0;
         initialCoeff[2] = 0.0; 
 	initialCoeff[3] = 0.0;
 	initialCoeff[4] = 0.0;
@@ -1015,20 +1075,89 @@ Entropy[c]=0.0;
 	shared_ptr<TArray> tempyzCell(new TArray(cells.getCount()));
         *tempyzCell = 0.0;
 	_macroFields.Tyz.addArray(cells,tempyzCell);
-
 	
-
+	//Entropy and Entropy Generation Rate for switching
         shared_ptr<TArray> EntropyCell(new TArray(cells.getCount()));
         *EntropyCell = 0.0;
         _macroFields.Entropy.addArray(cells,EntropyCell);
-      }
+	
+	shared_ptr<TArray> EntropyGenRateCell(new TArray(cells.getCount()));
+        *EntropyGenRateCell = 0.0;
+        _macroFields.EntropyGenRate.addArray(cells,EntropyGenRateCell);
+
+	shared_ptr<TArray> EntropyGenRateColl(new TArray(cells.getCount()));
+        *EntropyGenRateColl = 0.0;
+        _macroFields.EntropyGenRate_Collisional.addArray(cells,EntropyGenRateColl);
+
+	//Pxx,Pyy,Pzz,Pxy,Pxz,Pyz
+	shared_ptr<VectorT6Array> stressCell(new VectorT6Array(nCells));
+        VectorT6 initialstress;
+        initialstress[0] = 1.0;
+        initialstress[1] = 1.0;
+        initialstress[2] = 1.0; 
+	initialstress[3] = 0.0;
+	initialstress[4] = 0.0;	
+	initialstress[5] = 0.0;
+        *stressCell = initialstress;
+        _macroFields.Stress.addArray(cells,stressCell);
+	
+	const int numDirections = _quadrature.getDirCount();
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	FILE * pFile;
+	pFile=fopen("ref_incMEMOSA.txt","w");
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups()){
+	  const FaceGroup& fg = *fgPtr; 
+	  
+	  if((fg.groupType == "symmetry")||(fg.groupType == "realwall")){
+	  
+	    const StorageSite& faces = fg.site;
+	  		 
+	    const Field& areaMagField = _geomFields.areaMag;
+	    const TArray& faceAreaMag = dynamic_cast<const TArray &>(areaMagField[faces]);
+	    const Field& areaField = _geomFields.area;
+	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]); 
+	  
+	      const VectorT3 en = faceArea[0]/faceAreaMag[0];
+	      vector<int> tempVec(numDirections);
+	      
+	      for (int j=0; j<numDirections; j++){
+		const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];	
+		const T cx_incident = cx[j] - 2.0*c_dot_en*en[0];
+		const T cy_incident = cy[j] - 2.0*c_dot_en*en[1];
+		const T cz_incident = cz[j] - 2.0*c_dot_en*en[2];           
+		int direction_incident=0; 
+		T Rdotprod=1e54;
+		T dotprod=0.0;
+		for (int js=0; js<numDirections; js++){
+		  dotprod=pow(cx_incident-cx[js],2)+pow(cy_incident-cy[js],2)+pow(cz_incident-cz[js],2);
+		  if (dotprod< Rdotprod){
+		    Rdotprod =dotprod;
+		    direction_incident=js;}
+		}
+		tempVec[j] = direction_incident;
+		fprintf(pFile,"%d %d %d \n",fg.id, j,direction_incident);
+		
+	      }
+	      const int fgid=fg.id;
+	      _faceReflectionArrayMap[fgid] = tempVec; //add to map
+	    
+	      
+	  }
+	}
+	fclose(pFile);
+
+	
+      } //end of loop through meshes
     _niters  =0;
     _initialKmodelNorm = MFRPtr();
     //_initialKmodelvNorm = MFRPtr();
   
   }
   
-  
+  // const vector<int>& vecReflection = _faceReflectionArrayMap[faceID]
+
   
   void SetBoundaryConditions()
   {
@@ -1048,9 +1177,13 @@ Entropy[c]=0.0;
 		KineticBC<T> *bc(new KineticBC<T>());
 		
 		_bcMap[fg.id] = bc;
-		 if((fg.groupType == "wall"))
+		if((fg.groupType == "wall"))
 		  {
-		      bc->bcType = "WallBC";
+		    bc->bcType = "WallBC";
+		  }
+		else if((fg.groupType == "realwall"))
+		  {
+		    bc->bcType = "RealWallBC";
 		  }
 		else if (fg.groupType == "velocity-inlet")
 		  {
@@ -1175,14 +1308,15 @@ Entropy[c]=0.0;
     
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
 			 ls.getX(), ls.getB());
-
+    
     // boundary conditions
-      const int numMeshes = _meshes.size();
-      for (int n=0; n<numMeshes; n++)
+    const double epsilon=_options.epsilon_ES;
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-
+	
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	  {
 	    const FaceGroup& fg = *fgPtr;
@@ -1214,8 +1348,10 @@ Entropy[c]=0.0;
 	    if (( bc.bcType == "ZeroGradBC")) 
 	      {
 		for(int f=0; f< nFaces; f++)
-		  {
-		    gkbc.applyExtrapolationBC(f);
+		  {const int c1= faceCells(f,1);// boundary cell
+		     T bvalue =dsf[c1];
+		      gkbc.applyDirichletBC(f,bvalue);
+		      // gkbc.applyExtrapolationBC(f);
 		  }
 	      }
 	    //if ((bc.bcType == "WallBC")||(bc.bcType=="PressureInletBC")|| (bc.bcType=="PressureOutletBC")|| (bc.bcType=="VelocityInletBC"))
@@ -1227,7 +1363,7 @@ Entropy[c]=0.0;
 		  const VectorT3  WallVelocity = bVelocity[f];
 		  const T uwall = WallVelocity[0]; const T vwall = WallVelocity[1];
 		  const T wwall = WallVelocity[2]; const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
-		  if(c_dot_en -wallV_dot_en < T_Scalar(0.0))
+		  if(c_dot_en -wallV_dot_en < T_Scalar(epsilon))
 		    //incoming direction - dirchlet bc
 		    { const int c1= faceCells(f,1);// boundary cell
 		      T bvalue =dsf[c1];
@@ -1301,29 +1437,30 @@ Entropy[c]=0.0;
 	    
 	    KineticBoundaryConditions<T,T,T> kbc(faces, mesh,_geomFields,_quadrature,_macroFields,_dsfPtr);
 	    
-	    FloatValEvaluator<VectorT3>
-	      bVelocity(bc.getVal("specifiedXVelocity"),
-			bc.getVal("specifiedYVelocity"),
-			bc.getVal("specifiedZVelocity"),
-			faces);
-	    FloatValEvaluator<T>
-	      bTemperature(bc.getVal("specifiedTemperature"),
-			   faces);
-	    FloatValEvaluator<T>
-	      bPressure(bc.getVal("specifiedPressure"),
-			   faces);
-
+	    FloatValEvaluator<VectorT3> bVelocity(bc.getVal("specifiedXVelocity"),
+						  bc.getVal("specifiedYVelocity"),
+						  bc.getVal("specifiedZVelocity"),
+						  faces);
+	    FloatValEvaluator<T> bTemperature(bc.getVal("specifiedTemperature"),faces);
+	    FloatValEvaluator<T> bPressure(bc.getVal("specifiedPressure"),faces);
+	    FloatValEvaluator<T> accomCoeff(bc.getVal("accommodationCoefficient"),faces);
 	    if (bc.bcType == "WallBC")
-	      {	
-		//cout <<"applying wallbc"<<endl;
+	      {			
 		kbc.applyDiffuseWallBC(bVelocity,bTemperature);
-		//cout <<"applied"<<endl;
+	      }
+	    else if (bc.bcType == "RealWallBC")
+	      {
+		//kbc.applyRealWallBC(bVelocity,bTemperature,accomCoeff);
+		map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(fg.id);
+		const vector<int>& vecReflection=(*pos).second;
+		kbc.applyRealWallBC(bVelocity,bTemperature,accomCoeff,vecReflection);
 	      }
 	    else if(bc.bcType=="SymmetryBC")
 	      {
-		//cout <<"applying specularbc"<<endl;
-		kbc.applySpecularWallBC();
-		//cout <<"applied"<<endl;
+		//kbc.applySpecularWallBC(); //old boundary works only for cartesian-type quadrature
+		map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(fg.id);
+		const vector<int>& vecReflection=(*pos).second;
+		kbc.applySpecularWallBC(vecReflection);
 	      } 
 	    else if(bc.bcType=="ZeroGradBC")
 	      {
@@ -1331,14 +1468,12 @@ Entropy[c]=0.0;
 	      }
 	    else if(bc.bcType=="PressureInletBC")
 	      {
-		//cout <<"applying pressureinlet"<<endl;
 		kbc.applyPressureInletBC(bTemperature,bPressure);
-		//cout <<"applied"<<endl;
-	     } 
+	      } 
 	    else if(bc.bcType=="VelocityInletBC")
-	       {
+	      {
 		kbc.applyVelocityInletBC(bTemperature,bVelocity);
-	     }
+	      }
 	    else if(bc.bcType=="PressureOutletBC")
 	      {
 	    	kbc.applyPressureOutletBC(bTemperature,bPressure);
@@ -1419,19 +1554,26 @@ Entropy[c]=0.0;
 	{cout << _niters << ": " << *rNorm <<endl; }
 
 	_niters++;
-	if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance )) //&& ((*vNorm < _options.absoluteTolerance)||(*vnormRatio < _options.relativeTolerance )))
-	  break;
-	
+	//break here
+
 	callBoundaryConditions();
 	ComputeMacroparameters();	//update macroparameters
         ComputeCollisionfrequency();
 	//update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
 	if (_options.fgamma==0){initializeMaxwellianEq();}
 	else{ EquilibriumDistributionBGK();}
-	if (_options.fgamma==2){EquilibriumDistributionESBGK();}	    
+	if (_options.fgamma==2){EquilibriumDistributionESBGK();}
 
+
+	if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance )){
+	  //&& ((*vNorm < _options.absoluteTolerance)||(*vnormRatio < _options.relativeTolerance )))
+	  break;}
+	
+
+	
+	
       }
-
+    
 
     //char * filename="f.txt";
     //itoa(n,filename,10);
@@ -1502,6 +1644,34 @@ Entropy[c]=0.0;
       }
   }
 
+  /*
+ boost::shared_ptr<ArrayBase> getPressureTensor(const Mesh& mesh, const ArrayBase& gcellIds)
+  {
+    typedef Array<StressTensor<T> > StressTensorArray;
+    
+    //const StorageSite& cells = mesh.getCells();
+   
+    const Array<int>& cellIds = dynamic_cast<const Array<int> &>(gcellIds);
+    const int nCells = cellIds.getLength();
+    
+    boost::shared_ptr<StressTensorArray>pressureTensorPtr( new StressTensorArray(nCells));
+    StressTensorArray& pressureTensor = *pressureTensorPtr;
+   
+      for(int n=0; n<nCells;n++){
+	//const int c = cellIds[n];
+	    
+	pressureTensor[n][0] = 0.0;
+	pressureTensor[n][1] = 0.0;
+        pressureTensor[n][2] = 0.0;
+        pressureTensor[n][3] = 0.0;
+        pressureTensor[n][4] = 0.0;
+        pressureTensor[n][5] = 0.0;
+	}
+      //}
+    return pressureTensorPtr;
+  }
+  */
+  
   void OutputDsfBLOCK(const char* filename)
   {
     FILE * pFile;
@@ -1553,7 +1723,80 @@ Entropy[c]=0.0;
     }
     fclose(pFile);
   }
- void OutputDsfPOINT() //, const char* filename)
+
+  
+  void  computeSurfaceForce(const StorageSite& solidFaces, bool perUnitArea)
+  {
+    
+    const int nSolidFaces = solidFaces.getCount();
+    
+    boost::shared_ptr<VectorT3Array>
+      forcePtr( new VectorT3Array(nSolidFaces));
+    VectorT3Array& force = *forcePtr;
+    
+    force.zero();
+    _macroFields.force.addArray(solidFaces,forcePtr);
+    
+    const VectorT3Array& solidFaceArea =
+      dynamic_cast<const VectorT3Array&>(_geomFields.area[solidFaces]);
+    
+    const TArray& solidFaceAreaMag =
+      dynamic_cast<const TArray&>(_geomFields.areaMag[solidFaces]);
+    
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+        const Mesh& mesh = *_meshes[n];
+        const StorageSite& cells = mesh.getCells();
+        
+	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const TArray& wts = dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+	
+        const CRConnectivity& solidFacesToCells
+          = mesh.getConnectivity(solidFaces,cells);
+        const IntArray& sFCRow = solidFacesToCells.getRow();
+        const IntArray& sFCCol = solidFacesToCells.getCol();
+	
+	const int N123= _quadrature.getDirCount(); 	
+	
+	const int selfCount = cells.getSelfCount();
+	for(int f=0; f<nSolidFaces; f++){
+	  
+	  StressTensor<T> stress = NumTypeTraits<StressTensor<T> >::getZero();
+         
+	  for(int j=0;j<N123;j++){
+	    Field& fnd = *_dsfPtr.dsf[j];
+	    const TArray& f_dsf = dynamic_cast<const TArray&>(fnd[cells]);
+	    for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+	      {
+            
+		const int c = sFCCol[nc];            
+                if ( c < selfCount ){
+		   stress[0] +=pow((cx[j]-v[c][0]),2.0)*f_dsf[c]*wts[j];
+		   stress[1] +=pow((cy[j]-v[c][1]),2.0)*f_dsf[c]*wts[j];
+		   stress[2] +=pow((cz[j]-v[c][2]),2.0)*f_dsf[c]*wts[j];
+		   stress[3] +=(cx[j]-v[c][0])*(cy[j]-v[c][1])*f_dsf[c]*wts[j];
+		   stress[4] +=(cy[j]-v[c][1])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
+		   stress[5] +=(cx[j]-v[c][0])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
+                }
+	      }
+	  }
+          
+	  
+	  const VectorT3& Af = solidFaceArea[f];
+	  force[f][0] = Af[0]*stress[0] + Af[1]*stress[3] + Af[2]*stress[5];
+	  force[f][1] = Af[0]*stress[3] + Af[1]*stress[1] + Af[2]*stress[4];
+	  force[f][2] = Af[0]*stress[5] + Af[1]*stress[4] + Af[2]*stress[2];
+	  if (perUnitArea){
+	    force[f] /= solidFaceAreaMag[f];}
+	}
+      }
+  }
+  
+  void OutputDsfPOINT() //, const char* filename)
   {
     FILE * pFile;
     pFile = fopen("cxyz0.plt","w");  
@@ -1609,6 +1852,8 @@ Entropy[c]=0.0;
   MFRPtr _initialKmodelvNorm;
   shared_ptr<Field> _previousVelocity;
   shared_ptr<Field> _KmodelApField;
+  map<int, vector<int> > _faceReflectionArrayMap;
+  //map<int, IntArray > _faceReflectionArrayMap;
 };
 
 #endif

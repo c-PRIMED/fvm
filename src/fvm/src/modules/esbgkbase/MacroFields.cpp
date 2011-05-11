@@ -15,6 +15,10 @@ MacroFields::MacroFields(const string baseName) :
   Tyz(baseName +".Tyz"),
   coeff(baseName +".coeff"),
   coeffg(baseName +".coeffg"),
-  Entropy(baseName +"Entropy")
+  Entropy(baseName +"Entropy"),
+  EntropyGenRate(baseName +"EntropyGenRate"), 
+  EntropyGenRate_Collisional(baseName +"EntropyGenRate_Collisional"),
+  force(baseName +"Force"),
+  Stress(baseName +"Stress")
 {}
 
