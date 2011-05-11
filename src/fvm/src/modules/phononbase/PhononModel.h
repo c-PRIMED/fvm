@@ -29,13 +29,19 @@ class PhononModel : public Model
   typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
   typedef Vector<T_Scalar,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
+  typedef shared_ptr<VectorT3Array> T3ptr;
   typedef Kspace<T> Tkspace;
   typedef kvol<T> Tkvol;
   typedef pmode<T> Tmode;
   typedef Array<T> Tarray;
   typedef shared_ptr<Tarray> Tarrptr;
   typedef map<int,PhononBC<T>*> PhononBCMap;
-
+  typedef typename Tmode::Mode_ptr Mode_ptr;
+  typedef typename Tmode::Reflection Reflection;
+  typedef typename Tmode::Reflptr Reflptr;
+  typedef typename Tmode::Refl_pair Refl_pair;
+  typedef typename Tmode::Refl_Map Refl_Map;
+  
  PhononModel(const MeshList& meshes,const GeomFields& geomFields,Tkspace& kspace,PhononMacro& macro):
   
   Model(meshes),
@@ -73,9 +79,7 @@ class PhononModel : public Model
 		}
 	    } //facegroup loop end
 	} //mesh loop end 
-      
-      init();
-      cout<<"Model Initialized"<<endl;
+    
     }
 
   PhononModelOptions<T>& getOptions() {return _options;}
@@ -83,7 +87,7 @@ class PhononModel : public Model
   
   void init()
   {
-
+    
     _initialnorm = MFRPtr();
     _niters=0;
     const int numMeshes=_meshes.size();
@@ -92,9 +96,7 @@ class PhononModel : public Model
       {
 	const Mesh& mesh=*_meshes[n];
 	const int numK=_kspace.getlength();
-	const T DK3=_kspace.getDK3();     //total kspace volume
 	const StorageSite& cells=mesh.getCells();
-	const T Tref=_options["Tref"];
 	const int numcells=cells.getCount();
 	
 	//initialize lattice temperature
@@ -106,28 +108,68 @@ class PhononModel : public Model
 	for (int k=0;k<numK;k++)  //kspace loop beg
 	  {
 	    Tkvol& kv=_kspace.getkvol(k);
-	    const int numM=kv.getmodenum();	    
-
+	    const int numM=kv.getmodenum();
+	    
 	    for (int m=0;m<numM;m++) //mode loop beg
 	      {
 		//initialize each phonon mode
 		Tmode& mode=kv.getmode(m);
-		T cp=mode.getcp();
 		Field& efield=mode.getfield();
-		Field& e0field=mode.gete0field();		
-		Tarrptr evar=shared_ptr<Tarray>(new Tarray(numcells));
-		Tarrptr e0var=shared_ptr<Tarray>(new Tarray(numcells));		
-		const T einit=cp*(Tinit-Tref)/DK3;
+		Field& e0field=mode.gete0field();
+		Tarrptr e0var=shared_ptr<Tarray>(new Tarray(numcells));
+		Tarrptr evar=shared_ptr<Tarray>(new Tarray(numcells));	
+		const T einit=mode.calce0(Tinit);
 		*evar=einit;
 		*e0var=einit;
 		efield.addArray(cells,evar);
 		e0field.addArray(cells,e0var);
-
 	      }; //mode loop end
 	  }; //kspace loop end
-      }; //mesh loop end
-  };
 
+	// Compute reflections--later, should be moved inside above loop
+	
+	for (int k=0;k<numK;k++)  //kspace loop beg
+	  {
+	    Tkvol& kv=_kspace.getkvol(k);
+	    const int numM=kv.getmodenum();
+	    const T dk3=kv.getdk3();
+	    
+	    for (int m=0;m<numM;m++) //mode loop beg
+	      {	
+		Tmode& mode=kv.getmode(m);
+		Refl_Map& rmap=mode.getreflmap();
+		VectorT3 vg=mode.getv();
+		T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
+		VectorT3 si=vg/vmag;
+		VectorT3 so;
+
+		foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
+		    const Field& AreaMagField=_geomFields.areaMag;
+		    const Tarray& AreaMag=dynamic_cast<const Tarray&>(AreaMagField[faces]);
+		    const Field& AreaDirField=_geomFields.area;
+		    const VectorT3Array& AreaDir=dynamic_cast<const VectorT3Array&>(AreaDirField[faces]);
+		   	      
+		    const VectorT3 n=AreaDir[0]/AreaMag[0];
+		    const T sidotn=si[0]*n[0]+si[1]*n[1]+si[2]*n[2];
+
+		    if (sidotn > T_Scalar(0.0))
+		      {
+			so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
+			Refl_pair refls;
+			_kspace.findSpecs(dk3,vmag,m,so,refls);
+			rmap[fg.id]=refls;
+		      }
+		  }
+		
+	      }
+	    
+	  } //mesh loop end
+      }
+  }
+    
   void callBoundaryConditions()
   { 
     const int numMeshes = _meshes.size();
@@ -141,8 +183,8 @@ class PhononModel : public Model
 	    const StorageSite& faces = fg.site;
 	    const PhononBC<T>& bc = *_bcMap[fg.id];
 	    
-	    PhononBoundary<T> pbc(faces, mesh,_geomFields,_kspace,_options);
-
+	    PhononBoundary<T> pbc(faces, mesh,_geomFields,_kspace,_options,fg.id);
+	    
 	    if (bc.bcType == "reflecting")
 	      {	
      
@@ -171,8 +213,6 @@ class PhononModel : public Model
   void updateTL()
   {
 
-    T Tref=_options["Tref"];
-
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
@@ -180,9 +220,10 @@ class PhononModel : public Model
 	const StorageSite& cells = mesh.getCells();
 	const int numcells = cells.getCount();
 	const int numK=_kspace.getlength();
-	const T Covertau=_kspace.getCovertau();
 	Tarray& TL=dynamic_cast<Tarray&>(_macro.temperature[cells]);
-	TL=0.;  // initailize to zero for summing
+	Tarrptr e_sumptr=shared_ptr<Tarray>(new Tarray(numcells));
+	Tarray& e_sum=*(e_sumptr);
+	e_sum=0.;
 	
 	for(int k=0;k<numK;k++)
 	  {
@@ -198,21 +239,18 @@ class PhononModel : public Model
 		Tarray& e_val=dynamic_cast<Tarray&>(efield[cells]);
 		
 		for(int c=0;c<numcells;c++)
-		    TL[c]+=e_val[c]*dk3/tau;
+		    e_sum[c]+=e_val[c]*dk3/tau;
 
 	      }
 	  }
 	
 	for(int c=0;c<numcells;c++)
-	    TL[c]=TL[c]/Covertau+Tref;
-
+	  _kspace.NewtonSolve(TL[c],e_sum[c]);
       }
   }
 
 void updatee0()
   {
-
-    T Tref=_options["Tref"];
 
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -221,7 +259,6 @@ void updatee0()
 	const StorageSite& cells = mesh.getCells();
 	const int numcells = cells.getCount();
 	const int numK=_kspace.getlength();
-	T DK3=_kspace.getDK3();
 	Tarray& TL=dynamic_cast<Tarray&>(_macro.temperature[cells]);
 	
 	for(int k=0;k<numK;k++)
@@ -230,23 +267,55 @@ void updatee0()
 	    const int modenum=kv.getmodenum();
 	    
 	    for(int m=0;m<modenum;m++)
-	      {
+	      {		
 		Tmode& mode=kv.getmode(m);
-		T cp=mode.getcp();
 		Field& e0field=mode.gete0field();
 		Tarray& e0_val=dynamic_cast<Tarray&>(e0field[cells]);
-		
 		for(int c=0;c<numcells;c++)
-		  e0_val[c]=cp*(TL[c]-Tref)/DK3;
-
+		  e0_val[c]=mode.calce0(TL[c]);
 	      }
 	  }
 	
       }
   }
 
-   void initPhononModelLinearization(LinearSystem& ls, Tmode& mode)
-  {
+ void updateHeatFlux()
+ {
+   const int numMeshes = _meshes.size();
+   for (int n=0; n<numMeshes; n++)
+     {
+       VectorT3 zero_vec;
+       const Mesh& mesh = *_meshes[n];
+       const StorageSite& cells = mesh.getCells();
+       const int numcells = cells.getCount();
+       T3ptr heatFluxptr=T3ptr(new VectorT3Array(numcells));
+       VectorT3Array& heatFlux=*heatFluxptr;
+       zero_vec[0]=0.;zero_vec[1]=0.;zero_vec[2]=0.;
+       heatFlux=zero_vec;
+       
+       const int numK=_kspace.getlength();
+       for(int k=0;k<numK;k++)
+	 {
+	   Tkvol& kv=_kspace.getkvol(k);
+	   T dk3=kv.getdk3();
+	   const int modenum=kv.getmodenum();
+	   for(int m=0;m<modenum;m++)
+	     {
+	       Tmode& mode=kv.getmode(m);
+	       VectorT3 vg=mode.getv();
+	       Field& efield=mode.getfield();
+	       const Tarray& eval=dynamic_cast<const Tarray&>(efield[cells]);
+
+	       for(int c=0;c<numcells;c++)
+		 heatFlux[c]+=eval[c]*vg*dk3;
+	     }
+	 }
+       _macro.heatFlux.addArray(cells,heatFluxptr);  
+     }
+ }
+ 
+ void initPhononModelLinearization(LinearSystem& ls, Tmode& mode)
+ {
    const int numMeshes = _meshes.size();
    for (int n=0; n<numMeshes; n++)
      {
@@ -431,8 +500,7 @@ void updatee0()
 		
 	      }
 	  }
-	
-	
+		
 	if (!_initialnorm) _initialnorm = rNorm;
 
 	if (_niters < 5)
@@ -442,18 +510,19 @@ void updatee0()
 	MFRPtr normRatio((*rNorm)/(*_initialnorm));	
 	//	MFRPtr vnormRatio((*vNorm)/(*_initialKmodelvNorm));
 	//if ( MPI::COMM_WORLD.Get_rank() == 0 )
-	{cout << _niters << ": " << *rNorm <<endl; }
+	if(_niters % _options.showResidual == 0)
+	  cout << _niters << ": " << *rNorm <<endl;
 
 	_niters++;
 	if ((*rNorm < _options.absTolerance)||(*normRatio < _options.relTolerance )) 
 	  {//&& ((*vNorm < _options.absoluteTolerance)||(*vnormRatio < _options.relativeTolerance )))
 	    break;}
 	
-	callBoundaryConditions();
 	updateTL();	//update macroparameters
 	updatee0();
-
+	callBoundaryConditions();
       }
+    updateHeatFlux();
   }
 
   void printTemp()
@@ -466,11 +535,54 @@ void updatee0()
 	 const int numcells=cells.getCount();
 	 Tarray& TL=dynamic_cast<Tarray&>(_macro.temperature[cells]);
 	 for(int i=0;i<numcells;i++)
-	   cout<<TL[i]<<endl;
+	   cout<<TL[i]<<" "<<i<<endl;
 
        }
 
-  }    
+  }
+
+  T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
+  {
+    T r(0.);
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+        {
+	  const StorageSite& faces = fg.site;
+	  const int nFaces = faces.getCount();
+	  const StorageSite& cells = mesh.getCells();
+	  const CRConnectivity& faceCells=mesh.getFaceCells(faces);
+	  const Field& areaField=_geomFields.area;
+	  const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	    
+	  for(int k=0;k<_kspace.getlength();k++)
+	    {
+	      Tkvol& kv=_kspace.getkvol(k);
+	      int modenum=kv.getmodenum();
+	      for(int m=0;m<modenum;m++)
+		{
+		  VectorT3 vg=kv.getmode(m).getv();
+		  T dk3=kv.getdk3();
+		  Field& efield=kv.getmode(m).getfield();
+		  const Tarray& eval=dynamic_cast<const Tarray&>(efield[cells]);
+		  for(int f=0; f<nFaces; f++)
+		    {
+		      const VectorT3 An=faceArea[f];
+		      const int c1=faceCells(f,1);
+		      const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
+		      r += eval[c1]*vgdotAn*dk3;
+		    }
+		  found=true;
+		}
+	    }
+        }
+    }
+    if (!found)
+      throw CException("getHeatFluxIntegral: invalid faceGroupID");
+    return r;
+  }
 
   private:
 

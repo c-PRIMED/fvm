@@ -4,7 +4,39 @@
 
 %include "Model.i"
 %include "FloatVarDict.i"
-%include "PhononModel.h"
+
+template<class T>
+class PhononModel : public Model
+{
+
+ public:
+  
+  typedef map<int,PhononBC<T>*> PhononBCMap; 
+  typedef Kspace<T> Tkspace;
+  PhononModel(const MeshList& meshes,const GeomFields& geomFields,Tkspace& kspace,PhononMacro& macro);
+  PhononModelOptions<T>& getOptions();
+  PhononBCMap& getBCs();
+  void init();
+  void callBoundaryConditions();
+  void updateTL();
+  void updatee0();
+  void updateHeatFlux();
+  void advance(const int niter);
+  void printTemp();
+  T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
+   
+  private:
+
+    const GeomFields& _geomFields;
+    Tkspace& _kspace;       //kspace
+    PhononMacro& _macro;
+    PhononModelOptions<T> _options;
+    PhononBCMap _bcMap;
+    MFRPtr _initialnorm;
+    int _niters;
+    
+};
+
 
 template <class T>
 struct PhononBC : public FloatVarDict<T>
@@ -18,11 +50,10 @@ struct PhononModelOptions : public FloatVarDict<T>
   bool printNormalizedResiduals;
   bool transient;
   int timeDiscretizationOrder;
-  bool constantcp;
-  bool constanttau;
   LinearSolver* PhononLinearSolver;
   double absTolerance;
   double relTolerance;
+  int showResidual;
 };
 
 %template(PhononBCA) PhononBC<ATYPE_STR>;
