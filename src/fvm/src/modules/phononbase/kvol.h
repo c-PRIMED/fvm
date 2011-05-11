@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "Vector.h"
+#include "Field.h"
 #include "pmode.h"
 
 template<class T>
@@ -32,6 +33,7 @@ class kvol
  private:
 
   kvol(const kvol&);
+
   //weight factor (1/m3)
   T _dk3;
 
