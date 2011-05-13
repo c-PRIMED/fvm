@@ -5,7 +5,7 @@ from TimeStep import *
 
 class Simulator():
 
-    def __init__(self, meshes, models, ibm_update, threshold, voltage,
+    def __init__(self, meshes, models, ibm_update, threshold, voltage, probe,
                  transient=True, timeStep=1e-8, timevary=True):
         
         self.transient = transient
@@ -14,6 +14,7 @@ class Simulator():
         self.ibm_update = ibm_update
         self.threshold = threshold
         self.voltage = voltage
+        self.probeIndex = probe
 
         self.enableElecModel = models.enableElecModel
         self.enablePlateModel = models.enablePlateModel
@@ -31,6 +32,7 @@ class Simulator():
         self.nSolidCells = self.solidCells.getCount()
         self.sbMeshFaces = self.solidBoundaryMeshes[0].getFaces()
         self.beam_thickness = meshes.beam_thickness
+        self.dielectric_thickness = meshes.dielectric_thickness
         self.gap = meshes.gap
         
         if self.enableElecModel:
@@ -72,7 +74,7 @@ class Simulator():
         self.contactForceSum = 0.0
         self.cloestDistance = self.deformation.min(axis=0)[2] + self.gap
         self.voltage = bias
-        print 'current applied voltage %f' % self.voltage
+        #print 'current applied voltage %f' % self.voltage
         print 'Marching at global count %i' % self.globalCount
         print 'Marching at global time %e' % self.globalTime
         print '----------------------------------------------------------------------'
@@ -129,7 +131,10 @@ class Simulator():
             if self.enableElecModel:
                 for c in range (0, self.nSolidCells):
                     distance = self.gap + self.deformation[c][2]
-                    eforce = - computeElectrostaticForce(self.voltage, distance)
+                    realBias = calculateVoltage(self.voltage, 1.0, distance, 7.9, self.dielectric_thickness)
+                    if c == self.probeIndex:
+                        print 'the current bias is %f' % realBias
+                    eforce = - computeElectrostaticForce(realBias, distance)
                     self.beamForce[c] += eforce
                     self.elecForceSum += eforce
             

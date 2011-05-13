@@ -6,10 +6,11 @@ from FluentCase import FluentCase
 	
 class MeshSetup:
     
-    def __init__(self, beam, fluid, thickness, gap):
+    def __init__(self, beam, fluid, beam_thickness, gap, dielectric_thickness):
         self.beamCaseFile = beam
         self.fluidCaseFile = fluid
-        self.beam_thickness = thickness
+        self.beam_thickness = beam_thickness
+        self.dielectric_thickness = dielectric_thickness
         self.gap = gap
         self.probeIndex = 100
         
