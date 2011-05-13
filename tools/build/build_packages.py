@@ -36,6 +36,7 @@ class BuildPkg(Build):
         self.logdir = bld.logdir
         self.libdir = bld.libdir
         self.bindir = bld.bindir
+        self.incdir = bld.incdir
         self.bld = bld
 
     def pstatus(self, state, option=''):

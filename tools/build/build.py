@@ -19,8 +19,9 @@ class Build:
         self.logdir = os.path.join(self.blddir, "log")
         self.bindir = os.path.join(self.blddir, "bin")
         self.libdir = os.path.join(self.blddir, "lib")
+        self.incdir = os.path.join(self.blddir, "include")
         for p in [self.blddir, self.logdir,
-                  self.libdir, self.bindir ]:
+                  self.libdir, self.bindir, self.incdir]:
             if not os.path.isdir(p):
                 try:
                     os.makedirs(p)
