@@ -62,7 +62,7 @@ class Hdf5(BuildPkg):
             if int(v[0]) == 1 and int(v[1]) >= 8:
                 try:
                     x = int(v[2].split('-')[0])
-                    if x < 5:
+                    if x < 6:
                         return True
                 except:
                     return False
