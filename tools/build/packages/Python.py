@@ -4,7 +4,7 @@ class Python(BuildPkg):
     def _installed(self):
         ver = subprocess.Popen('python -V', shell=True, stderr=subprocess.PIPE).stderr.read()
         a, b = re.findall(r'Python ([^.]*).([^.\n]*)', ver)[0]
-        if int(a) == 2 and int(b) >= 5:
+        if int(a) == 2 and int(b) >= 6:
             return True
         return False
     def _configure(self):
