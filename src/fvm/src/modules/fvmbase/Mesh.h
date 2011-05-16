@@ -265,9 +265,8 @@ public:
       if ( numProcs > 1 )
           return *_cellCellsGhostExt;
       else
-          return this->getCellCells();
 #endif      
-  
+        return this->getCellCells();
   }
 
   const ArrayBase&      getSendCounts ( const EntryIndex& e ) const { return *_sendCounts[e];}
