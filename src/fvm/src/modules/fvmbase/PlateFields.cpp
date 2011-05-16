@@ -3,6 +3,12 @@
 PlateFields::PlateFields(const string baseName) :
   deformation(baseName + ".deformation"),
   moment(baseName + ".moment"),
+  stress(baseName + ".stress"),
+  devStress(baseName + ".devStress"),
+  VMStress(baseName + ".VMStress"),
+  plasticStrain(baseName + ".plasticStrain"),
+  plasticStrainN1(baseName + ".plasticStrainN1"),
+  plasticMoment(baseName + ".plasticMoment"),
   deformationGradient(baseName + ".deformationGradient"),
   deformationFlux(baseName + ".deformationFlux"),
   ym(baseName + ".ym"),

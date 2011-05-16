@@ -21,6 +21,8 @@ public:
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
+  typedef Vector<T,4> VectorT4;
+  typedef Array<VectorT4> VectorT4Array;
   typedef Gradient<VectorT3> VGradType;
   typedef Array<Gradient<VectorT3> > VGradArray;
 
@@ -32,15 +34,29 @@ public:
   typedef typename VGradModelType::GradMatrixType VGradMatrix;
   
   PlateSourceDiscretization(const MeshList& meshes,
-				const GeomFields& geomFields,
-				Field& varField,
-				const Field& ymField,
-				const Field& nuField,
-			        const Field& varGradientField,
-			        const Field& thicknessField,
-			        const Field& forceField,
-			        const T& scf,                                
-                                bool fullLinearization=true)  :
+			    const GeomFields& geomFields,
+			    Field& varField,
+			    const Field& ymField,
+			    const Field& nuField,
+			    const Field& varGradientField,
+			    const Field& thicknessField,
+			    const Field& forceField,
+			    const T& scf,
+			    const Field& devStressField,
+			    const Field& VMStressField,
+			    Field& plasticStrainField,
+			    Field& plasticStrainN1Field,
+			    Field& plasticMomentField,
+			    const T& A,
+			    const T& B,
+			    const T& mm,
+			    const T& nn,
+			    const T& Sy0,
+			    const int& nz,
+			    const T& timeStep,
+			    const int& creepModel,
+			    const bool& creep,
+			    bool fullLinearization=true)  :
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
@@ -50,6 +66,20 @@ public:
     _thicknessField(thicknessField),
     _forceField(forceField),
     _scf(scf),
+    _devStressField(devStressField),
+    _VMStressField(VMStressField),
+    _plasticStrainField(plasticStrainField),
+    _plasticStrainN1Field(plasticStrainN1Field),
+    _plasticMomentField(plasticMomentField),
+    _A(A),
+    _B(B),
+    _m(mm),
+    _n(nn),
+    _Sy0(Sy0),
+    _nz(nz),
+    _timeStep(timeStep),
+    _creepModel(creepModel),
+    _creep(creep),
     _fullLinearization(fullLinearization)
    {}
 
@@ -68,11 +98,106 @@ public:
 
     VectorT3Array& rCell = dynamic_cast<VectorT3Array&>(rField[cVarIndex]);
 
+    const TArray& ymCell =
+      dynamic_cast<const TArray&>(_ymField[cells]);
+
+    const TArray& nuCell =
+      dynamic_cast<const TArray&>(_nuField[cells]);
+
+    const TArray& tCell =
+      dynamic_cast<const TArray&>(_thicknessField[cells]);
+    
+    const VectorT4Array& devStress =
+      dynamic_cast<const VectorT4Array&>(_devStressField[cells]);
+
+    const TArray& VMStress =
+      dynamic_cast<const TArray&>(_VMStressField[cells]);
+
+    VectorT4Array& plasticStrain =
+      dynamic_cast<VectorT4Array&>(_plasticStrainField[cells]);
+
+    VectorT4Array& plasticStrainN1 =
+      dynamic_cast<VectorT4Array&>(_plasticStrainN1Field[cells]);
+    
+    VectorT3Array& plasticMoment =
+      dynamic_cast<VectorT3Array&>(_plasticMomentField[cells]);
+
     for(int c=0; c<cells.getSelfCount(); c++)
     {
         rCell[c][2]-=forceCell[c]*cellVolume[c];
     }
 
+    const int nCells = cells.getCount();
+    const T zero(0.0);
+    const T half(0.5);
+    const T one(1.0);
+    const T two(2.0);
+    const T three(3.0);
+    const T four(4.0);
+    const T six(6.0);
+    
+    if(_creep)
+    {
+	if (_creepModel==1) 
+	{
+	    for(int n=0; n<nCells; n++)
+	    {
+	        int nn = n*(_nz+1);
+	        for(int k=0; k<=_nz; k++)
+		{
+	   
+		    T VMPlasticStrain = sqrt(half*
+					     (pow(plasticStrain[nn+k][0]-plasticStrain[nn+k][1],2.0) +
+					      pow(plasticStrain[nn+k][1]-plasticStrain[nn+k][2],2.0) +
+					      pow(plasticStrain[nn+k][2]-plasticStrain[nn+k][0],2.0) +
+					      six*(pow(plasticStrain[nn+k][3],2.0))));
+		    
+		    //T VMPlasticStrain = sqrt(pow(plasticStrain[nn+k][0],2.0));
+		    T Sy = _Sy0*(one + _B*pow(VMPlasticStrain,_n));
+		    T mult = _A*(pow((VMStress[nn+k]/Sy),_m))/VMStress[nn+k];
+		    if(k==_nz/2)
+		      mult = zero;
+		    for(int i=0;i<4;i++)
+		      plasticStrain[nn+k][i] = plasticStrainN1[nn+k][i]+mult*devStress[nn+k][i]*_timeStep;
+		}
+	    }
+	}
+	
+	for(int n=0; n<nCells; n++)
+	{
+   	    T var1 = ymCell[n]/(one - pow(nuCell[n],two));
+	    T var2 = one - nuCell[n];
+	    T var3 = (tCell[n]/T(_nz))/three;
+	    T tHalf(0.0);
+	    T tempxx(0.0);
+	    T tempyy(0.0);
+	    T tempxy(0.0);
+	    tHalf = tCell[n]/two;
+	    int nn = n*(_nz+1);
+
+	    tempxx += (-tHalf)*(plasticStrain[nn][0] + nuCell[n]*plasticStrain[nn][1]);
+	    tempyy += (-tHalf)*(plasticStrain[nn][1] + nuCell[n]*plasticStrain[nn][0]);
+	    tempxy += (-tHalf)*var2*plasticStrain[nn][3];
+	    for(int k=1; k<_nz; k++)
+	    {
+	        T n1 = four;
+		if((k%2)==0)n1 = two;
+		T zz(tCell[n]*(T(k)-(T(_nz)/T(2)))/T(_nz));
+	        tempxx += T(n1)*zz*(plasticStrain[nn+k][0] + nuCell[n]*plasticStrain[nn+k][1]);
+		tempyy += T(n1)*zz*(plasticStrain[nn+k][1] + nuCell[n]*plasticStrain[nn+k][0]); 
+		tempxy += T(n1)*zz*var2*plasticStrain[nn+k][3];
+	    }
+	    tempxx += (tHalf)*(plasticStrain[nn+_nz][0] + nuCell[n]*plasticStrain[nn+_nz][1]);
+            tempyy += (tHalf)*(plasticStrain[nn+_nz][1] + nuCell[n]*plasticStrain[nn+_nz][0]);
+            tempxy += (tHalf)*var2*plasticStrain[nn+_nz][3];
+
+	    plasticMoment[n][0] = var1*var3*tempxx;
+	    plasticMoment[n][1] = var1*var3*tempyy;
+	    plasticMoment[n][2] = var1*var3*tempxy;
+
+	}
+    }
+    
     const StorageSite& iFaces = mesh.getInteriorFaceGroup().site;
     
     discretizeFaces(mesh, iFaces, mfmatrix, xField, rField, false, false);
@@ -142,6 +267,9 @@ public:
     const TArray& tCell =
       dynamic_cast<const TArray&>(_thicknessField[cells]);
 
+    VectorT3Array& plasticMoment =
+      dynamic_cast<VectorT3Array&>(_plasticMomentField[cells]);
+
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,
                                                              cVarIndex));
     CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
@@ -154,7 +282,7 @@ public:
     const Array<int>& ccRow = cellCells.getRow();
     const Array<int>& ccCol = cellCells.getCol();
 
-    //const int nInteriorCells = cells.getSelfCount();
+    const int nInteriorCells = cells.getSelfCount();
 
     const T zero(0.0);
     const T one(1.0);
@@ -212,6 +340,10 @@ public:
 
 	T faceNu(1.0);
 
+	T faceM0(1.0);
+	T faceM1(1.0);
+	T faceM2(1.0);
+
 	D0 = ymCell[c0]*pow(tCell[c0],three)/(twelve*(one - nuCell[c0]*nuCell[c0]));
 	D1 = ymCell[c1]*pow(tCell[c1],three)/(twelve*(one - nuCell[c1]*nuCell[c1]));
 
@@ -249,6 +381,13 @@ public:
 	faceB0 = xCell[c0][0]*bwt0 + xCell[c1][0]*bwt1;
 	faceB1 = xCell[c0][1]*bwt0 + xCell[c1][1]*bwt1;
 
+	if(_creep)
+	{
+	    faceM0 = plasticMoment[c0][0]*bwt0 + plasticMoment[c1][0]*bwt1;
+	    faceM1 = plasticMoment[c0][1]*bwt0 + plasticMoment[c1][1]*bwt1;
+	    faceM2 = plasticMoment[c0][2]*bwt0 + plasticMoment[c1][2]*bwt1;
+	}
+
 	const VGradType gradF = (vGradCell[c0]*wt0 + vGradCell[c1]*wt1);
 
 	VectorT3 source(NumTypeTraits<VectorT3>::getZero());
@@ -283,6 +422,12 @@ public:
     
 	source[2] = -wFlux;
 
+	if(_creep)
+	{
+	    source[0] += faceM0*Af[0] + faceM2*Af[1];
+	    source[1] += faceM2*Af[0] + faceM1*Af[1];
+	}
+
         // add flux to the residual of c0 
         rCell[c0] += source;
 
@@ -299,6 +444,12 @@ public:
 	  + dfy1*wFlux + MyFlux ;
         
 	source[2] = -wFlux;
+
+        if(_creep)
+	{
+            source[0] += faceM0*Af[0] + faceM2*Af[1];
+            source[1] += faceM2*Af[0] + faceM1*Af[1];
+	}
 
         rCell[c1] -= source;
 
@@ -498,6 +649,20 @@ private:
   const Field& _thicknessField;
   const Field& _forceField;
   const T& _scf;
+  const Field& _devStressField;
+  const Field& _VMStressField;
+  Field& _plasticStrainField;
+  Field& _plasticStrainN1Field;
+  Field& _plasticMomentField;
+  const T _A;
+  const T _B;
+  const T _m;
+  const T _n;
+  const T _Sy0;
+  const int _nz;
+  const T _timeStep;
+  const int _creepModel;
+  const bool _creep;
   const bool _fullLinearization;
 };
 

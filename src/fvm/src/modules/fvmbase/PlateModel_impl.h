@@ -278,6 +278,8 @@ public:
   typedef VectorTranspose<T,3> VectorT3T;
 
   typedef Array<VectorT3> VectorT3Array;
+  typedef Vector<T,4> VectorT4;
+  typedef Array<VectorT4> VectorT4Array;
   //typedef DiagonalTensor<T,3> DiagTensorT3;
   //typedef SquareTensor<T,3>  SquareTensorT3;
   typedef SquareTensor<T,3>  DiagTensorT3;
@@ -386,6 +388,29 @@ public:
 	    }
         }
         
+        shared_ptr<VectorT3Array> stressField(new VectorT3Array(cells.getCount()));
+        stressField->zero();
+        _plateFields.stress.addArray(cells,stressField);
+                
+        shared_ptr<VectorT4Array> devStressField(new VectorT4Array((cells.getCount())*(_options.nz+1)));
+        devStressField->zero();
+        _plateFields.devStress.addArray(cells,devStressField);
+
+        shared_ptr<TArray> VMStressField(new TArray((cells.getCount())*(_options.nz+1)));
+        VMStressField->zero();
+        _plateFields.VMStress.addArray(cells,VMStressField);
+
+        shared_ptr<VectorT4Array> plasticStrainField(new VectorT4Array((cells.getCount())*(_options.nz+1)));
+        plasticStrainField->zero();
+        _plateFields.plasticStrain.addArray(cells,plasticStrainField);
+
+        shared_ptr<VectorT4Array> plasticStrainN1Field(new VectorT4Array((cells.getCount())*(_options.nz+1)));
+        plasticStrainN1Field->zero();
+        _plateFields.plasticStrainN1.addArray(cells,plasticStrainN1Field);
+
+        shared_ptr<VectorT3Array> plasticMomentField(new VectorT3Array(cells.getCount()));
+        plasticMomentField->zero();
+        _plateFields.plasticMoment.addArray(cells,plasticMomentField); 
 
         shared_ptr<TArray> rhoCell(new TArray(cells.getCount()));
         *rhoCell = vc["density"];
@@ -482,6 +507,11 @@ public:
 	    }
 	    _options.timeStepN1 = _options["timeStep"];
 	}
+        VectorT4Array& pS =
+          dynamic_cast<VectorT4Array&>(_plateFields.plasticStrain[cells]);
+        VectorT4Array& pSN1 =
+          dynamic_cast<VectorT4Array&>(_plateFields.plasticStrainN1[cells]);
+        pSN1 = pS;
     }
   }
 
@@ -511,17 +541,34 @@ public:
   {
     _deformationGradientModel.compute();
     DiscrList discretizations;
-            
+
+    const Mesh& mesh = *_meshes[0];
+    if(!_options.constForce)
+      getMoment(mesh);
     shared_ptr<Discretization>
       sd(new PlateSourceDiscretization<T,DiagTensorT3,DiagTensorT3>
          (_meshes,_geomFields,
           _plateFields.deformation,
           _plateFields.ym,
-	  _plateFields.nu,
+          _plateFields.nu,
           _plateFields.deformationGradient,
-	  _plateFields.thickness,
-	  _plateFields.force,
-	  _options.scf));
+          _plateFields.thickness,
+          _plateFields.force,
+          _options.scf,
+          _plateFields.devStress,
+          _plateFields.VMStress,
+          _plateFields.plasticStrain,
+          _plateFields.plasticStrainN1,
+          _plateFields.plasticMoment,
+          _options.A,
+          _options.B,
+          _options.m,
+          _options.n,
+          _options.Sy0,
+          _options.nz,
+          _options["timeStep"],
+          _options.creepModel,
+          _options.creep));
       
     //    shared_ptr<Discretization>
     //  bfd(new SourceDiscretization<VectorT3>
@@ -813,7 +860,7 @@ public:
   {
     const StorageSite& cells = mesh.getCells();
 
-    const int nCells = cells.getSelfCount();
+    const int nCells = cells.getCount();
 
     shared_ptr<VectorT3Array> momentPtr(new VectorT3Array(nCells));
     momentPtr->zero();
@@ -822,27 +869,74 @@ public:
 
     _deformationGradientModel.compute();
 
-      const VGradArray& wGrad =
-        dynamic_cast<const VGradArray&>(_plateFields.deformationGradient[cells]);
+    const VGradArray& wGrad =
+      dynamic_cast<const VGradArray&>(_plateFields.deformationGradient[cells]);
+    
+    const TArray& ym = dynamic_cast<const TArray&>(_plateFields.ym[cells]);
+    const TArray& nu = dynamic_cast<const TArray&>(_plateFields.nu[cells]);
+    
+    const TArray& thickness = dynamic_cast<const TArray&>(_plateFields.thickness[cells]);
+    
+    TArray& VMStress = dynamic_cast<TArray&>(_plateFields.VMStress[cells]);
+    VectorT3Array& cellStress =
+      dynamic_cast<VectorT3Array&>(_plateFields.stress[cells]);      
+    VectorT4Array& devStress =
+      dynamic_cast<VectorT4Array&>(_plateFields.devStress[cells]);
+    VectorT4Array& pg =
+      dynamic_cast<VectorT4Array&>(_plateFields.plasticStrain[cells]);    
 
-      const TArray& ym = dynamic_cast<const TArray&>(_plateFields.ym[cells]);
-      const TArray& nu = dynamic_cast<const TArray&>(_plateFields.nu[cells]);
+    VectorT3Array& plasticMoment =
+      dynamic_cast<VectorT3Array&>(_plateFields.plasticMoment[cells]);
+    
+    const T onethird(1.0/3.0);
+    const T one(1.0);
+    const T two(2.0);
+    const T three(3.0);
+    const T six(6.0);
+    const T twelve(12.0);
+    const T zero(0.0);
 
-      const TArray& thickness = dynamic_cast<const TArray&>(_plateFields.thickness[cells]);
-      
-      const T one(1.0);
-      const T two(2.0);
-      const T three(3.0);
-      const T twelve(12.0);
-      
-      for(int n=0; n<nCells; n++)
-      {
-	  T cellD = ym[n]*pow(thickness[n],three)/(twelve*(one - pow(nu[n],two)));
-          const VGradType& wg = wGrad[n];
-          
-          moment[n][0] = cellD*(wg[0][0]+nu[n]*wg[1][1]);
-	  moment[n][1] = cellD*(wg[1][1]+nu[n]*wg[0][0]);
-	  moment[n][2] = cellD*((one-nu[n])/two)*(wg[1][0]+wg[0][1]);
+    for(int n=0; n<nCells; n++)
+    {
+        T cellD = ym[n]*pow(thickness[n],three)/(twelve*(one - pow(nu[n],two)));
+        const VGradType& wg = wGrad[n];
+        VectorT3 stress;
+        
+        moment[n][0] = cellD*(wg[0][0]+nu[n]*wg[1][1]);
+        moment[n][1] = cellD*(wg[1][1]+nu[n]*wg[0][0]);
+        moment[n][2] = cellD*((one-nu[n])/two)*(wg[1][0]+wg[0][1]);
+        if(_options.creep)
+          moment[n] = moment[n] - plasticMoment[n];
+	
+        cellStress[n][0] = six*moment[n][0]/pow(thickness[n],two);
+        cellStress[n][1] = six*moment[n][1]/pow(thickness[n],two);
+        cellStress[n][2] = six*moment[n][2]/pow(thickness[n],two);
+       
+        T cellE = ym[n]/(one - pow(nu[n],two));
+
+        int nn = n*(_options.nz+1);
+        for(int k=0; k<=_options.nz; k++)
+	{
+            T zz(thickness[n]*(T(k)-T(_options.nz)/T(2))/T(_options.nz));
+            stress[0] = (twelve*zz/pow(thickness[n],three))*cellD*(wg[0][0]+nu[n]*wg[1][1])-
+              cellE*(pg[nn+k][0]+nu[n]*pg[nn+k][1]);
+            stress[1] = (twelve*zz/pow(thickness[n],three))*cellD*(wg[1][1]+nu[n]*wg[0][0])-
+              cellE*(pg[nn+k][1]+nu[n]*pg[nn+k][0]);
+            stress[2] = (twelve*zz/pow(thickness[n],three))*cellD*((one-nu[n])/two)*(wg[1][0]+wg[0][1])-
+              cellE*(one-nu[n])*(pg[nn+k][3]);
+            
+	    T trace = stress[0] + stress[1];
+            devStress[nn+k][0] = stress[0];
+            devStress[nn+k][1] = stress[1];
+            devStress[nn+k][2] = zero;
+            devStress[nn+k][3] = stress[2];
+            devStress[nn+k][0] = devStress[nn+k][0] - onethird*trace;
+            devStress[nn+k][1] = devStress[nn+k][1] - onethird*trace;
+            devStress[nn+k][2] = devStress[nn+k][2] - onethird*trace;
+            VMStress[nn+k] = sqrt(pow(stress[0],2.0) + pow(stress[1],2.0) -
+				  stress[0]*stress[1] + three*pow(stress[2],2.0));
+            //VMStress[nn+k] = sqrt(pow(stress[0],2.0) + three*pow(stress[2],2.0));
+	}
       }
   }
 

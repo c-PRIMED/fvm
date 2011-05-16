@@ -31,6 +31,15 @@ struct PlateModelOptions : public FloatVarDict<T>
   int timeDiscretizationOrder;
   double scf;
   bool variableTimeStep;
+  bool creep;
+  bool constForce;
+  int creepModel;
+  double A;
+  double B;
+  double m;
+  double n;
+  double Sy0;
+  int nz;
   LinearSolver *deformationLinearSolver;
 }; 
 
