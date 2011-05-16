@@ -52,6 +52,15 @@ struct PlateModelOptions : public FloatVarDict<T>
     this->timeStepN1=0.1;
     this->timeStepN2=0.1;
     this->deformationLinearSolver = 0;
+    this->creep = false;
+    this->constForce = true;
+    this->creepModel=1;
+    this->A = 0.03/3600.;
+    this->B = 1.8e8;
+    this->m = 2.0;
+    this->n = 2.0;
+    this->Sy0 = 1.0e9;
+    this->nz = 20;
 
     this->incompressible = true;
   }
@@ -65,6 +74,15 @@ struct PlateModelOptions : public FloatVarDict<T>
   double timeStepN1;
   double timeStepN2;
   LinearSolver *deformationLinearSolver;
+  bool creep;
+  bool constForce;
+  int creepModel;
+  double A;
+  double B;
+  double m;
+  double n;
+  double Sy0;
+  int nz;
 
   bool incompressible;
 #ifndef SWIG
