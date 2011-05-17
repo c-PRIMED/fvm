@@ -118,18 +118,17 @@ class ContactModel<T>::Impl
        //const double distance = sqrt(solidFacesNearestCell[f].distanceSquared);
        const VectorT3& xf = solidFaceCentroid[f];
        const double distance = gap + thickness*0.5 + xf[2];
-       if (f == 100)
-       	   cout << "ddddddddddddddddddddd" << distance << endl;
+       
        //force[f] = -H/(6*PI) * ((1-alpha)/pow(distance,3) + alpha/pow(distance-alpha01,3)) 
        //	                     + B*exp(-(distance-alpha02)*gamma);
-       force[f] = B*exp(-(distance-alpha02)*gamma);
+       force[f][2] = B*exp(-(distance-alpha02)*gamma);
 
        if (!perUnitArea){
 	 force[f] *= solidFaceAreaMag[f];
        }       
      }  
 
-     
+     /*
      FILE *fp2 = fopen("./force.dat","w");
      for(int f=0; f<nSolidFaces; f++)       {
        fprintf(fp2, "%i\t%e\t%e\t%e\n", f, force[f][0],force[f][1],force[f][2]);
@@ -140,7 +139,7 @@ class ContactModel<T>::Impl
        fprintf(fp1, "%i\t%e\t%e\t%e\n", f, solidFaceCentroid[f][0], solidFaceCentroid[f][1],solidFaceCentroid[f][2]); 
      }
      fclose(fp1);
-     
+     */
    }
  private:
    const MeshList _meshes;
