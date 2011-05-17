@@ -471,13 +471,16 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 	       else {uwallnew=uwallnew+cz[j]*dsf[c1]*wts[j];}
 	     }
       }
+    /*
     if (abs(en[0]) == T_Scalar(1.0))     
       v[c1][0]=uwallnew/nin;
     else if (abs(en[1]) == T_Scalar(1.0)) //incoming  {vwallnew=vwallnew+cy[j]*dsf[c1]*wts[j];}
       v[c1][1]=uwallnew/nin;
     else if(abs(en[2]) == T_Scalar(1.0))     
       v[c1][2]=uwallnew/nin;//uwall=uwall+relax*(uwallnew-uwall);
+    */
     
+
     //update f
     for (int j=0; j<numDirections; j++)
       {

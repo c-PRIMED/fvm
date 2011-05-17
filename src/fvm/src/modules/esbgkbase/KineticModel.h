@@ -92,7 +92,6 @@ class KineticModel : public Model
 	  _vcMap[mesh.getID()] = vc;
 	}
       init(); 
-      //cout <<" initialized "<<endl;
       SetBoundaryConditions();
       
       //weightedMaxwellian(1.0,0.00,0.00,1.0,1.0);
@@ -102,7 +101,7 @@ class KineticModel : public Model
       ComputeMacroparameters(); //calculate density,velocity,temperature
     
       ComputeCollisionfrequency(); //calculate viscosity, collisionFrequency
-      initializeMaxwellianEq(); //equilibrium distribution
+      initializeMaxwellianEq();    //equilibrium distribution
       
       //EquilibriumDistributionBGK();
       //callBoundaryConditions();
@@ -1105,8 +1104,8 @@ class KineticModel : public Model
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
 	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-	FILE * pFile;
-	pFile=fopen("ref_incMEMOSA.txt","w");
+	//FILE * pFile;
+	//pFile=fopen("ref_incMEMOSA.txt","w");
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups()){
 	  const FaceGroup& fg = *fgPtr; 
 	  
@@ -1137,7 +1136,7 @@ class KineticModel : public Model
 		    direction_incident=js;}
 		}
 		tempVec[j] = direction_incident;
-		fprintf(pFile,"%d %d %d \n",fg.id, j,direction_incident);
+		//fprintf(pFile,"%d %d %d \n",fg.id, j,direction_incident);
 		
 	      }
 	      const int fgid=fg.id;
@@ -1146,7 +1145,7 @@ class KineticModel : public Model
 	      
 	  }
 	}
-	fclose(pFile);
+	//fclose(pFile);
 
 	
       } //end of loop through meshes
