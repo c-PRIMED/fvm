@@ -1,0 +1,10 @@
+IBM_ELECTROSTATICS_PROCS1_QUAD_JACOBISOLVER    ./ptest.py  --np 1    --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc1   --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS2_QUAD_JACOBISOLVER    ./ptest.py  --np 2    --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc2   --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS3_QUAD_JACOBISOLVER    ./ptest.py  --np 3    --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc3   --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS4_QUAD_JACOBISOLVER    ./ptest.py  --np 4    --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc4   --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS7_QUAD_JACOBISOLVER    ./ptest.py  --np 7    --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc7   --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS8_QUAD_JACOBISOLVER    ./ptest.py  --np 8    --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc8   --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS17_QUAD_JACOBISOLVER   ./ptest.py  --np 17   --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc17  --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS32_QUAD_JACOBISOLVER   ./ptest.py  --np 32   --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc32  --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS64_QUAD_JACOBISOLVER   ./ptest.py  --np 64   --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc64  --outdir TESTDIR
+IBM_ELECTROSTATICS_PROCS100_QUAD_JACOBISOLVER  ./ptest.py  --np 100  --script ibm_debug.py --type=quad  --volt=100.0 --inFluid ../quad100.cas --inSolid ../solid_beam.cas  --golden proc100 --outdir TESTDIR
