@@ -116,7 +116,7 @@ class ModelSetup:
             elecSolver.verbosity=0
             eoptions = self.emodel.getOptions()
             eoptions.electrostaticsLinearSolver = elecSolver
-            eoptions.electrostaticsTolerance = 1e-8
+            eoptions.electrostaticsTolerance = 1e-3
             eoptions.electrostatics_enable = 1
             eoptions.chargetransport_enable = 0
             eoptions.tunneling = 0

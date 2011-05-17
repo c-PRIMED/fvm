@@ -83,7 +83,7 @@ class Simulator():
 
             if self.enableElecModel:
                 self.ibm_update()
-                for i in range(0, 20):
+                for i in range(0, 50):
                     self.emodel.computeIBFacePotential(self.sbMeshFaces)
                     if self.emodel.advance(1):
                         break

@@ -11,6 +11,7 @@ class Output():
             os.mkdir(outputDir)
         self.defFile = open(outputDir + 'deformation.dat', 'w')
         self.forceFile = open(outputDir + 'force.dat', 'w') 
+        self.voltageFile = open(outputDir + 'voltage.dat', 'w')
         self.sim = sim
         self.probeIndex = probeIndex
         print 'probeIndex is %i' % self.probeIndex
@@ -19,6 +20,7 @@ class Output():
     def finish(self):
         self.defFile.close()
         self.forceFile.close()
+        self.voltageFile.close()
 
 
     def writeData(self):
@@ -37,6 +39,10 @@ class Output():
         cForce = self.sim.contactForceSum
         self.forceFile.write('%e\t%e\t%e\t%e\t%e\t%e\n' % (globalTime, vel, acc, eForce, fForce, cForce))
         self.forceFile.flush()
+
+        veltage = self.sim.voltage
+        self.voltageFile.write('%e\t%e\n' % (globalTime, voltage))
+        self.voltageFile.flush()
 
     def saveFluidVTK(self, n):
         geomFields = self.sim.geomFields
