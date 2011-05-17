@@ -6,6 +6,9 @@
 #include "ContactModel.h"
 #include "PhysicsConstant.h"
 
+
+
+
 template<class T>
 class ContactModel<T>::Impl
 {
@@ -28,6 +31,8 @@ class ContactModel<T>::Impl
 
    void init()
    {}
+
+   ContactModelConstants<T>& getConstants() {return _constants;}
 
    void computeSolidSurfaceForce(const StorageSite& solidFaces, bool perUnitArea)
    {
@@ -56,7 +61,7 @@ class ContactModel<T>::Impl
    
 
      //for each face in solidFaces, find out the nearest neighbor on substrate
-
+     /*	
      const int numMeshes = _meshes.size();
      for (int n=0; n<numMeshes; n++)
      {
@@ -97,7 +102,7 @@ class ContactModel<T>::Impl
 	     }
 	 }
      }
-     
+     */
      //for each face in solidFaces, calculate the contact force based on the nearest distance
      const double H = 0.23e-20;
      const double B = 3529e3;
@@ -106,23 +111,25 @@ class ContactModel<T>::Impl
      const double alpha01 = 1.6e-9;
      const double alpha02 = 1.99e-9; 
 
+     const double thickness = _constants["thickness"];
+     const double gap = _constants["gap"];
+     
      for(int f=0; f<nSolidFaces; f++)       {
-       const double distance = sqrt(solidFacesNearestCell[f].distanceSquared);
-
-       force[f] = -H/(6*PI) * ((1-alpha)/pow(distance,3) + alpha/pow(distance-alpha01,3)) 
-	                     + B*exp(-(distance-alpha02)*gamma);
+       //const double distance = sqrt(solidFacesNearestCell[f].distanceSquared);
+       const VectorT3& xf = solidFaceCentroid[f];
+       const double distance = gap + thickness*0.5 + xf[2];
+       if (f == 100)
+       	   cout << "ddddddddddddddddddddd" << distance << endl;
+       //force[f] = -H/(6*PI) * ((1-alpha)/pow(distance,3) + alpha/pow(distance-alpha01,3)) 
+       //	                     + B*exp(-(distance-alpha02)*gamma);
+       force[f] = B*exp(-(distance-alpha02)*gamma);
 
        if (!perUnitArea){
 	 force[f] *= solidFaceAreaMag[f];
        }       
      }  
 
-     FILE *fp = fopen("./distance.dat","w");
-     for(int f=0; f<nSolidFaces; f++)       {
-       const double distance = sqrt(solidFacesNearestCell[f].distanceSquared);
-       fprintf(fp, "%i\t%e\n", f, distance);
-     }
-     fclose(fp); 
+     
      FILE *fp2 = fopen("./force.dat","w");
      for(int f=0; f<nSolidFaces; f++)       {
        fprintf(fp2, "%i\t%e\t%e\t%e\n", f, force[f][0],force[f][1],force[f][2]);
@@ -139,7 +146,7 @@ class ContactModel<T>::Impl
    const MeshList _meshes;
    const GeomFields& _geomFields;
    ContactFields& _contactFields;
-
+   ContactModelConstants<T> _constants;
 
 };
 
@@ -180,3 +187,23 @@ ContactModel<T>::computeSolidSurfaceForcePerUnitArea(const StorageSite& particle
 {
   return _impl->computeSolidSurfaceForce(particles,true);
 }
+
+template<class T>
+ContactModelConstants<T>&
+ContactModel<T>::getConstants() {return _impl->getConstants();}
+
+template<class T>
+class ContactModel<T>::NearestCell
+{
+  public:
+     NearestCell():
+	mesh(0),
+        cell(-1),
+	distanceSquared(0)  {};
+   
+     const Mesh* mesh;
+     int cell;
+     double distanceSquared;
+     set<int> neighbors;
+};
+

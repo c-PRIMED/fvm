@@ -11,3 +11,7 @@ using namespace std;
 
 
 %template(ContactModelA) ContactModel< ATYPE_STR >;
+
+
+
+

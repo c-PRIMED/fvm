@@ -251,7 +251,7 @@ public:
   {
     
     const StorageSite::CommonMap& commonMap = site.getCommonMap();    
-    cout<<"\n The size of commonMap is "<<commonMap.size()<<"\n";
+    //cout<<"\n The size of commonMap is "<<commonMap.size()<<"\n";
 
     const Array<int>& myNodeIndices =
       *(site.getCommonMap().find(&osite)->second);

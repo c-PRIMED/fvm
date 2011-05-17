@@ -27,22 +27,10 @@ class ContactModel : public Model
   void computeSolidSurfaceForce(const StorageSite& particles);
 
   void computeSolidSurfaceForcePerUnitArea(const StorageSite& particles); 
+  ContactModelConstants<T>& getConstants();
 
-
-  struct NearestCell
-  {
-     NearestCell():
-        mesh(0),
-        cell(-1),
-	distanceSquared(0)
-     {}
-
-     const Mesh* mesh;
-     int cell;
-     double distanceSquared;
-     set<int> neighbors;
-  };
-
+  class NearestCell;
+	
  private:
   shared_ptr<Impl> _impl;
 

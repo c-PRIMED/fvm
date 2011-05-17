@@ -879,7 +879,7 @@ public:
 	{
 	  MFRPtr eNorm = solveElectroStatics();
 	
-	  if (_niters < 5)
+	  if (_niters < 1)
 	    _initialElectroStaticsNorm->setMax(*eNorm);
 	    
 	  MFRPtr eNormRatio((*eNorm)/(*_initialElectroStaticsNorm));
@@ -934,10 +934,9 @@ public:
 	}
 
     }	
-    _niters++;
-      
-    if (flag1 && flag2 ) return true;   
-    return false;
+    _niters++;  
+    return flag1;
+   
   }
 
   /*** update electric_field from potential_gradient ***/
@@ -1289,7 +1288,7 @@ public:
     }
   }
 
-
+     
 
   void printBCs()
   {
@@ -1422,8 +1421,7 @@ template<class T>
 bool
 ElectricModel<T>::advance(const int niter)
 {
-  _impl->advance(niter);
-  return true;
+  return _impl->advance(niter);  
 }
 
 template<class T>
