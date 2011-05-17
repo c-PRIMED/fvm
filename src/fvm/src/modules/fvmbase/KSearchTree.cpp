@@ -26,6 +26,9 @@ void
 KSearchTree::findNeighbors(const Vec3D& p, const int k, Array<int>& neighbors)
 {
   MyPoint query(p, -1);
+  if ( _tree->size() == 0 ){
+     return;
+  }
   K_neighbor_search search(*_tree, query, k);
 
   int i=0;

@@ -261,5 +261,6 @@ void LinearSystem::postSolve()
 void LinearSystem::updateSolution()
 {
   *_x += *_delta;
+   _x->sync();
 }
 

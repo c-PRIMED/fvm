@@ -1,3 +1,6 @@
+#include <fstream>
+#include <sstream>
+
 #include "Model.h"
 
 #include "NumType.h"
@@ -10,6 +13,10 @@
 #include "CRMatrixTranspose.h"
 #include "Mesh.h"
 #include "MatrixOperation.h"
+
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
 
   
 /**
@@ -448,6 +455,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
  const StorageSite& mpmParticles)
 {
   typedef CRMatrixTranspose<T,T,T> IMatrix;
+  typedef map<int,double> IntDoubleMap;
   
   const StorageSite& ibFaces = mesh.getIBFaces();
   const StorageSite& cells = mesh.getCells();
@@ -513,6 +521,20 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   // FILE * fp = fopen("/home/lin/work/app-memosa/src/fvm/verification/Structure_Electrostatics_Interaction/2D_beam/test/coeff.dat", "w");
 
 #if 1
+
+#if  0
+      ofstream   debugFileFluid;
+      ofstream   debugFileSolid;
+      stringstream ss(stringstream::in | stringstream::out);
+      ss <<  MPI::COMM_WORLD.Get_rank();
+      string  fname1 = "IBinterpolationFluid_proc" +  ss.str() + ".dat";
+      string  fname2 = "IBinterpolationSolid_proc" +  ss.str() + ".dat";
+      debugFileFluid.open( fname1.c_str() );
+      debugFileSolid.open( fname2.c_str() );
+      ss.str("");
+      const Array<int>&  localToGlobal = mesh.getLocalToGlobal();
+#endif
+
   for(int n=0; n<nIBFaces; n++)
   {
       const int f = ibFaceIndices[n];
@@ -641,11 +663,41 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 	  cout << "particles " << xParticles[p][0] << " " << xParticles[p][1] << " " << xParticles[p][2] << " " << particlesToIBCoeff[np] << endl; 
 	}
 	*/
-	
+
+#if 0
+      debugFileFluid << "ibface =  " << n << "   " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] <<  endl;
+      map<int, double> cellToValue;
+      map<int, int> globalToLocal;
+   
+      for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++){
+          const int localID = ibFCCol[nc];
+	  const int c = localToGlobal[ibFCCol[nc]];
+          globalToLocal[c] = localID;
+          cellToValue[c] = cellToIBCoeff[nc];
+ 
+	  //debugFile <<  "    glblcellID = " << c << ", cellToIBCoeff[" << n << "] = " << cellToIBCoeff[nc] <<  endl;
       }
-      
-      //if matrix is singular, use distance weighted interpolation
-      else {
+      foreach( IntDoubleMap::value_type& pos, cellToValue){
+         const int c = pos.first;
+         const double value =pos.second;
+         debugFileFluid <<  "    glblcellID = " << c <<  "  localCellID = " << globalToLocal[c]  <<  ", cellToIBCoeff[" << n << "] = " << value <<  endl;
+      } 
+
+      debugFileSolid << "ibface  = " << n << "   " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] <<  endl;
+      cellToValue.clear();
+      for(int nc=ibFPRow[n]; nc<ibFPRow[n+1]; nc++){
+          cellToValue[ibFPCol[nc]] = particlesToIBCoeff[nc];
+      }
+       foreach( IntDoubleMap::value_type& pos, cellToValue){
+          const int c = pos.first;
+          const double value =pos.second;
+          debugFileSolid <<  "    GlobalSolidFaceID = " << c << ", solidToIBCoeff[" << n << "] = " << value <<  endl;
+       } 
+
+    
+#endif 
+	
+      }   else {     //if matrix is singular, use distance weighted interpolation
 	cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
 	cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
@@ -685,6 +737,12 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       }	
   } 
 #endif
+
+#if 0
+      debugFileFluid.close();
+      debugFileSolid.close();
+#endif
+
   
   //fclose(fp);
 #if 0

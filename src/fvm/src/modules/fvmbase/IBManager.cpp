@@ -129,23 +129,32 @@ void IBManager::update()
     const int procID = MPI::COMM_WORLD.Get_rank();
     const int faceCount = solidMeshFaces.getCount();
     for( int i = 0; i < faceCount; i++ ){
-       const Mesh& mesh = *solidFacesNearestCell[i].mesh;
-       const int meshID = mesh.getID();
-       const int tag = (std::max(procID, meshID) << 16 ) | ( std::min(procID,meshID) );
-       const double val = solidFacesNearestCell[i].distanceSquared;
-       solidFacesNearestCellMPI[i].VALUE = val;
-       solidFacesNearestCellMPI[i].TAG   = tag;
+       const Mesh* mesh = solidFacesNearestCell[i].mesh;
+       if ( mesh != NULL){
+          const int meshID = mesh->getID();
+          const int tag = (std::max(procID, meshID) << 16 ) | ( std::min(procID,meshID) );
+          const double val = solidFacesNearestCell[i].distanceSquared;
+          solidFacesNearestCellMPI[i].VALUE = val;
+          solidFacesNearestCellMPI[i].TAG   = tag;
+      } else {
+          const double LARGE_VALUE = 1.0e+15;
+          solidFacesNearestCellMPI[i].VALUE = LARGE_VALUE;
+          solidFacesNearestCellMPI[i].TAG   = -1;
+
+      }
     } 
     //mpi comminuction
     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &solidFacesNearestCellMPI[0], faceCount, MPI::DOUBLE_INT, MPI::MINLOC);
     //now update solidFAcesNearestCell
     for ( int i = 0; i < faceCount; i++ ){
        const Mesh* meshThis = solidFacesNearestCell[i].mesh;
-       const int meshIDThis = meshThis->getID();
-       const int tagThis = (std::max(procID, meshIDThis) << 16 ) | ( std::min(procID,meshIDThis) );
-       if ( tagThis != solidFacesNearestCellMPI[i].TAG ){
-            solidFacesNearestCell[i].mesh = NULL;
-       }
+       if ( meshThis != NULL){
+          const int meshIDThis = meshThis->getID();
+          const int tagThis = (std::max(procID, meshIDThis) << 16 ) | ( std::min(procID,meshIDThis) );
+          if ( tagThis != solidFacesNearestCellMPI[i].TAG ){
+              solidFacesNearestCell[i].mesh = NULL;
+          }
+       } 
     }
 #endif
 
@@ -487,6 +496,7 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[mesh.getFaces()]);
 
   Array<int> fluidNeighbors(1);
+  fluidNeighbors[0] = -9999;
   Array<int> solidNeighbors(solidNeighborsPerIBFace);
 
   const Array<int>& ibFaceIndices = mesh.getIBFaceList();
@@ -522,17 +532,17 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
 
       // find the closest fluid cell
       fluidCellsTree.findNeighbors(xf, 1, fluidNeighbors);
-
       NearestCell& nc = nearestCellForIBFace[f];
-
-      nc.neighbors.insert(fluidNeighbors[0]);
-
-      const int c = fluidNeighbors[0];
-      const int neighborCount = cellCells2.getCount(c);
-      for(int nnb=0; nnb<neighborCount; nnb++) {
-          const int c_nb = cellCells2(c,nnb);
-          if (cellIBType[c_nb] == Mesh::IBTYPE_FLUID)
-              nc.neighbors.insert(c_nb);
+      cout << " fluidn[0] = " << fluidNeighbors[0] << endl;
+      if ( fluidNeighbors[0] != -9999 ){
+          nc.neighbors.insert(fluidNeighbors[0]);
+          const int c = fluidNeighbors[0];
+          const int neighborCount = cellCells2.getCount(c);
+          for(int nnb=0; nnb<neighborCount; nnb++) {
+             const int c_nb = cellCells2(c,nnb);
+             if (cellIBType[c_nb] == Mesh::IBTYPE_FLUID)
+                nc.neighbors.insert(c_nb);
+          }
       }
       
 #if 0
@@ -601,23 +611,25 @@ IBManager::findNearestCellForSolidFaces(Mesh& mesh,
 
 
   Array<int> fluidNeighbors(1);
+  fluidNeighbors[0] = -9999;
 
   for(int f=0; f<nSolidFaces; f++)
   {
       const Vec3D& xf = solidFaceCentroid[f];
       fluidCellsTree.findNeighbors(xf, 1, fluidNeighbors);
-
-      const int c = fluidNeighbors[0];
-      const Vec3D& xc = cellCentroid[c];
-      const double distanceSquared = mag2(xf-xc);
-      NearestCell& nc = nearest[f];
-      if ((nc.mesh == 0) || (nc.distanceSquared > distanceSquared))
-      {
-          nc.mesh = &mesh;
-          nc.cell = c;
-          nc.distanceSquared = distanceSquared;
+      if ( fluidNeighbors[0] != -9999 ){
+         const int c = fluidNeighbors[0];
+         const Vec3D& xc = cellCentroid[c];
+         const double distanceSquared = mag2(xf-xc);
+         NearestCell& nc = nearest[f];
+         if ((nc.mesh == 0) || (nc.distanceSquared > distanceSquared))
+         {
+            nc.mesh = &mesh;
+            nc.cell = c;
+            nc.distanceSquared = distanceSquared;
+         }
       }
-  }
+   }
 }
 
 

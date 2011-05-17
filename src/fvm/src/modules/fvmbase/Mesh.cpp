@@ -2109,6 +2109,7 @@ Mesh::CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, co
          debugFile << endl;
       }
       debugFile << endl;
+      debugFile.close();
    }
 #endif
 }
