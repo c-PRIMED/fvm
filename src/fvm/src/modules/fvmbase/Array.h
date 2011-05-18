@@ -507,4 +507,16 @@ private:
   const T& _c;
 };
 
+
+template<class T>
+shared_ptr<Array<T> >
+arrayFromVector(const vector<T>& v)
+{
+  const int count = v.size();
+  Array<T>* a = new Array<T>(count);
+  for(int i=0; i<count; i++)
+    (*a)[i] = v[i];
+  return shared_ptr<Array<T> >(a);
+}
+
 #endif
