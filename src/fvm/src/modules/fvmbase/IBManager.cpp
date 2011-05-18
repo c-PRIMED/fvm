@@ -533,7 +533,6 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
       // find the closest fluid cell
       fluidCellsTree.findNeighbors(xf, 1, fluidNeighbors);
       NearestCell& nc = nearestCellForIBFace[f];
-      cout << " fluidn[0] = " << fluidNeighbors[0] << endl;
       if ( fluidNeighbors[0] != -9999 ){
           nc.neighbors.insert(fluidNeighbors[0]);
           const int c = fluidNeighbors[0];
