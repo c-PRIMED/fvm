@@ -19,9 +19,10 @@ import numpy as np
 
 class problemDescription():
  
-    def __init__(self, beamMesh,  backgroundMesh,  beamThickness):
+    def __init__(self, beamMesh,  backgroundMesh,  beamThickness, initialGap):
         ## Read in 2d Solid Mesh
         self.beam_thickness = beamThickness
+        self.Gap = initialGap
         beamReader = FluentCase(beamMesh)
         beamReader.read();
         print "read solid mesh"
@@ -106,6 +107,7 @@ class problemDescription():
         self.globalCount = 0
         self.timeStep = 3600
         self.saveFrequency = 2
+        self.saveVTKstate = True
         initialTransient = False
         self.probeIndex = 3240
         
@@ -154,7 +156,11 @@ class problemDescription():
 
         self.pmodel.init()
         self.emodel.init()
-        self.dmodel.init()            
+        self.dmodel.init() 
+        
+    def saveVTK(self, state):
+        self.saveVTKstate = state
+        
     def solveModels(self, appliedVoltage):
         maxdeformation = []
         ibManager = fvmbaseExt.IBManager(self.geomFields,
@@ -272,18 +278,16 @@ class problemDescription():
                 if (temp2[2] < val):
                     val = temp2[2]
             
-            maxdeformation.append(val)
-            print maxdeformation[n]
-            
+            maxdeformation.append(val)            
             traceFile.write("%i %e\n" %(n, maxdeformation[n]))
             traceFile.flush()
-            if (abs(maxdeformation[n] ) > 1.7e-6):
+            
+            if (abs(maxdeformation[n] ) > self.Gap/3.0):
                 traceFile.write("Pull In")
                 traceFile.flush()
+                maxdeformation[n] = -self.Gap
                 break
             if (n!=0):
-                #print maxdeformation[n]
-                
                 print abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n])
                 if (abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n]) < 1e-3):
                     print "Convergence reached"
@@ -293,7 +297,7 @@ class problemDescription():
             self.globalTime += self.timeStep
             self.globalCount += 1
 
-            if (n%self.saveFrequency == 0):
+            if (n%self.saveFrequency == 0 and self.saveVTKstate):
                 writer = exporters.VTKWriterA(self.geomFields,self.fluidMeshes,
                                               "elecfield-"+ str(appliedVoltage) + "V-" + str(n) + ".vtk",
                                               "fix-fix beam",
