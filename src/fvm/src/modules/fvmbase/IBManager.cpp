@@ -180,6 +180,13 @@ IBManager::markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB)
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
   cellIBType = Mesh::IBTYPE_UNKNOWN;
+
+
+  if (fluidMesh.isShell())
+  {
+      cellIBType = Mesh::IBTYPE_FLUID;
+      return;
+  }
   
   const int nFaces = faces.getCount();
 
