@@ -320,6 +320,8 @@ public:
     {
         const Mesh& mesh = *_meshes[n];
 
+	if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0)
+        {
         const StorageSite& cells = mesh.getCells();
         const StorageSite& ibFaces = mesh.getIBFaces();
         
@@ -380,8 +382,8 @@ public:
 
 #endif
         _flowFields.velocity.addArray(ibFaces,ibV);
+        }
     }
-
   }
 
   map<string,shared_ptr<ArrayBase> >&

@@ -505,6 +505,9 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   StorageSite& ibFaces = mesh.getIBFaces();
   const int nIBFaces = ibFaces.getCount();
 
+  if (nIBFaces == 0)
+    return;
+  
   const Vec3DArray& faceCentroid =
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[mesh.getFaces()]);
 

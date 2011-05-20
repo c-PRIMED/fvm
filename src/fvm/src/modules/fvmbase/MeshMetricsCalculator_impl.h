@@ -484,6 +484,9 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
   
   const int nIBFaces = ibFaces.getCount();
 
+  if (nIBFaces == 0)
+    return;
+  
   const Array<int>& ibFaceIndices = mesh.getIBFaceList();
   
   shared_ptr<IMatrix> cellToIB(new IMatrix(ibFaceToCells));

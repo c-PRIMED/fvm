@@ -1176,7 +1176,8 @@ public:
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
-	if (!mesh.isShell()){
+	if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0)
+        {
         	const StorageSite& cells = mesh.getCells();
         	const StorageSite& ibFaces = mesh.getIBFaces();
         
