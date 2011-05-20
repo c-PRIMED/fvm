@@ -24,6 +24,7 @@ class Simulator():
         self.geomFields = meshes.geomFields        
         self.solidMeshes = meshes.solidMeshes
         self.fluidMeshes = meshes.fluidMeshes
+       
         self.solidBoundaryMeshes = meshes.solidBoundaryMeshes
         self.solidMetricsCalculator = meshes.solidMetricsCalculator
         self.solidBoundaryMetricsCalculator = meshes.solidBoundaryMetricsCalculator
@@ -33,6 +34,7 @@ class Simulator():
         self.sbMeshFaces = self.solidBoundaryMeshes[0].getFaces()
         self.beam_thickness = meshes.beam_thickness
         self.dielectric_thickness = meshes.dielectric_thickness
+        print "dielectric thickness in sim %e" % self.dielectric_thickness
         self.gap = meshes.gap
         
         if self.enableElecModel:
@@ -74,9 +76,11 @@ class Simulator():
         self.contactForceSum = 0.0
         self.cloestDistance = self.deformation.min(axis=0)[2] + self.gap
         self.voltage = bias
+        print '======================================================================='
         #print 'current applied voltage %f' % self.voltage
         print 'Marching at global count %i' % self.globalCount
         print 'Marching at global time %e' % self.globalTime
+        print 'cloest distance %e' % self.cloestDistance
         print '----------------------------------------------------------------------'
         ### use IBM to calculate electrostatic force, damping force and contact force ###
         if self.cloestDistance > self.threshold:
@@ -87,8 +91,11 @@ class Simulator():
                     self.emodel.computeIBFacePotential(self.sbMeshFaces)
                     if self.emodel.advance(1):
                         break
+                   
                 self.emodel.computeSolidSurfaceForcePerUnitArea(self.sbMeshFaces)
                 self.elecForce = self.elecFields.force[self.sbMeshFaces].asNumPyArray()
+                print "max force %e" % self.elecForce.max(axis=0)[2]
+                print "min force %e" % self.elecForce.min(axis=0)[2]
                 for c in range(0, self.nSolidSelfCells):
                     botFaceIndex = c
                     topFaceIndex = c+self.nSolidSelfCells
@@ -97,7 +104,7 @@ class Simulator():
                 for c in range(self.nSolidSelfCells, self.nSolidCells):
                     self.beamForce[c] += self.elecForce[self.nSolidSelfCells+c][2]  
                     self.elecForceSum += self.elecForce[self.nSolidSelfCells+c][2] 
-         
+            """
             if self.enableFlowModel:
             	for i in range(0,30):
                     self.fmodel.computeIBFaceVelocity(self.sbMeshFaces)
@@ -113,7 +120,7 @@ class Simulator():
                 for c in range(self.nSolidSelfCells, self.nSolidCells):
                     self.beamForce[c] += self.flowForce[self.nSolidSelfCells+c][2]  
                     self.flowForceSum += self.flowForce[self.nSolidSelfCells+c][2] 
-
+	    
             if self.enableContactModel:
                 self.cmodel.computeSolidSurfaceForcePerUnitArea(self.sbMeshFaces)
                 self.contactForce = self.contactFields.force[self.sbMeshFaces].asNumPyArray()
@@ -125,6 +132,26 @@ class Simulator():
                 for c in range(self.nSolidSelfCells, self.nSolidCells):
                     self.beamForce[c] += self.contactForce[self.nSolidSelfCells+c][2]  
                     self.contactForceSum += self.contactForce[self.nSolidSelfCells+c][2] 
+            """   
+            if self.enableFlowModel:
+                for c in range (0, self.nSolidCells):
+                    distance = self.gap + self.deformation[c][2]
+                    vel = self.velocity[c][2]
+                    width = 120e-6
+                    length = 500e-6
+                    Cf = computeDampCoeff(distance, width, self.beam_thickness)
+                    dforce = computeDampForce(vel, Cf)
+                    area = width
+                    dforce /= area
+                    self.beamForce[c] += dforce
+                    self.flowForceSum += dforce
+
+            if self.enableContactModel:
+                for c in range (0, self.nSolidCells):
+                    distance = self.gap + self.deformation[c][2]
+                    cforce = computeContactForce(distance)
+                    self.beamForce[c] += cforce
+                    self.contactForceSum += cforce
 
         ### simplied model to calculate electrostatic force, damping force and contact force ###   
         else:       

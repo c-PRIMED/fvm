@@ -40,9 +40,9 @@ class Output():
         self.forceFile.write('%e\t%e\t%e\t%e\t%e\t%e\n' % (globalTime, vel, acc, eForce, fForce, cForce))
         self.forceFile.flush()
 
-        veltage = self.sim.voltage
-        self.voltageFile.write('%e\t%e\n' % (globalTime, voltage))
-        self.voltageFile.flush()
+        #voltage = self.sim.voltage
+        #self.voltageFile.write('%e\t%e\n' % (globalTime, voltage))
+        #self.voltageFile.flush()
 
     def saveFluidVTK(self, n):
         geomFields = self.sim.geomFields

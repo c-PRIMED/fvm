@@ -19,7 +19,7 @@ class IBM():
             print 'flowModel is OFF; Canot apply IBM on flow field'
             print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
         self.solidBoundaryMeshes = meshes.solidBoundaryMeshes
-        self.fluidMeshes = meshes.fluidMeshes
+        self.fluidMeshes = meshes.fluidMeshesNew
         self.sbMeshFaces = self.solidBoundaryMeshes[0].getFaces()       
         self.fluidMetricsCalculator = meshes.fluidMetricsCalculator
         self.ibManager = fvmbaseExt.IBManager(self.geomFields,

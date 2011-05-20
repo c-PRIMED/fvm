@@ -6,14 +6,15 @@ from FluentCase import FluentCase
 	
 class MeshSetup:
     
-    def __init__(self, beam, fluid, beam_thickness, gap, dielectric_thickness=0):
+    def __init__(self, beam, fluid, beam_thickness, gap, dielectric_thickness=0, enableDielectric=False):
         self.beamCaseFile = beam
         self.fluidCaseFile = fluid
         self.beam_thickness = beam_thickness
         self.dielectric_thickness = dielectric_thickness
         self.gap = gap
-        self.probeIndex = 100
-        
+        self.probeIndex = 0
+        self.enableDielectric = enableDielectric
+
     def read(self):
         beamReader = FluentCase(self.beamCaseFile)
         beamReader.read()
@@ -29,6 +30,7 @@ class MeshSetup:
         print 'fluid mesh read in. Done!'
         print '------------------------------------------------------------'
         self.fluidMeshes = fluidReader.getMeshList()
+        self.fluidMeshesNew = self.fluidMeshes
         self.fluidMetricsCalculator = models.MeshMetricsCalculatorA(self.geomFields,self.fluidMeshes)
         self.fluidMetricsCalculator.init()
 
@@ -91,6 +93,18 @@ class MeshSetup:
             print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
             print 'Error: wrong tag name in translate mesh: [ %s ]' % tag
             print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+    
+    def createShell(self, interfaceID):
+        if self.enableDielectric == True:
+            numMeshes = len(self.fluidMeshes)
+            if numMeshes != 2:
+                print "number of fluid meshes is wrong. Can not apply dielectric"
+            else:
+                self.shellMesh = self.fluidMeshes[0].createShell(interfaceID, self.fluidMeshes[1],interfaceID)
+                self.fluidMeshesNew=[self.fluidMeshes[1], self.fluidMeshes[0], self.shellMesh]
+            self.fluidMetricsCalculator = models.MeshMetricsCalculatorA(self.geomFields,self.fluidMeshesNew)
+            self.fluidMetricsCalculator.init() 
+   
     def summary(self):
         nSelfCells = 0
         nCells = 0
@@ -128,6 +142,18 @@ class MeshSetup:
             print 'fluid mesh y range [ %e , %e ]' % (rMin[1], rMax[1])
             print 'fluid mesh z range [ %e , %e ]' % (rMin[2], rMax[2])
             print '--------------------------------------------------------------'
+        if self.enableDielectric == True:
+            cells = self.shellMesh.getCells()
+            nCells = cells.getCount()
+            nSelfCells = cells.getSelfCount()
+            print 'shell mesh: number of local cells %i' % nSelfCells
+            print 'shell mesh: number of local cells %i' % nCells
+            rCells = self.geomFields.coordinate[cells].asNumPyArray()
+            rMin = rCells.min(axis=0)
+            rMax = rCells.max(axis=0)
+            print 'shell mesh x range [ %e , %e ]' % (rMin[0], rMax[0])
+            print 'shell mesh y range [ %e , %e ]' % (rMin[1], rMax[1])
+            print 'shell mesh z range [ %e , %e ]' % (rMin[2], rMax[2])
         nFaces = 0
         for mesh in self.solidBoundaryMeshes:
             faces = mesh.getFaces()
