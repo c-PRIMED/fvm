@@ -424,7 +424,7 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
   for(int c=0; c<cells.getSelfCount(); c++)
     volumeSum += cellVolume[c];
 
-  cout << "volume sum for Mesh " << mesh.getID() << " = " << volumeSum << endl;
+  //cout << "volume sum for Mesh " << mesh.getID() << " = " << volumeSum << endl;
 
 
   // update boundary cells with adjacent interior cells values
@@ -454,6 +454,9 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 (const Mesh& mesh,
  const StorageSite& mpmParticles)
 {
+  if (mesh.isShell())
+  	return;
+  	
   typedef CRMatrixTranspose<T,T,T> IMatrix;
   typedef map<int,double> IntDoubleMap;
   
@@ -1103,6 +1106,9 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 (const Mesh& mesh,
  const StorageSite& solidFaces)
 {
+
+  if (mesh.isShell())
+  	return;	
   typedef CRMatrixTranspose<T,T,T> IMatrix;
   
   const StorageSite& cells = mesh.getCells();
@@ -1504,7 +1510,7 @@ MeshMetricsCalculator<T>::init()
         const Mesh& mesh = *_meshes[n];
         const StorageSite& cells = mesh.getCells();
         const int cellCount = cells.getCountLevel1();
-        if ( (cellCount > 0) && (!mesh.isShell()) )
+        if ( (cellCount > 0) ) //&& (!mesh.isShell()) )
         {
             shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCountLevel1()));
             *ibTypePtr = Mesh::IBTYPE_FLUID;

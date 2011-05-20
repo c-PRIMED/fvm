@@ -27,7 +27,7 @@ IBManager::IBManager(GeomFields& geomFields,
 void IBManager::update()
 {
   AABB sMeshesAABB(_solidBoundaryMesh);
-
+ 
   const StorageSite& solidMeshFaces = _solidBoundaryMesh.getFaces();
   
   const Vec3DArray& solidMeshCoords =
@@ -40,14 +40,12 @@ void IBManager::update()
   for (int n=0; n<numFluidMeshes; n++)
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
-
       markIntersections(fluidMesh, sMeshesAABB);
   }
 
 
   int nIter=0;
   int nFound=0;
-
 
   // repeat till we find no more fluid cells
   do
@@ -84,7 +82,6 @@ void IBManager::update()
   }
   _geomFields.ibType.syncLocal();  
 
-      
   for (int n=0; n<numFluidMeshes; n++)
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
@@ -104,24 +101,27 @@ void IBManager::update()
   for (int n=0; n<numFluidMeshes; n++) {
       Mesh& fluidMesh = *_fluidMeshes[n];
 
-      const StorageSite& cells = fluidMesh.getCells();
-      const int numCells = cells.getSelfCount();
-      
-      IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+      if (!fluidMesh.isShell()){
 
-      const Vec3DArray& cellCoords =
-        dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
+	const StorageSite& cells = fluidMesh.getCells();
+	const int numCells = cells.getSelfCount();
       
-      KSearchTree fluidCellsTree;
+	IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
-      for(int c=0; c<numCells; c++)
-      {
-          if (cellIBType[c] == Mesh::IBTYPE_FLUID)
-            fluidCellsTree.insert(cellCoords[c],c);
+	const Vec3DArray& cellCoords =
+	  dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
+      
+	KSearchTree fluidCellsTree;
+	
+	for(int c=0; c<numCells; c++)
+	  {
+	    if (cellIBType[c] == Mesh::IBTYPE_FLUID)
+	      fluidCellsTree.insert(cellCoords[c],c);
+	  }
+
+	createIBInterpolationStencil(fluidMesh,fluidCellsTree,solidMeshKSearchTree);
+	findNearestCellForSolidFaces(fluidMesh,fluidCellsTree,solidFacesNearestCell);
       }
-
-      createIBInterpolationStencil(fluidMesh,fluidCellsTree,solidMeshKSearchTree);
-      findNearestCellForSolidFaces(fluidMesh,fluidCellsTree,solidFacesNearestCell);
   }
 
 #ifdef FVM_PARALLEL
@@ -161,8 +161,10 @@ void IBManager::update()
   for (int n=0; n<numFluidMeshes; n++)
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
-      createSolidInterpolationStencil(fluidMesh,solidFacesNearestCell);
+      if (!fluidMesh.isShell())
+	createSolidInterpolationStencil(fluidMesh,solidFacesNearestCell);
   }
+
 }
 
 
@@ -170,23 +172,24 @@ void IBManager::update()
 void
 IBManager::markIntersections(Mesh& fluidMesh, AABB& sMeshesAABB)
 {
-  const Array<Vector<double,3> >& meshCoords = fluidMesh.getNodeCoordinates();
-  const StorageSite& faces = fluidMesh.getFaces();
-  const StorageSite& cells = fluidMesh.getCells();
   
-  const CRConnectivity& faceCells = fluidMesh.getAllFaceCells();
-  const CRConnectivity& cellNodes = fluidMesh.getCellNodes();
-
+  const StorageSite& cells = fluidMesh.getCells();
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
   cellIBType = Mesh::IBTYPE_UNKNOWN;
-
 
   if (fluidMesh.isShell())
   {
       cellIBType = Mesh::IBTYPE_FLUID;
       return;
   }
+
+  const Array<Vector<double,3> >& meshCoords = fluidMesh.getNodeCoordinates();
+  
+  const StorageSite& faces = fluidMesh.getFaces();
+  const CRConnectivity& faceCells = fluidMesh.getAllFaceCells();
+  const CRConnectivity& cellNodes = fluidMesh.getCellNodes();
+ 
   
   const int nFaces = faces.getCount();
 
@@ -402,6 +405,9 @@ IBManager::markIBTypePlus(Mesh& fluidMesh)
 void
 IBManager::createIBFaces(Mesh& fluidMesh)
 {
+
+  if (fluidMesh.isShell())
+    return;
   const StorageSite& faces = fluidMesh.getFaces();
   const StorageSite& cells = fluidMesh.getCells();
   

@@ -1176,34 +1176,35 @@ public:
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
-
-        const StorageSite& cells = mesh.getCells();
-        const StorageSite& ibFaces = mesh.getIBFaces();
+	if (!mesh.isShell()){
+        	const StorageSite& cells = mesh.getCells();
+        	const StorageSite& ibFaces = mesh.getIBFaces();
         
-        GeomFields::SSPair key1(&ibFaces,&cells);
-        const IMatrix& mIC =
-          dynamic_cast<const IMatrix&>
-          (*_geomFields._interpolationMatrices[key1]);
+        	GeomFields::SSPair key1(&ibFaces,&cells);
+        	const IMatrix& mIC =
+          	dynamic_cast<const IMatrix&>
+          	(*_geomFields._interpolationMatrices[key1]);
 
-	GeomFields::SSPair key2(&ibFaces,&solid);
-        const IMatrix& mIP =
-          dynamic_cast<const IMatrix&>
-          (*_geomFields._interpolationMatrices[key2]);
+		GeomFields::SSPair key2(&ibFaces,&solid);
+        	const IMatrix& mIP =
+          	dynamic_cast<const IMatrix&>
+          	(*_geomFields._interpolationMatrices[key2]);
 
-	shared_ptr<TArray> ibP(new TArray(ibFaces.getCount()));
+		shared_ptr<TArray> ibP(new TArray(ibFaces.getCount()));
         
-        const TArray& cP =
-          dynamic_cast<const TArray&>(_electricFields.potential[cells]);
+        	const TArray& cP =
+          	dynamic_cast<const TArray&>(_electricFields.potential[cells]);
 
-	//const Array<T>& cellToIBCoeff = mIC.getCoeff();
-	//const Array<T>& particlesToIBCoeff = mIP.getCoeff();
+		//const Array<T>& cellToIBCoeff = mIC.getCoeff();
+		//const Array<T>& particlesToIBCoeff = mIP.getCoeff();
 	
-	ibP->zero();
+		ibP->zero();
 
-	mIC.multiplyAndAdd(*ibP,cP);
-	mIP.multiplyAndAdd(*ibP,sP);
+		mIC.multiplyAndAdd(*ibP,cP);
+		mIP.multiplyAndAdd(*ibP,sP);
 
-        _electricFields.potential.addArray(ibFaces,ibP);
+        	_electricFields.potential.addArray(ibFaces,ibP);
+        }
     }
 
   }      
@@ -1239,32 +1240,34 @@ public:
     for (int n=0; n<numMeshes; n++)
     {
       const Mesh& mesh = *_meshes[n];
-      const StorageSite& cells = mesh.getCells();
+      const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
+      if (vc.vcType == "air") {
+        const StorageSite& cells = mesh.getCells();
 
-      const VectorT3Array& electric_field = 
-	dynamic_cast<const VectorT3Array&> (_electricFields.electric_field[cells]);
+      	const VectorT3Array& electric_field = 
+		dynamic_cast<const VectorT3Array&> (_electricFields.electric_field[cells]);
 
-      const TArray& dielectric_constant = 
-	dynamic_cast<const TArray&>(_electricFields.dielectric_constant[cells]);
+      	const TArray& dielectric_constant = 
+		dynamic_cast<const TArray&>(_electricFields.dielectric_constant[cells]);
       
-      const CRConnectivity& solidFacesToCells
-	= mesh.getConnectivity(solidFaces,cells);
+      	const CRConnectivity& solidFacesToCells
+		= mesh.getConnectivity(solidFaces,cells);
         
-      const IntArray& sFCRow = solidFacesToCells.getRow();
-      const IntArray& sFCCol = solidFacesToCells.getCol();
+      	const IntArray& sFCRow = solidFacesToCells.getRow();
+      	const IntArray& sFCCol = solidFacesToCells.getCol();
       
-      GeomFields::SSPair key1(&solidFaces,&cells);
-      const IMatrix& mIC = dynamic_cast<const IMatrix&>
-	(*_geomFields._interpolationMatrices[key1]);
+      	GeomFields::SSPair key1(&solidFaces,&cells);
+      	const IMatrix& mIC = dynamic_cast<const IMatrix&>
+		(*_geomFields._interpolationMatrices[key1]);
 
-      const Array<T>& iCoeffs = mIC.getCoeff();
+      	const Array<T>& iCoeffs = mIC.getCoeff();
 
-      for(int f=0; f<solidFaces.getCount(); f++)
-      {
-	T forceMag(0);
-	T forceSign(1);
-
-	for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)	    {
+      	for(int f=0; f<solidFaces.getCount(); f++)
+      	{
+	  T forceMag(0);
+	  T forceSign(1);
+	  
+	  for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)	    {
 	    const int c = sFCCol[nc];
 	    const T coeff = iCoeffs[nc];
 	    T efmag = mag(electric_field[c]);
@@ -1277,12 +1280,15 @@ public:
 	      forceSign = 0.0;
 	    }
 	  
-	    forceMag += 0.5 * coeff* dielectric_constant[c] *  efmag * efmag * forceSign; 
-	}
-	const VectorT3& Af = solidFaceArea[f];
-	force[f] = Af * forceMag;
-	if (perUnitArea){
-	  force[f] /= solidFaceAreaMag[f];
+	    forceMag += 0.5 * coeff* dielectric_constant[c] *  efmag * efmag * forceSign; 	    
+	  }
+	  
+	  const VectorT3& Af = solidFaceArea[f];
+	  force[f] += Af * forceMag;
+	 
+	  if (perUnitArea){
+	    force[f] /= solidFaceAreaMag[f];
+	  }
 	}
       }	  
     }

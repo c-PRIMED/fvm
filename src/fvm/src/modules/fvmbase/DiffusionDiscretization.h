@@ -69,11 +69,10 @@ public:
 
     const VectorT3Array& cellCentroid =
       dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
-    
+   
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-    
-    
+  
     DiagArray& diag = matrix.getDiag();
 
     const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]);
@@ -87,8 +86,7 @@ public:
 
     const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
 
-    
-
+   
     foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
       {
 	const FaceGroup& fg = *fgPtr;
