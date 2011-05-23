@@ -1240,9 +1240,8 @@ public:
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
-      const Mesh& mesh = *_meshes[n];
-      const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
-      if (vc.vcType == "air") {
+        const Mesh& mesh = *_meshes[n];
+        const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
         const StorageSite& cells = mesh.getCells();
 
       	const VectorT3Array& electric_field = 
@@ -1291,7 +1290,7 @@ public:
 	    force[f] /= solidFaceAreaMag[f];
 	  }
 	}
-      }	  
+      	  
     }
   }
 
