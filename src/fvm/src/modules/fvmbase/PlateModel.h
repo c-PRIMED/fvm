@@ -28,7 +28,12 @@ public:
   virtual ~PlateModel();
 
   virtual void init();
-  
+
+  virtual map<string,shared_ptr<ArrayBase> >&
+  getPersistenceData();
+
+  virtual void restart(); 
+
   PlateBCMap& getBCMap();
   PlateVCMap& getVCMap();
 

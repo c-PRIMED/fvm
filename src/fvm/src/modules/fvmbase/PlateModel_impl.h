@@ -940,6 +940,46 @@ public:
       }
   }
 
+  map<string,shared_ptr<ArrayBase> >&
+  getPersistenceData()
+  {
+    _persistenceData.clear();
+    
+    Array<int>* niterArray = new Array<int>(1);
+    (*niterArray)[0] = _niters;
+    _persistenceData["niters"]=shared_ptr<ArrayBase>(niterArray);
+
+    if (_initialDeformationNorm)
+    {
+      _persistenceData["initialDeformationNorm"] =
+	_initialDeformationNorm->getArrayPtr(_plateFields.deformation);
+    }
+    else
+    {
+      Array<Vector<T,3> >* xArray = new Array<Vector<T,3> >(1);
+      xArray->zero();
+      _persistenceData["initialDeformationNorm"]=shared_ptr<ArrayBase>(xArray);
+    }
+    return _persistenceData;
+  }
+
+  void restart()
+  {
+    if (_persistenceData.find("niters") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase> rp = _persistenceData["niters"];
+        ArrayBase& r = *rp;
+        Array<int>& niterArray = dynamic_cast<Array<int>& >(r);
+        _niters = niterArray[0];
+    }
+    if (_persistenceData.find("initialDeformationNorm") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase>  r = _persistenceData["initialDeformationNorm"];
+        _initialDeformationNorm = MFRPtr(new MultiFieldReduction());
+        _initialDeformationNorm->addArray(_plateFields.deformation,r);
+    }
+  }
+
   #if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
   
   void dumpMatrix(const string fileBase)
@@ -1051,6 +1091,8 @@ private:
   
   MFRPtr _initialDeformationNorm;
   int _niters;
+
+  map<string,shared_ptr<ArrayBase> > _persistenceData;
 };
 
 template<class T>
@@ -1118,9 +1160,24 @@ PlateModel<T>::getMoment(const Mesh& mesh)
   return  _impl->getMoment(mesh);
 }
 
-  template<class T>
-  void
-  PlateModel<T>::dumpMatrix(const string fileBase)
-  {
-    _impl->dumpMatrix(fileBase);
-  }
+template<class T>
+void
+PlateModel<T>::dumpMatrix(const string fileBase)
+{
+  _impl->dumpMatrix(fileBase);
+}
+
+
+template<class T>
+map<string,shared_ptr<ArrayBase> >&
+PlateModel<T>::getPersistenceData()
+{
+  return _impl->getPersistenceData();
+}
+
+template<class T>
+void
+PlateModel<T>::restart()
+{
+  _impl->restart();
+}
