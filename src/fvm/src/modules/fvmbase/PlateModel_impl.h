@@ -715,7 +715,7 @@ public:
 	*/
     }
                 
-    if(allNeumann)
+    if(allNeumann && !_options.transient)
     {
         const Mesh& mesh = *_meshes[0];
 	const StorageSite& cells = mesh.getCells();
