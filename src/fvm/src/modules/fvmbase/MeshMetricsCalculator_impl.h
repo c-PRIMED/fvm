@@ -195,7 +195,8 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
       const CRConnectivity& faceCells = mesh.getFaceCells(faces);
       const int faceCount = faces.getCount();
 
-      if ((fg.groupType!="interior") && (fg.groupType!="interface"))
+      if ((fg.groupType!="interior") && (fg.groupType!="interface") &&
+          (fg.groupType!="dielectric interface"))
       {
 	  if (fg.groupType == "symmetry")
 	  {
@@ -431,7 +432,8 @@ MeshMetricsCalculator<T>::calculateCellVolumes(const Mesh& mesh)
   foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
   {
       const FaceGroup& fg = *fgPtr;
-      if ((fg.groupType!="interior") && (fg.groupType!="interface"))
+      if ((fg.groupType!="interior") && (fg.groupType!="interface") &&
+          (fg.groupType!="dielectric interface"))
       {
 	  const StorageSite& faces = fg.site;
 	  const CRConnectivity& faceCells = mesh.getFaceCells(faces);
