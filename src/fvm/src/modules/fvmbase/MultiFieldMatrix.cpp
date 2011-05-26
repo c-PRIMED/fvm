@@ -154,9 +154,7 @@ MultiFieldMatrix::forwardGS(IContainer& xB, const IContainer& bB, IContainer& te
 #endif
       }
   }
-#ifdef FVM_PARALLEL
-      x.sync();
-#endif
+  x.sync();
 }
 
 void 
@@ -336,9 +334,8 @@ MultiFieldMatrix::reverseGS(IContainer& xB, const IContainer& bB, IContainer& te
 #endif
       }
   }
-#ifdef FVM_PARALLEL
-   x.sync();
-#endif
+
+  x.sync();
 
 }
 
