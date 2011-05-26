@@ -250,7 +250,7 @@ class DistFunctFields
  
 
 /*
-//Fgamma, Macroparameters, -ESBGKModel.h
+//Fgamma, Macroparameters, -ESBGKMol.h
 void Fgamma_alphas(){
   for (int j=0;j<N123;j++){
     malpha_BGK[j][0]=1.0;

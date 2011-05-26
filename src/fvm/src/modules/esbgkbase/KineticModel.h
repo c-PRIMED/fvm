@@ -1827,6 +1827,8 @@ class KineticModel : public Model
       }
   }
  
+  const DistFunctFields<T>& getdsf() const { return _dsfPtr;}
+    
 
  private:
   //shared_ptr<Impl> _impl;

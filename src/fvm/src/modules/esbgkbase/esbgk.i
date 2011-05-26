@@ -19,4 +19,5 @@ using namespace std;
 %include "Quadrature.i"
 %include "MacroFields.h"
 %include "KineticModel.i"
+%include "DistFunctField.i"
 
