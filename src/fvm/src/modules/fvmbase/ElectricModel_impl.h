@@ -1205,6 +1205,8 @@ public:
 		mIP.multiplyAndAdd(*ibP,sP);
 
         	_electricFields.potential.addArray(ibFaces,ibP);
+        	
+        	
         }
     }
 
@@ -1241,6 +1243,8 @@ public:
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
+        if (mesh.isShell())
+        	return;
         const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
         const StorageSite& cells = mesh.getCells();
 
