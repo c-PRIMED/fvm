@@ -83,14 +83,14 @@ struct Distance
   double max_distance_to_rectangle(const MyPoint& p,
 				   const CGAL::Kd_tree_rectangle<TreeTraits>& b) const
   {
-    double h = p.vec[0];
-    
+    double h = p.vec[0]; 	  
     double d0 = (h >= (b.min_coord(0)+b.max_coord(0))/2.0) ?
       (h-b.min_coord(0))*(h-b.min_coord(0)) : (b.max_coord(0)-h)*(b.max_coord(0)-h);
     
     h=p.vec[1];
     double d1 = (h >= (b.min_coord(1)+b.max_coord(1))/2.0) ?
       (h-b.min_coord(1))*(h-b.min_coord(1)) : (b.max_coord(1)-h)*(b.max_coord(1)-h);
+
     h=p.vec[2];
     double d2 = (h >= (b.min_coord(2)+b.max_coord(2))/2.0) ?
       (h-b.min_coord(2))*(h-b.min_coord(2)) : (b.max_coord(2)-h)*(b.max_coord(2)-h);
@@ -132,8 +132,7 @@ private:
 
   typedef CGAL::Search_traits<double, MyPoint, const double*,
                               Construct_coord_iterator> Traits;
-  typedef CGAL::Orthogonal_k_neighbor_search<Traits,
-                                             Distance> K_neighbor_search;
+  typedef CGAL::Orthogonal_k_neighbor_search<Traits> K_neighbor_search;
   typedef K_neighbor_search::Tree Tree;
 
   boost::shared_ptr<Tree> _tree;

@@ -124,6 +124,7 @@ void IBManager::update()
       }
   }
 
+
 #ifdef FVM_PARALLEL
     vector<doubleIntStruct>  solidFacesNearestCellMPI(solidMeshFaces.getCount());
     const int procID = MPI::COMM_WORLD.Get_rank();
@@ -148,15 +149,17 @@ void IBManager::update()
     //now update solidFAcesNearestCell
     for ( int i = 0; i < faceCount; i++ ){
        const Mesh* meshThis = solidFacesNearestCell[i].mesh;
-       if ( meshThis != NULL){
+       if ( meshThis != NULL ){
           const int meshIDThis = meshThis->getID();
           const int tagThis = (std::max(procID, meshIDThis) << 16 ) | ( std::min(procID,meshIDThis) );
           if ( tagThis != solidFacesNearestCellMPI[i].TAG ){
               solidFacesNearestCell[i].mesh = NULL;
           }
+
        } 
     }
 #endif
+
 
   for (int n=0; n<numFluidMeshes; n++)
   {
@@ -511,8 +514,6 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   const Vec3DArray& faceCentroid =
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[mesh.getFaces()]);
 
-  Array<int> fluidNeighbors(1);
-  fluidNeighbors[0] = -9999;
   Array<int> solidNeighbors(solidNeighborsPerIBFace);
 
   const Array<int>& ibFaceIndices = mesh.getIBFaceList();
@@ -547,6 +548,8 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
       const Vec3D& xf = faceCentroid[gf];
 
       // find the closest fluid cell
+      Array<int> fluidNeighbors(1);
+      fluidNeighbors[0] = -9999;
       fluidCellsTree.findNeighbors(xf, 1, fluidNeighbors);
       NearestCell& nc = nearestCellForIBFace[f];
       if ( fluidNeighbors[0] != -9999 ){
@@ -625,11 +628,10 @@ IBManager::findNearestCellForSolidFaces(Mesh& mesh,
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
 
 
-  Array<int> fluidNeighbors(1);
-  fluidNeighbors[0] = -9999;
-
   for(int f=0; f<nSolidFaces; f++)
   {
+      Array<int> fluidNeighbors(1);
+      fluidNeighbors[0] = -9999;
       const Vec3D& xf = solidFaceCentroid[f];
       fluidCellsTree.findNeighbors(xf, 1, fluidNeighbors);
       if ( fluidNeighbors[0] != -9999 ){
@@ -644,7 +646,9 @@ IBManager::findNearestCellForSolidFaces(Mesh& mesh,
             nc.distanceSquared = distanceSquared;
          }
       }
+
    }
+
 }
 
 
