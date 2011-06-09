@@ -17,6 +17,7 @@ class PersistenceESBGK(object):
         return self.hdfFile.attrs[attrName]
         
     def writeField(self,field,site,siteLabel):
+        #print ' ', field, field.getName()
         if site not in field:
             return
         group = self.hdfFile.get(field.getName(),None)
@@ -182,38 +183,48 @@ class PersistenceESBGK(object):
     # Kinetic Model
     #---------------------------------------------------------
         
-    def getKineticModelData(self,macroFields,fmodel,distfields,ndir):
+    def getKineticModelData(self,macroFields,fmodel,distfields,dsfN1,dsfN2,ndir):
         
         foptions = fmodel.getOptions()
 
         modelFieldData = {}
-
-        cellFields = [macroFields.velocity, macroFields.pressure,
-                      macroFields.density, macroFields.temperature]
-        for j in range(0,ndir):
-            dsfFields.append(distfields[j])
-        #faceFields = [flowFields.massFlux, flowFields.pressure]
-
-        #boundaryFields = [flowFields.momentumFlux]
-        """
+        cellFields=[]
+        #cellFields.append(distfields)
+        for i in range(0,ndir):
+            cellFields.append(distfields[i])
+            
+                              
+        cellFields.append(macroFields.velocity)
+        cellFields.append(macroFields.pressure)
+        cellFields.append(macroFields.density)
+        cellFields.append(macroFields.temperature)
+        cellFields.append(macroFields.coeff) #BGK coefficients
+        cellFields.append(macroFields.coeffg)#ESBGK coefficients
+        
+        
+        
         if foptions.transient:
-            cellFields.append(flowFields.velocityN1)
+            for i in range(0,ndir):
+                cellFields.append(dsfN1[i])
+         
             if foptions.timeDiscretizationOrder > 1:
-                cellFields.append(flowFields.velocityN2)
-        """
+                for i in range(0,ndir):
+                    cellFields.append(dsfN2[i])
+                
+        
         modelFieldData['cells'] = cellFields
         #modelFieldData['faces'] = faceFields
         #modelFieldData['boundaryFaces'] = boundaryFields
 
         return modelFieldData
     
-    def saveKineticModel(self,macroFields,model,meshes,distfields,ndir):
+    def saveKineticModel(self,macroFields,model,meshes,distfields,dsfN1,dsfN2,ndir):
 
-        modelFieldData = self.getKineticModelData(macroFields,model,distfields,ndir)
+        modelFieldData = self.getKineticModelData(macroFields,model,distfields,dsfN1,dsfN2,ndir)
         self.saveModel(model, 'fmodel', modelFieldData, meshes)
 
             
-    def readKineticModel(self,macroFields,model,meshes,distfields,ndir):
+    def readKineticModel(self,macroFields,model,meshes,distfields,dsfN1,dsfN2,ndir):
 
-        modelFieldData = self.getKineticModelData(macroFields,model,distfields,ndir)
+        modelFieldData = self.getKineticModelData(macroFields,model,distfields,dsfN1,dsfN2,ndir)
         self.readModel(model, 'fmodel', modelFieldData, meshes)
