@@ -203,7 +203,7 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
       }
     const X nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
     density[c1]=nwall;
-    if (c0==80)cout <<"incoming " << incomFlux <<" outgoing " <<Nmr << " dens " << nwall<< endl;
+    //if (c0==80)cout <<"incoming " << incomFlux <<" outgoing " <<Nmr << " dens " << nwall<< endl;
     //update f in boundary cell =alpha*f_wall+(1-alpha)*f_reflection
     //c.en-vwall.en=vwall.en-c_incident.en
 

@@ -21,13 +21,7 @@ class DistFunctFields
   //std::vector<shared_ptr<Field> > DistFunctFieldsPtr;
   std::vector<Field*> dsf;
   
-  %extend{
-   std::vector<Field*> getDSFVec(){
-   
-       self->dsf
-   }
-     
-  }
+ 
   
 };
 

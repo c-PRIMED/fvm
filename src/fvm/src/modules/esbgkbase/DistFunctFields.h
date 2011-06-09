@@ -45,7 +45,7 @@ class DistFunctFields
    */
  
   
- DistFunctFields(const MeshList& meshes,const MacroFields& macroPr, const Quadrature<T>& quad):
+  DistFunctFields(const MeshList& meshes,const MacroFields& macroPr, const Quadrature<T>& quad, const string dsfname):
   _meshes(meshes),
     _quadrature(quad) 
     {
@@ -58,7 +58,7 @@ class DistFunctFields
 	{
 	  stringstream ss;
 	  ss << n;
-	  string fieldName = "dist_Field_" + ss.str(); 
+	  string fieldName = dsfname + ss.str(); 
 	  dsf.push_back(new Field(fieldName));
 	}
       const int numMeshes = _meshes.size();
@@ -103,7 +103,7 @@ class DistFunctFields
 	}
     }
   
- DistFunctFields(const MeshList& meshes, const Quadrature<T>& quad):
+    DistFunctFields(const MeshList& meshes, const Quadrature<T>& quad, const string dsfname):
   _meshes(meshes),
     _quadrature(quad)
     {
@@ -118,7 +118,7 @@ class DistFunctFields
 	{
 	  stringstream ss;
 	  ss << j;
-	  string fieldName = "dist_Field_" + ss.str(); 
+	  string fieldName = dsfname + ss.str(); 
 	  dsf.push_back(new Field(fieldName));
 	}
       const int numMeshes = _meshes.size();
@@ -239,7 +239,9 @@ class DistFunctFields
     }
   }
 
-  
+  const Field& getField(int indx) const {
+       return *dsf[indx];
+  }
   
   
  private:

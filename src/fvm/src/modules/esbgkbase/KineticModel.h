@@ -75,11 +75,11 @@ class KineticModel : public Model
     _geomFields(geomFields),
     _quadrature(quad),
     _macroFields(macroFields),
-    _dsfPtr(_meshes,_quadrature),
-    _dsfPtr1(_meshes,_quadrature),
-    _dsfPtr2(_meshes,_quadrature),
-    _dsfEqPtr(_meshes,_quadrature),
-    _dsfEqPtrES(_meshes,_quadrature)
+    _dsfPtr(_meshes,_quadrature,"dsf_"),
+    _dsfPtr1(_meshes,_quadrature,"dsf1_"),
+    _dsfPtr2(_meshes,_quadrature,"dsf2_"),
+    _dsfEqPtr(_meshes,_quadrature,"dsfEq_"),
+    _dsfEqPtrES(_meshes,_quadrature,"dsfEqES_")
     {     
      
       const int numMeshes = _meshes.size();
@@ -1827,7 +1827,9 @@ class KineticModel : public Model
       }
   }
  
-  const DistFunctFields<T>& getdsf() const { return _dsfPtr;}
+  const DistFunctFields<T>& getdsf() const { return _dsfPtr;} 
+  const DistFunctFields<T>& getdsf1() const { return _dsfPtr1;} 
+  const DistFunctFields<T>& getdsf2() const { return _dsfPtr2;}
     
 
  private:
