@@ -1,6 +1,6 @@
 #include "Mesh.h"
 #include <sstream>
-
+#include <math.h>
 #include "NumType.h"
 #include "Array.h"
 #include "Field.h"
@@ -88,7 +88,10 @@ public:
             {
               bc->bcType = "Specifiedkandepsilon";
             }
-             
+             else if ((fg.groupType == "wall"))
+             {
+               bc->bcType = "Wall";
+             }
 
              else if ((fg.groupType == "pressure-inlet") ||
                       (fg.groupType == "pressure-outlet"))
@@ -502,6 +505,14 @@ public:
 		     }
 		
                }
+
+           else if ((bc.bcType == "Wall"))
+                 {
+                   for(int f=0; f<nFaces; f++)
+                     {
+                       gbc.applyNeumannBC(f,0);
+                     }
+                 }
            else if ((bc.bcType == "PressureBoundary"))
             {
             for(int f=0; f<nFaces; f++)
@@ -766,7 +777,29 @@ public:
  
 }
 
+void getutau(const Mesh& mesh)
+{
+   const StorageSite& cells = mesh.getCells();
 
+    TArray& utauCell =
+      dynamic_cast<TArray&>(_flowFields.utau[cells]);
+    TArray& kCell =
+      dynamic_cast< TArray&>(_keFields.energy[cells]);
+
+    TArray& eCell =
+      dynamic_cast< TArray&>(_keFields.dissipation[cells]);
+
+     T zeroPointonine(0.09);T zeroPointfour(0.4187);
+     T three(3.0);
+   const int nCells = cells.getCount();
+
+    for(int c=0; c<nCells; c++)
+   {
+       utauCell[c] = sqrt(sqrt(zeroPointonine)*kCell[c]);
+       eCell[c] = pow(utauCell[c],three)/zeroPointfour;
+   }
+
+}
   void getViscosity(const Mesh& mesh)
   {
     const StorageSite& cells = mesh.getCells();
@@ -809,10 +842,10 @@ public:
 
 
     const int nCells = cells.getCount();
-
+    T two(2.0);
     for(int c=0; c<nCells; c++)
     {
-        muCell[c] = (cmuCell[c]*kCell[c]*kCell[c]*rhoCell[c])/eCell[c];
+        muCell[c] = (cmuCell[c]*pow(kCell[c],two)*rhoCell[c])/eCell[c];
         c1Cell[c] = muCell[c]/sigmakCell[c];
         c2Cell[c] = muCell[c]/sigmaeCell[c];
         tmuCell[c] = muCell[c] + lmuCell[c];
@@ -849,7 +882,17 @@ public:
         lsk.postSolve();
         lsk.updateSolution();
 
+
         _niters++;
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+
+        getutau(mesh);
+    }
+
+
         if (*rNorm < _options.absoluteTolerance ||
             *normRatio < _options.relativeTolerance)
           break;
@@ -994,6 +1037,12 @@ KeModel<T>::updateTimee()
   _impl->updateTimee();
 }
 
+template<class T>
+void
+KeModel<T>:: getutau(const Mesh& mesh)
+{
+  _impl->getutau(mesh);
+}
 
 template<class T>
 void

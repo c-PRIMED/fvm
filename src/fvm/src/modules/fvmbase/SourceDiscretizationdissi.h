@@ -12,7 +12,7 @@
 #include "CRMatrixRect.h"
 #include "Vector.h"
 #include "GradientModel.h"
-
+#include <math.h>
 
 template<class T,class Diag, class OffDiag>
 class SourceDiscretizationdissi : public Discretization
@@ -54,6 +54,9 @@ public:
       _gradientField(gradientField)
 
    {}
+    KeModelOptions<T>&   getOptions() {return _options;}
+
+
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
                   MultiField& xField, MultiField& rField)
   {
@@ -100,15 +103,17 @@ public:
 
     DiagArray& diag = matrix.getDiag();
     T x; T y; T dx; T dy; T ds;
-    T onePointfour(1.44);
-    T onePointnine(1.92);
+    //T onePointfour(1.44);
+   // T onePointnine(1.92);
     T two(2.0);
+    T C1mu = _options.c1mu;
+    T C2mu = _options.c2mu;
     for(int n=0; n<nCells; n++)
     {
         const VGradType& vg = vGrad[n];
         VGradType vgSquare = vGrad[n];
-         x = (muCell[n]*eCell[n]*onePointfour)/kCell[n];
-         y = (onePointnine*eCell[n]*eCell[n]*rhoCell[n])/kCell[n];
+         x = (muCell[n]*eCell[n]*C1mu)/kCell[n];
+         y = (C2mu*pow(eCell[n],two)*rhoCell[n])/kCell[n];
          dx = x/eCell[n];
          dy = (y*two)/eCell[n];
          T sum = 0; 
@@ -123,14 +128,17 @@ public:
           //   vgSquare[i][j] += vg[i][j]*vg[j][i];
            }
         }
-        //cout<<sum;
+       //cout<<sum;
+        
         sourceCell[n] = sum*x-y ;
         ds = sum*dx-dy;
         sourcecCell[n] = sourceCell[n]- ds*eCell[n];
         sourcepCell[n] = ds;
         rCell[n] +=sourcecCell[n]*cellVolume[n];
         diag[n] -=cellVolume[n]*sourcepCell[n];
+
     }
+
 }
 
 private:
@@ -145,7 +153,7 @@ private:
   Field& _sourcecField;
   Field& _sourcepField;
   const Field& _gradientField;
-
+  KeModelOptions<T> _options;
 };
 
 #endif

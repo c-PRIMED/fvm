@@ -26,6 +26,10 @@ struct FlowFields
   Field force;
   Field eddyviscosity;
   Field totalviscosity;
+  Field utau;
+  Field uparallel;
+  Field tau;
+  Field tauwall; //parallel to flow
 };
 
 #endif

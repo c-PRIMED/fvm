@@ -18,6 +18,12 @@ FlowFields::FlowFields(const string baseName) :
   stress(baseName + ".stress"),
   force(baseName + ".force"),
   eddyviscosity(baseName + ".eddyviscosity"),
-  totalviscosity(baseName + ".totalviscosity")
+  totalviscosity(baseName + ".totalviscosity"),
+  utau(baseName + ".utau"),
+  uparallel(baseName + ".uparallel"),
+  tau(baseName + ".tau"),
+  tauwall(baseName + ".tauwall")
+
+
 {}
 

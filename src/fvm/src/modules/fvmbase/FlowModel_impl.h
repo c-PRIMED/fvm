@@ -27,6 +27,8 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "StressTensor.h"
+#include "KeFields.h"
+#include "WallDiscretization.h"
 
 template<class T>
 class FlowModel<T>::Impl
@@ -68,10 +70,12 @@ public:
   
   Impl(const GeomFields& geomFields,
        FlowFields& thermalFields,
+       KeFields& keFields,
        const MeshList& meshes) :
     _meshes(meshes),
     _geomFields(geomFields),
     _flowFields(thermalFields),
+    _keFields(keFields),
     _velocityGradientModel(_meshes,_flowFields.velocity,
                            _flowFields.velocityGradient,_geomFields),
     _pressureGradientModel(_meshes,_flowFields.pressure,
@@ -571,12 +575,27 @@ public:
           _flowFields.continuityResidual,
           _flowFields.velocityGradient));
 
-    shared_ptr<Discretization>
+if (_options.turbulent && "wall")
+{
+  shared_ptr<Discretization>
+      wd(new WallDiscretization<T,T,T>
+         (_meshes,_geomFields,
+          _flowFields.velocity,
+          _keFields.energy,
+          _flowFields.density,
+          _flowFields.uparallel,
+          _flowFields.tau,
+          _flowFields.tauwall,
+          _flowFields.viscosity));
+
+    discretizations.push_back(wd);
+
+ } 
+  shared_ptr<Discretization>
       pd(new MomentumPressureGradientDiscretization<T>
          (_meshes,_geomFields,
           _flowFields,
           _pressureGradientModel));
-
     discretizations.push_back(dd);
     discretizations.push_back(cd);
     discretizations.push_back(pd);
@@ -1990,7 +2009,7 @@ private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
   FlowFields& _flowFields;
-
+  KeFields& _keFields;
   FlowBCMap _bcMap;
   FlowVCMap _vcMap;
   
@@ -2016,9 +2035,10 @@ private:
 template<class T>
 FlowModel<T>::FlowModel(const GeomFields& geomFields,
                         FlowFields& thermalFields,
+                        KeFields& keFields,
                         const MeshList& meshes) :
   Model(meshes),
-  _impl(new Impl(geomFields,thermalFields,meshes))
+  _impl(new Impl(geomFields,thermalFields,keFields,meshes))
 {
   logCtor();
 }

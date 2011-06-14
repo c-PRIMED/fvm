@@ -46,11 +46,22 @@ struct KeModelOptions : public FloatVarDict<T>
     this->useCentralDifference=false;
     this->transient = false;
     this->timeDiscretizationOrder=1;
+    this->defineVar("cmu",T(0.09));
+    this->defineVar("c2mu",T(1.92));
+    this->defineVar("c1mu",T(1.44));
+    this->defineVar("vk",T(0.4187));
+    this->defineVar("emp",T(9.793));
+
   }
   bool transient;
   int timeDiscretizationOrder;
   double relativeTolerance;
   double absoluteTolerance;
+  double cmu;
+  double c2mu;
+  double c1mu;
+  double vk;
+  double emp;
   bool useCentralDifference;
   LinearSolver *linearSolver;
 

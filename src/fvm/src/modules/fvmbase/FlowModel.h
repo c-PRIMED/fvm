@@ -5,7 +5,7 @@
 
 #include "GeomFields.h"
 #include "FlowFields.h"
-
+#include "KeFields.h"
 #include "Mesh.h"
 #include "LinearSolver.h"
 
@@ -23,7 +23,7 @@ public:
   
   
   FlowModel(const GeomFields& geomFields,
-               FlowFields& thermalFields, const MeshList& meshes);
+               FlowFields& thermalFields,KeFields& keFields, const MeshList& meshes);
   
   virtual ~FlowModel();
 

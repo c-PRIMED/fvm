@@ -36,6 +36,7 @@ public:
   KeBC<T>& getBC(const int id);
 
   KeModelOptions<T>& getOptions();
+  void getutau(const Mesh& mesh);
 
   void getViscosity(const Mesh& mesh);
   void updateTimek();
