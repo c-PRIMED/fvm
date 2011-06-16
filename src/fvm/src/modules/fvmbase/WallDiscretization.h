@@ -125,8 +125,8 @@ public:
 
 
          T vonk = _options.vk; //vonKarman
-         T Emp = _options.emp; //Empirical
-         T Cmu = _options.cmu;
+         T Emp = _options.emp; //Empirical constant
+         T Cmu = _options.cmu; //Cmu constant of k-e model
          T onefourth(0.25);
          T eleven(11.225);
  

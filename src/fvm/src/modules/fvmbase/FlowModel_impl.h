@@ -27,8 +27,6 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "StressTensor.h"
-#include "KeFields.h"
-#include "WallDiscretization.h"
 
 template<class T>
 class FlowModel<T>::Impl
@@ -70,12 +68,10 @@ public:
   
   Impl(const GeomFields& geomFields,
        FlowFields& thermalFields,
-       KeFields& keFields,
        const MeshList& meshes) :
     _meshes(meshes),
     _geomFields(geomFields),
     _flowFields(thermalFields),
-    _keFields(keFields),
     _velocityGradientModel(_meshes,_flowFields.velocity,
                            _flowFields.velocityGradient,_geomFields),
     _pressureGradientModel(_meshes,_flowFields.pressure,
@@ -137,7 +133,7 @@ public:
         const StorageSite& cells = mesh.getCells();
         const StorageSite& faces = mesh.getFaces();
 
-        shared_ptr<VectorT3Array> vCell(new VectorT3Array(cells.getCountLevel1()));
+        shared_ptr<VectorT3Array> vCell(new VectorT3Array(cells.getCount()));
 
         VectorT3 initialVelocity;
         initialVelocity[0] = _options["initialXVelocity"];
@@ -157,7 +153,7 @@ public:
 
         }
         
-        shared_ptr<TArray> pCell(new TArray(cells.getCountLevel1()));
+        shared_ptr<TArray> pCell(new TArray(cells.getCount()));
         shared_ptr<TArray> pFace(new TArray(faces.getCount()));
         *pCell = _options["initialPressure"];
         *pFace = _options["initialPressure"];
@@ -165,19 +161,19 @@ public:
         _flowFields.pressure.addArray(faces,pFace);
 
 
-        shared_ptr<TArray> rhoCell(new TArray(cells.getCountLevel1()));
+        shared_ptr<TArray> rhoCell(new TArray(cells.getCount()));
         *rhoCell = vc["density"];
         _flowFields.density.addArray(cells,rhoCell);
 
-        shared_ptr<TArray> muCell(new TArray(cells.getCountLevel1()));
+        shared_ptr<TArray> muCell(new TArray(cells.getCount()));
         *muCell = vc["viscosity"];
         _flowFields.viscosity.addArray(cells,muCell);
 
-        shared_ptr<PGradArray> gradp(new PGradArray(cells.getCountLevel1()));
+        shared_ptr<PGradArray> gradp(new PGradArray(cells.getCount()));
         gradp->zero();
         _flowFields.pressureGradient.addArray(cells,gradp);
 
-        shared_ptr<TArray> ci(new TArray(cells.getCountLevel1()));
+        shared_ptr<TArray> ci(new TArray(cells.getCount()));
         ci->zero();
         _flowFields.continuityResidual.addArray(cells,ci);
 
@@ -303,14 +299,6 @@ public:
     }
   }
 
-  const Field& getViscosityField() const
-  {
-    if (_options.turbulent)
-      return _flowFields.totalviscosity;
-    else
-      return _flowFields.viscosity;
-  }
-  
   void computeIBFaceVelocity(const StorageSite& particles)
   {
     typedef CRMatrixTranspose<T,T,T> IMatrix;
@@ -324,8 +312,6 @@ public:
     {
         const Mesh& mesh = *_meshes[n];
 
-	if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0)
-        {
         const StorageSite& cells = mesh.getCells();
         const StorageSite& ibFaces = mesh.getIBFaces();
         
@@ -386,8 +372,8 @@ public:
 
 #endif
         _flowFields.velocity.addArray(ibFaces,ibV);
-        }
     }
+
   }
 
   map<string,shared_ptr<ArrayBase> >&
@@ -468,7 +454,7 @@ public:
         const Mesh& mesh = *_meshes[n];
 
         const StorageSite& cells = mesh.getCells();
-     	const int nCells = cells.getCountLevel1();
+     	const int nCells = cells.getCount();
 	
 	GeomFields::SSPair key2(&cells,&particles);
         const IMatrix& mIP =
@@ -564,7 +550,7 @@ public:
       dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,T>
          (_meshes,_geomFields,
           _flowFields.velocity,
-          getViscosityField(),
+          _flowFields.viscosity,
           _flowFields.velocityGradient));
 
     shared_ptr<Discretization>
@@ -575,27 +561,12 @@ public:
           _flowFields.continuityResidual,
           _flowFields.velocityGradient));
 
-if (_options.turbulent && "wall")
-{
-  shared_ptr<Discretization>
-      wd(new WallDiscretization<T,T,T>
-         (_meshes,_geomFields,
-          _flowFields.velocity,
-          _keFields.energy,
-          _flowFields.density,
-          _flowFields.uparallel,
-          _flowFields.tau,
-          _flowFields.tauwall,
-          _flowFields.viscosity));
-
-    discretizations.push_back(wd);
-
- } 
-  shared_ptr<Discretization>
+    shared_ptr<Discretization>
       pd(new MomentumPressureGradientDiscretization<T>
          (_meshes,_geomFields,
           _flowFields,
           _pressureGradientModel));
+
     discretizations.push_back(dd);
     discretizations.push_back(cd);
     discretizations.push_back(pd);
@@ -854,7 +825,7 @@ if (_options.turbulent && "wall")
 
     const T pressureURF(_options["pressureURF"]);
       
-    const int nCells = cells.getCountLevel1();
+    const int nCells = cells.getCount();
     for(int c=0; c<nCells; c++)
     {
         p[c] += pressureURF*(pp[c]-_referencePP);
@@ -873,7 +844,7 @@ if (_options.turbulent && "wall")
 
     const T velocityURF(_options["velocityURF"]);
       
-    const int nCells = cells.getCountLevel1();
+    const int nCells = cells.getCount();
     for(int c=0; c<nCells; c++)
     {
         V[c] += velocityURF*Vp[c];
@@ -1384,12 +1355,11 @@ if (_options.turbulent && "wall")
 	MFRPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
         
 #ifdef FVM_PARALLEL
-    if ( MPI::COMM_WORLD.Get_rank() == 0 ){ // only root process
+    if ( MPI::COMM_WORLD.Get_rank() == 0 ) // only root process
         if (_options.printNormalizedResiduals)
           cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
         else
           cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;
-    }	  
 #endif
 
 #ifndef FVM_PARALLEL
@@ -1741,8 +1711,7 @@ if (_options.turbulent && "wall")
     const TArray& pCell =
       dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
 
-    const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);
-
+    const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
 
     boost::shared_ptr<StressTensorArray> stressTensorPtr( new StressTensorArray(nCells));
     StressTensorArray& stressTensor = *stressTensorPtr;
@@ -1798,7 +1767,7 @@ if (_options.turbulent && "wall")
     const TArray& pCell =
       dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
 
-    const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);
+    const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
       
     for(int n=0; n<nCells; n++)
     {
@@ -1855,8 +1824,9 @@ if (_options.turbulent && "wall")
 
         const TArray& pCell =
           dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
-
-       const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);
+        
+        const TArray& mu =
+          dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
         
         //const FlowVC<T>& vc = *_vcMap[mesh.getID()];
             
@@ -2009,7 +1979,7 @@ private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
   FlowFields& _flowFields;
-  KeFields& _keFields;
+
   FlowBCMap _bcMap;
   FlowVCMap _vcMap;
   
@@ -2035,10 +2005,9 @@ private:
 template<class T>
 FlowModel<T>::FlowModel(const GeomFields& geomFields,
                         FlowFields& thermalFields,
-                        KeFields& keFields,
                         const MeshList& meshes) :
   Model(meshes),
-  _impl(new Impl(geomFields,thermalFields,keFields,meshes))
+  _impl(new Impl(geomFields,thermalFields,meshes))
 {
   logCtor();
 }
