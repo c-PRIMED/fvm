@@ -132,8 +132,8 @@ class KineticModel : public Model
 	TArray& Tyy = dynamic_cast<TArray&>(_macroFields.Tyy[cells]);
 	TArray& Tzz = dynamic_cast<TArray&>(_macroFields.Tzz[cells]);
 	TArray& Txy = dynamic_cast<TArray&>(_macroFields.Txy[cells]);
-	TArray& Txz = dynamic_cast<TArray&>(_macroFields.Txz[cells]);
 	TArray& Tyz = dynamic_cast<TArray&>(_macroFields.Tyz[cells]);
+	TArray& Tzx = dynamic_cast<TArray&>(_macroFields.Tzx[cells]);
 	//if ( MPI::COMM_WORLD.Get_rank() == 0 ) {cout << "ncells="<<nCells<<endl;}
 	
 	//initialize density,velocity  
@@ -172,8 +172,8 @@ class KineticModel : public Model
 	    Tyy[c]=0.5;
 	    Tzz[c]=0.5;
 	    Txy[c]=0.0;
-	    Txz[c]=0.0;
 	    Tyz[c]=0.0;
+	    Tzx[c]=0.0;
 	  }	
       }
   }
@@ -289,8 +289,8 @@ class KineticModel : public Model
 	TArray& Tyy = dynamic_cast<TArray&>(_macroFields.Tyy[cells]);
 	TArray& Tzz = dynamic_cast<TArray&>(_macroFields.Tzz[cells]);
 	TArray& Txy = dynamic_cast<TArray&>(_macroFields.Txy[cells]);
-	TArray& Txz = dynamic_cast<TArray&>(_macroFields.Txz[cells]);
 	TArray& Tyz = dynamic_cast<TArray&>(_macroFields.Tyz[cells]);
+	TArray& Tzx = dynamic_cast<TArray&>(_macroFields.Tzx[cells]);
 	
 	const int N123 = _quadrature.getDirCount(); 
 	
@@ -309,8 +309,8 @@ class KineticModel : public Model
 	    Tyy[c]=0.0;
 	    Tzz[c]=0.0;
 	    Txy[c]=0.0;
-	    Txz[c]=0.0;
 	    Tyz[c]=0.0;
+	    Tzx[c]=0.0;
 	  }
 	for(int j=0;j<N123;j++){
 	  
@@ -322,9 +322,13 @@ class KineticModel : public Model
 	    Txx[c]=Txx[c]+pow(cx[j]-v[c][0],2)*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
 	    Tyy[c]=Tyy[c]+pow(cy[j]-v[c][1],2)*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j] ;
 	    Tzz[c]=Tzz[c]+pow(cz[j]-v[c][2],2)*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
-	    Txy[c]=Txy[c]+(cx[j])*(cy[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
-	    Txz[c]=Txz[c]+(cx[j])*(cz[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
-	    Tyz[c]=Tyz[c]+(cy[j])*(cz[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];  
+	    //Txy[c]=Txy[c]+(cx[j])*(cy[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
+	    //Tyz[c]=Tyz[c]+(cy[j])*(cz[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];            //Tzx[c]=Tzx[c]+(cz[j])*(cx[j])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
+
+ 
+	    Txy[c]=Txy[c]+(cx[j]-v[c][0])*(cy[j]-v[c][1])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j];
+	    Tyz[c]=Tyz[c]+(cy[j]-v[c][1])*(cz[j]-v[c][2])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j]; 
+	    Tzx[c]=Tzx[c]+(cz[j]-v[c][2])*(cx[j]-v[c][0])*((1-1/Pr)*f[c]+1/Pr*fgam[c])*wts[j]; 
 	  }
 	}
 		
@@ -333,8 +337,8 @@ class KineticModel : public Model
 	  Tyy[c]=Tyy[c]/density[c];
 	  Tzz[c]=Tzz[c]/density[c];
 	  Txy[c]=Txy[c]/density[c];
-	  Txz[c]=Txz[c]/density[c];
 	  Tyz[c]=Tyz[c]/density[c];
+	  Tzx[c]=Tzx[c]/density[c];
 	}
 
      }
@@ -395,11 +399,12 @@ class KineticModel : public Model
 	const T rho_init=_options["rho_init"]; 
 	const T T_init= _options["T_init"]; 
 	const T molwt=_options["molecularWeight"]*1E-26/6.023;
-	const T R=8314.0/molwt;
+	const T R=8314.0/_options["molecularWeight"];
 	const T u_init=pow(2.0*R*T_init,0.5);
 	const T Planck=_options.Planck;
 	const T h3bm4u3=pow(Planck,3)/ pow(molwt,4)*rho_init/pow(u_init,3);
-		
+	//cout << "h3bm4u3  " << h3bm4u3 <<endl;	
+	//cout <<" u_init "<<u_init<<" rho_init "<<rho_init<<endl;
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
@@ -419,7 +424,7 @@ class KineticModel : public Model
 	    const TArray& fgam = dynamic_cast<const TArray&>(feqES[cells]);
 	    for(int c=0; c<nCells;c++){
 	      Entropy[c]=Entropy[c]+f[c]*wts[j]*(1-log(h3bm4u3*f[c]));
-	      EntropyGenRate_Collisional[c]+=(f[c]-fgam[c])*collisionFrequency[c]*(1-log(h3bm4u3*f[c]))*wts[j];
+	      EntropyGenRate_Collisional[c]+= (f[c]-fgam[c])*collisionFrequency[c]*log(h3bm4u3*f[c])*wts[j];
 	    }
 	  }
 	}
@@ -431,7 +436,7 @@ class KineticModel : public Model
 	    const TArray& fgam = dynamic_cast<const TArray&>(feq[cells]);
 	    for(int c=0; c<nCells;c++){
 	      Entropy[c]=Entropy[c]+f[c]*wts[j]*(1-log(h3bm4u3*f[c]));
-	      EntropyGenRate_Collisional[c]+=(f[c]-fgam[c])*collisionFrequency[c]*(1-log(h3bm4u3*f[c]))*wts[j];
+	      EntropyGenRate_Collisional[c]+=(f[c]-fgam[c])*collisionFrequency[c]*(log(h3bm4u3*f[c]))*wts[j];
 	    }
 	  }
 	}
@@ -515,9 +520,7 @@ class KineticModel : public Model
 	    SquareMatrix<T,sizeC> fjac(0);
 	    SquareMatrix<T,sizeC> fjacinv(0);
 	    VectorT5 fvec;
-	    // TArray* fvecPtr;
-	    //fvecPtr=new TArray(5);
-	    //TArray & fvec= *fvecPtr;
+	   
 	    
 	    fvec[0]=density[c];
 	    fvec[1]=density[c]*v[c][0];
@@ -681,8 +684,8 @@ class KineticModel : public Model
 	const TArray& Tyy = dynamic_cast<const TArray&>(_macroFields.Tyy[cells]);
 	const TArray& Tzz = dynamic_cast<const TArray&>(_macroFields.Tzz[cells]);
 	const TArray& Txy = dynamic_cast<const TArray&>(_macroFields.Txy[cells]);
-	const TArray& Txz = dynamic_cast<const TArray&>(_macroFields.Txz[cells]);
 	const TArray& Tyz = dynamic_cast<const TArray&>(_macroFields.Tyz[cells]);
+	const TArray& Tzx = dynamic_cast<const TArray&>(_macroFields.Tzx[cells]);
 	
 	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
     	
@@ -704,8 +707,8 @@ class KineticModel : public Model
 	    fvec[5]=density[c]*(pow(v[c][1],2)+Tyy[c]);
 	    fvec[6]=density[c]*(pow(v[c][2],2)+Tzz[c]);
 	    fvec[7]=density[c]*(v[c][0]*v[c][1]+Txy[c]);
-	    fvec[8]=density[c]*(v[c][0]*v[c][2]+Txz[c]);
-	    fvec[9]=density[c]*(v[c][1]*v[c][2]+Tyz[c]);
+	    fvec[8]=density[c]*(v[c][1]*v[c][2]+Tyz[c]);
+	    fvec[9]=density[c]*(v[c][2]*v[c][0]+Tzx[c]);
 	    
 	    //calculate Jacobian
 	    setJacobianESBGK(fjac,fvec,coeffg[c],v[c],c);
@@ -822,8 +825,8 @@ class KineticModel : public Model
 	    fEqES[c]=coeffg[c][0]*exp(-coeffg[c][1]*pow(Cc1,2)+coeffg[c][2]*Cc1
 				      -coeffg[c][3]*pow(Cc2,2)+coeffg[c][4]*Cc2
 				      -coeffg[c][5]*pow(Cc3,2)+coeffg[c][6]*Cc3
-				    +coeffg[c][7]*cx[j]*cy[j]+coeffg[c][8]*cx[j]*cz[j]
-				    +coeffg[c][9]*cy[j]*cz[j]);
+				    +coeffg[c][7]*cx[j]*cy[j]+coeffg[c][8]*cy[j]*cz[j]
+				    +coeffg[c][9]*cz[j]*cx[j]);
 	  }
 	  
 	}
@@ -847,7 +850,7 @@ class KineticModel : public Model
       T Cc3=cz[j]-v[2];
       T Econst=xn[0]*exp(-xn[1]*pow(Cc1,2)+xn[2]*Cc1-xn[3]*pow(Cc2,2)+ xn[4]*Cc2
 			 -xn[5]*pow(Cc3,2)+xn[6]*Cc3
-			 +xn[7]*cx[j]*cy[j]+xn[8]*cx[j]*cz[j]+xn[9]*cy[j]*cz[j])*wts[j];     
+			 +xn[7]*cx[j]*cy[j]+xn[8]*cy[j]*cz[j]+xn[9]*cz[j]*cx[j])*wts[j];     
       
       for (int row=0;row<10;row++){
 	fvec[row]+= -Econst*malphaESBGK(j,row); //smm
@@ -862,8 +865,8 @@ class KineticModel : public Model
       mexp[6]=-Econst*Cc3;
       
       mexp[7]=-Econst*cx[j]*cy[j];
-      mexp[8]=-Econst*cx[j]*cz[j];
-      mexp[9]=-Econst*cy[j]*cz[j];
+      mexp[8]=-Econst*cy[j]*cz[j];
+      mexp[9]=-Econst*cz[j]*cx[j];
    
       for (int row=0;row<10;row++){
 	for (int col=0;col<10;col++){
@@ -1067,13 +1070,13 @@ class KineticModel : public Model
         *tempxyCell = 0.0;
 	_macroFields.Txy.addArray(cells,tempxyCell);
 
-	shared_ptr<TArray> tempxzCell(new TArray(cells.getCount()));
-        *tempxzCell = 0.0;
-	_macroFields.Txz.addArray(cells,tempxzCell);
-
 	shared_ptr<TArray> tempyzCell(new TArray(cells.getCount()));
         *tempyzCell = 0.0;
 	_macroFields.Tyz.addArray(cells,tempyzCell);
+
+	shared_ptr<TArray> tempzxCell(new TArray(cells.getCount()));
+        *tempzxCell = 0.0;
+	_macroFields.Tzx.addArray(cells,tempzxCell);
 	
 	//Entropy and Entropy Generation Rate for switching
         shared_ptr<TArray> EntropyCell(new TArray(cells.getCount()));
@@ -1579,70 +1582,7 @@ class KineticModel : public Model
     //_dsfPtr.OutputDsf(_dsfPtr,filename);
   }
 
-  void advance_dir(const int niter)
-  {
-    const int N123 =_quadrature.getDirCount();
-   
-    MFRPtr rNorm;
-	  
-    for(int direction=0; direction<N123;direction++)
-      {
-
-
-	for(int n=0; n<niter; n++)  
-	  {
-	    LinearSystem ls;
-	    initKineticModelLinearization(ls, direction);
-	    ls.initAssembly();
-	    linearizeKineticModel(ls,direction);
-	    ls.initSolve();
-	    
-	    //const T* kNorm=_options.getKineticLinearSolver().solve(ls);
-	    MFRPtr kNorm(_options.getKineticLinearSolver().solve(ls));
-	   
-	    if (!rNorm)
-	      rNorm = kNorm;
-	    else
-	      {
-		// find the array for the 0the direction residual and
-		// add the current residual to it
-		Field& fn0 = *_dsfPtr.dsf[0];
-		Field& fnd = *_dsfPtr.dsf[direction];
-                
-		ArrayBase& rArray0 = (*rNorm)[fn0];
-		ArrayBase& rArrayd = (*kNorm)[fnd];//*wts[direction];
-		rArray0 = rArrayd;//*wts[direction];
-		
-	      }
-	    ls.postSolve();
-	    ls.updateSolution();
-	    
-	    _options.getKineticLinearSolver().cleanup();
-	      
-	    
-	    if (!_initialKmodelNorm) _initialKmodelNorm = rNorm;
-	    
-	    if (_niters < 5)
-	      {
-		_initialKmodelNorm->setMax(*rNorm);	
-	      } 
-	    
-	    MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));	
-	    
-	    if(direction ==_options["printDirectionNumber"]){cout << _niters << ": " << *kNorm <<endl; }
-	    
-	   
-	    _niters++;
-	    if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance )) 
-	      break;
-	  
-	    
-	  }
-
-	  
-      }
-  }
-
+ 
   /*
  boost::shared_ptr<ArrayBase> getPressureTensor(const Mesh& mesh, const ArrayBase& gcellIds)
   {
@@ -1697,7 +1637,7 @@ class KineticModel : public Model
       for(int j=0;j< numFields;j++){
 	Field& fnd = *_dsfPtr.dsf[j];
 	TArray& f = dynamic_cast< TArray&>(fnd[cells]);
-	fprintf(pFile,"%E\n",f[0]);
+	fprintf(pFile,"%E\n",f[cellno]);
       } 
       for(int j=0;j< numFields;j++){
 	Field& fEqnd = *_dsfEqPtr.dsf[j];
@@ -1830,6 +1770,8 @@ class KineticModel : public Model
   const DistFunctFields<T>& getdsf() const { return _dsfPtr;} 
   const DistFunctFields<T>& getdsf1() const { return _dsfPtr1;} 
   const DistFunctFields<T>& getdsf2() const { return _dsfPtr2;}
+  const DistFunctFields<T>& getdsfEq() const { return _dsfEqPtr;} 
+  const DistFunctFields<T>& getdsfEqES() const { return _dsfEqPtrES;}
     
 
  private:

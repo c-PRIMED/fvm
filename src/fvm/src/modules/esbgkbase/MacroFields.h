@@ -17,8 +17,8 @@ struct MacroFields
   Field Tyy;
   Field Tzz;
   Field Txy;
-  Field Txz;
   Field Tyz;
+  Field Tzx;
   Field coeff;
   Field coeffg;
   Field Entropy;

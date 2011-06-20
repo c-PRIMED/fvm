@@ -155,8 +155,8 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	    malphaESBGK(j,5)=pow(cy[j],2);
 	    malphaESBGK(j,6)=pow(cz[j],2);
 	    malphaESBGK(j,7)=cx[j]*cy[j]; 
-	    malphaESBGK(j,8)=cx[j]*cz[j];
-	    malphaESBGK(j,9)=cy[j]*cz[j];
+	    malphaESBGK(j,8)=cy[j]*cz[j];
+	    malphaESBGK(j,9)=cz[j]*cx[j];
 	    
 	    j++;
 	  }
@@ -403,8 +403,8 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
 	     malphaESBGK(j,5)=pow(cy[j],2);
 	     malphaESBGK(j,6)=pow(cz[j],2);
 	     malphaESBGK(j,7)=cx[j]*cy[j]; 
-	     malphaESBGK(j,8)=cx[j]*cz[j];
-	     malphaESBGK(j,9)=cy[j]*cz[j];
+	     malphaESBGK(j,8)=cy[j]*cz[j];
+	     malphaESBGK(j,9)=cz[j]*cx[j];
 	    
 	     
 	     j++;       
