@@ -177,3 +177,53 @@ class Persistence(object):
 
         modelFieldData = self.getStructureModelData(structureFields,model)
         self.readModel(model, 'smodel', modelFieldData, meshes)
+        
+#---------------------------------------------------------
+    # Kinetic Model
+    #---------------------------------------------------------
+        
+    def getKineticModelData(self,macroFields,fmodel,distfields,ndir):
+        
+        foptions = fmodel.getOptions()
+
+        modelFieldData = {}
+        cellFields=[]
+        #cellFields.append(distfields)
+        for i in range(0,ndir):
+            cellFields.append(distfields[i])
+            
+                              
+        cellFields.append(macroFields.velocity)
+        cellFields.append(macroFields.pressure)
+        cellFields.append(macroFields.density)
+        cellFields.append(macroFields.temperature)
+        cellFields.append(macroFields.coeff) #BGK coefficients
+        cellFields.append(macroFields.coeffg)#ESBGK coefficients
+        
+        
+        
+        if foptions.transient:
+            for i in range(ndir,2*ndir):
+                cellFields.append(distfields[i])
+         
+            if foptions.timeDiscretizationOrder > 1:
+                for i in range(2*ndir,3*ndir):
+                    cellFields.append(distfields[i])
+                
+        
+        modelFieldData['cells'] = cellFields
+        #modelFieldData['faces'] = faceFields
+        #modelFieldData['boundaryFaces'] = boundaryFields
+
+        return modelFieldData
+    
+    def saveKineticModel(self,macroFields,model,meshes,distfields,ndir):
+
+        modelFieldData = self.getKineticModelData(macroFields,model,distfields,ndir)
+        self.saveModel(model, 'fmodel', modelFieldData, meshes)
+
+            
+    def readKineticModel(self,macroFields,model,meshes,distfields,ndir):
+
+        modelFieldData = self.getKineticModelData(macroFields,model,distfields,ndir)
+        self.readModel(model, 'fmodel', modelFieldData, meshes)

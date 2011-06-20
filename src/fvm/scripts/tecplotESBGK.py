@@ -52,15 +52,15 @@ def esbgkTecplotFile(meshes, macroFields,filename ):
   TzzFields.append(macroFields.Tzz[cellSites[n]].asNumPyArray())
   TxyFields=[]
   TxyFields.append(macroFields.Txy[cellSites[n]].asNumPyArray())
-  TxzFields=[]
-  TxzFields.append(macroFields.Txz[cellSites[n]].asNumPyArray())
   TyzFields=[]
   TyzFields.append(macroFields.Tyz[cellSites[n]].asNumPyArray())
+  TzxFields=[]
+  TzxFields.append(macroFields.Tzx[cellSites[n]].asNumPyArray())
   #filename = "quadrature" + ".plt"
   f = open(filename, 'w')
 
   f.write("Title = \" tecplot out file\" \n")
-  f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\"Txx\",\"Tyy\",\"Tzz\",\"Txy\",\"Txz\",\"Tyz\",\n")
+  f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\"Txx\",\"Tyy\",\"Tzz\",\"Txy\",\"Tyz\",\"Tzx\",\n")
   #f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\n")
   title_name = "nmesh" + str(n)
   ncell  = cellSites[n].getSelfCount()
@@ -168,12 +168,12 @@ def esbgkTecplotFile(meshes, macroFields,filename ):
           f.write("\n")
   f.write("\n")
   for i in range(0,ncell):
-      f.write( str(TxzFields[n][i]) + "    ")
+      f.write( str(TyzFields[n][i]) + "    ")
       if ( i % 5  == 4 ):
           f.write("\n")
   f.write("\n")
   for i in range(0,ncell):
-      f.write( str(TyzFields[n][i]) + "    ")
+      f.write( str(TzxFields[n][i]) + "    ")
       if ( i % 5  == 4 ):
           f.write("\n")
   f.write("\n")

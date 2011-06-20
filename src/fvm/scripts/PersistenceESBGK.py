@@ -183,7 +183,7 @@ class PersistenceESBGK(object):
     # Kinetic Model
     #---------------------------------------------------------
         
-    def getKineticModelData(self,macroFields,fmodel,distfields,dsfN1,dsfN2,ndir):
+    def getKineticModelData(self,macroFields,fmodel,distfields,ndir):
         
         foptions = fmodel.getOptions()
 
@@ -204,12 +204,12 @@ class PersistenceESBGK(object):
         
         
         if foptions.transient:
-            for i in range(0,ndir):
-                cellFields.append(dsfN1[i])
+            for i in range(ndir,2*ndir):
+                cellFields.append(distfields[i])
          
             if foptions.timeDiscretizationOrder > 1:
-                for i in range(0,ndir):
-                    cellFields.append(dsfN2[i])
+                for i in range(2*ndir,3*ndir):
+                    cellFields.append(distfields[i])
                 
         
         modelFieldData['cells'] = cellFields
@@ -218,13 +218,13 @@ class PersistenceESBGK(object):
 
         return modelFieldData
     
-    def saveKineticModel(self,macroFields,model,meshes,distfields,dsfN1,dsfN2,ndir):
+    def saveKineticModel(self,macroFields,model,meshes,distfields,ndir):
 
-        modelFieldData = self.getKineticModelData(macroFields,model,distfields,dsfN1,dsfN2,ndir)
+        modelFieldData = self.getKineticModelData(macroFields,model,distfields,ndir)
         self.saveModel(model, 'fmodel', modelFieldData, meshes)
 
             
-    def readKineticModel(self,macroFields,model,meshes,distfields,dsfN1,dsfN2,ndir):
+    def readKineticModel(self,macroFields,model,meshes,distfields,ndir):
 
-        modelFieldData = self.getKineticModelData(macroFields,model,distfields,dsfN1,dsfN2,ndir)
+        modelFieldData = self.getKineticModelData(macroFields,model,distfields,ndir)
         self.readModel(model, 'fmodel', modelFieldData, meshes)
