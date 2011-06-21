@@ -311,34 +311,35 @@ public:
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
+	if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 
-        const StorageSite& cells = mesh.getCells();
-        const StorageSite& ibFaces = mesh.getIBFaces();
+           const StorageSite& cells = mesh.getCells();
+           const StorageSite& ibFaces = mesh.getIBFaces();
         
-        GeomFields::SSPair key1(&ibFaces,&cells);
-        const IMatrix& mIC =
-          dynamic_cast<const IMatrix&>
-          (*_geomFields._interpolationMatrices[key1]);
+           GeomFields::SSPair key1(&ibFaces,&cells);
+           const IMatrix& mIC =
+           dynamic_cast<const IMatrix&>
+            (*_geomFields._interpolationMatrices[key1]);
 
-        IMatrixV3 mICV(mIC);
+           IMatrixV3 mICV(mIC);
 
-        GeomFields::SSPair key2(&ibFaces,&particles);
-        const IMatrix& mIP =
-          dynamic_cast<const IMatrix&>
-          (*_geomFields._interpolationMatrices[key2]);
+           GeomFields::SSPair key2(&ibFaces,&particles);
+           const IMatrix& mIP =
+           dynamic_cast<const IMatrix&>
+            (*_geomFields._interpolationMatrices[key2]);
 
-        IMatrixV3 mIPV(mIP);
+           IMatrixV3 mIPV(mIP);
 
-        shared_ptr<VectorT3Array> ibV(new VectorT3Array(ibFaces.getCount()));
+           shared_ptr<VectorT3Array> ibV(new VectorT3Array(ibFaces.getCount()));
         
-        const VectorT3Array& cV =
-          dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
+           const VectorT3Array& cV =
+            dynamic_cast<const VectorT3Array&>(_flowFields.velocity[cells]);
     
 
-        ibV->zero();
+           ibV->zero();
 
-	mICV.multiplyAndAdd(*ibV,cV);
-	mIPV.multiplyAndAdd(*ibV,pV);
+           mICV.multiplyAndAdd(*ibV,cV);
+   	   mIPV.multiplyAndAdd(*ibV,pV);
 
 	
 #if 0
@@ -371,7 +372,9 @@ public:
 	//}
 
 #endif
-        _flowFields.velocity.addArray(ibFaces,ibV);
+          _flowFields.velocity.addArray(ibFaces,ibV);
+
+       }
     }
 
   }
@@ -1053,6 +1056,10 @@ public:
 #ifdef FVM_PARALLEL
       int count = 1;
       MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &netFlux, count, MPI::DOUBLE, MPI::SUM);
+
+      int useReferencePressureInt = int(this->_useReferencePressure );
+      MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &useReferencePressureInt, count, MPI::INT, MPI::PROD);
+      this->_useReferencePressure = bool(useReferencePressureInt);
 #endif
     //    cout << "net boundary flux = " << netFlux << endl;
     
