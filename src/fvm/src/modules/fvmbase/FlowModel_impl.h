@@ -27,6 +27,8 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "StressTensor.h"
+#include "KeFields.h"
+#include "WallDiscretization.h"
 
 template<class T>
 class FlowModel<T>::Impl
@@ -68,10 +70,12 @@ public:
   
   Impl(const GeomFields& geomFields,
        FlowFields& thermalFields,
-       const MeshList& meshes) :
+       const MeshList& meshes,
+       KeFields* keFields) :
     _meshes(meshes),
     _geomFields(geomFields),
     _flowFields(thermalFields),
+    _keFields(keFields),
     _velocityGradientModel(_meshes,_flowFields.velocity,
                            _flowFields.velocityGradient,_geomFields),
     _pressureGradientModel(_meshes,_flowFields.pressure,
@@ -297,6 +301,13 @@ public:
         }
         vN1 = v;
     }
+  }
+ const Field& getViscosityField() const
+  {
+    if (_options.turbulent)
+      return _flowFields.totalviscosity;
+    else
+      return _flowFields.viscosity;
   }
 
   void computeIBFaceVelocity(const StorageSite& particles)
@@ -553,7 +564,7 @@ public:
       dd(new DiffusionDiscretization<VectorT3,DiagTensorT3,T>
          (_meshes,_geomFields,
           _flowFields.velocity,
-          _flowFields.viscosity,
+           getViscosityField(),
           _flowFields.velocityGradient));
 
     shared_ptr<Discretization>
@@ -587,6 +598,23 @@ public:
         
         discretizations.push_back(td);
     }
+   if (_options.turbulent && "wall")
+   {
+      shared_ptr<Discretization>
+         wd(new WallDiscretization<T,T,T>
+           (_meshes,_geomFields,
+            _flowFields.velocity,
+            _keFields->energy,
+            _flowFields.density,
+            _flowFields.uparallel,
+            _flowFields.tau,
+            _flowFields.tauwall,
+            _flowFields.totalviscosity,
+            _flowFields.viscosity));
+
+    discretizations.push_back(wd);
+
+  }
 
     shared_ptr<Discretization>
       ibm(new GenericIBDiscretization<VectorT3,DiagTensorT3,T>
@@ -1718,7 +1746,7 @@ public:
     const TArray& pCell =
       dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
 
-    const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
+    const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);
 
     boost::shared_ptr<StressTensorArray> stressTensorPtr( new StressTensorArray(nCells));
     StressTensorArray& stressTensor = *stressTensorPtr;
@@ -1774,7 +1802,7 @@ public:
     const TArray& pCell =
       dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
 
-    const TArray& mu = dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
+    const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);
       
     for(int n=0; n<nCells; n++)
     {
@@ -1833,7 +1861,7 @@ public:
           dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
         
         const TArray& mu =
-          dynamic_cast<const TArray&>(_flowFields.viscosity[cells]);
+          dynamic_cast<const TArray&>(getViscosityField()[cells]);
         
         //const FlowVC<T>& vc = *_vcMap[mesh.getID()];
             
@@ -1986,7 +2014,7 @@ private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
   FlowFields& _flowFields;
-
+  KeFields* _keFields;
   FlowBCMap _bcMap;
   FlowVCMap _vcMap;
   
@@ -2012,9 +2040,10 @@ private:
 template<class T>
 FlowModel<T>::FlowModel(const GeomFields& geomFields,
                         FlowFields& thermalFields,
-                        const MeshList& meshes) :
+                        const MeshList& meshes,
+                        KeFields* keFields) :
   Model(meshes),
-  _impl(new Impl(geomFields,thermalFields,meshes))
+  _impl(new Impl(geomFields,thermalFields,meshes,keFields))
 {
   logCtor();
 }

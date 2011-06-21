@@ -8,8 +8,9 @@
 
 #include "Mesh.h"
 #include "LinearSolver.h"
-
+#include "KeFields.h"
 #include "FlowBC.h"
+class KeFields;
 
 template<class T>
 class FlowModel : public Model
@@ -23,7 +24,7 @@ public:
   
   
   FlowModel(const GeomFields& geomFields,
-               FlowFields& thermalFields, const MeshList& meshes);
+               FlowFields& thermalFields, const MeshList& meshes,KeFields* keFields=0);
   
   virtual ~FlowModel();
 

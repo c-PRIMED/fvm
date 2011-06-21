@@ -181,6 +181,14 @@ public:
         //*densityCell = vc1["density"];
         _flowFields.density.addArray(cells,densityCell);
  
+  
+      //utau field
+        shared_ptr<TArray> utauCell(new TArray(cells.getCount()));
+        *utauCell = T(0);
+        _flowFields.utau.addArray(cells,utauCell);
+
+
+
         //c1
         shared_ptr<TArray> c1Cell(new TArray(cells.getCount()));
         *c1Cell = vc["c1"];
@@ -726,6 +734,17 @@ public:
                                 
             }
 
+           else if((bc.bcType == "Wall"))
+         {
+          const int numMeshes = _meshes.size();
+          for (int n=0; n<numMeshes; n++)
+            {
+              const Mesh& mesh = *_meshes[n];
+
+              getutau(mesh);
+           }
+
+          }
             else if ((bc.bcType == "PressureBoundary"))
             {
             for(int f=0; f<nFaces; f++)
@@ -884,14 +903,6 @@ void getutau(const Mesh& mesh)
 
 
         _niters++;
-    const int numMeshes = _meshes.size();
-    for (int n=0; n<numMeshes; n++)
-    {
-        const Mesh& mesh = *_meshes[n];
-
-        getutau(mesh);
-    }
-
 
         if (*rNorm < _options.absoluteTolerance ||
             *normRatio < _options.relativeTolerance)

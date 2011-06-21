@@ -15,11 +15,15 @@
 #include "Array.h"
 #include "GeomFields.h"
 #include "FlowFields.h"
+#include "DiffusionDiscretization.h"
+#include "KeFields.h"
+
 
 template<class T, class Diag, class OffDiag>
 class WallDiscretization : public Discretization
 {
 public:
+  typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
 
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
@@ -39,7 +43,9 @@ public:
                      Field& parallelvelocityField,
                      Field& wallstressField,
                      Field& tauwallField,
-                     Field& muField):
+                     Field& diffusivityField,
+                     Field& muField,
+                     const T_Scalar thickness=0.0):
 
     Discretization(meshes),
     _geomFields(geomFields),
@@ -49,7 +55,9 @@ public:
     _parallelvelocityField(parallelvelocityField),
     _wallstressField(wallstressField),
     _tauwallField(tauwallField),
-    _muField(muField)
+    _diffusivityField(diffusivityField),
+    _muField(muField),
+    _thickness(thickness)
 
  {}
  // KeModelOptions<T>&   getOptions() {return _options;}
@@ -71,7 +79,7 @@ public:
     dynamic_cast<const TArray&>(_densityField[cells]);
   
   const TArray & kCell = 
-    dynamic_cast<const TArray&>(_energyField[cells]);
+   dynamic_cast<const TArray&>(_energyField[cells]);
 
   const TArray & muCell=
     dynamic_cast<const TArray&>(_muField[cells]);
@@ -83,11 +91,15 @@ public:
    VectorT3Array& Up =
     dynamic_cast<VectorT3Array&>(_parallelvelocityField[cells]);
 
+    const TArray& diffCell =
+      dynamic_cast<const TArray&>(_diffusivityField[cells]);
+
 
   TArray& rCell =
     dynamic_cast<TArray&>(rField[cVarIndex]);
 
- //const TArray& xCell = dynamic_cast<const TArray&>(xField[cVarIndex]);
+  const TArray& xCell = 
+    dynamic_cast<const TArray&>(xField[cVarIndex]);
  
 
  foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
@@ -133,17 +145,27 @@ public:
          for(int f=0; f<nFaces; f++)
            {
 
-             T ystar = 0; T diffMetric =0; 
+             T ystar = 0; T wallMetric =0; 
 
              VectorT3 n = faceArea[f]/faceAreaMag[f];
 
              const int c0 = faceCells(f,0);
              const int c1 = faceCells(f,1);
 
-            // Diag& a00 = diag[c0];
-             Diag& dRdX1 = diag[c1];
-            // OffDiag& a01 = assembler.getCoeff01(f);
-             OffDiag& dRdX0 = assembler.getCoeff10(f);
+             //Computation of Diffusion flux
+
+             VectorT3 ds = cellCentroid[c1]-cellCentroid[c0];
+             T_Scalar dsMag = mag(ds);
+
+             T_Scalar faceDiffusivity = harmonicAverage(diffCell[c0],diffCell[c1]);
+
+             T_Scalar sign(NumTypeTraits<T_Scalar>::getUnity());
+             if (dot(faceArea[f],ds) < 0.0)
+                  sign *= -1.0;
+
+             const T_Scalar diffMetric = sign * faceAreaMag[f] / (dsMag + 0.5* _thickness);
+             const T_Scalar diffCoeff = faceDiffusivity*diffMetric;
+             const T dFlux = diffCoeff*(xCell[c1]-xCell[c0]);
 
 
              ystar = (rhoCell[c0]*sqrt(kCell[c0])*pow(Cmu,onefourth)*cellCentroid[c0][1])/muCell[c0];
@@ -157,31 +179,37 @@ public:
    
                 if (ystar > eleven)
                  {
-                   diffMetric = (vonk*rhoCell[c0]*pow(Cmu,onefourth)*sqrt(kCell[c0]))/log(Emp*ystar);
+                   wallMetric = (vonk*rhoCell[c0]*pow(Cmu,onefourth)*sqrt(kCell[c0]))/log(Emp*ystar);
 
                  }  
 
                else
                  {
           
-                   diffMetric = muCell[c0]/cellCentroid[c0][1];
+                   wallMetric = muCell[c0]/cellCentroid[c0][1];
                  
                  }
 
-             tau[f][i] = Up[c0][i]*diffMetric;
+             tau[f][i] = Up[c0][i]*wallMetric;
 
              T tau_dot_n = tau[f][0]*n[0]+ tau[f][1]*n[1]+ tau[f][2]*n[2];
     
              TauWall[f][i] = tau[f][i] - tau_dot_n*n[i];
     
            }
-             T force = TauWall[f][0]*faceArea[f][0]+TauWall[f][1]*faceArea[f][1]+TauWall[f][2]*faceArea[f][2];
+             T wFlux = TauWall[f][0]*faceArea[f][0]+TauWall[f][1]*faceArea[f][1]+TauWall[f][2]*faceArea[f][2];
 
-            rCell[c0] += force;
-            rCell[c1] -= force;
+            T flux = wFlux - dFlux;
+            rCell[c0] += flux;
+            rCell[c1] -= flux;
+ 
+            //diag[c0] +=diffCoeff;
+           // assembler.getCoeff01(f) -=diffCoeff;
+            
+            T wallCoeff = wallMetric- diffCoeff;
 
-            dRdX1 +=diffMetric;
-            dRdX0 +=diffMetric;
+            diag[c1] -=wallCoeff;
+            assembler.getCoeff10(f) +=wallCoeff;
  
              } 
         }
@@ -196,8 +224,10 @@ private:
   Field& _parallelvelocityField;
   Field& _wallstressField;
   Field& _tauwallField;
+  Field& _diffusivityField;
   Field& _muField;
   FlowModelOptions<T> _options;
+  const T_Scalar _thickness;
 };
 
 #endif

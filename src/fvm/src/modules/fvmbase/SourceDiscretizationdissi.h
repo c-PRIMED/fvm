@@ -102,9 +102,6 @@ public:
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
 
     DiagArray& diag = matrix.getDiag();
-    T x; T y; T dx; T dy; T ds;
-    //T onePointfour(1.44);
-   // T onePointnine(1.92);
     T two(2.0);
     T C1mu = _options.c1mu;
     T C2mu = _options.c2mu;
@@ -112,10 +109,10 @@ public:
     {
         const VGradType& vg = vGrad[n];
         VGradType vgSquare = vGrad[n];
-         x = (muCell[n]*eCell[n]*C1mu)/kCell[n];
-         y = (C2mu*pow(eCell[n],two)*rhoCell[n])/kCell[n];
-         dx = x/eCell[n];
-         dy = (y*two)/eCell[n];
+        T sourcecoeff1  = (muCell[n]*eCell[n]*C1mu)/kCell[n];
+        T sourcecoeff2  = (C2mu*pow(eCell[n],two)*rhoCell[n])/kCell[n];
+        T dsc1 = sourcecoeff1/eCell[n];
+        T dsc2 = (sourcecoeff2*two)/eCell[n];
          T sum = 0; 
         for(int i=0;i<3;i++)
         {
@@ -124,14 +121,11 @@ public:
            vgSquare[i][j] =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
            sum += vgSquare[i][j];
 
-        //     vgSquare[i][j] =  vg[i][j]*vg[i][j] ;
-          //   vgSquare[i][j] += vg[i][j]*vg[j][i];
            }
         }
-       //cout<<sum;
         
-        sourceCell[n] = sum*x-y ;
-        ds = sum*dx-dy;
+        sourceCell[n] = sum*sourcecoeff1- sourcecoeff2 ;
+       T ds = sum*dsc1-dsc2;
         sourcecCell[n] = sourceCell[n]- ds*eCell[n];
         sourcepCell[n] = ds;
         rCell[n] +=sourcecCell[n]*cellVolume[n];

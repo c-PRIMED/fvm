@@ -82,7 +82,7 @@ public:
     {
         const VGradType& vg = vGrad[n];
         VGradType vgSquare = vGrad[n]; 
-        T x = eCell[n]*rhoCell[n];       
+        T rhoe = eCell[n]*rhoCell[n];       
         T sum = 0;
         for(int i=0;i<3;i++)
         {
@@ -93,7 +93,7 @@ public:
            sum += vgSquare[i][j];
          }
         }
-        sourceCell[n] = sum*muCell[n]-x;
+        sourceCell[n] = sum*muCell[n]-rhoe;
         rCell[n] +=sourceCell[n]*cellVolume[n];
     }
 }
