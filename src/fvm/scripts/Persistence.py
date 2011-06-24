@@ -46,6 +46,26 @@ class Persistence(object):
             a = mesh.getNodeCoordinates().asNumPyArray()
             group.create_dataset(nodesLabel,data=a)
 
+    def saveFluidMeshes(self,meshes):
+        group = self.hdfFile.get('coordinates_fluid',None)
+        if group is None:
+            group = self.hdfFile.create_group('coordinates_fluid')       
+        for mesh in meshes:
+            meshID = mesh.getID()
+            nodesLabel = 'mesh-%d:nodes' % meshID
+            a = mesh.getNodeCoordinates().asNumPyArray()
+            group.create_dataset(nodesLabel,data=a)
+
+    def saveSolidMeshes(self,meshes):
+        group = self.hdfFile.get('coordinates_solid',None)
+        if group is None:
+            group = self.hdfFile.create_group('coordinates_solid')
+        for mesh in meshes:
+            meshID = mesh.getID()
+            nodesLabel = 'mesh-%d:nodes' % meshID
+            a = mesh.getNodeCoordinates().asNumPyArray()
+            group.create_dataset(nodesLabel,data=a)
+
     def readMeshes(self,meshes):
         group = self.hdfFile.get('coordinates',None)
         if group is not None:
@@ -59,7 +79,37 @@ class Persistence(object):
                     a[:] = ds.value
                 else:
                     raise IndexError(' coordinates %s not found' % nodesLabel)
+    
 
+    def readSolidMeshes(self,meshes):
+        group = self.hdfFile.get('coordinates_solid',None)
+        if group is not None:
+            for mesh in meshes:
+                meshID = mesh.getID()
+                nodesLabel = 'mesh-%d:nodes' % meshID
+
+                ds = group.get(nodesLabel,None)
+                if ds is not None:
+                    a = mesh.getNodeCoordinates().asNumPyArray()
+                    a[:] = ds.value
+                else:
+                    raise IndexError('solid coordinates %s not found' % nodesLabel)
+
+    def readFluidMeshes(self,meshes):
+        group = self.hdfFile.get('coordinates_fluid',None)
+        if group is not None:
+            for mesh in meshes:
+                meshID = mesh.getID()
+                nodesLabel = 'mesh-%d:nodes' % meshID
+
+                ds = group.get(nodesLabel,None)
+                if ds is not None:
+                    a = mesh.getNodeCoordinates().asNumPyArray()
+                    a[:] = ds.value
+                else:
+                    raise IndexError('fluid coordinates %s not found' % nodesLabel)           
+
+                
     def readWriteModelFields(self, meshes, modelFieldData, op):
         for mesh in meshes:
             meshID = mesh.getID()
@@ -178,6 +228,65 @@ class Persistence(object):
         modelFieldData = self.getStructureModelData(structureFields,model)
         self.readModel(model, 'smodel', modelFieldData, meshes)
         
+    #---------------------------------------------------------
+    # Plate Model
+    #---------------------------------------------------------
+        
+    def getPlateModelData(self, plateFields, model):
+        modelFieldData = {}
+        options = model.getOptions()
+        
+        cellFields = [plateFields.deformation, 
+        	      plateFields.acceleration,
+        	      plateFields.velocity]
+        
+        if options.transient:
+            cellFields.append(plateFields.deformationN1)
+            cellFields.append(plateFields.deformationN2)
+            cellFields.append(plateFields.deformationN3)
+            
+        modelFieldData['cells'] = cellFields
+        
+        return modelFieldData
+
+    def savePlateModel(self, plateFields,model,meshes):
+
+        modelFieldData = self.getPlateModelData(plateFields,model)
+        self.saveModel(model, 'pmodel', modelFieldData, meshes)
+
+            
+    def readPlateModel(self,plateFields,model,meshes):
+
+        modelFieldData = self.getPlateModelData(plateFields,model)
+        self.readModel(model, 'pmodel', modelFieldData, meshes)   
+    
+    #---------------------------------------------------------
+    # Electric Model
+    #---------------------------------------------------------
+        
+    def getElectricModelData(self, elecFields, model):
+        modelFieldData = {}
+        options = model.getOptions()
+        
+        cellFields = [elecFields.potential]
+        
+        #if options.transient:
+                   
+        modelFieldData['cells'] = cellFields
+        
+        return modelFieldData
+
+    def saveElectricModel(self, elecFields,model,meshes):
+
+        modelFieldData = self.getElectricModelData(elecFields,model)
+        self.saveModel(model, 'emodel', modelFieldData, meshes)
+
+            
+    def readElectricModel(self,elecFields,model,meshes):
+
+        modelFieldData = self.getElectricModelData(elecFields,model)
+        self.readModel(model, 'emodel', modelFieldData, meshes)   
+        
 #---------------------------------------------------------
     # Kinetic Model
     #---------------------------------------------------------
@@ -227,3 +336,4 @@ class Persistence(object):
 
         modelFieldData = self.getKineticModelData(macroFields,model,distfields,ndir)
         self.readModel(model, 'fmodel', modelFieldData, meshes)
+
