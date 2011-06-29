@@ -84,6 +84,7 @@ public:
         VGradType vgSquare = vGrad[n]; 
         T rhoe = eCell[n]*rhoCell[n];       
         T sum = 0;
+
         for(int i=0;i<3;i++)
         {
          for(int j=0;j<3;j++)
@@ -93,6 +94,7 @@ public:
            sum += vgSquare[i][j];
          }
         }
+
         sourceCell[n] = sum*muCell[n]-rhoe;
         rCell[n] +=sourceCell[n]*cellVolume[n];
     }

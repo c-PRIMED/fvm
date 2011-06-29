@@ -111,9 +111,11 @@ public:
         VGradType vgSquare = vGrad[n];
         T sourcecoeff1  = (muCell[n]*eCell[n]*C1mu)/kCell[n];
         T sourcecoeff2  = (C2mu*pow(eCell[n],two)*rhoCell[n])/kCell[n];
-        T dsc1 = sourcecoeff1/eCell[n];
-        T dsc2 = (sourcecoeff2*two)/eCell[n];
-         T sum = 0; 
+        T dsc1 = (muCell[n]*C1mu)/kCell[n];
+        T dsc2 = (C2mu*2*eCell[n]*rhoCell[n])/kCell[n];
+
+         T sum = 0;
+ 
         for(int i=0;i<3;i++)
         {
           for(int j=0;j<3;j++)
@@ -125,7 +127,7 @@ public:
         }
         
         sourceCell[n] = sum*sourcecoeff1- sourcecoeff2 ;
-       T ds = sum*dsc1-dsc2;
+        T ds = sum*dsc1-dsc2;
         sourcecCell[n] = sourceCell[n]- ds*eCell[n];
         sourcepCell[n] = ds;
         rCell[n] +=sourcecCell[n]*cellVolume[n];

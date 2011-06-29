@@ -808,6 +808,9 @@ void getutau(const Mesh& mesh)
     TArray& eCell =
       dynamic_cast< TArray&>(_keFields.dissipation[cells]);
 
+    const VectorT3Array& cellCentroid =
+       dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+
      T zeroPointonine(0.09);T zeroPointfour(0.4187);
      T three(3.0);
    const int nCells = cells.getCount();
@@ -815,7 +818,7 @@ void getutau(const Mesh& mesh)
     for(int c=0; c<nCells; c++)
    {
        utauCell[c] = sqrt(sqrt(zeroPointonine)*kCell[c]);
-       eCell[c] = pow(utauCell[c],three)/zeroPointfour;
+       eCell[c] = (pow(utauCell[c],three))/(zeroPointfour*cellCentroid[c][1]);
    }
 
 }

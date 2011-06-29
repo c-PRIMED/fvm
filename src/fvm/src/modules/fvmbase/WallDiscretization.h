@@ -204,7 +204,7 @@ public:
             rCell[c1] -= flux;
  
             //diag[c0] +=diffCoeff;
-           // assembler.getCoeff01(f) -=diffCoeff;
+            //assembler.getCoeff01(f) -=diffCoeff;
             
             T wallCoeff = wallMetric- diffCoeff;
 
