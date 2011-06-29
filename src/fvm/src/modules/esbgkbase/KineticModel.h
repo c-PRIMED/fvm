@@ -177,7 +177,48 @@ class KineticModel : public Model
 	  }	
       }
   }
-  
+  void InitializeFgammaCoefficients()
+  {
+    const int numMeshes =_meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getCount(); 
+	//	const double pi(3.14159);
+	const double pi=_options.pi;
+	
+	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);  
+	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
+	VectorT5Array& coeff = dynamic_cast<VectorT5Array&>(_macroFields.coeff[cells]);
+	VectorT10Array& coeffg = dynamic_cast<VectorT10Array&>(_macroFields.coeffg[cells]);
+	
+	
+	for(int c=0; c<nCells;c++)
+	  {
+	    if(_options.fgamma>0){
+	      //BGK
+	      coeff[c][0]=density[c]/pow((pi*temperature[c]),1.5);
+	      coeff[c][1]=1/temperature[c];
+	      coeff[c][2]=0.0;coeff[c][3]=0.0;coeff[c][4]=0.0;
+	    }
+	    if(_options.fgamma ==2){
+	      //ESBGK
+	      coeffg[c][0]=coeff[c][0];
+	      coeffg[c][1]=coeff[c][1];
+	      coeffg[c][2]=coeff[c][2];
+	      coeffg[c][3]=coeff[c][1];
+	      coeffg[c][4]=coeff[c][3];
+	      coeffg[c][5]=coeff[c][1];
+	      coeffg[c][6]=coeff[c][4];
+	      coeffg[c][7]=0.0;
+	      coeffg[c][8]=0.0;
+	      coeffg[c][9]=0.0;	
+	    }
+	  }
+      }
+  }
+
   void ComputeMacroparameters() 
   {  
     //FILE * pFile;
@@ -935,7 +976,7 @@ class KineticModel : public Model
       }
   }
 
-  void weightedMaxwellian(double weight1,double vel1,double vel2,double temp1,double temp2)
+  void weightedMaxwellian(double weight1,double uvel1,double vvel1,double wvel1,double uvel2,double vvel2,double wvel2,double temp1,double temp2)
   {
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -954,8 +995,8 @@ class KineticModel : public Model
 	  Field& fnd = *_dsfPtr.dsf[j];
 	  TArray& f = dynamic_cast< TArray&>(fnd[cells]);
 	  for(int c=0; c<nCells;c++){
-	    f[c]=weight1*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-vel1),2.0)+pow((cy[j]-0.0),2.0)+pow((cz[j]-0.0),2.0))/temp1)
-	      +(1-weight1)*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-vel2),2.0)+pow((cy[j]-0.0),2.0)+pow((cz[j]-0.0),2.0))/temp2);
+	    f[c]=weight1*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-uvel1),2.0)+pow((cy[j]-vvel1),2.0)+pow((cz[j]-wvel1),2.0))/temp1)
+	      +(1-weight1)*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-uvel2),2.0)+pow((cy[j]-vvel2),2.0)+pow((cz[j]-wvel2),2.0))/temp2);
 	  }
 	  if (_options.transient)
 	    {
@@ -975,7 +1016,50 @@ class KineticModel : public Model
 	}
       }
   }
-  
+  void weightedMaxwellian(double weight1,double uvel1,double uvel2,double temp1,double temp2)
+  {
+    const double vvel1=0.0;
+    const double wvel1=0.0;
+    const double vvel2=0.0;
+    const double wvel2=0.0;
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getCount();
+	//double pi(acos(-1.0));
+	const double pi=_options.pi;
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const int numFields= _quadrature.getDirCount(); 
+	
+	for(int j=0;j< numFields;j++){
+	  Field& fnd = *_dsfPtr.dsf[j];
+	  TArray& f = dynamic_cast< TArray&>(fnd[cells]);
+	  for(int c=0; c<nCells;c++){
+	    f[c]=weight1*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-uvel1),2.0)+pow((cy[j]-vvel1),2.0)+pow((cz[j]-wvel1),2.0))/temp1)
+	      +(1-weight1)*1.0/pow((pi*1.0),1.5)*exp(-(pow((cx[j]-uvel2),2.0)+pow((cy[j]-vvel2),2.0)+pow((cz[j]-wvel2),2.0))/temp2);
+	  }
+	  if (_options.transient)
+	    {
+	      Field& fnd1 = *_dsfPtr1.dsf[j];
+	      TArray& f1 = dynamic_cast< TArray&>(fnd1[cells]);
+	      for (int c=0;c<nCells;c++)
+		f1[c] = f[c];
+              //cout << "discretization order " << _options.timeDiscretizationOrder << endl ;
+	      if (_options.timeDiscretizationOrder > 1)
+		{
+		  Field& fnd2 = *_dsfPtr2.dsf[j];
+		  TArray& f2 = dynamic_cast< TArray&>(fnd2[cells]);
+		  for (int c=0;c<nCells;c++)
+		    f2[c] = f[c];
+		}
+	    }
+	}
+      }
+  }
   KineticBCMap& getBCMap()  {return _bcMap;}
   KineticVCMap& getVCMap()  {return _vcMap;}
   
@@ -1394,7 +1478,7 @@ class KineticModel : public Model
 
 	const StorageSite& cells = mesh.getCells();
 	const int numFields= _quadrature.getDirCount(); 
-	callBoundaryConditions();  //new
+	//callBoundaryConditions();  //new
 	for (int direction = 0; direction < numFields; direction++)
 	  {
 	    Field& fnd = *_dsfPtr.dsf[direction];
@@ -1410,12 +1494,12 @@ class KineticModel : public Model
 	    fN1 = f;
 	  }
 
-	ComputeMacroparameters();	//update macroparameters
-        ComputeCollisionfrequency();
-	if (_options.fgamma==0){initializeMaxwellianEq();}
-	else{ EquilibriumDistributionBGK();}
+	//ComputeMacroparameters();	//update macroparameters
+        //ComputeCollisionfrequency();
+	//if (_options.fgamma==0){initializeMaxwellianEq();}
+	//else{ EquilibriumDistributionBGK();}
 	
-	if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+	//if (_options.fgamma==2){EquilibriumDistributionESBGK();}
 	
       }
   }
@@ -1552,7 +1636,7 @@ class KineticModel : public Model
  
 	MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));	
 	//	MFRPtr vnormRatio((*vNorm)/(*_initialKmodelvNorm));
-	//if ( MPI::COMM_WORLD.Get_rank() == 0 )
+	if ( MPI::COMM_WORLD.Get_rank() == 0 )
 	{cout << _niters << ": " << *rNorm <<endl; }
 
 	_niters++;

@@ -123,7 +123,7 @@ struct KineticModelOptions : public FloatVarDict<T>
     if (this->KineticLinearSolver == 0)
     {
         LinearSolver* ls(new AMG());
-        ls->relativeTolerance = 1e-5;
+        ls->relativeTolerance = 1e-15;
         ls->nMaxIterations = 100;
         ls->verbosity=0;
         this->KineticLinearSolver = ls;
