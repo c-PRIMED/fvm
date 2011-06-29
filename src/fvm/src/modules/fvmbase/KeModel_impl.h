@@ -811,14 +811,16 @@ void getutau(const Mesh& mesh)
     const VectorT3Array& cellCentroid =
        dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
 
-     T zeroPointonine(0.09);T zeroPointfour(0.4187);
+     T cmu = _options.cmu;
+     T vonk = _options.vk;
+     //T zeroPointonine(0.09);T zeroPointfour(0.4187);
      T three(3.0);
    const int nCells = cells.getCount();
 
     for(int c=0; c<nCells; c++)
    {
-       utauCell[c] = sqrt(sqrt(zeroPointonine)*kCell[c]);
-       eCell[c] = (pow(utauCell[c],three))/(zeroPointfour*cellCentroid[c][1]);
+       utauCell[c] = sqrt(sqrt(cmu)*kCell[c]);
+       eCell[c] = (pow(utauCell[c],three))/(vonk*cellCentroid[c][1]);
    }
 
 }
