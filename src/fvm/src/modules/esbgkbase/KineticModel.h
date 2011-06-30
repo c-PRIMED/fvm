@@ -192,7 +192,12 @@ class KineticModel : public Model
 	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
 	VectorT5Array& coeff = dynamic_cast<VectorT5Array&>(_macroFields.coeff[cells]);
 	VectorT10Array& coeffg = dynamic_cast<VectorT10Array&>(_macroFields.coeffg[cells]);
-	
+	TArray& Txx = dynamic_cast<TArray&>(_macroFields.Txx[cells]);
+	TArray& Tyy = dynamic_cast<TArray&>(_macroFields.Tyy[cells]);
+	TArray& Tzz = dynamic_cast<TArray&>(_macroFields.Tzz[cells]);
+	TArray& Txy = dynamic_cast<TArray&>(_macroFields.Txy[cells]);
+	TArray& Tyz = dynamic_cast<TArray&>(_macroFields.Tyz[cells]);
+	TArray& Tzx = dynamic_cast<TArray&>(_macroFields.Tzx[cells]);
 	
 	for(int c=0; c<nCells;c++)
 	  {
@@ -214,6 +219,13 @@ class KineticModel : public Model
 	      coeffg[c][7]=0.0;
 	      coeffg[c][8]=0.0;
 	      coeffg[c][9]=0.0;	
+
+	      Txx[c]=0.5*temperature[c];
+	      Tyy[c]=0.5*temperature[c];
+	      Tzz[c]=0.5*temperature[c];
+	      Txy[c]=0.0;
+	      Tyz[c]=0.0;
+	      Tzx[c]=0.0;
 	    }
 	  }
       }
@@ -1243,7 +1255,47 @@ class KineticModel : public Model
   }
   
   // const vector<int>& vecReflection = _faceReflectionArrayMap[faceID]
+map<string,shared_ptr<ArrayBase> >&
+  getPersistenceData()
+  {
+    _persistenceData.clear();
+    
+    Array<int>* niterArray = new Array<int>(1);
+    (*niterArray)[0] = _niters;
+    _persistenceData["niters"]=shared_ptr<ArrayBase>(niterArray);
+    
+    if (_initialKmodelNorm)
+    {
+        _persistenceData["initialKmodelNorm"] =
+        _initialKmodelNorm->getArrayPtr(_macroFields.velocity);
+    }
+    else
+    {
+        Array<Vector<T,3> >* xArray = new Array<Vector<T,3> >(1);
+        xArray->zero();
+        _persistenceData["initialKmodelNorm"]=shared_ptr<ArrayBase>(xArray);
+        
+    }
+    return _persistenceData;
+  }
 
+ void restart()
+  {
+    if (_persistenceData.find("niters") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase> rp = _persistenceData["niters"];
+        ArrayBase& r = *rp;
+        Array<int>& niterArray = dynamic_cast<Array<int>& >(r);
+        _niters = niterArray[0];
+    }
+
+    if (_persistenceData.find("initialKmodelNorm") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase>  r = _persistenceData["initialKmodelNorm"];
+        _initialKmodelNorm = MFRPtr(new MultiFieldReduction());
+        _initialKmodelNorm->addArray(_macroFields.velocity,r);
+    }
+  }
   
   void SetBoundaryConditions()
   {
@@ -1636,9 +1688,19 @@ class KineticModel : public Model
  
 	MFRPtr normRatio((*rNorm)/(*_initialKmodelNorm));	
 	//	MFRPtr vnormRatio((*vNorm)/(*_initialKmodelvNorm));
-	if ( MPI::COMM_WORLD.Get_rank() == 0 )
-	{cout << _niters << ": " << *rNorm <<endl; }
-
+#ifdef FVM_PARALLEL
+	if ( MPI::COMM_WORLD.Get_rank() == 0 ){
+	  if (_options.printNormalizedResiduals){
+	    cout << _niters << ": " << *normRatio << endl;}
+	  else{
+	    cout << _niters << ": " << *rNorm <<endl; }}
+#endif
+#ifndef FVM_PARALLEL 
+	if (_options.printNormalizedResiduals){
+	  cout << _niters << ": " << *normRatio << endl;}
+	else{
+	  cout << _niters << ": " << *rNorm <<endl; }
+#endif
 	_niters++;
 	//break here
 
@@ -1882,7 +1944,9 @@ class KineticModel : public Model
   shared_ptr<Field> _previousVelocity;
   shared_ptr<Field> _KmodelApField;
   map<int, vector<int> > _faceReflectionArrayMap;
-  //map<int, IntArray > _faceReflectionArrayMap;
+  //map<int, IntArray > _faceReflectionArrayMap; 
+  
+  map<string,shared_ptr<ArrayBase> > _persistenceData;
 };
 
 #endif
