@@ -4,9 +4,12 @@
 T discretizeMassFluxInterior(const Mesh& mesh,
                              const StorageSite& faces,
                              MultiFieldMatrix& mfmatrix,
-                             const MultiField& xField, MultiField& rField)
+                             const MultiField& xField, MultiField& rField,
+                             const bool isSymmetry=false)
 {
   const StorageSite& cells = mesh.getCells();
+  const int nCellsInterior = cells.getSelfCount();
+  
   MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
   MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
 
@@ -70,7 +73,7 @@ T discretizeMassFluxInterior(const Mesh& mesh,
       const T diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(Af,ds);
 
       const T momApBar0 = (momAp[c0][0]+momAp[c0][1]+momAp[c0][2])/3.0;
-      const T momApBar1 = (momAp[c1][0]+momAp[c1][1]+momAp[c1][2])/3.0;
+      const T momApBar1 = isSymmetry ? momApBar0 : (momAp[c1][0]+momAp[c1][1]+momAp[c1][2])/3.0 ;
       const T momApBarFace = momApBar0 + momApBar1;
 
       const T VdotA0 = dot(V[c0],Af) - OneMinusmomURF*dot(Vprev[c0],Af);
@@ -97,6 +100,9 @@ T discretizeMassFluxInterior(const Mesh& mesh,
           (ibType[c1] == Mesh::IBTYPE_FLUID))
       {
           massFlux[f] = rhoF*Vn - pCoeff*(p[c0]-p[c1]) + (1-momURF)*massFlux[f];
+
+          if (isSymmetry) massFlux[f] = 0.;
+          
           //massFlux[f] = rhoF*Vn  + OneMinusmomURF*massFlux[f];
             
           rCell[c0] -= massFlux[f];
@@ -107,6 +113,13 @@ T discretizeMassFluxInterior(const Mesh& mesh,
             
           ppDiag[c0] += pCoeff;
           ppDiag[c1] += pCoeff;
+          if (isSymmetry)
+          {
+              ppDiag[c0] -= ppAssembler.getCoeff01(f);
+              ppAssembler.getCoeff01(f) =0;
+              rCell[c1] = 0;
+              ppMatrix.setBoundary(c1);
+          }
       }
       else if (((ibType[c0] == Mesh::IBTYPE_FLUID)
                 && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
@@ -127,11 +140,18 @@ T discretizeMassFluxInterior(const Mesh& mesh,
           }
           else
           {
-              massFlux[f]= rho[c1]*dot(Af,faceVelocity);
-              rCell[c1] += massFlux[f];
               rCell[c0] = 0;
+
               ppMatrix.setDirichlet(c0);
-              boundaryFlux -= massFlux[f];
+
+              // skip c1 if this is a ghost cell since the other mesh will
+              // compute the right face flux
+              if (c1 < nCellsInterior)
+              {
+                  massFlux[f]= rho[c1]*dot(Af,faceVelocity);
+                  rCell[c1] += massFlux[f];
+                  boundaryFlux -= massFlux[f];
+              }
           }
                 
             
@@ -191,7 +211,8 @@ T discretizeMassFluxInterior(const Mesh& mesh,
 
 void correctVelocityInterior(const Mesh& mesh,
                              const StorageSite& faces,
-                             const MultiField& ppField)                               
+                             const MultiField& ppField,
+                             const bool isSymmetry = false)                               
 {
   const StorageSite& cells = mesh.getCells();
 
@@ -231,13 +252,15 @@ void correctVelocityInterior(const Mesh& mesh,
             
           const T Adotes = dot(Af,ds)/mag(ds);
           const T coeff0  = cellVolume[c0]*rho[c0]*aByMomAp0/Adotes;
-          const T coeff1  = cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
+          const T coeff1  = isSymmetry ? coeff0 :
+            cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
             
           const T ppFace = (coeff0*pp[c0]+coeff1*pp[c1])/(coeff0+coeff1);
           const VectorT3 ppA = ppFace*faceArea[f];
             
           V[c0] += ppA/momAp[c0];
-          V[c1] -= ppA/momAp[c1];
+          if (!isSymmetry)
+            V[c1] -= ppA/momAp[c1];
       }
       else if (((ibType[c0] == Mesh::IBTYPE_FLUID)
                 && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
@@ -268,7 +291,8 @@ void correctVelocityInterior(const Mesh& mesh,
 }
 
 void updateFacePressureInterior(const Mesh& mesh,
-                                const StorageSite& faces)
+                                const StorageSite& faces,
+                                const bool isSymmetry=false)
 {
   const StorageSite& cells = mesh.getCells();
 
@@ -307,7 +331,8 @@ void updateFacePressureInterior(const Mesh& mesh,
             
           const T Adotes = dot(Af,ds)/mag(ds);
           const T coeff0  = cellVolume[c0]*rho[c0]*aByMomAp0/Adotes;
-          const T coeff1  = cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
+          const T coeff1  = isSymmetry ? coeff0 :
+            cellVolume[c1]*rho[c1]*aByMomAp1/Adotes;
             
           pFace[f] = (coeff0*pCell[c0]+coeff1*pCell[c1])/(coeff0+coeff1);
       }
