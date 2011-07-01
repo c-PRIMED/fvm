@@ -215,6 +215,7 @@ void correctVelocityInterior(const Mesh& mesh,
                              const bool isSymmetry = false)                               
 {
   const StorageSite& cells = mesh.getCells();
+  const int nCellsInterior = cells.getSelfCount();
 
   const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
   const VectorT3Array& cellCentroid =  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
@@ -278,7 +279,7 @@ void correctVelocityInterior(const Mesh& mesh,
                 
               V[c0] += ppA/momAp[c0];
           }
-          else
+          else if (c1 < nCellsInterior)
           {
               const T ppFace = pp[c1];
               const VectorT3 ppA = ppFace*faceArea[f];
