@@ -4,6 +4,9 @@
 #include <mpi.h>
 #endif
 
+#include <fstream>
+#include <sstream>
+
 #include "NumType.h"
 #include "Array.h"
 #include "Field.h"
@@ -137,7 +140,7 @@ public:
         const StorageSite& cells = mesh.getCells();
         const StorageSite& faces = mesh.getFaces();
 
-        shared_ptr<VectorT3Array> vCell(new VectorT3Array(cells.getCount()));
+        shared_ptr<VectorT3Array> vCell(new VectorT3Array(cells.getCountLevel1()));
 
         VectorT3 initialVelocity;
         initialVelocity[0] = _options["initialXVelocity"];
@@ -157,27 +160,27 @@ public:
 
         }
         
-        shared_ptr<TArray> pCell(new TArray(cells.getCount()));
-        shared_ptr<TArray> pFace(new TArray(faces.getCount()));
+        shared_ptr<TArray> pCell(new TArray(cells.getCountLevel1()));
+        shared_ptr<TArray> pFace(new TArray(faces.getCountLevel1()));
         *pCell = _options["initialPressure"];
         *pFace = _options["initialPressure"];
         _flowFields.pressure.addArray(cells,pCell);
         _flowFields.pressure.addArray(faces,pFace);
 
 
-        shared_ptr<TArray> rhoCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> rhoCell(new TArray(cells.getCountLevel1()));
         *rhoCell = vc["density"];
         _flowFields.density.addArray(cells,rhoCell);
 
-        shared_ptr<TArray> muCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> muCell(new TArray(cells.getCountLevel1()));
         *muCell = vc["viscosity"];
         _flowFields.viscosity.addArray(cells,muCell);
 
-        shared_ptr<PGradArray> gradp(new PGradArray(cells.getCount()));
+        shared_ptr<PGradArray> gradp(new PGradArray(cells.getCountLevel1()));
         gradp->zero();
         _flowFields.pressureGradient.addArray(cells,gradp);
 
-        shared_ptr<TArray> ci(new TArray(cells.getCount()));
+        shared_ptr<TArray> ci(new TArray(cells.getCountLevel1()));
         ci->zero();
         _flowFields.continuityResidual.addArray(cells,ci);
 
@@ -333,6 +336,7 @@ public:
             (*_geomFields._interpolationMatrices[key1]);
 
            IMatrixV3 mICV(mIC);
+	   
 
            GeomFields::SSPair key2(&ibFaces,&particles);
            const IMatrix& mIP =
@@ -340,6 +344,7 @@ public:
             (*_geomFields._interpolationMatrices[key2]);
 
            IMatrixV3 mIPV(mIP);
+	   
 
            shared_ptr<VectorT3Array> ibV(new VectorT3Array(ibFaces.getCount()));
         
@@ -353,7 +358,14 @@ public:
    	   mIPV.multiplyAndAdd(*ibV,pV);
 
 	
-#if 0
+#if 0     
+      ofstream   debugFile;
+      stringstream ss(stringstream::in | stringstream::out);
+      ss <<  MPI::COMM_WORLD.Get_rank();
+      string  fname = "IBVelocity_proc" +  ss.str() + ".dat";
+      debugFile.open( fname.c_str() );
+      ss.str("");
+
 	// debug use
 	const Array<int>& ibFaceList = mesh.getIBFaceList();
 	const StorageSite& faces = mesh.getFaces();
@@ -370,17 +382,15 @@ public:
 	  int fID = ibFaceList[f];
 	  double r = mag(faceCentroid[fID]-center);
 	  double angle = atan2(faceCentroid[fID][1]-center[1],faceCentroid[fID][0]-center[0]);
-	  //(*ibV)[f][0]=-angV*r*sin(angle);
-	  //(*ibV)[f][1]=angV*r*cos(angle);
-	  //(*ibV)[f][2]=0.0;
-	  (*ibV)[f][0]=0.001;
-	  (*ibV)[f][1]=0.0;
-	  (*ibV)[f][2]=0.0;
+	  debugFile << "f=" << f << "  fID = "<<  fID << " faceCentroid = " << faceCentroid[fID] <<
+	    " ibV=" << (*ibV)[f]  << endl;
 	}
 	  
 	//for(int f=0; f<ibFaces.getCount();f++){
 	//cout<<f<<" "<<(*ibV)[f]<<endl;
 	//}
+	
+	debugFile.close();
 
 #endif
           _flowFields.velocity.addArray(ibFaces,ibV);
@@ -454,52 +464,7 @@ public:
     
   }
   
-  void computeIBandSolidVelocity(const StorageSite& particles)
-  {
-    typedef CRMatrixTranspose<T,T,T> IMatrix;
-    typedef CRMatrixTranspose<T,VectorT3,VectorT3> IMatrixV3;
 
-    const VectorT3Array& pV =
-      dynamic_cast<const VectorT3Array&>(_flowFields.velocity[particles]);
-    
-    const int numMeshes = _meshes.size();
-    for (int n=0; n<numMeshes; n++)
-    {
-        const Mesh& mesh = *_meshes[n];
-
-        const StorageSite& cells = mesh.getCells();
-     	const int nCells = cells.getCount();
-	
-	GeomFields::SSPair key2(&cells,&particles);
-        const IMatrix& mIP =
-          dynamic_cast<const IMatrix&>
-          (*_geomFields._interpolationMatrices[key2]);
-
-        IMatrixV3 mIPV(mIP);
-
-
-        shared_ptr<VectorT3Array> icV(new VectorT3Array(nCells));
-
-        icV->zero();
-
-       	mIPV.multiplyAndAdd(*icV,pV);
-	
-	//only modify the solid cell and IB cell velocity by interpolating of particles
-	VectorT3Array& cV =
-	  dynamic_cast<VectorT3Array&>(_flowFields.velocity[cells]);
-
-        const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
-		
-	for (int c = 0; c < nCells; c ++){
-            const int cellType = ibType[c];
-	  if (cellType == Mesh::IBTYPE_REALBOUNDARY){
-	    cV[c] = (*icV)[c];
-	  }
-	}
-	
-	//_flowFields.velocity.addArray(cells,cV);
-    }
-  }
   
   void initMomentumLinearization(LinearSystem& ls)
   {
@@ -856,7 +821,7 @@ public:
 
     const T pressureURF(_options["pressureURF"]);
       
-    const int nCells = cells.getCount();
+    const int nCells = cells.getCountLevel1();
     for(int c=0; c<nCells; c++)
     {
         p[c] += pressureURF*(pp[c]-_referencePP);
@@ -875,7 +840,7 @@ public:
 
     const T velocityURF(_options["velocityURF"]);
       
-    const int nCells = cells.getCount();
+    const int nCells = cells.getCountLevel1();
     for(int c=0; c<nCells; c++)
     {
         V[c] += velocityURF*Vp[c];
@@ -2202,15 +2167,6 @@ FlowModel<T>::computeSolidSurfaceForcePerUnitArea(const StorageSite& particles)
 {
   return _impl->computeSolidSurfaceForce(particles,true);
 }
-
-
-template<class T>
-void
-FlowModel<T>::computeIBandSolidVelocity(const StorageSite& particles)
-{
-  return _impl->computeIBandSolidVelocity(particles);
-}
-
 
 
 template<class T>
