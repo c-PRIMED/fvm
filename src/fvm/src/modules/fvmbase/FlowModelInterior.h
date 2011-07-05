@@ -152,6 +152,12 @@ T discretizeMassFluxInterior(const Mesh& mesh,
                   rCell[c1] += massFlux[f];
                   boundaryFlux -= massFlux[f];
               }
+              else
+              {
+                  rCell[c1] = 0;
+                  ppAssembler.getCoeff10(f) =0;
+                  ppDiag[c1] = -1;
+              }
           }
                 
             
