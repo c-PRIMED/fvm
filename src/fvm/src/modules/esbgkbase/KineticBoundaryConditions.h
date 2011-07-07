@@ -654,9 +654,17 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 
   }
 
- 
-
-  
+  /*
+  void applyNSInterfaceBC(const FloatValEvaluator<X>& bTemperature,const FloatValEvaluator<X>& bDensity,const FloatValEvaluator<VectorX3>& bVelocity) const
+   {
+fin(j3,j2,j1,i)=(rhoNS_L/(pi*TNS_L)**1.5*&
+                       exp(-((cx(j1)-uNS_L)**2.0+(cy(j2)-vNS_L)**2.0+(cz(j3))**2.0)/TNS_L)) *(1-2*cx(j1)*cy(j2)*slopeL*(muref/mu0*(Temp(i)/T_ref_mu*T_init)**w))
+fin(j3,j2,j1,i)=(rhoNS_R/(pi*TNS_R)**1.5*
+                      exp(-((cx(j1)-uNS_R)**2.0+(cy(j2)-vNS_R)**2.0+(cz(j3))**2.0)/TNS_R)) 
+                      *(1-1.5*cx(j1)*((cx(j1)-uNS_R)**2.0+(cy(j2)-vNS_R)**2.0+cz(j3)**2.0-2.5)
+                       *(muref/mu0*(TNS_R/T_ref_mu*T_init)**w)*slopeR)
+ }
+  */
  protected:
 
   const StorageSite& _faces;
