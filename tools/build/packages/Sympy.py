@@ -4,7 +4,7 @@ class Sympy(BuildPkg):
     requires = ['scipy']
 
     def _installed(self):
-        return python_package('sympy', [0,6,6])
+        return python_package('sympy', [0,7,0])
 
     def _install(self):
         do_env("LDFLAGS=")

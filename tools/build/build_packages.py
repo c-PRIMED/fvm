@@ -110,11 +110,15 @@ class BuildPkg(Build):
         if config(self.name, 'Build') == '':
             inst = self.installed()
             if inst:
-                print 'Using installed package %s%s%s' %\
-                 (colors['BOLD'], self.name, colors['NORMAL'])
-                self.bld.database[self.name] = self.build_start_time
-                self.bld.database[self.name + '-status'] = 'installed'
-                return
+                # Check to see if this is a python package
+                # that is already in our build lib directory.
+                path = python_path(self.name)
+                if os.path.commonprefix([path,self.libdir]) != self.libdir:
+                    print 'Using installed package %s%s%s' %\
+                     (colors['BOLD'], self.name, colors['NORMAL'])
+                    self.bld.database[self.name] = self.build_start_time
+                    self.bld.database[self.name + '-status'] = 'installed'
+                    return
 
         # get new sources
         self.unpack_srcs()

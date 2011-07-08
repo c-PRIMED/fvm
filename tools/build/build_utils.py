@@ -302,9 +302,9 @@ def set_python_path(dir):
     except:
         print "Unable to determine python version."
         print "ver=%s" % ver
-        
+
         sys.exit(2)
-        
+
     libpath = os.path.join(dir, 'lib')
     pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a, b), 'site-packages')
     pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a, b), 'site-packages')
@@ -414,6 +414,14 @@ def find_executable(executable, path=None):
     else:
         return None
 
+def python_path(name):
+    cmd = "python -c 'import %s; print %s.__path__[0]'" % (name, name)
+    try:
+        path = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except:
+        path = ''
+    return path
+
 def python_package(name, version):
     cmd = "python -c 'import %s; print %s.__version__'" % (name, name)
     try:
@@ -422,7 +430,7 @@ def python_package(name, version):
         ver = re.findall(r'([\d]+)', ver)
         if not ver:
             return False
-        
+
         for i,v in enumerate(ver):
             try:
                 ver[i] = int(v)
