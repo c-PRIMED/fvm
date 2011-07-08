@@ -14,15 +14,18 @@
 #include "GradientModel.h"
 
 
-template<class T>
+template<class X>
 class SourceDiscretizationene : public Discretization
 {
 public:
-  typedef Vector<T,3> VectorT3;
+  typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
+
+  typedef Vector<T_Scalar,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
   typedef Gradient<VectorT3> VGradType;
   typedef Array<Gradient<VectorT3> > VGradArray;
-  typedef Array<T> TArray;
+  typedef Array<T_Scalar> TArray;
+  typedef Array<X> XArray;
 
 
   SourceDiscretizationene(const MeshList& meshes,
@@ -72,7 +75,7 @@ public:
 
   
     TArray& rCell =
-      dynamic_cast<TArray&>(rField[cVarIndex]);
+      dynamic_cast<XArray&>(rField[cVarIndex]);
    
   
     const int nCells = cells.getCount();  
@@ -82,20 +85,31 @@ public:
     {
         const VGradType& vg = vGrad[n];
         VGradType vgSquare = vGrad[n]; 
-        T rhoe = eCell[n]*rhoCell[n];       
-        T sum = 0;
+        T_Scalar rhoe = eCell[n]*rhoCell[n];       
+        T_Scalar sum = 0;
 
         for(int i=0;i<3;i++)
         {
          for(int j=0;j<3;j++)
       
          {
-           vgSquare[i][j] =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
-           sum += vgSquare[i][j];
+         
+         T_Scalar x = vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
+         sum += x;
+          
+          //vgSquare[i][j] =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
+          //sum += vgSquare[i][j];
          }
         }
-
-        sourceCell[n] = sum*muCell[n]-rhoe;
+/*
+        cout << "sum" << sum << endl;
+        cout << "muCell" << muCell[n] << endl;
+        cout << "rhoe" << rhoCell[n] << endl;
+        cout << "epsilon" << eCell[n] << endl; 
+ */
+        
+       sourceCell[n] =  sum*muCell[n]-rhoe;
+        //cout << "rsource" << sourceCell[n]*cellVolume[n] << endl;
         rCell[n] +=sourceCell[n]*cellVolume[n];
     }
 }

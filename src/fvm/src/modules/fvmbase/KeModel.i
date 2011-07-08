@@ -22,10 +22,20 @@ template <class T>
 struct KeModelOptions : public FloatVarDict<T>
 {
   bool transient;
+  int timeDiscretizationOrder;
   double relativeTolerance;
   double absoluteTolerance;
   LinearSolver *linearSolver;
+  double cmu;
+  double c2mu;
+  double c1mu;
+  double vk;
+  double emp;
+  double sigmak;
+  double sigmae;
   bool useCentralDifference;
+  bool printNormalizedResiduals;
+
 };
 
 

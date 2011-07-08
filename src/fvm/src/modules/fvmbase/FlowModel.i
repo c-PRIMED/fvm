@@ -33,6 +33,10 @@ struct FlowModelOptions : public FloatVarDict<T>
   LinearSolver *momentumLinearSolver;
   LinearSolver *pressureLinearSolver;
   LinearSolver *coupledLinearSolver;
+  double cmu;
+  double vk;
+  double emp;
+  bool turbulent;
 }; 
 
 //%template(Vector3) Vector<ATYPE_STR,3>;

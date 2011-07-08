@@ -85,5 +85,10 @@ void Matrix::computeResidual(const IContainer& xB, const IContainer& bB,
 {
   throw CException("computeResidual not implemented");
 }
-
+/*
+void Matrix::setDirichlet(const int nr)
+{
+  throw CException("setDirichlet not implemented");
+}
+*/
 

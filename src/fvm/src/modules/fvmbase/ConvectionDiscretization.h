@@ -182,6 +182,8 @@ public:
 
               rCell[c0] -= varFlux;
               rCell[c1] += varFlux;
+              //cout << "convflux" << varFlux << endl;
+
           }
     }
 

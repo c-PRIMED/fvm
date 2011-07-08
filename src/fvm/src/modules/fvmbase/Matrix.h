@@ -64,7 +64,9 @@ public:
                      const CRConnectivity& coarseToFine,
                      const CRConnectivity& coarseConnectivity);
 
-  virtual bool isInvertible() {return false;}
+  virtual bool isInvertible() {return false;} 
+  
+  //virtual void setDirichlet(const int nr);
 };
 
 

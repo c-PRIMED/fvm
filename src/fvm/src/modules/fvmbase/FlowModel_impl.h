@@ -150,6 +150,24 @@ public:
 
         _flowFields.velocity.addArray(cells,vCell);
 
+        shared_ptr<VectorT3Array> uparallelCell(new VectorT3Array(cells.getCount()));
+        uparallelCell ->zero();
+        _flowFields.uparallel.addArray(cells,uparallelCell);
+
+      shared_ptr<VectorT3Array> tauCell(new VectorT3Array(faces.getCount()));
+        tauCell ->zero();
+        _flowFields.tau.addArray(faces,tauCell);
+
+     shared_ptr<VectorT3Array> TauWallCell(new VectorT3Array(faces.getCount()));
+        TauWallCell ->zero();
+        _flowFields.tauwall.addArray(faces,TauWallCell);
+
+
+
+
+  
+       
+
         if (_options.transient)
         {
             _flowFields.velocityN1.addArray(cells,
@@ -553,7 +571,7 @@ public:
     if (_options.transient)
     {
         shared_ptr<Discretization>
-          td(new TimeDerivativeDiscretization<VectorT3,DiagTensorT3,T>
+          td(new TimeDerivativeDiscretization<VectorT3,T,T>
              (_meshes,_geomFields,
               _flowFields.velocity,
               _flowFields.velocityN1,
@@ -563,19 +581,21 @@ public:
         
         discretizations.push_back(td);
     }
+
    if (_options.turbulent && "wall")
    {
       shared_ptr<Discretization>
-         wd(new WallDiscretization<T,T,T>
+         wd(new WallDiscretization<VectorT3,DiagTensorT3,T>
            (_meshes,_geomFields,
             _flowFields.velocity,
             _keFields->energy,
             _flowFields.density,
-            _flowFields.uparallel,
             _flowFields.tau,
+            _flowFields.uparallel,
             _flowFields.tauwall,
             _flowFields.totalviscosity,
-            _flowFields.viscosity));
+            _flowFields.viscosity,
+            _flowFields.velocityGradient));
 
     discretizations.push_back(wd);
 

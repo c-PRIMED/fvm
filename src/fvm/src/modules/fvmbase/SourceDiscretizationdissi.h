@@ -14,16 +14,19 @@
 #include "GradientModel.h"
 #include <math.h>
 
-template<class T,class Diag, class OffDiag>
+template<class X,class Diag, class OffDiag>
 class SourceDiscretizationdissi : public Discretization
 {
 public:
-  typedef Vector<T,3> VectorT3;
+ typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
+
+  typedef Vector<T_Scalar,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
   typedef Gradient<VectorT3> VGradType;
   typedef Array<Gradient<VectorT3> > VGradArray;
-  typedef Array<T> TArray;
-  typedef CRMatrix<Diag,OffDiag,T> CCMatrix;
+  typedef Array<T_Scalar> TArray;
+  typedef Array<X> XArray;
+  typedef CRMatrix<Diag,OffDiag,X> CCMatrix;
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef typename CCMatrix::PairWiseAssembler CCAssembler;
 
@@ -54,7 +57,7 @@ public:
       _gradientField(gradientField)
 
    {}
-    KeModelOptions<T>&   getOptions() {return _options;}
+    KeModelOptions<T_Scalar>&   getOptions() {return _options;}
 
 
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -93,7 +96,7 @@ public:
 
 
     TArray& rCell = 
-      dynamic_cast<TArray&>(rField[cVarIndex]);
+      dynamic_cast<XArray&>(rField[cVarIndex]);
 
 
     const int nCells = cells.getCount();
@@ -102,32 +105,35 @@ public:
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
 
     DiagArray& diag = matrix.getDiag();
-    T two(2.0);
-    T C1mu = _options.c1mu;
-    T C2mu = _options.c2mu;
+    T_Scalar two(2.0);
+    T_Scalar C1mu = _options.c1mu;
+    T_Scalar C2mu = _options.c2mu;
     for(int n=0; n<nCells; n++)
     {
         const VGradType& vg = vGrad[n];
         VGradType vgSquare = vGrad[n];
-        T sourcecoeff1  = (muCell[n]*eCell[n]*C1mu)/kCell[n];
-        T sourcecoeff2  = (C2mu*pow(eCell[n],two)*rhoCell[n])/kCell[n];
-        T dsc1 = (muCell[n]*C1mu)/kCell[n];
-        T dsc2 = (C2mu*2*eCell[n]*rhoCell[n])/kCell[n];
+        T_Scalar sourcecoeff1  = (muCell[n]*eCell[n]*C1mu)/kCell[n];
+        T_Scalar sourcecoeff2  = (C2mu*pow(eCell[n],two)*rhoCell[n])/kCell[n];
+        T_Scalar dsc1 = (muCell[n]*C1mu)/kCell[n];
+        T_Scalar dsc2 = (C2mu*2*eCell[n]*rhoCell[n])/kCell[n];
 
-         T sum = 0;
+         T_Scalar sum = 0;
  
         for(int i=0;i<3;i++)
         {
           for(int j=0;j<3;j++)
            {
-           vgSquare[i][j] =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
-           sum += vgSquare[i][j];
+           T_Scalar x =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
+           sum += x;
+           //vgSquare[i][j] =  vg[i][j]*vg[i][j]+vg[i][j]*vg[j][i] ;
+          // sum += vgSquare[i][j];
 
            }
         }
         
-        sourceCell[n] = sum*sourcecoeff1- sourcecoeff2 ;
-        T ds = sum*dsc1-dsc2;
+        sourceCell[n] = sum*sourcecoeff1-sourcecoeff2;
+        T_Scalar ds = sum*dsc1-dsc2;
+
         sourcecCell[n] = sourceCell[n]- ds*eCell[n];
         sourcepCell[n] = ds;
         rCell[n] +=sourcecCell[n]*cellVolume[n];
@@ -149,7 +155,7 @@ private:
   Field& _sourcecField;
   Field& _sourcepField;
   const Field& _gradientField;
-  KeModelOptions<T> _options;
+  KeModelOptions<T_Scalar> _options;
 };
 
 #endif

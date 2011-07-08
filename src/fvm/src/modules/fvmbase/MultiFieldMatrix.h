@@ -136,6 +136,8 @@ public:
   
   MFRPtr quadProduct(const MultiField& x) const;
   
+  //MatrixMap& getMatrixMap() { return _matrices;}
+  
 private:
   MatrixMap _matrices;
   MatrixSizeMap _coarseSizes;

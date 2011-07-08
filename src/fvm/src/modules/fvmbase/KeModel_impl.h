@@ -25,6 +25,7 @@
 #include "SourceDiscretizationene.h"
 #include "SourceDiscretizationdissi.h"
 
+
 template<class T>
 class  KeModel<T>::Impl
 {
@@ -37,8 +38,7 @@ public:
   typedef Gradient<T> EGradType;
   typedef Array<EGradType> EGradArray;
   typedef Gradient<T> DGradType;
-  typedef Array<DGradType> DGradArray;
- 
+  typedef Array<DGradType> DGradArray; 
   typedef CRMatrix<T,T,T> T_Matrix;
   
   Impl(const GeomFields& geomFields,
@@ -123,6 +123,12 @@ public:
         *kCell = vc["InitialEnergy"];
         _keFields.energy.addArray(cells,kCell);
 
+        //dissipation(e)
+        shared_ptr<TArray> eCell(new TArray(cells.getCount()));
+        *eCell = vc["InitialDissipation"];
+        _keFields.dissipation.addArray(cells,eCell);
+
+
         shared_ptr<TArray> sourcekCell(new TArray(cells.getCount()));
         *sourcekCell = T(1.0);
         _keFields.sourcek.addArray(cells,sourcekCell);
@@ -140,23 +146,15 @@ public:
         _keFields.sourcep.addArray(cells,sourcepCell);
 
 
-
-
-
-	//dissipation(e)
-        shared_ptr<TArray> eCell(new TArray(cells.getCount()));
-        *eCell = vc["InitialDissipation"];
-        _keFields.dissipation.addArray(cells,eCell);
-
-    //    if (_options.transient)
-  //      {
+      if (_options.transient)
+       {
             _keFields.dissipationN1.addArray(cells,
                                             dynamic_pointer_cast<ArrayBase>(eCell->newCopy()));
             if (_options.timeDiscretizationOrder > 1)
               _keFields.dissipationN2.addArray(cells,
                                               dynamic_pointer_cast<ArrayBase>(eCell->newCopy()));
 
-//        }
+       }
 
 
 	
@@ -181,14 +179,6 @@ public:
         //*densityCell = vc1["density"];
         _flowFields.density.addArray(cells,densityCell);
  
-  
-      //utau field
-        shared_ptr<TArray> utauCell(new TArray(cells.getCount()));
-        *utauCell = T(0);
-        _flowFields.utau.addArray(cells,utauCell);
-
-
-
         //c1
         shared_ptr<TArray> c1Cell(new TArray(cells.getCount()));
         *c1Cell = vc["c1"];
@@ -198,22 +188,6 @@ public:
         shared_ptr<TArray> c2Cell(new TArray(cells.getCount()));
         *c2Cell = vc["c2"];
         _keFields.c2.addArray(cells,c2Cell);
-        
-        //sigmak
-        shared_ptr<TArray> sigmakCell(new TArray(cells.getCount()));
-        *sigmakCell = vc["sigmak"];
-        _keFields.sigmak.addArray(cells,sigmakCell);
-
-        //sigmae
-        shared_ptr<TArray> sigmaeCell(new TArray(cells.getCount()));
-        *sigmaeCell = vc["sigmae"];
-        _keFields.sigmae.addArray(cells,sigmaeCell);
-
-        //cmu
-        shared_ptr<TArray> cmuCell(new TArray(cells.getCount()));
-        *cmuCell = vc["cmu"];
-        _keFields.cmu.addArray(cells,cmuCell);
-
 
         //kflux at faces
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
@@ -426,7 +400,8 @@ public:
             _options["timeStep"]));
 
        discretizations.push_back(td);
-    }   
+    }  
+ 
     shared_ptr<Discretization>
       dd(new DiffusionDiscretization<T,T,T>
 	 (_meshes,_geomFields,
@@ -445,7 +420,7 @@ public:
           _options.useCentralDifference));
     discretizations.push_back(cd);
     
-    
+  
     shared_ptr<Discretization>
       sd(new SourceDiscretizationene<T>
 	 (_meshes, 
@@ -635,6 +610,8 @@ public:
     _dissipationGradientModel.compute();
 
     DiscrList discretizations1;
+ if (_options.transient)
+    {
 
     shared_ptr<Discretization>
       td(new TimeDerivativeDiscretization<T,T,T>
@@ -646,7 +623,7 @@ public:
          _options["timeStep"]));
     discretizations1.push_back(td);
     
-
+}
     shared_ptr<Discretization>
       dd(new DiffusionDiscretization<T,T,T>
          (_meshes,_geomFields,
@@ -713,8 +690,31 @@ public:
 
             FloatValEvaluator<T>
               be(bc.getVal("specifiede"),faces);
-           
-            TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
+
+          const StorageSite& cells = mesh.getCells();
+          const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+          MultiFieldMatrix& MFMatrix = lse.getMatrix();
+          MultiField::ArrayIndex beIndex(&_keFields.dissipation,&cells);
+          MultiField& b = lse.getB();
+          TArray& rCell = dynamic_cast<TArray&>(b[beIndex]);
+          T_Matrix& matrix = dynamic_cast<T_Matrix&>(MFMatrix.getMatrix(beIndex,beIndex));
+
+          const TArray& faceAreaMag =dynamic_cast<const TArray &>(_geomFields.areaMag[faces]);
+
+          const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+
+          //const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+
+          const VectorT3Array& faceCentroid =dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+
+          const VectorT3Array& cellCentroid = dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+
+          TArray& kCell = dynamic_cast< TArray&>(_keFields.energy[cells]);
+          TArray& eCell = dynamic_cast<TArray&>(_keFields.dissipation[cells]);
+          T cmu = _options.cmu;
+          T vonk = _options.vk;
+ 
+          TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
             const int nFaces = faces.getCount();
 
            // if (bc.bcType == "Specifiede")
@@ -723,28 +723,43 @@ public:
               for(int f=0; f<nFaces; f++)
                {
                 if (massFlux[f] > 0.)
-                 {
                    gbc.applyExtrapolationBC(f);
-                 }
+              
                 else
-                 {
                    gbc.applyDirichletBC(f,be[f]);
-                 }
+                 
                }
                                 
-            }
-
-           else if((bc.bcType == "Wall"))
-         {
-          const int numMeshes = _meshes.size();
-          for (int n=0; n<numMeshes; n++)
-            {
-              const Mesh& mesh = *_meshes[n];
-
-              getutau(mesh);
            }
 
+          else if((bc.bcType == "Wall"))
+           {
+            for ( int f=0; f<nFaces; f++)
+             {
+         
+              const int c0 = faceCells(f,0); 
+           // const int c1 = faceCells(f,1);
+           // T vol0 = cellVolume[c0];
+           // T vol1 = cellVolume[c1];
+              VectorT3 ds;
+              VectorT3 n = faceArea[f]/faceAreaMag[f];
+        /*
+              if (vol1==0)
+              ds =faceCentroid[f] - cellCentroid[c0];
+             else
+               ds = cellCentroid[c1]-faceCentroid[f];
+           
+        */
+             ds =faceCentroid[f] - cellCentroid[c0];
+             const T yp = ds[0]*n[0] + ds[1]*n[1] + ds[2]*n[2];
+             rCell[0] = T(0);
+             eCell[c0] = (pow(kCell[c0],1.5)*pow(cmu,0.75))/(vonk*yp);
+             matrix.setDirichlet(c0);
+
+
           }
+ 
+        }
             else if ((bc.bcType == "PressureBoundary"))
             {
             for(int f=0; f<nFaces; f++)
@@ -796,34 +811,8 @@ public:
  
 }
 
-void getutau(const Mesh& mesh)
-{
-   const StorageSite& cells = mesh.getCells();
 
-    TArray& utauCell =
-      dynamic_cast<TArray&>(_flowFields.utau[cells]);
-    TArray& kCell =
-      dynamic_cast< TArray&>(_keFields.energy[cells]);
 
-    TArray& eCell =
-      dynamic_cast< TArray&>(_keFields.dissipation[cells]);
-
-    const VectorT3Array& cellCentroid =
-       dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
-
-     T cmu = _options.cmu;
-     T vonk = _options.vk;
-     //T zeroPointonine(0.09);T zeroPointfour(0.4187);
-     T three(3.0);
-   const int nCells = cells.getCount();
-
-    for(int c=0; c<nCells; c++)
-   {
-       utauCell[c] = sqrt(sqrt(cmu)*kCell[c]);
-       eCell[c] = (pow(utauCell[c],three))/(vonk*cellCentroid[c][1]);
-   }
-
-}
   void getViscosity(const Mesh& mesh)
   {
     const StorageSite& cells = mesh.getCells();
@@ -855,24 +844,20 @@ void getutau(const Mesh& mesh)
     TArray& c2Cell =
       dynamic_cast<TArray&>(_keFields.c2[cells]);
 
-    const TArray& sigmakCell =
-      dynamic_cast<const TArray&>(_keFields.sigmak[cells]);
-
-    const TArray& sigmaeCell =
-      dynamic_cast<const TArray&>(_keFields.sigmae[cells]);
-
-    const TArray& cmuCell =
-      dynamic_cast<const TArray&>(_keFields.cmu[cells]);
 
 
     const int nCells = cells.getCount();
     T two(2.0);
+    T cmu = _options.cmu;
+    T sigmak = _options.sigmak;
+    T sigmae = _options.sigmae;
     for(int c=0; c<nCells; c++)
     {
-        muCell[c] = (cmuCell[c]*pow(kCell[c],two)*rhoCell[c])/eCell[c];
-        c1Cell[c] = muCell[c]/sigmakCell[c];
-        c2Cell[c] = muCell[c]/sigmaeCell[c];
+        muCell[c] = (cmu*pow(kCell[c],two)*rhoCell[c])/eCell[c];
+        c1Cell[c] = muCell[c]/sigmak;
+        c2Cell[c] = muCell[c]/sigmae;
         tmuCell[c] = muCell[c] + lmuCell[c];
+
     }
 
   }
@@ -882,22 +867,27 @@ void getutau(const Mesh& mesh)
   {
     for(int n=0; n<niter; n++)
     { 
-      {
+ 
+     {
         LinearSystem lsk;
         initLinearizationk(lsk);
         
         lsk.initAssembly();
 
         linearizeenergy(lsk);
-
+  
         lsk.initSolve();
 
         MFRPtr rNorm(_options.getLinearSolver().solve(lsk));
-
+     
+        
         if (!_initialNormk) _initialNormk = rNorm;
         
         MFRPtr normRatio((*rNorm)/(*_initialNormk));
-
+     
+      if (_options.printNormalizedResiduals)
+          cout << _niters << ": " << *normRatio  <<  endl;
+      else
         cout << _niters << ": " << *rNorm << endl;
 
         
@@ -913,6 +903,7 @@ void getutau(const Mesh& mesh)
             *normRatio < _options.relativeTolerance)
           break;
       }
+/*
       { 
         LinearSystem lse;
         initLinearization(lse);
@@ -942,6 +933,7 @@ void getutau(const Mesh& mesh)
             *normRatio < _options.relativeTolerance)
           break;
     }
+*/
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
@@ -949,7 +941,9 @@ void getutau(const Mesh& mesh)
 
         getViscosity(mesh);
     }
+
     }
+
   }
   
  void printBCs()
@@ -1053,12 +1047,8 @@ KeModel<T>::updateTimee()
   _impl->updateTimee();
 }
 
-template<class T>
-void
-KeModel<T>:: getutau(const Mesh& mesh)
-{
-  _impl->getutau(mesh);
-}
+
+
 
 template<class T>
 void

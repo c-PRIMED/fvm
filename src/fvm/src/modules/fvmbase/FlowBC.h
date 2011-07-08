@@ -59,10 +59,10 @@ struct FlowModelOptions : public FloatVarDict<T>
 
     this->incompressible = true;
     this->turbulent = false;
-    this->defineVar("vk",T(0.4187));
-    this->defineVar("emp",T(9.793));
-    this->defineVar("cmu",T(0.09));
-   // this->newtontolerance=1e-6;
+    this->vk = 0.4187;
+    this->emp = 9.793;
+    this-> cmu = 0.09;
+   
 
   }
   
@@ -79,7 +79,6 @@ struct FlowModelOptions : public FloatVarDict<T>
   double cmu;
   double vk;
   double emp;
-  //double newtontolerance;
   bool incompressible;
 #ifndef SWIG
   LinearSolver& getMomentumLinearSolver()

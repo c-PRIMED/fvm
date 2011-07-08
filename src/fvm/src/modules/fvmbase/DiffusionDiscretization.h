@@ -199,8 +199,8 @@ public:
 		const VectorT3 secondaryCoeff = faceDiffusivity*(faceArea[f]-ds*diffMetric);
         
 		const XGrad gradF = (xGradCell[c0]*vol0+xGradCell[c1]*vol1)/(vol0+vol1);
-		
-		const X dFluxSecondary = gradF*secondaryCoeff;
+
+        	const X dFluxSecondary = gradF*secondaryCoeff;
 		
 		const X dFlux = diffCoeff*(xCell[c1]-xCell[c0]) + dFluxSecondary;
 
@@ -212,6 +212,14 @@ public:
 
 		diag[c0] -= diffCoeff;
 		diag[c1] -= diffCoeff;
+
+                //cout <<"dflux" << dFlux << endl;
+/*
+                cout << " c0 and c1 " << c0 << " " << c1 << endl;
+                cout << " diffcell " << diffCell[c0] << " " << diffCell[c1] << " " << faceDiffusivity << endl;
+                cout << " diffmetric  " << diffMetric << endl;
+                cout << "diffCoeff  " << diffCoeff << endl;
+*/
 	
 	      }
 

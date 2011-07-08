@@ -22,10 +22,6 @@ struct KeVC : public FloatVarDict<T>
       this->defineVar("InitialDissipation",T(1.0));
       this->defineVar("c1",T(1.0));
       this->defineVar("c2",T(1.0));
-      this->defineVar("sigmak",T(1.0));
-      this->defineVar("sigmae",T(1.3));
-      this->defineVar("cmu",T(0.09));
- 
 
 
   }
@@ -46,13 +42,18 @@ struct KeModelOptions : public FloatVarDict<T>
     this->useCentralDifference=false;
     this->transient = false;
     this->timeDiscretizationOrder=1;
-    this->defineVar("cmu",T(0.09));
-    this->defineVar("c2mu",T(1.92));
-    this->defineVar("c1mu",T(1.44));
-    this->defineVar("vk",T(0.4187));
-    this->defineVar("emp",T(9.793));
+    this-> cmu=0.09;
+    this-> c2mu=1.92;
+    this-> c1mu=1.44;
+    this-> vk=0.4187;
+    this-> emp=9.793;
+    this-> sigmak =1.0;
+    this-> sigmae =1.3;
+    this->printNormalizedResiduals = true;
 
-  }
+ }     
+
+  bool printNormalizedResiduals ;
   bool transient;
   int timeDiscretizationOrder;
   double relativeTolerance;
@@ -62,6 +63,8 @@ struct KeModelOptions : public FloatVarDict<T>
   double c1mu;
   double vk;
   double emp;
+  double sigmak;
+  double sigmae;
   bool useCentralDifference;
   LinearSolver *linearSolver;
 
