@@ -13,7 +13,9 @@ struct PlateFields
   Field stress;
   Field devStress;
   Field VMStress;
+  Field VMStressOut;
   Field plasticStrain;
+  Field plasticStrainOut;
   Field plasticStrainN1;
   Field plasticMoment;
   Field deformationGradient;

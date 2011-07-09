@@ -45,6 +45,7 @@ public:
 			    const Field& devStressField,
 			    const Field& VMStressField,
 			    Field& plasticStrainField,
+			    Field& plasticStrainOutField,
 			    Field& plasticStrainN1Field,
 			    Field& plasticMomentField,
 			    const T& A,
@@ -69,6 +70,7 @@ public:
     _devStressField(devStressField),
     _VMStressField(VMStressField),
     _plasticStrainField(plasticStrainField),
+    _plasticStrainOutField(plasticStrainOutField),
     _plasticStrainN1Field(plasticStrainN1Field),
     _plasticMomentField(plasticMomentField),
     _A(A),
@@ -116,6 +118,9 @@ public:
     VectorT4Array& plasticStrain =
       dynamic_cast<VectorT4Array&>(_plasticStrainField[cells]);
 
+    VectorT3Array& plasticStrainOut =
+      dynamic_cast<VectorT3Array&>(_plasticStrainOutField[cells]);
+
     VectorT4Array& plasticStrainN1 =
       dynamic_cast<VectorT4Array&>(_plasticStrainN1Field[cells]);
     
@@ -160,6 +165,9 @@ public:
 		    for(int i=0;i<4;i++)
 		      plasticStrain[nn+k][i] = plasticStrainN1[nn+k][i]+mult*devStress[nn+k][i]*_timeStep;
 		}
+		plasticStrainOut[n][0] = plasticStrain[nn+_nz][0];
+		plasticStrainOut[n][1] = plasticStrain[nn+_nz][1];
+		plasticStrainOut[n][2] = plasticStrain[nn+_nz][3];
 	    }
 	}
 	
@@ -652,6 +660,7 @@ private:
   const Field& _devStressField;
   const Field& _VMStressField;
   Field& _plasticStrainField;
+  Field& _plasticStrainOutField;
   Field& _plasticStrainN1Field;
   Field& _plasticMomentField;
   const T _A;

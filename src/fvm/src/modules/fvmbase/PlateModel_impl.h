@@ -400,9 +400,17 @@ public:
         VMStressField->zero();
         _plateFields.VMStress.addArray(cells,VMStressField);
 
+        shared_ptr<TArray> VMStressOutField(new TArray(cells.getCount()));
+        VMStressOutField->zero();
+        _plateFields.VMStressOut.addArray(cells,VMStressOutField);
+
         shared_ptr<VectorT4Array> plasticStrainField(new VectorT4Array((cells.getCount())*(_options.nz+1)));
         plasticStrainField->zero();
         _plateFields.plasticStrain.addArray(cells,plasticStrainField);
+
+        shared_ptr<VectorT3Array> plasticStrainOutField(new VectorT3Array(cells.getCount()));
+        plasticStrainOutField->zero();
+        _plateFields.plasticStrainOut.addArray(cells,plasticStrainOutField);
 
         shared_ptr<VectorT4Array> plasticStrainN1Field(new VectorT4Array((cells.getCount())*(_options.nz+1)));
         plasticStrainN1Field->zero();
@@ -558,6 +566,7 @@ public:
           _plateFields.devStress,
           _plateFields.VMStress,
           _plateFields.plasticStrain,
+	  _plateFields.plasticStrainOut,
           _plateFields.plasticStrainN1,
           _plateFields.plasticMoment,
           _options.A,
@@ -878,6 +887,7 @@ public:
     const TArray& thickness = dynamic_cast<const TArray&>(_plateFields.thickness[cells]);
     
     TArray& VMStress = dynamic_cast<TArray&>(_plateFields.VMStress[cells]);
+    TArray& VMStressOut = dynamic_cast<TArray&>(_plateFields.VMStressOut[cells]);
     VectorT3Array& cellStress =
       dynamic_cast<VectorT3Array&>(_plateFields.stress[cells]);      
     VectorT4Array& devStress =
@@ -937,6 +947,7 @@ public:
 				  stress[0]*stress[1] + three*pow(stress[2],2.0));
             //VMStress[nn+k] = sqrt(pow(stress[0],2.0) + three*pow(stress[2],2.0));
 	}
+	VMStressOut[n] = VMStress[nn+_options.nz];
       }
   }
 
