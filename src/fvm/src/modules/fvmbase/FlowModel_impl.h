@@ -266,7 +266,7 @@ public:
                 {
                     const int c0 = faceCells(f,0);
                     massFlux[f] = density[c0]*dot(bVelocity[f],faceArea[f]);
-                }
+                 }
             }
             else if (bc.bcType == "SpecifiedPressure")
             {

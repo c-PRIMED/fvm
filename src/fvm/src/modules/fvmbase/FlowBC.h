@@ -23,7 +23,7 @@ struct FlowVC : public FloatVarDict<T>
   {
       this->defineVar("viscosity",T(1e-3));
       this->defineVar("density",T(1.0));
-      this->defineVar("eddyviscosity",T(1e-3));
+      this->defineVar("eddyviscosity",T(1e-5));
       this->defineVar("totalviscosity",T(2e-3));
   }
   string vcType;

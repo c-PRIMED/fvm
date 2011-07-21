@@ -49,8 +49,8 @@ public:
     _geomFields(geomFields),
     _keFields(keFields),
     _flowFields(flowFields),
-    _velocityGradientModel(_meshes,_flowFields.velocity,
-                           _flowFields.velocityGradient,_geomFields),
+   // _velocityGradientModel(_meshes,_flowFields.velocity,
+     //                      _flowFields.velocityGradient,_geomFields),
     _energyGradientModel(_meshes,_keFields.energy,
                          _keFields.energyGradient,_geomFields),
     _dissipationGradientModel(_meshes,_keFields.dissipation,
@@ -157,12 +157,12 @@ public:
        }
 
 
-	
+/*	
 	//initial velocity gradient array
 	shared_ptr<VGradArray> gradV(new VGradArray(cells.getCount()));
 	gradV->zero();
 	_flowFields.velocityGradient.addArray(cells,gradV);
-        
+  */      
 	 //initial energy gradient array
         shared_ptr<EGradArray> gradE(new EGradArray(cells.getCount()));
         gradE->zero();
@@ -383,7 +383,7 @@ public:
 
   void linearizeenergy(LinearSystem& lsk)
   {
-    _velocityGradientModel.compute();
+    //_velocityGradientModel.compute();
     _energyGradientModel.compute();
     DiscrList discretizations;
 
@@ -454,10 +454,7 @@ public:
 	  {
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
-           // const int nFaces = faces.getCount();
-
             const KeBC<T>& bc = *_bcMap[fg.id];
-            
 
             GenericBCS<T,T,T> gbc(faces,mesh,
                                   _geomFields,
@@ -468,8 +465,8 @@ public:
             FloatValEvaluator<T>
              bk(bc.getVal("Specifiedk"),faces);
             TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
-
             const int nFaces = faces.getCount();
+
 
 	    
           //  if (bc.bcType == "Specifiedk")
@@ -477,6 +474,9 @@ public:
 	      {
                 for(int f=0; f<nFaces; f++)
 		   {
+
+                    //cout << "massflux" << massFlux[f] << endl;
+
                      if (massFlux[f] > 0.)
 	               {
                          gbc.applyExtrapolationBC(f);
@@ -493,6 +493,7 @@ public:
                  {
                    for(int f=0; f<nFaces; f++)
                      {
+
                        gbc.applyNeumannBC(f,0);
                      }
                  }
@@ -500,6 +501,7 @@ public:
             {
             for(int f=0; f<nFaces; f++)
                 {
+
                     if (massFlux[f] > 0.)
                     {
                         gbc.applyExtrapolationBC(f);
@@ -516,6 +518,8 @@ public:
 
            else if ((bc.bcType == "Symmetry"))
 	      {
+     cout <<"nfaces" << nFaces << endl;
+
                  gbc.applySymmetryBC();
 	      }
             else
@@ -606,7 +610,7 @@ public:
  
   void linearizedissipation(LinearSystem& lse)
   {
-    _velocityGradientModel.compute();
+    //_velocityGradientModel.compute();
     _dissipationGradientModel.compute();
 
     DiscrList discretizations1;
@@ -853,6 +857,7 @@ public:
     T sigmae = _options.sigmae;
     for(int c=0; c<nCells; c++)
     {
+        //cout << "c2" << c2Cell[c] << endl;
         muCell[c] = (cmu*pow(kCell[c],two)*rhoCell[c])/eCell[c];
         c1Cell[c] = muCell[c]/sigmak;
         c2Cell[c] = muCell[c]/sigmae;
@@ -903,7 +908,7 @@ public:
             *normRatio < _options.relativeTolerance)
           break;
       }
-/*
+
       { 
         LinearSystem lse;
         initLinearization(lse);
@@ -933,7 +938,7 @@ public:
             *normRatio < _options.relativeTolerance)
           break;
     }
-*/
+
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
@@ -969,7 +974,7 @@ private:
   
   KeVCMap _vcMap;
   KeModelOptions<T> _options;
-  GradientModel<VectorT3> _velocityGradientModel;  
+  //GradientModel<VectorT3> _velocityGradientModel;  
   GradientModel<T> _energyGradientModel;
   GradientModel<T> _dissipationGradientModel;
   MFRPtr _initialNormk; 

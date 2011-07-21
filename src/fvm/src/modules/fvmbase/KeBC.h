@@ -20,8 +20,8 @@ struct KeVC : public FloatVarDict<T>
   {
       this->defineVar("InitialEnergy",T(1.0));
       this->defineVar("InitialDissipation",T(1.0));
-      this->defineVar("c1",T(1.0));
-      this->defineVar("c2",T(1.0));
+      this->defineVar("c1",T(1e-5));
+      this->defineVar("c2",T(7.69e-06));
 
 
   }
