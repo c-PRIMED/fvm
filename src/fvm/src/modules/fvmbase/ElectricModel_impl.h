@@ -147,7 +147,7 @@ public:
 	  //total_charge (source in Poisson equation) setup
 	  if ( vc.vcType == "dielectric"){
 	    shared_ptr<TArray> sdCell(new TArray(nCells));
-	    *sdCell = _options["initialTotalCharge"];
+	    *sdCell = _options["initialTotalCharge"]*-QE;
 	    _electricFields.total_charge.addArray(cells,sdCell);
 	  }
 	  else{
@@ -409,12 +409,10 @@ public:
 	const int nTrap = _constants["nTrap"];
 	for (int c=0; c<nCells; c++){
 	  for (int i=0; i<=nTrap; i++){
-	    totalcharge[c] += charge[c][i];
+	    totalcharge[c] += charge[c][i]*-QE;
 	  }
-	  totalcharge[c] *= -QE;
 	}
-
-    }
+     }
   }
 
 
@@ -423,31 +421,32 @@ public:
     LinearSystem ls;
         
     initElectroStaticsLinearization(ls);
-
-    ls.initAssembly();
-
-    linearizeElectroStatics(ls);
-
-    ls.initSolve();
-
-    MFRPtr rNorm(_options.getElectroStaticsLinearSolver().solve(ls));
-
-    if (!_initialElectroStaticsNorm) _initialElectroStaticsNorm = rNorm;
-        
-    _options.getElectroStaticsLinearSolver().cleanup();
-
-    ls.postSolve();
-    ls.updateSolution();
-
-    updateElectricField();
     
+    ls.initAssembly();
+   
+    linearizeElectroStatics(ls);
+   
+    ls.initSolve();
+   
+    MFRPtr rNorm(_options.getElectroStaticsLinearSolver().solve(ls));
+  
+    if (!_initialElectroStaticsNorm) _initialElectroStaticsNorm = rNorm;
+   
+    _options.getElectroStaticsLinearSolver().cleanup();
+   
+    ls.postSolve();
+  
+    ls.updateSolution();
+  
+    updateElectricField();
+  
     if (_options.chargetransport_enable){
 
       updateElectronVelocity();
       
       updateConvectionFlux();
     }
-
+  
     return rNorm;
    
   }
@@ -577,7 +576,6 @@ public:
 	    {
 	      const FaceGroup& fg = *fgPtr;
 	      const StorageSite& faces = fg.site;
-
 	      MultiField::ArrayIndex fIndex(&_electricFields.chargeFlux,&faces);
 	      ls.getX().addArray(fIndex,_electricFields.chargeFlux.getArrayPtr(faces));
 	      
@@ -654,7 +652,8 @@ public:
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
-
+        const StorageSite& cells = mesh.getCells();
+	
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
         {
             const FaceGroup& fg = *fgPtr;
@@ -687,7 +686,16 @@ public:
                 T zeroFlux(NumTypeTraits<T>::getZero());
                 gbc.applyNeumannBC(zeroFlux);
             }
-	   
+	    else if (bc.bcType == "SpecialDielectricBoundary")
+	    {
+	    	const T specifiedPotential(bc["specifiedPotential"]);
+	    	const T dielectric_thickness = _constants["dielectric_thickness"];
+	    	const T dielectric_constant = _constants["dielectric_constant"] * E0_SI;
+	    	const T coeff = dielectric_constant / dielectric_thickness;
+	    	const T avgCharge = -100;
+	    	const T src = avgCharge * dielectric_thickness;
+	    	gbc. applyDielectricInterfaceBC(coeff, specifiedPotential, src);
+	    }
 	    else
               throw CException(bc.bcType + " not implemented for ElectricModel");
         }
@@ -878,11 +886,11 @@ public:
       for(int n=0; n<niter; n++)
 	{
 	  MFRPtr eNorm = solveElectroStatics();
-	
-	  if (_niters < 1)
+	  	
+	  if (_niters < 5)
 	    _initialElectroStaticsNorm->setMax(*eNorm);
-	    
-	  MFRPtr eNormRatio((*eNorm)/(*_initialElectroStaticsNorm));
+	  
+	  MFRPtr eNormRatio(eNorm->normalize(*_initialElectroStaticsNorm));
 
 #ifndef FVM_PARALLEL
 	  if (_options.printNormalizedResiduals)
@@ -899,7 +907,7 @@ public:
 	    cout << _niters << ": " << *eNorm << ";" <<  endl;
      }
 #endif
-
+   
 	  if (*eNormRatio < _options.electrostaticsTolerance ) {
 	      flag1 = true;
 	      break;
@@ -1200,6 +1208,8 @@ public:
 		//const Array<T>& particlesToIBCoeff = mIP.getCoeff();
 	
 		ibP->zero();
+		
+		//(*ibP) = 50;
 
 		mIC.multiplyAndAdd(*ibP,cP);
 		mIP.multiplyAndAdd(*ibP,sP);
@@ -1284,7 +1294,7 @@ public:
 	      forceSign = 0.0;
 	    }
 	  
-	    forceMag += 0.5 * coeff* dielectric_constant[c] *  efmag * efmag * forceSign; 	    
+	    forceMag += 0.5 * coeff* dielectric_constant[c] *  efmag * efmag * forceSign; 		   
 	  }
 	  
 	  const VectorT3& Af = solidFaceArea[f];
@@ -1293,6 +1303,7 @@ public:
 	  if (perUnitArea){
 	    force[f] /= solidFaceAreaMag[f];
 	  }
+
 	}
       	  
     }
@@ -1312,6 +1323,47 @@ public:
         }
     }
   }
+
+  map<string,shared_ptr<ArrayBase> >&
+  getPersistenceData()
+  {
+    _persistenceData.clear();
+    
+    Array<int>* niterArray = new Array<int>(1);
+    (*niterArray)[0] = _niters;
+    _persistenceData["niters"]=shared_ptr<ArrayBase>(niterArray);
+
+    if (_initialElectroStaticsNorm)
+    {
+      _persistenceData["initialElectroStaticsNorm"] =
+	_initialElectroStaticsNorm->getArrayPtr(_electricFields.potential);
+    }
+    else
+    {
+      Array<T>* xArray = new Array<T>(1);
+      xArray->zero();
+      _persistenceData["initialElectroStaticsNorm"]=shared_ptr<ArrayBase>(xArray);
+    }
+    return _persistenceData;
+  }
+
+  void restart()
+  {
+    if (_persistenceData.find("niters") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase> rp = _persistenceData["niters"];
+        ArrayBase& r = *rp;
+        Array<int>& niterArray = dynamic_cast<Array<int>& >(r);
+        _niters = niterArray[0];
+    }
+    if (_persistenceData.find("initialElectroStaticsNorm") != _persistenceData.end())
+    {
+        shared_ptr<ArrayBase>  r = _persistenceData["initialElectroStaticsNorm"];
+        _initialElectroStaticsNorm = MFRPtr(new MultiFieldReduction());
+        _initialElectroStaticsNorm->addArray(_electricFields.potential,r);
+    }
+  }
+
 
 
 
@@ -1342,6 +1394,8 @@ private:
   shared_ptr<CRConnectivity> _cellColumns;
   
   shared_ptr<CRConnectivity> _columnCells;
+
+  map<string,shared_ptr<ArrayBase> > _persistenceData;
 };
 
 
@@ -1460,4 +1514,18 @@ void
 ElectricModel<T>::computeSolidSurfaceForcePerUnitArea(const StorageSite& particles)
 {
   return _impl->computeSolidSurfaceForce(particles,true);
+}
+
+template<class T>
+map<string,shared_ptr<ArrayBase> >&
+ElectricModel<T>::getPersistenceData()
+{
+  return _impl->getPersistenceData();
+}
+
+template<class T>
+void
+ElectricModel<T>::restart()
+{
+  _impl->restart();
 }

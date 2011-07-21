@@ -47,12 +47,12 @@ void CRConnectivity::finishCount()
   for(int i=0; i<_rowDim; i++)
     row[i+1] += row[i];
   
-  const int colSize = row[_rowDim-1];
+  const int colSize = (_rowDim == 0) ? 0 : row[_rowDim-1];
 
     for(int i=_rowDim; i>0; i--)
     row[i] = row[i-1];
   row[0] = 0;
-  
+
   _col = shared_ptr<Array<int> >(new Array<int>(colSize));
 }
 

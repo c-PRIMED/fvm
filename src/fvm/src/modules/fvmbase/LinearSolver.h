@@ -16,7 +16,7 @@ public:
     nMaxIterations(100),
     verbosity(2),
     relativeTolerance(1e-8),
-    absoluteTolerance(1e-16)
+    absoluteTolerance(1e-50)
   {}
 
   virtual MFRPtr solve(LinearSystem & ls)=0;

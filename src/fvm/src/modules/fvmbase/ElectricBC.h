@@ -42,6 +42,7 @@ struct ElectricModelConstants : public FloatVarDict<T>
     this->defineVar("dielectric_bandgap", T (5.0));                 // in EV
     this->defineVar("optical_dielectric_constant", T(4.0));
     this->defineVar("dielectric_thickness", T(2.5e-7));          //in meter    
+    this->defineVar("dielectric_constant", T(7.9));
     this->defineVar("electron_capture_cross", T(1e-17));         //in m^-2
 
     this->defineVar("membrane_workfunction", T (5.0));              //in EV

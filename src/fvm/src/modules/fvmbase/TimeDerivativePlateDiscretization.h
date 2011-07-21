@@ -119,8 +119,8 @@ public:
 		rCell[c][2] += rhoVHbydT2*(two*x[c][2] - five*xN1[c][2] + four*xN2[c][2]
 					   - xN3[c][2]);
 		(diag[c])(2,2) += two*rhoVHbydT2;
-		acceleration[c] = rhobydT2*(two*x[c][2] - five*xN1[c][2] + four*xN2[c][2]
-					      - xN3[c][2]);
+		//acceleration[c] = rhobydT2*(two*x[c][2] - five*xN1[c][2] + four*xN2[c][2]
+		//			      - xN3[c][2]);
 	    }
 	}
 	else
@@ -142,8 +142,8 @@ public:
 		rCell[c][2] += rhoVHbydT2*(x[c][2]- two*xN1[c][2]
 					   + xN2[c][2]);
 		(diag[c])(2,2) += rhoVHbydT2;
-		acceleration[c] = rhobydT2*(x[c][2]- two*xN1[c][2]
-					      + xN2[c][2]);
+		//acceleration[c] = rhobydT2*(x[c][2]- two*xN1[c][2]
+		//			      + xN2[c][2]);
 	    }
 	}
     }
@@ -175,8 +175,8 @@ public:
                 rCell[c][2] += rhoVHbydT2*(c1*x[c][2] + c2*xN1[c][2] + c3*xN2[c][2]
                                            + c4*xN3[c][2]);
                 (diag[c])(2,2) += c1*rhoVHbydT2;
-		acceleration[c] = rhobydT2*(c1*x[c][2] + c2*xN1[c][2] + c3*xN2[c][2]
-					      + c4*xN3[c][2]);
+		//acceleration[c] = rhobydT2*(c1*x[c][2] + c2*xN1[c][2] + c3*xN2[c][2]
+		//			      + c4*xN3[c][2]);
 	    }
 	}
         else
@@ -201,8 +201,8 @@ public:
                 rCell[c][2] += rhoVHbydT2*(c1*x[c][2] + c2*xN1[c][2]
                                            + c3*xN2[c][2]);
                 (diag[c])(2,2) += c1*rhoVHbydT2;
-		acceleration[c] = rhobydT2*(c1*x[c][2] + c2*xN1[c][2]
-					      + c3*xN2[c][2]);
+		//acceleration[c] = rhobydT2*(c1*x[c][2] + c2*xN1[c][2]
+		//			      + c3*xN2[c][2]);
 	    }
 	}
     }

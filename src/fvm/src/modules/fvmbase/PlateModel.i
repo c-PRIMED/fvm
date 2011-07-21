@@ -39,6 +39,8 @@ struct PlateModelOptions : public FloatVarDict<T>
   double m;
   double n;
   double Sy0;
+  double timeStepN1;
+  double timeStepN2;
   int nz;
   LinearSolver *deformationLinearSolver;
 }; 

@@ -47,8 +47,8 @@ struct FlowModelOptions : public FloatVarDict<T>
     this->defineVar("operatingTemperature",T(300.0));
     this->defineVar("molecularWeight",T(28.966));
 
-    this->momentumTolerance=1e-4;
-    this->continuityTolerance=1e-4;
+    this->momentumTolerance=1e-3;
+    this->continuityTolerance=1e-3;
     this->printNormalizedResiduals = true;
     this->transient = false;
     this->correctVelocity = true;

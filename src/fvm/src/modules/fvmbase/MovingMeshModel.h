@@ -92,7 +92,7 @@ public:
 		}
 		else if(displacementOptions[j] == 1)
 		{
-                    averageDirichletDisplacement += mag((dirichletNodeDisplacement)[j]);
+		    averageDirichletDisplacement += mag((dirichletNodeDisplacement)[j]);
                     nDirichlet ++;
                     
 		    nodeDisplacement[j] = (dirichletNodeDisplacement)[j];
@@ -132,8 +132,8 @@ public:
 	    }
 
             T maxChangeRelative = maxChangeInDisplacement / averageDirichletDisplacement;
-            cout<<"\nsweep  "<<i<<" max change is "<< maxChangeInDisplacement
-                <<" and ratio is "<< maxChangeRelative<<"\n";
+            //cout<<"\nsweep  "<<i<<" max change is "<< maxChangeInDisplacement
+            //    <<" and ratio is "<< maxChangeRelative<<"\n";
 	    if((maxChangeInDisplacement<=_options.absTolerance)||
                (maxChangeRelative<=_options.relativeTolerance))
 	    {

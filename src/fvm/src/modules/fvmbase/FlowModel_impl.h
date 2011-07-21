@@ -375,42 +375,6 @@ public:
            mICV.multiplyAndAdd(*ibV,cV);
    	   mIPV.multiplyAndAdd(*ibV,pV);
 
-	
-#if 0     
-      ofstream   debugFile;
-      stringstream ss(stringstream::in | stringstream::out);
-      ss <<  MPI::COMM_WORLD.Get_rank();
-      string  fname = "IBVelocity_proc" +  ss.str() + ".dat";
-      debugFile.open( fname.c_str() );
-      ss.str("");
-
-	// debug use
-	const Array<int>& ibFaceList = mesh.getIBFaceList();
-	const StorageSite& faces = mesh.getFaces();
-	const VectorT3Array& faceCentroid = 
-          dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
-	const double angV = 1.0;
-	VectorT3 center;
-	center[0]=0.;
-	center[1]=0.;
-	center[2]=0.;	
-
-
-	for(int f=0; f<ibFaces.getCount();f++){
-	  int fID = ibFaceList[f];
-	  double r = mag(faceCentroid[fID]-center);
-	  double angle = atan2(faceCentroid[fID][1]-center[1],faceCentroid[fID][0]-center[0]);
-	  debugFile << "f=" << f << "  fID = "<<  fID << " faceCentroid = " << faceCentroid[fID] <<
-	    " ibV=" << (*ibV)[f]  << endl;
-	}
-	  
-	//for(int f=0; f<ibFaces.getCount();f++){
-	//cout<<f<<" "<<(*ibV)[f]<<endl;
-	//}
-	
-	debugFile.close();
-
-#endif
           _flowFields.velocity.addArray(ibFaces,ibV);
 
        }
@@ -644,7 +608,7 @@ public:
 
             if (bc.bcType == "NoSlipWall")
             {
-                gbc.applyDirichletBC(bVelocity);
+            	gbc.applyDirichletBC(bVelocity);
             }
             else if (bc.bcType == "SlipJump")
             {

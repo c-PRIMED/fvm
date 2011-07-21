@@ -66,7 +66,8 @@ public:
     _areaMagField(geomFields.areaMag),
     _faceAreaMag(dynamic_cast<const TArray&>(_areaMagField[_faces])),
     _areaField(geomFields.area),
-    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces]))
+    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces])),
+    _is2D(mesh.getDimension()==2)    
   {}
     
   void applyDirichletBC(int f, const X& bValue) const
@@ -286,44 +287,56 @@ public:
 
   //*********************************************************************
   //special interface boundary condition for dielectric layer
-  /*
-  void applyDielectricInterfaceBC(const int f) const
+  
+  void applyDielectricInterfaceBC(const int f, const X& hCoeff, 
+  				const X& Xinf, const X& source) const
   {
-    // the boundary cell could be either c0 or c1 at an interface
-    int cb = _faceCells(f,1);
-    T_Scalar sign(NumTypeTraits<T_Scalar>::getUnity());
-    if (cb < _cells.getSelfCount())
-    {
-        cb = _faceCells(f,0);
-        sign *= -1.0;
-    }
-    
+  // here the hCoeff = dielectric_constant / dielectric_thickness
+  // source = totalcharge * dielectric_thickness / 4. for 2D
+  // source = totalcharge * dielectric_thickness / 6. for 3D
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1);
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+
     // the current value of flux and its Jacobians
-    const X fluxInterior = -_r[cb];
-    const OffDiag dFluxdXC0 = -sign*_assembler.getCoeff10(f);
-    const OffDiag dFluxdXC1 = sign*_assembler.getCoeff01(f);
+    const X fluxInterior = -_r[c1];
 
-    _r[cb] = T_Scalar(0);
+    // flux based on current boundary value
+   
+    X fluxSource = source * _faceAreaMag[f];   
+    if (_is2D)
+    	fluxSource /= 4.0;
+    else 
+    	fluxSource /= 6.0; 
+    const X fluxBoundary = -hCoeff*(_x[c1]-Xinf)*_faceAreaMag[f] + fluxSource;
+    const X dFlux = fluxBoundary-fluxInterior;
 
-    if (sign>0)
-      _assembler.getCoeff10(f) = NumTypeTraits<OffDiag>::getZero();
-    else
-      _assembler.getCoeff01(f) = NumTypeTraits<OffDiag>::getZero();
-    
-    //setup the equation for the boundary flux correction
-    _dFluxdX.setCoeffL(f,dFluxdXC0);
-    _dFluxdX.setCoeffR(f,dFluxdXC1);
-    _flux[f] = fluxInterior;
-    _rFlux[f] = T_Scalar(0);
+    _r[c1] = dFlux;
+
+    // add this to complete the Jacobian wrt boundar value
+    _dRdXDiag[c1] -= hCoeff*_faceAreaMag[f];
+
+    // mark this row as a "boundary" row so that we will update it
+    // after the overall system is solved
+    _dRdX.setBoundary(c1);
+
+    _flux[f] = fluxBoundary;
+    _rFlux[f] = 0;
+    _dFluxdX.setCoeffL(f,NumTypeTraits<X>::getZero());
+    _dFluxdX.setCoeffR(f,-hCoeff*_faceAreaMag[f]);
     _dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+    
   }
-
-  void applyInterfaceBC() const
+    
+  void applyDielectricInterfaceBC(const X& hCoeff, 
+  				const X& Xinf, const X& source) const
   {
     for(int i=0; i<_faces.getCount(); i++)
-      applyInterfaceBC(i);
+      applyDielectricInterfaceBC(i,hCoeff, Xinf, source );
   }
-  */
+ 
 
 
   void applyFlowBC(const TArray& convFlux, const X& bValue) const
@@ -375,6 +388,8 @@ protected:
   const TArray& _faceAreaMag;
   const Field& _areaField;
   const VectorT3Array& _faceArea;
+  const bool _is2D;
+  
 };
 
 

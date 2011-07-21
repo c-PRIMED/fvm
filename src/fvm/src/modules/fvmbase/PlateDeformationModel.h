@@ -19,6 +19,7 @@ class PlateDeformationModel : public Model
 public:
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
+  typedef Vector<T,3> VecD3;
   typedef Array<VectorT3> VectorT3Array;  
  
   PlateDeformationModel(GeomFields& geomFields,
@@ -87,6 +88,7 @@ public:
           const int nNodes = nodes.getCount();
        	  VectorT3Array& nodeCoord =
             dynamic_cast<VectorT3Array&>(_geomFields.coordinate[nodes]);
+          //Array<VecD3>& nodeCoordMesh = mesh.getNodeCoordinates();
 	  const VectorT3Array& nodeCoord0 =
             dynamic_cast<const VectorT3Array&>(_geomFields.coordinate0[nodes]);
           VectorT3Array& nodeDisplacement =
@@ -97,7 +99,9 @@ public:
 	  for (int i=0;i<nNodes;i++)
 	  {
 	      nodeCoord[i] = nodeCoord0[i] + nodeDisplacement[i];
+	      //nodeCoordMesh[i] = nodeCoord[i]; 
 	  }
+	  
       }
   }
 

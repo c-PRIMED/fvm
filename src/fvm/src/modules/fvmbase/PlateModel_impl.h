@@ -273,6 +273,7 @@ template<class T>
 class PlateModel<T>::Impl
 {
 public:
+  typedef T T_Scalar;
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
   typedef VectorTranspose<T,3> VectorT3T;
@@ -380,7 +381,7 @@ public:
 					    dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));            
             if (_options.timeDiscretizationOrder > 1)
 	      _plateFields.deformationN3.addArray(cells,
-						      dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
+					    dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
 	    if(_options.variableTimeStep)
 	    {
 		_options.timeStepN1 = _options["timeStep"];
@@ -773,8 +774,10 @@ public:
     ls.postSolve();
     ls.updateSolution();
     //postPlateSolve(ls);
-    if (_options.transient)
+    if (_options.transient){
       calculatePlateVelocity();
+      calculatePlateAcceleration();
+    }
     return rNorm;
   }
 
@@ -799,6 +802,98 @@ public:
     }
   }
 	
+
+  void calculatePlateAcceleration()
+  {
+
+    T_Scalar two(2.0);
+    T_Scalar three(3.0);
+    T_Scalar five(5.0);
+    T_Scalar four(4.0);
+    T_Scalar twelve(12.0);
+    T_Scalar dT = _options["timeStep"];
+    
+    const T_Scalar dT2 = dT*dT;
+
+    const int numMeshes = _meshes.size();
+    for(int n=0;n<numMeshes;n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getCount();
+
+	TArray& acceleration =
+	  dynamic_cast<TArray&>(_plateFields.acceleration[cells]); 
+	const VectorT3Array& w =
+	  dynamic_cast<const VectorT3Array&>(_plateFields.deformation[cells]);
+	const VectorT3Array& wN1 =
+	  dynamic_cast<const VectorT3Array&>(_plateFields.deformationN1[cells]);
+	const VectorT3Array& wN2 =
+	  dynamic_cast<const VectorT3Array&>(_plateFields.deformationN2[cells]);
+	const TArray& density = 
+	  dynamic_cast<const TArray&> (_plateFields.density[cells]);
+	//constant time step
+	if(!_options.variableTimeStep)
+	  {
+	    if (_options.timeDiscretizationOrder > 1)        //second order
+	      {
+		const VectorT3Array& wN3 =
+		  dynamic_cast<const VectorT3Array&>(_plateFields.deformationN3[cells]);
+		for(int c=0; c<nCells; c++)
+		  {		    
+		    const T_Scalar rhobydT2 = density[c]/dT2;
+		    acceleration[c] = rhobydT2*(two*w[c][2] - five*wN1[c][2] + four*wN2[c][2]
+						- wN3[c][2]);
+		  }
+	      }
+	    else                                              // first order
+	      {
+		for(int c=0; c<nCells; c++)
+		  {
+		    const T_Scalar rhobydT2 = density[c]/dT2;
+		    acceleration[c] = rhobydT2*(w[c][2]- two*wN1[c][2] + wN2[c][2]);
+		  }
+	      }
+	  }
+	//variable time step
+	else
+	  {
+	    T_Scalar dTN1 = _options.timeStepN1;
+	    T_Scalar dTN2 = _options.timeStepN2;
+	    T_Scalar a = (dT + dTN1)/dT;
+	    T_Scalar b = (dT + dTN1 + dTN2)/dT;
+	    T_Scalar one(1.0);
+	    if (_options.timeDiscretizationOrder > 1)        //second order
+	      {	
+		const VectorT3Array& wN3 =
+		  dynamic_cast<const VectorT3Array&>(_plateFields.deformationN3[cells]);
+		T_Scalar c1 = (two*a*b*(pow(a,two)-pow(b,two))+two*b*(pow(b,two)-one)-two*a*(pow(a,two)-one))/
+		  (a*b*(a-one)*(b-one)*(a-b));
+		T_Scalar c2 = -two*(a+b)/((a-1)*(b-1));
+		T_Scalar c3 = -two*(b+one)/(a*(a-b)*(a-one));
+		T_Scalar c4 = two*(a+one)/(b*(a-b)*(b-one));		
+		for(int c=0; c<nCells; c++)
+		  {
+		    const T_Scalar rhobydT2 = density[c]/dT2;
+		    acceleration[c] = rhobydT2*(c1*w[c][2] + c2*wN1[c][2] + c3*wN2[c][2]
+					      + c4*wN3[c][2]);
+		  }
+	      }
+	    else
+	      {
+		T_Scalar c1 = two/a;
+		T_Scalar c2 = -two/(a-one);
+		T_Scalar c3 = two/(a*(a-one));
+		for(int c=0; c<nCells; c++)
+		  {
+		    const T_Scalar rhobydT2 = density[c]/dT2;
+		    acceleration[c] = rhobydT2*(c1*w[c][2] + c2*wN1[c][2]
+						+ c3*wN2[c][2]);
+		  }
+	      }
+	  }
+    }
+  }
 
   void postPlateSolve(LinearSystem& ls)
   {

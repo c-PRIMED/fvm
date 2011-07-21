@@ -15,3 +15,5 @@ using namespace std;
 
 
 
+%template(ContactModelConstantsA) ContactModelConstants< ATYPE_STR >;
+

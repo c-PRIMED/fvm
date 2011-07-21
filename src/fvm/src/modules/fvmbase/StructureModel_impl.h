@@ -442,6 +442,7 @@ public:
   
   void initDeformationLinearization(LinearSystem& ls)
   {
+  
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
     {
@@ -451,7 +452,7 @@ public:
         MultiField::ArrayIndex wIndex(&_structureFields.deformation,&cells);
 
         ls.getX().addArray(wIndex,_structureFields.deformation.getArrayPtr(cells));
-
+	
         const CRConnectivity& cellCells2 = mesh.getCellCells2();
         
         shared_ptr<Matrix> m(new CRMatrix<DiagTensorT3,DiagTensorT3,VectorT3>(cellCells2));

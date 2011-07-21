@@ -114,11 +114,14 @@ class ContactModel<T>::Impl
      const double thickness = _constants["thickness"];
      const double gap = _constants["gap"];
      
+     double cloestDistance = 1.;
+     cout << "gap " << gap << " thickness "<< thickness << endl;
      for(int f=0; f<nSolidFaces; f++)       {
        //const double distance = sqrt(solidFacesNearestCell[f].distanceSquared);
        const VectorT3& xf = solidFaceCentroid[f];
        const double distance = gap + thickness*0.5 + xf[2];
-       
+       if (distance < cloestDistance)
+	 cloestDistance = distance;
        //force[f] = -H/(6*PI) * ((1-alpha)/pow(distance,3) + alpha/pow(distance-alpha01,3)) 
        //	                     + B*exp(-(distance-alpha02)*gamma);
        force[f][2] = B*exp(-(distance-alpha02)*gamma);
@@ -128,6 +131,7 @@ class ContactModel<T>::Impl
        }       
      }  
 
+     cout << "cloest distance between beam and substrate  " << cloestDistance << endl;
      /*
      FILE *fp2 = fopen("./force.dat","w");
      for(int f=0; f<nSolidFaces; f++)       {

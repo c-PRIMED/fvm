@@ -118,12 +118,13 @@ void IBManager::update()
 	    if (cellIBType[c] == Mesh::IBTYPE_FLUID)
 	      fluidCellsTree.insert(cellCoords[c],c);
 	  }
-
+	
 	createIBInterpolationStencil(fluidMesh,fluidCellsTree,solidMeshKSearchTree);
+	
 	findNearestCellForSolidFaces(fluidMesh,fluidCellsTree,solidFacesNearestCell);
       }
   }
-
+  
 
 #ifdef FVM_PARALLEL
     vector<doubleIntStruct>  solidFacesNearestCellMPI(solidMeshFaces.getCount());
@@ -164,8 +165,9 @@ void IBManager::update()
   for (int n=0; n<numFluidMeshes; n++)
   {
       Mesh& fluidMesh = *_fluidMeshes[n];
-      if (!fluidMesh.isShell())
+      if (!fluidMesh.isShell())	
 	createSolidInterpolationStencil(fluidMesh,solidFacesNearestCell);
+      
   }
 
 }

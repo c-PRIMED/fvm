@@ -33,7 +33,10 @@ public:
   virtual ~ElectricModel();
 
   virtual void init();
-  
+
+  virtual map<string,shared_ptr<ArrayBase> >& getPersistenceData();
+  virtual void restart(); 
+
   ElectricBCMap& getBCMap();
   ElectricBC<T>& getBC(const int id);
 
