@@ -51,8 +51,27 @@ def computeTravelDistance(distance, gap, rmin=0.1e-9, rmax=50e-9):
     return deltaR
 ########################################################################    
 def computeTimeStep(dr, vel, acc, rmin=0.1e-9, rmax=50e-9):
+    timeStep = 0
     if fabs(acc) > 1e-10:
-        timeStep = (-vel + sqrt(vel*vel + 2*acc*dr)) / acc
+    	#if vel<0:
+    	#     dr = -dr
+    	discr = vel*vel + 2*acc*dr
+    	if discr > 0:
+    	     discr = sqrt(discr)
+    	     dt1 = (-vel + discr) / acc
+    	     dt2 = (-vel - discr) / acc
+    	     	
+    	     if dt1>0 and dt2>0:
+    	     	timeStep = min(dt1, dt2)
+    	     elif dt1 > 0:
+    	     	timeStep = dt1
+    	     elif dt2 > 0:
+    	     	timeStep = dt2
+    	     else:
+    	     	timeStep = -1
+    	        	     
+        else:
+             timeStep = fabs(2*vel/acc)
     else:
         timeStep = -1    
     return timeStep
