@@ -693,7 +693,8 @@ public:
 	    	const T dielectric_constant = _constants["dielectric_constant"] * E0_SI;
 	    	const T coeff = dielectric_constant / dielectric_thickness;
 	    	const T avgCharge = -100;
-	    	const T src = avgCharge * dielectric_thickness;
+	    	//const T src = avgCharge * dielectric_thickness;
+	    	const T src = 0;
 	    	gbc. applyDielectricInterfaceBC(coeff, specifiedPotential, src);
 	    }
 	    else
