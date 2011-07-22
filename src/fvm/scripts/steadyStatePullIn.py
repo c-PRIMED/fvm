@@ -24,7 +24,7 @@ class problemDescription():
         self.beam_thickness = beamThickness
         self.Gap = initialGap
         beamReader = FluentCase(beamMesh)
-        beamReader.read();
+        beamReader.read()
         print "read solid mesh"
         self.solidMeshes = beamReader.getMeshList()
         self.geomFields =  models.GeomFields('geom')
