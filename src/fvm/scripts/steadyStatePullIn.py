@@ -102,7 +102,7 @@ class problemDescription():
     def initializeModels(self):
         print "--Solving Models--"
         self.maxdeformation = []
-        self.numIterations = 30
+        self.numIterations = 20
         self.globalTime = 0
         self.globalCount = 0
         self.timeStep = 3600
@@ -282,17 +282,6 @@ class problemDescription():
             traceFile.write("%i %e\n" %(n, maxdeformation[n]))
             traceFile.flush()
             
-            if (abs(maxdeformation[n] ) > self.Gap/3.0):
-                traceFile.write("Pull In")
-                traceFile.flush()
-                maxdeformation[n] = -self.Gap
-                break
-            if (n!=0):
-                print abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n])
-                if (abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n]) < 1e-3):
-                    print "Convergence reached"
-                    break
-
             # -----------------update time --------------------------#
             self.globalTime += self.timeStep
             self.globalCount += 1
@@ -314,6 +303,18 @@ class problemDescription():
                 writer1.init()
                 writer1.writeVectorField(self.plateFields.deformation,"Deformation")
                 writer1.finish()
+ 
+            if (abs(maxdeformation[n] ) > self.Gap):
+                traceFile.write("Pull In")
+                traceFile.flush()
+                maxdeformation[n] = -self.Gap
+                break
+            if (n!=0):
+                print abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n])
+                if (abs((maxdeformation[n]-maxdeformation[n-1])/maxdeformation[n]) < 1e-3):
+                    print "Convergence reached"
+                    break
+
         t2 = time.time()
         print  '\nsolution time = %f' % (t2-t1)
         traceFile.close()
