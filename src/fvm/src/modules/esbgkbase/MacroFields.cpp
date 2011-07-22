@@ -19,6 +19,8 @@ MacroFields::MacroFields(const string baseName) :
   EntropyGenRate(baseName +"EntropyGenRate"), 
   EntropyGenRate_Collisional(baseName +"EntropyGenRate_Collisional"),
   force(baseName +"Force"),
-  Stress(baseName +"Stress")
+  Stress(baseName +"Stress"),
+  Knq(baseName+"Knq")//M300+M120+M102 for couette with uy
+
 {}
 

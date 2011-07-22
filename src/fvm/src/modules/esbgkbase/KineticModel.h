@@ -229,7 +229,32 @@ class KineticModel : public Model
 	initialstress[5] = 0.0;
         *stressCell = initialstress;
         _macroFields.Stress.addArray(cells,stressCell);
-	
+
+	//Knq=M300+M120+M102 for Couette with uy
+        shared_ptr<TArray> KnqCell(new TArray(cells.getCount()));
+        *KnqCell = 0.0;
+        _macroFields.Knq.addArray(cells,KnqCell);
+
+
+	//higher order moments of distribution function
+	/*
+	shared_ptr<VectorT3Array> M300Cell(new VectorT3Array(cells.getCount()));
+        VectorT3 initialM300;
+        initialM300[0] = 0.0;
+        initialM300[1] = 0.0;
+        initialM300[2] = 0.0; 
+        *M300Cell = initialM300;
+        _macroFields.M300.addArray(cells,M300Cell);
+
+	shared_ptr<VectorT3Array> M030Cell(new VectorT3Array(cells.getCount()));
+        VectorT3 initialM030;
+        initialM030[0] = 0.0;
+        initialM030[1] = 0.0;
+        initialM030[2] = 0.0; 
+        *M300Cell = initialM030;
+        _macroFields.M030.addArray(cells,M030Cell);
+	*/
+
 	const int numDirections = _quadrature.getDirCount();
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
@@ -311,6 +336,7 @@ class KineticModel : public Model
 	TArray& Tzx = dynamic_cast<TArray&>(_macroFields.Tzx[cells]);
 	//if ( MPI::COMM_WORLD.Get_rank() == 0 ) {cout << "ncells="<<nCells<<endl;}
 	
+	TArray& Knq = dynamic_cast<TArray&>(_macroFields.Knq[cells]);
 	//initialize density,velocity  
 	for(int c=0; c<nCells;c++)
 	  {
@@ -349,6 +375,8 @@ class KineticModel : public Model
 	    Txy[c]=0.0;
 	    Tyz[c]=0.0;
 	    Tzx[c]=0.0;
+	    
+	    Knq[c]=0.0;
 	  }	
       }
   }
@@ -591,7 +619,7 @@ class KineticModel : public Model
 	const T Tmuref= _options["Tmuref"];
 	const T muref= _options["muref"];
 	const T R=8314.0/_options["molecularWeight"];
-	const T nondim_length=_options["nonDimLength"];
+	const T nondim_length=_options["nonDimLt"];
 
 	const T mu0=rho_init*R* T_init*nondim_length/pow(2*R* T_init,0.5);  
 	
@@ -619,7 +647,48 @@ class KineticModel : public Model
       }
   }
   
-  
+  void MomentHierarchy()  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const int Knq_dir=_options["Knq_direction"]; 
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int nCells = cells.getCount();
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
+	TArray& Knq = dynamic_cast<TArray&>(_macroFields.Knq[cells]);
+	const int num_directions = _quadrature.getDirCount(); 
+	if (Knq_dir ==0){
+	  for(int j=0;j<num_directions;j++){
+	    Field& fnd = *_dsfPtr.dsf[j];
+	    const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
+	    for(int c=0; c<nCells;c++){
+	      Knq[c]=Knq[c]+0.5*f[c]*wts[j]*(pow(cx[j]-v[c][0],3.0)+(cx[j]-v[c][0])*pow(cy[j]-v[c][1],2.0)+(cx[j]-v[c][0])*pow(cz[j]-v[c][2],2.0));
+	  }
+	  }}
+	else if(Knq_dir ==1){
+	  for(int j=0;j<num_directions;j++){
+	    Field& fnd = *_dsfPtr.dsf[j];
+	    const TArray& f = dynamic_cast<const TArray&>(fnd[cells]); 
+	    for(int c=0; c<nCells;c++){
+	      Knq[c]=Knq[c]+0.5*f[c]*wts[j]*(pow(cy[j]-v[c][1],3.0)+(cy[j]-v[c][1])*pow(cx[j]-v[c][0],2.0)+(cy[j]-v[c][1])*pow(cz[j]-v[c][2],2.0));
+	    }
+	  }}
+	
+	else if(Knq_dir ==2){
+	  for(int j=0;j<num_directions;j++){
+	    Field& fnd = *_dsfPtr.dsf[j];
+	    const TArray& f = dynamic_cast<const TArray&>(fnd[cells]); 
+	    for(int c=0; c<nCells;c++){
+	      Knq[c]=Knq[c]+0.5*f[c]*wts[j]*(pow(cz[j]-v[c][2],3.0)+(cz[j]-v[c][2])*pow(cx[j]-v[c][0],2.0)+(cz[j]-v[c][2])*pow(cy[j]-v[c][1],2.0));
+	    }
+	  }}
+      }
+  }
   void EntropyGeneration()  {
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -1424,7 +1493,10 @@ map<string,shared_ptr<ArrayBase> >&
 	  fnd,
 	  cx[direction],
 	  cy[direction],
- 	  cz[direction]));
+ 	  cz[direction]
+	  //_options["nonDimLt"],
+	  //_options["nonDimLx"],_options["nonDimLy"],_options["nonDimLz"],
+	  ));
     discretizations.push_back(cd);
     
     if (_options.transient)
@@ -1440,7 +1512,7 @@ map<string,shared_ptr<ArrayBase> >&
 	     (_meshes,_geomFields,
 	      fnd,fnd1,fnd2,
 	      _options["timeStep"],
-	      _options["nonDimLength"],
+	      _options["nonDimLt"],
 	      _options.timeDiscretizationOrder));
 	
 	discretizations.push_back(td);
@@ -1550,7 +1622,14 @@ map<string,shared_ptr<ArrayBase> >&
 	      }
 	    fN1 = f;
 	  }
-
+#ifdef FVM_PARALLEL
+	if ( MPI::COMM_WORLD.Get_rank() == 0 )
+	  {cout << "updated time" <<endl;}
+	
+#endif
+#ifndef FVM_PARALLEL 
+	cout << "updated time" <<endl;
+#endif
 	//ComputeMacroparameters();	//update macroparameters
         //ComputeCollisionfrequency();
 	//if (_options.fgamma==0){initializeMaxwellianEq();}

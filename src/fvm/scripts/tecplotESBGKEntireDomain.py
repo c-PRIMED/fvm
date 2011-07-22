@@ -80,7 +80,10 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
   stressFields = []
   for n in range(0,nmesh):
       stressFields.append( macroFields.Stress[cellSitesLocal[n]].asNumPyArray() )
-  
+  KnqFields=[]
+  for n in range(0,nmesh):
+    KnqFields.append(macroFields.Knq[cellSitesLocal[n]].asNumPyArray())
+    
 
   #opening global Array
   densityFieldGlobal=[]
@@ -92,6 +95,7 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
   stressFieldGlobal = []
   entropyFieldGlobal=[]
   entgenFieldGlobal=[]
+  KnqFieldGlobal=[]
   for n in range(0,nmesh):
     selfCount = cellSites[n].getSelfCount()
 
@@ -105,7 +109,7 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
     stressFieldGlobal.append( zeros((selfCount,6), float) ) 
     entropyFieldGlobal.append( zeros((selfCount,1), float) )
     entgenFieldGlobal.append( zeros((selfCount,1), float) )
-    
+    KnqFieldGlobal.append( zeros((selfCount,1), float) )
     meshLocal = meshesLocal[n]
     localToGlobal = meshLocal.getLocalToGlobalPtr().asNumPyArray()
 
@@ -128,6 +132,8 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
     eFieldLocal=entropyFields[n]
     egFieldGlobal= entgenFieldGlobal[n]
     egFieldLocal=entgenFields[n]
+    kFieldGlobal= KnqFieldGlobal[n]
+    kFieldLocal=KnqFields[n]
     
     #fill local part of cells
     selfCount = cellSitesLocal[n].getSelfCount()
@@ -141,7 +147,8 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
        cfFieldGlobal[globalID] = cfFieldLocal[i]
        sFieldGlobal[globalID] = sFieldLocal[i]
        eFieldGlobal[globalID] = eFieldLocal[i]
-       egFieldGlobal[globalID] = egFieldLocal[i]
+       egFieldGlobal[globalID] = egFieldLocal[i] 
+       kFieldGlobal[globalID] = kFieldLocal[i]
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[dFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[vFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[tFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
@@ -151,18 +158,19 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[sFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[eFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[egFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
+    MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[kFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
   if MPI.COMM_WORLD.Get_rank() == 0:     
   #filename = "quadrature" + ".plt"
     f = open(filename, 'w')
 
     f.write("Title = \" tecplot parallel file\" \n")
-    f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\"Pxx\",\"Pyy\",\"Pzz\",\"Pxy\",\"Pyz\",\"Pzx\",\"Entropy\",\"EntGenRate\",\n")
+    f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\"Pxx\",\"Pyy\",\"Pzz\",\"Pxy\",\"Pyz\",\"Pzx\",\"Entropy\",\"EntGenRate\",\"Knq \",\n")
     #f.write("variables = \"x\", \"y\", \"z\", \"Density\",\"velX\", \"velY\", \"velZ\",\"Temperature\",\n")
     for n in range(0,nmesh):
       title_name = "nmesh" + str(n)
       ncell  = cellSites[n].getSelfCount()
       nnode  = nodeSites[n].getCount()
-      f.write("Zone T = \"%s\" N = %s E = %s DATAPACKING = BLOCK, VARLOCATION = ([4-19]=CELLCENTERED), ZONETYPE=%s\n" %
+      f.write("Zone T = \"%s\" N = %s E = %s DATAPACKING = BLOCK, VARLOCATION = ([4-20]=CELLCENTERED), ZONETYPE=%s\n" %
              (title_name,  nodeSites[n].getCount(), ncell, tectype[mtype]))     
 
  
@@ -260,10 +268,18 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
             f.write("\n")
       f.write("\n")
 
-      #write collision frequency
+      #write entgenrate
       egFieldGlobal = entgenFieldGlobal[n]
       for i in range(0,ncell):
          f.write( str(egFieldGlobal[i][0]) + "    ")
+         if ( i % 5  == 4 ):
+            f.write("\n")
+      f.write("\n")
+      
+      #write higher order moments Eq 32 in Gallis2006
+      kFieldGlobal = KnqFieldGlobal[n]
+      for i in range(0,ncell):
+         f.write( str(kFieldGlobal[i][0]) + "    ")
          if ( i % 5  == 4 ):
             f.write("\n")
       f.write("\n")

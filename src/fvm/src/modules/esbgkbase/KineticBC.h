@@ -49,7 +49,11 @@ struct KineticModelOptions : public FloatVarDict<T>
 
     this->defineVar("rho_init",T(9.28E-6));
     this->defineVar("T_init",T(273.15));
-    this->defineVar("nonDimLength",T(1.0));
+    this->defineVar("nonDimLt",T(1.0));
+    this->defineVar("nonDimLx",T(1.0)); 
+    this->defineVar("nonDimLy",T(1.0));
+    this->defineVar("nonDimLz",T(1.0));
+
 
     this->defineVar("operatingPressure",T(101325.0));
     this->defineVar("operatingTemperature",T(300.0));
@@ -89,11 +93,12 @@ struct KineticModelOptions : public FloatVarDict<T>
     this->Planck=6.26068E-34;
     this->epsilon_ES=1e-50;
     this->pi=acos(-1.0);//3.14159;
-
+ 
+    this->Knq_direction=0;
     //used in Newton's Method for Equilibrium distribution function
     this->defineVar("ToleranceX",T(1e-8));
     this->defineVar("ToleranceF",T(1e-16));
-  }
+ }
   
   bool printNormalizedResiduals;
   double Tolerance;
@@ -113,7 +118,7 @@ struct KineticModelOptions : public FloatVarDict<T>
   LinearSolver *KineticLinearSolver;
   int printCellNumber;
   int fgamma;
-  
+  int Knq_direction;
   double Prandtl;
   double SpHeatRatio;
 

@@ -78,7 +78,11 @@ public:
     const int nFaces = faces.getCount();
 
     const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);    
-
+    const X nondim_length=_options["nonDimLt"];
+    const X Lx=_options["nonDimLx"];
+    const X Ly=_options["nonDimLy"];
+    const X Lz=_options["nonDimLz"];
+    
     if (_geomFields.gridFlux.hasArray(faces))
     {
         shared_ptr<TArray> gridFluxPtr(new TArray(nFaces));
@@ -90,7 +94,7 @@ public:
             const int c0 = faceCells(f,0);
 	    const int c1 = faceCells(f,1);
 	    //const T_Scalar faceCFlux = convectingFlux[f] - gridFlux[f];
-	    const T_Scalar faceCFlux = faceArea[f][0]*_cx+faceArea[f][1]*_cy+faceArea[f][2]*_cz - gridFlux[f];
+	    const T_Scalar faceCFlux = faceArea[f][0]*_cx*nondim_length/Lx+faceArea[f][1]*_cy*nondim_length/Ly+faceArea[f][2]*_cz*nondim_length/Lz - gridFlux[f];
 
 	    X varFlux;
 	    if (faceCFlux > T_Scalar(0))
@@ -199,7 +203,8 @@ private:
   const double _cx;
   const double _cy;
   const double _cz;
-  const bool _useCentralDifference;
+  const bool _useCentralDifference;  
+  KineticModelOptions<X> _options;
 };
 
 #endif
