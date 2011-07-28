@@ -31,12 +31,16 @@ public:
   typedef Array<XGrad> GradArray;
 
   ConvectionDiscretization_Kmodel(const MeshList& meshes,
-                           const GeomFields& geomFields,
-                           Field& varField,
-			   const double cx,
-			   const double cy,
-			   const double cz,
-                           const bool useCentralDifference=false) :
+				  const GeomFields& geomFields,
+				  Field& varField,
+				  const double cx,
+				  const double cy,
+				  const double cz,
+				  //const double nondim_length,
+				  //const double Lx,
+				  //const double Ly,
+				  //const double Lz,
+				  const bool useCentralDifference=false) :
 
   Discretization(meshes),
     _geomFields(geomFields),

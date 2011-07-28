@@ -651,7 +651,7 @@ class KineticModel : public Model
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
-	const int Knq_dir=_options["Knq_direction"]; 
+	const int Knq_dir=_options.Knq_direction; 
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCount();
@@ -1485,7 +1485,8 @@ map<string,shared_ptr<ArrayBase> >&
 	    fnd,feq,
 	    _macroFields.collisionFrequency));
     discretizations.push_back(sd);
-    }
+    } 
+    
     shared_ptr<Discretization> 
       cd(new ConvectionDiscretization_Kmodel<T,T,T> 
 	 (_meshes,
@@ -1926,7 +1927,12 @@ map<string,shared_ptr<ArrayBase> >&
         const CRConnectivity& solidFacesToCells
           = mesh.getConnectivity(solidFaces,cells);
         const IntArray& sFCRow = solidFacesToCells.getRow();
-        const IntArray& sFCCol = solidFacesToCells.getCol();
+        const IntArray& sFCCol = solidFacesToCells.getCol(); 
+
+	const T Lx=_options["nonDimLx"];
+	const T Ly=_options["nonDimLy"];
+	const T Lz=_options["nonDimLz"];
+    
 	
 	const int N123= _quadrature.getDirCount(); 	
 	
@@ -1955,9 +1961,9 @@ map<string,shared_ptr<ArrayBase> >&
           
 	  
 	  const VectorT3& Af = solidFaceArea[f];
-	  force[f][0] = Af[0]*stress[0] + Af[1]*stress[3] + Af[2]*stress[5];
-	  force[f][1] = Af[0]*stress[3] + Af[1]*stress[1] + Af[2]*stress[4];
-	  force[f][2] = Af[0]*stress[5] + Af[1]*stress[4] + Af[2]*stress[2];
+	  force[f][0] = Af[0]*Ly*Lz*stress[0] + Af[1]*Lz*Lx*stress[3] + Af[2]*Lx*Ly*stress[5];
+	  force[f][1] = Af[0]*Ly*Lz*stress[3] + Af[1]*Lz*Lx*stress[1] + Af[2]*Lx*Ly*stress[4];
+	  force[f][2] = Af[0]*Ly*Lz*stress[5] + Af[1]*Lz*Lx*stress[4] + Af[2]*Ly*Ly*stress[2];
 	  if (perUnitArea){
 	    force[f] /= solidFaceAreaMag[f];}
 	}
