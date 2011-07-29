@@ -1522,7 +1522,7 @@ MeshMetricsCalculator<T>::init()
 
             shared_ptr<IntArray> ibFaceIndexPtr(new IntArray(faces.getCount()));
             *ibFaceIndexPtr = -1;
-            _geomFields.ibFaceIndex.addArray(cells,ibFaceIndexPtr);
+            _geomFields.ibFaceIndex.addArray(faces,ibFaceIndexPtr);
 
             if (_transient)
             {
