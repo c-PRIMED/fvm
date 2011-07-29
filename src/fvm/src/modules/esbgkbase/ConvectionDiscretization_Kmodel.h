@@ -125,7 +125,7 @@ public:
           {
               const int c0 = faceCells(f,0);
               const int c1 = faceCells(f,1);
-              const T_Scalar faceCFlux = faceArea[f][0]*_cx+faceArea[f][1]*_cy+faceArea[f][2]*_cz;
+              const T_Scalar faceCFlux = faceArea[f][0]*_cx*nondim_length/Lx+faceArea[f][1]*_cy*nondim_length/Ly+faceArea[f][2]*_cz*nondim_length/Lz;
               bool isIBFace = (((ibType[c0] == Mesh::IBTYPE_FLUID)
                                 && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
                                ((ibType[c1] == Mesh::IBTYPE_FLUID)
@@ -171,7 +171,7 @@ public:
           {
               const int c0 = faceCells(f,0);
               const int c1 = faceCells(f,1);
-              const T_Scalar faceCFlux = faceArea[f][0]*_cx+faceArea[f][1]*_cy+faceArea[f][2]*_cz;
+              const T_Scalar faceCFlux = faceArea[f][0]*_cx*nondim_length/Lx+faceArea[f][1]*_cy*nondim_length/Ly+faceArea[f][2]*_cz*nondim_length/Lz;
 
               X varFlux;
             
