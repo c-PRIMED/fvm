@@ -50,6 +50,7 @@ T discretizeMassFluxInterior(const Mesh& mesh,
   const T OneMinusmomURF(T(1.0)-momURF);
     
   const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+  const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[faces]);
 
   const StorageSite& ibFaces = mesh.getIBFaces();
     
@@ -59,9 +60,6 @@ T discretizeMassFluxInterior(const Mesh& mesh,
   // the net flux from ib faces
   T boundaryFlux(0);
       
-  // used to keep track of the current ib face index
-  int ibFace =0;
-    
   const int nFaces = faces.getCount();
   for(int f=0; f<nFaces; f++)
   {
@@ -126,6 +124,10 @@ T discretizeMassFluxInterior(const Mesh& mesh,
                ((ibType[c1] == Mesh::IBTYPE_FLUID)
                 && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
       {
+          const int ibFace = ibFaceIndex[f];
+          if (ibFace < 0)
+            throw CException("invalid ib face index");
+          
           const VectorT3& faceVelocity = (*ibVelocity)[ibFace];
 
           // this is an iBFace, determine which cell is interior and
@@ -160,9 +162,6 @@ T discretizeMassFluxInterior(const Mesh& mesh,
               }
           }
                 
-            
-          // increment count of ib faces
-          ibFace++;
       }
       else 
       {

@@ -1511,12 +1511,18 @@ MeshMetricsCalculator<T>::init()
     {
         const Mesh& mesh = *_meshes[n];
         const StorageSite& cells = mesh.getCells();
+        const StorageSite& faces = mesh.getFaces();
+        
         const int cellCount = cells.getCountLevel1();
         if ( (cellCount > 0) ) //&& (!mesh.isShell()) )
         {
             shared_ptr<IntArray> ibTypePtr(new IntArray(cells.getCountLevel1()));
             *ibTypePtr = Mesh::IBTYPE_FLUID;
             _geomFields.ibType.addArray(cells,ibTypePtr);
+
+            shared_ptr<IntArray> ibFaceIndexPtr(new IntArray(faces.getCount()));
+            *ibFaceIndexPtr = -1;
+            _geomFields.ibFaceIndex.addArray(cells,ibFaceIndexPtr);
 
             if (_transient)
             {

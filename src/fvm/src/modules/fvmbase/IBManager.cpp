@@ -419,9 +419,12 @@ IBManager::createIBFaces(Mesh& fluidMesh)
   const CRConnectivity& faceCells = fluidMesh.getAllFaceCells();
 
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
+  IntArray& ibFaceIndex = dynamic_cast<IntArray&>(_geomFields.ibFaceIndex[faces]);
 
   const int nFaces = faces.getCount();
 
+  ibFaceIndex = -1;
+  
   // find number of IBFaces
 
   int nIBFaces=0;
@@ -436,7 +439,7 @@ IBManager::createIBFaces(Mesh& fluidMesh)
       if ((ibType0 == Mesh::IBTYPE_FLUID && ibType1 == Mesh::IBTYPE_BOUNDARY) ||
           (ibType1 == Mesh::IBTYPE_FLUID && ibType0 == Mesh::IBTYPE_BOUNDARY))
       {
-          nIBFaces++;
+          ibFaceIndex[f]=nIBFaces++;
       }
 
       if ((ibType0 == Mesh::IBTYPE_FLUID && ibType1 == Mesh::IBTYPE_SOLID) ||

@@ -69,7 +69,8 @@ public:
 
     const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
 
-    const int nIBFaces = ibFaces.getCount();
+   const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[faces]);
+
 
     // used for computing the average value in IBTYPE_BOUNDARY cells.
     // we can't use the cellPhi storage during the loop below since a
@@ -86,8 +87,6 @@ public:
     xB.zero();
     wB.zero();
       
-      // used to keep track of the current ib face index
-    int ibFace =0;
     
     const int nFaces = faces.getCount();
     for(int f=0; f<nFaces; f++)
@@ -98,9 +97,12 @@ public:
         if (((ibType[c0] == Mesh::IBTYPE_FLUID) && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
             ((ibType[c1] == Mesh::IBTYPE_FLUID) && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
         {
-            if (ibFace >= nIBFaces)
-              throw CException("incorrect number of IB faces");
             // this is an iBFace, determine which cell is interior and which boundary
+
+            const int ibFace = ibFaceIndex[f];
+            if (ibFace < 0)
+              throw CException("invalid ib face index");
+            
             const X& facePhi = ibPhi[ibFace];
             if (ibType[c0] == Mesh::IBTYPE_FLUID)
             {
@@ -120,7 +122,6 @@ public:
                 xB[c0] += facePhi;
                 wB[c0]++;
             }
-            ibFace++;
         }
         else if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
             (ibType[c1] == Mesh::IBTYPE_FLUID))
@@ -136,8 +137,6 @@ public:
             matrix.setDirichlet(c1);
         }
     }
-    if (ibFace != nIBFaces)
-      throw CException("incorrect number of IB faces");
 
     // set the phi for boundary cells as average of the ib face values
     for(int c=0; c<nCells; c++)

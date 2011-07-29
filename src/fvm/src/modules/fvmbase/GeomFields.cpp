@@ -21,6 +21,7 @@ GeomFields::GeomFields(const string baseName) :
   dirichletNodeDisplacement(baseName+"dirichletNodeDisplacement"),
   displacementOptions(baseName+"displacementOptions"),
   ibType(baseName+"ibType"),
-  ibTypeN1(baseName+"ibTypeN1")
+  ibTypeN1(baseName+"ibTypeN1"),
+  ibFaceIndex(baseName+"ibFaceIndex")
 {}
 
