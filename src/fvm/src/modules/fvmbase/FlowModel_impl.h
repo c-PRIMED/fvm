@@ -535,7 +535,7 @@ public:
     if (_options.transient)
     {
         shared_ptr<Discretization>
-          td(new TimeDerivativeDiscretization<VectorT3,T,T>
+          td(new TimeDerivativeDiscretization<VectorT3,DiagTensorT3,T>
              (_meshes,_geomFields,
               _flowFields.velocity,
               _flowFields.velocityN1,
