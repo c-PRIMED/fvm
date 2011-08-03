@@ -114,6 +114,14 @@ class ServerCoupling:
        # force on boundary cells
        for c in range(selfCountCells, countCells):
           forcePlate[c] =  self.force[selfCountCells + c][2]
+
+    def updateTimeStep(self, timestep):
+        self.timestep = zeros(1,float)
+        self.timestep[0] = timestep
+        mpi_proc = MPI.PROC_NULL
+        if ( self.procID == 0 ):
+            mpi_proc = MPI.ROOT
+        self.SERVER_COMM_CLIENT.Bcast([self.timestep, MPI.DOUBLE], mpi_proc)	
  
     def dumpSolidBoundaryCoord(self,coord, rank):
         f = open('solidBoundaryCoord'+str(rank)+'.dat','w')
@@ -150,3 +158,4 @@ class ServerCoupling:
 	 self.PARENT.Barrier()
 	 self.PARENT.Disconnect()
 
+    

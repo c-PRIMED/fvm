@@ -85,6 +85,12 @@ class ClientCoupling:
 	#   self.dump3D(self.vel,"solidBoundaryVel.dat")
 
 
+     def acceptTimeStep(self):
+          #getting solid time step
+          timestep = zeros(1,float)
+          self.CLIENT_COMM_SERVER.Bcast([timestep, MPI.DOUBLE], root=0)
+          return timestep
+     
      def dump3D(self,coord, fname):
         f = open(fname,'w')
         for n in range(0,len(coord)):
