@@ -6,6 +6,8 @@
 
 #include <fstream>
 #include <sstream>
+#include <iomanip>
+#include <limits>
 
 #include "NumType.h"
 #include "Array.h"
@@ -374,6 +376,33 @@ public:
 
            mICV.multiplyAndAdd(*ibV,cV);
    	   mIPV.multiplyAndAdd(*ibV,pV);
+
+#if 0
+        ofstream debugFile;
+	stringstream ss(stringstream::in | stringstream::out);
+        ss <<  MPI::COMM_WORLD.Get_rank();
+	string  fname1 = "IBVelocity_proc" +  ss.str() + ".dat";
+	debugFile.open(fname1.c_str());
+	
+	//debug use
+	const Array<int>& ibFaceList = mesh.getIBFaceList();
+	const StorageSite& faces = mesh.getFaces();
+	const VectorT3Array& faceCentroid = 
+          dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+	const double angV = 1.0;
+	VectorT3 center;
+	center[0]=0.;
+	center[1]=0.;
+	center[2]=0.;	
+
+	for(int f=0; f<ibFaces.getCount();f++){
+	  int fID = ibFaceList[f];
+	  debugFile << "f=" <<   f << setw(10) <<  "   fID = " <<  fID << "  faceCentroid = " << faceCentroid[fID] << " ibV = " << (*ibV)[f] << endl;
+	}
+	  
+	 debugFile.close();
+#endif
+
 
           _flowFields.velocity.addArray(ibFaces,ibV);
 
@@ -876,31 +905,50 @@ public:
 
     const int nCells = cells.getSelfCount();
 
-    // find first fluid cell
-    int nc=0;
-    for(; nc<nCells; nc++)
-      if (ibType[nc] == Mesh::IBTYPE_FLUID) break;
-
-    if (nc==nCells)
-      throw CException("setDirichlet: no fluid cell");
+    const Array<int>& localToGlobal = mesh.getLocalToGlobal();
+    _globalRefCellID = numeric_limits<int>::max();
+    for ( int n = 0; n < nCells; n++ ){
+       if ( ibType[n] == Mesh::IBTYPE_FLUID ){
+	   int glblIndx = localToGlobal[n];
+	   if ( glblIndx < _globalRefCellID )
+	      _globalRefCellID = glblIndx;
+       }
+   } 
     
-    ppDiag[nc] = -1.;
-    rCell[nc]=0.;
-    for(int nb=row[nc]; nb<row[nc+1]; nb++)
-      ppCoeff[nb] = 0;
+#ifdef FVM_PARALLEL
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &_globalRefCellID, 1, MPI::INT, MPI::MIN);
+#endif    
     
-    if (mfmatrix.hasMatrix(pIndex,vIndex))
-    {
-        PVMatrix& pvMatrix =
-          dynamic_cast<PVMatrix&>(mfmatrix.getMatrix(pIndex,vIndex));
-        
-        PVDiagArray& pvDiag = pvMatrix.getDiag();
-        PVDiagArray& pvCoeff = pvMatrix.getOffDiag();
-
-        pvDiag[nc] = NumTypeTraits<VectorT3>::getZero();
-        for(int nb=row[nc]; nb<row[nc+1]; nb++)
-          pvCoeff[nb] = NumTypeTraits<VectorT3>::getZero();
+    _globalRefProcID = 0;
+    const map<int,int>& globalToLocal = mesh.getGlobalToLocal();
+#ifdef FVM_PARALLEL    
+    if ( globalToLocal.count(_globalRefCellID) > 0 ){
+       _globalRefProcID = MPI::COMM_WORLD.Get_rank();
     }
+#endif    
+    
+    int nc = _globalRefCellID;
+    if ( globalToLocal.count(_globalRefCellID) > 0){
+       ppDiag[nc] = -1.;
+       rCell[nc]=0.;
+       for(int nb=row[nc]; nb<row[nc+1]; nb++)
+         ppCoeff[nb] = 0;
+    
+       if (mfmatrix.hasMatrix(pIndex,vIndex))
+       {
+          PVMatrix& pvMatrix =
+            dynamic_cast<PVMatrix&>(mfmatrix.getMatrix(pIndex,vIndex));
+        
+          PVDiagArray& pvDiag = pvMatrix.getDiag();
+          PVDiagArray& pvCoeff = pvMatrix.getOffDiag();
+
+          pvDiag[nc] = NumTypeTraits<VectorT3>::getZero();
+          for(int nb=row[nc]; nb<row[nc+1]; nb++)
+             pvCoeff[nb] = NumTypeTraits<VectorT3>::getZero();
+       }
+    
+    }
+    
   }
 
   
@@ -1039,7 +1087,7 @@ public:
         }
     }
   
-
+ 
       //sum netflux globalally MPI::
 #ifdef FVM_PARALLEL
       int count = 1;
@@ -1049,7 +1097,7 @@ public:
       MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &useReferencePressureInt, count, MPI::INT, MPI::PROD);
       this->_useReferencePressure = bool(useReferencePressureInt);
 #endif
-    //    cout << "net boundary flux = " << netFlux << endl;
+        cout << "net boundary flux = " << netFlux << endl;
     
     if (this->_useReferencePressure)
     {
@@ -1074,6 +1122,10 @@ public:
                 volumeSum += cellVolume[c];
         }
 
+#ifdef FVM_PARALLEL
+        MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &volumeSum, 1, MPI::DOUBLE, MPI::SUM);
+#endif	
+
         netFlux /= volumeSum;
 
         for (int n=0; n<numMeshes; n++)
@@ -1097,15 +1149,8 @@ public:
         // equation also has an extra degree of freedom. This sets the
         // first cell to have a zero correction to account for this.
         
-        //this call is only for process 0
-#ifdef FVM_PARALLEL
-        if ( MPI::COMM_WORLD.Get_rank() == 0 ) 
-           setDirichlet(matrix,b);
-#endif
 
-#ifndef FVM_PARALLEL
-        setDirichlet(matrix,b);
-#endif
+      setDirichlet(matrix,b);
 
     }
   }
@@ -1120,18 +1165,28 @@ public:
         
         MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
         const TArray& pp = dynamic_cast<const TArray&>(ppField[pIndex]);
+
+#ifndef FVM_PARALLEL
+        _referencePP = pp[_globalRefCellID];  
+#endif
+
         
-        _referencePP = pp[0];
-#ifdef FVM_PARALLEL
-        int root  = 0;
+#ifdef FVM_PARALLEL    
+        _referencePP = 0.0;
+        const map<int,int>& globalToLocal = mesh.getGlobalToLocal();
+	if ( MPI::COMM_WORLD.Get_rank() == _globalRefProcID ){
+	    int localID = globalToLocal.find(_globalRefCellID)->second;
+           _referencePP = pp[localID];
+        }	   
+	   
         int count = 1;
-	MPI::COMM_WORLD.Bcast( &_referencePP, count, MPI::DOUBLE, root);			
+	MPI::COMM_WORLD.Bcast( &_referencePP, count, MPI::DOUBLE, _globalRefProcID);			
 #endif
        //broadcast this value (referencePP) to all 
 
     }
     else
-      _referencePP = 0;
+      _referencePP = 0.0;
   }
 
   void computeContinuityResidual()
@@ -1991,6 +2046,8 @@ private:
   shared_ptr<Field> _momApField;
 
   bool _useReferencePressure;
+  int  _globalRefCellID;
+  int  _globalRefProcID;
   T _referencePP;
   //AMG _momSolver;
   //AMG _continuitySolver;
