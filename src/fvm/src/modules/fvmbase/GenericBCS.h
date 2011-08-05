@@ -307,9 +307,9 @@ public:
    
     X fluxSource = source * _faceAreaMag[f];   
     if (_is2D)
-    	fluxSource /= 4.0;
+    	fluxSource /= 2.0;
     else 
-    	fluxSource /= 6.0; 
+    	fluxSource /= 2.0; 
     const X fluxBoundary = -hCoeff*(_x[c1]-Xinf)*_faceAreaMag[f] + fluxSource;
     const X dFlux = fluxBoundary-fluxInterior;
 

@@ -78,7 +78,8 @@ public:
 			  _electricFields.chargeGradient,_geomFields),
     _initialElectroStaticsNorm(),
     _initialChargeTransportNorm(),
-    _niters(0), 
+    _niters(0),
+    _avgCharge(0),
     _columns(0), 
     _columnList(),
     _cellColumns(),
@@ -410,9 +411,25 @@ public:
 	for (int c=0; c<nCells; c++){
 	  for (int i=0; i<=nTrap; i++){
 	    totalcharge[c] += charge[c][i]*-QE;
-	  }
+	  }	  
 	}
+
+	const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
+	if (vc.vcType == "dielectric"){
+	  const TArray& cellVolume = 
+	    dynamic_cast<const TArray&> (_geomFields.volume[cells]);
+	  T chargeSum(0);
+	  T volumeSum(0);
+	  const int nCells = cells.getSelfCount();
+	  for (int c=0; c<nCells; c++){
+	    volumeSum += cellVolume[c];
+	    chargeSum += totalcharge[c]*cellVolume[c];
+	  }
+	  _avgCharge = chargeSum/volumeSum;
+	}
+	cout << "the avergae charge " << _avgCharge << endl;
      }
+
   }
 
 
@@ -692,8 +709,9 @@ public:
 	    	const T dielectric_thickness = _constants["dielectric_thickness"];
 	    	const T dielectric_constant = _constants["dielectric_constant"] * E0_SI;
 	    	const T coeff = dielectric_constant / dielectric_thickness;
-	    	const T avgCharge = -100;
-	    	//const T src = avgCharge * dielectric_thickness;
+	    	//const T avgCharge = 100/1.60217646e-19*8.854187826e-12*-QE;
+	    	_avgCharge = -1e4;
+	    	//const T src = _avgCharge * dielectric_thickness;
 	    	const T src = 0;
 	    	gbc. applyDielectricInterfaceBC(coeff, specifiedPotential, src);
 	    }
@@ -1388,6 +1406,7 @@ private:
   MFRPtr _initialElectroStaticsNorm;
   MFRPtr _initialChargeTransportNorm;
   int _niters;
+  T _avgCharge;
 
   StorageSite _columns;
   ColumnList _columnList;
