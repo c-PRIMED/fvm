@@ -857,6 +857,7 @@ public:
     const Mesh& mesh = *_meshes[0];
     
     const StorageSite& cells = mesh.getCells();
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
     
     MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
     MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
@@ -873,9 +874,19 @@ public:
 
     const Array<int>& row = cr.getRow();
 
-    ppDiag[0] = -1.;
-    rCell[0]=0.;
-    for(int nb=row[0]; nb<row[1]; nb++)
+    const int nCells = cells.getSelfCount();
+
+    // find first fluid cell
+    int nc=0;
+    for(; nc<nCells; nc++)
+      if (ibType[nc] == Mesh::IBTYPE_FLUID) break;
+
+    if (nc==nCells)
+      throw CException("setDirichlet: no fluid cell");
+    
+    ppDiag[nc] = -1.;
+    rCell[nc]=0.;
+    for(int nb=row[nc]; nb<row[nc+1]; nb++)
       ppCoeff[nb] = 0;
     
     if (mfmatrix.hasMatrix(pIndex,vIndex))
@@ -886,8 +897,8 @@ public:
         PVDiagArray& pvDiag = pvMatrix.getDiag();
         PVDiagArray& pvCoeff = pvMatrix.getOffDiag();
 
-        pvDiag[0] = NumTypeTraits<VectorT3>::getZero();
-        for(int nb=row[0]; nb<row[1]; nb++)
+        pvDiag[nc] = NumTypeTraits<VectorT3>::getZero();
+        for(int nb=row[nc]; nb<row[nc+1]; nb++)
           pvCoeff[nb] = NumTypeTraits<VectorT3>::getZero();
     }
   }
