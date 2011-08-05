@@ -10,6 +10,10 @@ template class MeshMetricsCalculator<ATYPE>;
 #include "ThermalModel_impl.h"
 template class ThermalModel<ATYPE>;
 
+#include "SpeciesModel.h"
+#include "SpeciesModel_impl.h"
+template class SpeciesModel<ATYPE>;
+
 #ifndef USING_ATYPE_PC
 
 #include "ElectricModel.h"
