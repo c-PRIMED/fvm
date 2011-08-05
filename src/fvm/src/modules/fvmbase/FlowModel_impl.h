@@ -1097,7 +1097,7 @@ public:
       MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &useReferencePressureInt, count, MPI::INT, MPI::PROD);
       this->_useReferencePressure = bool(useReferencePressureInt);
 #endif
-        cout << "net boundary flux = " << netFlux << endl;
+        //cout << "net boundary flux = " << netFlux << endl;
     
     if (this->_useReferencePressure)
     {
