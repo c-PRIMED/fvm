@@ -5,11 +5,12 @@ from build_packages import *
 
 class Freetype(BuildPkg):
     def _installed(self):
-        for path in [self.blddir, '/usr/include', '/usr/local/include']:
+        for path in [os.path.join(self.blddir, 'include'), '/usr/include', '/usr/local/include']:
             verbose(2,'Checking for freetype headers in %s' % path)
             f = ''
             try:
                 f = open(os.path.join(path, 'ftbuild.h'), 'r')
+                f.close()
             except:
                 pass
             verbose(2,'Found freetype headers.')
