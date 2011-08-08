@@ -31,3 +31,4 @@ Amd		pkgs/AMD.tar.gz
 Ufconfig		pkgs/UFconfig.tar.gz
 Umfpack			pkgs/UMFPACK.tar.gz
 Sphinx	pkgs/sphinx.tgz
+Freetype	pkgs/freetype-2.4.6.tar.bz2
