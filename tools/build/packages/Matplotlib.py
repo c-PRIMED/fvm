@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Matplotlib(BuildPkg):
-    requires = ['numpy']
+    requires = ['numpy', 'freetype']
 
     def _installed(self):
         # need 1.0.1
