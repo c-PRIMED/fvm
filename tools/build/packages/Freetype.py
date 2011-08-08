@@ -9,12 +9,12 @@ class Freetype(BuildPkg):
             verbose(2,'Checking for freetype headers in %s' % path)
             f = ''
             try:
-                f = open(os.path.join(path, 'ftbuild.h'), 'r')
+                f = open(os.path.join(path, 'ft2build.h'), 'r')
                 f.close()
+                verbose(2,'Found freetype headers.')
+                return True
             except:
                 pass
-            verbose(2,'Found freetype headers.')
-            return True
         return False
 
     def _configure(self):
