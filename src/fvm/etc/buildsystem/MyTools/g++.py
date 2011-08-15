@@ -25,13 +25,15 @@ def generate(env):
 
     if env['DEBUG']:
         env.Append(CXXFLAGS=['-g', '-O0'])
+    elif env['PROFILE']:
+        env.Append(CXXFLAGS=['-fprofile-arcs', '-ftest-coverage'])
     else:
         env.Append(CXXFLAGS=['-O3', '-finline-limit=500'])
 
 
     if env['OPENMP']:
         env.Append(CXXFLAGS=['-fopenmp'])
-    
+
     if env['PARALLEL']:
         env['CXX'] = 'mpicxx'
         env.Append(CXXFLAGS=['-DFVM_PARALLEL'])

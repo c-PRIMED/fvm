@@ -37,7 +37,8 @@ def setBaseVars(env,cla):
 
         env[k] = v
 
-    env['DEBUG'] = env['VERSION'] == 'debug'
+    env['DEBUG'] = (env['VERSION'] == 'debug')
+    env['PROFILE'] = (env['VERSION'] == 'profile')
 
     env['ARCH'] = Arch.getArch()
     sconstructDir = os.path.abspath(str(env.fs.SConstruct_dir))

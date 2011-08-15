@@ -7,6 +7,8 @@ def generate(env):
     env['LINKFLAGS'] = CLVar('-rdynamic')
     if env['DEBUG']:
         env.Append(LINKFLAGS=['-g'])
+    elif env['PROFILE']:
+        env.Append(LINKFLAGS=['-lgcov', '-fprofile-arcs', '-ftest-coverage'])
 
     env['SHLINKFLAGS'] = env['LINKFLAGS']
     env.Append(SHLINKFLAGS=['-shared'])
