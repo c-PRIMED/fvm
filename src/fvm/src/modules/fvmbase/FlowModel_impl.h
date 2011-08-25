@@ -919,12 +919,14 @@ public:
     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &_globalRefCellID, 1, MPI::INT, MPI::MIN);
 #endif    
     
-    _globalRefProcID = 0;
+    _globalRefProcID = -1;
     const map<int,int>& globalToLocal = mesh.getGlobalToLocal();
 #ifdef FVM_PARALLEL    
     if ( globalToLocal.count(_globalRefCellID) > 0 ){
        _globalRefProcID = MPI::COMM_WORLD.Get_rank();
     }
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &_globalRefProcID, 1, MPI::INT, MPI::MAX);
+    
 #endif    
     
     int nc = _globalRefCellID;
@@ -1177,10 +1179,15 @@ public:
 	if ( MPI::COMM_WORLD.Get_rank() == _globalRefProcID ){
 	    int localID = globalToLocal.find(_globalRefCellID)->second;
            _referencePP = pp[localID];
+#if 0
+           cout << "rank  = " << MPI::COMM_WORLD.Get_rank() << " globalRefProcID = " << _globalRefProcID << 
+	           " globalRefCellID = " << _globalRefCellID << " refPP  = " << _referencePP << endl;	    
+#endif		   
         }	   
 	   
         int count = 1;
 	MPI::COMM_WORLD.Bcast( &_referencePP, count, MPI::DOUBLE, _globalRefProcID);			
+
 #endif
        //broadcast this value (referencePP) to all 
 
