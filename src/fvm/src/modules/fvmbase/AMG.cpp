@@ -18,6 +18,7 @@ AMG::AMG() :
   smootherType(GAUSS_SEIDEL),
   scaleCorrections(true),
   _finestLinearSystem(0),
+  _mergeLevelSize(0),
   _mergeLevel(-1),
   _isMerge(false),
 #ifdef FVM_PARALLEL
