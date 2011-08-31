@@ -2525,9 +2525,9 @@ MeshPartitioner::globalCellID_procID_map()
         int indx = recv_counts[0];
         for ( int i = 0; i < cellsLevel1Global->getLength(); i++ ){
             _cellsLevel1PartID[ (*cellsLevel1Global)[i] ] = procid;
-            if ( i == (indx-1) ){
-               procid++;
-               indx += recv_counts[procid];
+            if ( (i == indx-1) && (procid <_nPart.at(id)-1) ){
+               //procid++;
+               indx += recv_counts[++procid];
             }
         }
 
