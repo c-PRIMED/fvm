@@ -84,7 +84,11 @@ class BuildPkg(Build):
 
         # If tarballs have everything in a directory with the same name as the tarball,
         # strip out that directory name.
-        name = os.path.basename(src.rstrip('.' + suffix).rstrip('.tar'))
+        name = os.path.basename(src)[:-len(suffix)]
+        if name.endswith('.'):
+            name = name[:-1]
+        if name.endswith('.tar'):
+            name = name[:-4]
         dir = os.popen("/bin/bash -c 'tar -%stf %s 2> /dev/null'" % (compress, src)).readline().split()[0]
         if dir.startswith('%s/' % name):
             strip = '--strip-components 1'
