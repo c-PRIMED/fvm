@@ -445,6 +445,10 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
           {
               const int fineIndex = toIndices[ng];
               const int coarseOtherIndex = coarseIndex[fineIndex];
+
+              if (coarseOtherIndex < 0)
+                continue;
+              
               if (otherToMyMapping.find(coarseOtherIndex) !=
                   otherToMyMapping.end())
               {
