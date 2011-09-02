@@ -491,8 +491,9 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
           for(int ng=0; ng<nGhostRows; ng++)
           {
               const int fineIndex = fromIndices[ng];
-              //              const int coarseOtherIndex	 = coarseIndex[fineIndex];
-              scatterSet.insert( coarseIndex[fineIndex] );
+              const int coarseOtherIndex = coarseIndex[fineIndex];
+              if (coarseOtherIndex >= 0)
+                scatterSet.insert( coarseOtherIndex );
           }
 
           const int coarseMappersSize = scatterSet.size();
