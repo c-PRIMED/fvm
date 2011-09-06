@@ -525,7 +525,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 
   // FILE * fp = fopen("/home/lin/work/app-memosa/src/fvm/verification/Structure_Electrostatics_Interaction/2D_beam/test/coeff.dat", "w");
 
-#if 1
+#if 0
 
 #if  0
       ofstream   debugFileFluid;
@@ -538,6 +538,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       debugFileSolid.open( fname2.c_str() );
       ss.str("");
       const Array<int>&  localToGlobal = mesh.getLocalToGlobal();
+      const CRConnectivity& faceCells  = mesh.getAllFaceCells();
 #endif
 
   for(int n=0; n<nIBFaces; n++)
@@ -669,8 +670,11 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 	}
 	*/
 
-#if 0
-      debugFileFluid << "ibface =  " << n << "   " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] <<  endl;
+#if 0    
+      const int cell0 = localToGlobal[ faceCells(f,0) ];
+      const int cell1 = localToGlobal[ faceCells(f,1) ];
+      debugFileFluid << "ibface =  " << n << "   " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] <<  
+                        " cell0 = "  << std::min(cell0,cell1) << " cell1 = " << std::max(cell0,cell1) << endl;
       map<int, double> cellToValue;
       map<int, int> globalToLocal;
    

@@ -929,8 +929,8 @@ public:
     
 #endif    
     
-    int nc = _globalRefCellID;
     if ( globalToLocal.count(_globalRefCellID) > 0){
+       int nc =  globalToLocal.find(_globalRefCellID)->second;
        ppDiag[nc] = -1.;
        rCell[nc]=0.;
        for(int nb=row[nc]; nb<row[nc+1]; nb++)
@@ -1179,10 +1179,6 @@ public:
 	if ( MPI::COMM_WORLD.Get_rank() == _globalRefProcID ){
 	    int localID = globalToLocal.find(_globalRefCellID)->second;
            _referencePP = pp[localID];
-#if 0
-           cout << "rank  = " << MPI::COMM_WORLD.Get_rank() << " globalRefProcID = " << _globalRefProcID << 
-	           " globalRefCellID = " << _globalRefCellID << " refPP  = " << _referencePP << endl;	    
-#endif		   
         }	   
 	   
         int count = 1;

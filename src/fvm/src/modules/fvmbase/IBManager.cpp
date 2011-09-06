@@ -381,29 +381,91 @@ IBManager::markSolid(Mesh& fluidMesh)
 void
 IBManager::markIBTypePlus(Mesh& fluidMesh)
 {
+
+#if 0
   int nFluid=0;
   int nSolid=0;
   int nBoundary=0;
+  
   StorageSite& cells = fluidMesh.getCells();
   const int nCellsTotal = cells.getCountLevel1();
   const IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
-  for(int c=0; c<nCellsTotal; c++)
+
+  cout << " found " << nFluid << " fluid, "
+       << nSolid << " solid and "
+       << nBoundary << " boundary cells " << endl;
+       
+#endif        
+
+#ifdef FVM_PARALLEL
+
+#if 0
+  int nCellsInner = cells.getSelfCount();
+  int nFluidGlobal=0;
+  int nSolidGlobal=0;
+  int nBoundaryGlobal=0;
+  vector<int> ibTypeCells;  
+  const Array<int>& localToGlobal = fluidMesh.getLocalToGlobal();
+  
+ for(int c=0; c<nCellsInner; c++)
   {
       if (cellIBType[c] == Mesh::IBTYPE_FLUID)
         nFluid++;
       else if (cellIBType[c] == Mesh::IBTYPE_SOLID)
         nSolid++;
-      else if (cellIBType[c] == Mesh::IBTYPE_BOUNDARY)
+      else if (cellIBType[c] == Mesh::IBTYPE_BOUNDARY){
         nBoundary++;
+	ibTypeCells.push_back(localToGlobal[c]);
+      }
       else{
 	throw CException("invalid ib type");
 	}	
   }
+  
+     MPI::COMM_WORLD.Allreduce( &nFluid, &nFluidGlobal   , 1, MPI::INT, MPI::SUM);
+     MPI::COMM_WORLD.Allreduce( &nSolid, &nSolidGlobal   , 1, MPI::INT, MPI::SUM);
+     MPI::COMM_WORLD.Allreduce( &nBoundary, &nBoundaryGlobal, 1, MPI::INT, MPI::SUM);
+     vector<int> ibTypeCellsGlobal(nBoundaryGlobal);
+     const int nsize = MPI::COMM_WORLD.Get_size();
+     const int rank  = MPI::COMM_WORLD.Get_rank();
+     int counts [nsize];
+     int offsets[nsize];
+     MPI::COMM_WORLD.Allgather(&nBoundary, 1, MPI::INT, &counts[0], 1, MPI::INT);
+     //form offsets
+     offsets[0] = 0;
+     for ( int p=1; p < nsize; p++){
+        offsets[p] = counts[p-1] + offsets[p-1];
+     }
+     
+     //gathering/
+     MPI::COMM_WORLD.Gatherv(&ibTypeCells[0],counts[rank], MPI::INT,
+        &ibTypeCellsGlobal[0], counts, offsets, MPI::INT, 0);
 
-  cout << " found " << nFluid << " fluid, "
-       << nSolid << " solid and "
-       << nBoundary << " boundary cells " << endl;
+
+  if ( MPI::COMM_WORLD.Get_rank() == 0 ){
+      set<int> ibTypeCellSet;
+      for( int i = 0; i < int(ibTypeCellsGlobal.size()); i++ ){
+         ibTypeCellSet.insert( ibTypeCellsGlobal[i] );
+      }
+      
+      
+      ofstream debugFile;
+      debugFile.open("IBManagerDEBUG.dat");
+      debugFile << " found (global) " << nFluidGlobal << " fluid, "   << nSolidGlobal << " solid and "
+                << nBoundaryGlobal << " boundary cells " << endl;
+      debugFile << "IBTYPE_BOUNDARY CELLS (GLOBAL NUMBERING)" << endl;
+      foreach ( const set<int>::value_type cellID, ibTypeCellSet){
+         debugFile << cellID << endl;
+      }		
+
+      debugFile.close(); 
+       
+  }      
+#endif
+
+#endif
+
 
 }
 
