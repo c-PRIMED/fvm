@@ -129,7 +129,6 @@ def main():
         os.chdir(options.outdir)
 
     mpi = 'mpirun -np %s %s %s --type=%s' % (options.np, options.script, options.infile, options.type);
-    print mpi
     if options.xdmf:
         mpi += ' --xdmf'
 
