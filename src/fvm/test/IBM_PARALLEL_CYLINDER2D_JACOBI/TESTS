@@ -1,0 +1,4 @@
+IBMCYLINDER2D_PROCS1_FLUIDSOLVER_JACOBI   ./ptest.py  --np 1   --script ./parallel_cylinder2D.py --in  ../uniform-cart_5K.cas  --in2 ../circle_66.cas --type=quad --golden proc1   --outdir TESTDIR
+IBMCYLINDER2D_PROCS2_FLUIDSOLVER_JACOBI   ./ptest.py  --np 4   --script ./parallel_cylinder2D.py --in  ../uniform-cart_5K.cas  --in2 ../circle_66.cas --type=quad --golden proc4   --outdir TESTDIR
+IBMCYLINDER2D_PROCS16_FLUIDSOLVER_JACOBI  ./ptest.py  --np 16  --script ./parallel_cylinder2D.py --in  ../uniform-cart_5K.cas  --in2 ../circle_66.cas --type=quad --golden proc16  --outdir TESTDIR
+
