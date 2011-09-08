@@ -525,7 +525,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 
   // FILE * fp = fopen("/home/lin/work/app-memosa/src/fvm/verification/Structure_Electrostatics_Interaction/2D_beam/test/coeff.dat", "w");
 
-#if 0
+#if 1
 
 #if  0
       ofstream   debugFileFluid;
