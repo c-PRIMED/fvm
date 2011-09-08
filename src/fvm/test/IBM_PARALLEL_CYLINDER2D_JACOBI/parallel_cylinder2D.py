@@ -243,12 +243,12 @@ for n in range(0, numTimeSteps):
     ibManager.update()
     #checkMarking(n)
     fluidMetricsCalculator.computeIBInterpolationMatrices(sbMeshFaces)
+    momPC.redirectPrintToFile("convergence.dat")
     for i in range(0,10):
         fmodel.computeIBFaceVelocity(sbMeshFaces)
-	momPC.redirectPrintToFile("convergence.dat")
         if fmodel.advance(1):
             break
-        momPC.redirectPrintToScreen()
+    momPC.redirectPrintToScreen()
     #fmodel.updateTime()
     globalCount += 1
     globalTime += timeStep
