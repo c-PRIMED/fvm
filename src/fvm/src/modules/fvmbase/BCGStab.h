@@ -24,12 +24,16 @@ public:
   virtual void cleanup();
   virtual void smooth(LinearSystem& ls);
   
+  int getTotalIterations() const { return _totalIterations;}
+  
   DEFINE_TYPENAME("BCGStab");
   
   LinearSolver *preconditioner;
 private:
 
   BCGStab(const BCGStab&);
+  
+  int _totalIterations;
 };
 
 #endif

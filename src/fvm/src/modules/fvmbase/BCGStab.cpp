@@ -5,7 +5,8 @@
 
 #include "BCGStab.h"
 BCGStab::BCGStab() :
-  preconditioner(0)
+  preconditioner(0),
+  _totalIterations(0)
 {}
 
 BCGStab::~BCGStab()
@@ -56,7 +57,8 @@ BCGStab::solve(LinearSystem & ls)
 #endif
 
   for(int i = 0; i<nMaxIterations; i++)
-  {
+  { 
+      _totalIterations++;
       rhoPrev = rho;
       rho = r->dotWith(*rTilda);
 
