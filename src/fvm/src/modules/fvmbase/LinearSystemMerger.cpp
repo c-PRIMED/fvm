@@ -626,7 +626,7 @@ LinearSystemMerger::set_ls_vectors()
     foreach ( const MultiField::ArrayIndex& ai, arrayIndices){
          const StorageSite&  mergeSite = *_site;
          MultiField::ArrayIndex mergeIndex( ai.first, &mergeSite );
-          cout << " _procIDDDD=  " << _procID << " mergeSite.getCount() = " << mergeSite.getCount() << endl;
+          //cout << " _procIDDDD=  " << _procID << " mergeSite.getCount() = " << mergeSite.getCount() << endl;
          _mergeLS->_b->addArray( mergeIndex, delta[ai].newSizedClone( mergeSite.getCount()) );
 /*
         const Array<double> & xarray = dynamic_cast< const Array<double> & > ( delta[ai] );
