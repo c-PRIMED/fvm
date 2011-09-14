@@ -727,6 +727,12 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
   const StorageSite& cells = mesh.getCells();
   const StorageSite& solidMeshFaces = _solidBoundaryMesh.getFaces();
 
+  const Vec3DArray& cellCoords =
+    dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
+
+  const Vec3DArray& solidMeshCoords =
+    dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
+
   const int nSolidFaces = solidMeshFaces.getCount();
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
   //const CRConnectivity& cellCells  = mesh.getCellCells();
@@ -738,6 +744,8 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
   
   solidFacesToCells->initCount();
 
+  Array<int> desiredNeighbors(fluidNeighborsPerSolidFace);
+  
   for(int f=0; f<nSolidFaces; f++)
   {
       NearestCell& nc = nearest[f];
@@ -752,6 +760,26 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
               if (cellIBType[c_nb] == Mesh::IBTYPE_FLUID)
                  nc.neighbors.insert(c_nb);
           }
+
+
+          if ((int) nc.neighbors.size() > fluidNeighborsPerSolidFace)
+          {
+              // create a search tree to find the desired number of neighbors out of this set
+              
+              KSearchTree dtree;
+              foreach(int nb, nc.neighbors)
+              {
+                  dtree.insert( cellCoords[nb], nb);
+              }
+
+              dtree.findNeighbors(solidMeshCoords[f], fluidNeighborsPerSolidFace, desiredNeighbors);
+
+              // clear the current set of neighbors and add the desired ones
+              nc.neighbors.clear();
+              for(int i=0; i<fluidNeighborsPerSolidFace; i++)
+                nc.neighbors.insert(desiredNeighbors[i]);
+          }
+          
 
 #if 0
           int nLayers=0;
