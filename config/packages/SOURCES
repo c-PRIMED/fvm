@@ -32,4 +32,4 @@ Ufconfig		pkgs/UFconfig.tar.gz
 Umfpack			pkgs/UMFPACK.tar.gz
 Sphinx	pkgs/sphinx.tgz
 Freetype	pkgs/freetype-2.4.6.tar.bz2
-Pymc	pkgs/pymc-2.1beta.tar.bz2
+Pymc	pkgs/pymc-2.1.tar.bz2
