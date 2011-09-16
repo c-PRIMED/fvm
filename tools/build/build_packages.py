@@ -56,7 +56,6 @@ class BuildPkg(Build):
 
     # unpack tarball
     def unpack_srcs(self):
-        print "UNPACK"
         dst = self.bdir
         src = self.sdir
         suffix = src.split('.')[-1]
