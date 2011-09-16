@@ -1,7 +1,7 @@
 # config file for Coates gcc builds
 Testing:
 	PBS=True
-	queue=prism
+	queue=standby
 	walltime=2:00:00
 	nodes=4
 	ncpus=8
