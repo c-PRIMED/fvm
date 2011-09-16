@@ -21,6 +21,7 @@ AMG::AMG() :
   _mergeLevelSize(0),
   _mergeLevel(-1),
   _isMerge(false),
+  _totalIterations(0),
 #ifdef FVM_PARALLEL
   _commTarget(MPI::COMM_WORLD),
 #endif
@@ -244,7 +245,7 @@ AMG::solve(LinearSystem & ls)
 
   for(int i=1; i<nMaxIterations; i++)
   {
-
+      _totalIterations++;
       cycle(cycleType,0);
       finestMatrix.computeResidual(_finestLinearSystem->getDelta(),
                                    _finestLinearSystem->getB(),

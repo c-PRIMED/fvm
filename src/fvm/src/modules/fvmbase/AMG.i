@@ -7,7 +7,7 @@ public:
   void setMergeLevelSize( int level_size);
   void redirectPrintToFile( const string& fname );
   void redirectPrintToScreen( );
-  
+  int getTotalIterations() const;
   enum CycleType
     {
       V_CYCLE,

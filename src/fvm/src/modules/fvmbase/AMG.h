@@ -62,6 +62,7 @@ public:
 
    void redirectPrintToFile( const string& fname );
    void redirectPrintToScreen( );
+   int getTotalIterations() const { return _totalIterations;}
 
    virtual void cleanup();
   
@@ -92,6 +93,7 @@ private:
   int _mergeLevelSize; //where 
   int _mergeLevel; 
   bool _isMerge;
+  int _totalIterations;
 
 #ifdef FVM_PARALLEL
   MPI::Intracomm _commTarget;
