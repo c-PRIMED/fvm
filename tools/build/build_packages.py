@@ -56,6 +56,7 @@ class BuildPkg(Build):
 
     # unpack tarball
     def unpack_srcs(self):
+        print "UNPACK"
         dst = self.bdir
         src = self.sdir
         suffix = src.split('.')[-1]
@@ -89,6 +90,10 @@ class BuildPkg(Build):
             name = name[:-1]
         if name.endswith('.tar'):
             name = name[:-4]
+
+        if not os.access(src, os.R_OK):
+            raise IOError ("ERROR: unable to read file %s." % src)
+
         dir = os.popen("/bin/bash -c 'tar -%stf %s 2> /dev/null'" % (compress, src)).readline().split()[0]
         if dir.startswith('%s/' % name):
             strip = '--strip-components 1'
