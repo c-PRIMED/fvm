@@ -449,6 +449,21 @@ public:
         velCell->zero();
         _plateFields.velocity.addArray(cells,velCell);
 
+	//initial temparature gradient array
+	shared_ptr<VGradArray> rCell(new VGradArray(cells.getCount()));
+	VGradType residualStress;
+	residualStress[0][0] = _options["residualStressXX"];
+	residualStress[0][1] = _options["residualStressXY"];
+	residualStress[0][2] = _options["residualStressXZ"];
+	residualStress[1][0] = _options["residualStressXY"];
+	residualStress[1][1] = _options["residualStressYY"];
+	residualStress[1][2] = _options["residualStressYZ"];
+	residualStress[2][0] = _options["residualStressXZ"];
+	residualStress[2][1] = _options["residualStressYZ"];
+	residualStress[2][2] = _options["residualStressZZ"];
+	*rCell = residualStress;
+	_plateFields.residualStress.addArray(cells,rCell);
+
         // compute values of deformation flux
 
         // store deformation flux at interfaces
@@ -561,6 +576,7 @@ public:
           _plateFields.ym,
           _plateFields.nu,
           _plateFields.deformationGradient,
+	  _plateFields.residualStress,
           _plateFields.thickness,
           _plateFields.force,
           _options.scf,

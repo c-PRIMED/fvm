@@ -42,6 +42,12 @@ struct PlateModelOptions : public FloatVarDict<T>
     this->defineVar("deformationURF",T(0.7));
     this->defineVar("timeStep",T(0.1));
     this->defineVar("operatingTemperature",T(300.0));
+    this->defineVar("residualStressXX",T(0.0));
+    this->defineVar("residualStressYY",T(0.0));
+    this->defineVar("residualStressZZ",T(0.0));
+    this->defineVar("residualStressXY",T(0.0));
+    this->defineVar("residualStressYZ",T(0.0));
+    this->defineVar("residualStressXZ",T(0.0));
 
     this->deformationTolerance=1e-4;
     this->printNormalizedResiduals = true;

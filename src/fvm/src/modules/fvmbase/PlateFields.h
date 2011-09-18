@@ -11,6 +11,7 @@ struct PlateFields
   Field deformation;
   Field moment;
   Field stress;
+  Field residualStress;
   Field devStress;
   Field VMStress;
   Field VMStressOut;

@@ -4,6 +4,7 @@ PlateFields::PlateFields(const string baseName) :
   deformation(baseName + ".deformation"),
   moment(baseName + ".moment"),
   stress(baseName + ".stress"),
+  residualStress(baseName + ".residualStress"),
   devStress(baseName + ".devStress"),
   VMStress(baseName + ".VMStress"),
   VMStressOut(baseName + ".VMStressOut"),

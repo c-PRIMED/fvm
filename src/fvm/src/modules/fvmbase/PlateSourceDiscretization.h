@@ -39,6 +39,7 @@ public:
 			    const Field& ymField,
 			    const Field& nuField,
 			    const Field& varGradientField,
+			    const Field& residualStressField,
 			    const Field& thicknessField,
 			    const Field& forceField,
 			    const T& scf,
@@ -64,6 +65,7 @@ public:
     _ymField(ymField),
     _nuField(nuField),
     _varGradientField(varGradientField),
+    _residualStressField(residualStressField),
     _thicknessField(thicknessField),
     _forceField(forceField),
     _scf(scf),
@@ -91,6 +93,10 @@ public:
     const StorageSite& cells = mesh.getCells();
 
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
+    CCMatrix& matrix =
+      dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
+
+    DiagArray& diag = matrix.getDiag();
 
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
@@ -99,6 +105,10 @@ public:
       dynamic_cast<const TArray&>(_forceField[cells]);
 
     VectorT3Array& rCell = dynamic_cast<VectorT3Array&>(rField[cVarIndex]);
+    const VectorT3Array& xCell = dynamic_cast<const VectorT3Array&>(xField[cVarIndex]);
+
+    const VGradArray& residualCell =
+      dynamic_cast<const VGradArray&>(_residualStressField[cells]);
 
     const TArray& ymCell =
       dynamic_cast<const TArray&>(_ymField[cells]);
@@ -131,6 +141,17 @@ public:
     {
         rCell[c][2]-=forceCell[c]*cellVolume[c];
     }
+
+    //residual stress
+    for(int c=0; c<cells.getSelfCount(); c++)
+    {
+        const T HSigmazzV = tCell[c]*(residualCell[c])[2][2]*cellVolume[c];
+        rCell[c][0] += HSigmazzV*xCell[c][0];
+	(diag[c])(0,0) += HSigmazzV;
+	rCell[c][1] += HSigmazzV*xCell[c][1];
+	(diag[c])(1,1) += HSigmazzV;
+    }
+    //
 
     const int nCells = cells.getCount();
     const T zero(0.0);
@@ -266,6 +287,9 @@ public:
     const VGradArray& vGradCell =
       dynamic_cast<const VGradArray&>(_varGradientField[cells]);
 
+    const VGradArray& residualCell =
+      dynamic_cast<const VGradArray&>(_residualStressField[cells]);
+
     const TArray& ymCell =
       dynamic_cast<const TArray&>(_ymField[cells]);
 
@@ -352,6 +376,8 @@ public:
 	T faceM1(1.0);
 	T faceM2(1.0);
 
+	T faceT(1.0);
+
 	D0 = ymCell[c0]*pow(tCell[c0],three)/(twelve*(one - nuCell[c0]*nuCell[c0]));
 	D1 = ymCell[c1]*pow(tCell[c1],three)/(twelve*(one - nuCell[c1]*nuCell[c1]));
 
@@ -389,12 +415,23 @@ public:
 	faceB0 = xCell[c0][0]*bwt0 + xCell[c1][0]*bwt1;
 	faceB1 = xCell[c0][1]*bwt0 + xCell[c1][1]*bwt1;
 
+	faceT = tCell[c0]*bwt0 + tCell[c1]*bwt1;
+
 	if(_creep)
 	{
 	    faceM0 = plasticMoment[c0][0]*bwt0 + plasticMoment[c1][0]*bwt1;
 	    faceM1 = plasticMoment[c0][1]*bwt0 + plasticMoment[c1][1]*bwt1;
 	    faceM2 = plasticMoment[c0][2]*bwt0 + plasticMoment[c1][2]*bwt1;
 	}
+
+        //residual stress contribution//
+        const VGradType residualStressF = (residualCell[c0]*wt0 + residualCell[c1]*wt1);
+        const T diffRMetric = dot(faceArea[f],(residualStressF*faceArea[f]))/dot(faceArea[f],ds);
+        VectorT3 secondaryRCoeff = (residualStressF*faceArea[f]-ds*diffRMetric);
+	secondaryRCoeff[0] *= pow(faceT,three)/twelve;
+	secondaryRCoeff[1] *= pow(faceT,three)/twelve;
+	secondaryRCoeff[2] *= faceT;
+        //
 
 	const VGradType gradF = (vGradCell[c0]*wt0 + vGradCell[c1]*wt1);
 
@@ -560,6 +597,14 @@ public:
 		coeff(2,0)=zero;
 		coeff(2,1)=zero;
 		coeff(2,2)=-wt0*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+
+		//residual stress
+		for(int i=0; i<3; i++)
+		{
+		  for(int k=0; k<3; k++)
+		    coeff(i,i) -= wt0*secondaryRCoeff[k]*g_nb[k];
+                }
+		//
 		
                 OffDiag& a0_nb = matrix.getCoeff(c0,nb);
 
@@ -578,7 +623,15 @@ public:
 		coeff(2,0)=zero;
 		coeff(2,1)=zero;
 		coeff(2,2)=-wt0*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
-		
+
+		//residual stress
+		for(int i=0; i<3; i++)
+		{
+		    for(int k=0; k<3; k++)
+		      coeff(i,i) -= wt0*secondaryRCoeff[k]*g_nb[k];
+		}
+		//
+
                 a10 += coeff;
 
                 if (c1 != nb)
@@ -614,6 +667,14 @@ public:
 		    coeff(2,1)=zero;
 		    coeff(2,2)=-wt1*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
+		    //residual stress
+		    for(int i=0; i<3; i++)
+		    {
+			for(int k=0; k<3; k++)
+			  coeff(i,i) -= wt1*secondaryRCoeff[k]*g_nb[k];
+		    }
+		    //
+
                     OffDiag& a1_nb = matrix.getCoeff(c1,nb);
                     a1_nb -= coeff;
                     a11 += coeff;
@@ -631,6 +692,14 @@ public:
 		    coeff(2,1)=zero;
 		    coeff(2,2)=-wt1*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
+		    //residual stress
+                    for(int i=0; i<3; i++)
+		    {
+                        for(int k=0; k<3; k++)
+                          coeff(i,i) -= wt1*secondaryRCoeff[k]*g_nb[k];
+		    }
+		    //
+
                     a01 -= coeff;
 
                     if (c0 != nb)
@@ -644,6 +713,51 @@ public:
                 }
             }
         }
+	//contribution due to residual stress
+
+        //primary part
+        
+	VectorT3 residualSource(NumTypeTraits<VectorT3>::getZero());
+        residualSource -= diffRMetric*(xCell[c1]-xCell[c0]);
+	residualSource[0] *=  pow(faceT,three)/twelve;
+	residualSource[1] *=  pow(faceT,three)/twelve;
+	residualSource[2] *=  faceT;
+
+        // secondary part
+
+        residualSource -= gradF*secondaryCoeff;
+
+        // add flux due to residual Stress to the residual of c0 and c1
+        rCell[c0] += residualSource;
+        rCell[c1] -= residualSource;
+     
+        const T diffRCoeff = -diffRMetric;
+
+        
+        a01(0,0) +=(pow(faceT,three)/twelve)*diffRCoeff;
+        a10(0,0) +=(pow(faceT,three)/twelve)*diffRCoeff;
+
+        
+        a00(0,0) -=(pow(faceT,three)/twelve)*diffRCoeff;
+        a11(0,0) -=(pow(faceT,three)/twelve)*diffRCoeff;
+
+        a01(1,1) +=(pow(faceT,three)/twelve)*diffRCoeff;
+        a10(1,1) +=(pow(faceT,three)/twelve)*diffRCoeff;
+
+
+        a00(1,1) -=(pow(faceT,three)/twelve)*diffRCoeff;
+        a11(1,1) -=(pow(faceT,three)/twelve)*diffRCoeff;
+
+
+        a01(2,2) +=faceT*diffRCoeff;
+        a10(2,2) +=faceT*diffRCoeff;
+
+
+        a00(2,2) -=faceT*diffRCoeff;
+        a11(2,2) -=faceT*diffRCoeff;
+
+	//residual stress
+
     }
   }
     
@@ -654,6 +768,7 @@ private:
   const Field& _ymField;
   const Field& _nuField;
   const Field& _varGradientField;
+  const Field& _residualStressField;
   const Field& _thicknessField;
   const Field& _forceField;
   const T& _scf;
