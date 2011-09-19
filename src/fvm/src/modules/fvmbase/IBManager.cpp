@@ -16,9 +16,9 @@
 IBManager::IBManager(GeomFields& geomFields,
                      Mesh& solidBoundaryMesh,
                      const MeshList& fluidMeshes):
-  fluidNeighborsPerIBFace(3),
-  fluidNeighborsPerSolidFace(4),
-  solidNeighborsPerIBFace(2),
+  fluidNeighborsPerIBFace(50),
+  fluidNeighborsPerSolidFace(50),
+  solidNeighborsPerIBFace(50),
   _geomFields(geomFields),
   _solidBoundaryMesh(solidBoundaryMesh),
   _fluidMeshes(fluidMeshes)
