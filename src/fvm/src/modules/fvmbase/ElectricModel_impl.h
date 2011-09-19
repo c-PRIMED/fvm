@@ -1299,7 +1299,7 @@ public:
       	{
 	  T forceMag(0);
 	  T forceSign(1);
-	  
+	  //cout << f << endl;
 	  for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)	    {
 	    const int c = sFCCol[nc];
 	    const T coeff = iCoeffs[nc];
@@ -1312,10 +1312,12 @@ public:
 	    else{
 	      forceSign = 0.0;
 	    }
-	  
-	    forceMag += 0.5 * coeff* dielectric_constant[c] *  efmag * efmag * forceSign; 		   
+	    //T coeff = 0.25;
+	    forceMag += 0.5 * coeff* dielectric_constant[c] *  efmag * efmag * forceSign; 
+	    //cout << "   " << c << " " << efmag << " "  << coeff << " " << forceSign << endl;
 	  }
-	  
+	  //cout << forceMag << endl;
+
 	  const VectorT3& Af = solidFaceArea[f];
 	  force[f] += Af * forceMag;
 	 

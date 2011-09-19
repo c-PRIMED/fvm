@@ -16,9 +16,9 @@
 IBManager::IBManager(GeomFields& geomFields,
                      Mesh& solidBoundaryMesh,
                      const MeshList& fluidMeshes):
-  fluidNeighborsPerIBFace(8),
-  fluidNeighborsPerSolidFace(10),
-  solidNeighborsPerIBFace(3),
+  fluidNeighborsPerIBFace(3),
+  fluidNeighborsPerSolidFace(4),
+  solidNeighborsPerIBFace(2),
   _geomFields(geomFields),
   _solidBoundaryMesh(solidBoundaryMesh),
   _fluidMeshes(fluidMeshes)
@@ -488,7 +488,7 @@ IBManager::createIBFaces(Mesh& fluidMesh)
   ibFaceIndex = -1;
   
   // find number of IBFaces
-
+  
   int nIBFaces=0;
   for(int f=0; f<nFaces; f++)
   {
@@ -597,6 +597,14 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
 
   vector<NearestCell> nearestCellForIBFace(nIBFaces);
 
+  const Vec3DArray& cellCoords =
+    dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
+
+  const Vec3DArray& solidMeshCoords =
+    dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
+
+  Array<int> desiredNeighbors(fluidNeighborsPerSolidFace);
+
   ibFaceToCells->initCount();
   ibFaceToSolid->initCount();
 
@@ -620,15 +628,52 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
       fluidCellsTree.findNeighbors(xf, 1, fluidNeighbors);
       NearestCell& nc = nearestCellForIBFace[f];
       if ( fluidNeighbors[0] != -9999 ){
-          nc.neighbors.insert(fluidNeighbors[0]);
+          nc.neighbors.push_back(fluidNeighbors[0]);
           const int c = fluidNeighbors[0];
           const int neighborCount = cellCells2.getCount(c);
           for(int nnb=0; nnb<neighborCount; nnb++) {
              const int c_nb = cellCells2(c,nnb);
              if (cellIBType[c_nb] == Mesh::IBTYPE_FLUID)
-                nc.neighbors.insert(c_nb);
+                nc.neighbors.push_back(c_nb);
           }
       }
+      
+      if ((int) nc.neighbors.size() > fluidNeighborsPerIBFace)
+          {
+              // create a search tree to find the desired number of neighbors out of this set
+              
+              KSearchTree dtree;
+              foreach(int nb, nc.neighbors)
+              {
+                  dtree.insert( cellCoords[nb], nb);
+              }
+	      bool swap = true;
+	      while (swap == true){
+		swap = false;
+		for (int i=1; i<=(nc.neighbors.size()-1); i++){
+		  const int nbLeft = nc.neighbors[i-1];
+		  const int nbRight = nc.neighbors[i];
+		  const double distanceLeft = mag2(cellCoords[nbLeft]-solidMeshCoords[f]);
+		  const double distanceRight = mag2(cellCoords[nbRight]-solidMeshCoords[f]);
+		  if (distanceLeft > distanceRight){
+		    nc.neighbors[i-1] = nbRight;
+		    nc.neighbors[i] = nbLeft;
+		    swap = true;
+		  }
+		}
+	      }
+		
+              //dtree.findNeighbors(solidMeshCoords[f], fluidNeighborsPerSolidFace, desiredNeighbors);
+	      for (int i=0; i< fluidNeighborsPerIBFace; i++)
+		desiredNeighbors[i] = nc.neighbors[i];
+            
+              // clear the current set of neighbors and add the desired ones
+              nc.neighbors.clear();
+              for(int i=0; i<fluidNeighborsPerIBFace; i++)
+                nc.neighbors.push_back(desiredNeighbors[i]);
+          }
+          
+      
       
 #if 0
       int nLayers=0;
@@ -661,6 +706,11 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
       foreach(int nb, nc.neighbors)
       {
           ibFaceToCells->add(f,nb);
+	  ///if (f==200){
+	  //  cout << f << " " <<  nb << endl;
+	  //  cout << "face coordinate " << solidMeshCoords[f] << endl;
+	  //  cout << "cell coordinate " << cellCoords[nb] << endl;
+	  //}
       }
   }
   
@@ -752,13 +802,13 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
       if (nc.mesh == &mesh)
       {
           const int c = nc.cell;
-          nc.neighbors.insert(c);
+          nc.neighbors.push_back(c);
 
           const int neighborCount = cellCells2.getCount(c);
           for(int nnb=0; nnb<neighborCount; nnb++) {
               const int c_nb = cellCells2(c,nnb);
               if (cellIBType[c_nb] == Mesh::IBTYPE_FLUID)
-                 nc.neighbors.insert(c_nb);
+                 nc.neighbors.push_back(c_nb);
           }
 
 
@@ -771,19 +821,38 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
               {
                   dtree.insert( cellCoords[nb], nb);
               }
+	      // sort out the neighborlist by distance to ibface
+	      bool swap = true;
+	      while (swap == true){
+		swap = false;
+		for (int i=1; i<=(nc.neighbors.size()-1); i++){
+		  const int nbLeft = nc.neighbors[i-1];
+		  const int nbRight = nc.neighbors[i];
+		  const double distanceLeft = mag2(cellCoords[nbLeft]-solidMeshCoords[f]);
+		  const double distanceRight = mag2(cellCoords[nbRight]-solidMeshCoords[f]);
+		  if (distanceLeft > distanceRight){
+		    nc.neighbors[i-1] = nbRight;
+		    nc.neighbors[i] = nbLeft;
+		    swap = true;
+		  }
+		}
+	      }
+		
 
-              dtree.findNeighbors(solidMeshCoords[f], fluidNeighborsPerSolidFace, desiredNeighbors);
+              //dtree.findNeighbors(solidMeshCoords[f], fluidNeighborsPerSolidFace, desiredNeighbors);
+	      for (int i=0; i< fluidNeighborsPerSolidFace; i++)
+		desiredNeighbors[i] = nc.neighbors[i];
 
               // clear the current set of neighbors and add the desired ones
               nc.neighbors.clear();
               for(int i=0; i<fluidNeighborsPerSolidFace; i++)
-                nc.neighbors.insert(desiredNeighbors[i]);
+                nc.neighbors.push_back(desiredNeighbors[i]);
           }
           
 
 #if 0
           int nLayers=0;
-          // repeat till we have the required number but also protect
+          // repeat till we have the required number but also protect 
           // against infinite loop by capping the max number of layers
           while( ((int)nc.neighbors.size() < fluidNeighborsPerIBFace) && (nLayers < 10)) {
              addFluidNeighbors(nc.neighbors,cellCells,cellIBType);
@@ -794,7 +863,9 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
           //  throw CException("not enough fluid cells for solid face interpolation");
 #endif	  
           solidFacesToCells->addCount(f,nc.neighbors.size());
+	
       }
+          
   }
   
   solidFacesToCells->finishCount();
@@ -807,6 +878,11 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
           foreach(int nb, nc.neighbors)
           {
               solidFacesToCells->add(f,nb);
+	      //if (f==100){
+	      //   cout << f << " " <<  nb << endl;
+		// cout << "face coordinate " << solidMeshCoords[f] << endl;
+		// cout << "cell coordinate " << cellCoords[nb] << endl;
+	      //}
           }
       }
   }

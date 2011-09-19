@@ -26,7 +26,7 @@ NearestCell
   const Mesh* mesh;
   int cell;
   double distanceSquared;
-  set<int> neighbors;
+  vector<int> neighbors;
 };
 
 struct   

@@ -558,6 +558,11 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++){	
 	const int c = ibFCCol[nc];
 	VectorT3 dr((xCells[c]-xFaces[f])*scale);
+	//if (f ==200){
+	//    cout << f <<"      " << c <<endl;
+	//    cout << xCells[c] << endl;
+	//    cout << xFaces[f] << endl;
+	//  }
 	Q(0,0) += 1.0;
 	Q(0,1) += dr[0];
 	Q(0,2) += dr[1];
@@ -617,8 +622,8 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
       }
             
       // linear least square interpolation if the matrix is not singular
-
-      if (fabs(det) > 0 ){  
+      //if (nnb >=10){
+      if (fabs(det) > 1.0 ){  
 	if(is2D){
 	  QQinv = inverse(QQ);
 	  for(int i=0; i<3; i++){
@@ -706,9 +711,12 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
     
 #endif 
 	
-      }   else {     //if matrix is singular, use distance weighted interpolation
-	cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
-	cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
+      }   
+
+      
+      else {     //if matrix is singular, use distance weighted interpolation
+	//cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
+	//cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
 	  {	  
           const int c = ibFCCol[nc];
@@ -1146,17 +1154,21 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       T wtSum(0.0);
       int nnb(0);
       T det(0);
-      T scale(1e6);
+      T scale(1.0e6);
      
       SquareMatrix<T,4>  Q(NumTypeTraits<T>::getZero());
       SquareMatrix<T,4>  Qinv(NumTypeTraits<T>::getZero());
       SquareMatrix<T,3>  QQ(NumTypeTraits<T>::getZero());
       SquareMatrix<T,3>  QQinv(NumTypeTraits<T>::getZero());
 
-           
       for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
       {
-          const int c = sFCCol[nc];
+	  const int c = sFCCol[nc];
+	  //if (f ==168){
+	    //cout << f <<"      " << c <<endl;
+	  // cout << xCells[c] << endl;
+	   // cout << xFaces[f] << endl;
+	  //}
           VectorT3 dr((xCells[c]-xFaces[f])*scale);
 	  Q(0,0) += 1.0;
 	  Q(0,1) += dr[0];
@@ -1173,11 +1185,6 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       if (nnb == 0)
 	continue;
 
-      if (nnb < 4)
-      {
-	printf("only %i solid neighbors to interpolate!\n ", nnb);
-	//throw CException("Not enough solid points in Solid LLS interpolation!");
-      }
       //symetric matrix
       for(int i=0; i<4; i++)
 	for(int j=0; j<i; j++)
@@ -1195,8 +1202,9 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
       if (is3D) {
 	det = determinant(Q, 4);
       }
-      
-      if (fabs(det) > 1e-20){  
+      //cout << "determinant  " << f << " " << det <<endl;
+      //if (nnb>=4){
+      if (fabs(det) > 1.0){  
 	if(is2D){
 	  QQinv = inverse(QQ);
 	  for(int i=0; i<3; i++){
@@ -1209,7 +1217,8 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 	if(is3D){
 	  Qinv = inverse(Q, 4);
 	}
-
+	//if (f==168)
+	//  cout <<"determinant " << det <<endl;
      	for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
 	{
           const int c = sFCCol[nc];
@@ -1219,12 +1228,14 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 	    wt += Qinv(0,i)*dr[i-1];
 
 	  cellToSBCoeff[nc] = wt;
+	  //if (f==168)
+	  // cout<< "   "  << f <<"   " << cellToSBCoeff[nc] << endl;
 	}
       }
 
       //distance weighted interpolation
       else {
-
+        //printf("warning: distance weighted interpolation for solid face is applied  %i\n", f);
 	for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
 	  { 
 	    const int c = sFCCol[nc];
@@ -1233,6 +1244,12 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 	    cellToSBCoeff[nc] = wt;
 	    wtSum += wt;
 	    nnb++;
+	    //if (f==100){
+	    //  cout << "distance weight" <<endl;
+	    //  cout << c << endl;
+	    //  cout << dr << endl;
+	    //  cout << wt << endl;
+	    //}
 	  }
     
 	if (nnb == 0)
@@ -1241,6 +1258,8 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 	for(int nc=sFCRow[f]; nc<sFCRow[f+1]; nc++)
 	  {
 	    cellToSBCoeff[nc] /= wtSum;
+	    //if (f==168)
+	    //  cout <<"distance weight " <<  cellToSBCoeff[nc] << " " << wtSum << endl;
 	  }
       }
   }
