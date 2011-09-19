@@ -1,0 +1,1 @@
+TOTALCHARGES_PROCS1_ELECTRIC   ./ptest.py  --np 1   --script ./testDielectricCharging.py --in  ../1x1x1000.cas --type=quad --golden ./   --outdir TESTDIR
