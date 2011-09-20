@@ -220,10 +220,7 @@ velWhole = flowFields.velocity[fluidMeshes[0].getCells()].asNumPyArray()
 #velWhole[:,0] = 0.0
 
 
-
-ibManager.fluidNeighborsPerIBFace = 3
 ibManager.solidNeighborsPerIBFace = 2
-ibManager.fluidNeighborsPerSolidFace = 3
 
 globalCount = 0
 globalTime = 0.0

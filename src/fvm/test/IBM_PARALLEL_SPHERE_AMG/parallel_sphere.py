@@ -282,9 +282,7 @@ velocitya = velocity.asNumPyArray()
 velocitya[:,:] = 0.01
 flowFields.velocity[sbMeshFaces] = velocity
 
-ibManager.fluidNeighborsPerIBFace = 3
 ibManager.solidNeighborsPerIBFace = 2
-ibManager.fluidNeighborsPerSolidFace = 3
 
 globalCount = 0
 globalTime = 0.0

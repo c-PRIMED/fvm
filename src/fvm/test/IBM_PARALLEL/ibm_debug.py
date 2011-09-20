@@ -317,7 +317,7 @@ for mesh in solidBoundaryMeshes:
 sbMeshFaces = solidBoundaryMeshes[0].getFaces()
 #ibManager.fluidNeighborsPerIBFace = 4
 ibManager.solidNeighborsPerIBFace = 4
-ibManager.fluidNeighborsPerSolidFace = 6
+#ibManager.fluidNeighborsPerSolidFace = 6
 ibManager.update()  
 fluidMetricsCalculator.computeIBInterpolationMatrices(sbMeshFaces)
 fluidMetricsCalculator.computeSolidInterpolationMatrices(sbMeshFaces)     
