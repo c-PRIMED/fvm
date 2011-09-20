@@ -732,7 +732,11 @@ FluentReader::createMesh(const int cellZoneID)
 
       const int thisFZCount = fz.iEnd-fz.iBeg+1;
 
-      mesh->createBoundaryFaceGroup(thisFZCount,faceOffset,fzId,fz.zoneType);
+      if (fz.zoneType == "interface")
+        mesh->createInterfaceGroup(thisFZCount,faceOffset,fzId);
+      else
+        mesh->createBoundaryFaceGroup(thisFZCount,faceOffset,fzId,fz.zoneType);
+      
       faceOffset += thisFZCount;
 
       for(int j=fcRow[fz.iBeg]; j<fcRow[fz.iEnd+1]; j++)
