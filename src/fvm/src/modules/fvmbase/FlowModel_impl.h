@@ -905,32 +905,47 @@ public:
 
     const int nCells = cells.getSelfCount();
 
+#ifdef FVM_PARALLEL
     const Array<int>& localToGlobal = mesh.getLocalToGlobal();
+#endif
+    
     _globalRefCellID = numeric_limits<int>::max();
-    for ( int n = 0; n < nCells; n++ ){
-       if ( ibType[n] == Mesh::IBTYPE_FLUID ){
-	   int glblIndx = localToGlobal[n];
-	   if ( glblIndx < _globalRefCellID )
+    for ( int n = 0; n < nCells; n++ )
+    {
+        if ( ibType[n] == Mesh::IBTYPE_FLUID )
+        {
+#ifdef FVM_PARALLEL
+            int glblIndx = localToGlobal[n];
+#else
+            int glblIndx = n;
+#endif
+              
+            if ( glblIndx < _globalRefCellID )
 	      _globalRefCellID = glblIndx;
-       }
-   } 
+        }
+    } 
     
 #ifdef FVM_PARALLEL
     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &_globalRefCellID, 1, MPI::INT, MPI::MIN);
-#endif    
+
     
     _globalRefProcID = -1;
     const map<int,int>& globalToLocal = mesh.getGlobalToLocal();
-#ifdef FVM_PARALLEL    
+
     if ( globalToLocal.count(_globalRefCellID) > 0 ){
        _globalRefProcID = MPI::COMM_WORLD.Get_rank();
     }
     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &_globalRefProcID, 1, MPI::INT, MPI::MAX);
     
-#endif    
     
-    if ( globalToLocal.count(_globalRefCellID) > 0){
+    if ( globalToLocal.count(_globalRefCellID) > 0)
+    {
        int nc =  globalToLocal.find(_globalRefCellID)->second;
+
+#else
+       int nc = _globalRefCellID;
+#endif
+       
        ppDiag[nc] = -1.;
        rCell[nc]=0.;
        for(int nb=row[nc]; nb<row[nc+1]; nb++)
@@ -948,9 +963,9 @@ public:
           for(int nb=row[nc]; nb<row[nc+1]; nb++)
              pvCoeff[nb] = NumTypeTraits<VectorT3>::getZero();
        }
-    
+#ifdef FVM_PARALLEL
     }
-    
+#endif
   }
 
   
