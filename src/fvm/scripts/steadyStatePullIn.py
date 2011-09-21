@@ -59,10 +59,18 @@ class problemDescription():
         self.solidBoundaryMeshes = [m.extrude(1, beamThickness, True) for m in self.solidMeshes]
         self.solidBoundaryMetricsCalculator = models.MeshMetricsCalculatorA(self.geomFields,self.solidBoundaryMeshes)
         self.solidBoundaryMetricsCalculator.init()   
-    
     def materialPropsBeam(self, rho, E, nu):
       print "--Setting Beam Material Properties--"
       vcMap = self.pmodel.getVCMap()
+      self.residualStress = [0.e0,0.e0,0.e0]
+      for i,vc in vcMap.iteritems():
+        vc['density'] = rho
+        vc['ym'] = E
+        vc['nu'] = nu    
+    def materialPropsBeam(self, rho, E, nu, residualStress):
+      print "--Setting Beam Material Properties--"
+      vcMap = self.pmodel.getVCMap()
+      self.residualStress = residualStress
       for i,vc in vcMap.iteritems():
         vc['density'] = rho
         vc['ym'] = E
@@ -99,6 +107,7 @@ class problemDescription():
             bc = bcMap[bcId]
             bc.bcType = "SpecifiedPotential"
             bc['specifiedPotential'] = potential
+
     def initializeModels(self):
         print "--Solving Models--"
         self.maxdeformation = []
@@ -129,7 +138,9 @@ class problemDescription():
         poptions.transient=True
         poptions.scf = 5./6.
         poptions.setVar('timeStep',self.timeStep)
-
+        poptions.setVar('residualStressXX',self.residualStress[0])
+        poptions.setVar('residualStressYY',self.residualStress[1])
+        poptions.setVar('residualStressZZ',self.residualStress[2])
         ### elec solver ###
 
         epc = fvmbaseExt.AMG()
@@ -255,16 +266,14 @@ class problemDescription():
             bMeshCoord = self.solidBoundaryMeshes[0].getNodeCoordinates().asNumPyArray()
 
             self.deformation = self.geomFields.nodeDisplacement[nodes].asNumPyArray()
-            #pdb.set_trace()
+
             for sbn in range (0, nSBNodes/2):
                 bNodeCoord[sbn][2] =  -self.beam_thickness/2 + nodeCoord[sbn][2]
                 bMeshCoord[sbn][2] =  -self.beam_thickness/2 +  nodeCoord[sbn][2]
             for sbn in range (nSBNodes/2, nSBNodes):
                 bNodeCoord[sbn][2] = self.beam_thickness/2 + nodeCoord[sbn - nSBNodes/2][2] 
                 bMeshCoord[sbn][2] = self.beam_thickness/2 + nodeCoord[sbn - nSBNodes/2][2] 
-            #pdb.set_trace()
-            #solidBoundaryMetricsCalculator = models.MeshMetricsCalculatorA(geomFields,solidBoundaryMeshes)
-            #solidBoundaryMetricsCalculator.init()
+
             self.solidBoundaryMetricsCalculator.recalculate_deform() 
 
             cell = self.solidMeshes[0].getCells()
