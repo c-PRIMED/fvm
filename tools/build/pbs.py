@@ -56,7 +56,7 @@ def qsub(bp, cname):
     qname = config.config('Testing', 'queue')
     f.write('#PBS -q %s\n' % qname)
 
-    cpus = config.config('Testing', 'cpus')
+    cpus = config.config('Testing', 'ncpus')
     nodes = config.config('Testing', 'nodes')
     f.write('#PBS -l select=%s:ncpus=%s:mpiprocs=%s\n' % (nodes,cpus,cpus))
     f.write('#PBS -l walltime=%s\n' % config.config('Testing', 'walltime'))

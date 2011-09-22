@@ -8,7 +8,7 @@ import os, re
 _config = {
     'Testing': {
         'queue': 'standby',
-        'cpus' : '8',
+        'ncpus' : '8',
         'nodes': '1',
         'walltime': '1:00:00',
         },
