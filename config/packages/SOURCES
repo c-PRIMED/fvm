@@ -1,6 +1,6 @@
 Python   pkgs/Python-2.6.4.tar.bz2
 Numpy    pkgs/numpy-1.5.1.tar.bz2
-Ipython  pkgs/ipython.tgz
+Ipython  pkgs/ipython.tar.bz2
 Mpi4py   pkgs/mpi4py-1.2.2.tar.bz2
 Nose     pkgs/nose-0.11.0.tar.gz
 Scons    pkgs/scons-local-1.2.0.tar.gz
@@ -25,7 +25,7 @@ Pytables pkgs/tables-2.1.2.tar.gz
 Vitables pkgs/ViTables-2.0.tar.gz
 Pystatistics pkgs/statistics-0.19.tar.gz
 Cgal	pkgs/CGAL-3.6.tar.gz
-Sympy	pkgs/sympy-0.7.0.tar.gz
+Sympy	pkgs/sympy-0.7.1.tar.gz
 Time	pkgs/time-1.7.tar.gz
 Amd		pkgs/AMD.tar.gz
 Ufconfig		pkgs/UFconfig.tar.gz
