@@ -22,8 +22,13 @@ FlowFields::FlowFields(const string baseName) :
   utau(baseName + ".utau"),
   uparallel(baseName + ".uparallel"),
   tau(baseName + ".tau"),
-  tauwall(baseName + ".tauwall")
+  tauwall(baseName + ".tauwall"),
 
+  //ESInterface
+  InterfaceVelocity(baseName+".InterfaceVelocity"),
+  InterfacePressure(baseName+".InterfacePressure"), 
+  InterfaceStress(baseName+".InterfaceStress"),
+  InterfaceDensity(baseName+".InterfaceDensity")
 
 {}
 

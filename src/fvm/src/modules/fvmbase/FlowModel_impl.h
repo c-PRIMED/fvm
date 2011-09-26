@@ -73,6 +73,9 @@ public:
 
   typedef FluxJacobianMatrix<T,T> FMatrix;
   
+  typedef StressTensor<T> StressTensorT6;
+  typedef Array<StressTensorT6> StressTensorArray;
+  
   Impl(const GeomFields& geomFields,
        FlowFields& thermalFields,
        const MeshList& meshes,
@@ -122,11 +125,21 @@ public:
                 {
                     bc->bcType = "Symmetry";
                 }
-                else
+		else
                   throw CException("FlowModel: unknown face group type "
                                    + fg.groupType);
             }
         }
+	/*
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  {
+            const FaceGroup& fg = *fgPtr;
+	    if ((fg.groupType == "ESinterface"))
+	      { bc->bcType = "ESInterfaceBC";}
+	  }
+	*/
+	
+
     }
   }
 
@@ -236,6 +249,31 @@ public:
             shared_ptr<VectorT3Array> momFlux(new VectorT3Array(faces.getCount()));
             momFlux->zero();
             _flowFields.momentumFlux.addArray(faces,momFlux);
+	    
+	    if(fg.groupType == "ESinterface"){
+	      cout << "interface init" <<endl;
+	      const StorageSite& Intfaces = fg.site; 
+	      
+	      shared_ptr<VectorT3Array> InterfaceVelFace(new VectorT3Array(Intfaces.getCount()));
+	      InterfaceVelFace ->zero();
+	      _flowFields.InterfaceVelocity.addArray(Intfaces,InterfaceVelFace);
+	      
+	      shared_ptr<StressTensorArray> InterfaceStressFace(new StressTensorArray(Intfaces.getCount()));
+	      InterfaceStressFace ->zero();
+	      _flowFields.InterfaceStress.addArray(Intfaces,InterfaceStressFace);
+	      
+	      shared_ptr<TArray> InterfacePressFace(new TArray(Intfaces.getCount()));
+	      *InterfacePressFace = _options["initialPressure"];
+	      _flowFields.InterfacePressure.addArray(Intfaces,InterfacePressFace);
+	      
+	      shared_ptr<TArray> InterfaceDensityFace(new TArray(Intfaces.getCount()));
+	      *InterfaceDensityFace =vc["density"];
+	      _flowFields.InterfaceDensity.addArray(Intfaces,InterfaceDensityFace);
+	      
+	      
+	    }
+	    
+	    
         }
         
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
@@ -289,7 +327,9 @@ public:
             shared_ptr<VectorT3Array> momFlux(new VectorT3Array(faces.getCount()));
             momFlux->zero();
             _flowFields.momentumFlux.addArray(faces,momFlux);
-          
+           
+	    
+	    
         }
     }
 
@@ -670,6 +710,7 @@ public:
             {
                 gbc.applySymmetryBC();
             }
+	   
             else
               throw CException(bc.bcType + " not implemented for FlowModel");
         }
@@ -707,27 +748,25 @@ public:
     LinearSystem ls;
 
     initMomentumLinearization(ls);
-        
     ls.initAssembly();
-    
     linearizeMomentum(ls);
-
     ls.initSolve();
     
 
     // save current velocity for use in continuity discretization
     _previousVelocity = dynamic_pointer_cast<Field>(_flowFields.velocity.newCopy());
-
+    
     //AMG solver(ls);
     MFRPtr rNorm = _options.getMomentumLinearSolver().solve(ls);
-
+    
     if (!_initialMomentumNorm) _initialMomentumNorm = rNorm;
         
     _options.getMomentumLinearSolver().cleanup();
     
     ls.postSolve();
+    
     ls.updateSolution();
-
+   
     // save the momentum ap coeffficients for use in continuity discretization
     _momApField = shared_ptr<Field>(new Field("momAp"));
     const int numMeshes = _meshes.size();
@@ -744,6 +783,7 @@ public:
     }
     _momApField->syncLocal();
     return rNorm;
+    cout << "8" << endl;
   }
 
 
@@ -1423,18 +1463,18 @@ public:
 	MFRPtr cNormRatio((*cNorm)/(*_initialContinuityNorm));
         
 #ifdef FVM_PARALLEL
-    if ( MPI::COMM_WORLD.Get_rank() == 0 ) // only root process
+	if ( MPI::COMM_WORLD.Get_rank() == 0 ){ // only root process
         if (_options.printNormalizedResiduals)
-          cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
-        else
-          cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;
+          {cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;}
+        else{
+          cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;}}
 #endif
 
 #ifndef FVM_PARALLEL
         if (_options.printNormalizedResiduals)
-          cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;
+          {cout << _niters << ": " << *mNormRatio << ";" << *cNormRatio <<  endl;}
         else
-          cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;
+          {cout << _niters << ": " << *mNorm << ";" << *cNorm <<  endl;}
 #endif
 
         _niters++;
@@ -1805,6 +1845,78 @@ public:
     return stressTensorPtr;
   }
 
+  void ComputeStressTensorES(const StorageSite& solidFaces)
+  {
+    typedef Array<StressTensor<T> > StressTensorArray;
+    const int nSolidFaces = solidFaces.getCount();
+
+
+    //interface
+    VectorT3Array& IntVel =
+      dynamic_cast<VectorT3Array&>(_flowFields.InterfaceVelocity[solidFaces]);
+    TArray& IntPress =
+      dynamic_cast<TArray&>(_flowFields.InterfacePressure[solidFaces]); 
+    TArray& IntDens =
+      dynamic_cast<TArray&>(_flowFields.InterfaceDensity[solidFaces]);
+   
+    //const TArray& mu = dynamic_cast<const TArray&>(getViscosityField()[cells]);   
+    StressTensorArray& stressTensor = dynamic_cast<StressTensorArray &>(_flowFields.InterfaceStress[solidFaces]);
+   
+
+    const int numMeshes = _meshes.size();
+ 
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	//const int nCells = cells.getCount();
+	
+	_velocityGradientModel.compute();
+
+	const VGradArray& vGrad =
+	  dynamic_cast<VGradArray&>(_flowFields.velocityGradient[cells]);
+	const TArray& pCell =
+	  dynamic_cast<const TArray&>(_flowFields.pressure[cells]);
+	const TArray& dCell =
+	  dynamic_cast<const TArray&>(_flowFields.density[cells]);
+    	const VectorT3Array& vCell =
+	  dynamic_cast<VectorT3Array&>(_flowFields.velocity[cells]);
+
+
+	const CRConnectivity& _faceCells=mesh.getFaceCells(solidFaces);
+	
+	for(int f=0; f<nSolidFaces; f++)
+	  {
+	   
+	    const int c0 = _faceCells(f,0);  
+	    const int c1 = _faceCells(f,1);     
+	    
+	    const VGradType& vg = vGrad[c0];
+
+	    VGradType vgPlusTranspose = vGrad[c0];
+	    
+	    for(int i=0;i<3;i++)
+	      for(int j=0;j<3;j++)
+		vgPlusTranspose[i][j] += vg[j][i];
+	    
+	    stressTensor[f][0] = vgPlusTranspose[0][0];
+	    stressTensor[f][1] = vgPlusTranspose[1][1];
+	    stressTensor[f][3] = vgPlusTranspose[0][1];
+	    stressTensor[f][4] = vgPlusTranspose[1][2];
+	    stressTensor[f][5] = vgPlusTranspose[2][0];
+	    
+	    //copy density pressure and velocity into Interface arrays
+	    IntDens[f]=dCell[c1];
+	    IntPress[f]=pCell[c1];
+	    IntVel[f][0]=vCell[c1][0];
+	    IntVel[f][1]=vCell[c1][1];
+	    IntVel[f][2]=vCell[c1][2];
+	      }
+      }
+    
+    
+  }
+  
 
   void getTraction(const Mesh& mesh)
   {
@@ -2253,6 +2365,12 @@ FlowModel<T>::getTraction(const Mesh& mesh)
   return  _impl->getTraction(mesh);
 }
 
+template<class T>
+void
+FlowModel<T>:: ComputeStressTensorES(const StorageSite& particles)
+{
+  return  _impl-> ComputeStressTensorES(particles);
+}
 template<class T>
 map<string,shared_ptr<ArrayBase> >&
 FlowModel<T>::getPersistenceData()

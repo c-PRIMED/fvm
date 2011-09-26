@@ -168,7 +168,40 @@ public:
     */ 
  }
   
+ void applyInterfaceBC(const int f) const
+  {
+    // the boundary cell could be either c0 or c1 at an interface
+    int cb = _faceCells(f,1);
+    T_Scalar sign(NumTypeTraits<T_Scalar>::getUnity());
+    if (cb < _cells.getSelfCount())
+    {
+        cb = _faceCells(f,0);
+        sign *= -1.0;
+    }
+    
 
+    // the current value of flux and its Jacobians
+    // const X fluxInterior = -_r[cb];
+    //const OffDiag dFluxdXC0 = -sign*_assembler.getCoeff10(f);
+    //const OffDiag dFluxdXC1 = sign*_assembler.getCoeff01(f);
+
+   
+    _r[cb] = T_Scalar(0);
+
+    if (sign>0)
+      _assembler.getCoeff10(f) = NumTypeTraits<OffDiag>::getZero();
+    else
+      _assembler.getCoeff01(f) = NumTypeTraits<OffDiag>::getZero();
+    
+    //setup the equation for the boundary flux correction
+    /*
+    _dFluxdX.setCoeffL(f,dFluxdXC0);
+    _dFluxdX.setCoeffR(f,dFluxdXC1);
+    _flux[f] = fluxInterior;
+    _rFlux[f] = T_Scalar(0);
+    _dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+    */
+  }
   void applyInterfaceBC() const
   {
     for(int i=0; i<_faces.getCount(); i++)

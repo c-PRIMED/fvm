@@ -30,6 +30,11 @@ struct FlowFields
   Field uparallel;
   Field tau;
   Field tauwall; //parallel to flow
+  // ESInterface
+  Field InterfaceVelocity;
+  Field InterfacePressure;
+  Field InterfaceStress;
+  Field InterfaceDensity;
 };
 
 #endif

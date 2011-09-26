@@ -15,6 +15,7 @@
 #include "FluxJacobianMatrix.h"
 #include "DiagonalMatrix.h"
 
+#include "StressTensor.h"
 template<class X,class Diag,class OffDiag>
 class KineticBoundaryConditions
 {
@@ -31,7 +32,8 @@ class KineticBoundaryConditions
   typedef Array<X> XArray;
   typedef Vector<X,3> VectorX3; //new for esbgk
   typedef Array<VectorX3> VectorX3Array;
-  
+  typedef StressTensor<X> StressTensorX6;
+  typedef Array<StressTensorX6> StressTensorArray;
  
 
   KineticBoundaryConditions(const StorageSite& faces,
@@ -72,7 +74,7 @@ class KineticBoundaryConditions
     const XArray& cx = dynamic_cast<const XArray&>(*_quadrature.cxPtr);
     const XArray& cy = dynamic_cast<const XArray&>(*_quadrature.cyPtr);
     const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr);
-    const XArray& dcxyz= dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
+    const XArray& wts= dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
     VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
     XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
     //XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]); 
@@ -101,12 +103,12 @@ class KineticBoundaryConditions
 	const X fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
 	if (c_dot_en -wallV_dot_en < T_Scalar(epsilon)) //incoming
 	  {
-	    Dmr = Dmr - fwall*dcxyz[j]*(c_dot_en-wallV_dot_en);
-	    incomFlux=incomFlux-dsf[c0]*dcxyz[j]*(c_dot_en -wallV_dot_en);
+	    Dmr = Dmr - fwall*wts[j]*(c_dot_en-wallV_dot_en);
+	    incomFlux=incomFlux-dsf[c0]*wts[j]*(c_dot_en -wallV_dot_en);
 	  }
 	else
 	  {
-	    Nmr = Nmr + dsf[c0]*dcxyz[j]*(c_dot_en -wallV_dot_en);
+	    Nmr = Nmr + dsf[c0]*wts[j]*(c_dot_en -wallV_dot_en);
 	  }	
       }
     const X nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
@@ -165,7 +167,7 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
     const XArray& cx = dynamic_cast<const XArray&>(*_quadrature.cxPtr);
     const XArray& cy = dynamic_cast<const XArray&>(*_quadrature.cyPtr);
     const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr);
-    const XArray& dcxyz= dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
+    const XArray& wts= dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
     VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
     XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
     XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);   
@@ -193,12 +195,12 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 	const X fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
 	if (c_dot_en -wallV_dot_en < T_Scalar(0.0)) //incoming
 	  {
-	    Dmr = Dmr - fwall*dcxyz[j]*(c_dot_en-wallV_dot_en);
-	    incomFlux=incomFlux-dsf[c0]*dcxyz[j]*(c_dot_en-wallV_dot_en);
+	    Dmr = Dmr - fwall*wts[j]*(c_dot_en-wallV_dot_en);
+	    incomFlux=incomFlux-dsf[c0]*wts[j]*(c_dot_en-wallV_dot_en);
 	  }
 	else
 	  {
-	   Nmr = Nmr + dsf[c0]*dcxyz[j]*(c_dot_en-wallV_dot_en);
+	   Nmr = Nmr + dsf[c0]*wts[j]*(c_dot_en-wallV_dot_en);
 	  }	
       }
     const X nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
@@ -510,14 +512,16 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
   } 
   
 
-  // velocity inlet
-
- void applyVelocityInletBC(int f,const X& inletTemperature,const VectorX3& inletVelocity)  const
+  // velocity inlet given temperature and mass flow rate
+     
+ void applyInletBC(int f,const VectorX3&  InletVelocity,const X& InletTemperature,const X& InletMdot,const vector<int>& vecReflection) const
   {
-   
-     const double pi=_options.pi;
+    
+    const double pi=_options.pi;
+    //const double epsilon=_options.epsilon_ES;
+    
     const int c0 = _faceCells(f,0);
-    const int c1 = _faceCells(f,1);
+    const int c1 = _faceCells(f,1); 
     
     if (_ibType[c0] != Mesh::IBTYPE_FLUID)
       return;
@@ -526,50 +530,76 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
     const int numDirections = _quadrature.getDirCount();
     const XArray& cx = dynamic_cast<const XArray&>(*_quadrature.cxPtr);
     const XArray& cy = dynamic_cast<const XArray&>(*_quadrature.cyPtr);
-    const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr); 
+    const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr);
+    const XArray& wts= dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
+    VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
     XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
     XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);   
-    VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
+    const X uin = InletVelocity[0];
+    const X vin = InletVelocity[1];
+    const X win = InletVelocity[2];
+    const X Tin = InletTemperature;
+    const X mdot = InletMdot;
     
-   
-    const X Tin = inletTemperature;
-    X nin = density[c0];
+    v[c1][0]=uin;
+    v[c1][1]=vin;
+    v[c1][2]=win;
   
-    //store boundary values
-    temperature[c1]=inletTemperature;
+    temperature[c1]=Tin;
+    X Nmr(0.0) ;
+    X Dmr(0.0);	
+    const X rho_init=_options["rho_init"]; 
+    const X T_init= _options["T_init"]; 
+    const X R=8314.0/_options["molecularWeight"];
+    const X u_init=pow(2.0*R*T_init,0.5);
+    // find the number density corressponding to the inlet Maxwellian
+    for (int j=0; j<numDirections; j++)
+      {
+	const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
+	const X fwall = 1.0/pow(pi*Tin,1.5)*exp(-(pow(cx[j]-uin,2.0)+pow(cy[j]-vin,2.0)+pow(cz[j]-win,2.0))/Tin);
+	if (c_dot_en < T_Scalar(0.0)){Dmr = Dmr + fwall*wts[j]*c_dot_en;}
+	Nmr=mdot/(rho_init*u_init);
+	   
+      }
+    const X nin = Nmr/Dmr; // wall number density for initializing Maxwellian
     density[c1]=nin;
-   
-    v[c1][0]=inletVelocity[0];
-    v[c1][1]=0.0;
-    v[c1][2]=0.0;
 
-    //update f
     for (int j=0; j<numDirections; j++)
       {
 	Field& fnd = *_dsfPtr.dsf[j];
 	XArray& dsf = dynamic_cast< XArray&>(fnd[_cells]);
 	const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
-	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];		
-	if (c_dot_en< T_Scalar(0.0))
-	  {
-	    dsf[c1] = nin/pow(pi*Tin,1.5)*exp(-(pow(cx[j]-v[c1][0],2.0)+pow(cy[j]-v[c1][1],2.0)+pow(cz[j]-v[c1][2],2.0))/Tin);
-	    //dsf[c0] = dsf[c1];// change value of fluid boundary-cell
-	  }
-	else{dsf[c1]=dsf[c0];}//outgoing
+	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];	
 	
-      }
-  
-}
-  
-
-  
-  
-  void applyVelocityInletBC(const FloatValEvaluator<X>& bTemperature,const FloatValEvaluator<VectorX3>& bVelocity) const
+	if (c_dot_en < T_Scalar(0.0))
+	  { 
+	    const int direction_incident = vecReflection[j];
+	    Field& fndi = *_dsfPtr.dsf[direction_incident];
+	    const XArray& dsfi = dynamic_cast<const XArray&>(fndi[_cells]);
+	    
+	    dsf[c1] = nin/pow(pi*Tin,1.5)*exp(-(pow(cx[j]-uin,2.0)+pow(cy[j]-vin,2.0)+pow(cz[j]-win,2.0))/Tin)+dsfi[c0]; //inlet Maxwellian +reflected
+	  }
+	else
+	  dsf[c1]=dsf[c0];  
+      }       
+   
+  }
+  void applyInletBC(const VectorX3& bVelocity,const X& bTemperature,const X& Mdot,const vector<int>& vecReflection) const
   {
     for (int i=0; i<_faces.getCount();i++)
-      applyVelocityInletBC(i,bTemperature[i],bVelocity[i]);
+      applyInletBC(i,bVelocity,bTemperature,Mdot,vecReflection);
+  }
+  
+ 
+  void applyInletBC(const FloatValEvaluator<VectorX3>& bVelocity,const FloatValEvaluator<X>& bTemperature,const FloatValEvaluator<X>& Mdot,const vector<int>& vecReflection) const
+  {
+    for (int i=0; i<_faces.getCount();i++)
+      applyInletBC(i,bVelocity[i],bTemperature[i],Mdot[i],vecReflection);
 
-  } 
+  }
+
+  
 
 
   //outlet Boundary Condition
@@ -654,17 +684,97 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
 
   }
 
-  /*
-  void applyNSInterfaceBC(const FloatValEvaluator<X>& bTemperature,const FloatValEvaluator<X>& bDensity,const FloatValEvaluator<VectorX3>& bVelocity) const
+  
+  void applyNSInterfaceBC( )const 
+//const FloatValEvaluator<X>& bTemperature,const FloatValEvaluator<X>& bPressure,const FloatValEvaluator<VectorX3>& bVelocity, const FloatValEvaluator<VectorX3>& bStress) const
    {
-fin(j3,j2,j1,i)=(rhoNS_L/(pi*TNS_L)**1.5*&
-                       exp(-((cx(j1)-uNS_L)**2.0+(cy(j2)-vNS_L)**2.0+(cz(j3))**2.0)/TNS_L)) *(1-2*cx(j1)*cy(j2)*slopeL*(muref/mu0*(Temp(i)/T_ref_mu*T_init)**w))
-fin(j3,j2,j1,i)=(rhoNS_R/(pi*TNS_R)**1.5*
-                      exp(-((cx(j1)-uNS_R)**2.0+(cy(j2)-vNS_R)**2.0+(cz(j3))**2.0)/TNS_R)) 
-                      *(1-1.5*cx(j1)*((cx(j1)-uNS_R)**2.0+(cy(j2)-vNS_R)**2.0+cz(j3)**2.0-2.5)
-                       *(muref/mu0*(TNS_R/T_ref_mu*T_init)**w)*slopeR)
+     
+     for (int i=0; i<_faces.getCount();i++)
+       applyNSInterfaceBC(i); //,bTemperature[i],bPressure[i],bVelocity[i],bStress[i]);
+
+
+     
+   } 
+
+
+  
+  void applyNSInterfaceBC(int f)const //X& inletTemperature,const X& inletPressure, const VectorX3& inletVelocity, const VectorX3&tau)  const
+			  //StressTensor<X>&tau)  const
+  {
+    
+   const double pi=_options.pi;  
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1);
+    
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    
+   
+    const int numDirections = _quadrature.getDirCount();
+    const XArray& cx = dynamic_cast<const XArray&>(*_quadrature.cxPtr);
+    const XArray& cy = dynamic_cast<const XArray&>(*_quadrature.cyPtr);
+    const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr); 
+
+    //XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
+    //XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]); 
+    XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);   
+    //VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
+    
+    XArray& viscosity  = dynamic_cast<XArray&>(_macroFields.viscosity[_cells]); 
+    
+    
+    VectorX3Array& IntVel = dynamic_cast<VectorX3Array&>(_macroFields.InterfaceVelocity[_faces]);
+    XArray& IntPress  = dynamic_cast<XArray&>(_macroFields.InterfacePressure[_faces]); 
+    //XArray& IntDens  = dynamic_cast<XArray&>(_macroFields.InterfaceDensity[_faces]); 
+    StressTensorArray& tau  = dynamic_cast<StressTensorArray&>(_macroFields.InterfaceStress[_faces]); 
+    
+    const X Tin = temperature[c0];
+    const X Pin = IntPress[f];
+    const X nin = Pin/Tin; // wall number density for initializing Maxwellian
+
+   
+    const X u_in=IntVel[f][0];
+    const X v_in=IntVel[f][1];
+    const X w_in=IntVel[f][2];
+
+    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];  
+
+    // Extra for CE expression
+    const X rho_init=_options["rho_init"]; 
+    const X T_init= _options["T_init"]; 
+    const X R=8314.0/_options["molecularWeight"];
+    const X nondim_length=_options["nonDimLt"];
+    const X mu0=rho_init*R* T_init*nondim_length/pow(2*R* T_init,0.5);  
+	
+    //update f to Maxwellian
+    for (int j=0; j<numDirections; j++)
+      {
+	Field& fnd = *_dsfPtr.dsf[j];
+	XArray& dsf = dynamic_cast< XArray&>(fnd[_cells]);
+	//const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+	//const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];		
+	//if (c_dot_en< T_Scalar(0.0))
+	  {
+	    //cout << "nin " <<nin <<endl;
+	    dsf[c1] = nin/pow(pi*Tin,1.5)*exp(-(pow(cx[j]-u_in,2.0)+pow(cy[j]-v_in,2.0)+pow(cz[j]-w_in,2.0))/Tin)
+	    *(1-viscosity[c0]/mu0/(nin*pow(Tin,2.0))*(pow(cx[j]-u_in,2.0)*tau[f][0]+pow(cy[j]-v_in,2.0)*tau[f][1]+pow(cz[j]-w_in,2.0)*tau[f][2])
+	      +2.0*(cx[j]-u_in)*(cy[j]-v_in)*tau[f][3]+2.0*(cy[j]-v_in)*(cz[j]-w_in)*tau[f][4]+2.0*(cz[j]-w_in)*(cx[j]-u_in)*tau[f][5]); //update f to ChapmannEnskog
+	  }
+	//else{dsf[c1]=dsf[c0];}//outgoing
+	
+      } 
+    //update f to ChapmannEnskog
+
+   
+//dsf[c1]=dsf[c1]*(1-2*cx[j]*cy[j]*slopeL*viscosity[c]/mu0) //velocity tangential only
+//C2=pow(cx[j]-u_in,2.0)+pow(cy[j]-v_in,2.0)+pow(cz[j]-w_in,2.0)
+//dsf[c1]=dsf[c1]*(1+viscosity[c1]/(mu0*Pr*nin*pow(Tin,2.0))*((cx[j]-u_in)*dtbdx+(cy[j]-v_in)*dtbdy+(cz[j]-w_in)*dtbdz)*(C2-2.5)) 
+//temperature difference too
  }
-  */
+
+ 
+  
+
  protected:
 
   const StorageSite& _faces;

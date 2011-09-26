@@ -68,7 +68,7 @@ public:
   void computeIBFaceVelocity(const StorageSite& particles);
   void computeSolidSurfaceForce(const StorageSite& particles);
   void computeSolidSurfaceForcePerUnitArea(const StorageSite& particles);
-
+  void ComputeStressTensorES(const StorageSite& particles);
 
 #if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
   

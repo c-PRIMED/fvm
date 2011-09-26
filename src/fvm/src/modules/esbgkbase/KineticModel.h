@@ -48,7 +48,8 @@ class KineticModel : public Model
   typedef  Array2D<T> TArray2D;
   typedef Vector<T,3> VectorT3; 
   typedef Array<VectorT3> VectorT3Array;
-  typedef Array<StressTensor<T> > StressTensorArray;
+  typedef StressTensor<T> StressTensorT6;
+  typedef Array<StressTensorT6> StressTensorArray;
   typedef  std::vector<Field*> stdVectorField;
   typedef  DistFunctFields<T> TDistFF;
 
@@ -110,114 +111,115 @@ class KineticModel : public Model
     }
     
     void init()
-  {
-    const int numMeshes = _meshes.size();
-    for (int n=0; n<numMeshes; n++)
-      {
-        const Mesh& mesh = *_meshes[n];
-	
-        const KineticVC<T>& vc = *_vcMap[mesh.getID()];
-        
-        const StorageSite& cells = mesh.getCells();
-	
-	const int nCells = cells.getCount();
-	shared_ptr<VectorT3Array> vCell(new VectorT3Array(nCells));
-	
-        VectorT3 initialVelocity;
-        initialVelocity[0] = _options["initialXVelocity"];
-        initialVelocity[1] = _options["initialYVelocity"];
-        initialVelocity[2] = _options["initialZVelocity"];
-        *vCell = initialVelocity;
-        _macroFields.velocity.addArray(cells,vCell);
-	
-        
-	shared_ptr<TArray> pCell(new TArray(nCells));
-        *pCell = _options["operatingPressure"];
-        _macroFields.pressure.addArray(cells,pCell);
-	
-	
-        shared_ptr<TArray> rhoCell(new TArray(nCells));
-        *rhoCell = vc["density"];
-        _macroFields.density.addArray(cells,rhoCell);
 
-        shared_ptr<TArray> muCell(new TArray(nCells));
-        *muCell = vc["viscosity"];
-        _macroFields.viscosity.addArray(cells,muCell);
-
-        shared_ptr<TArray> tempCell(new TArray(cells.getCount()));
-        *tempCell = _options["operatingTemperature"];
-	_macroFields.temperature.addArray(cells,tempCell);
-	
-	shared_ptr<TArray> collFreqCell(new TArray(cells.getCount()));
-        *collFreqCell = vc["viscosity"];
-	_macroFields.collisionFrequency.addArray(cells,collFreqCell);
-	
-
-	//coeffs for perturbed BGK distribution function
-	shared_ptr<VectorT5Array> coeffCell(new VectorT5Array(cells.getCount()));
-        VectorT5 initialCoeff;
-        initialCoeff[0] = 1.0;
-        initialCoeff[1] = 1.0;
-        initialCoeff[2] = 0.0; 
-	initialCoeff[3] = 0.0;
-	initialCoeff[4] = 0.0;
-        *coeffCell = initialCoeff;
-        _macroFields.coeff.addArray(cells,coeffCell);
-
-	//coeffs for perturbed BGK distribution function
-	shared_ptr<VectorT10Array> coeffgCell(new VectorT10Array(cells.getCount()));
-        VectorT10 initialCoeffg;
-        initialCoeffg[0] = 1.0;
-	initialCoeffg[1] = 1.0;
-        initialCoeffg[2] = 0.0; 
-	initialCoeffg[3] = 1.0;
-	initialCoeffg[4] = 0.0; 
-	initialCoeffg[5] = 1.0;
-	initialCoeffg[6] = 0.0;
-        initialCoeffg[7] = 0.0; 
-	initialCoeffg[8] = 0.0;
-	initialCoeffg[9] = 0.0;
-        *coeffgCell = initialCoeffg;
-        _macroFields.coeffg.addArray(cells,coeffgCell);
-
-	// used for ESBGK equilibrium distribution function
-	shared_ptr<TArray> tempxxCell(new TArray(cells.getCount()));
-        *tempxxCell = _options["operatingTemperature"]/3;
-	_macroFields.Txx.addArray(cells,tempxxCell);
-
-	shared_ptr<TArray> tempyyCell(new TArray(cells.getCount()));
-        *tempyyCell = _options["operatingTemperature"]/3;
-	_macroFields.Tyy.addArray(cells,tempyyCell);
-
-	shared_ptr<TArray> tempzzCell(new TArray(cells.getCount()));
-        *tempzzCell = _options["operatingTemperature"]/3;
-	_macroFields.Tzz.addArray(cells,tempzzCell);
-
-	shared_ptr<TArray> tempxyCell(new TArray(cells.getCount()));
-        *tempxyCell = 0.0;
-	_macroFields.Txy.addArray(cells,tempxyCell);
-
-	shared_ptr<TArray> tempyzCell(new TArray(cells.getCount()));
-        *tempyzCell = 0.0;
-	_macroFields.Tyz.addArray(cells,tempyzCell);
-
-	shared_ptr<TArray> tempzxCell(new TArray(cells.getCount()));
-        *tempzxCell = 0.0;
-	_macroFields.Tzx.addArray(cells,tempzxCell);
-	
+    {
+      const int numMeshes = _meshes.size();
+      for (int n=0; n<numMeshes; n++)
+	{
+	  const Mesh& mesh = *_meshes[n];
+	  
+	  const KineticVC<T>& vc = *_vcMap[mesh.getID()];
+	  
+	  const StorageSite& cells = mesh.getCells();
+	  
+	  const int nCells = cells.getCount();
+	  shared_ptr<VectorT3Array> vCell(new VectorT3Array(nCells));
+	  
+	  VectorT3 initialVelocity;
+	  initialVelocity[0] = _options["initialXVelocity"];
+	  initialVelocity[1] = _options["initialYVelocity"];
+	  initialVelocity[2] = _options["initialZVelocity"];
+	  *vCell = initialVelocity;
+	  _macroFields.velocity.addArray(cells,vCell);
+	  
+	  
+	  shared_ptr<TArray> pCell(new TArray(nCells));
+	  *pCell = _options["operatingPressure"];
+	  _macroFields.pressure.addArray(cells,pCell);
+	  
+	  
+	  shared_ptr<TArray> rhoCell(new TArray(nCells));
+	  *rhoCell = vc["density"];
+	  _macroFields.density.addArray(cells,rhoCell);
+	  
+	  shared_ptr<TArray> muCell(new TArray(nCells));
+	  *muCell = vc["viscosity"];
+	  _macroFields.viscosity.addArray(cells,muCell);
+	  
+	  shared_ptr<TArray> tempCell(new TArray(cells.getCount()));
+	  *tempCell = _options["operatingTemperature"];
+	  _macroFields.temperature.addArray(cells,tempCell);
+	  
+	  shared_ptr<TArray> collFreqCell(new TArray(cells.getCount()));
+	  *collFreqCell = vc["viscosity"];
+	  _macroFields.collisionFrequency.addArray(cells,collFreqCell);
+	  
+	  
+	  //coeffs for perturbed BGK distribution function
+	  shared_ptr<VectorT5Array> coeffCell(new VectorT5Array(cells.getCount()));
+	  VectorT5 initialCoeff;
+	  initialCoeff[0] = 1.0;
+	  initialCoeff[1] = 1.0;
+	  initialCoeff[2] = 0.0; 
+	  initialCoeff[3] = 0.0;
+	  initialCoeff[4] = 0.0;
+	  *coeffCell = initialCoeff;
+	  _macroFields.coeff.addArray(cells,coeffCell);
+	  
+	  //coeffs for perturbed BGK distribution function
+	  shared_ptr<VectorT10Array> coeffgCell(new VectorT10Array(cells.getCount()));
+	  VectorT10 initialCoeffg;
+	  initialCoeffg[0] = 1.0;
+	  initialCoeffg[1] = 1.0;
+	  initialCoeffg[2] = 0.0; 
+	  initialCoeffg[3] = 1.0;
+	  initialCoeffg[4] = 0.0; 
+	  initialCoeffg[5] = 1.0;
+	  initialCoeffg[6] = 0.0;
+	  initialCoeffg[7] = 0.0; 
+	  initialCoeffg[8] = 0.0;
+	  initialCoeffg[9] = 0.0;
+	  *coeffgCell = initialCoeffg;
+	  _macroFields.coeffg.addArray(cells,coeffgCell);
+	  
+	  // used for ESBGK equilibrium distribution function
+	  shared_ptr<TArray> tempxxCell(new TArray(cells.getCount()));
+	  *tempxxCell = _options["operatingTemperature"]/3;
+	  _macroFields.Txx.addArray(cells,tempxxCell);
+	  
+	  shared_ptr<TArray> tempyyCell(new TArray(cells.getCount()));
+	  *tempyyCell = _options["operatingTemperature"]/3;
+	  _macroFields.Tyy.addArray(cells,tempyyCell);
+	  
+	  shared_ptr<TArray> tempzzCell(new TArray(cells.getCount()));
+	  *tempzzCell = _options["operatingTemperature"]/3;
+	  _macroFields.Tzz.addArray(cells,tempzzCell);
+	  
+	  shared_ptr<TArray> tempxyCell(new TArray(cells.getCount()));
+	  *tempxyCell = 0.0;
+	  _macroFields.Txy.addArray(cells,tempxyCell);
+	  
+	  shared_ptr<TArray> tempyzCell(new TArray(cells.getCount()));
+	  *tempyzCell = 0.0;
+	  _macroFields.Tyz.addArray(cells,tempyzCell);
+	  
+	  shared_ptr<TArray> tempzxCell(new TArray(cells.getCount()));
+	  *tempzxCell = 0.0;
+	  _macroFields.Tzx.addArray(cells,tempzxCell);
+	  
 	//Entropy and Entropy Generation Rate for switching
-        shared_ptr<TArray> EntropyCell(new TArray(cells.getCount()));
-        *EntropyCell = 0.0;
-        _macroFields.Entropy.addArray(cells,EntropyCell);
-	
-	shared_ptr<TArray> EntropyGenRateCell(new TArray(cells.getCount()));
-        *EntropyGenRateCell = 0.0;
-        _macroFields.EntropyGenRate.addArray(cells,EntropyGenRateCell);
+	  shared_ptr<TArray> EntropyCell(new TArray(cells.getCount()));
+	  *EntropyCell = 0.0;
+	  _macroFields.Entropy.addArray(cells,EntropyCell);
+	  
+	  shared_ptr<TArray> EntropyGenRateCell(new TArray(cells.getCount()));
+	  *EntropyGenRateCell = 0.0;
+	  _macroFields.EntropyGenRate.addArray(cells,EntropyGenRateCell);
 
-	shared_ptr<TArray> EntropyGenRateColl(new TArray(cells.getCount()));
-        *EntropyGenRateColl = 0.0;
-        _macroFields.EntropyGenRate_Collisional.addArray(cells,EntropyGenRateColl);
-
+	  shared_ptr<TArray> EntropyGenRateColl(new TArray(cells.getCount()));
+	  *EntropyGenRateColl = 0.0;
+	  _macroFields.EntropyGenRate_Collisional.addArray(cells,EntropyGenRateColl);
+	  
 	//Pxx,Pyy,Pzz,Pxy,Pxz,Pyz
 	shared_ptr<VectorT6Array> stressCell(new VectorT6Array(nCells));
         VectorT6 initialstress;
@@ -264,7 +266,7 @@ class KineticModel : public Model
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups()){
 	  const FaceGroup& fg = *fgPtr; 
 	  
-	  if((fg.groupType == "symmetry")||(fg.groupType == "realwall")){
+	  if((fg.groupType == "symmetry")||(fg.groupType == "realwall")||(fg.groupType == "velocity-inlet")){
 	  
 	    const StorageSite& faces = fg.site;
 	  		 
@@ -297,18 +299,42 @@ class KineticModel : public Model
 	      const int fgid=fg.id;
 	      _faceReflectionArrayMap[fgid] = tempVec; //add to map
 	    
-	      
 	  }
 	}
-	//fclose(pFile);
-
+	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups()){
+	  const FaceGroup& fg = *fgPtr; 
+	  if(fg.groupType == "NSinterface"){
+	    const StorageSite& Intfaces = fg.site; 
+	    
+	    shared_ptr<VectorT3Array> InterfaceVelFace(new VectorT3Array(Intfaces.getCount()));
+	    InterfaceVelFace ->zero();
+	    _macroFields.InterfaceVelocity.addArray(Intfaces,InterfaceVelFace);
+	    
+	    shared_ptr<StressTensorArray> InterfaceStressFace(new StressTensorArray(Intfaces.getCount()));
+	    InterfaceStressFace ->zero();
+	    _macroFields.InterfaceStress.addArray(Intfaces,InterfaceStressFace);
+	    
+	    shared_ptr<TArray> InterfacePressFace(new TArray(Intfaces.getCount()));
+	    *InterfacePressFace = _options["operatingPressure"];
+	    _macroFields.InterfacePressure.addArray(Intfaces,InterfacePressFace);
+	    
+	    shared_ptr<TArray> InterfaceDensityFace(new TArray(Intfaces.getCount()));
+	    *InterfaceDensityFace =vc["density"];
+	    _macroFields.InterfaceDensity.addArray(Intfaces,InterfaceDensityFace);
+	    
+	    
+	  }
+	  
+	  //fclose(pFile);
+	  
+	  
+	} //end of loop through meshes
+	_niters  =0;
+	_initialKmodelNorm = MFRPtr();
+	//_initialKmodelvNorm = MFRPtr();
 	
-      } //end of loop through meshes
-    _niters  =0;
-    _initialKmodelNorm = MFRPtr();
-    //_initialKmodelvNorm = MFRPtr();
-  
-  } 
+      }
+  }
     
   void InitializeMacroparameters()
   {  const int numMeshes =_meshes.size();
@@ -344,12 +370,14 @@ class KineticModel : public Model
 	    v[c][0]=0.0;
 	    v[c][1]=0.0;
 	    v[c][2]=0.0;
-	    if(_options.fgamma>0){
+	    temperature[c]=1.0;
+	    pressure[c]=temperature[c]*density[c];
+	    
 	    //BGK
 	      coeff[c][0]=density[c]/pow((pi*temperature[c]),1.5);
 	      coeff[c][1]=1/temperature[c];
 	      coeff[c][2]=0.0;coeff[c][3]=0.0;coeff[c][4]=0.0;
-	    }
+	    
 	    Entropy[c]=0.0;
             if(_options.fgamma ==2){
 	    //ESBGK
@@ -363,11 +391,7 @@ class KineticModel : public Model
 	    coeffg[c][7]=0.0;
 	    coeffg[c][8]=0.0;
 	    coeffg[c][9]=0.0;	
-	    }
-	   
-
-	    temperature[c]=1.0;
-	    pressure[c]=temperature[c]*density[c];
+	    }    
 	    
 	    Txx[c]=0.5;
 	    Tyy[c]=0.5;
@@ -404,12 +428,12 @@ class KineticModel : public Model
 	
 	for(int c=0; c<nCells;c++)
 	  {
-	    if(_options.fgamma>0){
+	    
 	      //BGK
 	      coeff[c][0]=density[c]/pow((pi*temperature[c]),1.5);
 	      coeff[c][1]=1/temperature[c];
 	      coeff[c][2]=0.0;coeff[c][3]=0.0;coeff[c][4]=0.0;
-	    }
+	   
 	    if(_options.fgamma ==2){
 	      //ESBGK
 	      coeffg[c][0]=coeff[c][0];
@@ -1399,7 +1423,7 @@ map<string,shared_ptr<ArrayBase> >&
 		  }
 		else if (fg.groupType == "velocity-inlet")
 		  {
-		    bc->bcType = "InletBC";
+		    bc->bcType = "VelocityInletBC";
 		  }
 		else if (fg.groupType == "pressure-inlet")
 		  {
@@ -1409,14 +1433,11 @@ map<string,shared_ptr<ArrayBase> >&
 		  {
 		    bc->bcType = "PressureOutletBC";
 		  }
-		else if (fg.groupType == "velocity-inlet")
-		  {
-		    bc->bcType = "VelocityInletBC";
-		  }
 		else if ((fg.groupType == "symmetry"))
 		  {
 		    bc->bcType = "SymmetryBC";
 		    }
+	
 		else if((fg.groupType =="zero-gradient "))
 		  {
 		      bc->bcType = "ZeroGradBC";
@@ -1426,6 +1447,22 @@ map<string,shared_ptr<ArrayBase> >&
 				     + fg.groupType);
 	      }
 	  }
+	/*
+	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr;
+	    if (_bcMap.find(fg.id) == _bcMap.end())
+	      { KineticBC<T> *bc(new KineticBC<T>());
+		
+		_bcMap[fg.id] = bc;
+		
+		if ((fg.groupType == "NSinterface"))
+		  {
+		    bc->bcType = "NSInterfaceBC";
+		  }
+	      }
+	  }
+	*/
       }
   }
   
@@ -1468,7 +1505,8 @@ map<string,shared_ptr<ArrayBase> >&
     const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
     const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
     const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-
+   
+    
     if(_options.fgamma==2){ 
       Field& feqES = *_dsfEqPtrES.dsf[direction];
       shared_ptr<Discretization>
@@ -1486,6 +1524,7 @@ map<string,shared_ptr<ArrayBase> >&
 	    _macroFields.collisionFrequency));
     discretizations.push_back(sd);
     } 
+    
     
     shared_ptr<Discretization> 
       cd(new ConvectionDiscretization_Kmodel<T,T,T> 
@@ -1569,8 +1608,26 @@ map<string,shared_ptr<ArrayBase> >&
 		      gkbc.applyDirichletBC(f,bvalue);
 		      // gkbc.applyExtrapolationBC(f);
 		  }
-	      }
+	      } 
+	    else if (( bc.bcType == "VelocityInletBC")){
+	      for(int f=0; f< nFaces; f++)
+		{
+		  const VectorT3 en = faceArea[f]/faceAreaMag[f];
+		  const T c_dot_en = cx[direction]*en[0]+cy[direction]*en[1]+cz[direction]*en[2];		 
+		  if(c_dot_en  < T_Scalar(epsilon))
+		    //incoming direction - dirchlet bc
+		    { const int c1= faceCells(f,1);
+		      T bvalue =dsf[c1];
+		      gkbc.applyDirichletBC(f,bvalue);
+		    }
+		  else{
+		    //outgoing direction - extrapolation bc
+		    gkbc.applyExtrapolationBC(f);
+		  } 
+		}
+	    }
 	    //if ((bc.bcType == "WallBC")||(bc.bcType=="PressureInletBC")|| (bc.bcType=="PressureOutletBC")|| (bc.bcType=="VelocityInletBC"))
+	   
 	    else{
 	      for(int f=0; f< nFaces; f++)
 		{
@@ -1591,10 +1648,31 @@ map<string,shared_ptr<ArrayBase> >&
 		  } 
 		  
 		}
-	    }  
+	    }
+  
 	    
 	    
 	  }
+
+	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr; 
+	    const StorageSite& faces = fg.site;
+	    const int nFaces = faces.getCount();
+	    //const KineticBC<T>& bc = *_bcMap[fg.id];
+	    //Field& fnd = *_dsfPtr.dsf[direction]; //field in a direction
+	    //TArray& dsf = dynamic_cast< TArray&>(fnd[cells]);
+	    BaseGenericKineticBCS<T,T,T> gkbc(faces, mesh, _geomFields,
+						 fnd,
+						 ls.getMatrix(),
+						 ls.getX(),
+					      ls.getB());
+	    for(int f=0; f< nFaces; f++)
+		 {gkbc.applyInterfaceBC(f);}//do nothign
+	    
+	  }
+
+
       }
   }
   
@@ -1663,6 +1741,13 @@ map<string,shared_ptr<ArrayBase> >&
 						  bc.getVal("specifiedYVelocity"),
 						  bc.getVal("specifiedZVelocity"),
 						  faces);
+	    //	   FloatValEvaluator<StressTensor<T>>
+	    FloatValEvaluator<VectorT3> bStress(bc.getVal("specifiedTauxx"),bc.getVal("specifiedTauyy"),
+						bc.getVal("specifiedTauzz"),faces);
+	    //bc.getVal("specifiedTauxy"),
+	    //				      bc.getVal("specifiedTauyz"),bc.getVal("specifiedTauzx"),faces);
+	    
+	    FloatValEvaluator<T> mdot(bc.getVal("specifiedMassFlowRate"),faces);
 	    FloatValEvaluator<T> bTemperature(bc.getVal("specifiedTemperature"),faces);
 	    FloatValEvaluator<T> bPressure(bc.getVal("specifiedPressure"),faces);
 	    FloatValEvaluator<T> accomCoeff(bc.getVal("accommodationCoefficient"),faces);
@@ -1692,9 +1777,12 @@ map<string,shared_ptr<ArrayBase> >&
 	      {
 		kbc.applyPressureInletBC(bTemperature,bPressure);
 	      } 
+	   
 	    else if(bc.bcType=="VelocityInletBC")
-	      {
-		kbc.applyVelocityInletBC(bTemperature,bVelocity);
+	      {	
+		map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(fg.id);
+		const vector<int>& vecReflection=(*pos).second;
+		kbc.applyInletBC(bVelocity,bTemperature,mdot,vecReflection);
 	      }
 	    else if(bc.bcType=="PressureOutletBC")
 	      {
@@ -1702,10 +1790,25 @@ map<string,shared_ptr<ArrayBase> >&
 	      }
 	    
 	  }
-      }
-   }
-
- 
+	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	  {
+	    
+	    const FaceGroup& fg = *fgPtr;
+	    const StorageSite& faces = fg.site;
+	    //const int nFaces = faces.getCount();
+	    
+	    //const KineticBC<T>& bc = *_bcMap[fg.id];
+	    
+	    KineticBoundaryConditions<T,T,T> kbc(faces, mesh,_geomFields,_quadrature,_macroFields,_dsfPtr); 
+	    //if(bc.bcType=="NSInterfaceBC")
+	    // {
+		kbc.applyNSInterfaceBC();//bTemperature,bPressure,bVelocity,bStress);
+		// } 
+	  }
+      }//end of loop through meshes
+  }
+  
+  
   void advance(const int niter)
   {
     for(int n=0; n<niter; n++)  
@@ -1789,11 +1892,14 @@ map<string,shared_ptr<ArrayBase> >&
 	//break here
 
 	callBoundaryConditions();
+	//cout << "called boundary"<<endl;
 	ComputeMacroparameters();	//update macroparameters
         ComputeCollisionfrequency();
+	
 	//update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
 	if (_options.fgamma==0){initializeMaxwellianEq();}
 	else{ EquilibriumDistributionBGK();}
+	//cout << "called BGk" <<endl;
 	if (_options.fgamma==2){EquilibriumDistributionESBGK();}
 
 

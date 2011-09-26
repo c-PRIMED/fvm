@@ -82,10 +82,10 @@ public:
     const int nFaces = faces.getCount();
 
     const VectorT3Array& faceArea = dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);    
-    const X nondim_length=_options["nonDimLt"];
-    const X Lx=_options["nonDimLx"];
-    const X Ly=_options["nonDimLy"];
-    const X Lz=_options["nonDimLz"];
+    //const X nondim_length=_options["nonDimLt"];
+    //const X Lx=_options["nonDimLx"];
+    //const X Ly=_options["nonDimLy"];
+    //const X Lz=_options["nonDimLz"];
     
     if (_geomFields.gridFlux.hasArray(faces))
     {
