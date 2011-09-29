@@ -8,3 +8,6 @@ template class PhononModel<ATYPE>;
 
 #include "PhononBoundary.h"
 template class PhononBoundary<ATYPE>;
+
+#include "ArrowHeadMatrix.h"
+template class ArrowHeadMatrix<ATYPE>;
