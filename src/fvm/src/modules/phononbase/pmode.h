@@ -29,6 +29,7 @@ class pmode
     _omega(omega),
     _efield("edoubleprime"),
     _e0field("e0"),
+    _residual("residual"),
     _reflections()
       {}
   
@@ -40,6 +41,7 @@ class pmode
   Refl_pair& getReflpair(int i) {return _reflections[i];}
   Field& getfield() {return _efield;}
   Field& gete0field() {return _e0field;}
+  Field& getresid() {return _residual;}
   T calce0(T Tl)
   {
     const T hbar=6.582119e-16;  // (eV s)
@@ -103,6 +105,9 @@ class pmode
 
   //e0
   Field _e0field;
+
+  //residual
+  Field _residual;
 
   //Map for specular reflections
   Refl_Map _reflections;

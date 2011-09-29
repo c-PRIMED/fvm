@@ -63,6 +63,22 @@ class Kspace
     return (_Kmesh[0]->getmodenum())*_length;
   }
   T getDK3() const {return _totvol;}
+  T calcTauTot()
+  {   
+    T tauTot=0.;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    tauTot+=dk3/mode.gettau();
+	  }
+      }
+    return tauTot;
+  }
   void NewtonSolve(T& guess, const T e_sum)
   {
     T e0_tau;
