@@ -19,6 +19,9 @@
 #include "PhononConvectionDiscretization.h"
 #include "GenericPhononBCS.h"
 #include "Linearizer.h"
+#include "ArrowHeadMatrix.h"
+#include "COMETDiscretizer.h"
+#include <math.h>
 
 template<class T>
 class PhononModel : public Model
@@ -41,13 +44,21 @@ class PhononModel : public Model
   typedef typename Tmode::Reflptr Reflptr;
   typedef typename Tmode::Refl_pair Refl_pair;
   typedef typename Tmode::Refl_Map Refl_Map;
+  typedef Array<int> BCcellArray;
+  typedef shared_ptr<BCcellArray> BCellPtr;
+  typedef vector<BCellPtr> BCcellList;
+  typedef Array<bool> BCfaceArray;
+  typedef shared_ptr<BCfaceArray> BfacePtr;
+  typedef vector<BfacePtr> BCfaceList;
   
  PhononModel(const MeshList& meshes,const GeomFields& geomFields,Tkspace& kspace,PhononMacro& macro):
   
   Model(meshes),
     _geomFields(geomFields),
     _kspace(kspace),
-    _macro(macro)
+    _macro(macro),
+    _BCells(),
+    _BFaces()
       {	
       //setting boundary conditions
 	const int numMeshes = _meshes.size();
@@ -55,6 +66,18 @@ class PhononModel : public Model
       for (int n=0; n<numMeshes; n++) //mesh loop beg
 	{
 	  const Mesh& mesh = *_meshes[n];
+	  const StorageSite& cells=mesh.getCells();
+	  const StorageSite& faces=mesh.getFaces();
+	  const int cellCount=cells.getSelfCount();
+	  const int faceCount=faces.getCount();
+
+	  BCellPtr BCptr(new BCcellArray(cellCount));
+	  _BCells.push_back(BCptr);
+	  BCptr->zero();
+
+	  BfacePtr BFptr(new BCfaceArray(faceCount));
+	  BFptr->zero();
+	  _BFaces.push_back(BFptr);
 	  
 	  foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())  //facegroup loop beg
 	    {
@@ -75,10 +98,9 @@ class PhononModel : public Model
 		  else
 		    throw CException("PhononModel: unknown face group type "
 				     + fg.groupType);
-
 		}
-	    } //facegroup loop end
-	} //mesh loop end 
+	    }
+	}
     
     }
 
@@ -104,11 +126,14 @@ class PhononModel : public Model
 	const T Tinit=_options["initialTemperature"];
 	*TLcell=Tinit;
 	_macro.temperature.addArray(cells,TLcell);
+
+	T e0sum=0.;
 	
 	for (int k=0;k<numK;k++)  //kspace loop beg
 	  {
 	    Tkvol& kv=_kspace.getkvol(k);
 	    const int numM=kv.getmodenum();
+	    const T dk3=kv.getdk3();
 	    
 	    for (int m=0;m<numM;m++) //mode loop beg
 	      {
@@ -116,15 +141,28 @@ class PhononModel : public Model
 		Tmode& mode=kv.getmode(m);
 		Field& efield=mode.getfield();
 		Field& e0field=mode.gete0field();
+		Field& resfield=mode.getresid();
 		Tarrptr e0var=shared_ptr<Tarray>(new Tarray(numcells));
-		Tarrptr evar=shared_ptr<Tarray>(new Tarray(numcells));	
+		Tarrptr evar=shared_ptr<Tarray>(new Tarray(numcells));
+		Tarrptr resid=shared_ptr<Tarray>(new Tarray(numcells));
 		const T einit=mode.calce0(Tinit);
+		e0sum+=einit*dk3;
 		*evar=einit;
 		*e0var=einit;
+		*resid=0.;
 		efield.addArray(cells,evar);
 		e0field.addArray(cells,e0var);
+		resfield.addArray(cells,resid);
 	      }; //mode loop end
 	  }; //kspace loop end
+
+	e0sum=e0sum/_kspace.getDK3();
+	shared_ptr<Tarray> e0cell(new Tarray(numcells));
+	*e0cell=e0sum;
+	_macro.e0.addArray(cells,e0cell);
+	shared_ptr<Tarray> e0ResidCell(new Tarray(numcells));
+	*e0ResidCell=0.;
+	_macro.e0Residual.addArray(cells,e0ResidCell);
 
 	// Compute reflections--later, should be moved inside above loop
 	
@@ -150,7 +188,8 @@ class PhononModel : public Model
 		    const Field& AreaMagField=_geomFields.areaMag;
 		    const Tarray& AreaMag=dynamic_cast<const Tarray&>(AreaMagField[faces]);
 		    const Field& AreaDirField=_geomFields.area;
-		    const VectorT3Array& AreaDir=dynamic_cast<const VectorT3Array&>(AreaDirField[faces]);
+		    const VectorT3Array& AreaDir=
+		      dynamic_cast<const VectorT3Array&>(AreaDirField[faces]);
 		   	      
 		    const VectorT3 n=AreaDir[0]/AreaMag[0];
 		    const T sidotn=si[0]*n[0]+si[1]*n[1]+si[2]*n[2];
@@ -163,13 +202,31 @@ class PhononModel : public Model
 			rmap[fg.id]=refls;
 		      }
 		  }
-		
 	      }
-	    
-	  } //mesh loop end
+	  }
+
+	BCcellArray& BCArray=*(_BCells[n]);
+	BCfaceArray& BCfArray=*(_BFaces[n]);
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr;
+	    if((_bcMap[fg.id]->bcType == "reflecting"))
+	      {
+		const CRConnectivity& BfaceCells=mesh.getFaceCells(fg.site);
+		const int faceCount=fg.site.getCount();
+		const int offSet=fg.site.getOffset();
+		for(int i=0;i<faceCount;i++)
+		  {
+		    int cell1=BfaceCells(i,0);
+		    BCArray[cell1]=1;
+		  }
+		for(int i=offSet;i<offSet+faceCount;i++)
+		  BCfArray[i]=true;
+	      } 
+	  }	
       }
   }
-    
+  
   void callBoundaryConditions()
   { 
     const int numMeshes = _meshes.size();
@@ -249,9 +306,25 @@ class PhononModel : public Model
       }
   }
 
-void updatee0()
+  void COMETupdateTL()
   {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+	const int numcells = cells.getCount();
+	Tarray& TL=dynamic_cast<Tarray&>(_macro.temperature[cells]);
+	Tarray& e0Array=dynamic_cast<Tarray&>(_macro.e0[cells]);
+	
+	for(int c=0;c<numcells;c++)
+	  _kspace.NewtonSolve(TL[c],e0Array[c]);
+      }
+  }
 
+  void updatee0()
+  {
+    
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
@@ -445,6 +518,9 @@ void updatee0()
   
   void advance(const int niter)
   {
+
+    int early=0;
+
     for(int n=0; n<niter; n++)  
       {
 	const int klength =_kspace.getlength();
@@ -515,16 +591,73 @@ void updatee0()
 
 	_niters++;
 	if ((*rNorm < _options.absTolerance)||(*normRatio < _options.relTolerance )) 
-	  {//&& ((*vNorm < _options.absoluteTolerance)||(*vnormRatio < _options.relativeTolerance )))
+	  {
+	    early=1;
+	    cout << endl;
+	    cout << "Final Residual at "<<_niters<<": "<< *rNorm <<endl;
 	    break;}
 	
 	updateTL();	//update macroparameters
 	updatee0();
 	callBoundaryConditions();
       }
-    updateHeatFlux();
+
+    updateHeatFlux();	  
   }
 
+  void advanceCOMET(const int niters)
+  {  
+    
+    T tol=_options.relTolerance;
+    T aveResid=-1;
+    T residChange=1;
+    int exit=0;
+
+    for(int n=0;n<niters;n++)
+      {
+	if(exit==1)
+	  {
+	    break;
+	  }
+
+	const int numMeshes=_meshes.size();
+	for(int msh=0;msh<numMeshes;msh++)
+	  {
+	    const Mesh& mesh=*_meshes[msh];
+	    const BCcellArray& BCArray=*(_BCells[msh]);
+	    COMETDiscretizer<T> CDisc(mesh,_geomFields,_macro,
+				      _kspace,_bcMap,BCArray);
+
+	    CDisc.setfgFinder();
+	    CDisc.findResid();
+	    
+	    if(aveResid==-1)
+	      aveResid=CDisc.getAveResid();
+	    else
+	      {
+		residChange=fabs(aveResid-CDisc.getAveResid()/aveResid);
+		aveResid=CDisc.getAveResid();
+	      }
+
+	    if(n%_options.showResidual==0)
+	      cout<<"[Iteration: "<<n<<" || Residual Change: "<<residChange<<
+		" || Average Residual: "<<aveResid<<"]"<<endl;
+	    
+	    if(fabs(residChange)>tol)
+	      {
+		CDisc.COMETSolve();
+		callBoundaryConditions();
+	      }
+	    else
+	      {
+		exit=1;
+		break;
+	      }
+	  }
+      }
+    COMETupdateTL();
+  }
+  
   void printTemp()
   {
      const int numMeshes = _meshes.size();
@@ -536,7 +669,6 @@ void updatee0()
 	 Tarray& TL=dynamic_cast<Tarray&>(_macro.temperature[cells]);
 	 for(int i=0;i<numcells;i++)
 	   cout<<TL[i]<<" "<<i<<endl;
-
        }
 
   }
@@ -593,8 +725,8 @@ void updatee0()
     PhononBCMap _bcMap;
     MFRPtr _initialnorm;
     int _niters;
-    
-
+    BCcellList _BCells;
+    BCfaceList _BFaces;
 };
 
 #endif
