@@ -40,7 +40,8 @@ public:
 				  //const double Lx,
 				  //const double Ly,
 				  //const double Lz,
-				  const bool useCentralDifference=false) :
+				  bool useCentralDifference) :
+    //const bool useCentralDifference=false) :
 
   Discretization(meshes),
     _geomFields(geomFields),

@@ -87,6 +87,7 @@ struct KineticModelOptions : public FloatVarDict<T>
    
 
     this->timeDiscretizationOrder=1;
+    this->CentralDifference=false;
     this->KineticLinearSolver = 0;
    
     this-> printCellNumber=0;
@@ -122,6 +123,8 @@ struct KineticModelOptions : public FloatVarDict<T>
   
   int NewtonsMethod_ktrial;
   int timeDiscretizationOrder;
+  bool CentralDifference;
+
   LinearSolver *KineticLinearSolver;
   int printCellNumber;
   int fgamma;

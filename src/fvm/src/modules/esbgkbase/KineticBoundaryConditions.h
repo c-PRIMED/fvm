@@ -57,6 +57,7 @@ class KineticBoundaryConditions
     
   {}
     KineticModelOptions<X>&   getOptions() {return _options;}  
+
   void applyDiffuseWallBC(int f,const VectorX3&  WallVelocity,const X& WallTemperature) const
   {
     

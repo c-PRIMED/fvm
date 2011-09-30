@@ -1533,7 +1533,8 @@ map<string,shared_ptr<ArrayBase> >&
 	  fnd,
 	  cx[direction],
 	  cy[direction],
- 	  cz[direction]
+ 	  cz[direction],
+	  _options.CentralDifference
 	  //_options["nonDimLt"],
 	  //_options["nonDimLx"],_options["nonDimLy"],_options["nonDimLz"],
 	  ));
@@ -1790,20 +1791,20 @@ map<string,shared_ptr<ArrayBase> >&
 	      }
 	    
 	  }
-	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	foreach(const FaceGroupPtr igPtr, mesh.getInterfaceGroups())
 	  {
 	    
-	    const FaceGroup& fg = *fgPtr;
-	    const StorageSite& faces = fg.site;
+	    const FaceGroup& ig = *igPtr;
+	    const StorageSite& faces = ig.site;
 	    //const int nFaces = faces.getCount();
 	    
 	    //const KineticBC<T>& bc = *_bcMap[fg.id];
 	    
 	    KineticBoundaryConditions<T,T,T> kbc(faces, mesh,_geomFields,_quadrature,_macroFields,_dsfPtr); 
-	    //if(bc.bcType=="NSInterfaceBC")
-	    // {
+	    if(ig.groupType=="NSinterface")
+	      {
 		kbc.applyNSInterfaceBC();//bTemperature,bPressure,bVelocity,bStress);
-		// } 
+	      } 
 	  }
       }//end of loop through meshes
   }
