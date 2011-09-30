@@ -16,6 +16,12 @@ enum
     READ_DATA
   };
 
+enum
+  {
+    PERIODIC = 12,
+    PERIODIC_SHADOW = 8
+  };
+
 
 FluentReader::FluentReader(const string& fileName) :
   SchemeReader(fileName),
@@ -364,7 +370,6 @@ void
 FluentReader::readFacePairs(const int pass, const bool isBinary,
                             const int sectionID)
 {
-#if 0
   int iBeg, iEnd, leftID, rightID, dummy;
   readHeader(iBeg,iEnd,leftID,rightID,dummy);
 
@@ -382,23 +387,19 @@ FluentReader::readFacePairs(const int pass, const bool isBinary,
           int leftF = readInt(isBinary);
           int rightF = readInt(isBinary);
 
-          (*leftFaces)[n]=leftF;
-          (*rightFaces)[n]=rightF;
+          (*leftFaces)[n]=leftF-1;
+          (*rightFaces)[n]=rightF-1;
       }
       if (isBinary)
         closeSectionBinary(sectionID);
       else
         closeSection();
+      FluentFacePairs *fp = new FluentFacePairs(count,leftID,rightID,
+                                                shared_ptr<Array<int> >(leftFaces),
+                                                shared_ptr<Array<int> >(rightFaces));
 
-      FluentFacePairs *fp = new FluentFacePairs();
-      fp->setVar("count",count);
-      fp->setVar("leftID",leftID);
-      fp->setVar("leftFaces",*leftFaces);
-      fp->setVar("rightID",rightID);
-      fp->setVar("rightFaces",*rightFaces);
-      
+      _facePairs[leftID] = shared_ptr<FluentFacePairs>(fp);
 
-      _facePairs.add(make_pair(leftID,rightID),fp);
   }
   else if ((pass == READ_COUNTS) || (pass == READ_MESH))
   {
@@ -408,7 +409,7 @@ FluentReader::readFacePairs(const int pass, const bool isBinary,
       else
         closeSection();
   }
-#endif
+
 }
 
 void FluentReader::read(const int pass)
@@ -544,11 +545,9 @@ void FluentReader::read(const int pass)
         readFaces(pass,isBinary,id);
         break;
 
-#if 0
       case 18:
         readFacePairs(pass,isBinary,id);
         break;
-#endif
         
       default:
         if (isBinary)
@@ -655,6 +654,8 @@ FluentReader::buildZones()
   {
       FluentFaceZone& fz = *(pos.second);
 
+      if (fz.threadType == PERIODIC_SHADOW)
+        fz.zoneType = "shadow";
       
       const int c0 = faceCells(fz.iBeg,0);
 
@@ -864,6 +865,81 @@ FluentReader::createMesh(const int cellZoneID)
       }
   }
 
+
+  int nPeriodic = 0;
+  Mesh::PeriodicFacePairs& periodicFacePairs = mesh->getPeriodicFacePairs();
+
+              
+  foreach(int fzId, cz.boundaryZoneIds)
+  {
+      const FluentFaceZone& fz = *_faceZones[fzId];
+      if (fz.zoneType == "periodic")
+      {
+          FacePairsMap::const_iterator pos = _facePairs.find(fzId);
+          if (pos != _facePairs.end())
+          {
+              const FluentFacePairs& facePairs = *pos->second;
+              const FluentFaceZone& shadowFz = *_faceZones[facePairs.rightID];
+
+              const Array<int>& pFaces = *facePairs.leftFaces;
+              const Array<int>& shadowFaces = *facePairs.rightFaces;
+              
+              nPeriodic += facePairs.count;
+
+              const FaceGroup& myFG = mesh->getFaceGroup(fzId);
+              const FaceGroup& myShadowFG = mesh->getFaceGroup(facePairs.rightID);
+
+              
+              const int myOffset = myFG.site.getOffset();
+              const int myShadowOffset = myShadowFG.site.getOffset();
+
+              for(int i=0; i<facePairs.count; i++)
+              {
+                  // compute face index in our Mesh by first
+                  // subtracting the fluent face zone offset and then
+                  // adding our face group offset
+                  
+                  const int lf = pFaces[i] - fz.iBeg + myOffset;
+                  const int rf = shadowFaces[i] - shadowFz.iBeg + myShadowOffset;
+
+                  periodicFacePairs[lf] = rf;
+              }
+          }
+      }
+  }
+  
+
+  if (nPeriodic > 0)
+  {
+      shared_ptr<Array<int> >fromPtr(new Array<int>(nPeriodic*2));
+      shared_ptr<Array<int> >toPtr(new Array<int>(nPeriodic*2));
+
+      Array<int>& from = *fromPtr;
+      Array<int>& to = *toPtr;
+
+      const CRConnectivity& faceCells = mesh->getAllFaceCells();
+
+      StorageSite& cells = mesh->getCells();
+      
+      nPeriodic  = 0;
+      for(Mesh::PeriodicFacePairs::const_iterator pos = periodicFacePairs.begin();
+          pos!=periodicFacePairs.end();
+          ++pos)
+      {
+          const int lf = pos->first;
+          const int rf = pos->second;
+          from[nPeriodic] = faceCells(lf,0);
+          from[nPeriodic+1] = faceCells(rf,0);
+          to[nPeriodic] = faceCells(lf,1);
+          to[nPeriodic+1] = faceCells(rf,1);
+
+          nPeriodic += 2;
+      }
+
+      cells.getGatherMap()[&cells] = toPtr;
+      cells.getScatterMap()[&cells] = fromPtr;
+  }
+  
   return mesh;
 }
 

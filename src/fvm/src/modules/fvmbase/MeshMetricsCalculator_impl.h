@@ -1524,8 +1524,39 @@ MeshMetricsCalculator<T>::init()
     }
    _coordField.syncLocal();
 
-    for (int n=0; n<numMeshes; n++)
-    {
+
+   // fix periodic ghost cell coordinates
+
+   for (int n=0; n<numMeshes; n++)
+   {
+       const Mesh& mesh = *_meshes[n];
+       const StorageSite& cells = mesh.getCells();
+       const StorageSite& faces = mesh.getFaces();
+
+       const CRConnectivity& faceCells = mesh.getAllFaceCells();
+       
+       const VectorT3Array& faceCoord =
+         dynamic_cast<const VectorT3Array&>(_coordField[faces]);
+
+       VectorT3Array& cellCoord =
+         dynamic_cast<VectorT3Array&>(_coordField[cells]);
+
+       const Mesh::PeriodicFacePairs periodicFacePairs = mesh.getPeriodicFacePairs();
+
+       for(Mesh::PeriodicFacePairs::const_iterator pos = periodicFacePairs.begin();
+           pos!=periodicFacePairs.end();
+           ++pos)
+       {
+          const int lf = pos->first;
+          const int rf = pos->second;
+          const VectorT3 dr = faceCoord[rf] - faceCoord[lf];
+          cellCoord[faceCells(lf,1)] += dr;
+          cellCoord[faceCells(rf,1)] -= dr;
+       }
+   }
+   
+   for (int n=0; n<numMeshes; n++)
+   {
       const Mesh& mesh = *_meshes[n];
       calculateCellVolumes(mesh);
    }

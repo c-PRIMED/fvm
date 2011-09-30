@@ -61,6 +61,8 @@ public:
   typedef pair<const StorageSite*, const StorageSite*> EntryIndex;
   typedef map<EntryIndex, shared_ptr<ArrayBase> > GhostArrayMap;
 
+  typedef map<int,int> PeriodicFacePairs;
+  
   enum
     {
       CELL_BAR2,
@@ -318,6 +320,9 @@ public:
   {return *_parentFaceGroupSite;}
 
   ConnectivityMap&  getConnectivityMap() {return _connectivityMap;}
+
+  PeriodicFacePairs& getPeriodicFacePairs() { return _periodicFacePairs;}
+  const PeriodicFacePairs& getPeriodicFacePairs() const { return _periodicFacePairs;}
   
 protected:
    
@@ -392,7 +397,8 @@ protected:
   const StorageSite* _parentFaceGroupSite;
   
   static int _lastID;
-  
+
+  PeriodicFacePairs _periodicFacePairs;
 private:
   void createRowColSiteCRConn();
   void countCRConn();

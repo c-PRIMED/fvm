@@ -43,13 +43,28 @@ struct FluentCellZone : public FluentZone
 
 struct FluentFacePairs
 {
-  int count;
-  int leftID;
-  int rightID;
+  FluentFacePairs(const int count_, const int leftID_, const int rightID_,
+                  shared_ptr<Array<int> > leftFaces_,
+                  shared_ptr<Array<int> > rightFaces_) :
+    count(count_),
+    leftID(leftID_),
+    rightID(rightID_),
+    leftFaces(leftFaces_),
+    rightFaces(rightFaces_)
+  {}
+
+  const int count;
+  const int leftID;
+  const int rightID;
+  shared_ptr<Array<int> > leftFaces;
+  shared_ptr<Array<int> > rightFaces;
+  
 };
+
 
 typedef map<int,FluentFaceZone*> FaceZonesMap;
 typedef map<int,FluentCellZone*> CellZonesMap;
+typedef map<int,shared_ptr<FluentFacePairs> > FacePairsMap;
 
 class FluentReader : public SchemeReader
 {
@@ -94,7 +109,7 @@ protected:
   
   FaceZonesMap _faceZones;
   CellZonesMap _cellZones;
-  //FacePairsMap _facePairs;
+  FacePairsMap _facePairs;
   
   Array<Vec3> _coords;
   int _rpVarStringLength;
