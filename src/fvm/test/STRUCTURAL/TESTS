@@ -1,0 +1,3 @@
+PLATE_STEADY         ./ptest.py  --np 1   --script ./testPlate.py                   --in  ../parallel4.cas --golden PLATE_STEADY         --outdir TESTDIR
+PLATE_TRANSIENT      ./ptest.py  --np 1   --script ./testPlateTransient.py          --in  ../plate4.cas    --golden PLATE_TRANSIENT      --outdir TESTDIR
+STRUCTURE_TRANSIENT  ./ptest.py  --np 1   --script ./testStructureModelTransient.py --in  ../wbar1.cas     --golden STRUCTURE_TRANSIENT  --outdir TESTDIR
