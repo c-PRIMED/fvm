@@ -1530,6 +1530,11 @@ MeshMetricsCalculator<T>::init()
    for (int n=0; n<numMeshes; n++)
    {
        const Mesh& mesh = *_meshes[n];
+       const Mesh::PeriodicFacePairs periodicFacePairs = mesh.getPeriodicFacePairs();
+
+       if (periodicFacePairs.size() == 0)
+         continue;
+       
        const StorageSite& cells = mesh.getCells();
        const StorageSite& faces = mesh.getFaces();
 
@@ -1541,7 +1546,6 @@ MeshMetricsCalculator<T>::init()
        VectorT3Array& cellCoord =
          dynamic_cast<VectorT3Array&>(_coordField[cells]);
 
-       const Mesh::PeriodicFacePairs periodicFacePairs = mesh.getPeriodicFacePairs();
 
        for(Mesh::PeriodicFacePairs::const_iterator pos = periodicFacePairs.begin();
            pos!=periodicFacePairs.end();
