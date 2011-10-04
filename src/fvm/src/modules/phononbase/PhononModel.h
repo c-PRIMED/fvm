@@ -625,8 +625,9 @@ class PhononModel : public Model
 	  {
 	    const Mesh& mesh=*_meshes[msh];
 	    const BCcellArray& BCArray=*(_BCells[msh]);
+	    const BCfaceArray& BCfArray=*(_BFaces[msh]);
 	    COMETDiscretizer<T> CDisc(mesh,_geomFields,_macro,
-				      _kspace,_bcMap,BCArray);
+				      _kspace,_bcMap,BCArray,BCfArray);
 
 	    CDisc.setfgFinder();
 	    CDisc.findResid();
