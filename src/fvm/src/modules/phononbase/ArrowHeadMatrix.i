@@ -1,11 +1,12 @@
 %{
 #include "ArrowHeadMatrix.h"
+#include "MatrixJML.h"
   %}
 
 %include "ArrayBase.i"
 
 template<class T>
-class ArrowHeadMatrix
+class ArrowHeadMatrix: public MatrixJML
 {
  public:
   typedef Array<T> TArray;
@@ -14,7 +15,7 @@ class ArrowHeadMatrix
   
   T& getElement(const int& i,const int& j);
   void printElement(const int& i,const int& j);
-  void solveArrowHead(TArray& bVec);
+  void Solve(TArray& bVec);
   
  private:
   int _elements;

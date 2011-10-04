@@ -1,12 +1,13 @@
-#ifndef _ARROWHEADMATRIX_H
-#define _ARROWHEADMATRIX_H
+#ifndef _ARROWHEADMATRIX_H_
+#define _ARROWHEADMATRIX_H_
 
+#include "MatrixJML.h"
 #include "Array.h"
 #include "ArrayBase.h"
 #include "NumType.h"
 
 template<class T>
-class ArrowHeadMatrix
+class ArrowHeadMatrix : public MatrixJML
 {
  public:
   typedef Array<T> TArray;
@@ -69,7 +70,7 @@ class ArrowHeadMatrix
 	}
     }
 
-  void solveArrowHead(TArray& bVec)
+  void Solve(TArray& bVec)
   {
 
     //Replaces bVec with solution vector.
