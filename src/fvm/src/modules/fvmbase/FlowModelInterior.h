@@ -178,7 +178,7 @@ T discretizeMassFluxInterior(const Mesh& mesh,
       }
   }
 
-#if 1
+#ifdef PV_COUPLED
   if (mfmatrix.hasMatrix(pIndex,vIndex))
   {
       PVMatrix& pvMatrix =
@@ -394,7 +394,7 @@ void correctMassFluxInterior(const Mesh& mesh,
         ppAssembler.getCoeff10(f)*pp[c0];
   }
 
-#if 1
+#ifdef PV_COUPLED
   MultiField::ArrayIndex vIndex(&_flowFields.velocity,&cells);
   if (mfmatrix.hasMatrix(pIndex,vIndex))
   {

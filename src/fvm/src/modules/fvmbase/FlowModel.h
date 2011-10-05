@@ -8,9 +8,8 @@
 
 #include "Mesh.h"
 #include "LinearSolver.h"
-#include "KeFields.h"
+
 #include "FlowBC.h"
-class KeFields;
 
 template<class T>
 class FlowModel : public Model
@@ -24,7 +23,7 @@ public:
   
   
   FlowModel(const GeomFields& geomFields,
-               FlowFields& thermalFields, const MeshList& meshes,KeFields* keFields=0);
+               FlowFields& thermalFields, const MeshList& meshes);
   
   virtual ~FlowModel();
 
@@ -44,8 +43,11 @@ public:
 
   // do the specified number of iterations, return true if converged 
   bool advance(const int niter);
-  bool advanceCoupled(const int niter);
 
+#ifdef PV_COUPLED
+  bool advanceCoupled(const int niter);
+#endif
+  
   void updateTime();
 
   Vector<T,3> getPressureIntegral(const Mesh& mesh, const int faceGroupID);

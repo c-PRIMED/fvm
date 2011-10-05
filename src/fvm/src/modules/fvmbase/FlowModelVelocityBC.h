@@ -32,6 +32,7 @@
 
     TArray& rCell = dynamic_cast<TArray&>(rField[pIndex]);
     TArray& massFlux = dynamic_cast<TArray&>(_flowFields.massFlux[faces]);
+    TArray& pCell = dynamic_cast<TArray&>(_flowFields.pressure[cells]);
     const TArray& density = dynamic_cast<const TArray&>(_flowFields.density[cells]);
 
     FloatValEvaluator<VectorT3>
@@ -39,7 +40,11 @@
                 bc.getVal("specifiedYVelocity"),
                 bc.getVal("specifiedZVelocity"),
                 faces);
+    
+    FloatValEvaluator<T>  bp(bc.getVal("specifiedPressure"),  faces);
 
+    const bool fixPressure = (bc.bcType == "FixedBoundary");
+    
     const int nFaces = faces.getCount();
 
     T netFlux(0.);
@@ -55,16 +60,25 @@
 
         netFlux += massFlux[f];
         ppAssembler.getCoeff01(f) =0;
-        ppAssembler.getCoeff10(f) =1;
         ppDiag[c1] = -1;
-        rCell[c1] = 0.;
+        if (fixPressure)
+        {
+            rCell[c1] = bp[f]-pCell[c1];
+            ppAssembler.getCoeff10(f) =0;
+        }
+        else
+        {
+          rCell[c1] = 0.;
+          ppAssembler.getCoeff10(f) =1;
+        }
+        
         ppMatrix.setBoundary(c1);
 
         dFluxdP.setCoeffL(f,T(0.));
         dFluxdP.setCoeffR(f,T(0.));
         
     }
-#if 1
+#ifdef PV_COUPLED
     if (matrix.hasMatrix(vIndex,pIndex))
     {
         VPMatrix& vpMatrix =

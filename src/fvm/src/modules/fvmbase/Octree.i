@@ -28,7 +28,7 @@ public:
 
   struct Point   
   {
-        VecD3      coordinate;    
+    //      VecD3      coordinate;    
         int           cellIndex;
         int           code;           // Used during octree generation
   };
@@ -37,7 +37,7 @@ public:
 
   struct Bound
   {
-        VecD3        center;         // Center of a cubic bounding volume
+    //  VecD3        center;         // Center of a cubic bounding volume
         double          radius;         // Radius of a cubic bounding volume
   };
 

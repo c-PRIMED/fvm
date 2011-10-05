@@ -12,7 +12,6 @@
 #include "Vector.h"
 #include "Field.h"
 #include "FieldLabel.h"
-#include "MPM_Particles.h"
 #include <vector>
 #include <map>
 #include <set>

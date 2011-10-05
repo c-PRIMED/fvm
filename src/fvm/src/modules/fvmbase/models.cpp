@@ -38,17 +38,6 @@ template class FlowModel<ATYPE>;
 
 template class IdealGasDensityModel<ATYPE>;
 
-#include "RosselandModel.h"
-#include "RosselandModel_impl.h"
-
-template class RosselandModel<ATYPE>;
-
-#include "KeModel.h"
-#include "KeModel_impl.h"
-
-
-template class KeModel<ATYPE>;
-
 
 
 #ifndef USING_ATYPE_PC
@@ -75,7 +64,5 @@ template class PlateDeformationModel<ATYPE>;
 
 #endif
 
-#include "OneDConduction.h"
-template class OneDConduction<ATYPE>;
 
 

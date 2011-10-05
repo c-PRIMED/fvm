@@ -19,7 +19,6 @@ using namespace std;
 %include "ThermalFields.h"
 %include "SpeciesFields.h"
 
-%include "KeFields.h"
 
 %include "ContactFields.h"
 
@@ -30,7 +29,6 @@ using namespace std;
 
 %include "SpeciesModel.i"
 
-%include "KeModel.i"
 
 %include "ContactModel.i"
 
@@ -51,8 +49,6 @@ using namespace std;
 %include "FlowModel.i"
 
 %include "IdealGasDensityModel.i"
-%include "RosselandModel.i"
-%include "KeModel.i"
 
 
  //%include "OneDConduction.i"

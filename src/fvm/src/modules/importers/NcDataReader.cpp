@@ -18,6 +18,7 @@
 #include "NcDataReader.h"
 #include "netcdfcpp.h"
 #include "OneToOneIndexMap.h"
+#include "CRConnectivity.h"
 
 
 NcDataReader::NcDataReader( const string& fname )

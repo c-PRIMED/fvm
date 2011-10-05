@@ -19,6 +19,7 @@
 #include "StorageSite.h"
 #include "Array.h"
 #include "OneToOneIndexMap.h"
+#include "CRConnectivity.h"
 
 int NcDataWriter::_writeAction = 0;
 

@@ -1,4 +1,6 @@
 #include "AABB.h"
+#include "CRConnectivity.h"
+
 #include <stack>
 
 AABB::AABB(const Mesh& mesh)

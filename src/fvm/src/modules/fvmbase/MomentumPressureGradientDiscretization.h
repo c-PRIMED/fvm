@@ -12,7 +12,11 @@
 #include "DiagonalMatrix.h"
 #include "Gradient.h"
 #include "GradientMatrix.h"
+#ifdef PV_COUPLED
 #include "CRMatrixRect.h"
+#endif
+
+#include "GradientModel.h"
 
 template<class X>
 class MomentumPressureGradientDiscretization : public Discretization
@@ -34,8 +38,9 @@ public:
 
   typedef Array<XGrad> GradArray;
 
+#ifdef PV_COUPLED
   typedef CRMatrixRect<VPCoeff,X,VectorT3> VPMatrix;
-  
+#endif
 
   MomentumPressureGradientDiscretization(const MeshList& meshes,
                                          const GeomFields& geomFields,
@@ -89,13 +94,30 @@ public:
         const StorageSite& faces = fg.site;
         const CRConnectivity& faceCells = mesh.getFaceCells(faces);
         const int faceCount = faces.getCount();
-        
-        for(int f=0; f<faceCount; f++)
+
+        if (fg.groupType == "symmetry")
         {
-            const int c0 = faceCells(f,0);
-            const int c1 = faceCells(f,1);
-            
-            pGradCell[c1] = pGradCell[c0];
+            const VectorT3Array& faceArea =
+              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+            const TArray& faceAreaMag =
+              dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
+            for(int f=0; f<faceCount; f++)
+            {
+                const int c0 = faceCells(f,0);
+                const int c1 = faceCells(f,1);
+                const VectorT3 en = faceArea[f]/faceAreaMag[f];
+                reflectGradient(pGradCell[c1], pGradCell[c0], en);
+            }
+        }
+        else
+        {
+            for(int f=0; f<faceCount; f++)
+            {
+                const int c0 = faceCells(f,0);
+                const int c1 = faceCells(f,1);
+                
+                pGradCell[c1] = pGradCell[c0];
+            }
         }
     }
   
@@ -109,7 +131,7 @@ public:
     }
     
 
-#if 1
+#ifdef PV_COUPLED
     const MultiField::ArrayIndex pIndex(&_flowFields.pressure,&cells);
     if (mfmatrix.hasMatrix(vIndex,pIndex))
     {

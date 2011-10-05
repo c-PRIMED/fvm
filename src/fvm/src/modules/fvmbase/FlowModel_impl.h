@@ -32,8 +32,6 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "StressTensor.h"
-#include "KeFields.h"
-#include "WallDiscretization.h"
 
 template<class T>
 class FlowModel<T>::Impl
@@ -56,6 +54,7 @@ public:
   typedef typename PPMatrix::DiagArray PPDiagArray;
   typedef typename PPMatrix::PairWiseAssembler PPAssembler;
 
+#ifdef PV_COUPLED
   typedef CRMatrixRect<VectorT3T,VectorT3,T> PVMatrix;
   typedef typename PVMatrix::DiagArray PVDiagArray;
   typedef typename PVMatrix::PairWiseAssembler PVAssembler;
@@ -64,7 +63,8 @@ public:
   typedef typename VPMatrix::DiagArray VPDiagArray;
   typedef typename VPMatrix::PairWiseAssembler VPAssembler;
 
-
+#endif
+  
   typedef Gradient<VectorT3> VGradType;
   typedef Array<Gradient<VectorT3> > VGradArray;
 
@@ -78,12 +78,10 @@ public:
   
   Impl(const GeomFields& geomFields,
        FlowFields& thermalFields,
-       const MeshList& meshes,
-       KeFields* keFields) :
+       const MeshList& meshes):
     _meshes(meshes),
     _geomFields(geomFields),
     _flowFields(thermalFields),
-    _keFields(keFields),
     _velocityGradientModel(_meshes,_flowFields.velocity,
                            _flowFields.velocityGradient,_geomFields),
     _pressureGradientModel(_meshes,_flowFields.pressure,
@@ -615,24 +613,6 @@ public:
         discretizations.push_back(td);
     }
 
-   if (_options.turbulent && "wall")
-   {
-      shared_ptr<Discretization>
-         wd(new WallDiscretization<VectorT3,DiagTensorT3,T>
-           (_meshes,_geomFields,
-            _flowFields.velocity,
-            _keFields->energy,
-            _flowFields.density,
-            _flowFields.tau,
-            _flowFields.uparallel,
-            _flowFields.tauwall,
-            _flowFields.totalviscosity,
-            _flowFields.viscosity,
-            _flowFields.velocityGradient));
-
-    discretizations.push_back(wd);
-
-  }
 
     shared_ptr<Discretization>
       ibm(new GenericIBDiscretization<VectorT3,DiagTensorT3,T>
@@ -783,7 +763,6 @@ public:
     }
     _momApField->syncLocal();
     return rNorm;
-    cout << "8" << endl;
   }
 
 
@@ -990,7 +969,7 @@ public:
        rCell[nc]=0.;
        for(int nb=row[nc]; nb<row[nc+1]; nb++)
          ppCoeff[nb] = 0;
-    
+#ifdef PV_COUPLED
        if (mfmatrix.hasMatrix(pIndex,vIndex))
        {
           PVMatrix& pvMatrix =
@@ -1003,6 +982,8 @@ public:
           for(int nb=row[nc]; nb<row[nc+1]; nb++)
              pvCoeff[nb] = NumTypeTraits<VectorT3>::getZero();
        }
+#endif
+       
 #ifdef FVM_PARALLEL
     }
 #endif
@@ -1485,6 +1466,7 @@ public:
     return false;
   }
 
+#ifdef PV_COUPLED
   bool advanceCoupled(const int niter)
   {
     const int numMeshes = _meshes.size();
@@ -1567,6 +1549,7 @@ public:
     }
     return false;
   }
+#endif
   
 #if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
   
@@ -2159,7 +2142,6 @@ private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
   FlowFields& _flowFields;
-  KeFields* _keFields;
   FlowBCMap _bcMap;
   FlowVCMap _vcMap;
   
@@ -2187,10 +2169,9 @@ private:
 template<class T>
 FlowModel<T>::FlowModel(const GeomFields& geomFields,
                         FlowFields& thermalFields,
-                        const MeshList& meshes,
-                        KeFields* keFields) :
+                        const MeshList& meshes) :
   Model(meshes),
-  _impl(new Impl(geomFields,thermalFields,meshes,keFields))
+  _impl(new Impl(geomFields,thermalFields,meshes))
 {
   logCtor();
 }
@@ -2236,12 +2217,14 @@ FlowModel<T>::advance(const int niter)
   return _impl->advance(niter);
 }
 
+#ifdef PV_COUPLED
 template<class T>
 bool
 FlowModel<T>::advanceCoupled(const int niter)
 {
   return _impl->advanceCoupled(niter);
 }
+#endif
 
 #if 0
 template<class T>
