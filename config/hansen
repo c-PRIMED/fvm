@@ -39,8 +39,9 @@ MEMOSA:
 	Build=1
 
 vitables:
-	Build=1
+	Build=0
 
+# REQUIRED until hansen gets a stable python module
 python:
 	Build=1
 
