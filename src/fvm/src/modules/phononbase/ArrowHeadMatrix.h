@@ -7,7 +7,7 @@
 #include "NumType.h"
 
 template<class T>
-class ArrowHeadMatrix : public MatrixJML
+class ArrowHeadMatrix : public MatrixJML<T>
 {
  public:
   typedef Array<T> TArray;
@@ -21,7 +21,7 @@ class ArrowHeadMatrix : public MatrixJML
       _values=0.;
     }
 
-  T& getElement(const int& i,const int& j)
+  T& getElement(const int i,const int j)
     {
       int index;
       if(i==j)
