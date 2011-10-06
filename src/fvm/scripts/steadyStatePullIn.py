@@ -188,9 +188,9 @@ class problemDescription():
             self.elecFields.potential[faces] = pot
             
         sbMeshFaces = self.solidBoundaryMeshes[0].getFaces()
-        ibManager.fluidNeighborsPerIBFace = 4
+        ibManager.fluidNeighborsPerIBFace = 6
         ibManager.solidNeighborsPerIBFace = 4
-        ibManager.fluidNeighborsPerSolidFace = 6
+        ibManager.fluidNeighborsPerSolidFace = 5
         t1 = time.time()
   
         traceFile = open(("tracefile-%e.dat" % appliedVoltage), "w")
@@ -209,8 +209,8 @@ class problemDescription():
             print "***    solving electric model  at globalCount %i  ***" % self.globalCount
             for i in range(0, 20):
                 self.emodel.computeIBFacePotential(sbMeshFaces)
-                self.emodel.advance(1)
-                   
+                if (self.emodel.advance(1)):
+                   break
                 self.emodel.computeSolidSurfaceForcePerUnitArea(sbMeshFaces)
             
             #------------update force on beam  ----------#
