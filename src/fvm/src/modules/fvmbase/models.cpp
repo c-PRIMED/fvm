@@ -21,12 +21,7 @@ template class SpeciesModel<ATYPE>;
 template class ElectricModel<ATYPE>;
 #endif
 
-#ifndef USING_ATYPE_PC
-#include "ContactModel.h"
-#include "ContactModel_impl.h"
-template class ContactModel<ATYPE>;
 
-#endif
 
 #include "FlowModel.h"
 #include "FlowModel_impl.h"

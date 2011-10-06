@@ -40,8 +40,7 @@ srcBase = ['CException.cpp',
            'KSearchTree.cpp',
            'IBManager.cpp',
 	   'SpikeStorage.cpp',
-	   'ContactFields.cpp',
-           'DirectSolver.cpp',
+	   'DirectSolver.cpp',
            ]
 
 env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal', 'umfpack'])

@@ -20,7 +20,7 @@ using namespace std;
 %include "SpeciesFields.h"
 
 
-%include "ContactFields.h"
+
 
 %include "atype.i"
 
@@ -30,7 +30,7 @@ using namespace std;
 %include "SpeciesModel.i"
 
 
-%include "ContactModel.i"
+
 
 
 #ifndef USING_ATYPE_PC
