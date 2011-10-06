@@ -64,7 +64,7 @@ class Kspace
   }
   T getDK3() const {return _totvol;}
   T calcTauTot()
-  {   
+  {   // returns sum(dk3/tau)
     T tauTot=0.;
     for(int k=0;k<_length;k++)
       {

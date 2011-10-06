@@ -608,7 +608,7 @@ class PhononModel : public Model
   void advanceCOMET(const int niters)
   {  
     
-    T tol=_options.relTolerance;
+    T tol=_options.absTolerance;
     T aveResid=-1;
     T residChange=1;
     int exit=0;
@@ -644,7 +644,7 @@ class PhononModel : public Model
 	      cout<<"[Iteration: "<<n<<" || Residual Change: "<<residChange<<
 		" || Average Residual: "<<aveResid<<"]"<<endl;
 	    
-	    if(fabs(residChange)>tol)
+	    if(aveResid>tol)
 	      {
 		CDisc.COMETSolve();
 		callBoundaryConditions();
