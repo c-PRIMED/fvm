@@ -55,7 +55,7 @@ class KineticBoundaryConditions
     
   {}
     KineticModelOptions<X>&   getOptions() {return _options;}  
-  void applyRelaxWallBC(int f,const VectorX3&  WallVelocity,const X& WallTemperature) const
+  void applyDiffuseWallBC(int f,const VectorX3&  WallVelocity,const X& WallTemperature) const
   {
     
     const double pi=_options.pi;
@@ -75,7 +75,6 @@ class KineticBoundaryConditions
     const XArray& dcxyz= dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
     VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
     XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
-    XArray& collfreq  = dynamic_cast<XArray&>(_macroFields.collisionFrequency[_cells]);
     //XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]); 
     XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);   
     const X uwall = WallVelocity[0];
@@ -99,14 +98,7 @@ class KineticBoundaryConditions
 	const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
 	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
 	const X wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
-        const X fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
-        const X fndEq = *_dsfEqPtr.dsf[j];
-        
-
-  //      Field& fndEq = *_dsfEqPtr.dsf[j];
-  //      const TArray& fgam = dynamic_cast<const TArray&>(fndEq[cells]);
-
-
+	const X fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
 	if (c_dot_en -wallV_dot_en < T_Scalar(epsilon)) //incoming
 	  {
 	    Dmr = Dmr - fwall*dcxyz[j]*(c_dot_en-wallV_dot_en);
@@ -114,8 +106,7 @@ class KineticBoundaryConditions
 	  }
 	else
 	  {
-            timetowall = 0
-	    Nmr = Nmr + (fndEq-(fndEq-dsf[c0]))/exp(timetowall*collfreq)*dcxyz[j]*(c_dot_en -wallV_dot_en);
+	    Nmr = Nmr + dsf[c0]*dcxyz[j]*(c_dot_en -wallV_dot_en);
 	  }	
       }
     const X nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
@@ -142,17 +133,17 @@ class KineticBoundaryConditions
    
   }
 
-void applyRelaxWallBC(const VectorX3& bVelocity,const X& bTemperature) const
+void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
   {
     for (int i=0; i<_faces.getCount();i++)
-    applyRelaxWallBC(i,bVelocity,bTemperature);
+    applyDiffuseWallBC(i,bVelocity,bTemperature);
   }
   
   
- void applyRelaxWallBC(const FloatValEvaluator<VectorX3>& bVelocity,const FloatValEvaluator<X>& bTemperature)const
+ void applyDiffuseWallBC(const FloatValEvaluator<VectorX3>& bVelocity,const FloatValEvaluator<X>& bTemperature)const
   {
     for (int i=0; i<_faces.getCount();i++)
-      applyRelaxWallBC(i,bVelocity[i],bTemperature[i]);
+      applyDiffuseWallBC(i,bVelocity[i],bTemperature[i]);
 
   }
 
