@@ -54,13 +54,17 @@ class TunnelingDiscretization : public Discretization
 			  const GeomFields& geomFields,
 			  const Field& varField,			  
 			  const Field& conductionbandField,
-			  const ElectricModelConstants<T_Scalar>& constants		 
+			  const ElectricModelConstants<T_Scalar>& constants, 
+			  T_Scalar& fluxIn, 
+			  T_Scalar& fluxOut
 			  ) :
     Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),    
     _conductionbandField(conductionbandField),
-    _constants(constants)
+      _constants(constants),
+      _fluxIn(fluxIn),
+      _fluxOut(fluxOut)
       {}
 
   void discretize(const Mesh& mesh, MultiFieldMatrix& mfmatrix,
@@ -96,6 +100,8 @@ class TunnelingDiscretization : public Discretization
        
     DiagArray& diag = matrix.getDiag();
 
+    _fluxIn = 0.0;
+    _fluxOut = 0.0;
 
     const T_Scalar electron_effmass = _constants["electron_effmass"];
     const T_Scalar temperature = _constants["OP_temperature"];
@@ -106,7 +112,6 @@ class TunnelingDiscretization : public Discretization
     const T_Scalar fermilevelsubstrate = -_constants["substrate_workfunction"] - _constants["substrate_voltage"];
     //const T_Scalar fermilevelmembrane = -_constants["substrate_workfunction"] - _constants["membrane_voltage"];
     //const T_Scalar& dielectric_ionization = _constants["dielectric_ionization"];
-
     const int subID = _constants["substrate_id"];
     //const int memID = _constants["membrane_id"];
     const int nLevel = _constants["nLevel"];
@@ -125,7 +130,7 @@ class TunnelingDiscretization : public Discretization
     for(int c=0; c < cells.getCount(); c++){
       transmission[c] = 0.0;
     }
-  
+   
     //=======================================//
     // tunneling from substrate to dielectric 
     //=======================================//
@@ -233,6 +238,7 @@ class TunnelingDiscretization : public Discretization
 	    fluxCoeff = alpha * stcap * transmission[c] * supplyfunction * 
 	      fermifunction * scatterfactor * energystep * QE;
 	  
+	    _fluxIn += (fluxCoeff * (electron_trapdensity[i] - xCell[c][i])); 
 	    rCell[c][i] += (fluxCoeff * (electron_trapdensity[i] - xCell[c][i])); 
 	    diag[c](i,i) -= fluxCoeff;
 	    //diag[c][i] -= fluxCoeff;
@@ -247,6 +253,7 @@ class TunnelingDiscretization : public Discretization
 	    fluxCoeff = alpha * stcap *  transmission[c] * supplyfunction * 
 	      (1-fermifunction) * scatterfactor * energystep * QE;
 	  
+	    _fluxOut =  (fluxCoeff * (- xCell[c][i])); 
 	    rCell[c][i] += (fluxCoeff * (- xCell[c][i])); 
 	    diag[c](i,i) -= fluxCoeff;
 	    //diag[c][i] -= fluxCoeff;
@@ -372,6 +379,8 @@ class TunnelingDiscretization : public Discretization
   const Field& _varField;
   const Field& _conductionbandField;
   const ElectricModelConstants<T_Scalar>& _constants;
+  T_Scalar& _fluxIn;
+  T_Scalar& _fluxOut;
 };
 
 

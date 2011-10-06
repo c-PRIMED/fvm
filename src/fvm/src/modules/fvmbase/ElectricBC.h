@@ -64,9 +64,11 @@ struct ElectricModelConstants : public FloatVarDict<T>
     this->defineVar("membrane_id", int(4));                //mesh id of membrane
     this->defineVar("nLevel", int(0));                   //number of grid in normal direction
     this->defineVar("normal_direction", int(2));          //normal direction index; values: 0 1 2
-    this->defineVar("nTrap", int(1));
+    this->defineVar("nTrap", int(1));   
+   
   }
 
+ 
   vector<T> electron_trapdensity;
   vector<T> electron_trapdepth;
 

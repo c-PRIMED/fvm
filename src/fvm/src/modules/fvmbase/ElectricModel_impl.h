@@ -29,7 +29,7 @@
 #include "Octree.h"
 #include "PhysicsConstant.h"
 #include "ElectricUtilityFunctions.h"
-#include "DielectricOneDimColumn.h"
+
 #include "SquareTensor.h"
 #include "ElecDiagonalTensor.h"
 #include "LinearizeDielectric.h"
@@ -63,8 +63,7 @@ public:
   typedef Gradient<T> PGradType;
   typedef Array<Gradient<T> > PGradArray;
   
-  typedef DielectricOneDimColumn<T> Column;
-  typedef vector<shared_ptr<Column> > ColumnList;
+  
 
   Impl(const GeomFields& geomFields,
        ElectricFields& electricFields,
@@ -80,10 +79,9 @@ public:
     _initialChargeTransportNorm(),
     _niters(0),
     _avgCharge(0),
-    _columns(0), 
-    _columnList(),
-    _cellColumns(),
-    _columnCells()
+    _tunnelCurrentIn(0),
+    _tunnelCurrentOut(0)
+  
   {
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -291,85 +289,7 @@ public:
   }
   
 
-  /*** set up the dielectric one-D model ***/
-  /*** only applied to dielectric zone ***/
-  /* currently not used
-
-  void dielectricOneDimModelPrep
-    (const int nXCol, const int nYCol, const int nGrid,
-     const VectorD3 corner1_1, 
-     const VectorD3 corner1_2,
-     const VectorD3 corner1_3,
-     const VectorD3 corner1_4,
-     const VectorD3 corner2_1, 
-     const VectorD3 corner2_2, 
-     const VectorD3 corner2_3, 
-     const VectorD3 corner2_4)
-  {
-
-    const int numMeshes = _meshes.size();
-    for (int n=0; n<numMeshes; n++)
-    {
-      const Mesh& mesh = *_meshes[n];
-      const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
-      if (vc.vcType == "dielectric"){
-	const StorageSite& cells = mesh.getCells();	
-	const VectorT3Array& cellCentroid = dynamic_cast<const VectorT3Array& > (_geomFields.coordinate[mesh.getCells()]);
-	const int nCol = nXCol * nYCol;
-	
-	_columns.setCount(nCol);
-
-	for(int n=0; n<nCol; n++){
-	  shared_ptr<Column> cl(new Column(cells, nGrid));
-	  _columnList.push_back(cl);
-	}
-	
-	//set centerline start and end points and its normalized direction
-	setCenterLines(nXCol, nYCol, 
-		       corner1_1, corner1_2, corner1_3, corner1_4,
-		       corner2_1, corner2_2, corner2_3, corner2_4, 
-		       _columnList, _columns);   
-
-	//setup connectivity between cells and columns
-	setConnectivityCellColumns(cells, _columns, cellCentroid, _columnList,_cellColumns);	  
-	_columnCells = _cellColumns->getTranspose(); 
-	outputConnectivityCellColumns(mesh, cellCentroid, _cellColumns);
-
-	//fill up the local celllist for each column
-	setCellList(_columnList, _columnCells);
-
-	//discretize center line for each column    
-	discretizeCenterLine(_columnList);
-
-	//setup connectivity between cell and grids for each column
-	setConnectivityCellGrids(_columnList, cellCentroid);
-
-	//calculate interpolation matrix for each column
-	const int method = 2;
-	calculateInterpolationMatrix(_columnList, method, cellCentroid);
-
-		
-	//test interpolation
-	TArray& transmission = dynamic_cast<TArray&> (_electricFields.transmission[cells]);
-	TArray& conduction_band = dynamic_cast< TArray&> (_electricFields.conduction_band[cells]);
-	
-	//test 1: assume conduction_band is linear with coordinate z;
-	for(int c=0; c<cells.getCount(); c++){
-	  conduction_band[c] = (cellCentroid[c][2]) * 1.0e7;
-	}
-	T energy = 0.0;
-	T d_i = 1.0;
-	T e_mass = 1.0;
-	string flag = "membrane";
-	ElectronTransmissionCoefficient
-             (energy, transmission, conduction_band, d_i, e_mass,flag,_columnList);
-	
-	
-	outputColumn(_columnList);
-      }
-    }
-  }
-*/
+ 
 
   ElectricBCMap& getBCMap() {return _bcMap;}
 
@@ -751,7 +671,9 @@ public:
 	    (_meshes, _geomFields,
 	     _electricFields.charge,	     
 	     _electricFields.conduction_band,
-	     _constants
+	     _constants, 
+	     _tunnelCurrentIn, 
+	     _tunnelCurrentOut
 	     ));
       discretizations.push_back(tnd);      
     }
@@ -1330,8 +1252,6 @@ public:
     }
   }
 
-     
-
   void printBCs()
   {
     foreach(typename ElectricBCMap::value_type& pos, _bcMap)
@@ -1385,8 +1305,13 @@ public:
     }
   }
 
-
-
+  
+  vector<T> getTunnelCurrent(){
+    vector<T> flux;    
+    flux.push_back(_tunnelCurrentIn);
+    flux.push_back(_tunnelCurrentOut);
+    return flux;
+  }
 
 
     
@@ -1409,13 +1334,10 @@ private:
   MFRPtr _initialChargeTransportNorm;
   int _niters;
   T _avgCharge;
+  T _tunnelCurrentIn;
+  T _tunnelCurrentOut;
 
-  StorageSite _columns;
-  ColumnList _columnList;
-
-  shared_ptr<CRConnectivity> _cellColumns;
-  
-  shared_ptr<CRConnectivity> _columnCells;
+ 
 
   map<string,shared_ptr<ArrayBase> > _persistenceData;
 };
@@ -1550,4 +1472,12 @@ void
 ElectricModel<T>::restart()
 {
   _impl->restart();
+}
+
+
+template<class T>
+vector<T>
+ElectricModel<T>::getTunnelCurrent()
+{
+  return _impl->getTunnelCurrent();
 }

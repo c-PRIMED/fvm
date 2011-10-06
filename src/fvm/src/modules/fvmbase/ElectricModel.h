@@ -60,6 +60,8 @@ public:
   void updateTime();
 
   void calculateEquilibriumParameters();
+  
+  vector<T> getTunnelCurrent();
 
   /*
   void  dielectricOneDimModelPrep(const int nXCol, const int nYCol, const int nGrid,
