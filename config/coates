@@ -23,7 +23,7 @@ fvm:
 	compiler=gcc
 
 MPM:
-	Build=1
+	Build=0
 	configname=gnu-linux
 
 hdf5:
