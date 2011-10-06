@@ -6,7 +6,7 @@
 #include <math.h>
 
 template<class T>
-class SquareMatrix : public MatrixJML
+class SquareMatrix : public MatrixJML<T>
 {
  public:
   typedef Array<T> TArray;
