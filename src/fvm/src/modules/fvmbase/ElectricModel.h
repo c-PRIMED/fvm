@@ -6,7 +6,7 @@
 #include "ElectricFields.h"
 #include "Mesh.h"
 #include "ElectricBC.h"
-#include "Octree.h"
+
 #include "Array.h"
 #include "Vector.h"
 #include "PhysicsConstant.h"
@@ -63,29 +63,7 @@ public:
   
   vector<T> getTunnelCurrent();
 
-  /*
-  void  dielectricOneDimModelPrep(const int nXCol, const int nYCol, const int nGrid,
-				  const VectorD3 corner1_1, 
-				  const VectorD3 corner1_2, 
-				  const VectorD3 corner1_3,
-				  const VectorD3 corner1_4,
-				  const VectorD3 corner2_1, 
-				  const VectorD3 corner2_2, 
-				  const VectorD3 corner2_3,
-				  const VectorD3 corner2_4);
  
-  const int findClosestPoint(const VectorT3 point, Octree& O);
-
-  boost::shared_ptr<ArrayBase> createPathAndDiscretize (
-      const VectorT3 startPoint, const VectorT3 endPoint, const int N);
-
-  boost::shared_ptr<ArrayBase > pathPointsInterpolation
-    (boost::shared_ptr<ArrayBase> pathPoints, 
-     Octree& O,
-     const double radius);
-*/
-
-
 private:
   shared_ptr<Impl> _impl;
 };
