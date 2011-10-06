@@ -30,6 +30,7 @@ class COMETDiscretizer
   typedef Vector<T_Scalar,3> VectorT3;  
   typedef Array<VectorT3> VectorT3Array;
   typedef Array<T_Scalar> TArray;
+  typedef MatrixJML<T> TMatrix;
   typedef ArrowHeadMatrix<T> TArrow;
   typedef SquareMatrix<T> TSquare;
   typedef map<int,PhononBC<T>*> PhononBCMap;
@@ -37,6 +38,7 @@ class COMETDiscretizer
   typedef Array<bool> BoolArray;
   typedef Vector<int,2> VecInt2;
   typedef map<int,VecInt2> FaceToFg;
+  typedef typename Tmode::Refl_pair Refl_pair;
 
  COMETDiscretizer(const Mesh& mesh, const GeomFields& geomfields, 
 		  PhononMacro& macro, Tkspace& kspace, PhononBCMap& bcMap,
@@ -69,30 +71,42 @@ class COMETDiscretizer
     for(int c=0;c<cellcount;c++)
       {	
 	const int totalmodes=_kspace.gettotmodes();
+	TArray Bvec(totalmodes+1);
+	TArray Resid(totalmodes+1);
 	
 	if(_BCArray[c]==0)  //not a reflecting boundary
 	  {
-	    TArrow AHMat(totalmodes+1);
-	    TArray Bvec(totalmodes+1);
-	    TArray Resid(totalmodes+1);
+	    TArrow AMat(totalmodes+1);
 	    Bvec.zero();
-	    
-	    COMETConvection(c,AHMat,Bvec);
-	    COMETCollision(c,AHMat,Bvec);
-	    COMETEquilibrium(c,AHMat,Bvec);
+	    Resid.zero();
+	    AMat.zero();
+
+	    COMETConvection(c,AMat,Bvec);	
+	    COMETCollision(c,&AMat,Bvec);
+	    COMETEquilibrium(c,&AMat,Bvec);
 	    Resid=Bvec;
-	    AHMat.Solve(Bvec);
+	    AMat.Solve(Bvec);
 	    
 	    Distribute(c,Bvec,Resid);
+	    
 	  }
 	else if(_BCArray[c]==1) //reflecting boundary
 	  {
 	    TSquare AMat(totalmodes+1);
-	    TArray Bvec(totalmodes+1);
-	    TArray Resid(totalmodes+1);
 	    Bvec.zero();
+	    Resid.zero();
+	    AMat.zero();
+	    
+	    COMETConvection(c,AMat,Bvec);	
+	    COMETCollision(c,&AMat,Bvec);
+	    COMETEquilibrium(c,&AMat,Bvec);
+	    Resid=Bvec;
 
-	    throw CException("Haven't put it in yet.");
+	    //AMat.printMatrix();
+
+	    AMat.Solve(Bvec);
+	    
+	    Distribute(c,Bvec,Resid);
 	  }
 	else
 	  throw CException("Unexpected value for boundary cell map.");
@@ -173,18 +187,19 @@ class COMETDiscretizer
 	  {
 	    int Fgid=findFgId(f);
 	    T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
+	    T oneMinusRefl=1-refl;
 
 	    //first sweep - have to make sumVdotA
 	    T sumVdotA=0.;
 	    for(int k=0;k<klen;k++)
 	      {
 		Tkvol& kvol=_kspace.getkvol(k);
+		T dk3=kvol.getdk3();
 		const int numModes=kvol.getmodenum();
 		for(int m=0;m<numModes;m++)
 		  {
 		    Tmode& mode=kvol.getmode(m);
 		    VectorT3 vg=mode.getv();
-		    T dk3=mode.getdk3();
 		    Field& efield=mode.getfield();
 		    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
 		    flux=vg[0]*Af[0]+vg[1]*Af[1]+vg[2]*Af[2];
@@ -195,25 +210,25 @@ class COMETDiscretizer
 			sumVdotA+=flux*dk3;
 		      }
 		    else
-		      {//have to move through all other directions
+		      {//have to move through all other modes
 			int ccount=1;
 			for(int kk=0;kk<klen;kk++)
 			  {
 			    Tkvol& kkvol=_kspace.getkvol(kk);
+			    T ddk3=kkvol.getdk3();
 			    const int numMODES=kkvol.getmodenum();
 			    for(int mm=0;mm<numMODES;mm++)
 			      {
-				if(kk!=k && m!=mm)
+				Refl_pair& rpairs=kkvol.getmode(mm).getReflpair(Fgid);
+				int k1=rpairs.first.second;
+				if(kk!=k || m!=mm)
 				  {
 				    VectorT3 vvg=kkvol.getmode(mm).getv();
-				    T ddk3=kkvol.getmode(mm).getdk3();
 				    T VdotA=vvg[0]*Af[0]+vvg[1]*Af[1]+vvg[2]*Af[2];    
 				    if(VdotA>T_Scalar(0))
 				      {
-					Field& eefield=kvol.getmode(mm).getfield();
-					TArray& eeArray=dynamic_cast<TArray&>(eefield[_cells]);
-					Amat(count,ccount)-=flux*VdotA*ddk3;
-					BVec[count-1]-=flux*VdotA*ddk3*eeArray[cell];
+					if(k==k1 && m==mm)
+					  Amat(count,ccount)-=flux*refl*ddk3/dk3;
 				      }
 				  }
 				ccount++;
@@ -224,11 +239,12 @@ class COMETDiscretizer
 		  }
 	      }
 
-	    //Second sweep - Now I have to divide some coeffs by sumVdotA
+	    //Second sweep
 	    count=1;
 	    for(int k=0;k<klen;k++)
 	      {
 		Tkvol& kvol=_kspace.getkvol(k);
+		T dk3=kvol.getdk3();
 		const int numModes=kvol.getmodenum();
 		for(int m=0;m<numModes;m++)
 		  {
@@ -241,14 +257,25 @@ class COMETDiscretizer
 			  {
 			    Tkvol& kkvol=_kspace.getkvol(kk);
 			    const int numMODES=kkvol.getmodenum();
+			    T ddk3=kkvol.getdk3();
 			    for(int mm=0;mm<numMODES;mm++)
 			      {
-				if(kk!=k && m!=mm)
+				if(kk!=k || m!=mm)
 				  {
 				    VectorT3 vvg=kkvol.getmode(mm).getv();
 				    T VdotA=vvg[0]*Af[0]+vvg[1]*Af[1]+vvg[2]*Af[2];
 				    if(VdotA>T_Scalar(0))
-				      Amat(count,ccount)/=sumVdotA;
+				      {
+					Refl_pair& rpairs=kkvol.getmode(mm).getReflpair(Fgid);
+					int k1=rpairs.first.second;
+					Field& eefield=kvol.getmode(mm).getfield();
+					TArray& eeArray=dynamic_cast<TArray&>(eefield[_cells]);
+					Amat(count,ccount)-=flux*VdotA*ddk3*oneMinusRefl/sumVdotA;
+					BVec[count-1]-=flux*VdotA*ddk3
+					  *eeArray[cell]/sumVdotA*oneMinusRefl;
+					if(k==k1 && m==mm)
+					  BVec[count-1]-=eeArray[cell]*ddk3/dk3*refl*flux;
+				      }
 				  }
 				ccount++;
 			      }
@@ -291,13 +318,8 @@ class COMETDiscretizer
     
   }
   
-  void COMETCollision(const int cell, TArrow& Amat, TArray& BVec)
+  void COMETCollision(const int cell, TMatrix* Amat, TArray& BVec)
   {
-    /* This is the COMET discretization for cells that do not
-       do not have a face which is a reflecting boundary.  When
-       there is a face with a reflecting boundary, we can no longer
-       use an arrowhead matrix as the structure becomes unknown a priori.
-     */
     const int klen=_kspace.getlength();
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
@@ -316,8 +338,8 @@ class COMETDiscretizer
 	    Field& efield=mode.getfield();
 	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);  
 	    coeff=_cellVolume[cell]/tau;
-	    Amat.getElement(count,order)+=coeff;
-	    Amat.getElement(count,count)-=coeff;
+	    Amat->getElement(count,order)+=coeff;
+	    Amat->getElement(count,count)-=coeff;
 	    BVec[count-1]-=coeff*eArray[cell];
 	    BVec[count-1]+=coeff*e0_Array[cell];
 	    count+=1;
@@ -326,13 +348,8 @@ class COMETDiscretizer
     
   }
 
-  void COMETEquilibrium(const int cell, TArrow& Amat, TArray& BVec)
+  void COMETEquilibrium(const int cell, TMatrix* Amat, TArray& BVec)
   {
-    /* This is the COMET discretization for cells that do not
-       do not have a face which is a reflecting boundary.  When
-       there is a face with a reflecting boundary, we can no longer
-       use an arrowhead matrix as the structure becomes unknown a priori.
-     */
     const int klen=_kspace.getlength();
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
@@ -353,12 +370,12 @@ class COMETDiscretizer
 	    coeff=dk3/tau/tauTot;
 	    Field& efield=mode.getfield();
 	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]); 
-	    Amat.getElement(order,count)-=coeff;
+	    Amat->getElement(order,count)-=coeff;
 	    BVec[totalmodes]-=coeff*eArray[cell];
 	    count+=1;
 	  }
       }
-    Amat.getElement(order,order)=1.;
+    Amat->getElement(order,order)=1.;
     BVec[totalmodes]+=e0_Array[cell];
   }
 
@@ -396,33 +413,62 @@ class COMETDiscretizer
     const int cellcount=_cells.getSelfCount();
     const int totalmodes=_kspace.gettotmodes();
     TArray ResidSum(totalmodes+1);
+    TArray Bsum(totalmodes+1);
     T ResidScalar=0.;
+    TArray Bvec(totalmodes+1);
+    TArray Resid(totalmodes+1);
     ResidSum.zero();
-    TArrow AHMat(totalmodes+1);
-
+    Bsum.zero();
+    
     for(int c=0;c<cellcount;c++)
       {	
-	AHMat.zero();
-	TArray Bvec(totalmodes+1);
-	TArray Resid(totalmodes+1);
-	Bvec.zero();
-	Resid.zero();
-	
-	COMETConvection(c,AHMat,Bvec);
-       	COMETCollision(c,AHMat,Bvec);
-	COMETEquilibrium(c,AHMat,Bvec);
-	Resid+=Bvec;
-	Bvec.zero();
-	ResidSum+=Resid;
+	if(_BCArray[c]==0)  //not a reflecting boundary
+	  {
+	    TArrow AMat(totalmodes+1);
+	    Bvec.zero();
+	    Resid.zero();
+	    AMat.zero();
+	    
+	    COMETConvection(c,AMat,Bvec);	
+	    COMETCollision(c,&AMat,Bvec);
+	    COMETEquilibrium(c,&AMat,Bvec);
+	    Resid+=Bvec;
+	    Bvec.zero();
+	    Distribute(c,Bvec,Resid);
 
-	Distribute(c,Bvec,Resid);
+	    makeValueArray(c,Bvec);
+	    ArrayAbs(Bvec);
+	    ArrayAbs(Resid);
+	    Bsum+=Bvec;
+	    ResidSum+=Resid;	    
+	  }
+	else if(_BCArray[c]==1) //reflecting boundary
+	  {
+	    TSquare AMat(totalmodes+1);
+	    Bvec.zero();
+	    Resid.zero();
+	    AMat.zero();
+	    
+	    COMETConvection(c,AMat,Bvec);	
+	    COMETCollision(c,&AMat,Bvec);
+	    COMETEquilibrium(c,&AMat,Bvec);
+	    Resid+=Bvec;
+	    Bvec.zero();
+	    Distribute(c,Bvec,Resid);
+
+	    makeValueArray(c,Bvec);
+	    ArrayAbs(Resid);
+	    ArrayAbs(Bvec);
+	    Bsum+=Bvec;
+	    ResidSum+=Resid;
+	  }
+	else
+	  throw CException("Unexpected value for boundary cell map.");
       }
 
     for(int o=0;o<totalmodes;o++)
       {
-	ResidSum[o]/=cellcount;
-	ResidSum[o]/=totalmodes;
-	ResidScalar+=ResidSum[o];
+	ResidScalar+=ResidSum[o]/Bsum[o];
       }
 
     if(_aveResid==-1)
@@ -490,6 +536,32 @@ class COMETDiscretizer
     throw CException("Didn't find matching FaceGroup!");
     return -1;
   }
+
+  void ArrayAbs(TArray& o)
+  {
+    int length=o.getLength();
+    for(int i=0;i<length;i++)
+      o[i]=fabs(o[i]);
+  }
+
+  void makeValueArray(const int c, TArray& o)
+  {
+    int klen=_kspace.getlength();
+    int count=0;
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Field& efield=mode.getfield();
+	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
+	    o[count]=eArray[c];
+	    count+=1;
+	  }
+      }
+  }
   
  private:
   const Mesh& _mesh;
@@ -501,8 +573,8 @@ class COMETDiscretizer
   const Field& _areaMagField;
   const TArray& _faceAreaMag;
   const Field& _areaField;
-  const TArray& _cellVolume;
   const VectorT3Array& _faceArea;
+  const TArray& _cellVolume;
   PhononMacro& _macro;
   Tkspace& _kspace;
   PhononBCMap& _bcMap;
