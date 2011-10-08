@@ -725,7 +725,7 @@ public:
 
         // secondary part
 
-        residualSource -= gradF*secondaryCoeff;
+        residualSource -= gradF*secondaryRCoeff;
 
         // add flux due to residual Stress to the residual of c0 and c1
         rCell[c0] += residualSource;
