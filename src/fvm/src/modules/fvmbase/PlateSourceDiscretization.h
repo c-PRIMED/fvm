@@ -442,7 +442,7 @@ public:
         T wFlux = faceG*diffMetric*(xCell[c1][2]-xCell[c0][2]);
 
         // secondary w flux
-        wFlux += faceG*(gradF[2][0]*secondaryCoeff[0] + gradF[2][0]*secondaryCoeff[1]);
+        wFlux += faceG*(gradF*secondaryCoeff)[2];
 
         // contribution from beta term
 
@@ -451,8 +451,14 @@ public:
 	// primary MxFlux
 	T MxFlux = -faceD*diffMetric*(xCell[c1][0]-xCell[c0][0]);
 
+        // secondary MxFlux
+        MxFlux -= faceD*(gradF*secondaryCoeff)[0];
+
 	// primary MyFlux
 	T MyFlux = -faceD*diffMetric*(xCell[c1][1]-xCell[c0][1]);
+
+        // secondary MyFlux
+        MyFlux -= faceD*(gradF*secondaryCoeff)[1];
 
         // source for cell 0, uses dfx0 and dfy0
         source[0] = -faceD*((faceNu*gradF[1][1])*Af[0]+
@@ -598,6 +604,13 @@ public:
 		coeff(2,1)=zero;
 		coeff(2,2)=-wt0*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
+                //secondary coefficient
+                for(int k=0; k<3; k++)
+		{
+                    coeff(0,0) -= wt0*faceD*secondaryCoeff[k]*g_nb[k];
+                    coeff(1,1) -= wt0*faceD*secondaryCoeff[k]*g_nb[k];
+                }
+
 		//residual stress
 		for(int i=0; i<3; i++)
 		{
@@ -623,6 +636,13 @@ public:
 		coeff(2,0)=zero;
 		coeff(2,1)=zero;
 		coeff(2,2)=-wt0*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+
+                //secondary coefficient
+                for(int k=0; k<3; k++)
+		{
+                    coeff(0,0) -= wt0*faceD*secondaryCoeff[k]*g_nb[k];
+                    coeff(1,1) -= wt0*faceD*secondaryCoeff[k]*g_nb[k];
+                }
 
 		//residual stress
 		for(int i=0; i<3; i++)
@@ -667,6 +687,13 @@ public:
 		    coeff(2,1)=zero;
 		    coeff(2,2)=-wt1*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
 
+                    //secondary coefficient
+                    for(int k=0; k<3; k++)
+		    {
+                        coeff(0,0) -= wt1*faceD*secondaryCoeff[k]*g_nb[k];
+                        coeff(1,1) -= wt1*faceD*secondaryCoeff[k]*g_nb[k];
+		    }
+
 		    //residual stress
 		    for(int i=0; i<3; i++)
 		    {
@@ -691,6 +718,13 @@ public:
 		    coeff(2,0)=zero;
 		    coeff(2,1)=zero;
 		    coeff(2,2)=-wt1*faceG*(g_nb[0]*secondaryCoeff[0]+g_nb[1]*secondaryCoeff[1]);
+
+                    //secondary coefficient
+                    for(int k=0; k<3; k++)
+		    {
+                        coeff(0,0) -= wt1*faceD*secondaryCoeff[k]*g_nb[k];
+                        coeff(1,1) -= wt1*faceD*secondaryCoeff[k]*g_nb[k];
+                    }
 
 		    //residual stress
                     for(int i=0; i<3; i++)
