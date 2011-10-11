@@ -301,7 +301,7 @@ poptions.deformationLinearSolver = defSolver
 poptions.deformationTolerance=1.0e-3
 poptions.setVar("deformationURF",1.0)
 poptions.printNormalizedResiduals=True
-poptions.timeDiscretizationOrder = 2
+poptions.timeDiscretizationOrder = 1
 poptions.transient=False
 poptions.scf = 5./6.
 

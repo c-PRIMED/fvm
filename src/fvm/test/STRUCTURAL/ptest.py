@@ -103,8 +103,13 @@ def main():
 	'testFlowParallel.py':[check_convergence],
 	'testPlate.py':[check_convergence],
 	'testPlateTransient.py':[check_convergence],
-	'testStructureModelTransient.py':[check_convergence]
-        }
+	'testStructureModelTransient.py':[check_convergence],
+	'testPlateFirstOrder.py':[check_convergence],
+	'testPlateTransientFirstOrder.py':[check_convergence],
+	'testStructureModelTransientFirstOrder.py':[check_convergence], 
+  'testPlateDeformation.py':[check_convergence],
+  'testPlateCreepDeformation.py':[check_convergence]   
+   }
     parser = OptionParser()
     parser.set_defaults(np=1,outdir='',type='tri')
     parser.add_option("--in", dest='infile', help="Input file (required).")

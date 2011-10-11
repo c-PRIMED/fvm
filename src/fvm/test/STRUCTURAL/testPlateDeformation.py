@@ -28,7 +28,9 @@ fileBase0 = None
 fileBase1 = None
 numIterations = 1
 numEIterations = 1
-
+pPot = 187.
+x0 = 0.e-6
+x1 = 400.e-6
 
 
 def eadvance(fmodel,niter):
@@ -47,32 +49,51 @@ def advance(pmodel,geomFields,structureFields,meshes,niter,nStep,globalTime):
         except KeyboardInterrupt:
             break
 
-def advanceUnsteady(pmodel,geomFields,plateFields,meshes,nTimeSteps,globalTime):
+def advanceUnsteady(pmodel,dmodel,geomFields,plateFields,meshes,nTimeSteps,globalTime):
     fileName = fileBase0 + "middef.txt"
     file = open(fileName,"w")
     mesh0 = meshes[0]
     deformation =  plateFields.deformation[mesh0.getCells()].asNumPyArray()
     force = plateFields.force[mesh0.getCells()].asNumPyArray()
     for i in range(0,nTimeSteps):
-        try:
-#            if i==0:
-#                force[:] = -10000.
-#            else:
-#                force[:] = -10000.
-            eadvance(pmodel,numIterations)
-            globalTime += timeStep
-            print 'advancing to time %e at iteration %i' % (globalTime,i)
-            print 'deflection = %e at iteration %i' % (deformation[0][2],i)
-            file.write(" %e " % globalTime)
-            file.write(" %e " % deformation[0][2])
-            file.write("\n")
-#            pmodel.updateTime()
-#            if (i%100)==0:
-#                pmodel.getMoment(mesh0)
-#                dumpTecplotFile(nmesh, meshes0, geomFields, options.type, i+1)
-        except KeyboardInterrupt:
+        createESBVFields(geomFields,meshes,plateFields)
+        pk=pmodel.advance(1)
+        dmodel.calculateNodeDisplacement()
+        dmodel.deformPlate()
+        metricsCalculator0.recalculate_deform()
+        #globalTime += timeStep
+        print 'advancing to time %e at iteration %i' % (globalTime,i)
+        print 'deflection = %e at iteration %i' % (deformation[1690][2],i)
+        file.write(" %e " % globalTime)
+        file.write(" %e " % deformation[1690][2])
+        file.write("\n")
+        if (pk==1)or(abs(deformation[1690][2])>=3.75e-6):
             break
-            
+        #pmodel.updateTime()
+        #if (i%100)==0:
+        #    pmodel.getMoment(mesh0)
+        #dumpTecplotFile(nmesh, meshes0, geomFields, options.type, i+1)
+    file.close() 
+                    
+def createESBVFields(geomFields,meshes,plateFields):
+    
+    mesh0 = meshes[0]    
+    cells0 = mesh0.getCells()
+    nCells = cells0.getCount()
+    deflection = plateFields.deformation[mesh0.getCells()].asNumPyArray()
+    force = plateFields.force[mesh0.getCells()].asNumPyArray()
+    xc = geomFields.coordinate[mesh0.getCells()].asNumPyArray()
+    pot_top=pPot
+    pot_bot=0.0
+    bSurface = -3.75e-6
+    perm=8.8542e-12
+    for i in range(0,nCells):
+        gap = deflection[i,2]-bSurface
+        dpot = (pot_top-pot_bot)/gap
+        sigmat=-perm*dpot
+        felec=-(sigmat*sigmat)/(2.*perm)
+        if ((xc[i][0]>=x0)and(xc[i][0]<=x1)):
+            force[i]=felec
 
 # map between fvm, tecplot, and xdmf types
 etype = {
@@ -229,7 +250,7 @@ parser.add_option("--time","-t",action='store_true',help="Print timing informati
 
 nmesh = 1
 
-fileBase0 = "plate_steady_"
+fileBase0 = "plate_deformation_"
 reader0 = FluentCase(sys.argv[1])
 
 #import debug
@@ -259,6 +280,7 @@ nu = 0.0
 
 plateFields =  models.PlateFields('plate')
 pmodel = models.PlateModelA(geomFields,plateFields,meshes0)
+dmodel = models.PlateDeformationModelA(geomFields,plateFields,meshes0)
 
 bcMap = pmodel.getBCMap()
 for bcID in bcMap:
@@ -271,12 +293,12 @@ for bcID in bcMap:
     elif bcID == 5:
         bc = bcMap[bcID]
         bc.bcType = 'SpecifiedTraction'
-    elif bcID == 4:
+    elif bcID ==4:
         bc = bcMap[bcID]
-        bc.bcType = 'SpecifiedShear'
-        bc['specifiedXShear']=100.
-        bc['specifiedYShear']=0.
-        bc['specifiedZShear']=0.
+        bc.bcType = 'Clamped'
+        bc['specifiedXRotation']=0
+        bc['specifiedYRotation']=0.
+        bc['specifiedZDeformation']=0.                        
     else:
         bc = bcMap[bcID]
         bc.bcType = 'SpecifiedTraction'
@@ -289,7 +311,7 @@ for i,vc in vcMap.iteritems():
 
 pc = fvmbaseExt.AMG()
 pc.verbosity=0
-defSolver = fvmbaseExt.BCGStab()
+defSolver = fvmbaseExt.DirectSolver()
 defSolver.preconditioner = pc
 defSolver.relativeTolerance = 1e-9
 defSolver.absoluteTolerance = 1.e-30
@@ -301,11 +323,11 @@ poptions.deformationLinearSolver = defSolver
 poptions.deformationTolerance=1.0e-3
 poptions.setVar("deformationURF",1.0)
 poptions.printNormalizedResiduals=True
-poptions.timeDiscretizationOrder = 2
+poptions.timeDiscretizationOrder = 1
 poptions.transient=False
 poptions.scf = 5./6.
 
-numTimeSteps = 1
+numTimeSteps = 100
 period = 1.e-5
 timeStep = period/1000
 globalTime=0.
@@ -325,7 +347,7 @@ print '\n number of cells in mesh0 = %i' % (mesh0.getCells().getSelfCount())
 
 xc = geomFields.coordinate[mesh0.getCells()].asNumPyArray()
 cells0 = mesh0.getCells()
-nCells0 = cells0.getCount()
+nCells0 = cells0.getSelfCount()
 fileName = fileBase0 + "coord.dat"
 file = open(fileName,"w")
 file.write("cellCoordinate\t\n")
@@ -338,11 +360,13 @@ for i in range(0,nCells0):
 file.close()
                         
 pmodel.init()
+dmodel.init()
+
 force = plateFields.force[mesh0.getCells()].asNumPyArray()
 thickness = plateFields.thickness[mesh0.getCells()].asNumPyArray()
 
-force[:] = -0.0
-thickness[:] = 0.1
+#force[:] = -10000.
+thickness[:] = 4.e-6
 
 #for i in range(numTimeSteps):
 #    pmodel.advance(numIterations)
@@ -350,7 +374,7 @@ thickness[:] = 0.1
 #    pmodel.updateTime()
 #eadvance(pmodel,numTimeSteps)
 pc.redirectPrintToFile("convergence.dat")
-advanceUnsteady(pmodel,geomFields,plateFields,meshes,numTimeSteps,globalTime)
+advanceUnsteady(pmodel,dmodel,geomFields,plateFields,meshes,numTimeSteps,globalTime)
 pc.redirectPrintToScreen()
 xc = geomFields.coordinate[mesh0.getCells()].asNumPyArray()
 deformation = plateFields.deformation[mesh0.getCells()].asNumPyArray()
@@ -361,19 +385,16 @@ nCells0 = cells0.getSelfCount()
 fileName = fileBase0 + "def.dat"
 file = open(fileName,"w")
 file.write("cellCoordinate\t\n")
-for i in range(0,cells0.getCount()):
-    if i>=nCells0:
-        file.write(" %i " % i)
-        file.write(" %e " % xc[i][0])
-        file.write(" %e " % xc[i][1])
-        file.write(" %e " % xc[i][2])
-        file.write(" %e " % deformation[i][2])
-        file.write("\n")
-#        file.write(" %e " % moment[i][0])
-#        file.write(" %e " % moment[i][1])
-#        file.write(" %e " % moment[i][2])
-#        file.write(" %e " % deformation[i][2])
-#        file.write("\n")
+for i in range(0,nCells0):
+    file.write(" %i " % i)
+    file.write(" %e " % xc[i][0])
+    file.write(" %e " % xc[i][1])
+    file.write(" %e " % xc[i][2])
+    file.write(" %e " % moment[i][0])
+    file.write(" %e " % moment[i][1])
+    file.write(" %e " % moment[i][2])
+    file.write(" %e " % deformation[i][2])
+    file.write("\n")
 file.close()                        
 
 dumpTecplotFile(nmesh, meshes, geomFields, options.type, 0)

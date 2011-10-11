@@ -1,3 +1,8 @@
-PLATE_STEADY         ./ptest.py  --np 1   --script ./testPlate.py                   --in  ../parallel4.cas --golden PLATE_STEADY         --outdir TESTDIR
-PLATE_TRANSIENT      ./ptest.py  --np 1   --script ./testPlateTransient.py          --in  ../plate4.cas    --golden PLATE_TRANSIENT      --outdir TESTDIR
-STRUCTURE_TRANSIENT  ./ptest.py  --np 1   --script ./testStructureModelTransient.py --in  ../wbar1.cas     --golden STRUCTURE_TRANSIENT  --outdir TESTDIR
+PLATE_STEADY                    ./ptest.py  --np 1   --script ./testPlate.py                   --in  ../parallel4.cas --golden PLATE_STEADY         --outdir TESTDIR
+PLATE_TRANSIENT                 ./ptest.py  --np 1   --script ./testPlateTransient.py          --in  ../plate4.cas    --golden PLATE_TRANSIENT      --outdir TESTDIR
+STRUCTURE_TRANSIENT             ./ptest.py  --np 1   --script ./testStructureModelTransient.py --in  ../wbar1.cas     --golden STRUCTURE_TRANSIENT  --outdir TESTDIR
+PLATE_STEADY_FIRSTORDER         ./ptest.py  --np 1   --script ./testPlateFirstOrder.py                   --in  ../parallel4.cas --golden PLATE_STEADY_FIRSTORDER         --outdir TESTDIR
+PLATE_TRANSIENT_FIRSTORDER      ./ptest.py  --np 1   --script ./testPlateTransientFirstOrder.py          --in  ../plate4.cas    --golden PLATE_TRANSIENT_FIRSTORDER      --outdir TESTDIR
+STRUCTURE_TRANSIENT_FIRSTORDER  ./ptest.py  --np 1   --script ./testStructureModelTransientFirstOrder.py --in  ../wbar1.cas     --golden STRUCTURE_TRANSIENT_FIRSTORDER  --outdir TESTDIR
+PLATE_DEFORMATION               ./ptest.py  --np 1   --script ./testPlateDeformation.py                  --in  ../plate6.cas --golden PLATE_DEFORMATION               --outdir TESTDIR
+PLATE_CREEP_DEFORMATION         ./ptest.py  --np 1   --script ./testPlateCreepDeformation.py             --in  ../plate_creep_V2.cas --golden PLATE_CREEP_DEFORMATION    --outdir TESTDIR
