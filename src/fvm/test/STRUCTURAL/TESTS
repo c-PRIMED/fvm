@@ -6,3 +6,4 @@ PLATE_TRANSIENT_FIRSTORDER      ./ptest.py  --np 1   --script ./testPlateTransie
 STRUCTURE_TRANSIENT_FIRSTORDER  ./ptest.py  --np 1   --script ./testStructureModelTransientFirstOrder.py --in  ../wbar1.cas     --golden STRUCTURE_TRANSIENT_FIRSTORDER  --outdir TESTDIR
 PLATE_DEFORMATION               ./ptest.py  --np 1   --script ./testPlateDeformation.py                  --in  ../plate6.cas --golden PLATE_DEFORMATION               --outdir TESTDIR
 PLATE_CREEP_DEFORMATION         ./ptest.py  --np 1   --script ./testPlateCreepDeformation.py             --in  ../plate_creep_V2.cas --golden PLATE_CREEP_DEFORMATION    --outdir TESTDIR
+STRUCTURE_DEFORMATION           ./ptest2.py  --np 1   --script ./testStructureElectricModel.py     --in1  ../dbeam1.cas --in2 ../dbeam2.cas --golden STRUCTURE_DEFORMATION    --outdir TESTDIR
