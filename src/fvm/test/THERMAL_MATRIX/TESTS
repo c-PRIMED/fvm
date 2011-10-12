@@ -1,0 +1,1 @@
+CAV32_PROCS1_FLUIDSOLVER_CONT   ./ptest.py  --np 1   --script ./testThermalParallel.py --in  ../cav32.cas --type=quad --golden ./   --outdir TESTDIR
