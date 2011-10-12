@@ -1,0 +1,1 @@
+PLATE_MATRIX   ./ptest.py  --np 1   --script ./testPlate.py --in  ../parallel4.cas --golden ./   --outdir TESTDIR
