@@ -294,7 +294,7 @@ def copytree(src, dst, ctype):
         else:
             os.symlink(srcname, dstname)
 
-def set_python_path(dir):
+def set_python_path(dir, reset=False):
     #py = find_executable('python')
     ver = os.popen("/bin/bash -c 'python -V 2>&1'").readline()
     try:
@@ -302,7 +302,6 @@ def set_python_path(dir):
     except:
         print "Unable to determine python version."
         print "ver=%s" % ver
-
         sys.exit(2)
 
     libpath = os.path.join(dir, 'lib')
@@ -315,7 +314,7 @@ def set_python_path(dir):
             os.makedirs(p)
         except OSError:
             pass
-    if 'PYTHONPATH' in os.environ:
+    if 'PYTHONPATH' in os.environ and not reset:
         orig = os.environ['PYTHONPATH']
     else:
         orig = ''

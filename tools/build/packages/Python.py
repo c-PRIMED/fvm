@@ -12,5 +12,6 @@ class Python(BuildPkg):
     def _build(self):
         return self.sys_log("make")
     def _install(self):
-        set_python_path(self.blddir)
-        self.sys_log("make install")
+        ret = self.sys_log("make install")
+        set_python_path(self.blddir, reset=True)
+        return ret
