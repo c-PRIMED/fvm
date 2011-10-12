@@ -1,0 +1,1 @@
+CAV32_PROCS1_FLUIDSOLVER_CONT   ./ptest.py  --np 1   --script ./testFlowParallel.py --in  ../cav32.cas --type=quad --golden ./   --outdir TESTDIR
