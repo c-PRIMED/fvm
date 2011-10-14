@@ -1,0 +1,3 @@
+STRUCT_ELEC_3D_UNSTEADY_COUPLING  ./ptest.py  --np 1  --script ./Struct_Elec_3D_unsteady_uq.py  --golden 3D_COUPLING  --outdir TESTDIR
+SHELL     ./ptest.py  --np 1  --script ./ibm.py  --golden SHELL  --outdir TESTDIR
+FROGLEG   ./ptest.py  --np 1  --script ./frogleg_plate.py  --golden FROGLEG  --outdir TESTDIR

@@ -1,0 +1,22 @@
+iteration 0: found 195288 fluid cells 
+iteration 1: found 0 fluid cells 
+ found 8492 ib Faces 
+0: [elec.potential : 1];
+1: [elec.potential : 0.00954535];
+2: [elec.potential : 0.00412779];
+3: [elec.potential : 0.0020042];
+4: [elec.potential : 0.000982843];
+0: [structure.deformation : [ 2.636793e-06 5.262449e-04 4.777259e-06 ]]
+1: [structure.deformation : [ 9.362097e-05 5.143715e-04 2.867910e-05 ]]
+2: [structure.deformation : [ 1.260477e-04 3.563201e-04 1.662240e-05 ]]
+3: [structure.deformation : [ 6.112933e-05 1.809614e-04 2.911253e-05 ]]
+4: [structure.deformation : [ 5.265629e-05 1.709201e-04 2.837824e-05 ]]
+5: [structure.deformation : [ 4.666825e-05 1.589731e-04 2.341766e-05 ]]
+6: [structure.deformation : [ 4.115444e-05 1.298584e-04 1.204299e-05 ]]
+7: [structure.deformation : [ 3.529240e-05 1.038790e-04 9.750476e-06 ]]
+8: [structure.deformation : [ 2.593757e-05 7.950066e-05 1.594881e-05 ]]
+9: [structure.deformation : [ 2.014834e-05 6.014068e-05 1.436319e-05 ]]
+10: [structure.deformation : [ 1.364444e-05 5.010003e-05 1.368323e-05 ]]
+11: [structure.deformation : [ 1.508746e-05 4.414390e-05 1.075241e-05 ]]
+n: [structure.deformation : [ 1.508746e-05 4.414390e-05 1.075241e-05 ]]
+0: [structure.deformation : [ 2.636793e-06 5.262449e-04 4.777259e-06 ]]
