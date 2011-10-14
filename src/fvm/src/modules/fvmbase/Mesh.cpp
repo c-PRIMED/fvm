@@ -34,7 +34,10 @@ Mesh::Mesh(const int dimension):
   _numOfAssembleMesh(1),
   _isAssembleMesh(false),
   _isShell(false),
-  _parentFaceGroupSite(0)
+  _isDoubleShell(false),
+  _parentFaceGroupSite(0),
+  _parentMeshID(0),
+  _otherMeshID(0)
 {
   _cells.setMesh(this);
   logCtor();
@@ -61,7 +64,10 @@ Mesh::Mesh( const int dimension,
   _numOfAssembleMesh(1),
   _isAssembleMesh(false),
   _isShell(false),
-  _parentFaceGroupSite(0)
+  _isDoubleShell(false),
+  _parentFaceGroupSite(0),
+  _parentMeshID(0),
+  _otherMeshID(0)
 {
   int faceNodeCount = _dimension == 2 ? 2 :4;
   int totNodes      = faceNodesCoord.getLength();
@@ -142,7 +148,10 @@ Mesh::Mesh( const int dimension,
   _numOfAssembleMesh(1),
   _isAssembleMesh(false),
   _isShell(false),
-  _parentFaceGroupSite(0)
+  _isDoubleShell(false),
+  _parentFaceGroupSite(0),
+  _parentMeshID(0),
+  _otherMeshID(0)
 {
   int nFaces = faceNodeCount.getLength();
   int nNodes      = nodesCoord.getLength();
@@ -1673,6 +1682,201 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   return shellMesh;
 }
 
+Mesh*
+Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
+{
+  typedef Array<int> IntArray;
+  
+  const FaceGroup& fg = getFaceGroup(fgId);
+  const StorageSite& fgSite = fg.site;
+  StorageSite& cells = getCells();
+
+
+  StorageSite& otherCells = otherMesh.getCells();
+  
+  const CRConnectivity& faceCells = getFaceCells(fgSite);
+
+  const int count = fgSite.getSelfCount();
+
+  Mesh* shellMesh = new Mesh(_dimension);
+
+  shellMesh->_isShell = true;
+  shellMesh->_isDoubleShell = true;
+  shellMesh->_parentFaceGroupSite = &fgSite;
+  shellMesh->_parentMeshID = getID();
+  shellMesh->_otherMeshID = otherMesh.getID();
+  
+  StorageSite& sMeshCells = shellMesh->getCells();
+
+  // twice as many cells as there are faces, plus twice the number of ghost cells
+  sMeshCells.setCount( 2*count, 2*count);
+
+
+  // we will number the left cells in the shell mesh in the same order as
+  // the faces on the left mesh
+  
+  // create a mapping from the cells in the left mesh to the smesh
+  // cells using the faceCell connectivity
+  map<int, int> leftCellsToSCells;
+  for(int f=0; f<count; f++)
+  {
+      const int c0 = faceCells(f,0);
+      const int c1 = faceCells(f,1);
+      leftCellsToSCells[c0] = f;
+      leftCellsToSCells[c1] = f;
+  }
+
+  // since there can be more than one face group in common between the
+  // two meshes, we need to split up the existing gather scatter index
+  // arrays into two sets, one for the cells that are connected
+  // through the faces in the current face group and one for the rest.
+
+  
+  StorageSite::ScatterMap& lScatterMap = cells.getScatterMap();
+  StorageSite::ScatterMap& rScatterMap = otherCells.getScatterMap();
+
+  shared_ptr<IntArray> L2RScatterOrigPtr = lScatterMap[&otherCells];
+  shared_ptr<IntArray> R2LScatterOrigPtr = rScatterMap[&cells];
+  
+  
+  StorageSite::GatherMap& lGatherMap = cells.getGatherMap();
+  StorageSite::GatherMap& rGatherMap = otherCells.getGatherMap();
+  
+  shared_ptr<IntArray> R2LGatherOrigPtr = lGatherMap[&otherCells];
+  shared_ptr<IntArray> L2RGatherOrigPtr = rGatherMap[&cells];
+
+
+  vector<int> L2SScatterVector;
+  vector<int> R2SScatterVector;
+  vector<int> S2LScatterVector;
+  vector<int> S2RScatterVector;
+
+  vector<int> L2SGatherVector;
+  vector<int> R2SGatherVector;
+  vector<int> S2LGatherVector;
+  vector<int> S2RGatherVector;
+
+  vector<int> L2RScatterNewVector;
+  vector<int> R2LScatterNewVector;
+  vector<int> L2RGatherNewVector;
+  vector<int> R2LGatherNewVector;
+  
+  for(int i=0; i<L2RScatterOrigPtr->getLength(); i++)
+  {
+      const int lcs = (*L2RScatterOrigPtr)[i];
+      const int rcg = (*L2RGatherOrigPtr)[i];
+      // if the left cell is in the current face groups neighbours it goes into the new1 
+      if (leftCellsToSCells.find(lcs) != leftCellsToSCells.end())
+      {
+	  //left shell cell is sCell
+          const int sCell = leftCellsToSCells[lcs];
+
+          L2SScatterVector.push_back(lcs);
+          L2SGatherVector.push_back(sCell+3*count);
+
+          S2RScatterVector.push_back(sCell+count);
+          S2RGatherVector.push_back(rcg);
+      }
+      else
+      {
+          L2RScatterNewVector.push_back(lcs);
+          L2RGatherNewVector.push_back(rcg);
+      }
+  }        
+
+  for(int i=0; i<R2LGatherOrigPtr->getLength(); i++)
+  {
+      const int lcg = (*R2LGatherOrigPtr)[i];
+      const int rcs = (*R2LScatterOrigPtr)[i];
+      // if the left cell is in the current face groups neighbours it goes into the new1 
+      if (leftCellsToSCells.find(lcg) != leftCellsToSCells.end())
+      {
+          const int sCell = leftCellsToSCells[lcg];
+
+          S2LGatherVector.push_back(lcg);
+          S2LScatterVector.push_back(sCell);
+
+          R2SGatherVector.push_back(sCell+2*count);
+          R2SScatterVector.push_back(rcs);
+
+      }
+      else
+      {
+          R2LGatherNewVector.push_back(lcg);
+          R2LScatterNewVector.push_back(rcs);
+      }
+  }        
+
+
+  // set the gather scatter arrays in the smesh cells
+  sMeshCells.getScatterMap()[&cells] = arrayFromVector(S2LScatterVector);
+  sMeshCells.getScatterMap()[&otherCells] = arrayFromVector(S2RScatterVector);
+  sMeshCells.getGatherMap()[&cells] = arrayFromVector(L2SGatherVector);
+  sMeshCells.getGatherMap()[&otherCells] = arrayFromVector(R2SGatherVector);
+
+  // replace the existing arrays in left and right maps and add the
+  // new ones
+
+  lScatterMap.erase(&otherCells);
+  if (L2RScatterNewVector.size() > 0)
+    lScatterMap[&otherCells] = arrayFromVector(L2RScatterNewVector);
+  lScatterMap[&sMeshCells] = arrayFromVector(L2SScatterVector);
+  
+  lGatherMap.erase(&otherCells);
+  if (R2LGatherNewVector.size() > 0)
+    lGatherMap[&otherCells] = arrayFromVector(R2LGatherNewVector);
+  lGatherMap[&sMeshCells] = arrayFromVector(S2LGatherVector);
+  
+  rScatterMap.erase(&cells);
+  if (R2LScatterNewVector.size() > 0)
+    rScatterMap[&cells] = arrayFromVector(R2LScatterNewVector);
+  rScatterMap[&sMeshCells] = arrayFromVector(R2SScatterVector);
+  
+  rGatherMap.erase(&cells);
+  if (L2RGatherNewVector.size() > 0)
+    rGatherMap[&cells] = arrayFromVector(L2RGatherNewVector);
+  rGatherMap[&sMeshCells] = arrayFromVector(S2RGatherVector);
+
+  // create the cell cell connectivity for the shell mesh
+  shared_ptr<CRConnectivity> sCellCells(new CRConnectivity(sMeshCells,sMeshCells));
+  sCellCells->initCount();
+
+  // three neighbours for the first count cells, one for the rest, due to abnormal interface conditions
+  for(int i=0; i<count; i++)
+  {
+      sCellCells->addCount(i,3);
+      sCellCells->addCount(i+count,1);
+      sCellCells->addCount(i+2*count,1);
+      sCellCells->addCount(i+3*count,1);
+  }
+  
+  sCellCells->finishCount();
+
+  for(int i=0; i<count; i++)
+  {
+      // left shell cells
+      sCellCells->add(i,i+3*count);
+      sCellCells->add(i,i+count);
+      sCellCells->add(i,i+2*count);
+
+      // right shell cells
+      sCellCells->add(i+count,i);
+
+      // right ghost cells
+      sCellCells->add(i+2*count,i);
+
+      // left ghost cells
+      sCellCells->add(i+3*count,i);
+  }
+
+  sCellCells->finishAdd();
+
+  SSPair key(&sMeshCells,&sMeshCells);
+
+  shellMesh->_connectivityMap[key] = sCellCells;
+
+  return shellMesh;
+}
  
 void 
 Mesh::createCellCellsGhostExt()

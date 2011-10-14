@@ -13,7 +13,12 @@ reader = FluentCase("/home/brad/TwoMaterialTest.cas")
 #import debug
 reader.read();
 
-meshes = reader.getMeshList()
+meshes_case = reader.getMeshList()
+
+#add double shell to mesh between two materials
+interfaceID = 9
+shellmesh = meshes_case[1].createDoubleShell(interfaceID, meshes_case[0], interfaceID)
+meshes = [meshes_case[0], meshes_case[1], shellmesh]
 
 geomFields =  models.GeomFields('geom')
 metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
@@ -28,9 +33,11 @@ vcmap = smodel.getVCMap(0)
 
 vcRightZone = vcmap[0]
 vcLeftZone = vcmap[1]
+#vcShell = vcmap[2]
 
-vcRightZone['massDiffusivity'] = 2.e-9
-vcLeftZone['massDiffusivity'] = 10.e-9
+vcRightZone['massDiffusivity'] = 1#.e-6
+vcLeftZone['massDiffusivity'] = 5#.e-6
+#vcShell['massDiffusivity'] = 10.e-6
 
 bcLeft = bcmap[6]
 bcTop1 = bcmap[8]
@@ -43,8 +50,8 @@ bcRight = bcmap[5]
 bcLeft.bcType = 'SpecifiedMassFraction'
 bcRight.bcType = 'SpecifiedMassFraction'
 
-bcLeft.setVar('specifiedMassFraction', 0.0)
-bcRight.setVar('specifiedMassFraction', 1.0)
+bcLeft.setVar('specifiedMassFraction', 1.0)
+bcRight.setVar('specifiedMassFraction', 0.0)
 
 # Neumann on Bottom,Top
 bcBottom1.bcType = 'SpecifiedMassFlux'
@@ -56,20 +63,24 @@ bcBottom2.setVar('specifiedMassFlux', 0.0)
 bcTop2.bcType = 'SpecifiedMassFlux'
 bcTop2.setVar('specifiedMassFlux', 0.0)
 
+soptions = smodel.getOptions()
+soptions.setVar('A_coeff',1.0)
+soptions.setVar('B_coeff',0.0)
+soptions.setVar('initialMassFraction',0.0)
+
 #smodel.printBCs()
 smodel.init()
-smodel.advance(50)
+smodel.advance(10)
 
 mesh = meshes[1]
-heatFlux = smodel.getMassFluxIntegral(mesh,6,0)
-print heatFlux
+massFlux = smodel.getMassFluxIntegral(mesh,6,0)
+print massFlux
 mesh = meshes[0]
-heatFlux2 = smodel.getMassFluxIntegral(mesh,5,0)
-print heatFlux2
+massFlux2 = smodel.getMassFluxIntegral(mesh,5,0)
+print massFlux2
 
 speciesFields = smodel.getSpeciesFields(0)
-
-writer = exporters.VTKWriterA(geomFields,meshes,"testSpeciesModel.vtk",
+writer = exporters.VTKWriterA(geomFields,meshes_case,"testSpeciesModel.vtk",
                                          "TestSpecies",False,0)
 writer.init()
 writer.writeScalarField(speciesFields.massFraction,"MassFraction")

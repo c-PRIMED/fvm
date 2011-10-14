@@ -164,7 +164,11 @@ public:
 
   Mesh* createShell(const int fgId, Mesh& otherMesh, const int otherFgId);
   bool isShell() const;
+  Mesh* createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId);
+  bool isDoubleShell() const;
   const StorageSite& getParentFaceGroupSite() const;
+  int getParentMeshID() const;
+  int getOtherMeshID() const;
   
   // const GhostCellSiteMap& getGhostCellSiteMap() const;
   // const StorageSite* getGhostCellSite( int id );

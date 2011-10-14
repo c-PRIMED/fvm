@@ -151,6 +151,12 @@ MeshMetricsCalculator<T>::calculateCellCentroids(const Mesh &mesh)
       for(int f=0; f<faceCount; f++)
       {
           cellCentroid[f] = faceCentroid[f];
+
+          //additional set of cells if double shell
+          if (mesh.isDoubleShell())
+	  {
+            cellCentroid[f+faceCount] = faceCentroid[f];
+	  }
       }
       return;
   }
@@ -1123,6 +1129,7 @@ MeshMetricsCalculator<T>::computeSolidInterpolationMatrices
 
   if (mesh.isShell())
   	return;	
+
   typedef CRMatrixTranspose<T,T,T> IMatrix;
   
   const StorageSite& cells = mesh.getCells();

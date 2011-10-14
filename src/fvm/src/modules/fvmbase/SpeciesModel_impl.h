@@ -22,6 +22,7 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "SourceDiscretization.h"
+#include "LinearizeSpeciesInterface.h"
 
 template<class T>
 class SpeciesModel<T>::Impl
@@ -118,8 +119,18 @@ public:
       
 	//mass fraction
         shared_ptr<TArray> mFCell(new TArray(cells.getCount()));
-	*mFCell = _options["initialMassFraction"];
-        sFields.massFraction.addArray(cells,mFCell);
+
+	//*mFCell = _options["initialMassFraction"];
+	const VectorT3Array& cellCentroid =
+	  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+
+	for (int c=0; c<cells.getCount(); c++)
+	{
+	  VectorT3 CellCent = cellCentroid[c]; 
+	  (*mFCell)[c] = -0.05*CellCent[0] + 0.5;
+	}
+	
+	sFields.massFraction.addArray(cells,mFCell);
 
 	if (_options.transient)
         {
@@ -353,6 +364,31 @@ public:
                          ls.getX(), ls.getB());
 
     const int numMeshes = _meshes.size();
+
+    /* linearize shell mesh */
+
+    for (int n=0; n<numMeshes; n++)
+    {
+      const Mesh& mesh = *_meshes[n];
+      if (mesh.isDoubleShell())
+	{
+	  const int parentMeshID = mesh.getParentMeshID();
+          const int otherMeshID = mesh.getOtherMeshID();
+	  const Mesh& parentMesh = *_meshes[parentMeshID];
+	  const Mesh& otherMesh = *_meshes[otherMeshID];
+
+	  LinearizeSpeciesInterface<T, T, T> lsm (_geomFields,
+					    sFields.diffusivity,
+					    _options["A_coeff"],
+					    _options["B_coeff"],
+					    sFields.massFraction);
+
+	  lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	}
+    }
+
+    /* boundary and interface condition */
+
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];

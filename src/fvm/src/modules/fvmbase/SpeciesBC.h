@@ -29,6 +29,8 @@ struct SpeciesModelOptions : public FloatVarDict<T>
   SpeciesModelOptions()
   {
     this->defineVar("initialMassFraction",T(1.0));
+    this->defineVar("A_coeff",T(1.0));
+    this->defineVar("B_coeff",T(0.0));
     this->defineVar("timeStep",T(0.1));
     this->relativeTolerance=1e-8;
     this->absoluteTolerance=1e-16;
