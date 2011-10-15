@@ -104,10 +104,10 @@ probeIndex = 50
 
 ### ===================== mesh read ===============================================###
 
-fileBase = "../../"
+fileBase = "./"
 
 ### 2D plate mesh
-beamReader = FluentCase(fileBase+"frogleg_2D_5018.cas")
+beamReader = FluentCase(sys.argv[2])
 beamReader.read();
 solidMeshes = beamReader.getMeshList()
 geomFields =  models.GeomFields('geom')
@@ -115,7 +115,7 @@ solidMetricsCalculator = models.MeshMetricsCalculatorA(geomFields,solidMeshes)
 solidMetricsCalculator.init()
 
 ### 3D fluid mesh
-fluidReader = FluentCase(fileBase+"fluid.cas")
+fluidReader = FluentCase(sys.argv[1])
 fluidReader.read();
 fluidMeshes = fluidReader.getMeshList()
 fluidMetricsCalculator = models.MeshMetricsCalculatorA(geomFields,fluidMeshes)

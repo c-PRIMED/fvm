@@ -124,7 +124,8 @@ def main():
    }
     parser = OptionParser()
     parser.set_defaults(np=1,outdir='',type='tri')
-    parser.add_option("--in", dest='infile', help="Input file (required).")
+    parser.add_option("--in1", dest='infile1', help="Input1 file (required).")
+    parser.add_option("--in2", dest='infile2', help="Input2 file (required).")    
     parser.add_option("--golden", help="Directory where golden files are stored.")
     parser.add_option("--np", type=int, help="Number of Processors.")
     parser.add_option("--outdir", help="Output directory.")
@@ -132,12 +133,14 @@ def main():
     parser.add_option("--type", help="'tri'[default], 'quad', 'hexa', or 'tetra'")
     parser.add_option("--xdmf", action='store_true', help="Dump data in xdmf")
     (options, args) = parser.parse_args()
-    print options.infile
+
     # convert path to absolute because we may cd to the test directory
     options.script   = os.path.abspath(options.script)
     options.outdir   = os.path.abspath(options.outdir)
     options.golden   = os.path.abspath(os.path.join(options.golden,'GOLDEN'))
-
+    options.infile1  = os.path.abspath(options.infile1)
+    options.infile2  = os.path.abspath(options.infile2)
+    
     if options.outdir:
         if not os.path.isdir(options.outdir):
             try:
@@ -147,8 +150,8 @@ def main():
                 sys.exit(1)
         os.chdir(options.outdir)
     print "cwd = ", os.getcwd()
-    print options.infile
-    mpi = 'mpirun -np %s python %s ' % (options.np, options.script)
+
+    mpi = 'mpirun -np %s python %s %s %s ' % (options.np, options.script, options.infile1, options.infile2)
     print "MPI = ", mpi
     if options.xdmf:
         mpi += ' --xdmf'

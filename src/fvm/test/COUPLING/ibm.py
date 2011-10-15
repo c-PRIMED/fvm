@@ -79,7 +79,7 @@ minR = 0.1e-9
 maxR = 50e-9
 
 
-fileBase = '../../'
+fileBase = './'
 outDir = './'
 outFile = open(outDir + 'deformation.dat','w')
 forceFile = open(outDir + 'force.dat', 'w')
@@ -97,8 +97,8 @@ else:
 solidCaseFile = fileBase + 'Gen5_beam_2D.cas'
 fluidCaseFile = fileBase + 'fluid_electrode_dielectric.cas'
 
-fluidReader = FluentCase(fluidCaseFile)
-solidReader = FluentCase(solidCaseFile)
+fluidReader = FluentCase(sys.argv[1])
+solidReader = FluentCase(sys.argv[2])
 
 fluidReader.read()
 solidReader.read()

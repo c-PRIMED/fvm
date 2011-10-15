@@ -228,7 +228,7 @@ numTimeSteps = 1
 pd = ProblemDefinition()
 
 
-fileBase = "../../"
+fileBase = "./"
 
 pd.globalTime = 0
 pd.globalCount = 0
@@ -247,9 +247,8 @@ pd.velocityFile = open(fileBase + "tipVelocity-se.dat", "w")
 beamFile = fileBase + 'Gen2_IBM_beam_12_1200.cas'
 fluidFile = fileBase + 'Gen2_IBM_backgroundmesh_C2D2_wo_sub.cas'
 
-
-beamReader = FluentCase(beamFile)
-fluidReader = FluentCase(fluidFile)
+fluidReader = FluentCase(sys.argv[1])
+beamReader = FluentCase(sys.argv[2])
 
 beamReader.read()
 fluidReader.read()
