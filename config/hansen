@@ -42,10 +42,10 @@ vitables:
 	Build=0
 
 # REQUIRED until hansen gets a stable python module
-python:
-	Build=1
+#python:
+#	Build=1
 
 before:
-	module load openmpi-1.4.2-gcc64/4.4.0 hdf5-1.8.3/gcc-4.4.0 swig atlas CGAL
+	module load  python/2.7.2 mpich2-gcc64/4.4.0 hdf5-1.8.3/gcc-4.4.0 swig atlas CGAL
 	export HDF5_DIR=/apps/rhel5/graphics/x86_64/gnu/gcc-4.4.0/hdf5-1.8.3
 
