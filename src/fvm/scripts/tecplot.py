@@ -1,7 +1,7 @@
 import string
 #from mpi4py import MPI
 
-def dumpTecplotFile(nmesh, meshes, flowFields ):
+def dumpTecplotFile(nmesh, meshes, flowFields,file_name ):
   #cell sites
   cellSites = []
   for n in range(0,nmesh):
@@ -43,7 +43,7 @@ def dumpTecplotFile(nmesh, meshes, flowFields ):
   for n in range(0,nmesh):
      coords.append( meshes[n].getNodeCoordinates().asNumPyArray() )
      
-  file_name = "quadrature_nmesh" + ".plt"
+  #file_name = "quadrature_nmesh" + ".plt"
   f = open(file_name, 'w')   
   #file_name = "cavity" +  str( MPI.COMM_WORLD.Get_rank() ) + ".dat"
   #f = open(file_name, 'w')

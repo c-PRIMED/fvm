@@ -1,6 +1,11 @@
 import string
-
-def esbgkTecplotFile(meshes, macroFields,filename ):
+tectype = {
+        'tri' : 'FETRIANGLE',
+        'quad' : 'FEQUADRILATERAL',
+        'tetra' : 'FETETRAHEDRON',
+        'hexa' : 'FEBRICK'
+        }
+def esbgkTecplotFile(meshes, macroFields, mtype,filename ):
   #cell sites
   cellSites = []
   n=0
@@ -58,24 +63,26 @@ def esbgkTecplotFile(meshes, macroFields,filename ):
   TzxFields.append(macroFields.Tzx[cellSites[n]].asNumPyArray())
   #filename = "quadrature" + ".plt"
   f = open(filename, 'w')
-
+  
   f.write("Title = \" tecplot out file\" \n")
   f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\"Txx\",\"Tyy\",\"Tzz\",\"Txy\",\"Tyz\",\"Tzx\",\n")
   #f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\n")
   title_name = "nmesh" + str(n)
   ncell  = cellSites[n].getSelfCount()
   nnode  = nodeSites[n].getCount()
-  zone_name = "Zone T = " + "\"" + title_name +  "\"" +      \
-                 " N = " + str( nodeSites[n].getCount() ) +     \
-		 " E = " + str( ncell ) +  \
-		 " DATAPACKING = BLOCK, VARLOCATION = ([4-17]=CELLCENTERED), " + \
-		 " ZONETYPE=FEQUADRILATERAL \n"
-  f.write( zone_name )
+  #zone_name = "Zone T = " + "\"" + title_name +  "\"" +      \
+  #               " N = " + str( nodeSites[n].getCount() ) +     \
+  #		 " E = " + str( ncell ) +  \
+  #		 " DATAPACKING = BLOCK, VARLOCATION = ([4-17]=CELLCENTERED), " + \
+  #		 " ZONETYPE=FEQUADRILATERAL \n"
+  f.write("Zone T = \"%s\" N = %s E = %s DATAPACKING = BLOCK, VARLOCATION = ([4-7]=CELLCENTERED), ZONETYPE=%s\n" %
+          (title_name,  nodeSites[n].getCount(), ncell, tectype[mtype]))  
+  #f.write( zone_name )
   #write x
   for i in range(0,nnode):
-      f.write(str(coords[n][i][0])+"    ")
-      if ( i % 5 == 4 ):
-          f.write("\n")
+    f.write(str(coords[n][i][0])+"    ")
+    if ( i % 5 == 4 ):
+      f.write("\n")
       f.write("\n")	 
   #write y
   for i in range(0,nnode):
