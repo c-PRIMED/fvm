@@ -23,6 +23,25 @@ reflectGradient(Gradient<T>& gr, const Gradient<T>& g0, const Vector<T,3>& en)
     gr[i] = g0[i] - g0_dot_en_x2*en[i];
 }
 
+
+// for a general vector treat as independent scalars
+template<class T, int N>
+void
+reflectGradient(Gradient<Vector<T,N> >& gr,
+                const Gradient<Vector<T,N> >& g0, const Vector<T,3>& en)
+{
+  for(int k=0; k<N; k++)
+  {
+      const T g0_dot_en_x2 = T(2.0)*(g0[0][k]*en[0] + g0[1][k]*en[1] + g0[2][k]*en[2]);
+      for(int i=0; i<3; i++)
+        gr[i][k] = g0[i][k] - g0_dot_en_x2*en[i];
+  }
+}
+
+// specialization for vector 2 and 3 assume the variable is actually a
+// vector in mathematical sense; this form shouldn't be used for
+// independent scalars
+
 template<class T>
 void
 reflectGradient(Gradient<Vector<T,2> >& gr,
