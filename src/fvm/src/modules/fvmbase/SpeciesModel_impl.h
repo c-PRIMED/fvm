@@ -120,7 +120,9 @@ public:
 	//mass fraction
         shared_ptr<TArray> mFCell(new TArray(cells.getCount()));
 
-	//*mFCell = _options["initialMassFraction"];
+	*mFCell = _options["initialMassFraction"];
+
+	/* //Initialize to 1-D linear solution in x direction
 	const VectorT3Array& cellCentroid =
 	  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
 
@@ -128,7 +130,7 @@ public:
 	{
 	  VectorT3 CellCent = cellCentroid[c]; 
 	  (*mFCell)[c] = -0.05*CellCent[0] + 0.5;
-	}
+	  } */
 	
 	sFields.massFraction.addArray(cells,mFCell);
 
@@ -377,11 +379,9 @@ public:
 	  const Mesh& parentMesh = *_meshes[parentMeshID];
 	  const Mesh& otherMesh = *_meshes[otherMeshID];
 
-	  LinearizeSpeciesInterface<T, T, T> lsm (_geomFields,
-					    sFields.diffusivity,
-					    _options["A_coeff"],
-					    _options["B_coeff"],
-					    sFields.massFraction);
+	  LinearizeSpeciesInterface<T, T, T> lsm (_options["A_coeff"],
+						  _options["B_coeff"],
+						  sFields.massFraction);
 
 	  lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	}

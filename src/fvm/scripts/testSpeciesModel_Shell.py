@@ -26,18 +26,16 @@ metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
 
 nSpecies = 1
-# species conditions
+
 smodel = models.SpeciesModelA(geomFields,meshes,nSpecies)
 bcmap = smodel.getBCMap(0)
 vcmap = smodel.getVCMap(0)
 
 vcRightZone = vcmap[0]
 vcLeftZone = vcmap[1]
-#vcShell = vcmap[2]
 
-vcRightZone['massDiffusivity'] = 1#.e-6
-vcLeftZone['massDiffusivity'] = 5#.e-6
-#vcShell['massDiffusivity'] = 10.e-6
+vcRightZone['massDiffusivity'] = 1.e-9
+vcLeftZone['massDiffusivity'] = 5.e-9
 
 bcLeft = bcmap[6]
 bcTop1 = bcmap[8]
@@ -50,8 +48,8 @@ bcRight = bcmap[5]
 bcLeft.bcType = 'SpecifiedMassFraction'
 bcRight.bcType = 'SpecifiedMassFraction'
 
-bcLeft.setVar('specifiedMassFraction', 1.0)
-bcRight.setVar('specifiedMassFraction', 0.0)
+bcLeft.setVar('specifiedMassFraction', 0.0)
+bcRight.setVar('specifiedMassFraction', 1.0)
 
 # Neumann on Bottom,Top
 bcBottom1.bcType = 'SpecifiedMassFlux'
@@ -64,13 +62,27 @@ bcTop2.bcType = 'SpecifiedMassFlux'
 bcTop2.setVar('specifiedMassFlux', 0.0)
 
 soptions = smodel.getOptions()
-soptions.setVar('A_coeff',1.0)
-soptions.setVar('B_coeff',0.0)
 soptions.setVar('initialMassFraction',0.0)
+
+# interface jump conditon (Phi_R = A*Phi_L + B)
+soptions.setVar('A_coeff',2.0)
+soptions.setVar('B_coeff',0.0)
+
+solver = fvmbaseExt.BCGStab()
+pc = fvmbaseExt.AMG()
+pc.verbosity=0
+solver.preconditioner = pc
+solver.relativeTolerance = 1e-8
+#solver.absoluteTolerance = 1e-16
+solver.nMaxIterations = 20000
+solver.maxCoarseLevels=30
+solver.verbosity=0
+soptions.linearSolver = solver
+
 
 #smodel.printBCs()
 smodel.init()
-smodel.advance(10)
+smodel.advance(1)
 
 mesh = meshes[1]
 massFlux = smodel.getMassFluxIntegral(mesh,6,0)
