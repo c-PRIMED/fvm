@@ -4,29 +4,21 @@ import pdb
 
 ### constants ###
 epsilon0 = 8.854187817e-12
-"""
-old parameters
-H = 0.23e-20
-B = 3529e3
-alpha = 0.1127
-gamma = 22.69e9
-alpha01 = 1.6e-9
-alpha02 = 1.99e-9
-"""
 H = 0.215e-18
-B = 0.738362e9
-xx = 0.1
-gamma = 6.35225
-x01 = 60e-9
-x02 = 42.1714e-9
-alpha = 2e-9
+c1 = 1.2e3
+c2 = 0.5e9
+c3 = 1.0e3
+dc = 110e-9
+ds = 30e-9
+d_bar = 1e-9
+tR = 8.5e-9
 
 def func(x):
     dx = 0
     if x > 0:
-        dx = pow((x*x*x+alpha*alpha*alpha), 1./3.)
+        dx = 0
     else:
-        dx = alpha
+        dx = -x
     return dx
 ########################################################################
 def computeElectrostaticForce(voltage, distance, stop=100e-9):
@@ -36,17 +28,28 @@ def computeElectrostaticForce(voltage, distance, stop=100e-9):
     ef = voltage/distance
     elecForce = 0.5 * ef * ef * epsilon0
     return elecForce
+########################################################################
+# voltage: the voltage difference between beam and substrate (including dielectric)
+# dc0:  air dielectric constant, i.e. dc0 = 1
+# thickness0: the gap between beam bottom and dielectric top surface
+# dc1: dielectric constant, i.e. dc1 = 7.9
+# thickness1: dielectric thickness, i.e. thickness1 = 200e-9
+# src: charge density * QE 
+def computeElectrostaticForceWithCharge(voltage, dc0=1.0, thickness0=0., 
+                                        dc1=7.9, thickness1=200e-9, src=0.):
+    alpha0 = thickness0/dc0
+    alpha1 = thickness1/dc1
+    source = 0.5 * src * thickness1 * thickness1 / (dc1*epsilon0)
+    ef = (voltage+source)/(alpha0+alpha1)
+    elecForce = 0.5 * ef * ef * epsilon0
+    return elecForce
 
 ########################################################################
 def computeContactForce(x):
     #if distance < 1e-10:
     #    distance = 1e-10
-    #repulsive_force =  B*exp(-(distance-alpha02)*gamma) 
-    #attractive_force = -H/(6*pi) * ((1-alpha)/pow(distance,3) + \
-    #                     alpha/pow(distance-alpha01,3))
-    #contactForce = repulsive_force #+ attractive_force 
-    attractive_force = -H/(6*pi) * ((1-xx)/pow(func(x),3) + xx/pow(func(x-x01),3))
-    repulsive_force = B*exp(-func(x-x02)/x02*gamma)
+    attractive_force = -H/(6*pi*(pow(x,3)+pow(ds,3))) -c3*func(x-(dc+tR))/d_bar
+    repulsive_force = c1*pow((func(x-dc)/d_bar),1.5) + c2*exp(-x/tR)
     contact_force = attractive_force + repulsive_force
     return contact_force
 
