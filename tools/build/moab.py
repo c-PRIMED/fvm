@@ -43,7 +43,7 @@ def msub(bp, cname):
     f.write('#MSUB -l walltime=%s\n' % config.config('Testing', 'walltime'))
     f.write('#MSUB -l partition=%s\n' % config.config('Testing', 'partition'))
 
-    f.write('source env.sh\n')
+    f.write('source env-%s.sh\n' % cname)
     
     # Load Modules
     cmds = config.config('ALL', 'before')

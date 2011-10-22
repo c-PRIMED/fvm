@@ -61,8 +61,8 @@ def qsub(bp, cname):
     f.write('#PBS -l select=%s:ncpus=%s:mpiprocs=%s\n' % (nodes,cpus,cpus))
     f.write('#PBS -l walltime=%s\n' % config.config('Testing', 'walltime'))
 
-    f.write('cd  $PBS_O_WORKDIR\n')
-    f.write('source env.sh\n')
+    f.write('cd $PBS_O_WORKDIR\n')
+    f.write('source env-%s.sh\n' % cname)
 
     # Load Modules
     cmds = config.config('ALL', 'before')
