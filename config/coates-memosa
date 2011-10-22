@@ -2,12 +2,12 @@
 Testing:
 	PBS=True
 	queue=standby
-	walltime=2:00:00
-	nodes=4
-	ncpus=8
+	walltime=00:20:00
+	nodes=1
+	ncpus=1
 
 fvm:
-	Build=1
+	Build=0
 
 	# build using MPI
 	# default is False
@@ -23,7 +23,7 @@ fvm:
 	compiler=gcc
 
 MPM:
-	Build=1
+	Build=0
 	configname=gnu-linux
 
 hdf5:

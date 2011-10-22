@@ -2,7 +2,7 @@
 Testing:
 	PBS=True
 	queue=standby
-	walltime=2:00:00
+	walltime=1:00:00
 	nodes=4
 	ncpus=8
 
@@ -23,7 +23,7 @@ fvm:
 	compiler=gcc
 
 MPM:
-	Build=1
+	Build=0
 	configname=gnu-linux
 
 hdf5:
@@ -36,7 +36,7 @@ netcdf:
 	env[CC]=gcc
 
 MEMOSA:
-	Build=1
+	Build=0
 
 vitables:
 	Build=0

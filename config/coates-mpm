@@ -2,12 +2,12 @@
 Testing:
 	PBS=True
 	queue=standby
-	walltime=2:00:00
-	nodes=4
+	walltime=1:00:00
+	nodes=2
 	ncpus=8
 
 fvm:
-	Build=1
+	Build=0
 
 	# build using MPI
 	# default is False
@@ -36,7 +36,7 @@ netcdf:
 	env[CC]=gcc
 
 MEMOSA:
-	Build=1
+	Build=0
 
 vitables:
 	Build=0
