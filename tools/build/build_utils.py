@@ -421,7 +421,7 @@ def find_executable(executable, path=None):
 def python_path(name):
     cmd = "python -c 'import %s; print %s.__path__[0]'" % (name, name)
     try:
-        path = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        path = subprocess.Popen(cmd, shell=True, stderr=null, stdout=subprocess.PIPE).stdout.read()
     except:
         path = ''
     return path
