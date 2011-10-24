@@ -30,6 +30,6 @@ Time	pkgs/time-1.7.tar.gz
 Amd		pkgs/AMD.tar.gz
 Ufconfig		pkgs/UFconfig.tar.gz
 Umfpack			pkgs/UMFPACK.tar.gz
-Sphinx	pkgs/sphinx.tgz
+Sphinx	pkgs/Sphinx-1.1.tar.gz
 Freetype	pkgs/freetype-2.4.6.tar.bz2
 Pymc	pkgs/pymc-2.1.tar.bz2
