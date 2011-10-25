@@ -1,0 +1,2 @@
+FLOWMODEL_IMPL   ./ptest.py  --np 1   --script ./mesh.py --in  ../uniform-cart_5K.cas  --in2 ../circle_66.cas --type=quad --golden ./   --outdir TESTDIR
+
