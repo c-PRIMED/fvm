@@ -1,0 +1,40 @@
+Face Group 3:
+    bc type NoSlipWall
+   accomodationCoefficient 1.000000e+00
+   specifiedPressure 0.000000e+00
+   specifiedXVelocity 0.000000e+00
+   specifiedYVelocity 0.000000e+00
+   specifiedZVelocity 0.000000e+00
+Face Group 4:
+    bc type NoSlipWall
+   accomodationCoefficient 1.000000e+00
+   specifiedPressure 0.000000e+00
+   specifiedXVelocity 0.000000e+00
+   specifiedYVelocity 0.000000e+00
+   specifiedZVelocity 0.000000e+00
+Face Group 5:
+    bc type VelocityBoundary
+   accomodationCoefficient 1.000000e+00
+   specifiedPressure 0.000000e+00
+   specifiedXVelocity 1.000000e+00
+   specifiedYVelocity 0.000000e+00
+   specifiedZVelocity 0.000000e+00
+Face Group 6:
+    bc type PressureBoundary
+   accomodationCoefficient 1.000000e+00
+   specifiedPressure 0.000000e+00
+   specifiedXVelocity 0.000000e+00
+   specifiedYVelocity 0.000000e+00
+   specifiedZVelocity 0.000000e+00
+Mesh 0 faceGroup 3 : [ 0.000000e+00 2.303911e+02 0.000000e+00 ]
+Mesh 0 faceGroup 4 : [ 0.000000e+00 -2.324790e+02 0.000000e+00 ]
+Mesh 0 faceGroup 5 : [ -1.798552e+02 0.000000e+00 0.000000e+00 ]
+Mesh 0 faceGroup 6 : [ 0.000000e+00 0.000000e+00 0.000000e+00 ]
+Mesh 0 faceGroup 3 : [ -3.552984e+01 5.413702e-01 0.000000e+00 ]
+Mesh 0 faceGroup 4 : [ -3.553511e+01 -5.404696e-01 0.000000e+00 ]
+Mesh 0 faceGroup 5 : [ 1.039480e+01 -5.013744e-03 0.000000e+00 ]
+Mesh 0 faceGroup 6 : [ -1.231054e+01 1.065042e-02 0.000000e+00 ]
+Mesh 0 faceGroup 3 : 0.000000e+00
+Mesh 0 faceGroup 4 : 0.000000e+00
+Mesh 0 faceGroup 5 : -1.000000e+01
+Mesh 0 faceGroup 6 : 1.030724e+01
