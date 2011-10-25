@@ -1689,34 +1689,7 @@ public:
     return r;
   }
 
-  VectorT3 getPVIntegral(const Field& velCoeffField,
-                         const Mesh& mesh, const int faceGroupId)
-  {
-    VectorT3 r(VectorT3::getZero());
-    bool found = false;
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-    {
-        const FaceGroup& fg = *fgPtr;
-        if (fg.id == faceGroupId)
-        {
-            const StorageSite& faces = fg.site;
-            const VectorT3Array& faceArea =
-              dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-            const VectorT3Array& velCoeff =
-              dynamic_cast<const VectorT3Array&>(velCoeffField[faces]);
-            const int nFaces = faces.getCount();
-            const TArray& facePressure = dynamic_cast<const TArray&>(_flowFields.pressure[faces]);
-            for(int f=0; f<nFaces; f++)
-              r += velCoeff[f]*(faceArea[f]*facePressure[f]);
-
-            found=true;
-        }
-    }
-  if (!found)
-    throw CException("getPVIntegral: invalid faceGroupID");
-    return r;
-  }
-  
+ 
   VectorT3 getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupId)
   {
     VectorT3 r(VectorT3::getZero());
@@ -2275,13 +2248,6 @@ Vector<T,3>
 FlowModel<T>::getPressureIntegral(const Mesh& mesh, const int faceGroupId)
 {
  return  _impl->getPressureIntegral(mesh,faceGroupId);
-}
-
-template<class T>
-Vector<T,3>
-FlowModel<T>::getPVIntegral(const Field& velCoeff,const Mesh& mesh, const int faceGroupId)
-{
-  return  _impl->getPVIntegral(velCoeff,mesh,faceGroupId);
 }
 
 template<class T>

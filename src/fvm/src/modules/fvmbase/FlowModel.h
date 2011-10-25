@@ -51,7 +51,6 @@ public:
   void updateTime();
 
   Vector<T,3> getPressureIntegral(const Mesh& mesh, const int faceGroupID);
-  Vector<T,3> getPVIntegral(const Field& velCoeff, const Mesh& mesh, const int faceGroupID);
   Vector<T,3> getMomentumFluxIntegral(const Mesh& mesh, const int faceGroupID);
   Vector<T,3> getMomentumDerivativeIntegral(const Mesh& mesh);
 
