@@ -11,7 +11,6 @@
 #include "StorageSite.h"
 #include "DiagonalMatrix.h"
 #include "CRMatrix.h"
-#include "DielectricOneDimColumn.h"
 #include "ElectricUtilityFunctions.h"
 
 
