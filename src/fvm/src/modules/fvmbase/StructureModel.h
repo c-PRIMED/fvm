@@ -34,7 +34,7 @@ public:
 
   StructureModelOptions<T>& getOptions();
 
-  void printBCs();
+  //void printBCs();
 
   // do the specified number of iterations, return true if converged 
   bool advance(const int niter);
@@ -49,19 +49,19 @@ public:
 
   //  Vector<T,3> getPressureIntegral(const Mesh& mesh, const int faceGroupID);
   //  Vector<T,3> getPVIntegral(const Field& velCoeff, const Mesh& mesh, const int faceGroupID);
-  Vector<T,3> getDeformationFluxIntegral(const Mesh& mesh, const int faceGroupID);
-  Vector<T,3> getDeformationDerivativeIntegral(const Mesh& mesh);
+  //Vector<T,3> getDeformationFluxIntegral(const Mesh& mesh, const int faceGroupID);
+  //Vector<T,3> getDeformationDerivativeIntegral(const Mesh& mesh);
   void getTraction(const Mesh& mesh);
 
   //  Vector<T,3> getPressureIntegralonIBFaces(const Mesh& mesh);
   //  Vector<T,3> getMomentumFluxIntegralonIBFaces(const Mesh& mesh);
 
 
-  boost::shared_ptr<ArrayBase> getStressTensor(const Mesh& mesh, const ArrayBase& cellIds);
+  //boost::shared_ptr<ArrayBase> getStressTensor(const Mesh& mesh, const ArrayBase& cellIds);
 
   
   //  void printPressureIntegrals();
-  void printDeformationFluxIntegrals();
+  //void printDeformationFluxIntegrals();
   //  void printMassFluxIntegrals();
   
   //  void computeIBFaceVelocity(const StorageSite& particles);
