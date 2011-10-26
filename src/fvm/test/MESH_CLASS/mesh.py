@@ -248,12 +248,28 @@ for n in range(0, numTimeSteps):
 
     #calling faceCell2	     
     momPC.redirectPrintToFile("faceCells2.dat")
-    print "getFaceCell2 ... \n"
     faceCells2 = fluidMeshes[0].getFaceCells2();
     fluidMeshes[0].CRConnectivityPrint( faceCells2, 0, "faceCell2")
     fluidMeshes[0].CRConnectivityPrintFile(faceCells2, "faceCell2_mesh", 0)
     
     momPC.redirectPrintToScreen()
+    
+    #calling setNodeRepeationArrayCoupling
+    fluidMeshes[0].setNodeRepeationArrayCoupling(fluidMeshes[0])  
+    repeatNodes = fluidMeshes[0].getUpdatedNodesCoordCoupling(geomFields, fluidMeshes[0]).asNumPyArray()  
+    print "repeat Nodes ... \n"
+    print repeatNodes[:,0:2]
+    print "\n"
+    
+    #setCommonFacesMap
+    fluidMeshes[0].setCommonFacesMap(solidBoundaryMeshes[0])
+    commFaceMaps = fluidMeshes[0].getCommonFacesMap()
+    print "commonFaceMap ... \n"
+    print commFaceMaps.keys()
+    print "\n"
+   
+    #findcommonFaces
+    fluidMeshes[0].findCommonFaces(sbMeshFaces, sbMeshFaces, geomFields)
     
     
     #fmodel.updateTime()
