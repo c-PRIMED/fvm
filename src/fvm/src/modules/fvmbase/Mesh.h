@@ -326,7 +326,9 @@ public:
 
   PeriodicFacePairs& getPeriodicFacePairs() { return _periodicFacePairs;}
   const PeriodicFacePairs& getPeriodicFacePairs() const { return _periodicFacePairs;}
-  
+  void CRConnectivityPrint(const CRConnectivity& conn, int procID, const string& name);
+  void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const;
+
 protected:
    
   
@@ -405,14 +407,13 @@ protected:
   static int _lastID;
 
   PeriodicFacePairs _periodicFacePairs;
+
 private:
   void createRowColSiteCRConn();
   void countCRConn();
   void addCRConn();
   int  getNumBounCells();
   int  get_request_size();
-  void CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name );
-  void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const;
 
       
   
