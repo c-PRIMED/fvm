@@ -62,7 +62,7 @@ PATTERNS = [ ('whitespace', re.compile(r'(\s+)')),
                                          ''',
                                    re.VERBOSE)),
              ('symbol',
-              re.compile(r'''([a-zA-Z\+\=\?\!\@\#\$\%\^\&\*\-\/\.\>\<]
+              re.compile(r'''([_a-zA-Z:\+\=\?\!\@\#\$\%\^\&\*\-\/\.\>\<]
                               [\w\+\=\?\!\@\#\$\%\^\&\*\-\/\.\>\<]*)''',
                                    re.VERBOSE)),
              ('string', re.compile(r'''
@@ -73,11 +73,16 @@ PATTERNS = [ ('whitespace', re.compile(r'(\s+)')),
                                    re.VERBOSE)),
              ]
 
+broken_number_re1 = re.compile( r'(\d\.)(\s|\))')
 
-def tokenize(s):
+def tokenize(s_in):
     """Given a string 's', return a list of its tokens.  A token can
     be one of the following types listed in the PATTERNS above, and
     each token is a 2-tuple: (type, content)."""
+
+    ## fix numbers like 4. to 4.0 so that the tokenizer works correctly
+    s = broken_number_re1.sub(r'\g<1>0\g<2>',s_in)
+
     tokens = []
     while 1:
         should_continue = 0
