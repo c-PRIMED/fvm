@@ -763,6 +763,8 @@ public:
     }
   }
   
+#if 0
+
   void postStructureSolve(LinearSystem& ls)
   {
     MultiField& sField = ls.getDelta();
@@ -788,6 +790,8 @@ public:
 	}
     }
   }
+
+#endif
 
   bool advance(const int niter)
   {
@@ -815,6 +819,7 @@ public:
     return false;
   }
 
+#if 0
   void printBCs()
   {
     foreach(typename StructureBCMap::value_type& pos, _bcMap)
@@ -931,6 +936,8 @@ public:
 
     return stressTensorPtr;
   }
+
+#endif
     
   void getTraction(const Mesh& mesh)
   {
@@ -1073,6 +1080,9 @@ void updateForceOnBoundary(const StorageSite& faceSite, const ArrayBase& bforceA
   }
   
   */
+
+#if 0
+
   void printDeformationFluxIntegrals()
   {
     const int numMeshes = _meshes.size();
@@ -1096,6 +1106,8 @@ void updateForceOnBoundary(const StorageSite& faceSite, const ArrayBase& bforceA
         }
     }
   }
+
+#endif
 
   /*  
   void printMassFluxIntegrals()
@@ -1191,6 +1203,7 @@ template<class T>
 StructureModelOptions<T>&
 StructureModel<T>::getOptions() {return _impl->getOptions();}
 
+#if 0
 
 template<class T>
 void
@@ -1198,6 +1211,8 @@ StructureModel<T>::printBCs()
 {
   _impl->printBCs();
 }
+
+#endif
 
 template<class T>
 bool
@@ -1246,6 +1261,7 @@ StructureModel<T>::updateTime()
   _impl->updateTime();
 }
 
+#if 0
 
 template<class T>
 void
@@ -1269,6 +1285,8 @@ StructureModel<T>::getDeformationDerivativeIntegral(const Mesh& mesh)
  return  _impl->getDeformationDerivativeIntegral(mesh);
 }
 
+#endif
+
 template<class T>
 void
 StructureModel<T>::getTraction(const Mesh& mesh)
@@ -1276,6 +1294,7 @@ StructureModel<T>::getTraction(const Mesh& mesh)
   return  _impl->getTraction(mesh);
 }
 
+#if 0
 
 template<class T>
 boost::shared_ptr<ArrayBase>
@@ -1284,3 +1303,4 @@ StructureModel<T>::getStressTensor(const Mesh& mesh, const ArrayBase& cellIds)
   return _impl->getStressTensor(mesh, cellIds);
 }
 
+#endif
