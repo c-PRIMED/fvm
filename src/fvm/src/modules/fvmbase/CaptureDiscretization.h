@@ -44,7 +44,7 @@ class CaptureDiscretization : public Discretization
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef typename CCMatrix::OffDiagArray OffDiagArray;
   typedef Array<X> XArray;
-  typedef Array<Vector<T_Scalar, 3> > VectorTNArray;
+  typedef Array<Vector<T_Scalar, 2> > VectorTNArray;
 
   CaptureDiscretization(const MeshList& meshes,
 			const GeomFields& geomFields,
@@ -68,7 +68,7 @@ class CaptureDiscretization : public Discretization
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
 
     const VectorTNArray& free_electron_capture_cross = dynamic_cast<const VectorTNArray&> (_capturecrossField[cells]);
-
+ 
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));

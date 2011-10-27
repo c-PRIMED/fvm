@@ -26,13 +26,13 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "SourceDiscretization.h"
-#include "Octree.h"
+
 #include "PhysicsConstant.h"
 #include "ElectricUtilityFunctions.h"
 
 #include "SquareTensor.h"
 #include "ElecDiagonalTensor.h"
-#include "LinearizeDielectric.h"
+//#include "LinearizeDielectric.h"
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
@@ -48,10 +48,10 @@ public:
   typedef Vector<double, 3> VectorD3;
   typedef Array<VectorT3> VectorT3Array;
   
-  typedef Vector<T,3> VectorTN;
+  typedef Vector<T,2> VectorTN;
   typedef Array<VectorTN> VectorTNArray;
   
-  typedef SquareTensor<T, 3> TensorNxN;
+  typedef SquareTensor<T, 2> TensorNxN;
   //typedef ElecDiagonalTensor<T, 2> TensorNxN;
   typedef Array<TensorNxN> TensorNxNArray;
 
@@ -326,14 +326,14 @@ public:
             chargeN2 = chargeN1;
         }
         chargeN1 = charge;
-	
+	/*
 	const int nTrap = _constants["nTrap"];
 	for (int c=0; c<nCells; c++){
 	  for (int i=0; i<=nTrap; i++){
 	    totalcharge[c] += charge[c][i]*-QE;
 	  }	  
 	}
-
+	*/
 	const ElectricVC<T>& vc = *_vcMap[mesh.getID()];
 	if (vc.vcType == "dielectric"){
 	  const TArray& cellVolume = 
@@ -1152,8 +1152,8 @@ public:
 		
 		//(*ibP) = 50;
 
-		mIC.multiplyAndAdd(*ibP,cP);
-		mIP.multiplyAndAdd(*ibP,sP);
+		//mIC.multiplyAndAdd(*ibP,cP);
+		//mIP.multiplyAndAdd(*ibP,sP);
 
         	_electricFields.potential.addArray(ibFaces,ibP);
         	

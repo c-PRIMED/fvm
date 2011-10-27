@@ -130,6 +130,8 @@ class TunnelingDiscretization : public Discretization
       transmission[c] = 0.0;
     }
    
+    
+
     //=======================================//
     // tunneling from substrate to dielectric 
     //=======================================//
@@ -214,8 +216,7 @@ class TunnelingDiscretization : public Discretization
 	    }
 	  }
 	}
-     
-      
+    
       //========= tunneling  calculation ==========//
 
       for(int c=0; c<nCells; c++){
@@ -240,7 +241,7 @@ class TunnelingDiscretization : public Discretization
 	    _fluxIn += (fluxCoeff * (electron_trapdensity[i] - xCell[c][i])); 
 	    rCell[c][i] += (fluxCoeff * (electron_trapdensity[i] - xCell[c][i])); 
 	    diag[c](i,i) -= fluxCoeff;
-	    //diag[c][i] -= fluxCoeff;
+	    
 	  }
 	  // tunneling from traps to substrate 
 
@@ -252,10 +253,10 @@ class TunnelingDiscretization : public Discretization
 	    fluxCoeff = alpha * stcap *  transmission[c] * supplyfunction * 
 	      (1-fermifunction) * scatterfactor * energystep * QE;
 	  
-	    _fluxOut =  (fluxCoeff * (- xCell[c][i])); 
+	    _fluxOut +=  (fluxCoeff * (- xCell[c][i])); 
 	    rCell[c][i] += (fluxCoeff * (- xCell[c][i])); 
 	    diag[c](i,i) -= fluxCoeff;
-	    //diag[c][i] -= fluxCoeff;
+	 
 	  }
 	}
       }
@@ -368,9 +369,9 @@ class TunnelingDiscretization : public Discretization
 	}
       }
     }
-
+    
 #endif
- 
+    //cout << _fluxIn << "  " << _fluxOut << endl;
   }
  
  private:
