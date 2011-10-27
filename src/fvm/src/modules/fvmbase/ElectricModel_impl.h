@@ -569,7 +569,7 @@ public:
     const int numMeshes = _meshes.size();
 
     /*linearize shell mesh*/
-
+    /*
     for (int n=0; n<numMeshes; n++)
     {
       const Mesh& mesh = *_meshes[n];
@@ -583,7 +583,7 @@ public:
 	  lsm.discretize(mesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	}
     }
-
+    */
     /* boundary and interface condition */
 
     for (int n=0; n<numMeshes; n++)
