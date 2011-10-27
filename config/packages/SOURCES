@@ -21,8 +21,6 @@ Matplotlib	pkgs/matplotlib-1.1.0.tar.gz
 Scipy		pkgs/scipy-0.9.0.tar.gz
 Pygsl	pkgs/pygsl-0.9.5.tar.gz
 Gsl		pkgs/gsl-1.14.tar.gz
-Pytables pkgs/tables-2.1.2.tar.gz
-Vitables pkgs/ViTables-2.1.tar.gz
 Pystatistics pkgs/statistics-0.19.tar.gz
 Cgal	pkgs/CGAL-3.6.tar.gz
 Sympy	pkgs/sympy-0.7.1.tar.gz
@@ -33,4 +31,3 @@ Umfpack			pkgs/UMFPACK.tar.gz
 Sphinx	pkgs/Sphinx-1.1.tar.gz
 Freetype	pkgs/freetype-2.4.6.tar.bz2
 Pymc	pkgs/pymc-2.1.tar.bz2
-Numexpr	pkgs/numexpr-1.4.2.tar.gz
