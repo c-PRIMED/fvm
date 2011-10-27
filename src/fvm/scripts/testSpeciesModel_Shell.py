@@ -8,14 +8,17 @@ import fvm.exporters_atyped_double as exporters
 from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
-reader = FluentCase("/home/brad/TwoMaterialTest.cas")
-
-#import debug
+reader = FluentCase("../test/TwoMaterialTest.cas")
 reader.read();
-
 meshes_case = reader.getMeshList()
 
-#add double shell to mesh between two materials
+# add double shell to mesh between two materials
+# When creating double shell mesh, the mesh it is created from
+# is called the 'parent' mesh and the mesh that is passed as an argument
+# is called the 'other' mesh
+#
+# The phi values at the interface between the two meshes are related as follows:
+# Phi_other = A * Phi_parent + B 
 interfaceID = 9
 shellmesh = meshes_case[1].createDoubleShell(interfaceID, meshes_case[0], interfaceID)
 meshes = [meshes_case[0], meshes_case[1], shellmesh]
@@ -47,9 +50,8 @@ bcRight = bcmap[5]
 #Dirichlet on Left,Right
 bcLeft.bcType = 'SpecifiedMassFraction'
 bcRight.bcType = 'SpecifiedMassFraction'
-
-bcLeft.setVar('specifiedMassFraction', 0.0)
-bcRight.setVar('specifiedMassFraction', 1.0)
+bcLeft.setVar('specifiedMassFraction', 1.0)
+bcRight.setVar('specifiedMassFraction', 0.0)
 
 # Neumann on Bottom,Top
 bcBottom1.bcType = 'SpecifiedMassFlux'
@@ -62,23 +64,24 @@ bcTop2.bcType = 'SpecifiedMassFlux'
 bcTop2.setVar('specifiedMassFlux', 0.0)
 
 soptions = smodel.getOptions()
-soptions.setVar('initialMassFraction',0.0)
 
 # interface jump conditon (Phi_R = A*Phi_L + B)
-soptions.setVar('A_coeff',2.0)
-soptions.setVar('B_coeff',0.0)
+# or (Phi_other = A*Phi_parent + B)
+soptions.setVar('A_coeff',0.5)
+soptions.setVar('B_coeff',0.1)
 
 solver = fvmbaseExt.BCGStab()
-pc = fvmbaseExt.AMG()
+pc = fvmbaseExt.JacobiSolver()
 pc.verbosity=0
 solver.preconditioner = pc
-solver.relativeTolerance = 1e-8
-#solver.absoluteTolerance = 1e-16
-solver.nMaxIterations = 20000
+solver.relativeTolerance = 1e-16 #solver tolerance
+solver.absoluteTolerance = 1e-16 #solver tolerance
+solver.nMaxIterations = 100
 solver.maxCoarseLevels=30
 solver.verbosity=0
 soptions.linearSolver = solver
-
+soptions.relativeTolerance=1e-16 #model tolerance
+soptions.absoluteTolerance=1e-16 #model tolerance
 
 #smodel.printBCs()
 smodel.init()

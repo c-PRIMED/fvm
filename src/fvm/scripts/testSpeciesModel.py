@@ -8,7 +8,7 @@ import fvm.exporters_atyped_double as exporters
 from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
-reader = FluentCase("/home/brad/TwoMaterialTest.cas")
+reader = FluentCase("../test/TwoMaterialTest.cas")
 
 #import debug
 reader.read();
@@ -56,9 +56,22 @@ bcBottom2.setVar('specifiedMassFlux', 0.0)
 bcTop2.bcType = 'SpecifiedMassFlux'
 bcTop2.setVar('specifiedMassFlux', 0.0)
 
+soptions = smodel.getOptions()
+solver = fvmbaseExt.AMG()
+solver.relativeTolerance = 1e-14 #solver tolerance
+solver.absoluteTolerance = 1e-16 #solver tolerance
+solver.nMaxIterations = 100
+solver.maxCoarseLevels=30
+solver.verbosity=0
+soptions.linearSolver = solver
+
+# model tolerances are only needed for non-linear or unstructured problems
+#soptions.relativeTolerance=1e-16
+#soptions.absoluteTolerance=1e-16
+
 #smodel.printBCs()
 smodel.init()
-smodel.advance(50)
+smodel.advance(1)
 
 mesh = meshes[1]
 heatFlux = smodel.getMassFluxIntegral(mesh,6,0)

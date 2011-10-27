@@ -69,7 +69,8 @@ class LinearizeSpeciesInterface
     DiagArray& parentdiag = parentmatrix.getDiag();
 
     // other mesh info
-    const CRConnectivity& otherFaceCells = otherMesh.getFaceCells(faces);
+    const StorageSite& otherFaces = mesh.getOtherFaceGroupSite();
+    const CRConnectivity& otherFaceCells = otherMesh.getFaceCells(otherFaces);
     const StorageSite& otherCells = otherMesh.getCells();
     const MultiField::ArrayIndex cVarIndexOther(&_varField,&otherCells);
     XArray& rOtherCell = dynamic_cast<XArray&>(rField[cVarIndexOther]);
@@ -79,30 +80,37 @@ class LinearizeSpeciesInterface
     for (int f=0; f<faces.getCount(); f++)
     {
        //get parent mesh fluxes and coeffs
-       const int c0p = parentFaceCells(f,0);
-       const int c1p = parentFaceCells(f,1);
-       const X leftFlux = rParentCell[c0p]; // inward shell flux on the left
-       OffDiag dRC0dXC1 = parentmatrix.getCoeff(c1p,  c0p);
-       Diag dRC0dXC0 = parentdiag[c1p];
+       int c0p = parentFaceCells(f,0);
+       int c1p = parentFaceCells(f,1);
        if (c1p < parentCells.getSelfCount())
-       {
-	 // c0 is ghost cell and c1 is boundry cell, so fix coeffs
-	 dRC0dXC1 = parentmatrix.getCoeff(c0p,  c1p);
-	 dRC0dXC0 = parentdiag[c0p];
+       { 
+	 // c0 is ghost cell and c1 is boundry cell, so swap cell numbers
+	 // so that c1p refers to the ghost cell in the following
+	 int temp = c0p;
+	 c0p = c1p;
+	 c1p = temp;
        }
 
+       const X leftFlux = rParentCell[c1p]; // inward shell flux on the left
+       const OffDiag dRC0dXC1 = parentmatrix.getCoeff(c1p,  c0p);
+       const Diag dRC0dXC0 = parentdiag[c1p];
+
        //get other mesh fluxes and coeffs
-       const int c0o = otherFaceCells(f,0);
-       const int c1o = otherFaceCells(f,1);
-       const X rightFlux = rOtherCell[c1o]; // inward shell flux on the right
-       OffDiag dRC0dXC3 = othermatrix.getCoeff(c1o,  c0o);
-       OffDiag dRC0dXC2 = otherdiag[c1o];
+       int c0o = otherFaceCells(f,0);
+       int c1o = otherFaceCells(f,1);
        if (c1o < otherCells.getSelfCount())
-       {
-	 // c0 is ghost cell and c1 is boundry cell, so fix coeffs
-	 dRC0dXC3 = othermatrix.getCoeff(c0o,  c1o);
-	 dRC0dXC2 = otherdiag[c0o];
+       { 
+	 // c0 is ghost cell and c1 is boundry cell, so swap cell numbers
+	 // so that c1o refers to the ghost cell in the following
+	 int temp = c0o;
+	 c0o = c1o;
+	 c1o = temp;
        }
+
+       const X rightFlux = rOtherCell[c1o]; // inward shell flux on the right
+       const OffDiag dRC0dXC3 = othermatrix.getCoeff(c1o,  c0o);
+       const OffDiag dRC0dXC2 = otherdiag[c1o];
+
 
        //now put flux information from meshes into shell cells
        const int c0 = f;

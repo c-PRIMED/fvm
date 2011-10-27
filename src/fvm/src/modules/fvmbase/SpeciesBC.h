@@ -6,7 +6,7 @@ struct SpeciesBC : public FloatVarDict<T>
 {
   SpeciesBC()
   {
-      this->defineVar("specifiedMassFraction",T(1.0));
+      this->defineVar("specifiedMassFraction",T(0.0));
       this->defineVar("specifiedMassFlux",T(0.0));
       
   }

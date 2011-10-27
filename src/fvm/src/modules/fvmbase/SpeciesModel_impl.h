@@ -527,11 +527,11 @@ public:
 
         _niters++;
         if (!(*rNorm < _options.absoluteTolerance ||
-	      *normRatio < _options.relativeTolerance))
+	    *normRatio < _options.relativeTolerance))
 	    allConverged=false;
       }
       if (allConverged)
-	break;
+      	break;
     }
   }
     

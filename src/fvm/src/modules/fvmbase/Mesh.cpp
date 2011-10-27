@@ -36,6 +36,7 @@ Mesh::Mesh(const int dimension):
   _isShell(false),
   _isDoubleShell(false),
   _parentFaceGroupSite(0),
+  _otherFaceGroupSite(0),
   _parentMeshID(0),
   _otherMeshID(0)
 {
@@ -66,6 +67,7 @@ Mesh::Mesh( const int dimension,
   _isShell(false),
   _isDoubleShell(false),
   _parentFaceGroupSite(0),
+  _otherFaceGroupSite(0),
   _parentMeshID(0),
   _otherMeshID(0)
 {
@@ -150,6 +152,7 @@ Mesh::Mesh( const int dimension,
   _isShell(false),
   _isDoubleShell(false),
   _parentFaceGroupSite(0),
+  _otherFaceGroupSite(0),
   _parentMeshID(0),
   _otherMeshID(0)
 {
@@ -1691,6 +1694,8 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   const StorageSite& fgSite = fg.site;
   StorageSite& cells = getCells();
 
+  const FaceGroup& fgOther = otherMesh.getFaceGroup(otherFgId);
+  const StorageSite& fgSiteOther = fgOther.site;
 
   StorageSite& otherCells = otherMesh.getCells();
   
@@ -1705,6 +1710,7 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   shellMesh->_parentFaceGroupSite = &fgSite;
   shellMesh->_parentMeshID = getID();
   shellMesh->_otherMeshID = otherMesh.getID();
+  shellMesh->_otherFaceGroupSite = &fgSiteOther;
   
   StorageSite& sMeshCells = shellMesh->getCells();
 

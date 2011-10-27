@@ -322,6 +322,9 @@ public:
   const StorageSite& getParentFaceGroupSite() const
   {return *_parentFaceGroupSite;}
 
+  const StorageSite& getOtherFaceGroupSite() const
+  {return *_otherFaceGroupSite;}
+
   ConnectivityMap&  getConnectivityMap() {return _connectivityMap;}
 
   PeriodicFacePairs& getPeriodicFacePairs() { return _periodicFacePairs;}
@@ -401,6 +404,7 @@ protected:
   // cells
   
   const StorageSite* _parentFaceGroupSite;
+  const StorageSite* _otherFaceGroupSite;
   int _parentMeshID;
   int _otherMeshID;
   

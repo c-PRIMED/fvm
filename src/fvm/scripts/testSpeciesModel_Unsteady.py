@@ -8,7 +8,7 @@ import fvm.exporters_atyped_double as exporters
 from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
-reader = FluentCase("/home/brad/ThermalTest3.cas")
+reader = FluentCase("../test/SpeciesTest.cas")
 
 #import debug
 reader.read();
@@ -27,7 +27,7 @@ vcmap = smodel.getVCMap(0)
 
 
 vcElectrode = vcmap[0]
-vcElectrode['massDiffusivity'] = 1
+vcElectrode['massDiffusivity'] = 1e-6
 
 bcLeft = bcmap[4]
 bcTop = bcmap[6]
@@ -49,9 +49,9 @@ bcBottom.setVar('specifiedMassFlux', 0.0)
 bcTop.bcType = 'SpecifiedMassFlux'
 bcTop.setVar('specifiedMassFlux', 0.0)
 
-timeStep = 0.25
-numTimeSteps = 200
-numIterPerTimeStep = 50
+timeStep = 1e6 # large timestep due to large mesh dimesions and small diffusivity
+numTimeSteps = 50 #approximately steady state
+numIterPerTimeStep = 1 # linear so only one linear solve needed
 
 def advanceUnsteady(smodel,geomFields,meshes,numTimeSteps,numIterPerTimeStep):
    for i in range(0,numTimeSteps):
@@ -76,6 +76,18 @@ soptions = smodel.getOptions()
 soptions.transient = True
 soptions.setVar('timeStep',timeStep)
 soptions.setVar('initialMassFraction',0.0)
+
+solver = fvmbaseExt.AMG()
+solver.relativeTolerance = 1e-14 #solver tolerance
+solver.absoluteTolerance = 1e-16 #solver tolerance
+solver.nMaxIterations = 100
+solver.maxCoarseLevels=30
+solver.verbosity=0
+soptions.linearSolver = solver
+
+# model tolerances are only needed for non-linear or unstructured problems
+#soptions.relativeTolerance=1e-16
+#soptions.absoluteTolerance=1e-16
 
 #bmodel.printBCs()
 smodel.init()

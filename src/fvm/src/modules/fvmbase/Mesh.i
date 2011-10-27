@@ -167,6 +167,7 @@ public:
   Mesh* createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId);
   bool isDoubleShell() const;
   const StorageSite& getParentFaceGroupSite() const;
+  const StorageSite& getOtherFaceGroupSite() const;
   int getParentMeshID() const;
   int getOtherMeshID() const;
   
