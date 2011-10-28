@@ -249,3 +249,4 @@ typedef std::vector<Mesh*> MeshList;
 
 
 %template(MeshList) std::vector<Mesh*>;
+%template(MapInt)  std::map<int,int>;
