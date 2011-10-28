@@ -144,6 +144,7 @@ MeshPartitioner::mesh()
  
 }
 
+#if 0
 void 
 MeshPartitioner::dumpTecplot()
 {
@@ -281,7 +282,7 @@ MeshPartitioner::dumpTecplot()
 
 }
 
-
+#endif
              //SET PROPERTIES METHODS
 void 
 MeshPartitioner::setWeightType( int weight_type )

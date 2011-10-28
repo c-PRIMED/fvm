@@ -64,7 +64,9 @@ public:
 
 
     void debug_print();
+#if 0
     void dumpTecplot();
+#endif    
     void mesh_xdmfplot();
 
     // set property methods

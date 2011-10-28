@@ -28,7 +28,7 @@ public:
 
     void  extractBoundaryMesh();
     const Mesh& getBoundaryMesh() const;
-    void dumpTecplot();
+//    void dumpTecplot();
     void mesh_xdmfplot();
     void isCleanup(bool clean_up);
     void isDebug(bool debug);
