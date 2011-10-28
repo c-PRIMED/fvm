@@ -44,7 +44,7 @@ class CaptureDiscretization : public Discretization
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef typename CCMatrix::OffDiagArray OffDiagArray;
   typedef Array<X> XArray;
-  typedef Array<Vector<T_Scalar, 2> > VectorTNArray;
+  typedef Array<Vector<T_Scalar, 3> > VectorTNArray;
 
   CaptureDiscretization(const MeshList& meshes,
 			const GeomFields& geomFields,

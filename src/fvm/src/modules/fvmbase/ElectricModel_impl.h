@@ -48,10 +48,10 @@ public:
   typedef Vector<double, 3> VectorD3;
   typedef Array<VectorT3> VectorT3Array;
   
-  typedef Vector<T,2> VectorTN;
+  typedef Vector<T,3> VectorTN;
   typedef Array<VectorTN> VectorTNArray;
   
-  typedef SquareTensor<T, 2> TensorNxN;
+  typedef SquareTensor<T, 3> TensorNxN;
   //typedef ElecDiagonalTensor<T, 2> TensorNxN;
   typedef Array<TensorNxN> TensorNxNArray;
 
