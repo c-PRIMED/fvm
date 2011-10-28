@@ -144,7 +144,7 @@ def main():
 	'beamTest.py':[check_convergence],
 	'beamTest3D.py':[check_convergence],
 	'testFlowParallel.py':[check_convergence],
-	'mesh.py':[check_compare, check_faceCell2_mesh0, check_faceCells2]
+	'mesh.py':[check_faceCell2_mesh0, check_faceCells2]
         }
     parser = OptionParser()
     parser.set_defaults(np=1,outdir='',type='tri')
