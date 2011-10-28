@@ -1,0 +1,183 @@
+ total mesh surrounding = 3
+ total mesh surrounding = 2
+ total mesh surrounding = 3
+ total mesh surrounding = 4
+ total mesh surrounding = 2
+ total mesh surrounding = 3
+ total mesh surrounding = 4
+ total mesh surrounding = 3
+ total mesh surrounding = 2
+ total mesh surrounding = 3
+ total mesh surrounding = 4
+ total mesh surrounding = 3
+ total mesh surrounding = 3
+ total mesh surrounding = 2
+ total mesh surrounding = 4
+ total mesh surrounding = 3
+
+ offset for ghost Cells from adjacent meshes to read data from _ghostCellsGlobal : 
+    n  =  0 offsetInterfaceCells = 120
+    n  =  1 offsetInterfaceCells = 128
+    n  =  2 offsetInterfaceCells = 136
+    n  =  3 offsetInterfaceCells = 128
+    n  =  4 offsetInterfaceCells = 136
+    n  =  5 offsetInterfaceCells = 120
+    n  =  6 offsetInterfaceCells = 128
+    n  =  7 offsetInterfaceCells = 136
+    n  =  8 offsetInterfaceCells = 112
+    n  =  9 offsetInterfaceCells = 120
+    n  =  10 offsetInterfaceCells = 128
+    n  =  11 offsetInterfaceCells = 136
+    n  =  12 offsetInterfaceCells = 128
+    n  =  13 offsetInterfaceCells = 136
+    n  =  14 offsetInterfaceCells = 120
+    n  =  15 offsetInterfaceCells = 128
+    n  =  16 offsetInterfaceCells = 136
+    n  =  17 offsetInterfaceCells = 112
+    n  =  18 offsetInterfaceCells = 120
+    n  =  19 offsetInterfaceCells = 128
+    n  =  20 offsetInterfaceCells = 136
+    n  =  21 offsetInterfaceCells = 120
+    n  =  22 offsetInterfaceCells = 128
+    n  =  23 offsetInterfaceCells = 136
+    n  =  24 offsetInterfaceCells = 128
+    n  =  25 offsetInterfaceCells = 136
+    n  =  26 offsetInterfaceCells = 120
+    n  =  27 offsetInterfaceCells = 128
+    n  =  28 offsetInterfaceCells = 136
+    n  =  29 offsetInterfaceCells = 112
+    n  =  30 offsetInterfaceCells = 120
+    n  =  31 offsetInterfaceCells = 128
+    n  =  32 offsetInterfaceCells = 136
+    n  =  33 offsetInterfaceCells = 120
+    n  =  34 offsetInterfaceCells = 128
+    n  =  35 offsetInterfaceCells = 136
+    n  =  36 offsetInterfaceCells = 120
+    n  =  37 offsetInterfaceCells = 128
+    n  =  38 offsetInterfaceCells = 136
+    n  =  39 offsetInterfaceCells = 128
+    n  =  40 offsetInterfaceCells = 136
+    n  =  41 offsetInterfaceCells = 112
+    n  =  42 offsetInterfaceCells = 120
+    n  =  43 offsetInterfaceCells = 128
+    n  =  44 offsetInterfaceCells = 136
+    n  =  45 offsetInterfaceCells = 120
+    n  =  46 offsetInterfaceCells = 128
+    n  =  47 offsetInterfaceCells = 136
+
+ neightboorhood cell IDs : 
+    n  =  0  interfaced Mesh ID = 1
+    n  =  1  interfaced Mesh ID = 3
+    n  =  2  interfaced Mesh ID = 7
+    n  =  3  interfaced Mesh ID = 0
+    n  =  4  interfaced Mesh ID = 2
+    n  =  5  interfaced Mesh ID = 1
+    n  =  6  interfaced Mesh ID = 3
+    n  =  7  interfaced Mesh ID = 15
+    n  =  8  interfaced Mesh ID = 0
+    n  =  9  interfaced Mesh ID = 2
+    n  =  10  interfaced Mesh ID = 6
+    n  =  11  interfaced Mesh ID = 14
+    n  =  12  interfaced Mesh ID = 5
+    n  =  13  interfaced Mesh ID = 7
+    n  =  14  interfaced Mesh ID = 4
+    n  =  15  interfaced Mesh ID = 6
+    n  =  16  interfaced Mesh ID = 11
+    n  =  17  interfaced Mesh ID = 3
+    n  =  18  interfaced Mesh ID = 5
+    n  =  19  interfaced Mesh ID = 7
+    n  =  20  interfaced Mesh ID = 10
+    n  =  21  interfaced Mesh ID = 0
+    n  =  22  interfaced Mesh ID = 4
+    n  =  23  interfaced Mesh ID = 6
+    n  =  24  interfaced Mesh ID = 9
+    n  =  25  interfaced Mesh ID = 11
+    n  =  26  interfaced Mesh ID = 8
+    n  =  27  interfaced Mesh ID = 10
+    n  =  28  interfaced Mesh ID = 12
+    n  =  29  interfaced Mesh ID = 6
+    n  =  30  interfaced Mesh ID = 9
+    n  =  31  interfaced Mesh ID = 11
+    n  =  32  interfaced Mesh ID = 14
+    n  =  33  interfaced Mesh ID = 5
+    n  =  34  interfaced Mesh ID = 8
+    n  =  35  interfaced Mesh ID = 10
+    n  =  36  interfaced Mesh ID = 9
+    n  =  37  interfaced Mesh ID = 13
+    n  =  38  interfaced Mesh ID = 14
+    n  =  39  interfaced Mesh ID = 12
+    n  =  40  interfaced Mesh ID = 15
+    n  =  41  interfaced Mesh ID = 3
+    n  =  42  interfaced Mesh ID = 10
+    n  =  43  interfaced Mesh ID = 12
+    n  =  44  interfaced Mesh ID = 15
+    n  =  45  interfaced Mesh ID = 2
+    n  =  46  interfaced Mesh ID = 13
+    n  =  47  interfaced Mesh ID = 14
+
+interface cells looking interior domain (global numbering)  : 
+    n  =  0  cell ID = 752
+    n  =  1  cell ID = 753
+    n  =  2  cell ID = 754
+    n  =  3  cell ID = 755
+    n  =  4  cell ID = 756
+    n  =  5  cell ID = 757
+    n  =  6  cell ID = 758
+    n  =  7  cell ID = 759
+    n  =  8  cell ID = 535
+    n  =  9  cell ID = 567
+    n  =  10  cell ID = 599
+    n  =  11  cell ID = 631
+    n  =  12  cell ID = 663
+    n  =  13  cell ID = 695
+    n  =  14  cell ID = 727
+    n  =  15  cell ID = 759
+    n  =  16  cell ID = 528
+    n  =  17  cell ID = 560
+    n  =  18  cell ID = 592
+    n  =  19  cell ID = 624
+    n  =  20  cell ID = 656
+    n  =  21  cell ID = 688
+    n  =  22  cell ID = 720
+    n  =  23  cell ID = 752
+    n  =  24  cell ID = 528
+    n  =  25  cell ID = 529
+    n  =  26  cell ID = 530
+    n  =  27  cell ID = 531
+    n  =  28  cell ID = 532
+    n  =  29  cell ID = 533
+    n  =  30  cell ID = 534
+    n  =  31  cell ID = 535
+interface cells looking interior domain (local numbering)  : 
+    n  =  0  interfaced Mesh ID = 56
+    n  =  1  interfaced Mesh ID = 57
+    n  =  2  interfaced Mesh ID = 58
+    n  =  3  interfaced Mesh ID = 59
+    n  =  4  interfaced Mesh ID = 60
+    n  =  5  interfaced Mesh ID = 61
+    n  =  6  interfaced Mesh ID = 62
+    n  =  7  interfaced Mesh ID = 63
+    n  =  8  interfaced Mesh ID = 7
+    n  =  9  interfaced Mesh ID = 15
+    n  =  10  interfaced Mesh ID = 23
+    n  =  11  interfaced Mesh ID = 31
+    n  =  12  interfaced Mesh ID = 39
+    n  =  13  interfaced Mesh ID = 47
+    n  =  14  interfaced Mesh ID = 55
+    n  =  15  interfaced Mesh ID = 63
+    n  =  16  interfaced Mesh ID = 0
+    n  =  17  interfaced Mesh ID = 8
+    n  =  18  interfaced Mesh ID = 16
+    n  =  19  interfaced Mesh ID = 24
+    n  =  20  interfaced Mesh ID = 32
+    n  =  21  interfaced Mesh ID = 40
+    n  =  22  interfaced Mesh ID = 48
+    n  =  23  interfaced Mesh ID = 56
+    n  =  24  interfaced Mesh ID = 0
+    n  =  25  interfaced Mesh ID = 1
+    n  =  26  interfaced Mesh ID = 2
+    n  =  27  interfaced Mesh ID = 3
+    n  =  28  interfaced Mesh ID = 4
+    n  =  29  interfaced Mesh ID = 5
+    n  =  30  interfaced Mesh ID = 6
+    n  =  31  interfaced Mesh ID = 7

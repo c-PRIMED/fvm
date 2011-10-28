@@ -1,0 +1,18 @@
+_totElems = 1024
+
+_npart    = 4
+
+_elemDist : 
+
+_elemDist[0] = 256
+_elemDist[1] = 256
+_elemDist[2] = 256
+_elemDist[3] = 256
+
+_globalIndx : 
+_globalIndx[0] = 0
+_globalIndx[1] = 256
+_globalIndx[2] = 512
+_globalIndx[3] = 768
+_globalIndx[4] = 1024
+

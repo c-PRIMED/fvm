@@ -1,0 +1,8 @@
+ total mesh surrounding = 0
+
+ offset for ghost Cells from adjacent meshes to read data from _ghostCellsGlobal : 
+
+ neightboorhood cell IDs : 
+
+interface cells looking interior domain (global numbering)  : 
+interface cells looking interior domain (local numbering)  : 

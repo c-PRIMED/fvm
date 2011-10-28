@@ -1,0 +1,321 @@
+Mesh ID = 0
+   localCellID = 0       itself and cells around (global number) = 17  48  1071  15  
+   localCellID = 1       itself and cells around (global number) = 16  18  49  1070  
+   localCellID = 2       itself and cells around (global number) = 17  19  50  1069  
+   localCellID = 3       itself and cells around (global number) = 18  20  51  1068  
+   localCellID = 4       itself and cells around (global number) = 19  21  52  1067  
+   localCellID = 5       itself and cells around (global number) = 20  22  53  1066  
+   localCellID = 6       itself and cells around (global number) = 21  23  54  1065  
+   localCellID = 7       itself and cells around (global number) = 22  24  55  1064  
+   localCellID = 8       itself and cells around (global number) = 23  25  56  1063  
+   localCellID = 9       itself and cells around (global number) = 24  26  57  1062  
+   localCellID = 10       itself and cells around (global number) = 25  27  58  1061  
+   localCellID = 11       itself and cells around (global number) = 26  28  59  1060  
+   localCellID = 12       itself and cells around (global number) = 27  29  60  1059  
+   localCellID = 13       itself and cells around (global number) = 28  30  61  1058  
+   localCellID = 14       itself and cells around (global number) = 29  31  62  1057  
+   localCellID = 15       itself and cells around (global number) = 30  63  1056  1119  
+   localCellID = 16       itself and cells around (global number) = 16  49  80  47  
+   localCellID = 17       itself and cells around (global number) = 17  48  50  81  
+   localCellID = 18       itself and cells around (global number) = 18  49  51  82  
+   localCellID = 19       itself and cells around (global number) = 19  50  52  83  
+   localCellID = 20       itself and cells around (global number) = 20  51  53  84  
+   localCellID = 21       itself and cells around (global number) = 21  52  54  85  
+   localCellID = 22       itself and cells around (global number) = 22  53  55  86  
+   localCellID = 23       itself and cells around (global number) = 23  54  56  87  
+   localCellID = 24       itself and cells around (global number) = 24  55  57  88  
+   localCellID = 25       itself and cells around (global number) = 25  56  58  89  
+   localCellID = 26       itself and cells around (global number) = 26  57  59  90  
+   localCellID = 27       itself and cells around (global number) = 27  58  60  91  
+   localCellID = 28       itself and cells around (global number) = 28  59  61  92  
+   localCellID = 29       itself and cells around (global number) = 29  60  62  93  
+   localCellID = 30       itself and cells around (global number) = 30  61  63  94  
+   localCellID = 31       itself and cells around (global number) = 31  62  95  1118  
+   localCellID = 32       itself and cells around (global number) = 48  81  112  79  
+   localCellID = 33       itself and cells around (global number) = 49  80  82  113  
+   localCellID = 34       itself and cells around (global number) = 50  81  83  114  
+   localCellID = 35       itself and cells around (global number) = 51  82  84  115  
+   localCellID = 36       itself and cells around (global number) = 52  83  85  116  
+   localCellID = 37       itself and cells around (global number) = 53  84  86  117  
+   localCellID = 38       itself and cells around (global number) = 54  85  87  118  
+   localCellID = 39       itself and cells around (global number) = 55  86  88  119  
+   localCellID = 40       itself and cells around (global number) = 56  87  89  120  
+   localCellID = 41       itself and cells around (global number) = 57  88  90  121  
+   localCellID = 42       itself and cells around (global number) = 58  89  91  122  
+   localCellID = 43       itself and cells around (global number) = 59  90  92  123  
+   localCellID = 44       itself and cells around (global number) = 60  91  93  124  
+   localCellID = 45       itself and cells around (global number) = 61  92  94  125  
+   localCellID = 46       itself and cells around (global number) = 62  93  95  126  
+   localCellID = 47       itself and cells around (global number) = 63  94  127  1117  
+   localCellID = 48       itself and cells around (global number) = 80  113  144  111  
+   localCellID = 49       itself and cells around (global number) = 81  112  114  145  
+   localCellID = 50       itself and cells around (global number) = 82  113  115  146  
+   localCellID = 51       itself and cells around (global number) = 83  114  116  147  
+   localCellID = 52       itself and cells around (global number) = 84  115  117  148  
+   localCellID = 53       itself and cells around (global number) = 85  116  118  149  
+   localCellID = 54       itself and cells around (global number) = 86  117  119  150  
+   localCellID = 55       itself and cells around (global number) = 87  118  120  151  
+   localCellID = 56       itself and cells around (global number) = 88  119  121  152  
+   localCellID = 57       itself and cells around (global number) = 89  120  122  153  
+   localCellID = 58       itself and cells around (global number) = 90  121  123  154  
+   localCellID = 59       itself and cells around (global number) = 91  122  124  155  
+   localCellID = 60       itself and cells around (global number) = 92  123  125  156  
+   localCellID = 61       itself and cells around (global number) = 93  124  126  157  
+   localCellID = 62       itself and cells around (global number) = 94  125  127  158  
+   localCellID = 63       itself and cells around (global number) = 95  126  159  1116  
+   localCellID = 64       itself and cells around (global number) = 112  145  176  143  
+   localCellID = 65       itself and cells around (global number) = 113  144  146  177  
+   localCellID = 66       itself and cells around (global number) = 114  145  147  178  
+   localCellID = 67       itself and cells around (global number) = 115  146  148  179  
+   localCellID = 68       itself and cells around (global number) = 116  147  149  180  
+   localCellID = 69       itself and cells around (global number) = 117  148  150  181  
+   localCellID = 70       itself and cells around (global number) = 118  149  151  182  
+   localCellID = 71       itself and cells around (global number) = 119  150  152  183  
+   localCellID = 72       itself and cells around (global number) = 120  151  153  184  
+   localCellID = 73       itself and cells around (global number) = 121  152  154  185  
+   localCellID = 74       itself and cells around (global number) = 122  153  155  186  
+   localCellID = 75       itself and cells around (global number) = 123  154  156  187  
+   localCellID = 76       itself and cells around (global number) = 124  155  157  188  
+   localCellID = 77       itself and cells around (global number) = 125  156  158  189  
+   localCellID = 78       itself and cells around (global number) = 126  157  159  190  
+   localCellID = 79       itself and cells around (global number) = 127  158  191  1115  
+   localCellID = 80       itself and cells around (global number) = 144  177  208  175  
+   localCellID = 81       itself and cells around (global number) = 145  176  178  209  
+   localCellID = 82       itself and cells around (global number) = 146  177  179  210  
+   localCellID = 83       itself and cells around (global number) = 147  178  180  211  
+   localCellID = 84       itself and cells around (global number) = 148  179  181  212  
+   localCellID = 85       itself and cells around (global number) = 149  180  182  213  
+   localCellID = 86       itself and cells around (global number) = 150  181  183  214  
+   localCellID = 87       itself and cells around (global number) = 151  182  184  215  
+   localCellID = 88       itself and cells around (global number) = 152  183  185  216  
+   localCellID = 89       itself and cells around (global number) = 153  184  186  217  
+   localCellID = 90       itself and cells around (global number) = 154  185  187  218  
+   localCellID = 91       itself and cells around (global number) = 155  186  188  219  
+   localCellID = 92       itself and cells around (global number) = 156  187  189  220  
+   localCellID = 93       itself and cells around (global number) = 157  188  190  221  
+   localCellID = 94       itself and cells around (global number) = 158  189  191  222  
+   localCellID = 95       itself and cells around (global number) = 159  190  223  1114  
+   localCellID = 96       itself and cells around (global number) = 176  209  240  207  
+   localCellID = 97       itself and cells around (global number) = 177  208  210  241  
+   localCellID = 98       itself and cells around (global number) = 178  209  211  242  
+   localCellID = 99       itself and cells around (global number) = 179  210  212  243  
+   localCellID = 100       itself and cells around (global number) = 180  211  213  244  
+   localCellID = 101       itself and cells around (global number) = 181  212  214  245  
+   localCellID = 102       itself and cells around (global number) = 182  213  215  246  
+   localCellID = 103       itself and cells around (global number) = 183  214  216  247  
+   localCellID = 104       itself and cells around (global number) = 184  215  217  248  
+   localCellID = 105       itself and cells around (global number) = 185  216  218  249  
+   localCellID = 106       itself and cells around (global number) = 186  217  219  250  
+   localCellID = 107       itself and cells around (global number) = 187  218  220  251  
+   localCellID = 108       itself and cells around (global number) = 188  219  221  252  
+   localCellID = 109       itself and cells around (global number) = 189  220  222  253  
+   localCellID = 110       itself and cells around (global number) = 190  221  223  254  
+   localCellID = 111       itself and cells around (global number) = 191  222  255  1113  
+   localCellID = 112       itself and cells around (global number) = 208  241  272  239  
+   localCellID = 113       itself and cells around (global number) = 209  240  242  273  
+   localCellID = 114       itself and cells around (global number) = 210  241  243  274  
+   localCellID = 115       itself and cells around (global number) = 211  242  244  275  
+   localCellID = 116       itself and cells around (global number) = 212  243  245  276  
+   localCellID = 117       itself and cells around (global number) = 213  244  246  277  
+   localCellID = 118       itself and cells around (global number) = 214  245  247  278  
+   localCellID = 119       itself and cells around (global number) = 215  246  248  279  
+   localCellID = 120       itself and cells around (global number) = 216  247  249  280  
+   localCellID = 121       itself and cells around (global number) = 217  248  250  281  
+   localCellID = 122       itself and cells around (global number) = 218  249  251  282  
+   localCellID = 123       itself and cells around (global number) = 219  250  252  283  
+   localCellID = 124       itself and cells around (global number) = 220  251  253  284  
+   localCellID = 125       itself and cells around (global number) = 221  252  254  285  
+   localCellID = 126       itself and cells around (global number) = 222  253  255  286  
+   localCellID = 127       itself and cells around (global number) = 223  254  287  1112  
+   localCellID = 128       itself and cells around (global number) = 240  273  304  271  
+   localCellID = 129       itself and cells around (global number) = 241  272  274  305  
+   localCellID = 130       itself and cells around (global number) = 242  273  275  306  
+   localCellID = 131       itself and cells around (global number) = 243  274  276  307  
+   localCellID = 132       itself and cells around (global number) = 244  275  277  308  
+   localCellID = 133       itself and cells around (global number) = 245  276  278  309  
+   localCellID = 134       itself and cells around (global number) = 246  277  279  310  
+   localCellID = 135       itself and cells around (global number) = 247  278  280  311  
+   localCellID = 136       itself and cells around (global number) = 248  279  281  312  
+   localCellID = 137       itself and cells around (global number) = 249  280  282  313  
+   localCellID = 138       itself and cells around (global number) = 250  281  283  314  
+   localCellID = 139       itself and cells around (global number) = 251  282  284  315  
+   localCellID = 140       itself and cells around (global number) = 252  283  285  316  
+   localCellID = 141       itself and cells around (global number) = 253  284  286  317  
+   localCellID = 142       itself and cells around (global number) = 254  285  287  318  
+   localCellID = 143       itself and cells around (global number) = 255  286  319  1111  
+   localCellID = 144       itself and cells around (global number) = 272  305  336  303  
+   localCellID = 145       itself and cells around (global number) = 273  304  306  337  
+   localCellID = 146       itself and cells around (global number) = 274  305  307  338  
+   localCellID = 147       itself and cells around (global number) = 275  306  308  339  
+   localCellID = 148       itself and cells around (global number) = 276  307  309  340  
+   localCellID = 149       itself and cells around (global number) = 277  308  310  341  
+   localCellID = 150       itself and cells around (global number) = 278  309  311  342  
+   localCellID = 151       itself and cells around (global number) = 279  310  312  343  
+   localCellID = 152       itself and cells around (global number) = 280  311  313  344  
+   localCellID = 153       itself and cells around (global number) = 281  312  314  345  
+   localCellID = 154       itself and cells around (global number) = 282  313  315  346  
+   localCellID = 155       itself and cells around (global number) = 283  314  316  347  
+   localCellID = 156       itself and cells around (global number) = 284  315  317  348  
+   localCellID = 157       itself and cells around (global number) = 285  316  318  349  
+   localCellID = 158       itself and cells around (global number) = 286  317  319  350  
+   localCellID = 159       itself and cells around (global number) = 287  318  351  1110  
+   localCellID = 160       itself and cells around (global number) = 304  337  368  335  
+   localCellID = 161       itself and cells around (global number) = 305  336  338  369  
+   localCellID = 162       itself and cells around (global number) = 306  337  339  370  
+   localCellID = 163       itself and cells around (global number) = 307  338  340  371  
+   localCellID = 164       itself and cells around (global number) = 308  339  341  372  
+   localCellID = 165       itself and cells around (global number) = 309  340  342  373  
+   localCellID = 166       itself and cells around (global number) = 310  341  343  374  
+   localCellID = 167       itself and cells around (global number) = 311  342  344  375  
+   localCellID = 168       itself and cells around (global number) = 312  343  345  376  
+   localCellID = 169       itself and cells around (global number) = 313  344  346  377  
+   localCellID = 170       itself and cells around (global number) = 314  345  347  378  
+   localCellID = 171       itself and cells around (global number) = 315  346  348  379  
+   localCellID = 172       itself and cells around (global number) = 316  347  349  380  
+   localCellID = 173       itself and cells around (global number) = 317  348  350  381  
+   localCellID = 174       itself and cells around (global number) = 318  349  351  382  
+   localCellID = 175       itself and cells around (global number) = 319  350  383  1109  
+   localCellID = 176       itself and cells around (global number) = 336  369  400  367  
+   localCellID = 177       itself and cells around (global number) = 337  368  370  401  
+   localCellID = 178       itself and cells around (global number) = 338  369  371  402  
+   localCellID = 179       itself and cells around (global number) = 339  370  372  403  
+   localCellID = 180       itself and cells around (global number) = 340  371  373  404  
+   localCellID = 181       itself and cells around (global number) = 341  372  374  405  
+   localCellID = 182       itself and cells around (global number) = 342  373  375  406  
+   localCellID = 183       itself and cells around (global number) = 343  374  376  407  
+   localCellID = 184       itself and cells around (global number) = 344  375  377  408  
+   localCellID = 185       itself and cells around (global number) = 345  376  378  409  
+   localCellID = 186       itself and cells around (global number) = 346  377  379  410  
+   localCellID = 187       itself and cells around (global number) = 347  378  380  411  
+   localCellID = 188       itself and cells around (global number) = 348  379  381  412  
+   localCellID = 189       itself and cells around (global number) = 349  380  382  413  
+   localCellID = 190       itself and cells around (global number) = 350  381  383  414  
+   localCellID = 191       itself and cells around (global number) = 351  382  415  1108  
+   localCellID = 192       itself and cells around (global number) = 368  401  432  399  
+   localCellID = 193       itself and cells around (global number) = 369  400  402  433  
+   localCellID = 194       itself and cells around (global number) = 370  401  403  434  
+   localCellID = 195       itself and cells around (global number) = 371  402  404  435  
+   localCellID = 196       itself and cells around (global number) = 372  403  405  436  
+   localCellID = 197       itself and cells around (global number) = 373  404  406  437  
+   localCellID = 198       itself and cells around (global number) = 374  405  407  438  
+   localCellID = 199       itself and cells around (global number) = 375  406  408  439  
+   localCellID = 200       itself and cells around (global number) = 376  407  409  440  
+   localCellID = 201       itself and cells around (global number) = 377  408  410  441  
+   localCellID = 202       itself and cells around (global number) = 378  409  411  442  
+   localCellID = 203       itself and cells around (global number) = 379  410  412  443  
+   localCellID = 204       itself and cells around (global number) = 380  411  413  444  
+   localCellID = 205       itself and cells around (global number) = 381  412  414  445  
+   localCellID = 206       itself and cells around (global number) = 382  413  415  446  
+   localCellID = 207       itself and cells around (global number) = 383  414  447  1107  
+   localCellID = 208       itself and cells around (global number) = 400  433  464  431  
+   localCellID = 209       itself and cells around (global number) = 401  432  434  465  
+   localCellID = 210       itself and cells around (global number) = 402  433  435  466  
+   localCellID = 211       itself and cells around (global number) = 403  434  436  467  
+   localCellID = 212       itself and cells around (global number) = 404  435  437  468  
+   localCellID = 213       itself and cells around (global number) = 405  436  438  469  
+   localCellID = 214       itself and cells around (global number) = 406  437  439  470  
+   localCellID = 215       itself and cells around (global number) = 407  438  440  471  
+   localCellID = 216       itself and cells around (global number) = 408  439  441  472  
+   localCellID = 217       itself and cells around (global number) = 409  440  442  473  
+   localCellID = 218       itself and cells around (global number) = 410  441  443  474  
+   localCellID = 219       itself and cells around (global number) = 411  442  444  475  
+   localCellID = 220       itself and cells around (global number) = 412  443  445  476  
+   localCellID = 221       itself and cells around (global number) = 413  444  446  477  
+   localCellID = 222       itself and cells around (global number) = 414  445  447  478  
+   localCellID = 223       itself and cells around (global number) = 415  446  479  1106  
+   localCellID = 224       itself and cells around (global number) = 432  465  496  463  
+   localCellID = 225       itself and cells around (global number) = 433  464  466  497  
+   localCellID = 226       itself and cells around (global number) = 434  465  467  498  
+   localCellID = 227       itself and cells around (global number) = 435  466  468  499  
+   localCellID = 228       itself and cells around (global number) = 436  467  469  500  
+   localCellID = 229       itself and cells around (global number) = 437  468  470  501  
+   localCellID = 230       itself and cells around (global number) = 438  469  471  502  
+   localCellID = 231       itself and cells around (global number) = 439  470  472  503  
+   localCellID = 232       itself and cells around (global number) = 440  471  473  504  
+   localCellID = 233       itself and cells around (global number) = 441  472  474  505  
+   localCellID = 234       itself and cells around (global number) = 442  473  475  506  
+   localCellID = 235       itself and cells around (global number) = 443  474  476  507  
+   localCellID = 236       itself and cells around (global number) = 444  475  477  508  
+   localCellID = 237       itself and cells around (global number) = 445  476  478  509  
+   localCellID = 238       itself and cells around (global number) = 446  477  479  510  
+   localCellID = 239       itself and cells around (global number) = 447  478  511  1105  
+   localCellID = 240       itself and cells around (global number) = 464  497  528  495  
+   localCellID = 241       itself and cells around (global number) = 465  496  498  529  
+   localCellID = 242       itself and cells around (global number) = 466  497  499  530  
+   localCellID = 243       itself and cells around (global number) = 467  498  500  531  
+   localCellID = 244       itself and cells around (global number) = 468  499  501  532  
+   localCellID = 245       itself and cells around (global number) = 469  500  502  533  
+   localCellID = 246       itself and cells around (global number) = 470  501  503  534  
+   localCellID = 247       itself and cells around (global number) = 471  502  504  535  
+   localCellID = 248       itself and cells around (global number) = 472  503  505  536  
+   localCellID = 249       itself and cells around (global number) = 473  504  506  537  
+   localCellID = 250       itself and cells around (global number) = 474  505  507  538  
+   localCellID = 251       itself and cells around (global number) = 475  506  508  539  
+   localCellID = 252       itself and cells around (global number) = 476  507  509  540  
+   localCellID = 253       itself and cells around (global number) = 477  508  510  541  
+   localCellID = 254       itself and cells around (global number) = 478  509  511  542  
+   localCellID = 255       itself and cells around (global number) = 479  510  1104  543  
+   localCellID = 256       itself and cells around (global number) = 31  
+   localCellID = 257       itself and cells around (global number) = 30  
+   localCellID = 258       itself and cells around (global number) = 29  
+   localCellID = 259       itself and cells around (global number) = 28  
+   localCellID = 260       itself and cells around (global number) = 27  
+   localCellID = 261       itself and cells around (global number) = 26  
+   localCellID = 262       itself and cells around (global number) = 25  
+   localCellID = 263       itself and cells around (global number) = 24  
+   localCellID = 264       itself and cells around (global number) = 23  
+   localCellID = 265       itself and cells around (global number) = 22  
+   localCellID = 266       itself and cells around (global number) = 21  
+   localCellID = 267       itself and cells around (global number) = 20  
+   localCellID = 268       itself and cells around (global number) = 19  
+   localCellID = 269       itself and cells around (global number) = 18  
+   localCellID = 270       itself and cells around (global number) = 17  
+   localCellID = 271       itself and cells around (global number) = 16  
+   localCellID = 272       itself and cells around (global number) = 511  
+   localCellID = 273       itself and cells around (global number) = 479  
+   localCellID = 274       itself and cells around (global number) = 447  
+   localCellID = 275       itself and cells around (global number) = 415  
+   localCellID = 276       itself and cells around (global number) = 383  
+   localCellID = 277       itself and cells around (global number) = 351  
+   localCellID = 278       itself and cells around (global number) = 319  
+   localCellID = 279       itself and cells around (global number) = 287  
+   localCellID = 280       itself and cells around (global number) = 255  
+   localCellID = 281       itself and cells around (global number) = 223  
+   localCellID = 282       itself and cells around (global number) = 191  
+   localCellID = 283       itself and cells around (global number) = 159  
+   localCellID = 284       itself and cells around (global number) = 127  
+   localCellID = 285       itself and cells around (global number) = 95  
+   localCellID = 286       itself and cells around (global number) = 63  
+   localCellID = 287       itself and cells around (global number) = 31  
+   localCellID = 288       itself and cells around (global number) = 529  560  496  527  
+   localCellID = 289       itself and cells around (global number) = 528  530  561  497  
+   localCellID = 290       itself and cells around (global number) = 529  531  562  498  
+   localCellID = 291       itself and cells around (global number) = 530  532  563  499  
+   localCellID = 292       itself and cells around (global number) = 531  533  564  500  
+   localCellID = 293       itself and cells around (global number) = 532  534  565  501  
+   localCellID = 294       itself and cells around (global number) = 533  535  566  502  
+   localCellID = 295       itself and cells around (global number) = 534  536  567  503  
+   localCellID = 296       itself and cells around (global number) = 535  537  568  504  
+   localCellID = 297       itself and cells around (global number) = 536  538  569  505  
+   localCellID = 298       itself and cells around (global number) = 537  539  570  506  
+   localCellID = 299       itself and cells around (global number) = 538  540  571  507  
+   localCellID = 300       itself and cells around (global number) = 539  541  572  508  
+   localCellID = 301       itself and cells around (global number) = 540  542  573  509  
+   localCellID = 302       itself and cells around (global number) = 541  543  574  510  
+   localCellID = 303       itself and cells around (global number) = 542  575  1103  511  
+   localCellID = 304       itself and cells around (global number) = 14  47  1072  16  
+   localCellID = 305       itself and cells around (global number) = 15  46  79  48  
+   localCellID = 306       itself and cells around (global number) = 47  78  111  80  
+   localCellID = 307       itself and cells around (global number) = 79  110  143  112  
+   localCellID = 308       itself and cells around (global number) = 111  142  175  144  
+   localCellID = 309       itself and cells around (global number) = 143  174  207  176  
+   localCellID = 310       itself and cells around (global number) = 175  206  239  208  
+   localCellID = 311       itself and cells around (global number) = 207  238  271  240  
+   localCellID = 312       itself and cells around (global number) = 239  270  303  272  
+   localCellID = 313       itself and cells around (global number) = 271  302  335  304  
+   localCellID = 314       itself and cells around (global number) = 303  334  367  336  
+   localCellID = 315       itself and cells around (global number) = 335  366  399  368  
+   localCellID = 316       itself and cells around (global number) = 367  398  431  400  
+   localCellID = 317       itself and cells around (global number) = 399  430  463  432  
+   localCellID = 318       itself and cells around (global number) = 431  462  495  464  
+   localCellID = 319       itself and cells around (global number) = 463  494  496  527  

@@ -1,0 +1,12 @@
+_totElems = 1024
+
+_npart    = 1
+
+_elemDist : 
+
+_elemDist[0] = 1024
+
+_globalIndx : 
+_globalIndx[0] = 0
+_globalIndx[1] = 1024
+

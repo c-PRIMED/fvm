@@ -1,0 +1,306 @@
+_boundarySet : 
+
+3
+4
+5
+6
+
+_mapBounIDAndBounType : 
+
+Boundary multimap = 3    wall
+Boundary multimap = 4    wall
+Boundary multimap = 5    wall
+Boundary multimap = 6    wall
+
+_elemSet : 
+
+528
+529
+530
+531
+532
+533
+534
+535
+536
+537
+538
+539
+540
+541
+542
+543
+560
+561
+562
+563
+564
+565
+566
+567
+568
+569
+570
+571
+572
+573
+574
+575
+592
+593
+594
+595
+596
+597
+598
+599
+600
+601
+602
+603
+604
+605
+606
+607
+624
+625
+626
+627
+628
+629
+630
+631
+632
+633
+634
+635
+636
+637
+638
+639
+656
+657
+658
+659
+660
+661
+662
+663
+664
+665
+666
+667
+668
+669
+670
+671
+688
+689
+690
+691
+692
+693
+694
+695
+696
+697
+698
+699
+700
+701
+702
+703
+720
+721
+722
+723
+724
+725
+726
+727
+728
+729
+730
+731
+732
+733
+734
+735
+752
+753
+754
+755
+756
+757
+758
+759
+760
+761
+762
+763
+764
+765
+766
+767
+784
+785
+786
+787
+788
+789
+790
+791
+792
+793
+794
+795
+796
+797
+798
+799
+816
+817
+818
+819
+820
+821
+822
+823
+824
+825
+826
+827
+828
+829
+830
+831
+848
+849
+850
+851
+852
+853
+854
+855
+856
+857
+858
+859
+860
+861
+862
+863
+880
+881
+882
+883
+884
+885
+886
+887
+888
+889
+890
+891
+892
+893
+894
+895
+912
+913
+914
+915
+916
+917
+918
+919
+920
+921
+922
+923
+924
+925
+926
+927
+944
+945
+946
+947
+948
+949
+950
+951
+952
+953
+954
+955
+956
+957
+958
+959
+976
+977
+978
+979
+980
+981
+982
+983
+984
+985
+986
+987
+988
+989
+990
+991
+1008
+1009
+1010
+1011
+1012
+1013
+1014
+1015
+1016
+1017
+1018
+1019
+1020
+1021
+1022
+1023
+
+Boundary multimap = 5    1088
+Boundary multimap = 5    1089
+Boundary multimap = 5    1090
+Boundary multimap = 5    1091
+Boundary multimap = 5    1092
+Boundary multimap = 5    1093
+Boundary multimap = 5    1094
+Boundary multimap = 5    1095
+Boundary multimap = 5    1096
+Boundary multimap = 5    1097
+Boundary multimap = 5    1098
+Boundary multimap = 5    1099
+Boundary multimap = 5    1100
+Boundary multimap = 5    1101
+Boundary multimap = 5    1102
+Boundary multimap = 5    1103
+Boundary multimap = 6    1120
+Boundary multimap = 6    1121
+Boundary multimap = 6    1122
+Boundary multimap = 6    1123
+Boundary multimap = 6    1124
+Boundary multimap = 6    1125
+Boundary multimap = 6    1126
+Boundary multimap = 6    1127
+Boundary multimap = 6    1128
+Boundary multimap = 6    1129
+Boundary multimap = 6    1130
+Boundary multimap = 6    1131
+Boundary multimap = 6    1132
+Boundary multimap = 6    1133
+Boundary multimap = 6    1134
+Boundary multimap = 6    1135
+

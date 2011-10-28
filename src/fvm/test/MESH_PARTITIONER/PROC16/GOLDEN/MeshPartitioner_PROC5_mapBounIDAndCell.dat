@@ -1,0 +1,90 @@
+_boundarySet : 
+
+3
+4
+5
+6
+
+_mapBounIDAndBounType : 
+
+Boundary multimap = 3    wall
+Boundary multimap = 4    wall
+Boundary multimap = 5    wall
+Boundary multimap = 6    wall
+
+_elemSet : 
+
+512
+513
+514
+515
+516
+517
+518
+519
+544
+545
+546
+547
+548
+549
+550
+551
+576
+577
+578
+579
+580
+581
+582
+583
+608
+609
+610
+611
+612
+613
+614
+615
+640
+641
+642
+643
+644
+645
+646
+647
+672
+673
+674
+675
+676
+677
+678
+679
+704
+705
+706
+707
+708
+709
+710
+711
+736
+737
+738
+739
+740
+741
+742
+743
+
+Boundary multimap = 3    1032
+Boundary multimap = 3    1033
+Boundary multimap = 3    1034
+Boundary multimap = 3    1035
+Boundary multimap = 3    1036
+Boundary multimap = 3    1037
+Boundary multimap = 3    1038
+Boundary multimap = 3    1039
+

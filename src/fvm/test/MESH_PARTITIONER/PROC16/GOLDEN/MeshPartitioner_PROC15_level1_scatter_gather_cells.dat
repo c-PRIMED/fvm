@@ -1,0 +1,68 @@
+This Mesh ID (Scatter Cells) = 0
+    neighProcID = 2  neighMeshID = 0
+     48
+     49
+     50
+     51
+     52
+     53
+     54
+     55
+     64
+    neighProcID = 3  neighMeshID = 0
+     56
+    neighProcID = 12  neighMeshID = 0
+     0
+    neighProcID = 13  neighMeshID = 0
+     8
+     9
+     10
+     11
+     12
+     13
+     14
+     15
+     71
+    neighProcID = 14  neighMeshID = 0
+     1
+     9
+     17
+     25
+     33
+     41
+     49
+     57
+This Mesh ID (Gather Cells) = 0
+    neighProcID = 2  neighMeshID = 0
+     96
+     97
+     98
+     99
+     100
+     101
+     102
+     103
+     104
+    neighProcID = 3  neighMeshID = 0
+     105
+    neighProcID = 12  neighMeshID = 0
+     106
+    neighProcID = 13  neighMeshID = 0
+     107
+     108
+     109
+     110
+     111
+     112
+     113
+     114
+     115
+    neighProcID = 14  neighMeshID = 0
+     116
+     117
+     118
+     119
+     120
+     121
+     122
+     123
