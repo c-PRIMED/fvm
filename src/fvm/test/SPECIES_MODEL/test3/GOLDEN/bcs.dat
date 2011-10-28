@@ -1,0 +1,25 @@
+Species Number :0
+Face Group 1:
+    bc type SpecifiedMassFlux
+   specifiedMassFlux 0
+   specifiedMassFraction 0
+Face Group 4:
+    bc type SpecifiedMassFlux
+   specifiedMassFlux 0
+   specifiedMassFraction 0
+Face Group 5:
+    bc type SpecifiedMassFraction
+   specifiedMassFlux 0
+   specifiedMassFraction 0
+Face Group 6:
+    bc type SpecifiedMassFraction
+   specifiedMassFlux 0
+   specifiedMassFraction 1
+Face Group 7:
+    bc type SpecifiedMassFlux
+   specifiedMassFlux 0
+   specifiedMassFraction 0
+Face Group 8:
+    bc type SpecifiedMassFlux
+   specifiedMassFlux 0
+   specifiedMassFraction 0
