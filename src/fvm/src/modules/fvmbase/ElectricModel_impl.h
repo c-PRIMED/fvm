@@ -1149,11 +1149,9 @@ public:
 		//const Array<T>& particlesToIBCoeff = mIP.getCoeff();
 	
 		ibP->zero();
-		
-		//(*ibP) = 50;
 
-		//mIC.multiplyAndAdd(*ibP,cP);
-		//mIP.multiplyAndAdd(*ibP,sP);
+		mIC.multiplyAndAdd(*ibP,cP);
+		mIP.multiplyAndAdd(*ibP,sP);
 
         	_electricFields.potential.addArray(ibFaces,ibP);
         	
