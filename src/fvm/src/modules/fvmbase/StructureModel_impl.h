@@ -1005,10 +1005,17 @@ public:
 	      tractionZ[n][2] += _options["residualZZStress"];
 	  }
 
-          tractionX[n][0] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
-          tractionY[n][1] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
-          if(mesh.getDimension()==3)
-            tractionZ[n][2] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+          if(mesh.getDimension()==2)
+	  {
+	      tractionX[n][0] -= (two*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+	      tractionY[n][1] -= (two*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+	  }
+	  else
+	  {
+	      tractionX[n][0] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+	      tractionY[n][1] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+	      tractionZ[n][2] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
+	  }
 
       }
   }

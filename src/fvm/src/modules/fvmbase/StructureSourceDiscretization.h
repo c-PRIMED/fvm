@@ -233,7 +233,10 @@ public:
 	source[2] = faceMu*(gradF[2][0]*Af[0] + gradF[2][1]*Af[1] + gradF[2][2]*Af[2])
           + faceLambda*divU*Af[2];
 
-        source -= (three*faceLambda+two*faceMu)*faceAlpha*(faceTemperature-_referenceTemperature)*Af;
+	if(mesh.getDimension()==2)
+	  source -= (two*faceLambda+two*faceMu)*faceAlpha*(faceTemperature-_referenceTemperature)*Af;
+	else
+	  source -= (three*faceLambda+two*faceMu)*faceAlpha*(faceTemperature-_referenceTemperature)*Af;
 
 	if(_residualStress)
 	{
