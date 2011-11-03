@@ -973,6 +973,7 @@ public:
       
       const T two(2.0);
       const T three(3.0);
+      const T zero(0.0);
       
       for(int n=0; n<nCells; n++)
       {
@@ -1016,7 +1017,10 @@ public:
 	      tractionY[n][1] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
 	      tractionZ[n][2] -= (three*eta1[n]+two*eta[n])*alpha[n]*(temperature[n]-_options["operatingTemperature"]);
 	  }
-
+          if (mesh.getDimension() == 2)
+          {
+              tractionZ[n] = zero;
+	  }
       }
   }
 
