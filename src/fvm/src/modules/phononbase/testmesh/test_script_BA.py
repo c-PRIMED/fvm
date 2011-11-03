@@ -18,11 +18,6 @@ fvm.set_atype('double')
 
 print " "
 
-#Specify the name of the file (it could be a .msh or a .cas)
-filename="test40x40"
-extension=".cas"
-
-fileBase=filename
 
 def usage():
     print "Usage: %s filebase [outfilename]" % sys.argv[0]
@@ -34,10 +29,12 @@ def usage():
 #Read the mesh, and extract the information into the MEMOSA#
 #data structures                                           # 
 ############################################################
-
-reader = FluentCase(fileBase+extension)
+print "1"
+reader = FluentCase("/home/brad/memosa/src/fvm/src/modules/phononbase/testmesh/Toy2.cas")
 reader.read();
+print "2"
 meshes = reader.getMeshList()
+print "3"
 geomFields =  fvm.models.GeomFields('geom')
 metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
@@ -93,24 +90,6 @@ popts.showResidual=10
 #L=1 unless the mesh is one of the 4 thin meshes.                #
 ##################################################################
 
-L=1.
-L_side=1.
-if filename=="thin" or filename=="thin_packed" or filename=="thin_2000" or filename=="thin_packed_2000":
-    L_side=0.05
-
-if filename=="test" or filename=="test100" or filename=="test40x40" or filename=="test80x80":
-    right=2
-    left=4
-    top=6
-    bot=5
-elif filename=="tilted" or filename=="thin" or filename=="thin_packed" or filename=="thin_2000" or filename=="thin_packed_2000":
-    top=4
-    left=5
-    bot=6
-    right=7
-else:
-    print "Wrong file name"
-    sys.exit(0)
 
 
 ######################################################################
@@ -119,21 +98,31 @@ else:
 #and 0 means diffuse.                                                #
 ######################################################################
 
-rightbc=bcMap[right]
+rightbc=bcMap[6]
 rightbc.bcType="temperature"
 rightbc["specifiedTemperature"]=T_2
-leftbc=bcMap[left]
+leftbc=bcMap[9]
 leftbc.bcType="temperature"
 leftbc["specifiedTemperature"]=T_1
-topbc=bcMap[top]
-topbc.bcType="reflecting"
-topbc["specifiedTemperature"]=T_2
-topbc["specifiedReflection"]=1.
-botbc=bcMap[bot]
-botbc.bcType="reflecting"
-botbc["specifiedTemperature"]=T_1
-botbc["specifiedReflection"]=1.
+topbc1=bcMap[8]
+topbc1.bcType="reflecting"
+topbc1["specifiedTemperature"]=T_2
+topbc1["specifiedReflection"]=1.
+topbc2=bcMap[5]
+topbc2.bcType="reflecting"
+topbc2["specifiedTemperature"]=T_2
+topbc2["specifiedReflection"]=1.
+botbc1=bcMap[10]
+botbc1.bcType="reflecting"
+botbc1["specifiedTemperature"]=T_1
+botbc1["specifiedReflection"]=1.
+botbc2=bcMap[7]
+botbc2.bcType="reflecting"
+botbc2["specifiedTemperature"]=T_1
+botbc2["specifiedReflection"]=1.
 
+L=1
+L_side = 1
 ac_th=L/(vg*tau)
 Kn=vg*tau/L
 
@@ -154,7 +143,7 @@ pmodel.init()
 #initialize the boundary conditions
 pmodel.callBoundaryConditions()
 #iterate (argument is the max number of iterations)
-pmodel.advance(10000)
+pmodel.advance(100)
 
 ###################################################
 #The simulation is finished, the rest is just post#
@@ -170,10 +159,10 @@ writer.writeScalarField(pmacro.temperature,"Temperature")
 writer.writeVectorField(pmacro.heatFlux,"HeatFlux")
 writer.finish()
 
-topflux=pmodel.HeatFluxIntegral(meshes[0],top)
-botflux=pmodel.HeatFluxIntegral(meshes[0],bot)
-leftflux=pmodel.HeatFluxIntegral(meshes[0],left)
-rightflux=pmodel.HeatFluxIntegral(meshes[0],right)
+topflux=pmodel.HeatFluxIntegral(meshes[0],5)+pmodel.HeatFluxIntegral(meshes[1],8)
+botflux=pmodel.HeatFluxIntegral(meshes[0],7)+pmodel.HeatFluxIntegral(meshes[1],10)
+leftflux=pmodel.HeatFluxIntegral(meshes[1],9)
+rightflux=pmodel.HeatFluxIntegral(meshes[0],6)
 ballistic=Cp*vg*(T_2-T_1)/4.*L_side
 
 print " "

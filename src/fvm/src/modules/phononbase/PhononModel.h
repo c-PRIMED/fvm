@@ -13,6 +13,7 @@
 #include "PhononBC.h"
 #include <map>
 #include "PhononBoundary.h"
+#include "PhononInterface.h"
 #include "LinearSystem.h"
 #include "NumType.h"
 #include "PhononCollisionDiscretization.h"
@@ -263,6 +264,15 @@ class PhononModel : public Model
 		cout<<"Couldn't find boundary condition"<<endl;
 		break;
 	      }
+	  };
+	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr;
+	    const StorageSite& faces = fg.site;
+	    const Mesh& otherMesh = faces.getMesh();
+	    cout << " " << endl;
+	    //cout << mesh << " " << otherMesh << endl;
+	    //PhononInterface<T> pbc(faces, mesh,_geomFields,_kspace,_options,fg.id);
 	  };
       };
   };

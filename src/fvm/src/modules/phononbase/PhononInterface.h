@@ -1,5 +1,5 @@
-#ifndef _PHONONBOUNDARY_H_
-#define _PHONONBOUNDARY_H_
+#ifndef _PHONONINTERFACE_H_
+#define _PHONONINTERFACE_H_
 
 #include "Mesh.h"
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "kvol.h"
 
 template<class X>
-class PhononBoundary
+class PhononInterface
 {
  public :
   
@@ -39,7 +39,7 @@ class PhononBoundary
   typedef pmode<X> Xmode;
   typedef typename Xmode::Refl_pair Refl_pair;
   
- PhononBoundary(const StorageSite& faces,
+ PhononInterface(const StorageSite& faces,
 		const Mesh& mesh,
 		const GeomFields& geomFields,
 		const Xkspace& kspace,
@@ -60,7 +60,7 @@ class PhononBoundary
   {}
 
   PhononModelOptions<X>&   getOptions() {return _options;}  
-
+  /*
   void applyReflectingWall(int f,const X refl) const
   {
     
@@ -205,15 +205,15 @@ class PhononBoundary
       }
   }
 
+  */
 
- /*
 
 
  void applyInterfaceCondition(int f,const X refl, const X trans) const
   {
     
-    const int c0 = _faceCells(f,0);
-    const int c1 = _faceCells(f,1);
+    int c0 = _faceCells(f,0);
+    int c1 = _faceCells(f,1);
     T_Scalar sign(NumTypeTraits<T_Scalar>::getUnity());
     if (c1 < _cells.getSelfCount())
        { 
@@ -288,7 +288,7 @@ class PhononBoundary
 	    if (vg_dot_en > T_Scalar(0.0))
 	      {
 		
-		Refl_pair& rpairs=mode.getReflpair(_fg_id);
+		/*Refl_pair& rpairs=mode.getReflpair(_fg_id);
 		X w1=rpairs.first.first;
 		X w2=rpairs.second.first;
 		int k1=rpairs.first.second;
@@ -300,7 +300,7 @@ class PhononBoundary
 		XArray& e_val1=dynamic_cast<XArray&>(field1[_cells]);
 		XArray& e_val2=dynamic_cast<XArray&>(field2[_cells]);
 		e_val1[c1]+=refl*w1*e_val[c0];
-		e_val2[c1]+=refl*w2*e_val[c0];
+		e_val2[c1]+=refl*w2*e_val[c0];*/
 		e_val[c1]=e_val[c0];    // upwinded value
 	      }
 	    else
@@ -316,7 +316,7 @@ class PhononBoundary
     for (int i=0; i<_faces.getCount();i++)
       applyInterfaceCondition(i,bRefl[i],bTrans[i]);
   }
-*/
+
  /*
  
   void applyZeroGradientBC(int f) const
