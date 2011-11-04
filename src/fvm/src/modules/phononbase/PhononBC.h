@@ -32,6 +32,8 @@ struct PhononModelOptions : public FloatVarDict<T>
     this->absTolerance=1e-8;
     this->relTolerance=1-4;
     this->showResidual=5;
+    this->defineVar("transmissivity0to1", T(0.0));
+    this->defineVar("transmissivity1to0", T(0.0));	   
   }
   
   bool printNormalizedResiduals;

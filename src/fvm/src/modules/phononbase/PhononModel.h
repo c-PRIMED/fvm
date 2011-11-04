@@ -267,12 +267,20 @@ class PhononModel : public Model
 	  };
 	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
 	  {
+	    int otherMeshID = 0;
+	    T_Scalar btrans = _options["transmissivity0to1"];
+	    T_Scalar brefl = 1.0 - _options["transmissivity1to0"];
+	    if (n==0)
+	      {
+		otherMeshID = 1;
+		btrans = _options["transmissivity1to0"];
+		brefl = 1.0 - _options["transmissivity0to1"];
+	      }
+	    const Mesh& otherMesh = *_meshes[otherMeshID];
 	    const FaceGroup& fg = *fgPtr;
-	    const StorageSite& faces = fg.site;
-	    const Mesh& otherMesh = faces.getMesh();
-	    cout << " " << endl;
-	    //cout << mesh << " " << otherMesh << endl;
-	    //PhononInterface<T> pbc(faces, mesh,_geomFields,_kspace,_options,fg.id);
+	    PhononInterface<T> pInt(fg, mesh, otherMesh,_geomFields,_kspace,_kspace,_options);
+
+	    pInt.applyInterfaceCondition(brefl,btrans);
 	  };
       };
   };
