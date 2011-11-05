@@ -43,6 +43,7 @@ public:
 				const T& residualXXStress,
 				const T& residualYYStress,
 				const T& residualZZStress,
+				const bool& thermo,
 				const bool& residualStress,
                                 bool fullLinearization=true)  :
     Discretization(meshes),
@@ -57,6 +58,7 @@ public:
     _residualXXStress(residualXXStress),
     _residualYYStress(residualYYStress),
     _residualZZStress(residualZZStress),
+    _thermo(thermo),
     _residualStress(residualStress),
     _fullLinearization(fullLinearization)
    {}
@@ -217,6 +219,7 @@ public:
 	const VGradType gradF = (vGradCell[c0]*wt0 + vGradCell[c1]*wt1);
 
 	VectorT3 source(NumTypeTraits<VectorT3>::getZero());
+	VectorT3 thermalSource(NumTypeTraits<VectorT3>::getZero());
 	VectorT3 residualSource(NumTypeTraits<VectorT3>::getZero());
         const T divU = (gradF[0][0] + gradF[1][1] + gradF[2][2]);
 
@@ -233,10 +236,13 @@ public:
 	source[2] = faceMu*(gradF[2][0]*Af[0] + gradF[2][1]*Af[1] + gradF[2][2]*Af[2])
           + faceLambda*divU*Af[2];
 
-	if(mesh.getDimension()==2)
-	  source -= (two*faceLambda+two*faceMu)*faceAlpha*(faceTemperature-_referenceTemperature)*Af;
-	else
-	  source -= (three*faceLambda+two*faceMu)*faceAlpha*(faceTemperature-_referenceTemperature)*Af;
+	if(_thermo)
+	{
+	    if(mesh.getDimension()==2)
+	      thermalSource -= (two*faceLambda+two*faceMu)*faceAlpha*(faceTemperature-_referenceTemperature)*Af;
+	    else
+	      thermalSource -= (three*faceLambda+two*faceMu)*faceAlpha*(faceTemperature-_referenceTemperature)*Af;
+	}
 
 	if(_residualStress)
 	{
@@ -378,6 +384,10 @@ public:
         rCell[c0] += source;
 	rCell[c1] -= source;
 
+        // add flux due to thermal Stress to the residual of c0 and c1
+        rCell[c0] += thermalSource;
+        rCell[c1] -= thermalSource;
+
 	// add flux due to residual Stress to the residual of c0 and c1
 	rCell[c0] += residualSource;
 	rCell[c1] -= residualSource;
@@ -411,6 +421,7 @@ private:
   const T _residualXXStress;
   const T _residualYYStress;
   const T _residualZZStress;
+  const bool _thermo;
   const bool _residualStress;
   const bool _fullLinearization; 
 };
