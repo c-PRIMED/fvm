@@ -2,9 +2,9 @@
 8: [elec.potential : 557.747]
 0: [elec.potential : 1];
 0: [eleccharge : [ 0.000000e+00 0.000000e+00 0.000000e+00 ]]
-0: [structure.deformation : [ 2.329221e-04 2.932067e+00 0.000000e+00 ]]
-Final : [structure.deformation : [ 2.726529e-08 2.513474e-07 0.000000e+00 ]]
-0: [structure.deformation : [ 7.943955e-05 1.000000e+00 0.000000e+00 ]]
+0: [structure.deformation : [ 2.294827e-04 2.932058e+00 0.000000e+00 ]]
+Final : [structure.deformation : [ 2.767863e-08 2.505803e-07 0.000000e+00 ]]
+0: [structure.deformation : [ 7.826677e-05 1.000000e+00 0.000000e+00 ]]
 0: [elec.potential : 5.958715e+02]
 24: [elec.potential : 5.821973e-01]
 1: [elec.potential : 9.310492e-04];
