@@ -44,6 +44,10 @@ public:
   
   static void getShape(int *shp) { *shp = N; NumTypeTraits<T>::getShape(shp+1);}
 
+  void* getData() 
+  {
+     return _data;
+  }
   static int getDataSize()
   {
     return N*NumTypeTraits<T>::getDataSize();

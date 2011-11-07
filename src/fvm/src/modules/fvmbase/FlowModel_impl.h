@@ -1683,9 +1683,12 @@ public:
         else
           r -= faceArea[ibFaceIndex]*facePressure[ibFaceIndex];
     }
-    
-    if (nibf == 0)
-      throw CException("getPressureIntegralonIBFaces: no IBFaces found!");
+
+#if FVM_PARALLEL    
+     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, r.getData(), 3, MPI::DOUBLE, MPI::SUM);
+#endif     
+
+
     return r;
   }
 
