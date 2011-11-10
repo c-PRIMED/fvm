@@ -51,8 +51,9 @@ class PhononModel : public Model
   typedef Array<bool> BCfaceArray;
   typedef shared_ptr<BCfaceArray> BfacePtr;
   typedef vector<BfacePtr> BCfaceList;
+  typedef vector<Tkspace*> TKList;
   
- PhononModel(const MeshList& meshes,const GeomFields& geomFields,Tkspace& kspace,PhononMacro& macro):
+ PhononModel(const MeshList& meshes,const GeomFields& geomFields,TKList& kspace,PhononMacro& macro):
   
   Model(meshes),
     _geomFields(geomFields),
@@ -118,7 +119,8 @@ class PhononModel : public Model
     for (int n=0;n<numMeshes;n++)  //mesh loop beg
       {
 	const Mesh& mesh=*_meshes[n];
-	const int numK=_kspace.getlength();
+	Tkspace& kspace=*_kspace[n];
+	const int numK=kspace.getlength();
 	const StorageSite& cells=mesh.getCells();
 	const int numcells=cells.getCount();
 	
@@ -132,7 +134,7 @@ class PhononModel : public Model
 	
 	for (int k=0;k<numK;k++)  //kspace loop beg
 	  {
-	    Tkvol& kv=_kspace.getkvol(k);
+	    Tkvol& kv=kspace.getkvol(k);
 	    const int numM=kv.getmodenum();
 	    const T dk3=kv.getdk3();
 	    
@@ -157,7 +159,7 @@ class PhononModel : public Model
 	      }; //mode loop end
 	  }; //kspace loop end
 
-	e0sum=e0sum/_kspace.getDK3();
+	e0sum=e0sum/kspace.getDK3();
 	shared_ptr<Tarray> e0cell(new Tarray(numcells));
 	*e0cell=e0sum;
 	_macro.e0.addArray(cells,e0cell);
@@ -169,7 +171,7 @@ class PhononModel : public Model
 	
 	for (int k=0;k<numK;k++)  //kspace loop beg
 	  {
-	    Tkvol& kv=_kspace.getkvol(k);
+	    Tkvol& kv=kspace.getkvol(k);
 	    const int numM=kv.getmodenum();
 	    const T dk3=kv.getdk3();
 	    
@@ -199,7 +201,7 @@ class PhononModel : public Model
 		      {
 			so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
 			Refl_pair refls;
-			_kspace.findSpecs(dk3,vmag,m,so,refls);
+			kspace.findSpecs(dk3,vmag,m,so,refls);
 			rmap[fg.id]=refls;
 		      }
 		  }
@@ -234,6 +236,7 @@ class PhononModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
+	Tkspace& kspace=*_kspace[n];
 	
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	  {
@@ -241,7 +244,7 @@ class PhononModel : public Model
 	    const StorageSite& faces = fg.site;
 	    const PhononBC<T>& bc = *_bcMap[fg.id];
 	    
-	    PhononBoundary<T> pbc(faces, mesh,_geomFields,_kspace,_options,fg.id);
+	    PhononBoundary<T> pbc(faces, mesh,_geomFields,kspace,_options,fg.id);
 	    
 	    if (bc.bcType == "reflecting")
 	      {	
@@ -277,8 +280,9 @@ class PhononModel : public Model
 		brefl = 1.0 - _options["transmissivity0to1"];
 	      }
 	    const Mesh& otherMesh = *_meshes[otherMeshID];
+	    Tkspace& otherKspace= *_kspace[otherMeshID];
 	    const FaceGroup& fg = *fgPtr;
-	    PhononInterface<T> pInt(fg, mesh, otherMesh,_geomFields,_kspace,_kspace,_options);
+	    PhononInterface<T> pInt(fg, mesh, otherMesh,_geomFields,kspace,otherKspace,_options);
 
 	    pInt.applyInterfaceCondition(brefl,btrans);
 	  };
@@ -292,9 +296,10 @@ class PhononModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
+	Tkspace& kspace=*_kspace[n];
 	const StorageSite& cells = mesh.getCells();
 	const int numcells = cells.getCount();
-	const int numK=_kspace.getlength();
+	const int numK=kspace.getlength();
 	Tarray& TL=dynamic_cast<Tarray&>(_macro.temperature[cells]);
 	Tarrptr e_sumptr=shared_ptr<Tarray>(new Tarray(numcells));
 	Tarray& e_sum=*(e_sumptr);
@@ -302,7 +307,7 @@ class PhononModel : public Model
 	
 	for(int k=0;k<numK;k++)
 	  {
-	    Tkvol& kv=_kspace.getkvol(k);
+	    Tkvol& kv=kspace.getkvol(k);
 	    const int modenum=kv.getmodenum();
 	    T dk3=kv.getdk3();
 	    
@@ -320,7 +325,7 @@ class PhononModel : public Model
 	  }
 	
 	for(int c=0;c<numcells;c++)
-	  _kspace.NewtonSolve(TL[c],e_sum[c]);
+	  kspace.NewtonSolve(TL[c],e_sum[c]);
       }
   }
 
@@ -330,13 +335,14 @@ class PhononModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
+	Tkspace& kspace=*_kspace[n];
 	const StorageSite& cells = mesh.getCells();
 	const int numcells = cells.getCount();
 	Tarray& TL=dynamic_cast<Tarray&>(_macro.temperature[cells]);
 	Tarray& e0Array=dynamic_cast<Tarray&>(_macro.e0[cells]);
 	
 	for(int c=0;c<numcells;c++)
-	  _kspace.NewtonSolve(TL[c],e0Array[c]);
+	  kspace.NewtonSolve(TL[c],e0Array[c]);
       }
   }
 
@@ -347,14 +353,15 @@ class PhononModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
+	Tkspace& kspace=*_kspace[n];
 	const StorageSite& cells = mesh.getCells();
 	const int numcells = cells.getCount();
-	const int numK=_kspace.getlength();
+	const int numK=kspace.getlength();
 	Tarray& TL=dynamic_cast<Tarray&>(_macro.temperature[cells]);
 	
 	for(int k=0;k<numK;k++)
 	  {
-	    Tkvol& kv=_kspace.getkvol(k);
+	    Tkvol& kv=kspace.getkvol(k);
 	    const int modenum=kv.getmodenum();
 	    
 	    for(int m=0;m<modenum;m++)
@@ -377,6 +384,7 @@ class PhononModel : public Model
      {
        VectorT3 zero_vec;
        const Mesh& mesh = *_meshes[n];
+       Tkspace& kspace=*_kspace[n];
        const StorageSite& cells = mesh.getCells();
        const int numcells = cells.getCount();
        T3ptr heatFluxptr=T3ptr(new VectorT3Array(numcells));
@@ -384,10 +392,10 @@ class PhononModel : public Model
        zero_vec[0]=0.;zero_vec[1]=0.;zero_vec[2]=0.;
        heatFlux=zero_vec;
        
-       const int numK=_kspace.getlength();
+       const int numK=kspace.getlength();
        for(int k=0;k<numK;k++)
 	 {
-	   Tkvol& kv=_kspace.getkvol(k);
+	   Tkvol& kv=kspace.getkvol(k);
 	   T dk3=kv.getdk3();
 	   const int modenum=kv.getmodenum();
 	   for(int m=0;m<modenum;m++)
@@ -541,7 +549,7 @@ class PhononModel : public Model
 
     for(int n=0; n<niter; n++)  
       {
-	const int klength =_kspace.getlength();
+	const int klength =_kspace.size();
 	MFRPtr rNorm;
     
 	/*
@@ -553,7 +561,7 @@ class PhononModel : public Model
 	for(int k=0; k<klength;k++)
 	  {
 	    
-	    Tkvol& kv=_kspace.getkvol(k);
+	    Tkvol& kv=kspace.getkvol(k);
 	    const int mlength=kv.getmodenum();
 	    
 	    for(int m=0;m<mlength;m++)
@@ -623,7 +631,7 @@ class PhononModel : public Model
     updateHeatFlux();	  
   }
 
-  void advanceCOMET(const int niters)
+  /*void advanceCOMET(const int niters)
   {  
     
     T tol=_options.absTolerance;
@@ -644,6 +652,7 @@ class PhononModel : public Model
 	    const Mesh& mesh=*_meshes[msh];
 	    const BCcellArray& BCArray=*(_BCells[msh]);
 	    const BCfaceArray& BCfArray=*(_BFaces[msh]);
+	    /*
 	    COMETDiscretizer<T> CDisc(mesh,_geomFields,_macro,
 				      _kspace,_bcMap,BCArray,BCfArray);
 
@@ -651,20 +660,20 @@ class PhononModel : public Model
 	    CDisc.findResid();
 	    
 	    if(aveResid==-1)
-	      aveResid=CDisc.getAveResid();
+	      //  aveResid=CDisc.getAveResid();
 	    else
 	      {
 		residChange=fabs(aveResid-CDisc.getAveResid()/aveResid);
 		aveResid=CDisc.getAveResid();
 	      }
-
+	    
 	    if(n%_options.showResidual==0)
 	      cout<<"[Iteration: "<<n<<" || Residual Change: "<<residChange<<
 		" || Average Residual: "<<aveResid<<"]"<<endl;
 	    
 	    if(aveResid>tol)
 	      {
-		CDisc.COMETSolve();
+		//CDisc.COMETSolve(1);
 		callBoundaryConditions();
 	      }
 	    else
@@ -675,7 +684,7 @@ class PhononModel : public Model
 	  }
       }
     COMETupdateTL();
-  }
+  }*/
   
   void printTemp()
   {
@@ -738,7 +747,7 @@ class PhononModel : public Model
   private:
 
     const GeomFields& _geomFields;
-    Tkspace& _kspace;       //kspace
+    TKList& _kspace;       //kspaces
     PhononMacro& _macro;
     PhononModelOptions<T> _options;
     PhononBCMap _bcMap;
