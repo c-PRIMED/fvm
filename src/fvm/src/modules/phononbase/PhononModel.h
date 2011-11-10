@@ -550,7 +550,7 @@ class PhononModel : public Model
     for(int n=0; n<niter; n++)  
       {
 	const int klength =_kspace.size();
-	Tkspace& kspace=*_kspace[0]
+	Tkspace& kspace=*_kspace[0];
 	MFRPtr rNorm;
     
 	/*
