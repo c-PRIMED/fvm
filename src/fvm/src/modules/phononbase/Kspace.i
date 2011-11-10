@@ -2,6 +2,7 @@
 #include "Kspace.h"
   %}
 
+%include "std_vector.i"
 
 template<class T>
 class Kspace
@@ -15,6 +16,7 @@ class Kspace
   typedef kvol<T> Tkvol;
   typedef shared_ptr<Tkvol> Kvolptr;
   typedef vector<Kvolptr> Volvec;
+  typedef Kspace<T> TKspace;
   typedef typename Tmode::Reflection Reflection;
   typedef typename Tmode::Reflptr Reflptr;
   typedef typename Tmode::Refl_pair Refl_pair;
@@ -25,6 +27,16 @@ class Kspace
   int gettotmodes();
   T getDK3() ;
   T calcSpecificHeat(T Tl);
+
+  %extend{
+    Kspace<T>* getSelfPointer() {return self;}
+    std::vector<Kspace<T>*> MakeList()
+      {
+	std::vector<Kspace<T>*> newList;
+	newList.push_back(self);
+	return newList;
+      }
+  }
   
  private:
   
@@ -38,3 +50,6 @@ class Kspace
 
 
 %template(KspaceA) Kspace< ATYPE_STR >;
+
+typedef std::vector<Kspace<ATYPE_STR>*> KList;
+%template(KList) std::vector<Kspace<ATYPE_STR>*>;

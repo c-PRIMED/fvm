@@ -16,7 +16,9 @@ class pmode
   
  public:
   
-  typedef Vector<T,3> Tvec;
+  typedef pmode<T> Tmode;
+  typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
+  typedef Vector<T_Scalar,3> Tvec;
   typedef shared_ptr<pmode<T> > Mode_ptr;
   typedef pair<T,int> Reflection;  //<weight,kvol index>
   typedef shared_ptr<Reflection> Reflptr;
@@ -30,6 +32,15 @@ class pmode
     _efield("edoubleprime"),
     _e0field("e0"),
     _residual("residual"),
+    _FASCorrection("FASCorrection"),
+    _reflections()
+      {}
+
+ pmode():
+  _efield("edoubleprime"),
+    _e0field("e0"),
+    _residual("residual"),
+    _FASCorrection("FASCorrection"),
     _reflections()
       {}
   
@@ -38,10 +49,12 @@ class pmode
   T gettau() {return _tau;}
   T getomega() {return _omega;}
   Refl_Map& getreflmap() {return _reflections;}
+  Refl_Map getreflmapValue() {return _reflections;}
   Refl_pair& getReflpair(int i) {return _reflections[i];}
   Field& getfield() {return _efield;}
   Field& gete0field() {return _e0field;}
   Field& getresid() {return _residual;}
+  Field& getFASfield() {return _FASCorrection;}
   T calce0(T Tl)
   {
     const T hbar=6.582119e-16;  // (eV s)
@@ -84,6 +97,33 @@ class pmode
     
     return e0kp; 
   }
+
+  Tmode& operator=(Tmode& o)
+    {
+      _vg=o.getv();
+      _cp=o.getcp();
+      _tau=o.gettau();
+      _omega=o.getomega();
+      _reflections=o.getreflmap();
+
+      return *this;
+    }
+
+  void copyPmode(Tmode& inMode)
+  {
+    Tvec newVg=inMode.getv();
+    T newCp=inMode.getcp();
+    T newTau=inMode.gettau();
+    T newOmega=inMode.getomega();
+    Refl_Map& newMap=inMode.getreflmap();
+
+    _vg=newVg;
+    _cp=newCp;
+    _tau=newTau;
+    _omega=newOmega;
+    _reflections=newMap;
+
+  }
   
  private:
   
@@ -103,11 +143,14 @@ class pmode
   //e"
   Field _efield;
 
-  //e0
+  //e0 or injected solution
   Field _e0field;
 
   //residual
   Field _residual;
+
+  //residual of the injected solution, minus the injected residual
+  Field _FASCorrection;
 
   //Map for specular reflections
   Refl_Map _reflections;

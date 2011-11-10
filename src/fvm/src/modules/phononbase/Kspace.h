@@ -13,6 +13,7 @@ class Kspace
 
  public:
 
+  typedef Kspace<T> Tkspace;
   typedef Vector<T,3> Tvec;
   typedef pmode<T> Tmode;
   typedef shared_ptr<Tmode> Tmodeptr;
@@ -54,6 +55,9 @@ class Kspace
 	      }
 	  }
       }
+
+ Kspace()
+      {}
   
   //void setvol(int n,Tkvol k) {*_Kmesh[n]=k;}
   Tkvol& getkvol(int n) const {return *_Kmesh[n];}
@@ -91,7 +95,7 @@ class Kspace
 	gete0_tau(guess,e0_tau,de0_taudT);
 	deltaT=(e0_tau-e_sum)/de0_taudT;
 	newguess=guess-deltaT;
-	deltaT=deltaT/guess;
+	deltaT=fabs(deltaT/guess);
 	guess=newguess;
 	iters++;
       }	
@@ -197,6 +201,19 @@ class Kspace
     refls.second.first=w2*vo*dk3/v2mag/dk32;
     refls.first.second=m1;
     refls.second.second=m2;  
+  }
+  
+  void CopyKspace(Tkspace& copyFromKspace)
+  {
+    _length=copyFromKspace.getlength();
+    _totvol=copyFromKspace.getDK3();
+    _Kmesh.clear();
+    for(int i=0;i<_length;i++)
+      {
+	Kvolptr newKvol=Kvolptr(new Tkvol());
+	newKvol->copyKvol(copyFromKspace.getkvol(i));
+	_Kmesh.push_back(newKvol);
+      }
   }
   
  private:

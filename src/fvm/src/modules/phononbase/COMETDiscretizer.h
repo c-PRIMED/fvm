@@ -12,11 +12,12 @@
 #include "CRConnectivity.h"
 #include "GeomFields.h"
 #include "NumType.h"
-#include "PhononBC.h"
+#include "COMETBC.h"
 #include <math.h>
 #include <map>
 #include "MatrixJML.h"
 #include "SquareMatrix.h"
+#include "PhononMacro.h"
 
 template<class T>
 class COMETDiscretizer
@@ -33,7 +34,7 @@ class COMETDiscretizer
   typedef MatrixJML<T> TMatrix;
   typedef ArrowHeadMatrix<T> TArrow;
   typedef SquareMatrix<T> TSquare;
-  typedef map<int,PhononBC<T>*> PhononBCMap;
+  typedef map<int,COMETBC<T>*> COMETBCMap;
   typedef Array<int> IntArray;
   typedef Array<bool> BoolArray;
   typedef Vector<int,2> VecInt2;
@@ -41,8 +42,8 @@ class COMETDiscretizer
   typedef typename Tmode::Refl_pair Refl_pair;
 
  COMETDiscretizer(const Mesh& mesh, const GeomFields& geomfields, 
-		  PhononMacro& macro, Tkspace& kspace, PhononBCMap& bcMap,
-		  const IntArray& BCArray, const BoolArray& BCfArray):
+		  PhononMacro& macro, Tkspace& kspace, COMETBCMap& bcMap,
+		  const IntArray& BCArray, const IntArray& BCfArray):
   _mesh(mesh),
     _geomFields(geomfields),
     _cells(mesh.getCells()),
@@ -64,11 +65,17 @@ class COMETDiscretizer
     _fgFinder()
     {}
 
-  void COMETSolve()
+  void COMETSolve(const int dir,const int level)
   {
     const int cellcount=_cells.getSelfCount();
+    int start;
+
+    if(dir==1)
+      start=0;
+    if(dir==-1)
+      start=cellcount-1;
     
-    for(int c=0;c<cellcount;c++)
+    for(int c=start;((c<cellcount)&&(c>-1));c+=dir)
       {	
 	const int totalmodes=_kspace.gettotmodes();
 	TArray Bvec(totalmodes+1);
@@ -81,14 +88,17 @@ class COMETDiscretizer
 	    Resid.zero();
 	    AMat.zero();
 
-	    COMETConvection(c,AMat,Bvec);	
+	    COMETConvection(c,AMat,Bvec);
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
+	    
+	    if(level>0)
+	      addFAS(c,Bvec);
+
 	    Resid=Bvec;
 	    AMat.Solve(Bvec);
 	    
-	    Distribute(c,Bvec,Resid);
-	    
+	    Distribute(c,Bvec,Resid); 
 	  }
 	else if(_BCArray[c]==1) //reflecting boundary
 	  {
@@ -100,17 +110,18 @@ class COMETDiscretizer
 	    COMETConvection(c,AMat,Bvec);	
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
+
+	    if(level>0)
+	      addFAS(c,Bvec);
+
 	    Resid=Bvec;
-
-	    //AMat.printMatrix();
-
 	    AMat.Solve(Bvec);
 	    
 	    Distribute(c,Bvec,Resid);
 	  }
 	else
 	  throw CException("Unexpected value for boundary cell map.");
-      }   
+      }
   }
 
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec)
@@ -562,6 +573,27 @@ class COMETDiscretizer
 	  }
       }
   }
+
+  void addFAS(const int c, TArray& bVec)
+  {
+    int klen=_kspace.getlength();
+    int count=0;
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Field& fasField=mode.getFASfield();
+	    TArray& fasArray=dynamic_cast<TArray&>(fasField[_cells]);
+	    bVec[count]-=fasArray[c];
+	    count+=1;
+	  }
+      }
+    TArray& fasArray=dynamic_cast<TArray&>(_macro.e0FASCorrection[_cells]);
+    bVec[count]-=fasArray[c];
+  }
   
  private:
   const Mesh& _mesh;
@@ -577,9 +609,9 @@ class COMETDiscretizer
   const TArray& _cellVolume;
   PhononMacro& _macro;
   Tkspace& _kspace;
-  PhononBCMap& _bcMap;
+  COMETBCMap& _bcMap;
   const IntArray& _BCArray;
-  const BoolArray& _BCfArray;
+  const IntArray& _BCfArray;
   T _aveResid;
   T _residChange;
   FaceToFg _fgFinder;

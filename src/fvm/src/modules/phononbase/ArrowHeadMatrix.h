@@ -52,23 +52,41 @@ class ArrowHeadMatrix : public MatrixJML<T>
       if(i==j)
 	{
 	  index=(i-1);
-	  cout<<_values[index]<<endl;
+	  cout<<_values[index];
 	}
       else if(j==_order)
 	{
 	  index=i-1+_order;
-	  cout<<_values[index]<<endl;
+	  cout<<_values[index];
 	}
       else if(i==_order)
 	{
 	  index=2*_order+j-2;
-	  cout<<_values[index]<<endl;
+	  cout<<_values[index];
 	}
       else
 	{
 	  throw CException("Invalid index for Arrowhead matrix");
 	}
     }
+
+  void print()
+  {
+    for(int i=1;i<_order+1;i++)
+      {
+	for(int j=1;j<_order+1;j++)
+	  {
+	    if((i==j)||(i==_order)||(j==_order))
+	      {
+		printElement(i,j);
+		cout<<" ";
+	      }
+	    else
+	      cout<<0<<" ";
+	  }
+	cout<<endl;
+      }
+  }
 
   void Solve(TArray& bVec)
   {
