@@ -2,7 +2,7 @@ import os
 import sys
 
 def getArch():
-    if sys.platform == 'linux2':
+    if sys.platform.startswith('linux'):
         if os.uname()[4] == 'ia64':
             return 'lnxia64'
         elif os.uname()[4] == 'x86_64':
