@@ -25,8 +25,12 @@ class kvol
     _modes(1,mode)
       {}
   
- kvol()
-      {}
+  kvol()
+    {}
+  
+ kvol(const int modes):
+  _modenum(modes)
+    {}
   
   Tvec getkvec() {return _Kvector;}
   void setkvec(Tvec K) {_Kvector=K;}
@@ -34,6 +38,7 @@ class kvol
   T getdk3() {return _dk3;}
   int getmodenum() {return _modenum;}
   Tmode& getmode(int n) const {return *_modes[n];}
+  Modes& getModes() {return _modes;}
   Tkvol& operator=(Tkvol& o)
     {
       const int m=o.getmodenum();

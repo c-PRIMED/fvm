@@ -48,6 +48,9 @@ class pmode
   T getcp() {return _cp;}
   T gettau() {return _tau;}
   T getomega() {return _omega;}
+  Tvec& getVRef(){return _vg;}
+  T& getTauRef() {return _tau;}
+  T& getOmegaRef() {return _omega;}
   Refl_Map& getreflmap() {return _reflections;}
   Refl_Map getreflmapValue() {return _reflections;}
   Refl_pair& getReflpair(int i) {return _reflections[i];}
