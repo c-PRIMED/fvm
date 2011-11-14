@@ -1,6 +1,9 @@
 #ifndef _KSPACE_H_
 #define _KSPACE_H_
 
+#include <iostream>
+#include <fstream>
+#include<string>
 #include <vector>
 #include <math.h>
 #include "Vector.h"
@@ -17,6 +20,7 @@ class Kspace
   typedef Vector<T,3> Tvec;
   typedef pmode<T> Tmode;
   typedef shared_ptr<Tmode> Tmodeptr;
+  typedef vector<Tmodeptr> Modes;
   typedef kvol<T> Tkvol;
   typedef shared_ptr<Tkvol> Kvolptr;
   typedef vector<Kvolptr> Volvec;
@@ -58,6 +62,93 @@ class Kspace
 
  Kspace()
       {}
+
+ Kspace(const char* filename,const int dimension)
+   {
+     ifstream fp_in;
+     cout<<"Opening file..."<<endl;
+     fp_in.open(filename,ifstream::in);
+     cout<<"File opened."<<endl;
+
+     int modeNum;
+     int kPoints;
+     int directions;
+
+     fp_in>>modeNum;
+     cout<<"Number of Polarizations: "<<modeNum<<endl;
+     fp_in>>kPoints;
+     cout<<"Number of Wave Vector Magnitude Discretizations: "<<kPoints<<endl;
+     fp_in>>directions;
+     cout<<"Number of Angular Discretizations: "<<directions<<endl;
+
+     _length=kPoints*directions;
+
+     for(int k=0;k<_length;k++)
+       {
+	 Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeNum));
+	 Modes& modes=volptr->getModes();
+
+	 for(int m=0;m<modeNum;m++)
+	   {
+	     T Tdummy;
+	     T omega;
+	     T tau;
+	     Tvec vg;
+	     Tvec K; 
+	     T weight;
+	     Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode());
+	     fp_in>>Tdummy;
+	     fp_in>>weight;
+	     fp_in>>omega;
+	     fp_in>>Tdummy;
+	     K[0]=Tdummy;
+
+	     if(dimension==2)
+	       {
+		 fp_in>>Tdummy;
+		 K[1]=Tdummy;
+		 K[2]=0.;
+	       }
+	     
+	     if(dimension==3)
+	       {
+		 fp_in>>Tdummy;
+		 K[2]=Tdummy;
+	       }
+	     else
+
+	     fp_in>>Tdummy;
+	     vg[0]=Tdummy;
+
+	     if(dimension==2)
+	       {
+		 fp_in>>Tdummy;
+		 vg[1]=Tdummy;
+		 vg[2]=0.;
+	       }
+	     
+	     if(dimension==3)
+	       {
+		 fp_in>>Tdummy;
+		 vg[2]=Tdummy;
+	       }
+
+	     fp_in>>tau;
+
+	     modeptr->getVRef()=vg;
+	     modeptr->getTauRef()=tau;
+	     modeptr->getOmegaRef()=omega;
+	     modes.push_back(modeptr);
+	     volptr->setkvec(K);
+	     volptr->setdk3(weight);
+	   }
+	 _Kmesh.push_back(volptr);
+       }
+
+     cout<<"Closing file..."<<endl;
+     fp_in.close();
+     cout<<"File closed."<<endl;
+   }
   
   //void setvol(int n,Tkvol k) {*_Kmesh[n]=k;}
   Tkvol& getkvol(int n) const {return *_Kmesh[n];}
@@ -90,7 +181,7 @@ class Kspace
     T deltaT=1.;
     T newguess;
     int iters=0;
-    while(deltaT>1e-6)
+    while((deltaT>1e-6)&&(iters<10))
       {
 	gete0_tau(guess,e0_tau,de0_taudT);
 	deltaT=(e0_tau-e_sum)/de0_taudT;

@@ -22,7 +22,8 @@ class Kspace
   typedef typename Tmode::Refl_pair Refl_pair;
   typedef typename Tmode::Refl_Map Refl_Map;
 
-  Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi) ;
+  Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi);
+  Kspace(const char* filename,const int dimension);
   int getlength();
   int gettotmodes();
   T getDK3() ;
