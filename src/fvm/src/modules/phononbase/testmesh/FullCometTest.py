@@ -21,6 +21,8 @@ print " "
 filename="test40x40"
 extension=".cas"
 
+BZ="graphene_data.txt"
+
 fileBase="/home/james/memosa/src/fvm/src/modules/phononbase/testmesh/"+filename
 
 def usage():
@@ -36,13 +38,14 @@ geomFields =  fvm.models.GeomFields('geom')
 metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
 
-vg=.01
+vg=.1
 tau=1.
-ntheta=5
-nphi=10
+ntheta=4
+nphi=8
 Tinit=310
 
-K_space=pa.KspaceA(1,tau,vg,4e12,ntheta,nphi)
+#K_space=pa.KspaceA(1,tau,vg,4e12,ntheta,nphi)
+K_space=pa.KspaceA(BZ,2)
 
 pmacro=pext.PhononMacro(filename)
 
@@ -53,22 +56,41 @@ cBCs=cmodel.getBCs()
 
 copts["initialTemperature"]=Tinit
 copts.showResidual=1
-copts.maxLevels=3
+copts.maxLevels=5
 copts.absTolerance=1e-8
 copts.preSweeps=0
-copts.postSweeps=2
+copts.postSweeps=5
 
 cBCs[4].bcType="temperature"
 cBCs[4]["specifiedTemperature"]=300
-cBCs[5].bcType="temperature"
+cBCs[5].bcType="reflecting"
+cBCs[5]["specifiedReflection"]=1.
 cBCs[5]["specifiedTemperature"]=300
-cBCs[6].bcType="temperature"
+cBCs[6].bcType="reflecting"
+cBCs[6]["specifiedReflection"]=1.
 cBCs[6]["specifiedTemperature"]=300
 cBCs[2].bcType="temperature"
-cBCs[2]["specifiedTemperature"]=300
+cBCs[2]["specifiedTemperature"]=310
 
+print "Initializing..."
 cmodel.init()
-cmodel.advance(1000)
+print "Iterating..."
+begin=time.clock()
+cmodel.advance(1)
+end=time.clock()
+
+print "Total Solution Time:",end-begin
+
+wallflux1=cmodel.HeatFluxIntegral(meshes[0],4)
+wallflux2=cmodel.HeatFluxIntegral(meshes[0],2)
+wallArea=cmodel.getWallArea(meshes[0],4)
+
+Cp=K_space.calcSpecificHeat(305)
+ballistic=Cp*vg*10./4.*wallArea
+
+
+print "flux1",wallflux1/ballistic
+print "flux2",wallflux2/ballistic
 
 writer = exporters.VTKWriterA(geomFields,meshes,
                               "temperatureProfile.vtk",
@@ -77,3 +99,5 @@ writer = exporters.VTKWriterA(geomFields,meshes,
 writer.init()
 writer.writeScalarField(pmacro.temperature,"Temperature")
 writer.finish()
+
+Cp=K_space.calcSpecificHeat(305)
