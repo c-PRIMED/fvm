@@ -194,7 +194,7 @@ class COMETDiscretizer
 	    cell2=_faceCells(f,0);
 	  }
 	
-	if(_BCfArray[f]==true) //If the face in question is a reflecting face
+	if(_BCfArray[f]==2) //If the face in question is a reflecting face
 	  {
 	    int Fgid=findFgId(f);
 	    T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
@@ -419,7 +419,7 @@ class COMETDiscretizer
     e0ResArray[cell]=-Rvec[totalmodes];
   }
 
-  void findResid()
+  void findResid(const int level)
   {
     const int cellcount=_cells.getSelfCount();
     const int totalmodes=_kspace.gettotmodes();
@@ -443,6 +443,7 @@ class COMETDiscretizer
 	    COMETConvection(c,AMat,Bvec);	
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
+	    
 	    Resid+=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
@@ -463,6 +464,7 @@ class COMETDiscretizer
 	    COMETConvection(c,AMat,Bvec);	
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
+
 	    Resid+=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
@@ -489,7 +491,6 @@ class COMETDiscretizer
 	_residChange=fabs(_aveResid-ResidScalar)/_aveResid;
 	_aveResid=ResidScalar;
       }
-
   }
   
   TArray gatherResid(const int c)
