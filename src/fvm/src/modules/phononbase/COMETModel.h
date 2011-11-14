@@ -205,8 +205,9 @@ class COMETModel : public Model
 	 *e0ResidCell=0.;
 	 _macro.e0Residual.addArray(cells,e0ResidCell);
        }
-
+     cout<<"Creating Coarse Levels..."<<endl;
      MakeCoarseModel(this);
+     cout<<"Coarse Levels Completed."<<endl;
   }
 
   void initCoarse()
@@ -361,8 +362,7 @@ class COMETModel : public Model
 	    newModelPtr->getBCs()=finerModel->getBCs();
 
 	    newModelPtr->initCoarse();
-	    
-	    MakeCoarseModel(newModelPtr);
+	    newModelPtr->MakeCoarseModel(newModelPtr);
 	  }
       }
     else if(_options.AgglomerationMethod=="AMG")
@@ -407,36 +407,39 @@ class COMETModel : public Model
 	int pairWith;
 	for(int c=0;c<inCellCount;c++)
 	  {
-	    //loop through all neighbors to find pairing
-	    const int neibCount=inCellinFaces.getCount(c);
-	    pairWith=-1;
-	    T maxArea=0.;
-	    int c2;
-	    for(int neib=0;neib<neibCount;neib++)
+	    if(FineToCoarse[c]<0) //dont bother if im already paired
 	      {
-		const int f=inCellinFaces(c,neib);
-		
-		if(inBCfArray[f]==0)  //not a boundary face
+		//loop through all neighbors to find pairing
+		const int neibCount=inCellinFaces.getCount(c);
+		pairWith=-1;
+		T maxArea=0.;
+		int c2;
+		for(int neib=0;neib<neibCount;neib++)
 		  {
-		    if(c==inFaceinCells(f,1))
-		      c2=inFaceinCells(f,0);
-		    else
-		      c2=inFaceinCells(f,1);
+		    const int f=inCellinFaces(c,neib);
 		    
-		    if(FineToCoarse[c2]==-1)
-		      if(areaMagArray[c2]>maxArea)
-			pairWith=c2;
+		    if(inBCfArray[f]==0)  //not a boundary face
+		      {
+			if(c==inFaceinCells(f,1))
+			  c2=inFaceinCells(f,0);
+			else
+			  c2=inFaceinCells(f,1);
+			
+			if(FineToCoarse[c2]==-1)
+			  if(areaMagArray[c2]>maxArea)
+			    pairWith=c2;
+		      }
+		  }
+		
+		if(pairWith!=-1)
+		  {
+		    FineToCoarse[c]=coarseCount;
+		    FineToCoarse[c2]=coarseCount;
+		    coarseCount++;
 		  }
 	      }
-	    
-	    if(pairWith!=-1)
-	      {
-		FineToCoarse[c]=coarseCount;
-		FineToCoarse[c2]=coarseCount;
-		coarseCount++;
-	      }
 	  }
-
+	
 	//second sweep to group stragglers, or group with self
 	for(int c=0;c<inCellCount;c++)
 	  {
@@ -800,9 +803,7 @@ class COMETModel : public Model
 				  _kspace,_bcMap,BCArray,BCfArray);
 	
 	CDisc.setfgFinder();
-	applyTemperatureBoundaries();
 	CDisc.COMETSolve(1,_level); //forward
-	applyTemperatureBoundaries();
 	CDisc.COMETSolve(-1,_level); //reverse
       }
   }
@@ -821,8 +822,7 @@ class COMETModel : public Model
 				  _kspace,_bcMap,BCArray,BCfArray);
 	
 	CDisc.setfgFinder();
-	applyTemperatureBoundaries();
-	CDisc.findResid();
+	CDisc.findResid(_level);
 	currentResid=CDisc.getAveResid();
 
 	if(lowResid<0)
@@ -883,6 +883,7 @@ class COMETModel : public Model
 		Field& cvarField=cmode.getfield();
 		Field& resField=mode.getresid();
 		Field& cinjField=cmode.gete0field();
+		Field& FASField=mode.getFASfield();
 		Field& cFASField=cmode.getFASfield();
 		TArray& coarserVar=dynamic_cast<TArray&>(cvarField[coarserCells]);
 		TArray& coarserInj=dynamic_cast<TArray&>(cinjField[coarserCells]);
@@ -890,44 +891,101 @@ class COMETModel : public Model
 		TArray& finerVar=dynamic_cast<TArray&>(varField[finerCells]);
 		TArray& finerRes=dynamic_cast<TArray&>(resField[finerCells]);
 
-		for(int c=0;c<cellCount;c++)
+		if(_level>0)
 		  {
-		    const int fineCount=CoarserToFiner.getCount(c);
-		    coarserVar[c]=0.;
+		    TArray& finerFAS=dynamic_cast<TArray&>(FASField[finerCells]);
 
-		    for(int fc=0;fc<fineCount;fc++)
+		    for(int c=0;c<cellCount;c++)
 		      {
-			const int cell=CoarserToFiner(c,fc);
-			coarserVar[c]+=finerVar[cell]*finerVol[cell];
-			coarserFAS[c]+=finerRes[cell];
+			const int fineCount=CoarserToFiner.getCount(c);
+			coarserVar[c]=0.;
+			coarserFAS[c]=0.;
+			T FASprev=0.;
+			
+			for(int fc=0;fc<fineCount;fc++)
+			  {
+			    const int cell=CoarserToFiner(c,fc);
+			    coarserVar[c]+=finerVar[cell]*finerVol[cell];
+			    coarserFAS[c]+=finerRes[cell];
+			    FASprev+=finerFAS[cell];
+			  }
+			coarserFAS[c]+=FASprev;
+			coarserVar[c]/=coarserVol[c];
+			coarserInj[c]=coarserVar[c];
 		      }
-		    coarserVar[c]/=coarserVol[c];
-		    coarserInj[c]=coarserVar[c];
-		  }	
+		  }
+		else
+		  {
+		    for(int c=0;c<cellCount;c++)
+		      {
+			const int fineCount=CoarserToFiner.getCount(c);
+			coarserVar[c]=0.;
+			coarserFAS[c]=0.;
+			
+			for(int fc=0;fc<fineCount;fc++)
+			  {
+			    const int cell=CoarserToFiner(c,fc);
+			    coarserVar[c]+=finerVar[cell]*finerVol[cell];
+			    coarserFAS[c]+=finerRes[cell];
+			  }
+			coarserVar[c]/=coarserVol[c];
+			coarserInj[c]=coarserVar[c];
+		      }
+		  }
 	      }
 	  }
-
+	
 	TArray& coarserVar=dynamic_cast<TArray&>(coarserMacro.e0[coarserCells]);
 	TArray& coarserInj=dynamic_cast<TArray&>(coarserMacro.e0Injected[coarserCells]);
 	TArray& coarserFAS=dynamic_cast<TArray&>(coarserMacro.e0FASCorrection[coarserCells]);
 	TArray& finerVar=dynamic_cast<TArray&>(_macro.e0[finerCells]);
 	TArray& finerRes=dynamic_cast<TArray&>(_macro.e0Residual[finerCells]);
 
-	for(int c=0;c<cellCount;c++)
+	if(_level>0)
 	  {
-	    const int fineCount=CoarserToFiner.getCount(c);
-	    for(int fc=0;fc<fineCount;fc++)
+	    TArray& finerFAS=dynamic_cast<TArray&>(_macro.e0FASCorrection[finerCells]);
+	    
+	    for(int c=0;c<cellCount;c++)
 	      {
-		const int cell=CoarserToFiner(c,fc);
-		coarserVar[c]+=finerVar[cell]*finerVol[cell];
-		coarserFAS[c]+=finerRes[cell];
+		const int fineCount=CoarserToFiner.getCount(c);
+		coarserVar[c]=0.;
+		coarserFAS[c]=0.;
+		T FASprev=0.;
+		
+		for(int fc=0;fc<fineCount;fc++)
+		  {
+		    const int cell=CoarserToFiner(c,fc);
+		    coarserVar[c]+=finerVar[cell]*finerVol[cell];
+		    coarserFAS[c]+=finerRes[cell];
+		    FASprev+=finerFAS[cell];
+		  }
+		coarserFAS[c]+=FASprev;
+		coarserVar[c]/=coarserVol[c];
+		coarserInj[c]=coarserVar[c];
 	      }
-	    coarserVar[c]/=coarserVol[c];
-	    coarserInj[c]=coarserVar[c];
+	  }
+	else
+	  {
+	    for(int c=0;c<cellCount;c++)
+	      {
+		const int fineCount=CoarserToFiner.getCount(c);
+		coarserVar[c]=0.;
+		coarserFAS[c]=0.;
+		
+		for(int fc=0;fc<fineCount;fc++)
+		  {
+		    const int cell=CoarserToFiner(c,fc);
+		    coarserVar[c]+=finerVar[cell]*finerVol[cell];
+		    coarserFAS[c]+=finerRes[cell];
+		  }
+
+		coarserVar[c]/=coarserVol[c];
+		coarserInj[c]=coarserVar[c];
+	      }
 	  }
       }
   }
-
+  
   void makeFAS()
   {
     updateResid();
@@ -1048,7 +1106,6 @@ class COMETModel : public Model
     while((niters<iters) && (residual>absTol))
       {
 	cycle();
-	applyTemperatureBoundaries();
 	niters++;
 	residual=updateResid();
 	if(niters%show==0)
@@ -1056,7 +1113,78 @@ class COMETModel : public Model
 	
       }
     updateTL();
-    cout<<"Total Iterations:"<<niters<<" Residual:"<<residual<<endl;
+    applyTemperatureBoundaries();
+    cout<<endl<<"Total Iterations:"<<niters<<" Residual:"<<residual<<endl;
+  }
+
+  T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
+  {
+    T r(0.);
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+	  {
+	    const StorageSite& faces = fg.site;
+	    const int nFaces = faces.getCount();
+	    const StorageSite& cells = mesh.getCells();
+	    const CRConnectivity& faceCells=mesh.getFaceCells(faces);
+	    const Field& areaField=_geomFields.area;
+	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	    
+	    for(int k=0;k<_kspace.getlength();k++)
+	      {
+		Tkvol& kv=_kspace.getkvol(k);
+		int modenum=kv.getmodenum();
+		for(int m=0;m<modenum;m++)
+		  {
+		    VectorT3 vg=kv.getmode(m).getv();
+		    T dk3=kv.getdk3();
+		    Field& efield=kv.getmode(m).getfield();
+		    const TArray& eval=dynamic_cast<const TArray&>(efield[cells]);
+		    for(int f=0; f<nFaces; f++)
+		      {
+			const VectorT3 An=faceArea[f];
+			const int c1=faceCells(f,1);
+			const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
+			r += eval[c1]*vgdotAn*dk3;
+		      }
+		    found=true;
+		  }
+	      }
+	    break;
+	  }
+      }
+    if (!found)
+      throw CException("getHeatFluxIntegral: invalid faceGroupID");
+    return r;
+  }
+
+  T getWallArea(const Mesh& mesh, const int faceGroupId)
+  {
+    T r(0.);
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+	  {
+	    const StorageSite& faces = fg.site;
+	    const int nFaces = faces.getCount();
+	    const Field& areaMagField=_geomFields.areaMag;
+	    const TArray& faceArea=dynamic_cast<const TArray&>(areaMagField[faces]);
+	    	    
+       	    for(int f=0; f<nFaces; f++)
+	      r += faceArea[f];
+	    
+	    found=true;
+	    break;
+	  }
+      }
+    if (!found)
+      throw CException("getwallArea: invalid faceGroupID");
+    return r;
   }
   
   void setBCMap(COMETBCMap* bcMap) {_bcMap=*bcMap;}

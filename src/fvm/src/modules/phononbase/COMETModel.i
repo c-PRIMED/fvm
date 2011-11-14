@@ -21,6 +21,8 @@ class COMETModel : public Model
   
   void init();
   void advance(int);
+  T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
+  T getWallArea(const Mesh& mesh, const int faceGroupId);
   COMETModelOptions<T>& getOptions();
   COMETBCMap& getBCs();
   
