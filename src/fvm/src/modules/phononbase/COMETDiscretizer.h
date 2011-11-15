@@ -419,13 +419,14 @@ class COMETDiscretizer
     e0ResArray[cell]=-Rvec[totalmodes];
   }
 
-  void findResid(const int level)
+  void findResid(const bool plusFAS)
   {
     const int cellcount=_cells.getSelfCount();
     const int totalmodes=_kspace.gettotmodes();
     TArray ResidSum(totalmodes+1);
     TArray Bsum(totalmodes+1);
     T ResidScalar=0.;
+    T traceSum=0.;
     TArray Bvec(totalmodes+1);
     TArray Resid(totalmodes+1);
     ResidSum.zero();
@@ -444,6 +445,10 @@ class COMETDiscretizer
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
 	    
+	    if(plusFAS)
+	      addFAS(c,Bvec);
+
+	    traceSum+=(AMat.getTraceAbs()-1);
 	    Resid+=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
@@ -464,7 +469,11 @@ class COMETDiscretizer
 	    COMETConvection(c,AMat,Bvec);	
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
+	    
+	    if(plusFAS)
+	      addFAS(c,Bvec);
 
+	    traceSum+=(AMat.getTraceAbs()-1);
 	    Resid+=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
@@ -481,8 +490,10 @@ class COMETDiscretizer
 
     for(int o=0;o<totalmodes;o++)
       {
-	ResidScalar+=ResidSum[o]/Bsum[o];
+	ResidScalar+=ResidSum[o];
       }
+
+    ResidScalar/=traceSum;
 
     if(_aveResid==-1)
       {_aveResid=ResidScalar;}
