@@ -139,6 +139,14 @@ class SquareMatrix : public MatrixJML<T>
     cout<<endl;
   }
 
+  T getTraceAbs()
+  {
+    T trace=0.;
+    for(int i=1;i<_order+1;i++)
+      trace+=fabs((*this)(i,i));
+    return trace;
+  }
+
  private:
   const int _order;
   const int _elements;

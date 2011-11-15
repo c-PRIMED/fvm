@@ -5,6 +5,7 @@
 #include "Array.h"
 #include "ArrayBase.h"
 #include "NumType.h"
+#include <math.h>
 
 template<class T>
 class ArrowHeadMatrix : public MatrixJML<T>
@@ -129,6 +130,14 @@ class ArrowHeadMatrix : public MatrixJML<T>
   {
     for(int i=0;i<_elements;i++)
       _values[i]=T_Scalar(0);
+  }
+
+  T getTraceAbs()
+  {
+    T trace=0.;
+    for(int i=0;i<_order;i++)
+      trace+=fabs(_values[i]);
+    return trace;
   }
 
  private:
