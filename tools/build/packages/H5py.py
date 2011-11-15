@@ -13,8 +13,8 @@ class H5py(BuildPkg):
 
     def _installed(self):
         ver = h5py_version()
-        if ver and (int(ver[0] > 1 or (int(ver[0]) > 0 and int(ver[1]) >= 2))):
-                return True
+        if ver and (int(ver[0] > 1)):
+            return True
         return False
 
     def _build(self):

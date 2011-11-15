@@ -51,21 +51,12 @@ class Hdf5(BuildPkg):
         return v, mpi
 
     def _installed(self):
-        # Need 1.8.x where x < 5
-        # API change starting with 1.8.5 breaks things.
-
-        #v, mpi = self.find_hdf5_vers(in_build=True)
+        # Need 1.8.x
         v, mpi = self.find_hdf5_vers(installed=True)
         if v:
             v = v.split('.')
-
             if int(v[0]) == 1 and int(v[1]) >= 8:
-                try:
-                    x = int(v[2].split('-')[0])
-                    if x < 6:
-                        return True
-                except:
-                    return False
+                return True
         return False
 
     def _configure(self):
