@@ -808,7 +808,7 @@ class COMETModel : public Model
       }
   }
 
-  T updateResid()
+  T updateResid(const bool addFAS)
   {
     const int numMeshes=_meshes.size();
     T lowResid=-1.;
@@ -822,7 +822,7 @@ class COMETModel : public Model
 				  _kspace,_bcMap,BCArray,BCfArray);
 	
 	CDisc.setfgFinder();
-	CDisc.findResid(_level);
+	CDisc.findResid(addFAS);
 	currentResid=CDisc.getAveResid();
 
 	if(lowResid<0)
@@ -840,8 +840,11 @@ class COMETModel : public Model
     
     if(_level+1<_options.maxLevels)
       {
-	if(_options.preSweeps==0)
-	  updateResid();
+	if(_level==0)
+	  updateResid(false);
+	else
+	  updateResid(true);
+
 	injectResid();
 	_coarserLevel->makeFAS();
 	_coarserLevel->cycle();
@@ -894,22 +897,25 @@ class COMETModel : public Model
 		if(_level>0)
 		  {
 		    TArray& finerFAS=dynamic_cast<TArray&>(FASField[finerCells]);
+		    Field& injField=mode.gete0field();
+		    TArray& finerInj=dynamic_cast<TArray&>(injField[finerCells]);
 
 		    for(int c=0;c<cellCount;c++)
 		      {
 			const int fineCount=CoarserToFiner.getCount(c);
 			coarserVar[c]=0.;
 			coarserFAS[c]=0.;
-			T FASprev=0.;
+			//T FASprev=0.;
 			
 			for(int fc=0;fc<fineCount;fc++)
 			  {
 			    const int cell=CoarserToFiner(c,fc);
 			    coarserVar[c]+=finerVar[cell]*finerVol[cell];
+			    //coarserVar[c]+=finerInj[cell]*finerVol[cell];
 			    coarserFAS[c]+=finerRes[cell];
-			    FASprev+=finerFAS[cell];
+			    // FASprev+=finerFAS[cell];
 			  }
-			coarserFAS[c]+=FASprev;
+			//coarserFAS[c]+=FASprev;
 			coarserVar[c]/=coarserVol[c];
 			coarserInj[c]=coarserVar[c];
 		      }
@@ -944,22 +950,24 @@ class COMETModel : public Model
 	if(_level>0)
 	  {
 	    TArray& finerFAS=dynamic_cast<TArray&>(_macro.e0FASCorrection[finerCells]);
+	    TArray& finerInj=dynamic_cast<TArray&>(_macro.e0Injected[finerCells]);
 	    
 	    for(int c=0;c<cellCount;c++)
 	      {
 		const int fineCount=CoarserToFiner.getCount(c);
 		coarserVar[c]=0.;
 		coarserFAS[c]=0.;
-		T FASprev=0.;
+		//T FASprev=0.;
 		
 		for(int fc=0;fc<fineCount;fc++)
 		  {
 		    const int cell=CoarserToFiner(c,fc);
 		    coarserVar[c]+=finerVar[cell]*finerVol[cell];
+		    // coarserVar[c]+=finerInj[cell]*finerVol[cell];
 		    coarserFAS[c]+=finerRes[cell];
-		    FASprev+=finerFAS[cell];
+		    //FASprev+=finerFAS[cell];
 		  }
-		coarserFAS[c]+=FASprev;
+		//coarserFAS[c]+=FASprev;
 		coarserVar[c]/=coarserVol[c];
 		coarserInj[c]=coarserVar[c];
 	      }
@@ -988,7 +996,7 @@ class COMETModel : public Model
   
   void makeFAS()
   {
-    updateResid();
+    updateResid(false);
 
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
@@ -1098,7 +1106,7 @@ class COMETModel : public Model
   {
     T residual;
     applyTemperatureBoundaries();
-    residual=updateResid();
+    residual=updateResid(false);
     int niters=0;
     const T absTol=_options.absTolerance;
     const int show=_options.showResidual;
@@ -1107,7 +1115,7 @@ class COMETModel : public Model
       {
 	cycle();
 	niters++;
-	residual=updateResid();
+	residual=updateResid(false);
 	if(niters%show==0)
 	  cout<<"Iteration:"<<niters<<" Residual:"<<residual<<endl;
 	
