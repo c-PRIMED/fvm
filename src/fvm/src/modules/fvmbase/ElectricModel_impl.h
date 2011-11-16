@@ -33,6 +33,7 @@
 #include "SquareTensor.h"
 #include "ElecDiagonalTensor.h"
 //#include "LinearizeDielectric.h"
+#include "LinearizeInterfaceJump.h"
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
@@ -584,6 +585,27 @@ public:
 	}
     }
     */
+
+    /* linearize couble shell mesh for interface potential jump*/
+
+    for (int n=0; n<numMeshes; n++)
+    {
+      const Mesh& mesh = *_meshes[n];
+      if (mesh.isDoubleShell())
+	{
+	  const int parentMeshID = mesh.getParentMeshID();
+          const int otherMeshID = mesh.getOtherMeshID();
+	  const Mesh& parentMesh = *_meshes[parentMeshID];
+	  const Mesh& otherMesh = *_meshes[otherMeshID];
+	  
+	  LinearizeInterfaceJump<T, T, T> lsm (_options["Interface_A_coeff"],
+					       _options["Interface_B_coeff"],
+					       _electricFields.potential);
+
+	  lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	}
+    }
+
     /* boundary and interface condition */
 
     for (int n=0; n<numMeshes; n++)

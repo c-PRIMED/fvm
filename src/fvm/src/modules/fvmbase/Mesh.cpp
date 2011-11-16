@@ -1861,9 +1861,10 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   for(int i=0; i<count; i++)
   {
       // left shell cells
-      sCellCells->add(i,i+3*count);
+      //sCellCells->add(i,i+3*count);
       sCellCells->add(i,i+count);
       sCellCells->add(i,i+2*count);
+      sCellCells->add(i,i+3*count);
 
       // right shell cells
       sCellCells->add(i+count,i);

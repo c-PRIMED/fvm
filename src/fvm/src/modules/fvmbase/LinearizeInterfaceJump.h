@@ -1,5 +1,5 @@
-#ifndef _LINEARIZESPECIESINTERFACE_H_
-#define _LINEARIZESPECIESINTERFACE_H_ 
+#ifndef _LINEARIZEINTERFACEJUMP_H_
+#define _LINEARIZEINTERFACEJUMP_H_ 
 
 #include "Mesh.h"
 #include "NumType.h"
@@ -17,7 +17,7 @@
 
 
 template<class X, class Diag, class OffDiag>
-class LinearizeSpeciesInterface
+class LinearizeInterfaceJump
 {
  public:
   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
@@ -29,7 +29,7 @@ class LinearizeSpeciesInterface
   typedef Array<VectorT3> VectorT3Array;
  
 
- LinearizeSpeciesInterface(const T_Scalar A_coeff, 
+ LinearizeInterfaceJump(const T_Scalar A_coeff, 
 			   const T_Scalar B_coeff,
 			   Field& varField):
     _varField(varField), 
@@ -92,7 +92,7 @@ class LinearizeSpeciesInterface
        }
 
        const X leftFlux = rParentCell[c1p]; // inward shell flux on the left
-       const OffDiag dRC0dXC1 = parentmatrix.getCoeff(c1p,  c0p);
+       const OffDiag dRC0dXC3 = parentmatrix.getCoeff(c1p,  c0p);
        const Diag dRC0dXC0 = parentdiag[c1p];
 
        //get other mesh fluxes and coeffs
@@ -108,8 +108,8 @@ class LinearizeSpeciesInterface
        }
 
        const X rightFlux = rOtherCell[c1o]; // inward shell flux on the right
-       const OffDiag dRC0dXC3 = othermatrix.getCoeff(c1o,  c0o);
-       const OffDiag dRC0dXC2 = otherdiag[c1o];
+       const OffDiag dRC0dXC2 = othermatrix.getCoeff(c1o,  c0o);
+       const OffDiag dRC0dXC1 = otherdiag[c1o];
 
 
        //now put flux information from meshes into shell cells
@@ -130,11 +130,11 @@ class LinearizeSpeciesInterface
        diag[c0] = dRC0dXC0;
 
        // right shell cell - 1 neighbor
-       OffDiag& offdiagC2_C0 = matrix.getCoeff(c2,  c0);
+       OffDiag& offdiagC1_C0 = matrix.getCoeff(c1,  c0);
 
-       rCell[c2] = _A_coeff*xCell[c0] + _B_coeff - xCell[c2];
-       offdiagC2_C0 = _A_coeff;
-       diag[c2] = -1;
+       rCell[c1] = _A_coeff*xCell[c0] + _B_coeff - xCell[c1];
+       offdiagC1_C0 = _A_coeff;
+       diag[c1] = -1;
    }
 
   }

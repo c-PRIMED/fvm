@@ -22,7 +22,7 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "SourceDiscretization.h"
-#include "LinearizeSpeciesInterface.h"
+#include "LinearizeInterfaceJump.h"
 
 template<class T>
 class SpeciesModel<T>::Impl
@@ -379,9 +379,9 @@ public:
 	  const Mesh& parentMesh = *_meshes[parentMeshID];
 	  const Mesh& otherMesh = *_meshes[otherMeshID];
 
-	  LinearizeSpeciesInterface<T, T, T> lsm (_options["A_coeff"],
-						  _options["B_coeff"],
-						  sFields.massFraction);
+	  LinearizeInterfaceJump<T, T, T> lsm (_options["A_coeff"],
+					       _options["B_coeff"],
+					       sFields.massFraction);
 
 	  lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	}
