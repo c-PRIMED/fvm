@@ -494,31 +494,32 @@ for ( unsigned int id = 0; id < _meshes.size(); id++ ){
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
-
-        const StorageSite& cells = mesh.getCells();
-        const StorageSite& ibFaces = mesh.getIBFaces();
+        if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+           const StorageSite& cells = mesh.getCells();
+           const StorageSite& ibFaces = mesh.getIBFaces();
         
-        GeomFields::SSPair key1(&ibFaces,&cells);
-        const IMatrix& mIC =
-          dynamic_cast<const IMatrix&>
-          (*_geomFields._interpolationMatrices[key1]);
+           GeomFields::SSPair key1(&ibFaces,&cells);
+           const IMatrix& mIC =
+           dynamic_cast<const IMatrix&>
+           (*_geomFields._interpolationMatrices[key1]);
 
-        GeomFields::SSPair key2(&ibFaces,&particles);
-        const IMatrix& mIP =
-          dynamic_cast<const IMatrix&>
-          (*_geomFields._interpolationMatrices[key2]);
+           GeomFields::SSPair key2(&ibFaces,&particles);
+           const IMatrix& mIP =
+           dynamic_cast<const IMatrix&>
+           (*_geomFields._interpolationMatrices[key2]);
 
-        shared_ptr<TArray> ibT(new TArray(ibFaces.getCount()));
+           shared_ptr<TArray> ibT(new TArray(ibFaces.getCount()));
         
-        const TArray& cT =
-          dynamic_cast<const TArray&>(_thermalFields.temperature[cells]);
+           const TArray& cT =
+             dynamic_cast<const TArray&>(_thermalFields.temperature[cells]);
     
 
-        ibT->zero();
+           ibT->zero();
 
-	mIC.multiplyAndAdd(*ibT,cT);
-	mIP.multiplyAndAdd(*ibT,pT);
-	_thermalFields.temperature.addArray(ibFaces,ibT);
+	   mIC.multiplyAndAdd(*ibT,cT);
+	   mIP.multiplyAndAdd(*ibT,pT);
+	  _thermalFields.temperature.addArray(ibFaces,ibT);
+        }  
     }
 
   }
