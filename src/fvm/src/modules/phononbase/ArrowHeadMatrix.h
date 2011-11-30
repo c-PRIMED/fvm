@@ -43,7 +43,7 @@ class ArrowHeadMatrix : public MatrixJML<T>
 	}
       else
 	{
-	  throw CException("Invalid index for Arrowhead matrix");
+	  throw CException("Invalid index: Arrowhead matrix");
 	  return _values[0];
 	}
     }
