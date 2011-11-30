@@ -6,6 +6,7 @@
 #include "ArrayBase.h"
 #include "NumType.h"
 #include <math.h>
+#include <omp.h>
 
 template<class T>
 class ArrowHeadMatrix : public MatrixJML<T>
@@ -103,6 +104,8 @@ class ArrowHeadMatrix : public MatrixJML<T>
     alpha=0.;
     beta=0.;
 
+#pragma omp parallel for default(shared) private(i,ani,aii,ain)
+    {
     for(int i=1;i<_order;i++)
       {
 	ani=getElement(_order,i);
@@ -112,16 +115,19 @@ class ArrowHeadMatrix : public MatrixJML<T>
 	alpha+=ani*bVec[i-1]/aii;
 	beta+=ani*ain/aii;
       }
-    
+    }
     T bn;
     bn=(bVec[_order-1]-alpha)/(getElement(_order,_order)-beta);
     
+#pragma omp parallel for default(shared) private(i,aii,ain)
+    {
     for(int i=1;i<_order;i++)
       {
 	ain=getElement(i,_order);
 	aii=getElement(i,i);
 	bVec[i-1]=(bVec[i-1]-ain*bn)/aii;
       }
+    }
 
     bVec[_order-1]=bn;
   }

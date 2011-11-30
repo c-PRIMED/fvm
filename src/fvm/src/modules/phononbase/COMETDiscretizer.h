@@ -18,6 +18,7 @@
 #include "MatrixJML.h"
 #include "SquareMatrix.h"
 #include "PhononMacro.h"
+#include "SquareTensor.h"
 
 template<class T>
 class COMETDiscretizer
@@ -35,15 +36,17 @@ class COMETDiscretizer
   typedef ArrowHeadMatrix<T> TArrow;
   typedef SquareMatrix<T> TSquare;
   typedef map<int,COMETBC<T>*> COMETBCMap;
+  typedef COMETModelOptions<T> COpts;
   typedef Array<int> IntArray;
   typedef Array<bool> BoolArray;
   typedef Vector<int,2> VecInt2;
   typedef map<int,VecInt2> FaceToFg;
   typedef typename Tmode::Refl_pair Refl_pair;
+  typedef SquareTensor<T,3> T3Tensor;
 
  COMETDiscretizer(const Mesh& mesh, const GeomFields& geomfields, 
 		  PhononMacro& macro, Tkspace& kspace, COMETBCMap& bcMap,
-		  const IntArray& BCArray, const IntArray& BCfArray):
+		  const IntArray& BCArray, const IntArray& BCfArray, COpts& options):
   _mesh(mesh),
     _geomFields(geomfields),
     _cells(mesh.getCells()),
@@ -62,7 +65,8 @@ class COMETDiscretizer
     _BCfArray(BCfArray),
     _aveResid(-1.),
     _residChange(-1.),
-    _fgFinder()
+    _fgFinder(),
+    _options(options)
     {}
 
   void COMETSolve(const int dir,const int level)
@@ -87,41 +91,52 @@ class COMETDiscretizer
 	    Bvec.zero();
 	    Resid.zero();
 	    AMat.zero();
-
+	    
 	    COMETConvection(c,AMat,Bvec);
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
+
+	    if(_options.withNormal)
+	      COMETShifted(c,&AMat,Bvec);
 	    
 	    if(level>0)
 	      addFAS(c,Bvec);
-
-	    Resid=Bvec;
-	    AMat.Solve(Bvec);
 	    
-	    Distribute(c,Bvec,Resid); 
-	  }
-	else if(_BCArray[c]==1) //reflecting boundary
-	  {
-	    TSquare AMat(totalmodes+1);
-	    Bvec.zero();
-	    Resid.zero();
-	    AMat.zero();
-	    
-	    COMETConvection(c,AMat,Bvec);	
-	    COMETCollision(c,&AMat,Bvec);
-	    COMETEquilibrium(c,&AMat,Bvec);
-
-	    if(level>0)
-	      addFAS(c,Bvec);
-
 	    Resid=Bvec;
 	    AMat.Solve(Bvec);
 	    
 	    Distribute(c,Bvec,Resid);
 	  }
+	else if(_BCArray[c]==1) //reflecting boundary
+	  {
+	    for(int j=0;j<3;j++)
+	      {
+		TSquare AMat(totalmodes+1);
+		Bvec.zero();
+		Resid.zero();
+		AMat.zero();
+		
+		COMETConvection(c,AMat,Bvec);	
+		COMETCollision(c,&AMat,Bvec);
+		COMETEquilibrium(c,&AMat,Bvec);
+		
+		if(level>0)
+		  addFAS(c,Bvec);
+		
+		Resid=Bvec;
+		AMat.Solve(Bvec);
+		
+		Distribute(c,Bvec,Resid);
+		updatee0();
+	      }
+	  }
 	else
 	  throw CException("Unexpected value for boundary cell map.");
+
       }
+    updatee0();
+    if(_options.withNormal)
+      updateeShifted();
   }
 
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec)
@@ -239,7 +254,7 @@ class COMETDiscretizer
 				    if(VdotA>T_Scalar(0))
 				      {
 					if(k==k1 && m==mm)
-					  Amat(count,ccount)-=flux*refl*ddk3/dk3;
+					  Amat(count,ccount)-=VdotA*refl*ddk3/dk3;
 				      }
 				  }
 				ccount++;
@@ -285,7 +300,7 @@ class COMETDiscretizer
 					BVec[count-1]-=flux*VdotA*ddk3
 					  *eeArray[cell]/sumVdotA*oneMinusRefl;
 					if(k==k1 && m==mm)
-					  BVec[count-1]-=eeArray[cell]*ddk3/dk3*refl*flux;
+					  BVec[count-1]-=eeArray[cell]*ddk3/dk3*refl*VdotA;
 				      }
 				  }
 				ccount++;
@@ -334,7 +349,7 @@ class COMETDiscretizer
     const int klen=_kspace.getlength();
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
-    TArray& e0_Array=dynamic_cast<TArray&>(_macro.e0[_cells]);
+    TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
     int count=1;
     T coeff;
     
@@ -346,13 +361,17 @@ class COMETDiscretizer
 	  {
 	    Tmode& mode=kvol.getmode(m);
 	    T tau=mode.gettau();
+	    T de0dT=mode.calcde0dT(Tlold[cell]);
 	    Field& efield=mode.getfield();
-	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);  
+	    Field& e0field=mode.gete0field();
+	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
+	    TArray& e0Array=dynamic_cast<TArray&>(e0field[_cells]);
 	    coeff=_cellVolume[cell]/tau;
-	    Amat->getElement(count,order)+=coeff;
+	    Amat->getElement(count,order)+=coeff*de0dT;
 	    Amat->getElement(count,count)-=coeff;
 	    BVec[count-1]-=coeff*eArray[cell];
-	    BVec[count-1]+=coeff*e0_Array[cell];
+	    //BVec[count-1]+=coeff*Tlold[cell]*de0dT;
+	    BVec[count-1]+=coeff*e0Array[cell];
 	    count+=1;
 	  }
       }
@@ -364,8 +383,8 @@ class COMETDiscretizer
     const int klen=_kspace.getlength();
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
-    const T tauTot=_kspace.calcTauTot();
-    TArray& e0_Array=dynamic_cast<TArray&>(_macro.e0[_cells]);
+    TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    const T tauTot=_kspace.getde0taudT(Tlold[cell]);
     int count=1;
     T coeff;
     
@@ -380,14 +399,52 @@ class COMETDiscretizer
 	    T tau=mode.gettau();
 	    coeff=dk3/tau/tauTot;
 	    Field& efield=mode.getfield();
-	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]); 
-	    Amat->getElement(order,count)-=coeff;
-	    BVec[totalmodes]-=coeff*eArray[cell];
+	    Field& e0field=mode.gete0field();
+	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
+	    TArray& e0Array=dynamic_cast<TArray&>(e0field[_cells]);
+	    Amat->getElement(order,count)+=coeff;
+	    BVec[totalmodes]+=coeff*eArray[cell];
+	    BVec[totalmodes]-=coeff*e0Array[cell];
 	    count+=1;
 	  }
       }
-    Amat->getElement(order,order)=1.;
-    BVec[totalmodes]+=e0_Array[cell];
+    Amat->getElement(order,order)=-1.;
+    //BVec[totalmodes]+=Tlold[cell];
+  }
+
+  void COMETShifted(const int cell, TMatrix* Amat, TArray& BVec)
+  { //adds to collision and equilibrium
+    const int klen=_kspace.getlength();
+    const int totalmodes=_kspace.gettotmodes();
+    const int order=totalmodes+1;
+    TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    const T tauTot=_kspace.getde0taudT(Tlold[cell]);
+    int count=1;
+    T coeff;
+    
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    T tau=mode.gettauN();
+	    Field& efield=mode.getfield();
+	    Field& eShiftedfield=mode.geteShifted();
+	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
+	    TArray& eShifted=dynamic_cast<TArray&>(eShiftedfield[_cells]);
+	    coeff=_cellVolume[cell]/tau;
+	    Amat->getElement(count,count)-=coeff;
+	    Amat->getElement(order,count)+=coeff/tauTot;
+	    BVec[count-1]-=coeff*eArray[cell];
+	    BVec[count-1]+=coeff*eShifted[cell];
+	    BVec[totalmodes]+=coeff*eArray[cell]/tauTot;
+	    BVec[totalmodes]-=coeff*eShifted[cell]/tauTot;
+	    count+=1;
+	  }
+      }
+    
   }
 
   void Distribute(const int cell, TArray& BVec, TArray& Rvec)
@@ -413,8 +470,10 @@ class COMETDiscretizer
 	  }
       }
     
-    TArray& e0Array=dynamic_cast<TArray&>(_macro.e0[_cells]);
-    e0Array[cell]-=BVec[totalmodes];
+    TArray& TlArray=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    TlArray[cell]-=BVec[totalmodes];
+    TArray& deltaTArray=dynamic_cast<TArray&>(_macro.deltaT[_cells]);
+    deltaTArray[cell]=BVec[totalmodes];
     TArray& e0ResArray=dynamic_cast<TArray&>(_macro.e0Residual[_cells]);
     e0ResArray[cell]=-Rvec[totalmodes];
   }
@@ -448,7 +507,7 @@ class COMETDiscretizer
 	    if(plusFAS)
 	      addFAS(c,Bvec);
 
-	    traceSum+=(AMat.getTraceAbs()-1);
+	    traceSum+=AMat.getTraceAbs();
 	    Resid+=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
@@ -473,7 +532,7 @@ class COMETDiscretizer
 	    if(plusFAS)
 	      addFAS(c,Bvec);
 
-	    traceSum+=(AMat.getTraceAbs()-1);
+	    traceSum+=AMat.getTraceAbs();
 	    Resid+=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
@@ -488,7 +547,7 @@ class COMETDiscretizer
 	  throw CException("Unexpected value for boundary cell map.");
       }
 
-    for(int o=0;o<totalmodes;o++)
+    for(int o=0;o<totalmodes+1;o++)
       {
 	ResidScalar+=ResidSum[o];
       }
@@ -606,6 +665,101 @@ class COMETDiscretizer
     TArray& fasArray=dynamic_cast<TArray&>(_macro.e0FASCorrection[_cells]);
     bVec[count]-=fasArray[c];
   }
+
+  void updatee0()
+  {
+    TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    TArray& dT=dynamic_cast<TArray&>(_macro.deltaT[_cells]);
+    const T cellCount=_cells.getSelfCount();
+    int klen=_kspace.getlength();
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Field& e0Field=mode.gete0field();
+	    TArray& e0Array=dynamic_cast<TArray&>(e0Field[_cells]);
+	    
+	    for(int c=0;c<cellCount;c++)
+	      {
+		T Told=Tl[c]-dT[c];
+		T de0dTold=mode.calcde0dT(Told);
+		e0Array[c]-=dT[c]*de0dTold;
+	      }
+	  }
+      }
+  }
+
+  void updateeShifted()
+  {
+    const int cellcount=_cells.getSelfCount();
+    TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+
+    for(int c=0;c<cellcount;c++)
+      {	
+	T3Tensor TensorSum;
+	VectorT3 VectorSum;
+	VectorT3 lambda;
+	T TpreFactor=0.;
+	T VpreFactor=0.;
+
+	int klen=_kspace.getlength();
+	for(int k=0;k<klen;k++)
+	  {
+	    Tkvol& kvol=_kspace.getkvol(k);
+	    const int numModes=kvol.getmodenum();
+	    for(int m=0;m<numModes;m++)
+	      {
+		Tmode& mode=kvol.getmode(m);
+		Field& eField=mode.getfield();
+		TArray& eArray=dynamic_cast<TArray&>(eField[_cells]);
+		TpreFactor+=mode.calcTensorPrefactor(Tl[c]);
+		VpreFactor+=mode.calcVectorPrefactor(Tl[c],eArray[c]);
+	      }
+	  }
+
+	TensorSum.zero();
+	VectorSum.zero();
+
+	for(int k=0;k<klen;k++)
+	  {
+	    Tkvol& kvol=_kspace.getkvol(k);
+	    T dk3=kvol.getdk3();
+	    VectorT3 Kvec=kvol.getkvec();
+	    T3Tensor TempTensor;
+	    outerProduct(Kvec,Kvec,TempTensor);
+	    TensorSum+=TempTensor*dk3*TpreFactor;
+	    VectorSum+=Kvec*dk3*VpreFactor;
+	  }
+
+	lambda=inverse(TensorSum)*VectorSum;
+
+	for(int k=0;k<klen;k++)
+	  {
+	    Tkvol& kvol=_kspace.getkvol(k);
+	    VectorT3 Kvec=kvol.getkvec();
+	    T shift=Kvec[0]*lambda[0]+Kvec[1]*lambda[1]+Kvec[2]*lambda[2];
+	    const int numModes=kvol.getmodenum();
+	    for(int m=0;m<numModes;m++)
+	      {
+		Tmode& mode=kvol.getmode(m);
+		Field& eShiftedField=mode.geteShifted();
+		TArray& eShifted=dynamic_cast<TArray&>(eShiftedField[_cells]);
+		eShifted[c]=mode.calcShifted(Tl[c],shift);
+	      }
+	  }
+	
+      }
+  }
+  
+  void outerProduct(const VectorT3& v1, const VectorT3& v2, T3Tensor& out)
+  {
+    for(int i=0;i<3;i++)
+      for(int j=0;j<3;j++)
+	out(i,j)=v1[i]*v2[j];
+  }
   
  private:
   const Mesh& _mesh;
@@ -627,6 +781,7 @@ class COMETDiscretizer
   T _aveResid;
   T _residChange;
   FaceToFg _fgFinder;
+  COpts _options;
   
 };
 

@@ -12,7 +12,7 @@ class COMETModel : public Model
  public:
   
   typedef Kspace<T> Tkspace;
-  typedef map<int,COMETBC<T>*> COMETBCMap; 
+  typedef map<int,COMETBC<T>*> COMETBCMap;
   typedef COMETModel<T> TCOMET;
   typedef shared_ptr<TCOMET> TCOMETPtr;
 
@@ -20,11 +20,13 @@ class COMETModel : public Model
 	     Tkspace& kspace,PhononMacro& macro);
   
   void init();
+  void updateTL();
   void advance(int);
   T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
   T getWallArea(const Mesh& mesh, const int faceGroupId);
   COMETModelOptions<T>& getOptions();
   COMETBCMap& getBCs();
+  T getResidual();
   
  private:
   
@@ -39,6 +41,7 @@ class COMETModel : public Model
   PhononModelOptions<T> _options;
   BCfaceList _BFaces;
   BCcellList _BCells;
+  T _residual;
 
 };
 
@@ -61,6 +64,8 @@ struct COMETModelOptions : public FloatVarDict<T>
   string AgglomerationMethod;
   int preSweeps;
   int postSweeps;
+  double relFactor;
+  bool withNormal;
 };
 
 %template(COMETBCA) COMETBC<ATYPE_STR>;

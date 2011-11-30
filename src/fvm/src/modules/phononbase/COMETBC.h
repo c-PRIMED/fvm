@@ -33,6 +33,8 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->AgglomerationMethod="FaceArea";
     this->preSweeps=0;
     this->postSweeps=2;
+    this->relFactor=.1;
+    this->withNormal=false;
   }
   
   bool printNormalizedResiduals;
@@ -45,6 +47,8 @@ struct COMETModelOptions : public FloatVarDict<T>
   string AgglomerationMethod;
   int preSweeps;
   int postSweeps;
+  double relFactor;
+  bool withNormal;
 
 };
 

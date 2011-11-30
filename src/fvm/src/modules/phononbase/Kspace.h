@@ -66,20 +66,20 @@ class Kspace
  Kspace(const char* filename,const int dimension)
    {
      ifstream fp_in;
-     cout<<"Opening file..."<<endl;
      fp_in.open(filename,ifstream::in);
-     cout<<"File opened."<<endl;
 
      int modeNum;
      int kPoints;
      int directions;
-
+     
+     cout<<endl<<"Reading BZ file"<<endl;
      fp_in>>modeNum;
      cout<<"Number of Polarizations: "<<modeNum<<endl;
      fp_in>>kPoints;
      cout<<"Number of Wave Vector Magnitude Discretizations: "<<kPoints<<endl;
      fp_in>>directions;
      cout<<"Number of Angular Discretizations: "<<directions<<endl;
+     cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
 
      _length=kPoints*directions;
 
@@ -113,9 +113,10 @@ class Kspace
 	     if(dimension==3)
 	       {
 		 fp_in>>Tdummy;
+		 K[1]=Tdummy;
+		 fp_in>>Tdummy;
 		 K[2]=Tdummy;
 	       }
-	     else
 
 	     fp_in>>Tdummy;
 	     vg[0]=Tdummy;
@@ -129,6 +130,8 @@ class Kspace
 	     
 	     if(dimension==3)
 	       {
+		 fp_in>>Tdummy;
+		 vg[1]=Tdummy;
 		 fp_in>>Tdummy;
 		 vg[2]=Tdummy;
 	       }
@@ -145,9 +148,101 @@ class Kspace
 	 _Kmesh.push_back(volptr);
        }
 
-     cout<<"Closing file..."<<endl;
      fp_in.close();
-     cout<<"File closed."<<endl;
+     calcDK3();
+   }
+ 
+ Kspace(const char* filename,const int dimension,const bool normal)
+   {
+     ifstream fp_in;
+     fp_in.open(filename,ifstream::in);
+
+     int modeNum;
+     int kPoints;
+     int directions;
+     
+     cout<<endl<<"Using Shifted Normal Scattering"<<endl;
+     cout<<"Reading BZ file"<<endl;
+     fp_in>>modeNum;
+     cout<<"Number of Polarizations: "<<modeNum<<endl;
+     fp_in>>kPoints;
+     cout<<"Number of Wave Vector Magnitude Discretizations: "<<kPoints<<endl;
+     fp_in>>directions;
+     cout<<"Number of Angular Discretizations: "<<directions<<endl;
+     cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
+
+     _length=kPoints*directions;
+
+     for(int k=0;k<_length;k++)
+       {
+	 Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeNum));
+	 Modes& modes=volptr->getModes();
+
+	 for(int m=0;m<modeNum;m++)
+	   {
+	     T Tdummy;
+	     T omega;
+	     T tau;
+	     T tauN;
+	     Tvec vg;
+	     Tvec K; 
+	     T weight;
+	     Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode());
+	     fp_in>>Tdummy;
+	     fp_in>>weight;
+	     fp_in>>omega;
+	     fp_in>>Tdummy;
+	     K[0]=Tdummy;
+
+	     if(dimension==2)
+	       {
+		 fp_in>>Tdummy;
+		 K[1]=Tdummy;
+		 K[2]=0.;
+	       }
+	     
+	     if(dimension==3)
+	       {
+		 fp_in>>Tdummy;
+		 K[1]=Tdummy;
+		 fp_in>>Tdummy;
+		 K[2]=Tdummy;
+	       }
+
+	     fp_in>>Tdummy;
+	     vg[0]=Tdummy;
+
+	     if(dimension==2)
+	       {
+		 fp_in>>Tdummy;
+		 vg[1]=Tdummy;
+		 vg[2]=0.;
+	       }
+	     
+	     if(dimension==3)
+	       {
+		 fp_in>>Tdummy;
+		 vg[1]=Tdummy;
+		 fp_in>>Tdummy;
+		 vg[2]=Tdummy;
+	       }
+
+	     fp_in>>tau;
+	     fp_in>>tauN;
+
+	     modeptr->getVRef()=vg;
+	     modeptr->getTauRef()=tau;
+	     modeptr->getTauNRef()=tauN;
+	     modeptr->getOmegaRef()=omega;
+	     modes.push_back(modeptr);
+	     volptr->setkvec(K);
+	     volptr->setdk3(weight);
+	   }
+	 _Kmesh.push_back(volptr);
+       }
+
+     fp_in.close();
+     calcDK3();
    }
   
   //void setvol(int n,Tkvol k) {*_Kmesh[n]=k;}
@@ -156,6 +251,17 @@ class Kspace
   int gettotmodes()
   {
     return (_Kmesh[0]->getmodenum())*_length;
+  }
+  T calcDK3()
+  {
+    T r(0.0);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	r+=kv.getdk3();
+      }
+    _totvol=r;
+    return r;
   }
   T getDK3() const {return _totvol;}
   T calcTauTot()
@@ -181,7 +287,7 @@ class Kspace
     T deltaT=1.;
     T newguess;
     int iters=0;
-    while((deltaT>1e-6)&&(iters<10))
+    while((deltaT>1e-6)&&(iters<100))
       {
 	gete0_tau(guess,e0_tau,de0_taudT);
 	deltaT=(e0_tau-e_sum)/de0_taudT;
@@ -210,6 +316,23 @@ class Kspace
       }
   }
 
+  T getde0taudT(T Tl)
+  {
+    T de0taudT=0.;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    de0taudT+=mode.calcde0taudT(Tl)*dk3;
+	  }
+      }
+    return de0taudT;
+  }
+
   T calcSpecificHeat(T Tl)
   {
     T r(0.0);
@@ -225,6 +348,61 @@ class Kspace
 	  }
       }
     return r;
+  }
+
+  T calcSpecificHeat(T Tl,const int m)
+  {
+    T r(0.0);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	Tmode& mode=kv.getmode(m);
+	r+=mode.calcde0dT(Tl)*dk3;
+      }
+    return r;
+  }
+
+  void findKnStats(const T length)
+  {
+    T AveKn(0.0);
+    T maxKn(0.0);
+    T minKn;
+
+    Tvec vg1=getkvol(0).getmode(0).getv();
+    T vmag1=sqrt(pow(vg1[0],2)+pow(vg1[1],2)+pow(vg1[2],2));
+    T tau1=getkvol(0).getmode(0).gettau();
+    minKn=vmag1*tau1;
+
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    Tvec vg=mode.getv();
+	    T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
+	    T tau=mode.gettau();
+	    AveKn+=vmag*tau*dk3;
+	    if(vmag*tau>maxKn)
+	      maxKn=vmag*tau;
+	    if(vmag*tau<minKn)
+	      minKn=vmag*tau;
+
+	  }
+      }
+    AveKn/=_totvol;
+    AveKn/=length;
+    maxKn/=length;
+    minKn/=length;
+
+    cout<<"Average Kn: "<<AveKn<<endl;
+    cout<<"Maximum Kn: "<<maxKn<<endl;
+    cout<<"Minimum Kn: "<<minKn<<endl;
+    
   }
 
   void findSpecs(T dk3, T vo, int m, Tvec so, Refl_pair& refls)

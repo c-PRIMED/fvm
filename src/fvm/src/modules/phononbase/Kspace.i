@@ -24,10 +24,13 @@ class Kspace
 
   Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi);
   Kspace(const char* filename,const int dimension);
+  Kspace(const char* filename,const int dimension,const bool normal);
   int getlength();
   int gettotmodes();
   T getDK3() ;
   T calcSpecificHeat(T Tl);
+  T calcSpecificHeat(T Tl,const int m);
+  void findKnStats(const T length);
 
   %extend{
     Kspace<T>* getSelfPointer() {return self;}

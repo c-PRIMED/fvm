@@ -30,7 +30,9 @@ class pmode
     _tau(tau),
     _omega(omega),
     _efield("edoubleprime"),
+    _eShifted("eShifted"),
     _e0field("e0"),
+    _injected("injected"),
     _residual("residual"),
     _FASCorrection("FASCorrection"),
     _reflections()
@@ -38,7 +40,9 @@ class pmode
 
  pmode():
   _efield("edoubleprime"),
+    _eShifted("eShifted"),
     _e0field("e0"),
+    _injected("injected"),
     _residual("residual"),
     _FASCorrection("FASCorrection"),
     _reflections()
@@ -47,15 +51,19 @@ class pmode
   Tvec getv(){return _vg;}
   T getcp() {return _cp;}
   T gettau() {return _tau;}
+  T gettauN() {return _tauN;}
   T getomega() {return _omega;}
   Tvec& getVRef(){return _vg;}
   T& getTauRef() {return _tau;}
+  T& getTauNRef() {return _tauN;}
   T& getOmegaRef() {return _omega;}
   Refl_Map& getreflmap() {return _reflections;}
   Refl_Map getreflmapValue() {return _reflections;}
   Refl_pair& getReflpair(int i) {return _reflections[i];}
   Field& getfield() {return _efield;}
+  Field& geteShifted() {return _eShifted;}
   Field& gete0field() {return _e0field;}
+  Field& getInjected() {return _injected;}
   Field& getresid() {return _residual;}
   Field& getFASfield() {return _FASCorrection;}
   T calce0(T Tl)
@@ -101,6 +109,37 @@ class pmode
     return e0kp; 
   }
 
+  T calcTensorPrefactor(T Tl)
+  {
+    const T hbar=6.582119e-16;  // (eV s)
+    const T kb=8.617343e-5;  // (eV/K) 
+    T e0kp;
+    
+    e0kp=exp(hbar*_omega/kb/Tl)/pow((exp(hbar*_omega/kb/Tl)-1),2)
+      /_tauN/kb/Tl;
+    
+    return e0kp; 
+  }
+
+  T calcVectorPrefactor(T Tl, T e)
+  {
+    const T hbar=6.582119e-16;  // (eV s)
+    T e0=calce0(Tl);
+    e0=(e0-e)/_tauN/hbar/_omega;
+    return e0;
+  }
+
+  T calcShifted(T Tl, T shift)
+  {
+    const T hbar=6.582119e-16;  // (eV s)
+    const T kb=8.617343e-5;  // (eV/K)
+    T e0kp;
+    
+    e0kp=hbar*_omega/(exp((hbar*_omega-shift)/kb/Tl)-1);
+    
+    return e0kp;
+  }
+
   Tmode& operator=(Tmode& o)
     {
       _vg=o.getv();
@@ -139,6 +178,9 @@ class pmode
   
   //relaxation rate
   T _tau;
+
+  //Normal process relaxation
+  T _tauN;
   
   //frequency  (rad/s)
   T _omega;
@@ -146,8 +188,14 @@ class pmode
   //e"
   Field _efield;
 
-  //e0 or injected solution
+  //shifted e" field
+  Field _eShifted;
+
+  //e0
   Field _e0field;
+  
+  //injected field
+  Field _injected;
 
   //residual
   Field _residual;
