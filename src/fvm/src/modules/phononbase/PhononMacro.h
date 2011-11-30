@@ -10,6 +10,7 @@ struct PhononMacro
   PhononMacro(const string baseName);
 
   Field temperature;
+  Field deltaT;
   Field e0;
   Field e0Residual;
   Field e0Injected;
