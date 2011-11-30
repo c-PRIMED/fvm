@@ -18,7 +18,7 @@ fvm.set_atype('double')
 
 print " "
 
-filename="40x40Biased"
+filename="60x60Biased"
 extension=".msh"
 
 BZfile="SiliconIsotropicN"
