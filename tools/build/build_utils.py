@@ -304,7 +304,7 @@ def set_python_path(dir, reset=False):
         print "ver=%s" % ver
         sys.exit(2)
 
-    libpath = os.path.join(dir, 'lib', 'python%s.%s' % (a, b))
+    libpath = os.path.join(dir, 'lib')
     pypath1 = os.path.join(dir, 'lib64', 'python%s.%s' % (a, b), 'site-packages')
     pypath2 = os.path.join(dir, 'lib', 'python%s.%s' % (a, b), 'site-packages')
     pypath = pypath1 + ':' + pypath2
