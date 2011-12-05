@@ -20,6 +20,7 @@ class StorageSite
   typedef map<  const StorageSite*, map<int,int> >   ScatterIndex;  
 public:
   int getCount() const;
+  int getCountLevel1() const;
   int getSelfCount() const;
   const ScatterMap&  getScatterMap() const;
   const GatherMap&   getGatherMap()  const;
