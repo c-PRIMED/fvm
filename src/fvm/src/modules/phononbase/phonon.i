@@ -13,8 +13,11 @@
 
 using namespace std;
 
-%include "pmode.i"
-%include "kvol.i"
+//%include "pmode.i"
+//%include "kvol.i"
 %include "Kspace.i"
-%include "PhononModel.i"
-%include "PhononBoundary.i"
+ %include "PhononModel.i"
+ %include "PhononBoundary.i"
+%include "COMETModel.i"
+ //%include "MatrixJML.i"
+ //%include "ArrowHeadMatrix.i"
