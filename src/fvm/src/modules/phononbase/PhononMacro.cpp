@@ -8,6 +8,7 @@ PhononMacro::PhononMacro(const std::string baseName) :
   e0Injected(baseName + "e0Injected"),
   e0FASCorrection(baseName + "e0FASCorrection"),
   heatFlux(baseName + ".heatFlux"),
+  lam(baseName + ".lam"),
   zero(baseName + "zero"),
   one(baseName + "one")
 {}

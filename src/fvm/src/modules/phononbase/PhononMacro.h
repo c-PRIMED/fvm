@@ -16,6 +16,7 @@ struct PhononMacro
   Field e0Injected;
   Field e0FASCorrection;
   Field heatFlux;
+  Field lam;
 
   Field zero;                     //used to fill in continuityResidual
   Field one;                      //used to fill in density
