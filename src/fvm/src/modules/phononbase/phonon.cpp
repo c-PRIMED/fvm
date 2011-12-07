@@ -1,5 +1,6 @@
 #include <atype.h>
 
+
 #include "Kspace.h"
 template class Kspace<ATYPE>;
 
@@ -14,3 +15,6 @@ template class PhononInterface<ATYPE>;
 
 #include "ArrowHeadMatrix.h"
 template class ArrowHeadMatrix<ATYPE>;
+
+#include "COMETModel.h"
+template class COMETModel<ATYPE>;
