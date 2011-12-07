@@ -109,13 +109,18 @@ class COMETModel : public Model
 	 const int numK=_kspace.getlength();
 	 const StorageSite& cells=mesh.getCells();
 	 const int numcells=cells.getCount();
+	 VectorT3 lamTemp;
 	 
 	 shared_ptr<TArray> TLcell(new TArray(numcells));
 	 shared_ptr<TArray> deltaTcell(new TArray(numcells));
+	 shared_ptr<VectorT3Array> lamArray(new VectorT3Array(numcells));
+	 lamTemp.zero();
+	 *lamArray=lamTemp;
 	 *deltaTcell=0.;
 	 *TLcell=Tinit;
 	 _macro.temperature.addArray(cells,TLcell);
 	 _macro.deltaT.addArray(cells,deltaTcell);
+	 _macro.lam.addArray(cells,lamArray);
 	 
 	 T e0sum=0.;
 	 
