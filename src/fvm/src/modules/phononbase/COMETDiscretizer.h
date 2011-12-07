@@ -696,6 +696,7 @@ class COMETDiscretizer
   {
     const int cellcount=_cells.getSelfCount();
     TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    VectorT3Array& lam=dynamic_cast<VectorT3Array&>(_macro.lam[_cells]);
 
     for(int c=0;c<cellcount;c++)
       {	
@@ -735,6 +736,7 @@ class COMETDiscretizer
 	  }
 
 	lambda=inverse(TensorSum)*VectorSum;
+	lam[c]=lambda;
 
 	for(int k=0;k<klen;k++)
 	  {
