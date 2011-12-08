@@ -19,7 +19,7 @@ a=.275e-9;  %lattice constant (m)
 Kmax=pi/a;
 ntheta=4;
 nphi=16;
-nK=10;
+nK=20;
 npol=6;
 dtheta=pi/ntheta/2;
 dphi=2*pi/nphi;
@@ -50,13 +50,13 @@ C=137.39;
 [newLO_K,newLO_vg]=transform(LO_K,LO_vg,nK);
 [newTO_K,newTO_vg]=transform(TO_K,TO_vg,nK);
 
-fp = fopen('SiliconIsotropicN300K.txt','w');
+fp = fopen('SiliconIsotropicNCp.txt','w');
 
 fprintf(fp,'%u\n',npol);
 fprintf(fp,'%u\n',nK);
 fprintf(fp,'%u\n',nphi*ntheta);
 
-dK=newTA_K(1)*2*Kmax;
+dK=newTA_K(1)*Kmax*2;
 
 totalvolume=0.;
 
@@ -65,7 +65,8 @@ for k=1:1:nK
         th=(theta-1)*dtheta+dtheta/2;
         for phi=1:1:nphi
             
-            weight=(Kmax*newTA_K(k))^2*sin(th)*dK*dtheta*dphi/8/pi^3*2;
+	    kweight=(newTA_K(k)*Kmax)^2*dK+dK^3/12.;
+            weight=kweight*2*sin(th)*sin(dtheta/2)*dphi/8/pi^3*2;
             totalvolume=totalvolume+weight;
             ph=(phi-1)*dphi+dphi/2;
             
