@@ -808,10 +808,23 @@ public:
         
         MFRPtr dNormRatio(dNorm->normalize(*_initialDeformationNorm));
         
+
+#ifdef FVM_PARALLEL	
+        if ( MPI::COMM_WORLD.Get_rank() == 0 ){  //only root process
+          if (_options.printNormalizedResiduals)
+             cout << _niters << ": " << *dNormRatio <<  endl;
+          else
+             cout << _niters << ": " << *dNorm <<  endl;
+        }	     
+#endif
+
+#ifndef FVM_PARALLEL	
         if (_options.printNormalizedResiduals)
           cout << _niters << ": " << *dNormRatio <<  endl;
         else
           cout << _niters << ": " << *dNorm <<  endl;
+#endif
+
 
         _niters++;
         if (*dNormRatio < _options.deformationTolerance)
