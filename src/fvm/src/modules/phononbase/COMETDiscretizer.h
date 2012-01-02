@@ -87,38 +87,21 @@ class COMETDiscretizer
 	
 	if(_BCArray[c]==0)  //not a reflecting boundary
 	  {
-	    TArrow AMat(totalmodes+1);
-	    Bvec.zero();
-	    Resid.zero();
-	    AMat.zero();
-	    
-	    COMETConvection(c,AMat,Bvec);
-	    COMETCollision(c,&AMat,Bvec);
-	    COMETEquilibrium(c,&AMat,Bvec);
-
-	    if(_options.withNormal)
-	      COMETShifted(c,&AMat,Bvec);
-	    
-	    if(level>0)
-	      addFAS(c,Bvec);
-	    
-	    Resid=Bvec;
-	    AMat.Solve(Bvec);
-	    
-	    Distribute(c,Bvec,Resid);
-	  }
-	else if(_BCArray[c]==1) //reflecting boundary
-	  {
-	    for(int j=0;j<3;j++)
+	    T dt=1;
+	    int NewtonIters=0;
+	    while(dt>_options.NewtonTol && NewtonIters<10)
 	      {
-		TSquare AMat(totalmodes+1);
+		TArrow AMat(totalmodes+1);
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
 		
-		COMETConvection(c,AMat,Bvec);	
+		COMETConvection(c,AMat,Bvec);
 		COMETCollision(c,&AMat,Bvec);
 		COMETEquilibrium(c,&AMat,Bvec);
+		
+		if(_options.withNormal)
+		  COMETShifted(c,&AMat,Bvec);
 		
 		if(level>0)
 		  addFAS(c,Bvec);
@@ -127,14 +110,53 @@ class COMETDiscretizer
 		AMat.Solve(Bvec);
 		
 		Distribute(c,Bvec,Resid);
-		updatee0();
+		updatee0(c);
+		NewtonIters++;
+		dt=fabs(Bvec[totalmodes]);
+	      }
+	  }
+	else if(_BCArray[c]==1) //reflecting boundary
+	  {
+	    T dt=1;
+	    int NewtonIters=0;
+	    while(dt>_options.NewtonTol && NewtonIters<10)
+	      {
+		TSquare AMat(totalmodes+1);
+		Bvec.zero();
+		Resid.zero();
+		AMat.zero();
+		
+		COMETConvection(c,AMat,Bvec);
+		for(int ind=0;ind<totalmodes+1;ind++)
+		  cout<<Bvec[ind]<<endl;
+		cout<<endl;
+		COMETCollision(c,&AMat,Bvec);
+		for(int ind=0;ind<totalmodes+1;ind++)
+		  cout<<Bvec[ind]<<endl;
+		cout<<endl;
+		COMETEquilibrium(c,&AMat,Bvec);
+
+		if(level>0)
+		  addFAS(c,Bvec);
+
+		for(int ind=0;ind<totalmodes+1;ind++)
+		  cout<<Bvec[ind]<<endl;
+
+		AMat.printMatrix();
+
+		Resid=Bvec;
+		AMat.Solve(Bvec);
+		
+		Distribute(c,Bvec,Resid);
+		updatee0(c);
+		NewtonIters++;
+		dt=fabs(Bvec[totalmodes]);
 	      }
 	  }
 	else
 	  throw CException("Unexpected value for boundary cell map.");
 
       }
-    updatee0();
     if(_options.withNormal)
       updateeShifted();
   }
@@ -243,19 +265,17 @@ class COMETDiscretizer
 			    Tkvol& kkvol=_kspace.getkvol(kk);
 			    T ddk3=kkvol.getdk3();
 			    const int numMODES=kkvol.getmodenum();
+
 			    for(int mm=0;mm<numMODES;mm++)
 			      {
 				Refl_pair& rpairs=kkvol.getmode(mm).getReflpair(Fgid);
-				int k1=rpairs.first.second;
-				if(kk!=k || m!=mm)
+				int k1=rpairs.first.second;  
+				
+				if(k==k1 && m==mm)
 				  {
 				    VectorT3 vvg=kkvol.getmode(mm).getv();
-				    T VdotA=vvg[0]*Af[0]+vvg[1]*Af[1]+vvg[2]*Af[2];    
-				    if(VdotA>T_Scalar(0))
-				      {
-					if(k==k1 && m==mm)
-					  Amat(count,ccount)-=VdotA*refl*ddk3/dk3;
-				      }
+				    T VdotA=vvg[0]*Af[0]+vvg[1]*Af[1]+vvg[2]*Af[2];  
+				    Amat(count,ccount)+=VdotA*refl*ddk3/dk3;
 				  }
 				ccount++;
 			      }
@@ -300,7 +320,7 @@ class COMETDiscretizer
 					BVec[count-1]-=flux*VdotA*ddk3
 					  *eeArray[cell]/sumVdotA*oneMinusRefl;
 					if(k==k1 && m==mm)
-					  BVec[count-1]-=eeArray[cell]*ddk3/dk3*refl*VdotA;
+					  BVec[count-1]+=eeArray[cell]*ddk3/dk3*refl*VdotA;
 				      }
 				  }
 				ccount++;
@@ -474,8 +494,8 @@ class COMETDiscretizer
     TlArray[cell]-=BVec[totalmodes];
     TArray& deltaTArray=dynamic_cast<TArray&>(_macro.deltaT[_cells]);
     deltaTArray[cell]=BVec[totalmodes];
-    TArray& e0ResArray=dynamic_cast<TArray&>(_macro.e0Residual[_cells]);
-    e0ResArray[cell]=-Rvec[totalmodes];
+    TArray& TlResArray=dynamic_cast<TArray&>(_macro.TlResidual[_cells]);
+    TlResArray[cell]=-Rvec[totalmodes];
   }
 
   void findResid(const bool plusFAS)
@@ -493,13 +513,14 @@ class COMETDiscretizer
     
     for(int c=0;c<cellcount;c++)
       {	
+	Bvec.zero();
+	Resid.zero();
+
 	if(_BCArray[c]==0)  //not a reflecting boundary
 	  {
 	    TArrow AMat(totalmodes+1);
-	    Bvec.zero();
-	    Resid.zero();
 	    AMat.zero();
-	    
+
 	    COMETConvection(c,AMat,Bvec);	
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
@@ -508,10 +529,14 @@ class COMETDiscretizer
 	      addFAS(c,Bvec);
 
 	    traceSum+=AMat.getTraceAbs();
-	    Resid+=Bvec;
+	    
+	    Resid=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
 
+	    AMat.multiply(Resid,Bvec);
+	    Resid=Bvec;
+	    
 	    makeValueArray(c,Bvec);
 	    ArrayAbs(Bvec);
 	    ArrayAbs(Resid);
@@ -521,8 +546,6 @@ class COMETDiscretizer
 	else if(_BCArray[c]==1) //reflecting boundary
 	  {
 	    TSquare AMat(totalmodes+1);
-	    Bvec.zero();
-	    Resid.zero();
 	    AMat.zero();
 	    
 	    COMETConvection(c,AMat,Bvec);	
@@ -533,9 +556,12 @@ class COMETDiscretizer
 	      addFAS(c,Bvec);
 
 	    traceSum+=AMat.getTraceAbs();
-	    Resid+=Bvec;
+	    Resid=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
+
+	    AMat.multiply(Resid,Bvec);
+	    Resid=Bvec;
 
 	    makeValueArray(c,Bvec);
 	    ArrayAbs(Resid);
@@ -585,7 +611,7 @@ class COMETDiscretizer
 	    count+=1;
 	  }
       }
-    rArray[order]=_macro.e0Residual[c];
+    rArray[order]=_macro.TlResidual[c];
   }
   
   T getResidChange() {return _residChange;}
@@ -643,6 +669,8 @@ class COMETDiscretizer
 	    count+=1;
 	  }
       }
+    TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    o[count]=Tl[c];
   }
 
   void addFAS(const int c, TArray& bVec)
@@ -662,14 +690,14 @@ class COMETDiscretizer
 	    count+=1;
 	  }
       }
-    TArray& fasArray=dynamic_cast<TArray&>(_macro.e0FASCorrection[_cells]);
+    TArray& fasArray=dynamic_cast<TArray&>(_macro.TlFASCorrection[_cells]);
     bVec[count]-=fasArray[c];
   }
 
   void updatee0()
   {
     TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    TArray& dT=dynamic_cast<TArray&>(_macro.deltaT[_cells]);
+    //TArray& dT=dynamic_cast<TArray&>(_macro.deltaT[_cells]);
     const T cellCount=_cells.getSelfCount();
     int klen=_kspace.getlength();
     for(int k=0;k<klen;k++)
@@ -684,10 +712,32 @@ class COMETDiscretizer
 	    
 	    for(int c=0;c<cellCount;c++)
 	      {
-		T Told=Tl[c]-dT[c];
-		T de0dTold=mode.calcde0dT(Told);
-		e0Array[c]-=dT[c]*de0dTold;
+		//T Told=Tl[c]-dT[c];
+		//T de0dTold=mode.calcde0dT(Told);
+		e0Array[c]=mode.calce0(Tl[c]);
 	      }
+	  }
+      }
+  }
+
+  void updatee0(int c)
+  {
+    TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    //TArray& dT=dynamic_cast<TArray&>(_macro.deltaT[_cells]);
+    int klen=_kspace.getlength();
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Field& e0Field=mode.gete0field();
+	    TArray& e0Array=dynamic_cast<TArray&>(e0Field[_cells]);
+	    
+	    //T Told=Tl[c]-dT[c];
+	    //T de0dTold=mode.calcde0dT(Told);
+	    e0Array[c]=mode.calce0(Tl[c]);
 	  }
       }
   }

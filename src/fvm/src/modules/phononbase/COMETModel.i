@@ -38,7 +38,7 @@ class COMETModel : public Model
   TCOMET* _coarserLevel;
   TCOMET* _finerLevel;
   PhononBCMap _bcMap;
-  PhononModelOptions<T> _options;
+  COMETModelOptions<T> _options;
   BCfaceList _BFaces;
   BCcellList _BCells;
   T _residual;
@@ -66,6 +66,7 @@ struct COMETModelOptions : public FloatVarDict<T>
   int postSweeps;
   double relFactor;
   bool withNormal;
+  double NewtonTol;
 };
 
 %template(COMETBCA) COMETBC<ATYPE_STR>;

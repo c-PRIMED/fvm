@@ -215,13 +215,13 @@ class COMETModel : public Model
 	       }    
 	   }
 	 
-	 e0sum=e0sum/_kspace.calcTauTot();	 
-	 shared_ptr<TArray> e0cell(new TArray(numcells));
-	 *e0cell=e0sum;
-	 _macro.e0.addArray(cells,e0cell);
-	 shared_ptr<TArray> e0ResidCell(new TArray(numcells));
-	 *e0ResidCell=0.;
-	 _macro.e0Residual.addArray(cells,e0ResidCell);
+	 //e0sum=e0sum/_kspace.calcTauTot();	 
+	 //shared_ptr<TArray> e0cell(new TArray(numcells));
+	 //*e0cell=e0sum;
+	 //_macro.e0.addArray(cells,e0cell);
+	 shared_ptr<TArray> TlResidCell(new TArray(numcells));
+	 *TlResidCell=0.;
+	 _macro.TlResidual.addArray(cells,TlResidCell);
        }
      cout<<"Creating Coarse Levels..."<<endl;
      MakeCoarseModel(this);
@@ -259,6 +259,7 @@ class COMETModel : public Model
 	       {
 		 Tmode& mode=kv.getmode(m);
 		 Field& efield=mode.getfield();
+		 Field& eInjField=mode.getInjected();
 		 Field& e0field=mode.gete0field();
 		 Field& resfield=mode.getresid();
 		 Field& FASfield=mode.getFASfield();
@@ -266,13 +267,16 @@ class COMETModel : public Model
 		 TArrptr evar=TArrptr(new TArray(numcells));
 		 TArrptr resid=TArrptr(new TArray(numcells));
 		 TArrptr FAS=TArrptr(new TArray(numcells));
+		 TArrptr inj=TArrptr(new TArray(numcells));
 		 const T einit=0.;
 		 e0sum+=einit*dk3;
 		 *evar=einit;
+		 *inj=einit;
 		 *e0var=einit;
 		 *resid=0.;
 		 *FAS=0;
 		 efield.addArray(cells,evar);
+		 eInjField.addArray(cells,inj);
 		 e0field.addArray(cells,e0var);
 		 resfield.addArray(cells,resid);
 		 FASfield.addArray(cells,FAS);
@@ -311,19 +315,19 @@ class COMETModel : public Model
 	       }    
 	   }
 	 
-	 e0sum=e0sum/_kspace.getDK3();
-	 TArrptr e0cell(new TArray(numcells));
-	 *e0cell=e0sum;
-	 _macro.e0.addArray(cells,e0cell);
-	 TArrptr e0ResidCell(new TArray(numcells));
-	 *e0ResidCell=0.;
-	 _macro.e0Residual.addArray(cells,e0ResidCell);
-	 TArrptr e0Inj(new TArray(numcells));
-	 *e0Inj=0.;
-	 _macro.e0Injected.addArray(cells,e0Inj);
-	 TArrptr e0FAS(new TArray(numcells));
-	 *e0FAS=0.;
-	 _macro.e0FASCorrection.addArray(cells,e0FAS);
+	 //e0sum=e0sum/_kspace.getDK3();
+	 //TArrptr e0cell(new TArray(numcells));
+	 //*e0cell=e0sum;
+	 //_macro.e0.addArray(cells,e0cell);
+	 TArrptr TlResidCell(new TArray(numcells));
+	 *TlResidCell=0.;
+	 _macro.TlResidual.addArray(cells,TlResidCell);
+	 TArrptr TlInj(new TArray(numcells));
+	 *TlInj=0.;
+	 _macro.TlInjected.addArray(cells,TlInj);
+	 TArrptr TlFAS(new TArray(numcells));
+	 *TlFAS=0.;
+	 _macro.TlFASCorrection.addArray(cells,TlFAS);
        }
   }
 
@@ -868,6 +872,7 @@ class COMETModel : public Model
 	  updateResid(true);
 
 	injectResid();
+	_coarserLevel->sete0();
 	_coarserLevel->makeFAS();
 	_coarserLevel->cycle();
 	correctSolution();
@@ -907,7 +912,7 @@ class COMETModel : public Model
 		Field& varField=mode.getfield();
 		Field& cvarField=cmode.getfield();
 		Field& resField=mode.getresid();
-		Field& cinjField=cmode.gete0field();
+		Field& cinjField=cmode.getInjected();
 		Field& cFASField=cmode.getFASfield();
 		TArray& coarserVar=dynamic_cast<TArray&>(cvarField[coarserCells]);
 		TArray& coarserInj=dynamic_cast<TArray&>(cinjField[coarserCells]);
@@ -935,11 +940,11 @@ class COMETModel : public Model
 	      }
 	  }
 	
-	TArray& coarserVar=dynamic_cast<TArray&>(coarserMacro.e0[coarserCells]);
-	TArray& coarserInj=dynamic_cast<TArray&>(coarserMacro.e0Injected[coarserCells]);
-	TArray& coarserFAS=dynamic_cast<TArray&>(coarserMacro.e0FASCorrection[coarserCells]);
-	TArray& finerVar=dynamic_cast<TArray&>(_macro.e0[finerCells]);
-	TArray& finerRes=dynamic_cast<TArray&>(_macro.e0Residual[finerCells]);
+	TArray& coarserVar=dynamic_cast<TArray&>(coarserMacro.temperature[coarserCells]);
+	TArray& coarserInj=dynamic_cast<TArray&>(coarserMacro.TlInjected[coarserCells]);
+	TArray& coarserFAS=dynamic_cast<TArray&>(coarserMacro.TlFASCorrection[coarserCells]);
+	TArray& finerVar=dynamic_cast<TArray&>(_macro.temperature[finerCells]);
+	TArray& finerRes=dynamic_cast<TArray&>(_macro.TlResidual[finerCells]);
 	    
 	for(int c=0;c<cellCount;c++)
 	  {
@@ -985,9 +990,38 @@ class COMETModel : public Model
 	      }
 	  }
 
-	TArray& resArray=dynamic_cast<TArray&>(_macro.e0Residual[cells]);
-	TArray& fasArray=dynamic_cast<TArray&>(_macro.e0FASCorrection[cells]);
+	TArray& resArray=dynamic_cast<TArray&>(_macro.TlResidual[cells]);
+	TArray& fasArray=dynamic_cast<TArray&>(_macro.TlFASCorrection[cells]);
 	fasArray-=resArray;
+      }
+  }
+
+  void sete0()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh=*_meshes[n];
+	const StorageSite& cells=mesh.getCells();
+	const int cellCount=cells.getSelfCount();
+	TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[cells]);
+
+	const int klen=_kspace.getlength();
+	for(int k=0;k<klen;k++)
+	  {
+	    Tkvol& kvol=_kspace.getkvol(k);
+	    const int numModes=kvol.getmodenum();
+	    for(int m=0;m<numModes;m++)
+	      {
+		Tmode& mode=kvol.getmode(m);
+		Field& e0Field=mode.gete0field();
+		TArray& e0Array=dynamic_cast<TArray&>(e0Field[cells]);
+
+		for(int c=0;c<cellCount;c++)
+		  e0Array[c]=mode.calce0(Tl[c]);
+
+	      }
+	  }
       }
   }
 
@@ -1019,7 +1053,7 @@ class COMETModel : public Model
 		Tmode& cmode=ckvol.getmode(m);
 		Field& varField=mode.getfield();
 		Field& cvarField=cmode.getfield();
-		Field& cinjField=cmode.gete0field();
+		Field& cinjField=cmode.getInjected();
 		TArray& coarserArray=dynamic_cast<TArray&>(cvarField[coarserCells]);
 		TArray& finerArray=dynamic_cast<TArray&>(varField[finerCells]);
 		TArray& injArray=dynamic_cast<TArray&>(cinjField[coarserCells]);
@@ -1035,9 +1069,9 @@ class COMETModel : public Model
 	      }
 	  }
 
-	TArray& coarserArray=dynamic_cast<TArray&>(coarserMacro.e0[coarserCells]);
-	TArray& injArray=dynamic_cast<TArray&>(coarserMacro.e0Injected[coarserCells]);
-	TArray& finerArray=dynamic_cast<TArray&>(_macro.e0[finerCells]);
+	TArray& coarserArray=dynamic_cast<TArray&>(coarserMacro.temperature[coarserCells]);
+	TArray& injArray=dynamic_cast<TArray&>(coarserMacro.TlInjected[coarserCells]);
+	TArray& finerArray=dynamic_cast<TArray&>(_macro.temperature[finerCells]);
 	
 	for(int c=0;c<cellCount;c++)
 	  {

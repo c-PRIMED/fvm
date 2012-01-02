@@ -12,9 +12,9 @@ struct PhononMacro
   Field temperature;
   Field deltaT;
   Field e0;
-  Field e0Residual;
-  Field e0Injected;
-  Field e0FASCorrection;
+  Field TlResidual;
+  Field TlInjected;
+  Field TlFASCorrection;
   Field heatFlux;
   Field lam;
 

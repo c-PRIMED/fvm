@@ -10,6 +10,7 @@ class SquareMatrix : public MatrixJML<T>
 {
  public:
   typedef Array<T> TArray;
+  typedef shared_ptr<TArray> TArrPtr;
   typedef Array<int> IntArray;
   typedef typename NumTypeTraits<T>::T_Scalar T_Scalar;
 
@@ -41,11 +42,16 @@ class SquareMatrix : public MatrixJML<T>
 	for(int i=1;i<_order+1;i++)
 	  {
 	    l[i-1]=i;
-	    s[i-1]=(*this)(i,1);
+	    s[i-1]=fabs((*this)(i,1));
 	    for(int j=2;j<_order+1;j++)
 	      {
 		if(s[i-1]<fabs((*this)(i,j)))
-		  s[i-1]=(*this)(i,j);
+		  s[i-1]=fabs((*this)(i,j));
+	      }
+	    if(s[i-1]==0)
+	      {
+		cout<<"Row: "<<i<<endl;
+		throw CException("Matrix has row of zeros!");
 	      }
 	  }
 	_maxVals=s;
@@ -60,7 +66,7 @@ class SquareMatrix : public MatrixJML<T>
 	    int newMax;
 	    for(int j=i;j<_order+1;j++)
 	      {
-		T r=fabs(LU(l[i-1],j)/s[i-1]);
+		T r=fabs(LU(l[j-1],i)/s[l[j-1]-1]);
 		if(r>rmax)
 		  {
 		    rmax=r;
@@ -69,7 +75,7 @@ class SquareMatrix : public MatrixJML<T>
 	      }
 
 	    int temp=l[i-1];
-	    l[i-1]=newMax-1;
+	    l[i-1]=newMax;
 	    l[newMax-1]=temp;
 
 	    for(int j=i+1;j<_order+1;j++)
@@ -78,7 +84,20 @@ class SquareMatrix : public MatrixJML<T>
 		LU(l[j-1],i)=factor;
 		bVec[l[j-1]-1]-=factor*bVec[l[i-1]-1];
 		for(int k=i+1;k<_order+1;k++)
-		    LU(l[j-1],k)=LU(l[j-1],k)-LU(l[i-1],k)*factor;
+		  {
+		    LU(l[j-1],k)-=LU(l[i-1],k)*factor;
+		    T test=LU(l[j-1],k);
+		    if(isnan(test)||isinf(test))
+		      {
+			cout<<"Denom: "<<LU(l[i-1],i)<<endl;
+			cout<<"Num: "<<LU(l[j-1],i)<<endl;
+			cout<<"first: "<<LU(l[j-1],k)<<endl;
+			cout<<"second: "<<LU(l[i-1],k)<<endl;
+			cout<<"factor: "<<factor<<endl;
+			cout<<"test: "<<test<<endl;
+			throw CException("test is nan");
+		      }
+		  }
 	      }
 	  }
 	_pivotRows=l;
@@ -111,7 +130,7 @@ class SquareMatrix : public MatrixJML<T>
       {
 	sum=0.;
 	for(int j=i+1;j<_order+1;j++)
-	  sum-=LU(_pivotRows[i-1],j)*bVec[j-1];
+	  sum-=LU(_pivotRows[i-1],j)*bVec[_pivotRows[j-1]-1];
 	bVec[_pivotRows[i-1]-1]+=sum;
 	bVec[_pivotRows[i-1]-1]=bVec[_pivotRows[i-1]-1]/LU(_pivotRows[i-1],i);
       }
@@ -145,6 +164,42 @@ class SquareMatrix : public MatrixJML<T>
     for(int i=1;i<_order+1;i++)
       trace+=fabs((*this)(i,i));
     return trace;
+  }
+
+  void multiply(const TArray& x, TArray& b)
+    {
+      int lenx=x.getLength();
+      int lenb=b.getLength();
+      if(lenx==_order && lenb==_order)
+	{
+	  b.zero();
+	  for(int i=1;i<_order+1;i++)
+	    for(int j=1;j<_order+1;j++)
+	      b[i-1]+=(*this)(i,j)*x[j-1];
+	}
+      else
+	throw CException("Array length does not match matrix order!");
+    }
+
+  void testSolve()
+  {
+    TArray x(_order);
+    TArray b(_order);
+
+    x=1.;
+
+    multiply(x,b);
+
+    cout<<"Before"<<endl;
+    for(int i=0;i<_order;i++)
+      cout<<"b["<<i<<"]="<<b[i]<<endl;
+
+    Solve(b);
+
+    cout<<"After"<<endl;
+    for(int i=0;i<_order;i++)
+      cout<<"b["<<i<<"]="<<b[i]<<endl;
+
   }
 
  private:

@@ -16,5 +16,8 @@ template class PhononInterface<ATYPE>;
 #include "ArrowHeadMatrix.h"
 template class ArrowHeadMatrix<ATYPE>;
 
+#include "SquareMatrix.h"
+template class SquareMatrix<ATYPE>;
+
 #include "COMETModel.h"
 template class COMETModel<ATYPE>;

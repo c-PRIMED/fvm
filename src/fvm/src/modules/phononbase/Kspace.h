@@ -356,7 +356,6 @@ class Kspace
     for(int k=0;k<_length;k++)
       {
 	Tkvol& kv=getkvol(k);
-	const int modenum=kv.getmodenum();
 	T dk3=kv.getdk3();
 	Tmode& mode=kv.getmode(m);
 	r+=mode.calcde0dT(Tl)*dk3;

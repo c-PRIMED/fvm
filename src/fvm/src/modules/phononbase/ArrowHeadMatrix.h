@@ -146,6 +146,23 @@ class ArrowHeadMatrix : public MatrixJML<T>
     return trace;
   }
 
+  void multiply(const TArray& x, TArray& b)
+    {
+      int len=x.getLength();
+      if(len==_order)
+	{
+	  b.zero();
+	  for(int i=0;i<_order-1;i++)
+	    b[i]=_values[i]*x[i]+_values[i-1+_order]*x[_order-1];
+	  
+	  b[_order-1]+=_values[_order-1]*x[_order-1];
+	  for(int i=0;i<_order-1;i++)
+	    b[_order-1]+=_values[2*_order+i-2]*x[i];
+	}
+      else
+	throw CException("Array length does not match matrix order!");
+    }
+
  private:
   int _elements;
   TArray _values;

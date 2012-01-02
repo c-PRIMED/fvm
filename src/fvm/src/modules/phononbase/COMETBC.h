@@ -35,6 +35,7 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->postSweeps=2;
     this->relFactor=.1;
     this->withNormal=false;
+    this->NewtonTol=1e-4;
   }
   
   bool printNormalizedResiduals;
@@ -49,6 +50,7 @@ struct COMETModelOptions : public FloatVarDict<T>
   int postSweeps;
   double relFactor;
   bool withNormal;
+  double NewtonTol;
 
 };
 

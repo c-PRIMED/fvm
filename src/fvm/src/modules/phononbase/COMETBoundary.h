@@ -74,14 +74,13 @@ class COMETBoundary
 	    Field& efield=mode.getfield();
 	    VectorT3 vg = mode.getv();
 	    TArray& e_val = dynamic_cast<TArray&>(efield[_cells]);
-	    const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+	    const VectorT3 en = _faceArea[f];
 	    const T vg_dot_en = vg[0]*en[0]+vg[1]*en[1]+vg[2]*en[2];
 	    
 	    if (vg_dot_en > T_Scalar(0.0))
 	      e_val[c1]=e_val[c0];
 	    else
 	      e_val[c1]=mode.calce0(Twall);
-	    vg=0.;
 	  }	
       }
   }
