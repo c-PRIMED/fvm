@@ -25,6 +25,7 @@ class Quadrature
    */ 
   typedef Array<T> TArray;
   typedef  Array2D<T> TArray2D;
+  typedef  Quadrature<T> TQuad;
    /**
    *  Cx pointer. 
    *  Pointer to discrete velocity in x-direction.
@@ -55,6 +56,16 @@ class Quadrature
   T get_dcx()const{return _dcx;}
   T get_dcy()const{return _dcy;}
   T get_dcz() const{return _dcz;}
+  TArray& get_absci1()const{return *absci1Ptr;}
+  TArray& get_absci2()const{return *absci2Ptr;}
+  TArray& get_absci3()const{return *absci3Ptr;}
+  TArray& get_cx()const{return *cxPtr;}
+  TArray& get_cy()const{return *cyPtr;}
+  TArray& get_cz()const{return *czPtr;}
+  TArray& get_wts1()const{return *wts1Ptr;}
+  TArray& get_wts2()const{return *wts2Ptr;}
+  TArray& get_wts3()const{return *wts3Ptr;}
+  TArray& get_dcxyz()const{return *dcxyzPtr;}
 
    // bool printCx;
   /**
@@ -420,7 +431,90 @@ Quadrature(int N1,  int N2,  int N3, double clim,  double T2)
       fclose (pFile);
        
     }
-  
+
+  Quadrature()
+    {}
+
+  void CopyQuad(TQuad& copyFromQuad)
+  {
+    N123=copyFromQuad.getDirCount();
+    _NV=copyFromQuad.getNVCount();
+    _Ntheta=copyFromQuad.getNthetaCount();
+    _Nphi=copyFromQuad.getNphiCount();
+    _dcx=copyFromQuad.get_dcx();
+    _dcy=copyFromQuad.get_dcy();
+    _dcz=copyFromQuad.get_dcz();
+
+    absci1Ptr=new TArray(_NV);
+    TArray& absci1= *absci1Ptr;
+    absci2Ptr=new TArray(_Ntheta);
+    TArray& absci2= *absci2Ptr;
+    absci3Ptr=new TArray(_Nphi);
+    TArray& absci3= *absci3Ptr;
+
+    cxPtr=new TArray(N123);
+    TArray& cx= *cxPtr;
+    cyPtr=new TArray(N123);
+    TArray& cy= *cyPtr;
+    czPtr=new TArray(N123);
+    TArray& cz= *czPtr;
+
+    wts1Ptr=new TArray(_NV);
+    TArray& wts1= *wts1Ptr;
+    wts2Ptr=new TArray(_Ntheta);
+    TArray& wts2= *wts2Ptr;
+    wts3Ptr=new TArray(_Nphi);
+    TArray& wts3= *wts3Ptr;
+
+    dcxyzPtr=new TArray(N123);
+    TArray& dcxyz= *dcxyzPtr;
+
+    malphaBGKPtr=new TArray2D(N123,5);
+    TArray2D& malphaBGK= *malphaBGKPtr;
+    malphaESBGKPtr=new TArray2D(N123,10);
+    TArray2D& malphaESBGK= *malphaESBGKPtr;
+
+    absci1=copyFromQuad.get_absci1();
+    absci2=copyFromQuad.get_absci2();
+    absci3=copyFromQuad.get_absci3();
+
+    cx=copyFromQuad.get_cx();	
+    cy=copyFromQuad.get_cy();	
+    cz=copyFromQuad.get_cz();
+
+    wts1=copyFromQuad.get_wts1();
+    wts2=copyFromQuad.get_wts2();
+    wts3=copyFromQuad.get_wts3();
+
+    dcxyz=copyFromQuad.get_dcxyz();
+
+    int j;
+    j=0;
+    for(int j1=0;j1<_NV;j1++){
+      for (int j2=0;j2<_Ntheta;j2++){
+	for (int j3=0;j3<_Nphi;j3++){
+	  malphaBGK(j,0)=1.0;
+	  malphaBGK(j,1)=cx[j];
+	  malphaBGK(j,2)=cy[j];
+	  malphaBGK(j,3)=cz[j];
+	  malphaBGK(j,4)=pow(cx[j],2)+pow(cy[j],2)+pow(cz[j],2);
+
+	  malphaESBGK(j,0)=1.0;
+	  malphaESBGK(j,1)=cx[j];
+	  malphaESBGK(j,2)=cy[j];
+	  malphaESBGK(j,3)=cz[j];
+	  malphaESBGK(j,4)=pow(cx[j],2);
+	  malphaESBGK(j,5)=pow(cy[j],2);
+	  malphaESBGK(j,6)=pow(cz[j],2);
+	  malphaESBGK(j,7)=cx[j]*cy[j];
+	  malphaESBGK(j,8)=cy[j]*cz[j];
+	  malphaESBGK(j,9)=cz[j]*cx[j];
+
+	  j++;
+	}
+      }
+    }
+  }
  
   virtual ~Quadrature() {}
 

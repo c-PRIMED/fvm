@@ -2,6 +2,9 @@
 
 MacroFields::MacroFields(const string baseName): //:FlowFields( baseName)
   velocity(baseName + ".velocity"),
+  velocityResidual(baseName + ".velocityResidual"),
+  velocityInjected(baseName + ".velocityInjected"),
+  velocityFASCorrection(baseName + ".velocityFASCorrection"),
   pressure(baseName + ".pressure"),
   viscosity(baseName + ".viscosity"),
   density(baseName + ".density"),

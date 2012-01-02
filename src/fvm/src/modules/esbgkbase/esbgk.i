@@ -20,6 +20,7 @@ using namespace std;
 
 %include "MacroFields.h"
 %include "KineticModel.i"
+%include "COMETModel.i"
 
 
 

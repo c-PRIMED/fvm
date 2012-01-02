@@ -9,6 +9,9 @@ struct MacroFields //public Flowfields
 {
   MacroFields(const string baseName);//: Flowfields(baseName){
   Field velocity;
+  Field velocityResidual;
+  Field velocityInjected;
+  Field velocityFASCorrection;
   Field pressure;
   Field viscosity;
   Field density;
