@@ -377,7 +377,7 @@ class COMETModel : public Model
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	{
             const FaceGroup& fg = *fgPtr;
-            if((fg.groupType == "wall")||(fg.groupType == "realwall")||(fg.groupType == "symmetry"))
+            if((_bcMap[fg.id]->bcType == "WallBC")||(_bcMap[fg.id]->bcType == "RealWallBC")||(_bcMap[fg.id]->bcType == "SymmetryBC"))
 	    {
                 const StorageSite& faces = fg.site;
                 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
@@ -393,7 +393,7 @@ class COMETModel : public Model
                     BCArray[cell1]=1;
 		}
 	    }
-            else if(fg.groupType == "velocity-inlet")
+            else if(_bcMap[fg.id]->bcType == "VelocityInletBC")
 	    {
                 const StorageSite& faces = fg.site;
                 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
@@ -409,7 +409,7 @@ class COMETModel : public Model
                     BCArray[cell1]=1;
 		}
 	    }
-            else if(fg.groupType == "zero-gradient ")
+            else if(_bcMap[fg.id]->bcType == "ZeroGradBC")
 	    {
                 const StorageSite& faces = fg.site;
                 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
@@ -433,8 +433,9 @@ class COMETModel : public Model
 		}
 		*/
 	    }
-            else if((fg.groupType == "pressure-inlet")||(fg.groupType == "pressure-outlet"))
+            else if((_bcMap[fg.id]->bcType == "PressureInletBC")||(_bcMap[fg.id]->bcType == "PressureOutletBC"))
 	    {
+	      cout<<"fgid for level "<<_level<<" is "<<fg.id<<endl;
                 const StorageSite& faces = fg.site;
                 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
                 const int faceCount=faces.getCount();
@@ -2512,6 +2513,7 @@ map<string,shared_ptr<ArrayBase> >&
           updateResid(true);
 
         injectResid();
+	cout<<"injected by level "<<_level<<endl;
 	_coarserLevel->ComputeCOMETMacroparameters();
 	_coarserLevel->ComputeCollisionfrequency();
         if (_options.fgamma==0){_coarserLevel->initializeMaxwellianEq();}
@@ -2519,8 +2521,17 @@ map<string,shared_ptr<ArrayBase> >&
 	if (_options.fgamma==2){_coarserLevel->EquilibriumDistributionESBGK();}     
 
         _coarserLevel->makeFAS();
+	cout<<"made Fas by level "<<_level<<endl;
         _coarserLevel->cycle();
         correctSolution();
+	cout<<"corrected by level "<<_level<<endl;
+	
+        ComputeCOMETMacroparameters();
+        ComputeCollisionfrequency();
+        if (_options.fgamma==0){initializeMaxwellianEq();}
+        else{EquilibriumDistributionBGK();}
+        if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+	
       }
     
     doSweeps(_options.postSweeps);
