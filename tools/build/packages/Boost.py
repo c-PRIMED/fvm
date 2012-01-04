@@ -1,30 +1,30 @@
 from build_packages import *
 
-# We don't build boost, just use the headers
 class Boost(BuildPkg):
-    def unpack_srcs(self):
-        dst = os.path.join(self.blddir, 'include', 'boost')
-        src = self.sdir
-        suffix = src.split('.')[-1]
-                
-        compress = None
-        if suffix == 'tgz' or suffix == 'gz':
-            compress = 'z'
-        elif suffix == 'bz2':
-            compress = 'j'
-        elif suffix == 'tar':
-            compress = ''
-
-        if compress == None:
-            fatal('Cannot unpack %s' % src)
-
-        # need to keep the build system happy
-        self.sys_log("/bin/mkdir -p %s" % self.bdir)        
-        
-        if not os.path.isdir(dst):
-            self.sys_log("/bin/mkdir -p %s" % dst)
-        
-        os.system('tar -C %s -%sxf %s' % (dst, compress, src))
-        
-
-
+    def _installed(self):
+        oname = 'boost_version'
+        ename = "./" + oname
+        cname = oname + '.cpp'
+        src="#include <boost/version.hpp>\n#include <iostream>\nint main()\n{ std::cout << BOOST_LIB_VERSION; }"
+        fp = open(cname, 'w')
+        fp.write(src)
+        fp.close()
+        res = os.system('g++ -o %s %s' % (oname, cname))
+        print "res=", res
+        ver = subprocess.Popen(ename, shell=True, stdout=subprocess.PIPE).stdout.read()
+        try:
+            os.remove(cname)            
+            os.remove(ename)
+        except:
+            pass
+        a,b = re.findall(r'([^_]*)_([^\n]*)',ver)[0]
+        print "ver=%s.%s" % (a,b)        
+        if int(a) > 1 or int(b) > 45:
+            return True
+        return False
+    
+    def _configure(self):
+        return self.sys_log("./bootstrap.sh --prefix=%s" % (self.blddir))
+    def _install(self):
+        ret = self.sys_log("./b2 install")
+        return ret
