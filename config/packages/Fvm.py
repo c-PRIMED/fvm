@@ -3,7 +3,7 @@ import glob
 
 class Fvm(BuildPkg):
     requires = ['scons', 'rlog', 'swig', 'nose', 'netcdf', 'boost', 'cgal',
-                'umfpack', 'h5py', 'mpi4py']
+                'umfpack', 'h5py', 'mpi4py', 'pcl']
 
     def add_required(self, deps):
         x = config('fvm', 'parallel')
