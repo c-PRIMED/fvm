@@ -163,7 +163,7 @@ class PhononModel : public Model
 	_macro.e0.addArray(cells,e0cell);
 	shared_ptr<Tarray> e0ResidCell(new Tarray(numcells));
 	*e0ResidCell=0.;
-	_macro.e0Residual.addArray(cells,e0ResidCell);
+	//	_macro.e0Residual.addArray(cells,e0ResidCell);
 
 	// Compute reflections--later, should be moved inside above loop
 	
