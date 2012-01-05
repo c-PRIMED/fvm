@@ -10,7 +10,12 @@ class Boost(BuildPkg):
         fp.write(src)
         fp.close()
         res = os.system('g++ -o %s %s' % (oname, cname))
-        print "res=", res
+        if res:
+            try:
+                os.remove(cname)            
+            except:
+                pass
+            return False
         ver = subprocess.Popen(ename, shell=True, stdout=subprocess.PIPE).stdout.read()
         try:
             os.remove(cname)            
@@ -18,7 +23,7 @@ class Boost(BuildPkg):
         except:
             pass
         a,b = re.findall(r'([^_]*)_([^\n]*)',ver)[0]
-        print "ver=%s.%s" % (a,b)        
+        #print "ver=%s.%s" % (a,b)        
         if int(a) > 1 or int(b) > 45:
             return True
         return False
