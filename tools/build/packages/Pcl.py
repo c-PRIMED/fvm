@@ -17,8 +17,8 @@ class Pcl(BuildPkg):
             cmdline += " -DBoost_SYSTEM_LIBRARY_RELEASE=%s" % os.path.join(self.libdir, 'libboost_system.so')
             cmdline += " -DBoost_THREAD_LIBRARY=%s" % os.path.join(self.libdir, 'libboost_thread.so')            
             cmdline += " -DBoost_THREAD_LIBRARY_RELEASE=%s" % os.path.join(self.libdir, 'libboost_thread.so')   
-        if os.path.isfile(os.path.join(self.libdir, 'libqhull.so')):
-            cmdline += " -DQHULL_LIBRARY=%s" % os.path.join(self.libdir, 'libqhull.so')
+        if os.path.isfile(os.path.join(self.libdir, 'libqhull6.so')):
+            cmdline += " -DQHULL_LIBRARY=%s" % os.path.join(self.libdir, 'libqhull6.so')
         return self.sys_log(cmdline)
     def _build(self):
         return self.sys_log("make -j%s" % jobs(self.name))
