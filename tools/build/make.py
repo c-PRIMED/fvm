@@ -113,6 +113,10 @@ def main():
 
     build_utils.fix_path('PATH', bld.bindir, 1, 0)
     build_utils.fix_path('LD_LIBRARY_PATH', bld.libdir, 1, 0)
+    build_utils.fix_path('LD_LIBRARY_PATH', os.path.join(bld.blddir, "lib64")   , 1, 0)   
+    build_utils.fix_path('C_INCLUDE_PATH', bld.incdir, 1, 0)     
+    build_utils.fix_path('CPLUS_INCLUDE_PATH', bld.incdir, 1, 0)         
+    
     os.environ['MEMOSA_HOME'] = bld.blddir
     os.environ['MEMOSA_CONFNAME'] = cname
     build_start_time = build_end_time = test_start_time = test_end_time = 0
