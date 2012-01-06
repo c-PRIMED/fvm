@@ -1,5 +1,5 @@
 from build_packages import *
-import config
+import re
 
 class Pcl(BuildPkg):
     requires = ['flann', 'eigen', 'boost', 'qhull']
@@ -19,6 +19,15 @@ class Pcl(BuildPkg):
             cmdline += " -DBoost_THREAD_LIBRARY_RELEASE=%s" % os.path.join(self.libdir, 'libboost_thread.so')   
         if os.path.isfile(os.path.join(self.libdir, 'libqhull6.so')):
             cmdline += " -DQHULL_LIBRARY=%s" % os.path.join(self.libdir, 'libqhull6.so')
+
+        # gcc 4.6.2 does not compile PCL with -O3
+        try:
+            line = os.popen("/bin/bash -c 'gcc --version 2>&1'").readline()
+            version = re.compile(r'[^(]*[^)]*\) ([^\n ]*)').findall(line)[0]
+            if version == '4.6.2':
+                cmdline += " -DCMAKE_CXX_FLAGS_RELEASE='-O -DNDEBUG'"
+        except:
+            pass
         return self.sys_log(cmdline)
     def _build(self):
         return self.sys_log("make -j%s" % jobs(self.name))
