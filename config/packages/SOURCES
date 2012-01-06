@@ -34,5 +34,4 @@ Pymc	pkgs/pymc-2.1.tar.bz2
 Pcl		pkgs/PCL-1.4.0-Source.tar.bz2
 Flann	pkgs/flann-1.7.1-src.bz2
 Eigen	pkgs/eigen-eigen-13a11181fc5a.tar.bz2
-Qhull	pkgs/qhull-2011.2.tgz
-
+Qhull	pkgs/qhull-2011-2.bz2
