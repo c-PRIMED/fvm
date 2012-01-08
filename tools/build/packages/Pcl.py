@@ -16,7 +16,8 @@ class Pcl(BuildPkg):
             cmdline += " -DBoost_SYSTEM_LIBRARY=%s" % os.path.join(self.libdir, 'libboost_system.so')
             cmdline += " -DBoost_SYSTEM_LIBRARY_RELEASE=%s" % os.path.join(self.libdir, 'libboost_system.so')
             cmdline += " -DBoost_THREAD_LIBRARY=%s" % os.path.join(self.libdir, 'libboost_thread.so')            
-            cmdline += " -DBoost_THREAD_LIBRARY_RELEASE=%s" % os.path.join(self.libdir, 'libboost_thread.so')   
+            cmdline += " -DBoost_THREAD_LIBRARY_RELEASE=%s" % os.path.join(self.libdir, 'libboost_thread.so')
+            cmdline += " -DBoost_INCLUDE_DIR=%s" % self.incdir
         if os.path.isfile(os.path.join(self.libdir, 'libqhull6.so')):
             cmdline += " -DQHULL_LIBRARY=%s" % os.path.join(self.libdir, 'libqhull6.so')
 

@@ -1,7 +1,15 @@
 from build_packages import *
+import build_utils
 
 class Boost(BuildPkg):
     def _installed(self):
+        if os.environ.has_key('BOOST_HOME'):
+            binc = os.path.join(os.environ['BOOST_HOME'], 'include')
+            blib = os.path.join(os.environ['BOOST_HOME'], 'lib')
+            build_utils.fix_path('CPLUS_INCLUDE_PATH', binc, 0, 0)
+            build_utils.fix_path('C_INCLUDE_PATH', binc, 0, 0)            
+            build_utils.fix_path('LD_LIBRARY_PATH', blib, 0, 0)
+            
         oname = 'boost_version'
         ename = "./" + oname
         cname = oname + '.cpp'
@@ -22,7 +30,8 @@ class Boost(BuildPkg):
             os.remove(ename)
         except:
             pass
-        a,b = re.findall(r'([^_]*)_([^\n]*)',ver)[0]
+        #print "ver=%s" % ver        
+        a,b = re.findall(r'([^_]*)_([^_\n]*)',ver)[0]
         #print "ver=%s.%s" % (a,b)        
         if int(a) > 1 or int(b) > 45:
             return True
