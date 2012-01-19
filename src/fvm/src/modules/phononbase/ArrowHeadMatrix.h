@@ -104,7 +104,7 @@ class ArrowHeadMatrix : public MatrixJML<T>
     alpha=0.;
     beta=0.;
 
-#pragma omp parallel for default(shared) private(i,ani,aii,ain)
+    #pragma omp parallel for default(shared) private(i,ani,aii,ain)
     {
     for(int i=1;i<_order;i++)
       {
@@ -115,11 +115,12 @@ class ArrowHeadMatrix : public MatrixJML<T>
 	alpha+=ani*bVec[i-1]/aii;
 	beta+=ani*ain/aii;
       }
-    }
+    }    
+
     T bn;
     bn=(bVec[_order-1]-alpha)/(getElement(_order,_order)-beta);
     
-#pragma omp parallel for default(shared) private(i,aii,ain)
+    #pragma omp parallel for default(shared) private(i,aii,ain)
     {
     for(int i=1;i<_order;i++)
       {
@@ -136,6 +137,12 @@ class ArrowHeadMatrix : public MatrixJML<T>
   {
     for(int i=0;i<_elements;i++)
       _values[i]=T_Scalar(0);
+  }
+
+  void ones()
+  {
+    for(int i=0;i<_elements;i++)
+      _values[i]=T_Scalar(1);
   }
 
   T getTraceAbs()

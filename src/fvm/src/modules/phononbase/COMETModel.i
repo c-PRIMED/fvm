@@ -13,6 +13,7 @@ class COMETModel : public Model
   
   typedef Kspace<T> Tkspace;
   typedef map<int,COMETBC<T>*> COMETBCMap;
+  typedef Vector<T,3> VectorT3;
   typedef COMETModel<T> TCOMET;
   typedef shared_ptr<TCOMET> TCOMETPtr;
 
@@ -24,6 +25,7 @@ class COMETModel : public Model
   void advance(int);
   T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
   T getWallArea(const Mesh& mesh, const int faceGroupId);
+  VectorT3 getWallAreaVector(const Mesh& mesh, const int faceGroupId);
   COMETModelOptions<T>& getOptions();
   COMETBCMap& getBCs();
   T getResidual();

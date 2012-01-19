@@ -412,12 +412,12 @@ class Kspace
     int m2=1;
     Tvec vg1=mode1.getv();
     Tvec vg2=mode2.getv();
-    Tvec sn1=vg1/sqrt(pow(vg1[0],2)+pow(vg1[1],2)+pow(vg1[2],2));
-    Tvec sn2=vg2/sqrt(pow(vg2[0],2)+pow(vg2[1],2)+pow(vg2[2],2));
-    T sn1dotso=sn1[0]*so[0]+sn1[1]*so[1]+sn1[2]*so[2];
-    T sn2dotso=sn2[0]*so[0]+sn2[1]*so[1]+sn2[2]*so[2];
+    Tvec sn1=vg1;///sqrt(pow(vg1[0],2)+pow(vg1[1],2)+pow(vg1[2],2));
+    Tvec sn2=vg2;///sqrt(pow(vg2[0],2)+pow(vg2[1],2)+pow(vg2[2],2));
+    T sn1dotso=fabs(sn1[0]*so[0]+sn1[1]*so[1]+sn1[2]*so[2]-vo);
+    T sn2dotso=fabs(sn2[0]*so[0]+sn2[1]*so[1]+sn2[2]*so[2]-vo);
     
-    if (sn2dotso>sn1dotso)
+    if (sn2dotso<sn1dotso)
       {
 	T temp=sn1dotso;
 	sn1dotso=sn2dotso;
@@ -430,17 +430,17 @@ class Kspace
       {
 	Tmode& temp_mode=getkvol(k).getmode(m);
 	Tvec vgt=temp_mode.getv();
-	const Tvec sn=vgt/sqrt(pow(vgt[0],2)+pow(vgt[1],2)+pow(vgt[2],2));
-	const T sndotso=sn[0]*so[0]+sn[1]*so[1]+sn[2]*so[2];
+	const Tvec sn=vgt;///sqrt(pow(vgt[0],2)+pow(vgt[1],2)+pow(vgt[2],2));
+	const T sndotso=fabs(sn[0]*so[0]+sn[1]*so[1]+sn[2]*so[2]-vo);
 	
-	if(sndotso>sn1dotso)
+	if(sndotso<sn1dotso)
 	  {
 	    sn2dotso=sn1dotso;
 	    sn1dotso=sndotso;
 	    m2=m1;
 	    m1=k;
 	  }
-	else if (sndotso>sn2dotso)
+	else if (sndotso<sn2dotso)
 	  {
 	    sn2dotso=sndotso;
 	    m2=k;
@@ -450,6 +450,8 @@ class Kspace
     T w1=sn1dotso/(sn1dotso+sn2dotso);
     T w2=sn2dotso/(sn1dotso+sn2dotso);
 
+    //cout<<"Closest: "<<m1<<","<<sn1dotso<<endl;
+    
     if(sn1dotso>.99)
       {
 	w1=1;
@@ -482,6 +484,30 @@ class Kspace
 	newKvol->copyKvol(copyFromKspace.getkvol(i));
 	_Kmesh.push_back(newKvol);
       }
+  }
+
+  T FindBallisticHeatRate(const Tvec An,const T T1,const T T2)
+  {
+    T q=0.;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const T dk3=kvol.getdk3();
+	const int modes=kvol.getmodenum();
+	for(int m=0;m<modes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Tvec vg=mode.getv();
+	    T flux=vg[0]*An[0]+vg[1]*An[1]+vg[2]*An[2];
+	    T e0;
+	    if(flux>0.)
+	      e0=mode.calce0(T2);
+	    else
+	      e0=mode.calce0(T1);
+	    q+=flux*e0*dk3;
+	  }
+      }
+    return q;
   }
   
  private:

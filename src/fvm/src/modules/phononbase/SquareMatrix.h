@@ -33,6 +33,7 @@ class SquareMatrix : public MatrixJML<T>
 
     SquareMatrix<T> LU(_order);
     (*this).makeCopy(LU);
+    TArray bCpy(_order);
     IntArray l(_order);
     TArray s(_order);
 
@@ -55,6 +56,9 @@ class SquareMatrix : public MatrixJML<T>
 	      }
 	  }
 	_maxVals=s;
+	//cout<<"Max vals:"<<endl;
+	//for(int i=0;i<_order;i++)
+	//cout<<s[i]<<endl;
       }
     
     //Forward sweep
@@ -62,21 +66,28 @@ class SquareMatrix : public MatrixJML<T>
       {
 	for(int i=1;i<_order;i++)
 	  {
-	    T rmax=0;
-	    int newMax;
-	    for(int j=i;j<_order+1;j++)
+	    T rmax=fabs((*this)(l[i-1],i)/s[l[i-1]-1]);
+	    //  cout<<"rmax: "<<rmax<<endl;
+	    int newMax=-1;
+	    for(int j=i+1;j<_order+1;j++)
 	      {
-		T r=fabs(LU(l[j-1],i)/s[l[j-1]-1]);
+		T r=fabs((*this)(l[j-1],i)/s[l[j-1]-1]);
 		if(r>rmax)
 		  {
+		    //cout<<"switching,i,j,r:"<<i<<","<<j<<","<<r<<endl;
+		    //cout<<"factors "<<(*this)(l[j-1],i)<<" "<<s[l[j-1]-1]<<endl;
+		    //cout<<"mapped j "<<l[j-1]<<endl;
 		    rmax=r;
 		    newMax=j;
 		  }
 	      }
 
-	    int temp=l[i-1];
-	    l[i-1]=newMax;
-	    l[newMax-1]=temp;
+	    if(newMax!=-1)
+	      {
+		int temp=l[i-1];
+		l[i-1]=newMax;
+		l[newMax-1]=temp;
+	      }
 
 	    for(int j=i+1;j<_order+1;j++)
 	      {
@@ -102,6 +113,10 @@ class SquareMatrix : public MatrixJML<T>
 	  }
 	_pivotRows=l;
 	_sorted=true;
+	//cout<<"Order"<<endl;
+	//for(int i=0;i<_order;i++)
+	//  cout<<_pivotRows[i]<<endl;
+	//cout<<endl;
       }
     else
       {
@@ -110,7 +125,7 @@ class SquareMatrix : public MatrixJML<T>
 	    for(int j=i+1;j<_order+1;j++)
 	      {
 		T factor=LU(_pivotRows[j-1],i)/LU(_pivotRows[i-1],i);
-		LU(l[j-1],i)=factor;
+		LU(_pivotRows[j-1],i)=factor;
 		bVec[_pivotRows[j-1]-1]-=factor*bVec[_pivotRows[i-1]-1];
 		for(int k=i+1;k<_order+1;k++)
 		  {
@@ -134,6 +149,12 @@ class SquareMatrix : public MatrixJML<T>
 	bVec[_pivotRows[i-1]-1]+=sum;
 	bVec[_pivotRows[i-1]-1]=bVec[_pivotRows[i-1]-1]/LU(_pivotRows[i-1],i);
       }
+    
+    //reorder
+    bCpy=bVec;
+    for(int i=0;i<_order;i++)
+      bVec[i]=bCpy[_pivotRows[i]-1];
+
   }
 
   void makeCopy(SquareMatrix<T>& o)
@@ -186,10 +207,15 @@ class SquareMatrix : public MatrixJML<T>
     TArray x(_order);
     TArray b(_order);
 
-    x=1.;
-
+    cout<<"Correct Solution:"<<endl;
+    for(int i=0;i<_order;i++)
+      {
+	x[i]=rand()/1.e9;
+	cout<<"x["<<i<<"]="<<x[i]<<endl;
+      }
+    
     multiply(x,b);
-
+    
     cout<<"Before"<<endl;
     for(int i=0;i<_order;i++)
       cout<<"b["<<i<<"]="<<b[i]<<endl;
@@ -199,6 +225,15 @@ class SquareMatrix : public MatrixJML<T>
     cout<<"After"<<endl;
     for(int i=0;i<_order;i++)
       cout<<"b["<<i<<"]="<<b[i]<<endl;
+    cout<<endl;
+
+    cout<<"Error"<<endl;
+    for(int i=0;i<_order;i++)
+      cout<<"b["<<i<<"]="<<b[i]-x[i]<<endl;
+    cout<<endl;
+    
+
+    throw CException("finished with test");
 
   }
 

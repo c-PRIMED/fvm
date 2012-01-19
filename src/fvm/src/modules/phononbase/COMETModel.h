@@ -141,6 +141,7 @@ class COMETModel : public Model
 		 TArrptr evar=shared_ptr<TArray>(new TArray(numcells));
 		 TArrptr resid=shared_ptr<TArray>(new TArray(numcells));
 		 const T einit=mode.calce0(Tinit);
+		 //cout<<"k,m,einit: "<<k<<", "<<m<<", "<<einit<<endl;
 		 e0sum+=einit*dk3/tau;
 		 *evar=einit;
 		 *e0var=einit;
@@ -170,6 +171,7 @@ class COMETModel : public Model
 		     const FaceGroup& fg = *fgPtr;
 		     if(_bcMap[fg.id]->bcType == "reflecting")
 		       {
+			 //cout<<"in reflecting, fgid:"<<fg.id<<endl;
 			 const StorageSite& faces = fg.site;
 			 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
 			 const int faceCount=faces.getCount();
@@ -197,8 +199,18 @@ class COMETModel : public Model
 			 if (sidotn > T_Scalar(0.0))
 			   {
 			     so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
+			     T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
+			     so/=soMag;
 			     Refl_pair refls;
+			     //cout<<"Face Group: "<<fg.id<<" Kvol:"<<k<<" Mode: "<<m<<endl;
 			     _kspace.findSpecs(dk3,vmag,m,so,refls);
+			     rmap[fg.id]=refls;
+			   }
+			 else
+			   {
+			     Refl_pair refls;                                                                               
+			     refls.first.second=-1;                                                                  
+			     refls.second.second=-1;                                                                        
 			     rmap[fg.id]=refls;
 			   }
 		       }
@@ -207,7 +219,11 @@ class COMETModel : public Model
 			 const StorageSite& faces = fg.site;
 			 const int faceCount=faces.getCount();
 			 const int offSet=faces.getOffset();
-			 
+			 Refl_pair refls;
+			 refls.first.second=-1;
+			 refls.second.second=-1;
+			 rmap[fg.id]=refls;
+
 			 for(int i=offSet;i<offSet+faceCount;i++)
 			   BCfArray[i]=1;
 		       }
@@ -827,10 +843,16 @@ class COMETModel : public Model
 	const BCfaceArray& BCfArray=*(_BFaces[msh]);
 	COMETDiscretizer<T> CDisc(mesh,_geomFields,_macro,
 				  _kspace,_bcMap,BCArray,BCfArray,_options);
-	
+	//int ps;
+
 	CDisc.setfgFinder();
+	//cout<<"Starting forward"<<endl;
 	CDisc.COMETSolve(1,_level); //forward
+	//cout<<"paused after forward"<<endl;
+	//cin>>ps;
+	//cout<<"Starting reverse"<<endl;
 	CDisc.COMETSolve(-1,_level); //reverse
+	//throw CException("finished forward and backward");
       }
   }
 
@@ -1189,6 +1211,31 @@ class COMETModel : public Model
     if (!found)
       throw CException("getwallArea: invalid faceGroupID");
     return r;
+  }
+
+  VectorT3 getWallAreaVector(const Mesh& mesh, const int faceGroupId)
+  {
+    VectorT3 An;
+    An=0.;
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      {
+	const FaceGroup& fg = *fgPtr;
+	if (fg.id == faceGroupId)
+	  {
+	    const StorageSite& faces = fg.site;
+	    const int nFaces = faces.getCount();
+	    const Field& areaField=_geomFields.area;
+	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	    for(int f=0; f<nFaces; f++)
+	      An+=faceArea[f];
+	    found=true;
+	    break;
+	  }
+      }
+    if (!found)
+      throw CException("getwallArea: invalid faceGroupID");
+    return An;
   }
   
   void setBCMap(COMETBCMap* bcMap) {_bcMap=*bcMap;}
