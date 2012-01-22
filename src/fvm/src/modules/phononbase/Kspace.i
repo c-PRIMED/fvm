@@ -31,7 +31,9 @@ class Kspace
   T calcSpecificHeat(T Tl);
   T calcSpecificHeat(T Tl,const int m);
   void findKnStats(const T length);
-  T FindBallisticHeatRate(const Tvec Af,const T T1,const T T2);	
+  T FindBallisticHeatRate(const Tvec Af,const T T1,const T T2);
+  ArrayBase* getVelocities();
+  ArrayBase* getReflectionArray(const Mesh& mesh, const int FgId);
 
   %extend{
     Kspace<T>* getSelfPointer() {return self;}

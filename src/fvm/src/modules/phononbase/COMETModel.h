@@ -141,7 +141,6 @@ class COMETModel : public Model
 		 TArrptr evar=shared_ptr<TArray>(new TArray(numcells));
 		 TArrptr resid=shared_ptr<TArray>(new TArray(numcells));
 		 const T einit=mode.calce0(Tinit);
-		 //cout<<"k,m,einit: "<<k<<", "<<m<<", "<<einit<<endl;
 		 e0sum+=einit*dk3/tau;
 		 *evar=einit;
 		 *e0var=einit;
@@ -202,16 +201,15 @@ class COMETModel : public Model
 			     T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
 			     so/=soMag;
 			     Refl_pair refls;
-			     //cout<<"Face Group: "<<fg.id<<" Kvol:"<<k<<" Mode: "<<m<<endl;
+			     Refl_pair reflsFrom;
 			     _kspace.findSpecs(dk3,vmag,m,so,refls);
 			     rmap[fg.id]=refls;
-			   }
-			 else
-			   {
-			     Refl_pair refls;                                                                               
-			     refls.first.second=-1;                                                                  
-			     refls.second.second=-1;                                                                        
-			     rmap[fg.id]=refls;
+			     const int k1=refls.first.second;
+			     Tmode& mode2=_kspace.getkvol(k1).getmode(m);
+			     Refl_Map& rmap2=mode2.getreflmap();
+			     reflsFrom.first.second=-1;
+			     reflsFrom.second.second=k;
+			     rmap2[fg.id]=reflsFrom;
 			   }
 		       }
 		     else
@@ -843,16 +841,10 @@ class COMETModel : public Model
 	const BCfaceArray& BCfArray=*(_BFaces[msh]);
 	COMETDiscretizer<T> CDisc(mesh,_geomFields,_macro,
 				  _kspace,_bcMap,BCArray,BCfArray,_options);
-	//int ps;
 
 	CDisc.setfgFinder();
-	//cout<<"Starting forward"<<endl;
 	CDisc.COMETSolve(1,_level); //forward
-	//cout<<"paused after forward"<<endl;
-	//cin>>ps;
-	//cout<<"Starting reverse"<<endl;
 	CDisc.COMETSolve(-1,_level); //reverse
-	//throw CException("finished forward and backward");
       }
   }
 
@@ -1237,6 +1229,30 @@ class COMETModel : public Model
       throw CException("getwallArea: invalid faceGroupID");
     return An;
   }
+  
+  ArrayBase* getValueArray(const Mesh& mesh, const int cell)
+    {
+      //only returns the e" values, not the lattice temperature
+      const int allModes=_kspace.gettotmodes();
+      TArray* vals=new TArray(allModes);
+      const StorageSite& cells=mesh.getCells();
+      const int len=_kspace.getlength();
+      int count=0;
+      for(int k=0;k<len;k++)
+	{
+	  Tkvol& kvol=_kspace.getkvol(k);
+	  const int modes=kvol.getmodenum();
+	  for(int m=0;m<modes;m++)
+	    {
+	      Tmode& mode=kvol.getmode(m);
+	      Field& eField=mode.getfield();
+	      const TArray& eArray=dynamic_cast<const TArray&>(eField[cells]);
+	      (*vals)[count]=eArray[cell];
+	      count++;
+	    }
+	}
+      return vals;
+    }
   
   void setBCMap(COMETBCMap* bcMap) {_bcMap=*bcMap;}
   void setCoarserLevel(TCOMET* cl) {_coarserLevel=cl;}

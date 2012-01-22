@@ -18,6 +18,8 @@ class Kspace
 
   typedef Kspace<T> Tkspace;
   typedef Vector<T,3> Tvec;
+  typedef Array<Tvec> TvecArray;
+  typedef Array<int> IntArray;
   typedef pmode<T> Tmode;
   typedef shared_ptr<Tmode> Tmodeptr;
   typedef vector<Tmodeptr> Modes;
@@ -42,6 +44,7 @@ class Kspace
 	T dphi=2.*pi/nphi;
 	T dk3;
 	Tvec vg;
+	int count=1;
 	for(int t=0;t<ntheta;t++)
 	  {
 	    theta=dtheta*(t+.5);
@@ -53,6 +56,8 @@ class Kspace
 		vg[2]=vgmag*cos(theta);
 		dk3=2.*sin(theta)*sin(dtheta/2.)*dphi;
 		Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode(vg,omega,tau));
+		modeptr->setIndex(count);
+		count++;
 		Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeptr,dk3));
 		_Kmesh.push_back(volptr);
 		_totvol+=dk3;
@@ -82,6 +87,7 @@ class Kspace
      cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
 
      _length=kPoints*directions;
+     int count=0;
 
      for(int k=0;k<_length;k++)
        {
@@ -141,6 +147,8 @@ class Kspace
 	     modeptr->getVRef()=vg;
 	     modeptr->getTauRef()=tau;
 	     modeptr->getOmegaRef()=omega;
+	     modeptr->setIndex(count);
+	     count++;
 	     modes.push_back(modeptr);
 	     volptr->setkvec(K);
 	     volptr->setdk3(weight);
@@ -172,6 +180,7 @@ class Kspace
      cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
 
      _length=kPoints*directions;
+     int count=1;
 
      for(int k=0;k<_length;k++)
        {
@@ -234,6 +243,8 @@ class Kspace
 	     modeptr->getTauRef()=tau;
 	     modeptr->getTauNRef()=tauN;
 	     modeptr->getOmegaRef()=omega;
+	     modeptr->setIndex(count);
+	     count++;
 	     modes.push_back(modeptr);
 	     volptr->setkvec(K);
 	     volptr->setdk3(weight);
@@ -469,8 +480,8 @@ class Kspace
 
     refls.first.first=w1*vo*dk3/v1mag/dk31;
     refls.second.first=w2*vo*dk3/v2mag/dk32;
-    refls.first.second=m1;
-    refls.second.second=m2;  
+    refls.first.second=m1; //refls.first-- to whom the mode dumps energy
+    refls.second.second=-1;  //refls.second-- from whom the mode receices energy 
   }
   
   void CopyKspace(Tkspace& copyFromKspace)
@@ -509,6 +520,59 @@ class Kspace
       }
     return q;
   }
+
+  ArrayBase* getVelocities()
+  {
+    const int allModes=gettotmodes();
+    TvecArray* Velocities=new TvecArray(allModes);
+ 
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const int modes=kvol.getmodenum();
+	for(int m=0;m<modes;m++)
+	  {
+	    const int count=kvol.getmode(m).getIndex()-1;
+	    (*Velocities)[count]=kvol.getmode(m).getv();
+	  }
+      }
+    return Velocities;
+  }
+
+  ArrayBase* getReflectionArray(const Mesh& mesh, const int FgId)
+    {
+      const int allModes=gettotmodes();
+      IntArray* reflInd=new IntArray(allModes);
+
+      for(int k=0;k<_length;k++)
+	{
+	  Tkvol& kvol=getkvol(k);
+	  const int modes=kvol.getmodenum();
+	  for(int m=0;m<modes;m++)
+	    {
+	      Tmode& mode=kvol.getmode(m);
+	      const int count=mode.getIndex()-1;
+	      Refl_pair& refls=mode.getReflpair(FgId);
+	      if(refls.second.second!=-1)  //v dot A < 0
+		{
+		  const int kk=refls.second.second;
+		  Tmode& FromMode=getkvol(kk).getmode(m);
+		  const int indx=FromMode.getIndex();
+		  (*reflInd)[count]=indx;
+		}
+	      else if(refls.first.second!=-1)//v dot A > 0
+		{
+		  const int kk=refls.first.second;
+		  Tmode& ToMode=getkvol(kk).getmode(m);
+		  const int indx=ToMode.getIndex();
+		  (*reflInd)[count]=indx;
+		}
+	      else
+		throw CException("Not a reflecting wall!");
+	    }
+	}
+      return reflInd;
+    }
   
  private:
 

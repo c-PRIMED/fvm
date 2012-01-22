@@ -29,6 +29,7 @@ class COMETModel : public Model
   COMETModelOptions<T>& getOptions();
   COMETBCMap& getBCs();
   T getResidual();
+  ArrayBase* getValueArray(const Mesh& mesh, const int cell);
   
  private:
   
