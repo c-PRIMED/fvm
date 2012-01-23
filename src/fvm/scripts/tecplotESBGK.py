@@ -5,7 +5,7 @@ tectype = {
         'tetra' : 'FETETRAHEDRON',
         'hexa' : 'FEBRICK'
         }
-def esbgkTecplotFile(meshes, macroFields, mtype,filename ):
+def esbgkTecplotFile(meshes, macroFields, mtype, filename="quadrature.plt"):
   #cell sites
   cellSites = []
   n=0
@@ -61,7 +61,7 @@ def esbgkTecplotFile(meshes, macroFields, mtype,filename ):
   TyzFields.append(macroFields.Tyz[cellSites[n]].asNumPyArray())
   TzxFields=[]
   TzxFields.append(macroFields.Tzx[cellSites[n]].asNumPyArray())
-  #filename = "quadrature" + ".plt"
+  
   f = open(filename, 'w')
   
   f.write("Title = \" tecplot out file\" \n")
