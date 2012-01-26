@@ -253,7 +253,7 @@ class PhononModel : public Model
 	      }
 	    else if(bc.bcType=="temperature")
 	      {
-	      
+		
 		FloatValEvaluator<T>
 		  bTemperature(bc.getVal("specifiedTemperature"),faces);
 	  

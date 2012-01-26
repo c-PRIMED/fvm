@@ -129,18 +129,18 @@ class PhononBoundary
 	      {
 		
 		Refl_pair& rpairs=mode.getReflpair(_fg_id);
-		X w1=rpairs.first.first;
-		X w2=rpairs.second.first;
+		//X w1=rpairs.first.first;
+		//X w2=rpairs.second.first;
 		int k1=rpairs.first.second;
-		int k2=rpairs.second.second;
+		//int k2=rpairs.second.second;
 		Xmode& mode1=_kspace.getkvol(k1).getmode(m);
-		Xmode& mode2=_kspace.getkvol(k2).getmode(m);
+		//Xmode& mode2=_kspace.getkvol(k2).getmode(m);
 		Field& field1=mode1.getfield();
-		Field& field2=mode2.getfield();
+		//Field& field2=mode2.getfield();
 		XArray& e_val1=dynamic_cast<XArray&>(field1[_cells]);
-		XArray& e_val2=dynamic_cast<XArray&>(field2[_cells]);
-		e_val1[c1]+=refl*w1*e_val[c0];
-		e_val2[c1]+=refl*w2*e_val[c0];
+		//XArray& e_val2=dynamic_cast<XArray&>(field2[_cells]);
+		e_val1[c1]+=refl*e_val[c0];
+		//e_val2[c1]+=refl*w2*e_val[c0];
 		e_val[c1]=e_val[c0];    // upwinded value
 	      }
 	    else

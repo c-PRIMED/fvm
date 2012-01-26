@@ -343,6 +343,7 @@ class COMETModel : public Model
 	 *TlFAS=0.;
 	 _macro.TlFASCorrection.addArray(cells,TlFAS);
        }
+     applyTemperatureBoundaries();
   }
 
   void applyTemperatureBoundaries()
