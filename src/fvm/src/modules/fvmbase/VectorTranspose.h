@@ -4,6 +4,7 @@
 #include "NumType.h"
 
 #include "Vector.h"
+#include "SquareTensor.h"
 
 template<class T, int N>
 class VectorTranspose
@@ -112,6 +113,16 @@ public:
   {
     _v *= o._v;
     return *this;
+  }
+
+  SquareTensor<T,N> getTensor(const Vector<T,N>& o)
+  {
+      SquareTensor<T,N> r;
+      r.zero();
+      for(int i=0;i<N;i++)
+	for(int j=0;j<N;j++)
+	  r(i,j)=o[i]*_v[j];
+      return r;
   }
 
   void zero()
