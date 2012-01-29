@@ -5,6 +5,7 @@
 #include "Quadrature.h"
 #include "DistFunctFields.h"
 #include "CometMatrix.h"
+#include "ArrowHeadMatrix.h"
 #include "Array.h"
 #include "Vector.h"
 #include "StorageSite.h"
@@ -28,6 +29,7 @@ class COMETESBGKDiscretizer
   typedef Array<T_Scalar> TArray;
   typedef MatrixJML<T> TMatrix;
   typedef CometMatrix<T> TComet;
+  typedef ArrowHeadMatrix<T,3> TArrow;
   typedef SquareMatrixESBGK<T> TSquareESBGK;
   typedef map<int,COMETBC<T>*> COMETBCMap;
   typedef Array<int> IntArray;
@@ -104,7 +106,8 @@ class COMETESBGKDiscretizer
 
 	if(_BCArray[c]==0)
 	{
-	    TComet AMat(numDir+3);   
+	  //TComet AMat(numDir+3);   
+	    TArrow AMat(numDir+3);
 
 	    Bvec.zero();
 	    Resid.zero();
@@ -157,7 +160,8 @@ class COMETESBGKDiscretizer
     }
   }
 
-  void COMETUnsteady(const int cell, TMatrix* Amat, TArray& BVec)
+  template<class MatrixType>
+  void COMETUnsteady(const int cell, MatrixType Amat, TArray& BVec)
   {
     const int numDir = _quadrature.getDirCount();
     const T two(2.0);
@@ -190,7 +194,7 @@ class COMETESBGKDiscretizer
     }
   }
 
-  void COMETConvection(const int cell, TComet& Amat, TArray& BVec, const int cellcount)
+  void COMETConvection(const int cell, TArrow& Amat, TArray& BVec, const int cellcount)
   {
     const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
     const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
@@ -484,7 +488,8 @@ class COMETESBGKDiscretizer
     }
   }
 
-  void COMETCollision(const int cell, TMatrix* Amat, TArray& BVec)
+  template<class MatrixType>
+  void COMETCollision(const int cell, MatrixType Amat, TArray& BVec)
   {
     TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[_cells]);
     const int numDir = _quadrature.getDirCount();
@@ -530,7 +535,8 @@ class COMETESBGKDiscretizer
     }
   }
 
-  void COMETMacro(const int cell, TMatrix* Amat, TArray& BVec)
+  template<class MatrixType>
+  void COMETMacro(const int cell, MatrixType Amat, TArray& BVec)
   {
     const int numDir = _quadrature.getDirCount();
 
@@ -669,7 +675,8 @@ class COMETESBGKDiscretizer
 	
 	if(_BCArray[c]==0)
 	{
-	    TComet AMat(numDir+3);
+	    //TComet AMat(numDir+3);
+	    TArrow AMat(numDir+3);
 
 	    Bvec.zero();
 	    Resid.zero();

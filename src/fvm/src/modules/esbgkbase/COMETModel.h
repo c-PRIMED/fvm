@@ -427,7 +427,6 @@ class COMETModel : public Model
 	    }
             else if((_bcMap[fg.id]->bcType == "PressureInletBC")||(_bcMap[fg.id]->bcType == "PressureOutletBC"))
 	    {
-	      cout<<"fgid for level "<<_level<<" is "<<fg.id<<endl;
                 const StorageSite& faces = fg.site;
                 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
                 const int faceCount=faces.getCount();
@@ -2505,7 +2504,6 @@ map<string,shared_ptr<ArrayBase> >&
           updateResid(true);
 
         injectResid();
-	cout<<"injected by level "<<_level<<endl;
 	_coarserLevel->ComputeCOMETMacroparameters();
 	_coarserLevel->ComputeCollisionfrequency();
         if (_options.fgamma==0){_coarserLevel->initializeMaxwellianEq();}
@@ -2513,17 +2511,14 @@ map<string,shared_ptr<ArrayBase> >&
 	if (_options.fgamma==2){_coarserLevel->EquilibriumDistributionESBGK();}     
 
         _coarserLevel->makeFAS();
-	cout<<"made Fas by level "<<_level<<endl;
         _coarserLevel->cycle();
         correctSolution();
-	cout<<"corrected by level "<<_level<<endl;
 	
         ComputeCOMETMacroparameters();
         ComputeCollisionfrequency();
         if (_options.fgamma==0){initializeMaxwellianEq();}
         else{EquilibriumDistributionBGK();}
-        if (_options.fgamma==2){EquilibriumDistributionESBGK();}
-	
+        if (_options.fgamma==2){EquilibriumDistributionESBGK();}	
       }
     
     doSweeps(_options.postSweeps);
