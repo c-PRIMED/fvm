@@ -11,7 +11,7 @@ struct COMETBC : public FloatVarDict<T>
   {
       this->defineVar("specifiedTemperature",T(300.0));
       this->defineVar("specifiedReflection",T(0.0));
-      this->defineVar("FullyImplicit",true);
+      this->defineVar("FullyImplicit",false);
   }
   string bcType;
 };
