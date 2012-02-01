@@ -96,12 +96,12 @@ class Kspace
 
 	 for(int m=0;m<modeNum;m++)
 	   {
-	     T Tdummy;
-	     T omega;
-	     T tau;
+	     T Tdummy(0.);
+	     T omega(0.);
+	     T tau(0.);
 	     Tvec vg;
 	     Tvec K; 
-	     T weight;
+	     T weight(0.);
 	     Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode());
 	     fp_in>>Tdummy;
 	     fp_in>>weight;
@@ -189,13 +189,13 @@ class Kspace
 
 	 for(int m=0;m<modeNum;m++)
 	   {
-	     T Tdummy;
-	     T omega;
-	     T tau;
-	     T tauN;
+	     T Tdummy(0.);
+	     T omega(0.);
+	     T tau(0.);
+	     T tauN(0.);
 	     Tvec vg;
 	     Tvec K; 
-	     T weight;
+	     T weight(0.);
 	     Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode());
 	     fp_in>>Tdummy;
 	     fp_in>>weight;

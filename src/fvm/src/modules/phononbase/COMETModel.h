@@ -170,19 +170,44 @@ class COMETModel : public Model
 		     const FaceGroup& fg = *fgPtr;
 		     if(_bcMap[fg.id]->bcType == "reflecting")
 		       {
-			 //cout<<"in reflecting, fgid:"<<fg.id<<endl;
 			 const StorageSite& faces = fg.site;
 			 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
 			 const int faceCount=faces.getCount();
 			 const int offSet=faces.getOffset();
+			 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
 
-			 for(int i=offSet;i<offSet+faceCount;i++)
-			   BCfArray[i]=2;
-
-			 for(int i=0;i<faceCount;i++)
+			 if(Imp)
 			   {
-			     int cell1=BfaceCells(i,0);
-			     BCArray[cell1]=1;
+			     for(int i=offSet;i<offSet+faceCount;i++)
+			       BCfArray[i]=2;  //implicit boundary
+			   }
+			 else
+			   {
+			     for(int i=offSet;i<offSet+faceCount;i++)
+			       BCfArray[i]=3;  //explicit boundary
+			   }
+
+			 if(Imp)
+			   {
+			     for(int i=0;i<faceCount;i++)
+			       {
+				 int cell1=BfaceCells(i,0);
+				 if(BCArray[cell1]==0)
+				   BCArray[cell1]=1;    //implicit boundary only
+				 else if(BCArray[cell1]==2)
+				   BCArray[cell1]=3;  //mix implicit/explicit boundary
+			       }
+			   }
+			 else
+			   {
+			     for(int i=0;i<faceCount;i++)
+			       {
+				 int cell1=BfaceCells(i,0);
+				 if(BCArray[cell1]==0)
+				   BCArray[cell1]=2;  //explicit boundary only
+				 else if (BCArray[cell1]==1)
+				   BCArray[cell1]=3;  //mix implicit/explicit boundary
+			       }
 			   }
 			 
 			 const Field& AreaMagField=_geomFields.areaMag;

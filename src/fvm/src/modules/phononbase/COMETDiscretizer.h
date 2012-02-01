@@ -85,7 +85,7 @@ class COMETDiscretizer
 	TArray Bvec(totalmodes+1);
 	TArray Resid(totalmodes+1);
 		
-	if(_BCArray[c]==0)  //not a reflecting boundary
+	if(_BCArray[c]==0)  //no reflections at all--interior cell or temperature boundary
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
@@ -116,7 +116,7 @@ class COMETDiscretizer
 		dt=fabs(Bvec[totalmodes]);
 	      }
 	  }
-	else if(_BCArray[c]==1) //reflecting boundary
+	else if(_BCArray[c]==1) //Implicit reflecting boundary only
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
@@ -139,6 +139,66 @@ class COMETDiscretizer
 		
 		Distribute(c,Bvec,Resid);
 		updatee0(c);
+		NewtonIters++;
+		dt=fabs(Bvec[totalmodes]);
+	      }
+	  }
+	else if(_BCArray[c]==2)  //Explicit boundary only
+	  {
+	    T dt=1;
+	    int NewtonIters=0;
+	  
+	    while(dt>_options.NewtonTol && NewtonIters<10)
+	      {
+		TArrow AMat(totalmodes+1);
+		Bvec.zero();
+		Resid.zero();
+		AMat.zero();
+		
+		COMETConvection(c,AMat,Bvec);
+		COMETCollision(c,&AMat,Bvec);
+		COMETEquilibrium(c,&AMat,Bvec);
+		
+		if(_options.withNormal)
+		  COMETShifted(c,&AMat,Bvec);
+		
+		if(level>0)
+		  addFAS(c,Bvec);
+		
+		Resid=Bvec;
+		AMat.Solve(Bvec);
+
+		Distribute(c,Bvec,Resid);
+		updatee0(c);
+		updateGhost(c);
+		NewtonIters++;
+		dt=fabs(Bvec[totalmodes]);
+	      }
+	  }
+	else if(_BCArray[c]==3) //Mix Implicit/Explicit reflecting boundary
+	  {
+	    T dt=1;
+	    int NewtonIters=0;
+	    while(dt>_options.NewtonTol && NewtonIters<10)
+	      {
+		TSquare AMat(totalmodes+1);
+		Bvec.zero();
+		Resid.zero();
+		AMat.zero();
+		
+		COMETConvection(c,AMat,Bvec);
+		COMETCollision(c,&AMat,Bvec);
+		COMETEquilibrium(c,&AMat,Bvec);
+		
+		if(level>0)
+		  addFAS(c,Bvec);
+	       
+		Resid=Bvec;
+		AMat.Solve(Bvec);
+		
+		Distribute(c,Bvec,Resid);
+		updatee0(c);
+		updateGhost(c);
 		NewtonIters++;
 		dt=fabs(Bvec[totalmodes]);
 	      }
@@ -219,7 +279,7 @@ class COMETDiscretizer
 	    cell2=_faceCells(f,0);
 	  }
        
-	if(_BCfArray[f]==2) //If the face in question is a reflecting face
+	if(_BCfArray[f]==2) //If the face in question is an implicit reflecting face
 	  {
 	    int Fgid=findFgId(f);
 	    T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
@@ -251,8 +311,6 @@ class COMETDiscretizer
 			Refl_pair& rpairs=mode.getReflpair(Fgid);
 			const int kk=rpairs.second.second;
 			Tkvol& kkvol=_kspace.getkvol(kk);
-			VectorT3 vvg=kkvol.getmode(m).getv();
-			T VdotA=vvg[0]*Af[0]+vvg[1]*Af[1]+vvg[2]*Af[2];
 			const int ccount=kkvol.getmode(m).getIndex();
 			Field& eefield=kkvol.getmode(m).getfield();
 			TArray& eeArray=dynamic_cast<TArray&>(eefield[_cells]);
@@ -268,7 +326,6 @@ class COMETDiscretizer
 	    for(int k=0;k<klen;k++)
 	      {
 		Tkvol& kvol=_kspace.getkvol(k);
-		T dk3=kvol.getdk3();
 		const int numModes=kvol.getmodenum();
 		for(int m=0;m<numModes;m++)
 		  {
@@ -303,7 +360,7 @@ class COMETDiscretizer
 	    
 	    
 	  }
-	else  //if the face in question is not reflecting
+	else  //if the face in question is not implicit
 	  {
 	    for(int k=0;k<klen;k++)
 	      {
@@ -478,7 +535,7 @@ class COMETDiscretizer
 	Bvec.zero();
 	Resid.zero();
 
-	if(_BCArray[c]==0)  //not a reflecting boundary
+	if(_BCArray[c]==0 || _BCArray[c]==2)  //Arrowhead
 	  {
 	    TArrow AMat(totalmodes+1);
 	    AMat.zero();
@@ -505,7 +562,7 @@ class COMETDiscretizer
 	    Bsum+=Bvec;
 	    ResidSum+=Resid;	    
 	  }
-	else if(_BCArray[c]==1) //reflecting boundary
+	else if(_BCArray[c]==1 || _BCArray[c]==3) //General Dense
 	  {
 	    TSquare AMat(totalmodes+1);
 	    AMat.zero();
@@ -678,7 +735,7 @@ class COMETDiscretizer
       }
   }
 
-  void updatee0(int c)
+  void updatee0(const int c)
   {
     TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
 
@@ -698,6 +755,105 @@ class COMETDiscretizer
       }
   }
 
+  void updateGhost(const int cell)
+  {
+    const int neibcount=_cellFaces.getCount(cell);
+    const int klen=_kspace.getlength();
+    TArray SumVdotA(neibcount);
+    TArray SumEVdotA(neibcount);
+
+    SumVdotA.zero();
+    SumEVdotA.zero();
+
+    //first loop to sum up the diffuse reflection
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int numModes=kvol.getmodenum();
+	T dk3=kvol.getdk3();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Field& eField=mode.getfield();
+	    TArray& eArray=dynamic_cast<TArray&>(eField[_cells]);
+	    VectorT3 vg=mode.getv();
+	    for(int j=0;j<neibcount;j++)
+	      {
+		const int f=_cellFaces(cell,j);
+		if(_BCfArray[f]==3)
+		  {
+		    int Fgid=findFgId(f);
+		    const T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
+		    int cell2=_faceCells(f,1);
+		    VectorT3 Af=_faceArea[f];
+		    
+		    if(cell2==cell)
+ 		      {
+			Af=Af*-1.;
+			cell2=_faceCells(f,0);
+		      }
+		    
+		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
+		    
+		    if(VdotA>0)
+		      {
+			eArray[cell2]=eArray[cell];
+			SumVdotA[j]+=VdotA*dk3;
+			SumEVdotA[j]+=VdotA*dk3*eArray[cell];
+		      }
+		    else
+		      {
+			Refl_pair& rpairs=mode.getReflpair(Fgid);
+			const int kk=rpairs.second.second;
+			Tkvol& kkvol=_kspace.getkvol(kk);
+			Field& eeField=kkvol.getmode(m).getfield();
+			TArray& eeArray=dynamic_cast<TArray&>(eeField[_cells]);
+			eArray[cell2]=eeArray[cell]*refl;
+		      }
+		  }
+	      }
+	  }
+      }
+
+    //second loop to add in the diffuse reflection
+    for(int k=0;k<klen;k++)
+      {
+        Tkvol& kvol=_kspace.getkvol(k);
+        const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    VectorT3 vg=mode.getv();
+	    Field& eField=mode.getfield();
+	    TArray& eArray=dynamic_cast<TArray&>(eField[_cells]);
+	    for(int j=0;j<neibcount;j++)
+	      {
+		const int f=_cellFaces(cell,j);
+		if(_BCfArray[f]==3)
+		  {
+		    int Fgid=findFgId(f);
+		    const T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
+		    const T oneMinusRefl=1.-refl;
+		    int cell2=_faceCells(f,1);
+		    VectorT3 Af=_faceArea[f];
+		    const T eDiffuse=SumEVdotA[j]/SumVdotA[j];
+		    
+		    if(cell2==cell)
+ 		      {
+			Af=Af*-1.;
+			cell2=_faceCells(f,0);
+		      }
+		    
+		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
+		    
+		    if(VdotA<0)
+		      eArray[cell2]+=eDiffuse*oneMinusRefl;
+		  }
+	      }
+	  }
+      }
+  }
+    
   void updateeShifted()
   {
     const int cellcount=_cells.getSelfCount();
