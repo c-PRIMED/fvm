@@ -491,7 +491,7 @@ class COMETModel : public Model
 			  c2=inFaceinCells(f,1);
 			
 			if(FineToCoarse[c2]==-1)
-			  if(areaMagArray[c2]>maxArea)
+			  if(areaMagArray[f]>maxArea)
 			    pairWith=c2;
 		      }
 		  }
@@ -526,7 +526,7 @@ class COMETModel : public Model
 			else
 			  c2=inFaceinCells(f,1);
 			
-			if(areaMagArray[c2]>maxArea)
+			if(areaMagArray[f]>maxArea)
 			  {
 			    pairWith=FineToCoarse[c2]; //coarse level cell
 			    c2perm=c2;                 //fine level cell
