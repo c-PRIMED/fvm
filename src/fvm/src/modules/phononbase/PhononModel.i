@@ -26,6 +26,7 @@ class PhononModel : public Model
   //void advanceCOMET(const int niter);
   void printTemp();
   T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
+  int getIters();
    
   private:
 

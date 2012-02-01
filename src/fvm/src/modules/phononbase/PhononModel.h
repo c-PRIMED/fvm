@@ -735,6 +735,8 @@ class PhononModel : public Model
     return r;
   }
 
+  int getIters() {return _niters;}
+
   private:
 
     const GeomFields& _geomFields;
