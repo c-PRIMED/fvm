@@ -132,7 +132,7 @@ class COMETESBGKDiscretizer
 	}
         else if(_BCArray[c]==1)
 	{
-            TSquareESBGK AMat(numDir+3);
+            TArrow AMat(numDir+3);
 
             Bvec.zero();
             Resid.zero();
@@ -235,6 +235,7 @@ class COMETESBGKDiscretizer
 	    }
 	    else
 	    {
+	        /*
 		if(_ZCArray[cell]==1)
 		{
 		    if(cell2>=cellcount)
@@ -248,6 +249,8 @@ class COMETESBGKDiscretizer
 		} 
 		else
 		  BVec[count-1]-=flux*f[cell2];
+		*/
+	        BVec[count-1]-=flux*f[cell2];
 	    }
 	    count++;
 	}
@@ -255,7 +258,7 @@ class COMETESBGKDiscretizer
   }
 
 
-  void COMETConvection(const int cell, TSquareESBGK& Amat, TArray& BVec)
+  void COMETConvection(const int cell, TArrow& Amat, TArray& BVec)
   {
     const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
     const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
@@ -310,7 +313,7 @@ class COMETESBGKDiscretizer
 		const T c_dot_en = cx[dir1]*en[0]+cy[dir1]*en[1]+cz[dir1]*en[2];
 		if((c_dot_en-wallV_dot_en)>T_Scalar(0))
 		{
-		    Amat(count,count)-=flux;
+		    Amat.getElement(count,count)-=flux;
 		    BVec[count-1]-=flux*f[cell];
 		    Nmr = Nmr + f[cell]*wts[dir1]*(c_dot_en -wallV_dot_en);
 		}
@@ -322,7 +325,8 @@ class COMETESBGKDiscretizer
 	    }
 	    
 	    const T nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
-	    
+
+	    /*	    
 	    //Second sweep
 	    const T zero(0.0);
 	    count=1;
@@ -340,7 +344,7 @@ class COMETESBGKDiscretizer
 			const int direction_incident = vecReflection[dir1];
 			Field& fndi = *_dsfPtr.dsf[direction_incident];
 			const TArray& dsfi = dynamic_cast<const TArray&>(fndi[_cells]);
-			Amat(count,direction_incident+1)-=flux*m1alpha;
+			//Amat.getElement(count,direction_incident+1)-=flux*m1alpha;
 			BVec[count-1]-=flux*m1alpha*dsfi[cell];
 		    }
 		    int ccount=1;
@@ -354,7 +358,7 @@ class COMETESBGKDiscretizer
 			    Field& f2nd = *_dsfPtr.dsf[dir2];
 			    const TArray& f2 = dynamic_cast<const TArray&>(f2nd[_cells]);
 			    T coeff2 = wts[dir2]*(c2_dot_en-wallV_dot_en);
-			    Amat(count,ccount)-=flux*(coeff1*coeff2/Dmr)*alpha;
+			    //Amat(count,ccount)-=flux*(coeff1*coeff2/Dmr)*alpha;
 			    BVec[count-1]-=flux*(coeff1*coeff2/Dmr)*alpha*f2[cell];
 			}
 			ccount++;
@@ -362,7 +366,53 @@ class COMETESBGKDiscretizer
 		}
 		count++;
 	    } 
+	    */
+
+	    //Second sweep
+	    const T zero(0.0);
+	    count=1;
+	    for(int dir1=0;dir1<numDir;dir1++)
+	    {		
+	        Field& fnd = *_dsfPtr.dsf[dir1];
+		const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
+		flux=cx[dir1]*Af[0]+cy[dir1]*Af[1]+cz[dir1]*Af[2];
+		const T c1_dot_en = cx[dir1]*en[0]+cy[dir1]*en[1]+cz[dir1]*en[2];
+		if((c1_dot_en-wallV_dot_en)<T_Scalar(0))
+		{
+		    const T coeff1 = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[dir1]-uwall,2.0)+pow(cy[dir1]-vwall,2.0)+pow(cz[dir1]-wwall,2.0))/Twall);
+		    if(m1alpha!=zero)
+		    {
+			const int direction_incident = vecReflection[dir1];
+			Field& fndi = *_dsfPtr.dsf[direction_incident];
+			const TArray& dsfi = dynamic_cast<const TArray&>(fndi[_cells]);
+			//Amat.getElement(count,direction_incident+1)-=flux*m1alpha;
+			BVec[count-1]-=flux*m1alpha*dsfi[cell];
+		    }
+		    /*
+		    int ccount=1;
+		    for(int dir2=0;dir2<numDir;dir2++)
+		    {
+			Field& f2nd = *_dsfPtr.dsf[dir2];
+			const TArray& f2 = dynamic_cast<const TArray&>(f2nd[_cells]);
+			const T c2_dot_en = cx[dir2]*en[0]+cy[dir2]*en[1]+cz[dir2]*en[2];
+			if((c2_dot_en -wallV_dot_en)>T_Scalar(0))
+			{
+			    Field& f2nd = *_dsfPtr.dsf[dir2];
+			    const TArray& f2 = dynamic_cast<const TArray&>(f2nd[_cells]);
+			    T coeff2 = wts[dir2]*(c2_dot_en-wallV_dot_en);
+			    //Amat(count,ccount)-=flux*(coeff1*coeff2/Dmr)*alpha;
+			    BVec[count-1]-=flux*(coeff1*coeff2/Dmr)*alpha*f2[cell];
+			}
+			ccount++;
+		    }
+		    */
+		    BVec[count-1]-=flux*alpha*(nwall*coeff1);
+		}
+		count++;
+	    } 
+
 	}
+	/*
 	else if(_BCfArray[f]==3) //If the face in question is a inlet velocity face
 	{ 
 	    int Fgid=findFgId(f); 
@@ -422,6 +472,7 @@ class COMETESBGKDiscretizer
 		count++;
 	    }
 	}
+	*/
         else if(_BCfArray[f]==4)  //if the face in question is zero derivative
 	{
             int count=1;
@@ -434,12 +485,12 @@ class COMETESBGKDiscretizer
 
                 if(c_dot_en>T_Scalar(0))
 		{
-                    Amat(count,count)-=flux;
+                    Amat.getElement(count,count)-=flux;
                     BVec[count-1]-=flux*f[cell];
 		}
                 else
 		{
-		    Amat(count,count)-=flux;
+		    Amat.getElement(count,count)-=flux;
 		    BVec[count-1]-=flux*f[cell];
 		}
 		count++;
@@ -457,7 +508,7 @@ class COMETESBGKDiscretizer
 
                 if(c_dot_en>T_Scalar(0))
 		{
-                    Amat(count,count)-=flux;
+                    Amat.getElement(count,count)-=flux;
                     BVec[count-1]-=flux*f[cell];
 		}
                 else
@@ -477,7 +528,7 @@ class COMETESBGKDiscretizer
 		
 		if(c_dot_en>T_Scalar(0))
 		{
-		    Amat(count,count)-=flux;
+		    Amat.getElement(count,count)-=flux;
 		    BVec[count-1]-=flux*f[cell];
 		}
 		else
@@ -705,7 +756,7 @@ class COMETESBGKDiscretizer
 	}
 	else if(_BCArray[c]==1) //reflecting boundary
         {
-	    TSquareESBGK AMat(numDir+3);
+	    TArrow AMat(numDir+3);
 
 	    Bvec.zero();
 	    Resid.zero();
