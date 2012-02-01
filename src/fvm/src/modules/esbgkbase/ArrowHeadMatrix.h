@@ -86,18 +86,10 @@ public:
 
   void zero()
   {
-    for(int i=0;i<_order-3;i++)
-    {
-	_d[i]=T_Scalar(0);
-	_r[i]=T_Scalar(0);
-	_c[i]=T_Scalar(0); 
-    }
-    for(int i=0;i<3;i++)
-    {
-      _l(i,0)=T_Scalar(0);
-      _l(i,1)=T_Scalar(0);
-      _l(i,2)=T_Scalar(0);
-    }
+    _d.zero();
+    _r.zero();
+    _c.zero();
+    _l.zero();
   }
 
   T_Scalar getTraceAbs()
