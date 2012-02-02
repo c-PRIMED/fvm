@@ -23,6 +23,31 @@ class ArrowHeadMatrix : public MatrixJML<T>
       _values=0.;
     }
 
+  T& operator()(const int i, const int j)
+    {
+      int index;
+      if(i==j)
+	{
+	  index=(i-1);
+	  return _values[index];
+	}
+      else if(j==_order)
+	{
+	  index=i-1+_order;
+	  return _values[index];
+	}
+      else if(i==_order)
+	{
+	  index=2*_order+j-2;
+	  return _values[index];
+	}
+      else
+	{
+	  throw CException("Invalid index: Arrowhead matrix");
+	  return _values[0];
+	}
+    }
+  
   T& getElement(const int i,const int j)
     {
       int index;
@@ -108,9 +133,9 @@ class ArrowHeadMatrix : public MatrixJML<T>
     {
     for(int i=1;i<_order;i++)
       {
-	ani=getElement(_order,i);
-	aii=getElement(i,i);
-	ain=getElement(i,_order);
+	ani=(*this)(_order,i);
+	aii=(*this)(i,i);
+	ain=(*this)(i,_order);
 
 	alpha+=ani*bVec[i-1]/aii;
 	beta+=ani*ain/aii;
@@ -118,14 +143,14 @@ class ArrowHeadMatrix : public MatrixJML<T>
     }    
 
     T bn;
-    bn=(bVec[_order-1]-alpha)/(getElement(_order,_order)-beta);
+    bn=(bVec[_order-1]-alpha)/((*this)(_order,_order)-beta);
     
     #pragma omp parallel for default(shared) private(i,aii,ain)
     {
     for(int i=1;i<_order;i++)
       {
-	ain=getElement(i,_order);
-	aii=getElement(i,i);
+	ain=(*this)(i,_order);
+	aii=(*this)(i,i);
 	bVec[i-1]=(bVec[i-1]-ain*bn)/aii;
       }
     }
