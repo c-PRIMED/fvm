@@ -374,7 +374,7 @@ class Kspace
     return r;
   }
 
-  void findKnStats(const T length)
+  T findKnStats(const T length)
   {
     T AveKn(0.0);
     T maxKn(0.0);
@@ -412,6 +412,8 @@ class Kspace
     cout<<"Average Kn: "<<AveKn<<endl;
     cout<<"Maximum Kn: "<<maxKn<<endl;
     cout<<"Minimum Kn: "<<minKn<<endl;
+
+    return AveKn;
     
   }
 
