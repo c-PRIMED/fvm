@@ -87,32 +87,32 @@ public:
         const ThermalVC<T>& vc = *_vcMap[mesh.getID()];
 
 	//temperature
-        shared_ptr<TArray> tCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> tCell(new TArray(cells.getCountLevel1()));
         *tCell = _options["initialTemperature"];
         _thermalFields.temperature.addArray(cells,tCell);
 	
 	//conductivity
-        shared_ptr<TArray> condCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> condCell(new TArray(cells.getCountLevel1()));
         *condCell = vc["thermalConductivity"];
         _thermalFields.conductivity.addArray(cells,condCell);
 	
 	//source 
-	shared_ptr<TArray> sCell(new TArray(cells.getCount()));
+	shared_ptr<TArray> sCell(new TArray(cells.getCountLevel1()));
 	*sCell = T(0.);
 	_thermalFields.source.addArray(cells,sCell);
 
 	//create a zero field
-	shared_ptr<TArray> zeroCell(new TArray(cells.getCount()));
+	shared_ptr<TArray> zeroCell(new TArray(cells.getCountLevel1()));
 	*zeroCell = T(0.0);
 	_thermalFields.zero.addArray(cells,zeroCell);
 
 	//create a one field
-	shared_ptr<TArray> oneCell(new TArray(cells.getCount()));
+	shared_ptr<TArray> oneCell(new TArray(cells.getCountLevel1()));
 	*oneCell = T(1.0);
 	_thermalFields.one.addArray(cells,oneCell);
 
 	//initial temparature gradient array
-	shared_ptr<TGradArray> gradT(new TGradArray(cells.getCount()));
+	shared_ptr<TGradArray> gradT(new TGradArray(cells.getCountLevel1()));
 	gradT->zero();
 	_thermalFields.temperatureGradient.addArray(cells,gradT);
         
