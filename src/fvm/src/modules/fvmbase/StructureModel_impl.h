@@ -177,12 +177,29 @@ public:
 
   void applyInterfaceBC(const int f) const
   {
-    // do nothing
+    // the boundary cell could be either c0 or c1 at an interface
+    int cb = _faceCells(f,1);
+    T_Scalar sign(NumTypeTraits<T_Scalar>::getUnity());
+    if (cb < _cells.getSelfCount())
+    {
+        cb = _faceCells(f,0);
+        sign *= -1.0;
+    }
+    
+
+    _r[cb] = T_Scalar(0);
+
+    if (sign>0)
+      _assembler.getCoeff10(f) = NumTypeTraits<OffDiag>::getZero();
+    else
+      _assembler.getCoeff01(f) = NumTypeTraits<OffDiag>::getZero();
+    
   }
 
   void applyInterfaceBC() const
   {
-    // do nothing
+    for(int i=0; i<_faces.getCount(); i++)
+      applyInterfaceBC(i);
   }
 
   void applySymmetryBC() const
@@ -513,6 +530,10 @@ public:
                 gbc.applySymmetryBC();
                 allNeumann = false;
 	    }
+            else if (bc.bcType == "Interface")
+            {
+                gbc.applyInterfaceBC();
+	    }
             else if (bc.bcType == "ZeroDerivative")
             {
                 gbc.applyZeroDerivativeBC();
@@ -565,7 +586,7 @@ public:
 
 		}
 	    }
-            else if (bc.bcType != "Interface")
+            else
               throw CException(bc.bcType + " not implemented for StructureModel");
             //cout << "force sum for " << fg.id  << " = " << fluxB << endl;  
 	    }
