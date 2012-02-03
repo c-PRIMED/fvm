@@ -369,11 +369,11 @@ public:
         *eta1Cell = vc["eta1"];
         _structureFields.eta1.addArray(cells,eta1Cell);
 
-        shared_ptr<TArray> alphaCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> alphaCell(new TArray(cells.getCountLevel1()));
         *alphaCell = vc["alpha"];
         _structureFields.alpha.addArray(cells,alphaCell);
 
-        shared_ptr<TArray> tCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> tCell(new TArray(cells.getCountLevel1()));
         *tCell = _options["operatingTemperature"];
         _structureFields.temperature.addArray(cells,tCell);
 
@@ -405,6 +405,12 @@ public:
 	}
 
     }
+     _structureFields.eta.syncLocal();
+     _structureFields.eta1.syncLocal();
+     _structureFields.alpha.syncLocal();
+     _structureFields.density.syncLocal();
+     
+     
 
     _niters  =0;
     _initialDeformationNorm = MFRPtr();
