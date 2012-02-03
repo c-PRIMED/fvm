@@ -1,9 +1,20 @@
 from build_packages import *
-import re
+import re, os
 
 class Pcl(BuildPkg):
     requires = ['flann', 'eigen', 'boost', 'qhull']
     
+    def _installed(self):
+        found = False
+        for path in ['/usr/lib','/usr/lib64']:
+            try:
+                st = os.stat(os.path.join(path, 'libpcl_common.so.1.4'))
+                found = True
+                break
+            except OSError:
+                pass
+        return found
+
     def _configure(self):
         cmdline = "cmake %s -DBUILD_visualization=OFF -DCMAKE_INSTALL_PREFIX=%s -DCMAKE_BUILD_TYPE=Release" % (self.sdir, self.blddir)
         if os.path.isfile(os.path.join(self.libdir, 'libboost_date_time.so')):
