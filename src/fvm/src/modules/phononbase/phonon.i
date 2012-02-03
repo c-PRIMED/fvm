@@ -21,5 +21,5 @@ using namespace std;
 %include "PhononBoundary.i"
 %include "COMETModel.i"
 %include "MatrixJML.i"
-%include "ArrowHeadMatrix.i"
 %include "SquareMatrix.i"
+%include "ArrowHeadMatrix.i"

@@ -158,6 +158,49 @@ class ArrowHeadMatrix : public MatrixJML<T>
     bVec[_order-1]=bn;
   }
 
+  void DummySolve()
+  {
+    TArray bVec(_order);
+    bVec=1.;
+    //Replaces bVec with solution vector.
+    
+    T ani;
+    T ain;
+    T aii;
+    T alpha;
+    T beta;
+
+    alpha=0.;
+    beta=0.;
+
+    #pragma omp parallel for default(shared) private(i,ani,aii,ain)
+    {
+    for(int i=1;i<_order;i++)
+      {
+	ani=(*this)(_order,i);
+	aii=(*this)(i,i);
+	ain=(*this)(i,_order);
+	alpha+=ani*bVec[i-1]/aii;
+	beta+=ani*ain/aii;
+      }
+    }    
+
+    T bn;
+    bn=(bVec[_order-1]-alpha)/((*this)(_order,_order)-beta);
+    
+    #pragma omp parallel for default(shared) private(i,aii,ain)
+    {
+    for(int i=1;i<_order;i++)
+      {
+	ain=(*this)(i,_order);
+	aii=(*this)(i,i);
+	bVec[i-1]=(bVec[i-1]-ain*bn)/aii;
+      }
+    }
+
+    bVec[_order-1]=bn;
+  }
+
   void zero()
   {
     for(int i=0;i<_elements;i++)
@@ -194,7 +237,7 @@ class ArrowHeadMatrix : public MatrixJML<T>
       else
 	throw CException("Array length does not match matrix order!");
     }
-
+  
  private:
   int _elements;
   TArray _values;

@@ -254,10 +254,6 @@ class COMETModel : public Model
 	       }    
 	   }
 	 
-	 //e0sum=e0sum/_kspace.calcTauTot();	 
-	 //shared_ptr<TArray> e0cell(new TArray(numcells));
-	 //*e0cell=e0sum;
-	 //_macro.e0.addArray(cells,e0cell);
 	 shared_ptr<TArray> TlResidCell(new TArray(numcells));
 	 *TlResidCell=0.;
 	 _macro.TlResidual.addArray(cells,TlResidCell);
@@ -270,7 +266,7 @@ class COMETModel : public Model
   void initCoarse()
   {
     const int numMeshes=_meshes.size();
-    const T Tinit=0.;
+    const T Tinit=_options["initialTemperature"];
 
      for (int n=0;n<numMeshes;n++)
        {
@@ -307,7 +303,7 @@ class COMETModel : public Model
 		 TArrptr resid=TArrptr(new TArray(numcells));
 		 TArrptr FAS=TArrptr(new TArray(numcells));
 		 TArrptr inj=TArrptr(new TArray(numcells));
-		 const T einit=0.;
+		 const T einit=mode.calce0(Tinit);
 		 e0sum+=einit*dk3;
 		 *evar=einit;
 		 *inj=einit;
@@ -331,14 +327,40 @@ class COMETModel : public Model
 			 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
 			 const int faceCount=faces.getCount();
 			 const int offSet=faces.getOffset();
+			 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
 			 
-			 for(int i=offSet;i<offSet+faceCount;i++)
-			   BCfArray[i]=2;
-
-			 for(int i=0;i<faceCount;i++)
+			 if(Imp)
 			   {
-			     int cell1=BfaceCells(i,0);
-			     BCArray[cell1]=1;
+			     for(int i=offSet;i<offSet+faceCount;i++)
+			       BCfArray[i]=2;  //implicit boundary
+			   }
+			 else
+			   {
+			     for(int i=offSet;i<offSet+faceCount;i++)
+			       BCfArray[i]=3;  //explicit boundary
+			   }
+			 
+			 if(Imp)
+			   {
+			     for(int i=0;i<faceCount;i++)
+			       {
+				 int cell1=BfaceCells(i,0);
+				 if(BCArray[cell1]==0)
+				   BCArray[cell1]=1;    //implicit boundary only
+				 else if(BCArray[cell1]==2)
+				   BCArray[cell1]=3;  //mix implicit/explicit boundary
+			       }
+			   }
+			 else
+			   {
+			     for(int i=0;i<faceCount;i++)
+			       {
+				 int cell1=BfaceCells(i,0);
+				 if(BCArray[cell1]==0)
+				   BCArray[cell1]=2;  //explicit boundary only
+				 else if (BCArray[cell1]==1)
+				   BCArray[cell1]=3;  //mix implicit/explicit boundary
+			       }
 			   }
 		       }
 		     else
@@ -354,10 +376,6 @@ class COMETModel : public Model
 	       }    
 	   }
 	 
-	 //e0sum=e0sum/_kspace.getDK3();
-	 //TArrptr e0cell(new TArray(numcells));
-	 //*e0cell=e0sum;
-	 //_macro.e0.addArray(cells,e0cell);
 	 TArrptr TlResidCell(new TArray(numcells));
 	 *TlResidCell=0.;
 	 _macro.TlResidual.addArray(cells,TlResidCell);

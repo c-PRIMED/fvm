@@ -100,7 +100,7 @@ class COMETDiscretizer
 		COMETConvection(c,AMat,Bvec);
 		COMETCollision(c,&AMat,Bvec);
 		COMETEquilibrium(c,&AMat,Bvec);
-		
+
 		if(_options.withNormal)
 		  COMETShifted(c,&AMat,Bvec);
 		
@@ -126,6 +126,8 @@ class COMETDiscretizer
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
+		cout<<"In implicit reflecting boundary only"<<endl;
+		throw CException("IMPLICIT BOUNDARY!!");
 		
 		COMETConvection(c,AMat,Bvec);
 		COMETCollision(c,&AMat,Bvec);
@@ -147,6 +149,7 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
+	    updateGhost(c);
 	  
 	    while(dt>_options.NewtonTol && NewtonIters<10)
 	      {
@@ -179,12 +182,16 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
+	    updateGhost(c);
 	    while(dt>_options.NewtonTol && NewtonIters<10)
 	      {
 		TSquare AMat(totalmodes+1);
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
+
+		cout<<"In mix reflecting boundary"<<endl;
+		throw CException("IMPLICIT BOUNDARY!!");
 		
 		COMETConvection(c,AMat,Bvec);
 		COMETCollision(c,&AMat,Bvec);
@@ -207,8 +214,7 @@ class COMETDiscretizer
 	  throw CException("Unexpected value for boundary cell map.");
 
       }
-    //if(_options.withNormal)
-    // updateeShifted();
+    
   }
 
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec)
@@ -537,6 +543,9 @@ class COMETDiscretizer
 
 	if(_BCArray[c]==0 || _BCArray[c]==2)  //Arrowhead
 	  {
+
+	    if(_BCArray[c]==2)
+	      updateGhost(c);
 	    TArrow AMat(totalmodes+1);
 	    AMat.zero();
 

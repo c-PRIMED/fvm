@@ -12,10 +12,12 @@ class ArrowHeadMatrix: public MatrixJML<T>
   typedef Array<T> TArray;
   
   ArrowHeadMatrix(const int order);
-  
   T& getElement(const int i,const int j);
+  void zero();
+  void ones();
   void printElement(const int& i,const int& j);
   void Solve(TArray& bVec);
+  void DummySolve();
   
  private:
   int _elements;
