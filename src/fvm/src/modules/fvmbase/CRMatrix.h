@@ -571,7 +571,7 @@ public:
   {
     const Array<int>&  coarseIndex = dynamic_cast<const Array<int>& >(gCoarseIndex);
 
-    const int nCoarseRows = coarseRowSite.getCount();
+    const int nCoarseRows = coarseRowSite.getCountLevel1();
 
     shared_ptr<CRConnectivity> coarseCR(new CRConnectivity(coarseRowSite,coarseColSite));
 

@@ -527,7 +527,7 @@ MultiFieldMatrix::createCoarseToFineMapping(const MultiField& coarseIndexField)
 
       const StorageSite& coarseSite = *_coarseSites[rowIndex];
 
-      const int nFineRows = fineSite.getCount();
+      const int nFineRows = fineSite.getCountLevel1();
 
       const Array<int>& coarseIndex =
         dynamic_cast<const Array<int>& >(coarseIndexField[rowIndex]);
