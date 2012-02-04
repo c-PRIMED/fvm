@@ -5,7 +5,7 @@ class Pcl(BuildPkg):
     requires = ['flann', 'eigen', 'boost', 'qhull']
     
     def _installed(self):
-        return find_lib('pcl', '1.4')
+        return find_lib('pcl_common', '1.4')
 
     def _configure(self):
         cmdline = "cmake %s -DBUILD_visualization=OFF -DCMAKE_INSTALL_PREFIX=%s -DCMAKE_BUILD_TYPE=Release" % (self.sdir, self.blddir)
