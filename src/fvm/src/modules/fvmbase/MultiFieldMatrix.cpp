@@ -432,37 +432,64 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
       const StorageSite& site = *rowIndex.second;
 
       const StorageSite::GatherMap&  gatherMap  = site.getGatherMap();
+      const StorageSite::GatherMap&  gatherMapLevel1  = site.getGatherMapLevel1();
+
+      // collect all the toIndices arrays for each storage site from
+      // both gatherMap and gatherMapLevel1
+      
+      typedef map<const StorageSite*, vector<const Array<int>* > > IndicesMap;
+      IndicesMap toIndicesMap;
+
       foreach(const StorageSite::GatherMap::value_type pos, gatherMap)
-        {
+      {
           const StorageSite& oSite = *pos.first;
           const Array<int>& toIndices = *pos.second;
 
+          toIndicesMap[&oSite].push_back(&toIndices);
+      }
+      
+      foreach(const StorageSite::GatherMap::value_type pos, gatherMapLevel1)
+      {
+          const StorageSite& oSite = *pos.first;
+          const Array<int>& toIndices = *pos.second;
+
+          toIndicesMap[&oSite].push_back(&toIndices);
+      }
+      
+      foreach(IndicesMap::value_type pos, toIndicesMap)
+        {
+          const StorageSite& oSite = *pos.first;
+          const vector<const Array<int>* > toIndicesArrays = pos.second;
+
+          
           map<int,int> otherToMyMapping;
           UnorderedSet  gatherSet;
 
-          const int nGhostRows = toIndices.getLength();
-          for(int ng=0; ng<nGhostRows; ng++)
+          foreach(const Array<int>* toIndicesPtr, toIndicesArrays)
           {
-              const int fineIndex = toIndices[ng];
-              const int coarseOtherIndex = coarseIndex[fineIndex];
-
-              if (coarseOtherIndex < 0)
-                continue;
-              
-              if (otherToMyMapping.find(coarseOtherIndex) !=
-                  otherToMyMapping.end())
+              const Array<int>& toIndices = *toIndicesPtr;
+              const int nGhostRows = toIndices.getLength();
+              for(int ng=0; ng<nGhostRows; ng++)
               {
-                  coarseIndex[fineIndex] = otherToMyMapping[coarseOtherIndex];
+                  const int fineIndex = toIndices[ng];
+                  const int coarseOtherIndex = coarseIndex[fineIndex];
+                  
+                  if (coarseOtherIndex < 0)
+                    continue;
+                  
+                  if (otherToMyMapping.find(coarseOtherIndex) !=
+                      otherToMyMapping.end())
+                  {
+                      coarseIndex[fineIndex] = otherToMyMapping[coarseOtherIndex];
+                  }
+                  else
+                  {
+                      coarseIndex[fineIndex] = coarseGhostSize+coarseSize;
+                      otherToMyMapping[coarseOtherIndex] = coarseIndex[fineIndex];
+                      gatherSet.insert( coarseIndex[fineIndex] );
+                      coarseGhostSize++;
+                  }
               }
-              else
-              {
-                  coarseIndex[fineIndex] = coarseGhostSize+coarseSize;
-                  otherToMyMapping[coarseOtherIndex] = coarseIndex[fineIndex];
-                  gatherSet.insert( coarseIndex[fineIndex] );
-                  coarseGhostSize++;
-              }
-
-
           }
 
           const int coarseMappersSize = otherToMyMapping.size();
@@ -480,36 +507,59 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
         }
 
       const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
-      foreach(const StorageSite::ScatterMap::value_type pos, scatterMap)
-        {
+      const StorageSite::ScatterMap& scatterMapLevel1 = site.getScatterMapLevel1();
+      
+      IndicesMap fromIndicesMap;
+
+      foreach(const StorageSite::GatherMap::value_type pos, scatterMap)
+      {
           const StorageSite& oSite = *pos.first;
           const Array<int>& fromIndices = *pos.second;
 
+          fromIndicesMap[&oSite].push_back(&fromIndices);
+      }
+      
+      foreach(const StorageSite::GatherMap::value_type pos, scatterMapLevel1)
+      {
+          const StorageSite& oSite = *pos.first;
+          const Array<int>& fromIndices = *pos.second;
+
+          fromIndicesMap[&oSite].push_back(&fromIndices);
+      }
+
+      foreach(IndicesMap::value_type pos, fromIndicesMap)
+      {
+          const StorageSite& oSite = *pos.first;
+          const vector<const Array<int>* > fromIndicesArrays = pos.second;
+
           UnorderedSet  scatterSet;
 
-          const int nGhostRows = fromIndices.getLength();
-          for(int ng=0; ng<nGhostRows; ng++)
+          foreach(const Array<int>* fromIndicesPtr, fromIndicesArrays)
           {
-              const int fineIndex = fromIndices[ng];
-              const int coarseOtherIndex = coarseIndex[fineIndex];
-              if (coarseOtherIndex >= 0)
-                scatterSet.insert( coarseOtherIndex );
+              const Array<int>& fromIndices = *fromIndicesPtr;
+              const int nGhostRows = fromIndices.getLength();
+              for(int ng=0; ng<nGhostRows; ng++)
+              {
+                  const int fineIndex = fromIndices[ng];
+                  const int coarseOtherIndex = coarseIndex[fineIndex];
+                  if (coarseOtherIndex >= 0)
+                    scatterSet.insert( coarseOtherIndex );
+              }
+
           }
 
           const int coarseMappersSize = scatterSet.size();
-
+          
           shared_ptr<Array<int> > coarseFromIndices(new Array<int>(coarseMappersSize));
-
+          
           for(int n = 0; n < scatterSet.size(); n++ ) {
               (*coarseFromIndices)[n] = scatterSet.getData().at(n);
           }
-
+          
           SSPair sskey(&site,&oSite);
           _coarseScatterMaps[sskey] = coarseFromIndices;
-
-        }
-
-
+          
+      }
       _coarseGhostSizes[rowIndex]=coarseGhostSize;
   }
 }
