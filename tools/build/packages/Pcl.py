@@ -5,15 +5,7 @@ class Pcl(BuildPkg):
     requires = ['flann', 'eigen', 'boost', 'qhull']
     
     def _installed(self):
-        found = False
-        for path in ['/usr/lib','/usr/lib64']:
-            try:
-                st = os.stat(os.path.join(path, 'libpcl_common.so.1.4'))
-                found = True
-                break
-            except OSError:
-                pass
-        return found
+        return find_lib('pcl', '1.4')
 
     def _configure(self):
         cmdline = "cmake %s -DBUILD_visualization=OFF -DCMAKE_INSTALL_PREFIX=%s -DCMAKE_BUILD_TYPE=Release" % (self.sdir, self.blddir)

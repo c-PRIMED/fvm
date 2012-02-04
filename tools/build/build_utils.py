@@ -1,7 +1,7 @@
 """
 build utility functions.
 """
-import sys, os, shutil, re, subprocess
+import sys, os, shutil, re, subprocess, glob
 from config import config
 
 # define some exceptions
@@ -449,6 +449,34 @@ def python_package(name, version):
         return True
     except:
         pass
+    return False
+
+# find a library
+# example: find_library('png12','0.46.0')
+def find_lib(libname, req_version):
+    req_version = req_version.split('.')
+    req_version = map(int, req_version)
+
+    for lname in glob.glob("/usr/lib*/lib%s.so*" % libname):
+        if not req_version:
+            return True
+        ver = re.findall(r'[^.]+\.so\.([\d.]+)', lname)
+        if ver:
+            ver = ver[0].split('.')
+            for i,v in enumerate(ver):
+                try:
+                    ver[i] = int(v)
+                except:
+                    ver[i] = 0
+            match = True
+            for v1,v2 in zip(req_version, ver):
+                if v1 > v2:
+                    match = False
+                    break
+                if v2 > v1:
+                    return True
+            if match and len(req_version) == len(ver):
+                return True
     return False
 
 if __name__ == '__main__':
