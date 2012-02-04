@@ -5,6 +5,7 @@
 #include "StorageSite.h"
 #include "OneToOneIndexMap.h"
 #include "SpikeStorage.h"
+#include "mpi.h"
 
 MultiFieldMatrix::MultiFieldMatrix() :
   _matrices(),
@@ -567,6 +568,7 @@ MultiFieldMatrix::syncGhostCoarsening(MultiField& coarseIndexField)
 void
 MultiFieldMatrix::createCoarseToFineMapping(const MultiField& coarseIndexField)
 {
+
   const int xLen = coarseIndexField.getLength();
   //#pragma omp parallel for
   for(int i=0; i<xLen; i++)
@@ -578,6 +580,7 @@ MultiFieldMatrix::createCoarseToFineMapping(const MultiField& coarseIndexField)
       const StorageSite& coarseSite = *_coarseSites[rowIndex];
 
       const int nFineRows = fineSite.getCountLevel1();
+      
 
       const Array<int>& coarseIndex =
         dynamic_cast<const Array<int>& >(coarseIndexField[rowIndex]);
@@ -586,9 +589,13 @@ MultiFieldMatrix::createCoarseToFineMapping(const MultiField& coarseIndexField)
 
       coarseToFine->initCount();
 
-      for(int nr=0; nr<nFineRows; nr++)
+
+      
+      for(int nr=0; nr<nFineRows; nr++){
         if (coarseIndex[nr]>=0)
           coarseToFine->addCount(coarseIndex[nr],1);
+      } 
+	  
 
       coarseToFine->finishCount();
 
