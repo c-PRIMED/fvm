@@ -1,0 +1,69 @@
+# config file for ubuntu
+
+# Need to have installed:
+# python
+# cmake
+# g++
+# libboost-all-dev
+# swig
+# python-scipy
+# python-matplotlib
+# python-nose
+# python-h5py
+# libhdf5-serial-dev
+# libblas-dev
+
+# PCL (Point Cloud Library)
+# http://pointclouds.org/downloads/linux.html
+# sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
+# sudo apt-get update
+# sudo apt-get install libpcl-all
+
+# FOR MPM
+# gfortran
+
+python:
+	#Build=True
+	# When using valgrind on python programs, configure with
+	# the following options. Note that it will print out messages
+	# that will confuse some tests.
+	#configure= --with-pydebug --without-pymalloc
+
+# ipython - an improved command line for python, Not required.
+ipython:
+	Build=0
+
+# not really used.
+Xdmf:
+	Build=0
+
+fvm:
+	Build=1
+
+	# build using MPI
+	# default is False
+	parallel=True
+
+	# 'release', 'debug', or 'profile'
+	# release is built with optimization on
+	# default is release
+	version=release
+
+	# compiler. 'intelc' or 'gcc'
+	# default is gcc
+	#compiler=gcc
+
+MPM:
+	Build=0
+	configname=gnu-linux
+	#configname=gnu-linux-coupling
+
+# Integration scripts
+MEMOSA:
+	Build=1
+
+sphinx:
+	Build=0
+
+pymc:
+	Build=0
