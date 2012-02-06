@@ -126,8 +126,6 @@ class COMETDiscretizer
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
-		cout<<"In implicit reflecting boundary only"<<endl;
-		throw CException("IMPLICIT BOUNDARY!!");
 		
 		COMETConvection(c,AMat,Bvec);
 		COMETCollision(c,&AMat,Bvec);
@@ -189,9 +187,6 @@ class COMETDiscretizer
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
-
-		cout<<"In mix reflecting boundary"<<endl;
-		throw CException("IMPLICIT BOUNDARY!!");
 		
 		COMETConvection(c,AMat,Bvec);
 		COMETCollision(c,&AMat,Bvec);
