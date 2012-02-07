@@ -18,6 +18,8 @@
 #include "MatrixJML.h"
 #include "SquareMatrixESBGK.h"
 
+#define SQR(x) ((x)*(x))
+
 template<class T>
 class COMETESBGKDiscretizer
 {
@@ -84,13 +86,53 @@ class COMETESBGKDiscretizer
     _ZCArray(ZCArray),
     _aveResid(-1.),
     _residChange(-1.),
-    _fgFinder()
-    {}
-   
+  _fgFinder(),
+  _numDir(_quadrature.getDirCount()),
+  _cx(dynamic_cast<const TArray&>(*_quadrature.cxPtr)),
+  _cy(dynamic_cast<const TArray&>(*_quadrature.cyPtr)),
+  _cz(dynamic_cast<const TArray&>(*_quadrature.czPtr)),
+  _wts(dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr)),
+  _density(dynamic_cast<TArray&>(_macroFields.density[_cells])),
+  _pressure(dynamic_cast<TArray&>(_macroFields.pressure[_cells])),
+  _velocity(dynamic_cast<VectorT3Array&>(_macroFields.velocity[_cells])),
+  _velocityResidual(dynamic_cast<VectorT3Array&>(_macroFields.velocityResidual[_cells])),
+  _velocityFASCorrection(0),
+  _temperature(dynamic_cast<TArray&>(_macroFields.temperature[_cells])),
+  _stress(dynamic_cast<VectorT6Array&>(_macroFields.Stress[_cells])),
+  _collisionFrequency(dynamic_cast<TArray&>(_macroFields.collisionFrequency[_cells])),
+  _coeffg(dynamic_cast<VectorT10Array&>(_macroFields.coeffg[_cells]))
+
+  {
+    _fArrays = new TArray*[_numDir];
+    _fN1Arrays = new TArray*[_numDir];
+    _fN2Arrays = new TArray*[_numDir];
+    _fResArrays = new TArray*[_numDir];
+    _fasArrays = new TArray*[_numDir];
+    
+    for(int direction=0;direction<_numDir;direction++)
+    {
+        Field& fnd = *_dsfPtr.dsf[direction];
+        Field& fN1nd = *_dsfPtr1.dsf[direction];
+        Field& fN2nd = *_dsfPtr2.dsf[direction];
+        Field& fndRes = *_dsfPtrRes.dsf[direction];
+        Field& fndFAS = *_dsfPtrFAS.dsf[direction];
+
+        _fArrays[direction] = &dynamic_cast<TArray&>(fnd[_cells]); 
+        _fN1Arrays[direction] = &dynamic_cast<TArray&>(fN1nd[_cells]); 
+        _fN2Arrays[direction] = &dynamic_cast<TArray&>(fN2nd[_cells]); 
+        _fResArrays[direction] = &dynamic_cast<TArray&>(fndRes[_cells]);
+        if (fndFAS.hasArray(_cells))
+          _fasArrays[direction] = &dynamic_cast<TArray&>(fndFAS[_cells]); 
+    }
+
+    if (_macroFields.velocityFASCorrection.hasArray(_cells))
+      _velocityFASCorrection = &dynamic_cast<VectorT3Array&>
+        (_macroFields.velocityFASCorrection[_cells]);
+
+  }
    void COMETSolve(const int sweep, const int level)
    {
     const int cellcount=_cells.getSelfCount();
-    const int numDir = _quadrature.getDirCount();
 
     int start;
 
@@ -99,15 +141,16 @@ class COMETESBGKDiscretizer
     if(sweep==-1)
       start=cellcount-1;
 
+    TArray Bvec(_numDir+3);
+    TArray Resid(_numDir+3);
+    TArrow AMat(_numDir+3);
+
     for(int c=start;((c<cellcount)&&(c>-1));c+=sweep)
     {
-        TArray Bvec(numDir+3);
-	TArray Resid(numDir+3);
 
 	if(_BCArray[c]==0)
 	{
-	  //TComet AMat(numDir+3);   
-	    TArrow AMat(numDir+3);
+	  //TComet AMat(_numDir+3);   
 
 	    Bvec.zero();
 	    Resid.zero();
@@ -132,9 +175,7 @@ class COMETESBGKDiscretizer
 	}
         else if(_BCArray[c]==1)
 	{
-            TArrow AMat(numDir+3);
-
-            Bvec.zero();
+             Bvec.zero();
             Resid.zero();
             AMat.zero();
 
@@ -163,14 +204,13 @@ class COMETESBGKDiscretizer
   template<class MatrixType>
   void COMETUnsteady(const int cell, MatrixType Amat, TArray& BVec)
   {
-    const int numDir = _quadrature.getDirCount();
     const T two(2.0);
     const T onePointFive(1.5);
     const T pointFive(0.5);
 
     int count = 1;
 
-    for(int direction=0;direction<numDir;direction++)
+    for(int direction=0;direction<_numDir;direction++)
     {
 	const T fbydT = _cellVolume[cell]/_dT; //pow(_nonDimLength,3);
         Field& fnd = *_dsfPtr.dsf[direction];
@@ -196,12 +236,6 @@ class COMETESBGKDiscretizer
 
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec, const int cellcount)
   {
-    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-    const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-    const int numDir = _quadrature.getDirCount();
-
     const int neibcount=_cellFaces.getCount(cell);
 
     for(int j=0;j<neibcount;j++)
@@ -221,12 +255,11 @@ class COMETESBGKDiscretizer
 	}
 	
 	int count=1;
-	for(int dir=0;dir<numDir;dir++)
+	for(int dir=0;dir<_numDir;dir++)
 	{
-	    Field& fnd = *_dsfPtr.dsf[dir];
-	    const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-	    flux=cx[dir]*Af[0]+cy[dir]*Af[1]+cz[dir]*Af[2];
-	    const T c_dot_en = cx[dir]*en[0]+cy[dir]*en[1]+cz[dir]*en[2];
+	    const TArray& f = *_fArrays[dir];
+	    flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+	    const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
 	    
 	    if(c_dot_en>T_Scalar(0))
 	    {
@@ -260,11 +293,6 @@ class COMETESBGKDiscretizer
 
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec)
   {
-    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-    const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-    const int numDir = _quadrature.getDirCount();
 
     const int neibcount=_cellFaces.getCount(cell);
 
@@ -304,22 +332,21 @@ class COMETESBGKDiscretizer
 	    T Nmr(0.0);
 	    T Dmr(0.0);
 	    int count=1;
-	    for(int dir1=0;dir1<numDir;dir1++)
+	    for(int dir1=0;dir1<_numDir;dir1++)
 	    {
-		Field& fnd = *_dsfPtr.dsf[dir1];
-		const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-		const T fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[dir1]-uwall,2.0)+pow(cy[dir1]-vwall,2.0)+pow(cz[dir1]-wwall,2.0))/Twall);
-		flux=cx[dir1]*Af[0]+cy[dir1]*Af[1]+cz[dir1]*Af[2];
-		const T c_dot_en = cx[dir1]*en[0]+cy[dir1]*en[1]+cz[dir1]*en[2];
+		const TArray& f = *_fArrays[dir1];
+		const T fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(_cx[dir1]-uwall,2.0)+pow(_cy[dir1]-vwall,2.0)+pow(_cz[dir1]-wwall,2.0))/Twall);
+		flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+		const T c_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
 		if((c_dot_en-wallV_dot_en)>T_Scalar(0))
 		{
 		    Amat.getElement(count,count)-=flux;
 		    BVec[count-1]-=flux*f[cell];
-		    Nmr = Nmr + f[cell]*wts[dir1]*(c_dot_en -wallV_dot_en);
+		    Nmr = Nmr + f[cell]*_wts[dir1]*(c_dot_en -wallV_dot_en);
 		}
 		else
 		{   //have to move through all other directions
-		    Dmr = Dmr - fwall*wts[dir1]*(c_dot_en-wallV_dot_en);
+		    Dmr = Dmr - fwall*_wts[dir1]*(c_dot_en-wallV_dot_en);
 		}
 		count++;
 	    }
@@ -330,34 +357,30 @@ class COMETESBGKDiscretizer
 	    //Second sweep
 	    const T zero(0.0);
 	    count=1;
-	    for(int dir1=0;dir1<numDir;dir1++)
+	    for(int dir1=0;dir1<_numDir;dir1++)
 	    {		
-	        Field& fnd = *_dsfPtr.dsf[dir1];
-		const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-		flux=cx[dir1]*Af[0]+cy[dir1]*Af[1]+cz[dir1]*Af[2];
-		const T c1_dot_en = cx[dir1]*en[0]+cy[dir1]*en[1]+cz[dir1]*en[2];
+		const TArray& f = *_fArrays[dir1];
+		flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+		const T c1_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
 		if((c1_dot_en-wallV_dot_en)<T_Scalar(0))
 		{
-		    const T coeff1 = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[dir1]-uwall,2.0)+pow(cy[dir1]-vwall,2.0)+pow(cz[dir1]-wwall,2.0))/Twall);
+		    const T coeff1 = 1.0/pow(pi*Twall,1.5)*exp(-(pow(_cx[dir1]-uwall,2.0)+pow(_cy[dir1]-vwall,2.0)+pow(_cz[dir1]-wwall,2.0))/Twall);
 		    if(m1alpha!=zero)
 		    {
 			const int direction_incident = vecReflection[dir1];
-			Field& fndi = *_dsfPtr.dsf[direction_incident];
-			const TArray& dsfi = dynamic_cast<const TArray&>(fndi[_cells]);
+			const TArray& dsfi = *_fArrays[direction_incident];
 			//Amat.getElement(count,direction_incident+1)-=flux*m1alpha;
 			BVec[count-1]-=flux*m1alpha*dsfi[cell];
 		    }
 		    int ccount=1;
-		    for(int dir2=0;dir2<numDir;dir2++)
+		    for(int dir2=0;dir2<_numDir;dir2++)
 		    {
-			Field& f2nd = *_dsfPtr.dsf[dir2];
-			const TArray& f2 = dynamic_cast<const TArray&>(f2nd[_cells]);
-			const T c2_dot_en = cx[dir2]*en[0]+cy[dir2]*en[1]+cz[dir2]*en[2];
+			const TArray& f2 = *_fArrays[dir2];
+			const T c2_dot_en = _cx[dir2]*en[0]+_cy[dir2]*en[1]+_cz[dir2]*en[2];
 			if((c2_dot_en -wallV_dot_en)>T_Scalar(0))
 			{
-			    Field& f2nd = *_dsfPtr.dsf[dir2];
-			    const TArray& f2 = dynamic_cast<const TArray&>(f2nd[_cells]);
-			    T coeff2 = wts[dir2]*(c2_dot_en-wallV_dot_en);
+			    const TArray& f2 = *_fArrays[dir2];
+			    T coeff2 = _wts[dir2]*(c2_dot_en-wallV_dot_en);
 			    //Amat(count,ccount)-=flux*(coeff1*coeff2/Dmr)*alpha;
 			    BVec[count-1]-=flux*(coeff1*coeff2/Dmr)*alpha*f2[cell];
 			}
@@ -371,35 +394,31 @@ class COMETESBGKDiscretizer
 	    //Second sweep
 	    const T zero(0.0);
 	    count=1;
-	    for(int dir1=0;dir1<numDir;dir1++)
+	    for(int dir1=0;dir1<_numDir;dir1++)
 	    {		
-	        Field& fnd = *_dsfPtr.dsf[dir1];
-		const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-		flux=cx[dir1]*Af[0]+cy[dir1]*Af[1]+cz[dir1]*Af[2];
-		const T c1_dot_en = cx[dir1]*en[0]+cy[dir1]*en[1]+cz[dir1]*en[2];
+		const TArray& f = *_fArrays[dir1];
+		flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+		const T c1_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
 		if((c1_dot_en-wallV_dot_en)<T_Scalar(0))
 		{
-		    const T coeff1 = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[dir1]-uwall,2.0)+pow(cy[dir1]-vwall,2.0)+pow(cz[dir1]-wwall,2.0))/Twall);
+		    const T coeff1 = 1.0/pow(pi*Twall,1.5)*exp(-(pow(_cx[dir1]-uwall,2.0)+pow(_cy[dir1]-vwall,2.0)+pow(_cz[dir1]-wwall,2.0))/Twall);
 		    if(m1alpha!=zero)
 		    {
 			const int direction_incident = vecReflection[dir1];
-			Field& fndi = *_dsfPtr.dsf[direction_incident];
-			const TArray& dsfi = dynamic_cast<const TArray&>(fndi[_cells]);
+			const TArray& dsfi = *_fArrays[direction_incident];
 			//Amat.getElement(count,direction_incident+1)-=flux*m1alpha;
 			BVec[count-1]-=flux*m1alpha*dsfi[cell];
 		    }
 		    /*
 		    int ccount=1;
-		    for(int dir2=0;dir2<numDir;dir2++)
+		    for(int dir2=0;dir2<_numDir;dir2++)
 		    {
-			Field& f2nd = *_dsfPtr.dsf[dir2];
-			const TArray& f2 = dynamic_cast<const TArray&>(f2nd[_cells]);
-			const T c2_dot_en = cx[dir2]*en[0]+cy[dir2]*en[1]+cz[dir2]*en[2];
+			const TArray& f2 = *_fArrays[dir2];
+			const T c2_dot_en = _cx[dir2]*en[0]+_cy[dir2]*en[1]+_cz[dir2]*en[2];
 			if((c2_dot_en -wallV_dot_en)>T_Scalar(0))
 			{
-			    Field& f2nd = *_dsfPtr.dsf[dir2];
-			    const TArray& f2 = dynamic_cast<const TArray&>(f2nd[_cells]);
-			    T coeff2 = wts[dir2]*(c2_dot_en-wallV_dot_en);
+			    const TArray& f2 = *_fArrays[dir2];
+			    T coeff2 = _wts[dir2]*(c2_dot_en-wallV_dot_en);
 			    //Amat(count,ccount)-=flux*(coeff1*coeff2/Dmr)*alpha;
 			    BVec[count-1]-=flux*(coeff1*coeff2/Dmr)*alpha*f2[cell];
 			}
@@ -431,13 +450,13 @@ class COMETESBGKDiscretizer
 	    const T R=8314.0/_MW;
 	    const T u_init=pow(2.0*R*_T_init,0.5);
 	    int count=1;
-	    for(int dir1=0;dir1<numDir;dir1++)
+	    for(int dir1=0;dir1<_numDir;dir1++)
 	    {
 		Field& fnd = *_dsfPtr.dsf[dir1];
 		const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-		const T fwall = 1.0/pow(pi*Tin,1.5)*exp(-(pow(cx[dir1]-uin,2.0)+pow(cy[dir1]-vin,2.0)+pow(cz[dir1]-win,2.0))/Tin);
-		flux=cx[dir1]*Af[0]+cy[dir1]*Af[1]+cz[dir1]*Af[2];
-		const T c_dot_en = cx[dir1]*en[0]+cy[dir1]*en[1]+cz[dir1]*en[2];
+		const T fwall = 1.0/pow(pi*Tin,1.5)*exp(-(pow(_cx[dir1]-uin,2.0)+pow(_cy[dir1]-vin,2.0)+pow(_cz[dir1]-win,2.0))/Tin);
+		flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+		const T c_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
 		if(c_dot_en>T_Scalar(0))
 		{
 		    Amat(count,count)-=flux;
@@ -445,7 +464,7 @@ class COMETESBGKDiscretizer
 		}
 		else
 		{   //have to move through all other directions
-		    Dmr = Dmr + fwall*wts[dir1]*c_dot_en;
+		    Dmr = Dmr + fwall*_wts[dir1]*c_dot_en;
 		}
 		count++;
 	    }
@@ -455,19 +474,19 @@ class COMETESBGKDiscretizer
 	    
 	    //Second sweep
 	    count=1;
-	    for(int dir1=0;dir1<numDir;dir1++)
+	    for(int dir1=0;dir1<_numDir;dir1++)
 	    {
 		Field& fnd = *_dsfPtr.dsf[dir1];
 		const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-		flux=cx[dir1]*Af[0]+cy[dir1]*Af[1]+cz[dir1]*Af[2];
-		const T c_dot_en = cx[dir1]*en[0]+cy[dir1]*en[1]+cz[dir1]*en[2];
+		flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+		const T c_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
 		if(c_dot_en<T_Scalar(0))
 		{
 		    const int direction_incident = vecReflection[dir1];
 		    Field& fndi = *_dsfPtr.dsf[direction_incident];
 		    const TArray& dsfi = dynamic_cast<const TArray&>(fndi[_cells]);
 		    Amat(count,direction_incident+1)-=flux;
-		    BVec[count-1]-=flux*(nin/pow(pi*Tin,1.5)*exp(-(pow(cx[dir1]-uin,2.0)+pow(cy[dir1]-vin,2.0)+pow(cz[dir1]-win,2.0))/Tin)+dsfi[cell]);
+		    BVec[count-1]-=flux*(nin/pow(pi*Tin,1.5)*exp(-(pow(_cx[dir1]-uin,2.0)+pow(_cy[dir1]-vin,2.0)+pow(_cz[dir1]-win,2.0))/Tin)+dsfi[cell]);
 		}
 		count++;
 	    }
@@ -476,12 +495,11 @@ class COMETESBGKDiscretizer
         else if(_BCfArray[f]==4)  //if the face in question is zero derivative
 	{
             int count=1;
-            for(int dir=0;dir<numDir;dir++)
+            for(int dir=0;dir<_numDir;dir++)
 	    {
-                Field& fnd = *_dsfPtr.dsf[dir];
-                const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-                flux=cx[dir]*Af[0]+cy[dir]*Af[1]+cz[dir]*Af[2];
-                const T c_dot_en = cx[dir]*en[0]+cy[dir]*en[1]+cz[dir]*en[2];
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
 
                 if(c_dot_en>T_Scalar(0))
 		{
@@ -499,12 +517,11 @@ class COMETESBGKDiscretizer
         else if(_BCfArray[f]==5)  //if the face in question is specified pressure
 	{
             int count=1;
-            for(int dir=0;dir<numDir;dir++)
+            for(int dir=0;dir<_numDir;dir++)
 	    {
-                Field& fnd = *_dsfPtr.dsf[dir];
-                const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-                flux=cx[dir]*Af[0]+cy[dir]*Af[1]+cz[dir]*Af[2];
-                const T c_dot_en = cx[dir]*en[0]+cy[dir]*en[1]+cz[dir]*en[2];
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
 
                 if(c_dot_en>T_Scalar(0))
 		{
@@ -519,12 +536,11 @@ class COMETESBGKDiscretizer
 	else if(_BCfArray[f]==0)  //if the face in question is not reflecting
 	{
 	    int count=1;
-	    for(int dir=0;dir<numDir;dir++)
+	    for(int dir=0;dir<_numDir;dir++)
 	    {
-	        Field& fnd = *_dsfPtr.dsf[dir];
-		const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-		flux=cx[dir]*Af[0]+cy[dir]*Af[1]+cz[dir]*Af[2];
-		const T c_dot_en = cx[dir]*en[0]+cy[dir]*en[1]+cz[dir]*en[2];
+                const TArray& f = *_fArrays[dir];
+		flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+		const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
 		
 		if(c_dot_en>T_Scalar(0))
 		{
@@ -542,42 +558,33 @@ class COMETESBGKDiscretizer
   template<class MatrixType>
   void COMETCollision(const int cell, MatrixType Amat, TArray& BVec)
   {
-    TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[_cells]);
-    const int numDir = _quadrature.getDirCount();
-    const int order=numDir;
+    const int order=_numDir;
 
-    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-    const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-
-    VectorT10Array& coeffg = dynamic_cast<VectorT10Array&>(_macroFields.coeffg[_cells]);
-    VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[_cells]);
+    VectorT3Array& v = _velocity;
     
     const T two(2.0);
 
     T coeff;
     int count = 1;
     
-    for(int direction=0;direction<numDir;direction++)
+    for(int direction=0;direction<_numDir;direction++)
     {
-        Field& fnd = *_dsfPtr.dsf[direction];
-	const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]); 
-	coeff =_cellVolume[cell]*collisionFrequency[cell];
+        const TArray& f = *_fArrays[direction];
+	coeff =_cellVolume[cell]*_collisionFrequency[cell];
 
-	T C1=(cx[direction]-v[cell][0]);
-	T C2=(cy[direction]-v[cell][1]);
-	T C3=(cz[direction]-v[cell][2]);
-	T fGamma=coeffg[cell][0]*exp(-coeffg[cell][1]*pow(C1,2)+coeffg[cell][2]*C1
-				     -coeffg[cell][3]*pow(C2,2)+coeffg[cell][4]*C2
-				     -coeffg[cell][5]*pow(C3,2)+coeffg[cell][6]*C3
-				     +coeffg[cell][7]*cx[direction]*cy[direction]
-				     +coeffg[cell][8]*cy[direction]*cz[direction]
-				     +coeffg[cell][9]*cz[direction]*cx[direction]);
+	T C1=(_cx[direction]-v[cell][0]);
+	T C2=(_cy[direction]-v[cell][1]);
+	T C3=(_cz[direction]-v[cell][2]);
+	T fGamma=_coeffg[cell][0]*exp(-_coeffg[cell][1]*SQR(C1)+_coeffg[cell][2]*C1
+                                      -_coeffg[cell][3]*SQR(C2)+_coeffg[cell][4]*C2
+				     -_coeffg[cell][5]*SQR(C3)+_coeffg[cell][6]*C3
+				     +_coeffg[cell][7]*_cx[direction]*_cy[direction]
+				     +_coeffg[cell][8]*_cy[direction]*_cz[direction]
+				     +_coeffg[cell][9]*_cz[direction]*_cx[direction]);
 	
-	Amat->getElement(count,order+1)+=coeff*fGamma*(two*coeffg[cell][1]*C1-coeffg[cell][2]);
-	Amat->getElement(count,order+2)+=coeff*fGamma*(two*coeffg[cell][3]*C2-coeffg[cell][4]);
-	Amat->getElement(count,order+3)+=coeff*fGamma*(two*coeffg[cell][5]*C3-coeffg[cell][6]);
+	Amat->getElement(count,order+1)+=coeff*fGamma*(two*_coeffg[cell][1]*C1-_coeffg[cell][2]);
+	Amat->getElement(count,order+2)+=coeff*fGamma*(two*_coeffg[cell][3]*C2-_coeffg[cell][4]);
+	Amat->getElement(count,order+3)+=coeff*fGamma*(two*_coeffg[cell][5]*C3-_coeffg[cell][6]);
 	Amat->getElement(count,count)-=coeff;
 	
         BVec[count-1]+=coeff*fGamma;
@@ -589,145 +596,121 @@ class COMETESBGKDiscretizer
   template<class MatrixType>
   void COMETMacro(const int cell, MatrixType Amat, TArray& BVec)
   {
-    const int numDir = _quadrature.getDirCount();
 
-    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-
-    const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-
-    VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[_cells]);
+    VectorT3Array& v = _velocity;
 
     T density(0.);
-    for(int dir=0;dir<numDir;dir++)
+    for(int dir=0;dir<_numDir;dir++)
     {
-        Field& fnd = *_dsfPtr.dsf[dir];
-	const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-	density+=f[cell]*wts[dir];
+        const TArray& f = *_fArrays[dir];
+	density+=f[cell]*_wts[dir];
     }
     
     int count = 1;
 
-    for(int dir=0;dir<numDir;dir++)
+    for(int dir=0;dir<_numDir;dir++)
     {
-        Field& fnd = *_dsfPtr.dsf[dir];
-	const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-        T C1=(cx[dir]-v[cell][0]);
-        T C2=(cy[dir]-v[cell][1]);
-        T C3=(cz[dir]-v[cell][2]);
+        const TArray& f = *_fArrays[dir];
+        T C1=(_cx[dir]-v[cell][0]);
+        T C2=(_cy[dir]-v[cell][1]);
+        T C3=(_cz[dir]-v[cell][2]);
 
-        Amat->getElement(numDir+1,count)+=wts[dir]*C1/density;
-	BVec[numDir]+=cx[dir]*wts[dir]*f[cell]/density;
-        Amat->getElement(numDir+2,count)+=wts[dir]*C2/density;
-	BVec[numDir+1]+=cy[dir]*wts[dir]*f[cell]/density;
-        Amat->getElement(numDir+3,count)+=wts[dir]*C3/density;
-	BVec[numDir+2]+=cz[dir]*wts[dir]*f[cell]/density;
+        Amat->getElement(_numDir+1,count)+=_wts[dir]*C1/density;
+	BVec[_numDir]+=_cx[dir]*_wts[dir]*f[cell]/density;
+        Amat->getElement(_numDir+2,count)+=_wts[dir]*C2/density;
+	BVec[_numDir+1]+=_cy[dir]*_wts[dir]*f[cell]/density;
+        Amat->getElement(_numDir+3,count)+=_wts[dir]*C3/density;
+	BVec[_numDir+2]+=_cz[dir]*_wts[dir]*f[cell]/density;
 	count++;
     }
-    Amat->getElement(numDir+1,numDir+1)-=1;
-    BVec[numDir]-=v[cell][0];
-    Amat->getElement(numDir+2,numDir+2)-=1;
-    BVec[numDir+1]-=v[cell][1];
-    Amat->getElement(numDir+3,numDir+3)-=1;
-    BVec[numDir+2]-=v[cell][2];
+    Amat->getElement(_numDir+1,_numDir+1)-=1;
+    BVec[_numDir]-=v[cell][0];
+    Amat->getElement(_numDir+2,_numDir+2)-=1;
+    BVec[_numDir+1]-=v[cell][1];
+    Amat->getElement(_numDir+3,_numDir+3)-=1;
+    BVec[_numDir+2]-=v[cell][2];
   }
 
   void Distribute(const int cell, TArray& BVec, TArray& Rvec)
   {
-    const int numDir = _quadrature.getDirCount();
-    VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[_cells]);
-    VectorT3Array& vR = dynamic_cast<VectorT3Array&>(_macroFields.velocityResidual[_cells]);
+    VectorT3Array& v = _velocity;
+    VectorT3Array& vR = _velocityResidual;
 
-    for(int direction=0;direction<numDir;direction++)
+    for(int direction=0;direction<_numDir;direction++)
     {
-        Field& fnd = *_dsfPtr.dsf[direction];
-	Field& fndRes = *_dsfPtrRes.dsf[direction];
-        TArray& f = dynamic_cast<TArray&>(fnd[_cells]);
-	TArray& fRes = dynamic_cast<TArray&>(fndRes[_cells]);
+	TArray& f = *_fArrays[direction];
+	TArray& fRes = *_fResArrays[direction];
         f[cell]-=BVec[direction];
 	fRes[cell]=-Rvec[direction];
     }
-    v[cell][0]-=BVec[numDir];
-    v[cell][1]-=BVec[numDir+1];
-    v[cell][2]-=BVec[numDir+2];
-    vR[cell][0]=-Rvec[numDir];
-    vR[cell][1]=-Rvec[numDir+1];
-    vR[cell][2]=-Rvec[numDir+2];
+    v[cell][0]-=BVec[_numDir];
+    v[cell][1]-=BVec[_numDir+1];
+    v[cell][2]-=BVec[_numDir+2];
+    vR[cell][0]=-Rvec[_numDir];
+    vR[cell][1]=-Rvec[_numDir+1];
+    vR[cell][2]=-Rvec[_numDir+2];
   }
 
   void ComputeMacroparameters(const int cell)
   {
-    const int numDir = _quadrature.getDirCount();
 
-    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-    const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-
-    TArray& density = dynamic_cast<TArray&>(_macroFields.density[_cells]);
-    VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[_cells]);
-    TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[_cells]);
-    TArray& pressure = dynamic_cast<TArray&>(_macroFields.pressure[_cells]);
-    VectorT6Array& stress = dynamic_cast<VectorT6Array&>(_macroFields.Stress[_cells]);
+    VectorT3Array& v = _velocity;
  
     const T zero(0.);
 
-    density[cell]=zero;
-    temperature[cell]=zero;
-    stress[cell][0]=0.0;stress[cell][1]=0.0;stress[cell][2]=0.0;
-    stress[cell][3]=0.0;stress[cell][4]=0.0;stress[cell][5]=0.0;
+    _density[cell]=zero;
+    _temperature[cell]=zero;
+    _stress[cell][0]=0.0;_stress[cell][1]=0.0;_stress[cell][2]=0.0;
+    _stress[cell][3]=0.0;_stress[cell][4]=0.0;_stress[cell][5]=0.0;
 
-    for(int dir=0;dir<numDir;dir++)
+    for(int dir=0;dir<_numDir;dir++)
     {
-        Field& fnd = *_dsfPtr.dsf[dir];
-	const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-	density[cell] = density[cell]+wts[dir]*f[cell];
-	temperature[cell]= temperature[cell]+(pow(cx[dir],2.0)+pow(cy[dir],2.0)
-					      +pow(cz[dir],2.0))*f[cell]*wts[dir];
+	const TArray& f = *_fArrays[dir];
+	_density[cell] = _density[cell]+_wts[dir]*f[cell];
+	_temperature[cell]= _temperature[cell]+(SQR(_cx[dir])+SQR(_cy[dir])
+					      +SQR(_cz[dir]))*f[cell]*_wts[dir];
     }
 	  	
-    temperature[cell]=temperature[cell]-(pow(v[cell][0],2.0)
-					 +pow(v[cell][1],2.0)
-					 +pow(v[cell][2],2.0))*density[cell];
-    temperature[cell]=temperature[cell]/(1.5*density[cell]);  
-    pressure[cell]=density[cell]*temperature[cell];
+    _temperature[cell]=_temperature[cell]-(SQR(v[cell][0])
+                                           +SQR(v[cell][1])
+                                           +SQR(v[cell][2]))*_density[cell];
+    _temperature[cell]=_temperature[cell]/(1.5*_density[cell]);  
+    _pressure[cell]=_density[cell]*_temperature[cell];
 
-    for(int dir=0;dir<numDir;dir++)
+    for(int dir=0;dir<_numDir;dir++)
     {	  
-	Field& fnd = *_dsfPtr.dsf[dir];
-	const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);	  
-	stress[cell][0] +=pow((cx[dir]-v[cell][0]),2.0)*f[cell]*wts[dir];
-	stress[cell][1] +=pow((cy[dir]-v[cell][1]),2.0)*f[cell]*wts[dir];
-	stress[cell][2] +=pow((cz[dir]-v[cell][2]),2.0)*f[cell]*wts[dir];
-	stress[cell][3] +=(cx[dir]-v[cell][0])*(cy[dir]-v[cell][1])*f[cell]*wts[dir];
-	stress[cell][4] +=(cy[dir]-v[cell][1])*(cz[dir]-v[cell][2])*f[cell]*wts[dir];
-	stress[cell][5] +=(cz[dir]-v[cell][2])*(cx[dir]-v[cell][0])*f[cell]*wts[dir];	
+	const TArray& f = *_fArrays[dir];
+	_stress[cell][0] +=SQR((_cx[dir]-v[cell][0]))*f[cell]*_wts[dir];
+	_stress[cell][1] +=SQR((_cy[dir]-v[cell][1]))*f[cell]*_wts[dir];
+	_stress[cell][2] +=SQR((_cz[dir]-v[cell][2]))*f[cell]*_wts[dir];
+	_stress[cell][3] +=(_cx[dir]-v[cell][0])*(_cy[dir]-v[cell][1])*f[cell]*_wts[dir];
+	_stress[cell][4] +=(_cy[dir]-v[cell][1])*(_cz[dir]-v[cell][2])*f[cell]*_wts[dir];
+	_stress[cell][5] +=(_cz[dir]-v[cell][2])*(_cx[dir]-v[cell][0])*f[cell]*_wts[dir];	
     }
-    //cout<<"density of cell "<<cell<<" is "<<density[cell]<<endl; 
+    //cout<<"_density of cell "<<cell<<" is "<<_density[cell]<<endl; 
   }  
 
   void findResid(const bool plusFAS)
   {
     const int cellcount=_cells.getSelfCount();
-    const int numDir = _quadrature.getDirCount();
 
-    TArray ResidSum(numDir+3);
-    TArray Bsum(numDir+3);
+    TArray ResidSum(_numDir+3);
+    TArray Bsum(_numDir+3);
     T traceSum=0.;
     T ResidScalar=0.;
     ResidSum.zero();
     Bsum.zero();
+
+    TArray Bvec(_numDir+3);
+    TArray Resid(_numDir+3);
+    TArrow AMat(_numDir+3);
     
     for(int c=0;c<cellcount;c++)
     {
-        TArray Bvec(numDir+3);
-	TArray Resid(numDir+3);
 	
 	if(_BCArray[c]==0)
 	{
-	    //TComet AMat(numDir+3);
-	    TArrow AMat(numDir+3);
+	    //TComet AMat(_numDir+3);
 
 	    Bvec.zero();
 	    Resid.zero();
@@ -756,8 +739,6 @@ class COMETESBGKDiscretizer
 	}
 	else if(_BCArray[c]==1) //reflecting boundary
         {
-	    TArrow AMat(numDir+3);
-
 	    Bvec.zero();
 	    Resid.zero();
 	    AMat.zero();
@@ -786,7 +767,7 @@ class COMETESBGKDiscretizer
 	else
           throw CException("Unexpected value for boundary cell map.");
     }
-    for(int o=0;o<numDir+3;o++)
+    for(int o=0;o<_numDir+3;o++)
     {
 	ResidScalar+=ResidSum[o];
     }
@@ -823,19 +804,17 @@ class COMETESBGKDiscretizer
 
   void addFAS(const int c, TArray& bVec)
   {
-    const int numDir = _quadrature.getDirCount();
     int count=0;
-    for(int dir=0;dir<numDir;dir++)
+    for(int dir=0;dir<_numDir;dir++)
     {
-	Field& fndFAS = *_dsfPtrFAS.dsf[dir];
-	TArray& fasArray=dynamic_cast<TArray&>(fndFAS[_cells]);
+	TArray& fasArray=*_fasArrays[dir];
 	bVec[count]-=fasArray[c];
 	count+=1;
     }
-    VectorT3Array& fasArray = dynamic_cast<VectorT3Array&>(_macroFields.velocityFASCorrection[_cells]);
-    bVec[numDir]-=fasArray[c][0];
-    bVec[numDir+1]-=fasArray[c][1];
-    bVec[numDir+2]-=fasArray[c][2];
+    VectorT3Array& fasArray = *_velocityFASCorrection;
+    bVec[_numDir]-=fasArray[c][0];
+    bVec[_numDir+1]-=fasArray[c][1];
+    bVec[_numDir+2]-=fasArray[c][2];
   }
 
   int findFgId(const int faceIndex)
@@ -859,21 +838,15 @@ class COMETESBGKDiscretizer
 
   void makeValueArray(const int c, TArray& o)
   {
-    const int numDir = _quadrature.getDirCount();
-    const TArray& density = dynamic_cast<const TArray&>(_macroFields.density[_cells]);
-    const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[_cells]);
-    const TArray& temperature = dynamic_cast<const TArray&>(_macroFields.temperature[_cells]);
-    int count=0;
-    for(int dir=0;dir<numDir;dir++)
+    for(int dir=0;dir<_numDir;dir++)
     {
-	Field& fnd = *_dsfPtr.dsf[dir];
-        const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
-	o[count]=f[c];
-	count+=1;
+	const TArray& f = *_fArrays[dir];
+	o[dir]=f[c];
     }
-    o[numDir]=v[c][0];
-    o[numDir+1]=v[c][1];
-    o[numDir+2]=v[c][2];
+    const VectorT3Array& v = _velocity;
+    o[_numDir]=v[c][0];
+    o[_numDir+1]=v[c][1];
+    o[_numDir+2]=v[c][2];
   }
   
  private:
@@ -910,6 +883,26 @@ class COMETESBGKDiscretizer
   T _aveResid;
   T _residChange;
   FaceToFg _fgFinder;
+  const int _numDir;
+  const TArray& _cx;
+  const TArray& _cy;
+  const TArray& _cz;
+  const TArray& _wts;
+  TArray& _density;
+  TArray& _pressure;
+  VectorT3Array& _velocity;
+  VectorT3Array& _velocityResidual;
+  VectorT3Array* _velocityFASCorrection;
+  TArray& _temperature;
+  VectorT6Array& _stress;
+  TArray& _collisionFrequency;
+  VectorT10Array& _coeffg;
+
+  TArray** _fArrays;
+  TArray** _fN1Arrays;
+  TArray** _fN2Arrays;
+  TArray** _fResArrays;
+  TArray** _fasArrays;
   
 };
 
