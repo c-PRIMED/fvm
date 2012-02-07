@@ -101,6 +101,29 @@ public:
     return trace;
   }
 
+  void multiply(const XArray& x, XArray& b)
+  {
+      int len=x.getLength();
+      if(len==_order)
+      {
+          b.zero();
+          for(int i=0;i<_order-3;i++)
+            b[i]=_d[i]*x[i]+_c[i][0]*x[_order-3]+_c[i][1]*x[_order-2]+_c[i][2]*x[_order-1];
+          
+	  b[_order-3]+=_l(0,0)*x[_order-3];
+          b[_order-2]+=_l(1,1)*x[_order-2];
+          b[_order-1]+=_l(2,2)*x[_order-1];
+          for(int i=0;i<_order-3;i++)
+	  {
+	      b[_order-3]+=_r[i][0]*x[i];
+              b[_order-2]+=_r[i][1]*x[i];
+              b[_order-1]+=_r[i][2]*x[i];
+	  }
+      }
+      else
+        throw CException("Array length does not match matrix order!");
+  }
+
   
 private:
 

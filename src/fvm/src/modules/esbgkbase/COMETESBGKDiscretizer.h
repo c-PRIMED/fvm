@@ -732,6 +732,10 @@ class COMETESBGKDiscretizer
 	    Distribute(c,Bvec,Resid);
 
 	    makeValueArray(c,Bvec);
+
+            AMat.multiply(Resid,Bvec);
+            Resid=Bvec; 
+
 	    ArrayAbs(Bvec);
 	    ArrayAbs(Resid);
 	    Bsum+=Bvec;
@@ -759,6 +763,10 @@ class COMETESBGKDiscretizer
 	    Distribute(c,Bvec,Resid);
 
 	    makeValueArray(c,Bvec);
+
+            AMat.multiply(Resid,Bvec);
+            Resid=Bvec; 
+
 	    ArrayAbs(Bvec);
 	    ArrayAbs(Resid);
 	    Bsum+=Bvec;
