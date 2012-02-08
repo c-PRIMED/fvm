@@ -2419,13 +2419,13 @@ map<string,shared_ptr<ArrayBase> >&
     return smallestMesh;
   }
 
-  void doSweeps(const int sweeps)
+  void doSweeps(const int sweeps, const int num)
   {
     for(int sweepNo=0;sweepNo<sweeps;sweepNo++)
-      smooth();
+      smooth(num);
   }
 
-  void smooth()
+  void smooth(const int num)
   {
     const int numMeshes=_meshes.size();
     for(int msh=0;msh<numMeshes;msh++)
@@ -2452,12 +2452,15 @@ map<string,shared_ptr<ArrayBase> >&
 	if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
         
 	CDisc.COMETSolve(-1,_level); //reverse
-        //callCOMETBoundaryConditions();
-        ComputeCollisionfrequency();
-        //update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
-        if (_options.fgamma==0){initializeMaxwellianEq();}
-        else{ EquilibriumDistributionBGK();}
-        if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+	if((num==1)||(num==0&&_level==0))
+	{
+	    //callCOMETBoundaryConditions();
+	    ComputeCollisionfrequency();
+	    //update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
+	    if (_options.fgamma==0){initializeMaxwellianEq();}
+	    else{ EquilibriumDistributionBGK();}
+	    if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+	}
       }
   }
 
@@ -2494,7 +2497,7 @@ map<string,shared_ptr<ArrayBase> >&
 
   void cycle()
   {
-    doSweeps(_options.preSweeps);
+    doSweeps(_options.preSweeps,1);
     
     if(_level+1<_options.maxLevels)
       {
@@ -2521,7 +2524,7 @@ map<string,shared_ptr<ArrayBase> >&
         if (_options.fgamma==2){EquilibriumDistributionESBGK();}	
       }
     
-    doSweeps(_options.postSweeps);
+    doSweeps(_options.postSweeps,0);
   }
 
   void injectResid()
