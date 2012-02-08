@@ -155,8 +155,6 @@ class COMETESBGKDiscretizer
 
 	if(_BCArray[c]==0)
 	{
-	  //TComet AMat(_numDir+3);   
-
 	    Bvec.zero();
 	    Resid.zero();
 	    AMat.zero();
@@ -176,12 +174,11 @@ class COMETESBGKDiscretizer
 	    
 	    AMat.Solve(Bvec);
 	    Distribute(c,Bvec,Resid);
-	    ComputeMacroparameters(c);
-	    
+	    //ComputeMacroparameters(c);	    
 	}
         else if(_BCArray[c]==1)
 	{
-             Bvec.zero();
+            Bvec.zero();
             Resid.zero();
             AMat.zero();
 
@@ -200,8 +197,7 @@ class COMETESBGKDiscretizer
 
 	    AMat.Solve(Bvec);
 	    Distribute(c,Bvec,Resid);
-	    ComputeMacroparameters(c);
-	    
+	    //ComputeMacroparameters(c);	    
 	}
         else
           throw CException("Unexpected value for boundary cell map.");
@@ -274,24 +270,7 @@ class COMETESBGKDiscretizer
 		BVec[count-1]-=flux*f[cell];
 	    }
 	    else
-	    {
-	        /*
-		if(_ZCArray[cell]==1)
-		{
-		    if(cell2>=cellcount)
-		    {
-			Amat.getElement(count,count)-=flux;
-			BVec[count-1]-=flux*f[cell];
-		    }
-		    else
-		      BVec[count-1]-=flux*f[cell2];
-		  
-		} 
-		else
-		  BVec[count-1]-=flux*f[cell2];
-		*/
-	        BVec[count-1]-=flux*f[cell2];
-	    }
+	      BVec[count-1]-=flux*f[cell2];
 	    count++;
 	}
     }
@@ -360,7 +339,6 @@ class COMETESBGKDiscretizer
 	    
 	    const T nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
 
-	    /*	    
 	    //Second sweep
 	    const T zero(0.0);
 	    count=1;
@@ -379,66 +357,13 @@ class COMETESBGKDiscretizer
 			//Amat.getElement(count,direction_incident+1)-=flux*m1alpha;
 			BVec[count-1]-=flux*m1alpha*dsfi[cell];
 		    }
-		    int ccount=1;
-		    for(int dir2=0;dir2<_numDir;dir2++)
-		    {
-			const TArray& f2 = *_fArrays[dir2];
-			const T c2_dot_en = _cx[dir2]*en[0]+_cy[dir2]*en[1]+_cz[dir2]*en[2];
-			if((c2_dot_en -wallV_dot_en)>T_Scalar(0))
-			{
-			    const TArray& f2 = *_fArrays[dir2];
-			    T coeff2 = _wts[dir2]*(c2_dot_en-wallV_dot_en);
-			    //Amat(count,ccount)-=flux*(coeff1*coeff2/Dmr)*alpha;
-			    BVec[count-1]-=flux*(coeff1*coeff2/Dmr)*alpha*f2[cell];
-			}
-			ccount++;
-		    }
-		}
-		count++;
-	    } 
-	    */
-
-	    //Second sweep
-	    const T zero(0.0);
-	    count=1;
-	    for(int dir1=0;dir1<_numDir;dir1++)
-	    {		
-		const TArray& f = *_fArrays[dir1];
-		flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
-		const T c1_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
-		if((c1_dot_en-wallV_dot_en)<T_Scalar(0))
-		{
-		    const T coeff1 = 1.0/pow(pi*Twall,1.5)*exp(-(pow(_cx[dir1]-uwall,2.0)+pow(_cy[dir1]-vwall,2.0)+pow(_cz[dir1]-wwall,2.0))/Twall);
-		    if(m1alpha!=zero)
-		    {
-			const int direction_incident = vecReflection[dir1];
-			const TArray& dsfi = *_fArrays[direction_incident];
-			//Amat.getElement(count,direction_incident+1)-=flux*m1alpha;
-			BVec[count-1]-=flux*m1alpha*dsfi[cell];
-		    }
-		    /*
-		    int ccount=1;
-		    for(int dir2=0;dir2<_numDir;dir2++)
-		    {
-			const TArray& f2 = *_fArrays[dir2];
-			const T c2_dot_en = _cx[dir2]*en[0]+_cy[dir2]*en[1]+_cz[dir2]*en[2];
-			if((c2_dot_en -wallV_dot_en)>T_Scalar(0))
-			{
-			    const TArray& f2 = *_fArrays[dir2];
-			    T coeff2 = _wts[dir2]*(c2_dot_en-wallV_dot_en);
-			    //Amat(count,ccount)-=flux*(coeff1*coeff2/Dmr)*alpha;
-			    BVec[count-1]-=flux*(coeff1*coeff2/Dmr)*alpha*f2[cell];
-			}
-			ccount++;
-		    }
-		    */
 		    BVec[count-1]-=flux*alpha*(nwall*coeff1);
 		}
 		count++;
 	    } 
 
 	}
-	/*
+        /*
 	else if(_BCfArray[f]==3) //If the face in question is a inlet velocity face
 	{ 
 	    int Fgid=findFgId(f); 
@@ -537,6 +462,32 @@ class COMETESBGKDiscretizer
 		}
                 else
                   BVec[count-1]-=flux*f[cell2];
+                count++;
+	    }
+	}
+        else if(_BCfArray[f]==6) //If the face in question is a symmetry wall
+	{
+            int Fgid=findFgId(f);
+            map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(Fgid);
+            const vector<int>& vecReflection=(*pos).second;
+
+            int count=1;
+            for(int dir1=0;dir1<_numDir;dir1++)
+	    {
+                const TArray& f = *_fArrays[dir1];
+                flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+                const T c_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
+                if(c_dot_en>T_Scalar(0))
+		{
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		}
+                else
+		{
+                    const int direction_incident = vecReflection[dir1];
+                    const TArray& dsfi = *_fArrays[direction_incident];
+                    BVec[count-1]-=flux*dsfi[cell];
+		}
                 count++;
 	    }
 	}
@@ -740,8 +691,7 @@ class COMETESBGKDiscretizer
 	_stress[cell][3] +=(_cx[dir]-v[cell][0])*(_cy[dir]-v[cell][1])*f[cell]*_wts[dir];
 	_stress[cell][4] +=(_cy[dir]-v[cell][1])*(_cz[dir]-v[cell][2])*f[cell]*_wts[dir];
 	_stress[cell][5] +=(_cz[dir]-v[cell][2])*(_cx[dir]-v[cell][0])*f[cell]*_wts[dir];	
-    }
-    //cout<<"_density of cell "<<cell<<" is "<<_density[cell]<<endl; 
+    } 
   }  
 
   void findResid(const bool plusFAS)
@@ -764,8 +714,6 @@ class COMETESBGKDiscretizer
 	
 	if(_BCArray[c]==0)
 	{
-	    //TComet AMat(_numDir+3);
-
 	    Bvec.zero();
 	    Resid.zero();
 	    AMat.zero();
@@ -853,7 +801,7 @@ class COMETESBGKDiscretizer
   void setfgFinder()
   {
     foreach(const FaceGroupPtr fgPtr, _mesh.getBoundaryFaceGroups())
-      {
+    {
 	const FaceGroup& fg=*fgPtr;
 	const int off=fg.site.getOffset();
 	const int cnt=fg.site.getCount();
@@ -863,7 +811,7 @@ class COMETESBGKDiscretizer
 	BegEnd[0]=off;
 	BegEnd[1]=off+cnt;
 	_fgFinder[id]=BegEnd;
-      }
+    }
   }
 
   void addFAS(const int c, TArray& bVec)
@@ -885,10 +833,10 @@ class COMETESBGKDiscretizer
   {
     FaceToFg::iterator id;
     for(id=_fgFinder.begin();id!=_fgFinder.end();id++)
-      {
+    {
 	if(id->second[0]<=faceIndex && id->second[1]>faceIndex)
 	  return id->first;
-      }
+    }
     throw CException("Didn't find matching FaceGroup!");
     return -1;
   }

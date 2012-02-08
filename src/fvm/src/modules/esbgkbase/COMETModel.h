@@ -377,7 +377,7 @@ class COMETModel : public Model
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	{
             const FaceGroup& fg = *fgPtr;
-            if((_bcMap[fg.id]->bcType == "WallBC")||(_bcMap[fg.id]->bcType == "RealWallBC")||(_bcMap[fg.id]->bcType == "SymmetryBC"))
+            if((_bcMap[fg.id]->bcType == "WallBC")||(_bcMap[fg.id]->bcType == "RealWallBC"))
 	    {
                 const StorageSite& faces = fg.site;
                 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
@@ -434,6 +434,22 @@ class COMETModel : public Model
 
                 for(int i=offSet;i<offSet+faceCount;i++)
                   BCfArray[i]=5;
+	    }
+            else if(_bcMap[fg.id]->bcType == "SymmetryBC")
+	    {
+                const StorageSite& faces = fg.site;
+                const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+                const int faceCount=faces.getCount();
+                const int offSet=faces.getOffset();
+
+                for(int i=offSet;i<offSet+faceCount;i++)
+                  BCfArray[i]=6;
+
+                for(int i=0;i<faceCount;i++)
+		{
+                    int cell1=BfaceCells(i,0);
+                    BCArray[cell1]=1;
+		}
 	    }
             else
 	    {
@@ -2445,6 +2461,7 @@ map<string,shared_ptr<ArrayBase> >&
         
 	CDisc.COMETSolve(1,_level); //forward
 	//callCOMETBoundaryConditions();
+	ComputeCOMETMacroparameters();
 	ComputeCollisionfrequency();
 	//update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
 	if (_options.fgamma==0){initializeMaxwellianEq();}
@@ -2455,6 +2472,7 @@ map<string,shared_ptr<ArrayBase> >&
 	if((num==1)||(num==0&&_level==0))
 	{
 	    //callCOMETBoundaryConditions();
+	    ComputeCOMETMacroparameters();
 	    ComputeCollisionfrequency();
 	    //update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
 	    if (_options.fgamma==0){initializeMaxwellianEq();}
