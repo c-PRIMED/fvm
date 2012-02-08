@@ -106,6 +106,7 @@ class COMETESBGKDiscretizer
     _fArrays = new TArray*[_numDir];
     _fN1Arrays = new TArray*[_numDir];
     _fN2Arrays = new TArray*[_numDir];
+    _fEqESArrays = new TArray*[_numDir];
     _fResArrays = new TArray*[_numDir];
     _fasArrays = new TArray*[_numDir];
     
@@ -114,13 +115,17 @@ class COMETESBGKDiscretizer
         Field& fnd = *_dsfPtr.dsf[direction];
         Field& fN1nd = *_dsfPtr1.dsf[direction];
         Field& fN2nd = *_dsfPtr2.dsf[direction];
+        Field& fndEqES = *_dsfEqPtrES.dsf[direction];
         Field& fndRes = *_dsfPtrRes.dsf[direction];
         Field& fndFAS = *_dsfPtrFAS.dsf[direction];
 
         _fArrays[direction] = &dynamic_cast<TArray&>(fnd[_cells]); 
-        _fN1Arrays[direction] = &dynamic_cast<TArray&>(fN1nd[_cells]); 
-        _fN2Arrays[direction] = &dynamic_cast<TArray&>(fN2nd[_cells]); 
+	_fEqESArrays[direction] = &dynamic_cast<TArray&>(fndEqES[_cells]);
         _fResArrays[direction] = &dynamic_cast<TArray&>(fndRes[_cells]);
+	if (fN1nd.hasArray(_cells))
+	  _fN1Arrays[direction] = &dynamic_cast<TArray&>(fN1nd[_cells]);
+        if (fN2nd.hasArray(_cells))
+          _fN2Arrays[direction] = &dynamic_cast<TArray&>(fN2nd[_cells]);
         if (fndFAS.hasArray(_cells))
           _fasArrays[direction] = &dynamic_cast<TArray&>(fndFAS[_cells]); 
     }
@@ -160,8 +165,9 @@ class COMETESBGKDiscretizer
 	      COMETUnsteady(c,&AMat,Bvec);	
 	
 	    COMETConvection(c,AMat,Bvec,cellcount);
-	    COMETCollision(c,&AMat,Bvec);
-	    COMETMacro(c,&AMat,Bvec);
+	    COMETTest(c,&AMat,Bvec);
+	    //COMETCollision(c,&AMat,Bvec);
+	    //COMETMacro(c,&AMat,Bvec);
 
             if(level>0)
               addFAS(c,Bvec);
@@ -183,8 +189,9 @@ class COMETESBGKDiscretizer
               COMETUnsteady(c,&AMat,Bvec);
 
             COMETConvection(c,AMat,Bvec);
-            COMETCollision(c,&AMat,Bvec);
-            COMETMacro(c,&AMat,Bvec);
+	    COMETTest(c,&AMat,Bvec);
+            //COMETCollision(c,&AMat,Bvec);
+            //COMETMacro(c,&AMat,Bvec);
 
             if(level>0)
               addFAS(c,Bvec);
@@ -556,6 +563,53 @@ class COMETESBGKDiscretizer
   }
 
   template<class MatrixType>
+  void COMETTest(const int cell, MatrixType Amat, TArray& BVec)
+  {
+    const int order=_numDir;
+
+    VectorT3Array& v = _velocity;
+    TArray& density = _density;
+    
+    const T two(2.0);
+
+    T coeff;
+    int count = 1;
+    
+    for(int direction=0;direction<_numDir;direction++)
+    {
+	const TArray& f = *_fArrays[direction];
+	const TArray& fEqES = *_fEqESArrays[direction];
+	coeff =_cellVolume[cell]*_collisionFrequency[cell];
+	
+	T C1=(_cx[direction]-v[cell][0]);
+	T C2=(_cy[direction]-v[cell][1]);
+	T C3=(_cz[direction]-v[cell][2]);
+	
+	Amat->getElement(count,order+1)+=coeff*fEqES[cell]*(two*_coeffg[cell][1]*C1-_coeffg[cell][2]);
+	Amat->getElement(count,order+2)+=coeff*fEqES[cell]*(two*_coeffg[cell][3]*C2-_coeffg[cell][4]);
+	Amat->getElement(count,order+3)+=coeff*fEqES[cell]*(two*_coeffg[cell][5]*C3-_coeffg[cell][6]);
+	Amat->getElement(count,count)-=coeff;
+	
+	BVec[count-1]+=coeff*(fEqES[cell]-f[cell]);
+	
+	Amat->getElement(_numDir+1,count)+=_wts[direction]*C1/density[cell];
+	BVec[_numDir]+=_cx[direction]*_wts[direction]*f[cell]/density[cell];
+	Amat->getElement(_numDir+2,count)+=_wts[direction]*C2/density[cell];
+	BVec[_numDir+1]+=_cy[direction]*_wts[direction]*f[cell]/density[cell];
+	Amat->getElement(_numDir+3,count)+=_wts[direction]*C3/density[cell];
+	BVec[_numDir+2]+=_cz[direction]*_wts[direction]*f[cell]/density[cell];
+	
+	count++;
+    }
+    Amat->getElement(_numDir+1,_numDir+1)-=1;
+    BVec[_numDir]-=v[cell][0];
+    Amat->getElement(_numDir+2,_numDir+2)-=1;
+    BVec[_numDir+1]-=v[cell][1];
+    Amat->getElement(_numDir+3,_numDir+3)-=1;
+    BVec[_numDir+2]-=v[cell][2];
+  }
+  
+  template<class MatrixType>
   void COMETCollision(const int cell, MatrixType Amat, TArray& BVec)
   {
     const int order=_numDir;
@@ -720,8 +774,9 @@ class COMETESBGKDiscretizer
 	      COMETUnsteady(c,&AMat,Bvec);
 	    
 	    COMETConvection(c,AMat,Bvec,cellcount);
-	    COMETCollision(c,&AMat,Bvec);
-	    COMETMacro(c,&AMat,Bvec);
+	    COMETTest(c,&AMat,Bvec);
+	    //COMETCollision(c,&AMat,Bvec);
+	    //COMETMacro(c,&AMat,Bvec);
 	 
             if(plusFAS)
               addFAS(c,Bvec);
@@ -751,8 +806,9 @@ class COMETESBGKDiscretizer
 	      COMETUnsteady(c,&AMat,Bvec);
 
 	    COMETConvection(c,AMat,Bvec);
-	    COMETCollision(c,&AMat,Bvec);
-	    COMETMacro(c,&AMat,Bvec);
+            COMETTest(c,&AMat,Bvec);
+	    //COMETCollision(c,&AMat,Bvec);
+	    //COMETMacro(c,&AMat,Bvec);
 
             if(plusFAS)
               addFAS(c,Bvec);
@@ -909,6 +965,7 @@ class COMETESBGKDiscretizer
   TArray** _fArrays;
   TArray** _fN1Arrays;
   TArray** _fN2Arrays;
+  TArray** _fEqESArrays;
   TArray** _fResArrays;
   TArray** _fasArrays;
   
