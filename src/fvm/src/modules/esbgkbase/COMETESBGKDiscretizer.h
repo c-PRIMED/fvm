@@ -150,9 +150,12 @@ class COMETESBGKDiscretizer
     TArray Resid(_numDir+3);
     TArrow AMat(_numDir+3);
 
+    TArray fVal(_numDir);
+
     for(int c=start;((c<cellcount)&&(c>-1));c+=sweep)
     {
-
+        for(int dir=0;dir<_numDir;dir++)
+	  fVal[dir]=(*_fArrays[dir])[c];
 	if(_BCArray[c]==0)
 	{
 	    Bvec.zero();
@@ -163,7 +166,7 @@ class COMETESBGKDiscretizer
 	      COMETUnsteady(c,&AMat,Bvec);	
 	
 	    COMETConvection(c,AMat,Bvec,cellcount);
-	    COMETTest(c,&AMat,Bvec);
+	    COMETTest(c,&AMat,Bvec,fVal);
 	    //COMETCollision(c,&AMat,Bvec);
 	    //COMETMacro(c,&AMat,Bvec);
 
@@ -178,15 +181,15 @@ class COMETESBGKDiscretizer
 	}
         else if(_BCArray[c]==1)
 	{
-            Bvec.zero();
-            Resid.zero();
-            AMat.zero();
+	    Bvec.zero();
+	    Resid.zero();
+	    AMat.zero();
 
             if(_transient)
               COMETUnsteady(c,&AMat,Bvec);
 
             COMETConvection(c,AMat,Bvec);
-	    COMETTest(c,&AMat,Bvec);
+	    COMETTest(c,&AMat,Bvec,fVal);
             //COMETCollision(c,&AMat,Bvec);
             //COMETMacro(c,&AMat,Bvec);
 
@@ -361,7 +364,6 @@ class COMETESBGKDiscretizer
 		}
 		count++;
 	    } 
-
 	}
         /*
 	else if(_BCfArray[f]==3) //If the face in question is a inlet velocity face
@@ -514,7 +516,7 @@ class COMETESBGKDiscretizer
   }
 
   template<class MatrixType>
-  void COMETTest(const int cell, MatrixType Amat, TArray& BVec)
+    void COMETTest(const int cell, MatrixType Amat, TArray& BVec, TArray& fV)
   {
     const int order=_numDir;
 
@@ -528,7 +530,7 @@ class COMETESBGKDiscretizer
     
     for(int direction=0;direction<_numDir;direction++)
     {
-	const TArray& f = *_fArrays[direction];
+      //const TArray& f = *_fArrays[direction];
 	const TArray& fEqES = *_fEqESArrays[direction];
 	coeff =_cellVolume[cell]*_collisionFrequency[cell];
 	
@@ -541,14 +543,14 @@ class COMETESBGKDiscretizer
 	Amat->getElement(count,order+3)+=coeff*fEqES[cell]*(two*_coeffg[cell][5]*C3-_coeffg[cell][6]);
 	Amat->getElement(count,count)-=coeff;
 	
-	BVec[count-1]+=coeff*(fEqES[cell]-f[cell]);
+	BVec[count-1]+=coeff*(fEqES[cell]-fV[direction]);
 	
 	Amat->getElement(_numDir+1,count)+=_wts[direction]*C1/density[cell];
-	BVec[_numDir]+=_cx[direction]*_wts[direction]*f[cell]/density[cell];
+	BVec[_numDir]+=_cx[direction]*_wts[direction]*fV[direction]/density[cell];
 	Amat->getElement(_numDir+2,count)+=_wts[direction]*C2/density[cell];
-	BVec[_numDir+1]+=_cy[direction]*_wts[direction]*f[cell]/density[cell];
+	BVec[_numDir+1]+=_cy[direction]*_wts[direction]*fV[direction]/density[cell];
 	Amat->getElement(_numDir+3,count)+=_wts[direction]*C3/density[cell];
-	BVec[_numDir+2]+=_cz[direction]*_wts[direction]*f[cell]/density[cell];
+	BVec[_numDir+2]+=_cz[direction]*_wts[direction]*fV[direction]/density[cell];
 	
 	count++;
     }
@@ -656,6 +658,20 @@ class COMETESBGKDiscretizer
     vR[cell][2]=-Rvec[_numDir+2];
   }
 
+  void Distribute(const int cell, TArray& Rvec)
+  {
+    VectorT3Array& vR = _velocityResidual;
+
+    for(int direction=0;direction<_numDir;direction++)
+    {
+        TArray& fRes = *_fResArrays[direction];
+        fRes[cell]=-Rvec[direction];
+    }
+    vR[cell][0]=-Rvec[_numDir];
+    vR[cell][1]=-Rvec[_numDir+1];
+    vR[cell][2]=-Rvec[_numDir+2];
+  }
+
   void ComputeMacroparameters(const int cell)
   {
 
@@ -708,10 +724,13 @@ class COMETESBGKDiscretizer
     TArray Bvec(_numDir+3);
     TArray Resid(_numDir+3);
     TArrow AMat(_numDir+3);
-    
+
+    TArray fVal(_numDir);
+
     for(int c=0;c<cellcount;c++)
     {
-	
+        for(int dir=0;dir<_numDir;dir++)
+	  fVal[dir]=(*_fArrays[dir])[c];
 	if(_BCArray[c]==0)
 	{
 	    Bvec.zero();
@@ -722,7 +741,7 @@ class COMETESBGKDiscretizer
 	      COMETUnsteady(c,&AMat,Bvec);
 	    
 	    COMETConvection(c,AMat,Bvec,cellcount);
-	    COMETTest(c,&AMat,Bvec);
+	    COMETTest(c,&AMat,Bvec,fVal);
 	    //COMETCollision(c,&AMat,Bvec);
 	    //COMETMacro(c,&AMat,Bvec);
 	 
@@ -730,17 +749,18 @@ class COMETESBGKDiscretizer
               addFAS(c,Bvec);
    
 	    traceSum+=AMat.getTraceAbs();
-	    Resid+=Bvec;
-	    Bvec.zero();
-	    Distribute(c,Bvec,Resid);
+	    Resid=Bvec;
+	    //Bvec.zero();
+	    Distribute(c,Resid);
 
 	    makeValueArray(c,Bvec);
 
             AMat.multiply(Resid,Bvec);
             Resid=Bvec; 
 
-	    ArrayAbs(Bvec);
-	    ArrayAbs(Resid);
+	    //ArrayAbs(Bvec);
+	    //ArrayAbs(Resid);
+	    ArrayAbs(Bvec,Resid);
 	    Bsum+=Bvec;
 	    ResidSum+=Resid;
 	}
@@ -754,7 +774,7 @@ class COMETESBGKDiscretizer
 	      COMETUnsteady(c,&AMat,Bvec);
 
 	    COMETConvection(c,AMat,Bvec);
-            COMETTest(c,&AMat,Bvec);
+            COMETTest(c,&AMat,Bvec,fVal);
 	    //COMETCollision(c,&AMat,Bvec);
 	    //COMETMacro(c,&AMat,Bvec);
 
@@ -762,17 +782,18 @@ class COMETESBGKDiscretizer
               addFAS(c,Bvec);
 
 	    traceSum+=AMat.getTraceAbs();
-	    Resid+=Bvec;
-	    Bvec.zero();
-	    Distribute(c,Bvec,Resid);
+	    Resid=Bvec;
+	    //Bvec.zero();
+	    Distribute(c,Resid);
 
 	    makeValueArray(c,Bvec);
 
             AMat.multiply(Resid,Bvec);
             Resid=Bvec; 
 
-	    ArrayAbs(Bvec);
-	    ArrayAbs(Resid);
+	    //ArrayAbs(Bvec);
+	    //ArrayAbs(Resid);
+	    ArrayAbs(Bvec,Resid);
 	    Bsum+=Bvec;
 	    ResidSum+=Resid;
 	}
@@ -846,6 +867,16 @@ class COMETESBGKDiscretizer
     int length=o.getLength();
     for(int i=0;i<length;i++)
       o[i]=fabs(o[i]);
+  }
+
+  void ArrayAbs(TArray& o1, TArray& o2)
+  {
+    int length=o1.getLength();
+    for(int i=0;i<length;i++)
+    {
+	o1[i]=fabs(o1[i]);
+	o2[i]=fabs(o2[i]);
+    }
   }
 
   void makeValueArray(const int c, TArray& o)
