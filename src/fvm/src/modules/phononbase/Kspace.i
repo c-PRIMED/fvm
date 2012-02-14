@@ -34,6 +34,7 @@ class Kspace
   T FindBallisticHeatRate(const Tvec Af,const T T1,const T T2);
   ArrayBase* getVelocities();
   ArrayBase* getReflectionArray(const Mesh& mesh, const int FgId);
+  ArrayBase* getHollandConductivity(const T Tl);
 
   %extend{
     Kspace<T>* getSelfPointer() {return self;}

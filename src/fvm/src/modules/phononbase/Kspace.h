@@ -9,6 +9,7 @@
 #include "Vector.h"
 #include "pmode.h"
 #include "kvol.h"
+#include "SquareTensor.h"
 
 template<class T>
 class Kspace
@@ -17,6 +18,7 @@ class Kspace
  public:
 
   typedef Kspace<T> Tkspace;
+  typedef Array<T> TArray;
   typedef Vector<T,3> Tvec;
   typedef Array<Tvec> TvecArray;
   typedef Array<int> IntArray;
@@ -26,6 +28,7 @@ class Kspace
   typedef kvol<T> Tkvol;
   typedef shared_ptr<Tkvol> Kvolptr;
   typedef vector<Kvolptr> Volvec;
+  typedef SquareTensor<T,3> T3Tensor;
   typedef typename Tmode::Reflection Reflection;
   typedef typename Tmode::Reflptr Reflptr;
   typedef typename Tmode::Refl_pair Refl_pair;
@@ -575,6 +578,51 @@ class Kspace
 	}
       return reflInd;
     }
+
+  ArrayBase* getHollandConductivity(const T Tl)
+  {//returns the thermal conductivity tensor in row major order
+    T3Tensor KTensor;
+    T3Tensor Dummy;
+    KTensor.zero();
+    Dummy.zero();
+    
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const T dk3=kvol.getdk3();
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Tvec vg=mode.getv();
+	    T tau=mode.gettau();
+	    T de0dT=mode.calcde0dT(Tl);
+	    outerProduct(vg, vg, Dummy);
+	    KTensor+=Dummy*tau*de0dT*dk3;
+	    Dummy.zero();
+	  }
+      }
+
+    TArray* Kptr=new TArray(9);
+    int count=0;
+    for(int j=0;j<3;j++)
+      {
+	for(int i=0;i<3;i++)
+	  {
+	    (*Kptr)[count]=KTensor(i,j);
+	    count++;
+	  }
+      }
+
+    return Kptr;
+  }
+
+  void outerProduct(const Tvec& v1, const Tvec& v2, T3Tensor& out)
+  {
+    for(int i=0;i<3;i++)
+      for(int j=0;j<3;j++)
+	out(i,j)=v1[i]*v2[j];
+  }
   
  private:
 
