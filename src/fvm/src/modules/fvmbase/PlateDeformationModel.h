@@ -58,6 +58,7 @@ public:
           VectorT3Array& nodeDisplacement =
             dynamic_cast<VectorT3Array&>(_geomFields.nodeDisplacement[nodes]);
 	  const T one(1.0);
+          const T zero(0.0);
 
 	  for(int j=0;j<nNodes;j++)
           {
@@ -71,8 +72,10 @@ public:
 		  weight += one/mag(ds);
 	      }
 	      dr = dr/weight;
-	      nodeDisplacement[j][0] = nodeCoordinate0[j][2]*nodeDisplacement[j][0];
-	      nodeDisplacement[j][1] = nodeCoordinate0[j][2]*nodeDisplacement[j][1];
+	      //nodeDisplacement[j][0] = nodeCoordinate0[j][2]*nodeDisplacement[j][0];
+	      //nodeDisplacement[j][1] = nodeCoordinate0[j][2]*nodeDisplacement[j][1];
+	      nodeDisplacement[j][0] = zero;
+              nodeDisplacement[j][1] = zero;
 	      nodeDisplacement[j][2] = dr[2];
 	  }
       }
