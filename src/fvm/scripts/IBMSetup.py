@@ -49,4 +49,6 @@ class IBM():
     def update(self):
         self.ibManager.update()
         self.fluidMetricsCalculator.computeIBInterpolationMatrices(self.sbMeshFaces)
+        
         self.fluidMetricsCalculator.computeSolidInterpolationMatrices(self.sbMeshFaces)  
+       

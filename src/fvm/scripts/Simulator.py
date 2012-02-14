@@ -1,21 +1,23 @@
 from Tools import *
 from ComputeForce import *
 from TimeStep import *
-
+from Persistence import Persistence
+from OnDemandContactModel import *
 
 class Simulator():
 
-    def __init__(self, meshes, models, ibm_update, threshold, voltage, probe,
-                 transient=True, timeStep=1e-8, timevary=True):
+    def __init__(self, meshes, models, ibm_update, 
+                 timeStep=1e-8, minR=10e-9, maxR=50e-9, dc = 7.9):
         
-        self.transient = transient
+        self.transient = models.pmodel.getOptions().transient
         self.timeStep = timeStep
-        self.timeOption = timevary
-        self.ibm_update = ibm_update
-        self.threshold = threshold
-        self.voltage = voltage
-        self.probeIndex = probe
-
+        self.timeStepN1 = timeStep
+        self.timeStepN2 = timeStep
+        self.timeOption = models.pmodel.getOptions().variableTimeStep
+        self.ibm_update = ibm_update        
+	self.minR = minR
+	self.maxR = maxR
+	
         self.enableElecModel = models.enableElecModel
         self.enablePlateModel = models.enablePlateModel
         self.enableFlowModel = models.enableFlowModel
@@ -24,7 +26,8 @@ class Simulator():
         self.geomFields = meshes.geomFields        
         self.solidMeshes = meshes.solidMeshes
         self.fluidMeshes = meshes.fluidMeshes
-       
+        self.fluidMeshesNew = meshes.fluidMeshesNew
+
         self.solidBoundaryMeshes = meshes.solidBoundaryMeshes
         self.solidMetricsCalculator = meshes.solidMetricsCalculator
         self.solidBoundaryMetricsCalculator = meshes.solidBoundaryMetricsCalculator
@@ -33,9 +36,13 @@ class Simulator():
         self.nSolidCells = self.solidCells.getCount()
         self.sbMeshFaces = self.solidBoundaryMeshes[0].getFaces()
         self.beam_thickness = meshes.beam_thickness
+        self.beam_width = meshes.beam_width
+        self.beam_length = meshes.beam_length	
+        self.dielectric_constant = dc
         self.dielectric_thickness = meshes.dielectric_thickness
         print "dielectric thickness in sim %e" % self.dielectric_thickness
         self.gap = meshes.gap
+        self.rn  = []
         
         if self.enableElecModel:
             self.emodel = models.emodel
@@ -57,9 +64,9 @@ class Simulator():
             self.fmodel = models.fmodel
             self.flowFields = models.flowFields           
 
-        if self.enableContactModel:
-            self.cmodel = models.cmodel
-            self.contactFields = models.contactFields
+        #if self.enableContactModel:
+        #    self.cmodel = models.cmodel
+        #    self.contactFields = models.contactFields
                     
         self.globalCount = 0
         self.globalTime = 0.0
@@ -69,33 +76,60 @@ class Simulator():
         self.flowForceSum = 0.0
         self.contactForceSum = 0.0
 
-    def run(self, bias):
+    def restart(self, restartFile):
+        self.globalCount = restartFile.readAttribute('globalCount')
+        self.globalTime = restartFile.readAttribute('globalTime') 
+        self.timeStep = restartFile.readAttribute('timeStep')
+        self.timeStepN1 = restartFile.readAttribute('timeStepN1')
+        self.timeStepN2 = restartFile.readAttribute('timeStepN2')
+        self.poptions.setVar('timeStep',self.timeStep)
+        self.poptions.timeStepN1 = self.timeStepN1
+        self.poptions.timeStepN2 = self.timeStepN2
+        restartFile.close()
+
+    def saveRestartFile(self, outDir, n):
+        saveFileName = outDir + 'checkpoint_' + str(n) + '.hdf5'
+        f = Persistence(saveFileName,'w')
+        f.saveAttribute('globalCount', self.globalCount)
+        f.saveAttribute('globalTime', self.globalTime)
+        ts = self.timeStep
+        tsN1 = self.poptions.timeStepN1
+        tsN2 = self.poptions.timeStepN2
+        f.saveAttribute('timeStep', ts)
+        f.saveAttribute('timeStepN1', tsN1)
+        f.saveAttribute('timeStepN2', tsN2)
+        f.saveFluidMeshes(self.fluidMeshes)
+        f.saveSolidMeshes(self.solidMeshes)
+        f.savePlateModel(self.plateFields,self.pmodel,self.solidMeshes)
+        f.saveElectricModel(self.elecFields,self.emodel,self.fluidMeshes)
+        f.close()     
+
+
+    def run(self, bias, switch, tag):
         self.beamForce[:] = 0.0
         self.elecForceSum = 0.0
         self.flowForceSum = 0.0
         self.contactForceSum = 0.0
-        self.cloestDistance = self.deformation.min(axis=0)[2] + self.gap
+        self.cloestDistance = self.deformation.min(axis=0)[2] + self.gap- self.dielectric_thickness
         self.voltage = bias
+        self.switch = switch
         print '======================================================================='
         #print 'current applied voltage %f' % self.voltage
         print 'Marching at global count %i' % self.globalCount
         print 'Marching at global time %e' % self.globalTime
         print 'cloest distance %e' % self.cloestDistance
         print '----------------------------------------------------------------------'
-        ### use IBM to calculate electrostatic force, damping force and contact force ###
-        if self.cloestDistance > self.threshold:
-
+        ### use IBM to calculate electrostatic force ###
+        if switch == 1:
             if self.enableElecModel:
                 self.ibm_update()
                 for i in range(0, 50):
                     self.emodel.computeIBFacePotential(self.sbMeshFaces)
                     if self.emodel.advance(1):
-                        break
-                   
+                        break                    
                 self.emodel.computeSolidSurfaceForcePerUnitArea(self.sbMeshFaces)
                 self.elecForce = self.elecFields.force[self.sbMeshFaces].asNumPyArray()
-                print "max force %e" % self.elecForce.max(axis=0)[2]
-                print "min force %e" % self.elecForce.min(axis=0)[2]
+                
                 for c in range(0, self.nSolidSelfCells):
                     botFaceIndex = c
                     topFaceIndex = c+self.nSolidSelfCells
@@ -103,119 +137,67 @@ class Simulator():
                     self.elecForceSum += self.elecForce[botFaceIndex][2] + self.elecForce[topFaceIndex][2]
                 for c in range(self.nSolidSelfCells, self.nSolidCells):
                     self.beamForce[c] += self.elecForce[self.nSolidSelfCells+c][2]  
-                    self.elecForceSum += self.elecForce[self.nSolidSelfCells+c][2] 
-            """
-            if self.enableFlowModel:
-            	for i in range(0,30):
-                    self.fmodel.computeIBFaceVelocity(self.sbMeshFaces)
-                    if self.fmodel.advance(1):
-                        break
-                self.fmodel.computeSolidSurfaceForcePerUnitArea(self.sbMeshFaces)
-                self.flowForce = self.flowFields.force[self.sbMeshFaces].asNumPyArray()
-                for c in range(0, self.nSolidSelfCells):
-                    botFaceIndex = c
-                    topFaceIndex = c+self.nSolidSelfCells
-                    self.beamForce[c] += self.flowForce[botFaceIndex][2] + self.flowForce[topFaceIndex][2]
-                    self.flowForceSum += self.flowForce[botFaceIndex][2] + self.flowForce[topFaceIndex][2]
-                for c in range(self.nSolidSelfCells, self.nSolidCells):
-                    self.beamForce[c] += self.flowForce[self.nSolidSelfCells+c][2]  
-                    self.flowForceSum += self.flowForce[self.nSolidSelfCells+c][2] 
-	    
-            if self.enableContactModel:
-                self.cmodel.computeSolidSurfaceForcePerUnitArea(self.sbMeshFaces)
-                self.contactForce = self.contactFields.force[self.sbMeshFaces].asNumPyArray()
-                for c in range(0, self.nSolidSelfCells):
-                    botFaceIndex = c
-                    topFaceIndex = c+self.nSolidSelfCells
-                    self.beamForce[c] += self.contactForce[botFaceIndex][2] + self.contactForce[topFaceIndex][2]
-                    self.contactForceSum += self.contactForce[botFaceIndex][2] + self.contactForce[topFaceIndex][2]
-                for c in range(self.nSolidSelfCells, self.nSolidCells):
-                    self.beamForce[c] += self.contactForce[self.nSolidSelfCells+c][2]  
-                    self.contactForceSum += self.contactForce[self.nSolidSelfCells+c][2] 
-            """   
-            if self.enableFlowModel:
-                for c in range (0, self.nSolidCells):
-                    distance = self.gap + self.deformation[c][2]
-                    vel = self.velocity[c][2]
-                    width = 120e-6
-                    length = 500e-6
-                    Cf = computeDampCoeff(distance, width, self.beam_thickness)
-                    dforce = computeDampForce(vel, Cf)
-                    area = width
-                    dforce /= area
-                    self.beamForce[c] += dforce
-                    self.flowForceSum += dforce
-
-            if self.enableContactModel:
-                for c in range (0, self.nSolidCells):
-                    distance = self.gap + self.deformation[c][2]
-                    cforce = computeContactForce(distance)
-                    self.beamForce[c] += cforce
-                    self.contactForceSum += cforce
-
-        ### simplied model to calculate electrostatic force, damping force and contact force ###   
-        else:       
+                    self.elecForceSum += self.elecForce[self.nSolidSelfCells+c][2]                
+           
+        ### simplied model to calculate electrostatic force###   
+        if switch == 0:       
             if self.enableElecModel:
                 for c in range (0, self.nSolidCells):
-                    distance = self.gap + self.deformation[c][2]
-                    realBias = calculateVoltage(self.voltage, 1.0, distance, 7.9, self.dielectric_thickness)
-                    if c == self.probeIndex:
-                        print 'the current bias is %f' % realBias
+                    distance = self.gap + self.deformation[c][2] - self.dielectric_thickness
+                    realBias = calculateVoltage(self.voltage, 1.0, distance, self.dielectric_constant, self.dielectric_thickness)
                     eforce = - computeElectrostaticForce(realBias, distance)
-                    self.beamForce[c] += eforce
+           	    self.beamForce[c] += eforce
                     self.elecForceSum += eforce
-            
-            if self.enableFlowModel:
+                    
+        ### use compact damping model to compute damp force ###    
+        if self.enableFlowModel:
                 for c in range (0, self.nSolidCells):
-                    distance = self.gap + self.deformation[c][2]
+                    distance = self.gap + self.deformation[c][2]- self.dielectric_thickness
                     vel = self.velocity[c][2]
-                    width = 120e-6
-                    length = 500e-6
-                    Cf = computeDampCoeff(distance, width, self.beam_thickness)
+                    width = self.beam_width
+                    length = self.beam_length
+                    if tag == 'pullin':
+                    	Cf = computeDampCoeff(distance, width, self.beam_thickness)
+                    if tag == 'pullout':
+                    	Cf = computeDampCoeff(distance, width, self.beam_thickness)
                     dforce = computeDampForce(vel, Cf)
                     area = width
                     dforce /= area
                     self.beamForce[c] += dforce
                     self.flowForceSum += dforce
-            
-            if self.enableContactModel:
+        
+        ### use new contact model to compute contact force ###    
+        if self.enableContactModel:
+        	if self.globalCount == 0:
+        	    self.rn = generateRandomNumber(self.nSolidCells)
                 for c in range (0, self.nSolidCells):
-                    distance = self.gap + self.deformation[c][2]
+                    distance = self.gap + self.deformation[c][2]- self.dielectric_thickness
                     cforce = computeContactForce(distance)
+                    #cforce = computeContactForceOnDemand(0,0,0,0, distance, c, self.rn)
                     self.beamForce[c] += cforce
                     self.contactForceSum += cforce
-            
-        #print '----------------------------------------------------------------------'
-        
-        for i in range (0, 2):    
-            self.pmodel.advance(1)
-        #print 'solve beam plate deformation done!'
-
+       
+         
+        self.pmodel.advance(3)        
         self.dmodel.calculateNodeDisplacement()
         self.dmodel.deformPlate()
         self.solidMetricsCalculator.recalculate_deform()
-        #print 'deform beam done!'
+        
+        nodeCoordMesh = self.solidMeshes[0].getNodeCoordinates().asNumPyArray()
+        nodeCoord = self.geomFields.coordinate[self.solidMeshes[0].getNodes()].asNumPyArray()
+        nodeCoordMesh[:,:] = nodeCoord[:,:]
 
-        if self.enableFlowModel == False: 
-            self.dmodel.updateBoundaryMesh(self.solidMeshes[0], 
+        self.dmodel.updateBoundaryMesh(self.solidMeshes[0], 
                                            self.solidBoundaryMeshes[0], 
                                            self.beam_thickness)
-        else:
-            self.dmodel.updateBoundaryMesh(self.solidMeshes[0], 
-                                           self.solidBoundaryMeshes[0], 
-                                           self.beam_thickness, 
-                                           self.timeStep, 
-                                           self.flowFields.velocity)
         self.solidBoundaryMetricsCalculator.recalculate_deform()  
         print 'update boundary mesh done!'
         
-        #print '----------------------------------------------------------------------'
         
         if self.transient == True:
             self.pmodel.updateTime()
             self.dmodel.updateTime()
-            if self.enableFlowModel == True:
-                self.fmodel.updateTime()
+          
             self.globalTime += self.timeStep
             #print 'update time done!'
         self.globalCount += 1
@@ -225,24 +207,25 @@ class Simulator():
         
         if self.timeOption == True:
             mints = 5.0e-8
-            dr = computeTravelDistance(self.cloestDistance, self.gap)
+            dr = computeTravelDistance(self.cloestDistance, self.gap, self.minR, self.maxR)
             for c in range(0, self.nSolidCells):
                 acc = fabs(self.acceleration[c])
                 vel = fabs(self.velocity[c][2])
-                ts = computeTimeStep(dr, vel, acc)
-                if ts > 1e-15 and ts < mints:
+                ts = computeTimeStep(dr, vel, acc, self.minR, self.maxR)
+                if ts > 0 and ts < mints:
                     mints = ts
-            if mints > 0:
-                self.timeStep = mints 
+                #if ts > 0 and ts < 5e-10:
+                #    mints = 5e-10
+            
+            self.timeStep = mints 
             self.poptions.setVar('timeStep',self.timeStep)    
-            print 'time step %e' % self.timeStep  
+        print 'time step %e' % self.timeStep  
+	print 'cloest distance %e' % self.cloestDistance
 
-
-        if self.cloestDistance < 0:
+        if tag == 'pullin' and self.cloestDistance < 5e-9:
             return False
+        if tag == 'pullout' and self.cloestDistance > self.gap*0.99:
+            return False        	
 
-    
-
-        
             
     

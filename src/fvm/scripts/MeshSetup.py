@@ -1,15 +1,17 @@
 import fvm.fvmbaseExt as fvmbaseExt
 import fvm.models_atyped_double as models
 from FluentCase import FluentCase
-
+from Persistence import Persistence
 
 	
 class MeshSetup:
     
-    def __init__(self, beam, fluid, beam_thickness, gap, dielectric_thickness=0, enableDielectric=False):
+    def __init__(self, beam, fluid, beam_thickness, beam_width, beam_length, gap, dielectric_thickness=0, enableDielectric=False):
         self.beamCaseFile = beam
         self.fluidCaseFile = fluid
         self.beam_thickness = beam_thickness
+        self.beam_width = beam_width
+        self.beam_length = beam_length
         self.dielectric_thickness = dielectric_thickness
         self.gap = gap
         self.probeIndex = 0
@@ -36,6 +38,22 @@ class MeshSetup:
 
         self.solidBoundaryMeshes = [m.extrude(1, self.beam_thickness, True) for m in self.solidMeshes]
         self.solidBoundaryMetricsCalculator = models.MeshMetricsCalculatorA(self.geomFields,self.solidBoundaryMeshes)
+        
+        self.solidBoundaryMetricsCalculator.init()
+
+    def restart(self, restartFile):
+        restartFile.readFluidMeshes(self.fluidMeshes)
+        restartFile.readSolidMeshes(self.solidMeshes)
+
+        self.solidBoundaryMeshes = [m.extrude(1, self.beam_thickness, True) for m in self.solidMeshes]
+        self.solidBoundaryMetricsCalculator = models.MeshMetricsCalculatorA(self.geomFields,self.solidBoundaryMeshes)
+        solidNodeCoord = self.solidMeshes[0].getNodeCoordinates().asNumPyArray()
+        solidBoundaryNodeCoord = self.solidBoundaryMeshes[0].getNodeCoordinates().asNumPyArray()
+        ns = self.solidMeshes[0].getNodes().getSelfCount()
+        nb = self.solidBoundaryMeshes[0].getNodes().getSelfCount()
+        for n in range(0, ns):
+            solidBoundaryNodeCoord[n][2] += solidNodeCoord[n][2]
+            solidBoundaryNodeCoord[n+ns][2] += solidNodeCoord[n][2]
         self.solidBoundaryMetricsCalculator.init()
 
     def translate(self, tag, dx=0, dy=0, dz=0):
@@ -101,17 +119,15 @@ class MeshSetup:
                 print "number of fluid meshes is wrong. Can not apply dielectric"
             else:
                 self.shellMesh = self.fluidMeshes[0].createShell(interfaceID, self.fluidMeshes[1],interfaceID)
-                self.fluidMeshesNew=[self.fluidMeshes[1], self.fluidMeshes[0], self.shellMesh]
+                self.fluidMeshesNew=[self.fluidMeshes[0], self.fluidMeshes[1], self.shellMesh]
             self.fluidMetricsCalculator = models.MeshMetricsCalculatorA(self.geomFields,self.fluidMeshesNew)
             self.fluidMetricsCalculator.init() 
    
     def summary(self):
-        nSelfCells = 0
-        nCells = 0
         for mesh in self.solidMeshes:
             cells = mesh.getCells()
-            nSelfCells += cells.getSelfCount()
-            nCells += cells.getCount()
+            nSelfCells = cells.getSelfCount()
+            nCells = cells.getCount()
             print '-------------------------------------------------------------'
             print 'solid mesh: number of local cells %i' % nSelfCells 
             print 'solid mesh: number of total cells %i' % nCells 
@@ -126,12 +142,11 @@ class MeshSetup:
                 print 'Error: beam mesh is not centered at zero Z direction!'
                 print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
             print '-------------------------------------------------------------'
-        nSelfCells = 0
-        nCells = 0
-        for mesh in self.fluidMeshes:
+        
+        for mesh in self.fluidMeshesNew:
             cells = mesh.getCells()
-            nSelfCells += cells.getSelfCount()
-            nCells += cells.getCount()
+            nSelfCells = cells.getSelfCount()
+            nCells = cells.getCount()
             print '-------------------------------------------------------------'
             print 'fluid mesh: number of local cells %i' % nSelfCells 
             print 'fluid mesh: number of total cells %i' % nCells 
@@ -142,22 +157,10 @@ class MeshSetup:
             print 'fluid mesh y range [ %e , %e ]' % (rMin[1], rMax[1])
             print 'fluid mesh z range [ %e , %e ]' % (rMin[2], rMax[2])
             print '--------------------------------------------------------------'
-        if self.enableDielectric == True:
-            cells = self.shellMesh.getCells()
-            nCells = cells.getCount()
-            nSelfCells = cells.getSelfCount()
-            print 'shell mesh: number of local cells %i' % nSelfCells
-            print 'shell mesh: number of local cells %i' % nCells
-            rCells = self.geomFields.coordinate[cells].asNumPyArray()
-            rMin = rCells.min(axis=0)
-            rMax = rCells.max(axis=0)
-            print 'shell mesh x range [ %e , %e ]' % (rMin[0], rMax[0])
-            print 'shell mesh y range [ %e , %e ]' % (rMin[1], rMax[1])
-            print 'shell mesh z range [ %e , %e ]' % (rMin[2], rMax[2])
-        nFaces = 0
+          
         for mesh in self.solidBoundaryMeshes:
             faces = mesh.getFaces()
-            nFaces += faces.getCount()
+            nFaces = faces.getCount()
             print '--------------------------------------------------------------'
             print 'solid boundary mesh: number of faces %i' % nFaces
             rCells = self.geomFields.coordinate[faces].asNumPyArray()
