@@ -537,19 +537,11 @@ class PhononModel : public Model
   void advance(const int niter)
   {
 
-    int early=0;
-
     for(int n=0; n<niter; n++)  
       {
 	const int klength =_kspace.getlength();
 	MFRPtr rNorm;
     
-	/*
-   	  _macroFields.velocity.syncLocal();
- 	  _macroFields.temperature.syncLocal();   ???????
-  	  _macroFields.density .syncLocal();
-	*/	
-
 	for(int k=0; k<klength;k++)
 	  {
 	    
@@ -567,9 +559,7 @@ class PhononModel : public Model
 		linearizePhononModel(ls,mode);
 		ls.initSolve();
 		
-		//const T* kNorm=_options.getKineticLinearSolver().solve(ls);
 		MFRPtr kNorm(_options.getPhononLinearSolver().solve(ls));
-		
 		
 		if (!rNorm)
 		  rNorm = kNorm;
@@ -602,15 +592,13 @@ class PhononModel : public Model
             
  
 	MFRPtr normRatio((*rNorm)/(*_initialnorm));	
-	//	MFRPtr vnormRatio((*vNorm)/(*_initialKmodelvNorm));
-	//if ( MPI::COMM_WORLD.Get_rank() == 0 )
+
 	if(_niters % _options.showResidual == 0)
 	  cout << _niters << ": " << *rNorm <<endl;
 
 	_niters++;
 	if ((*rNorm < _options.absTolerance)||(*normRatio < _options.relTolerance )) 
 	  {
-	    early=1;
 	    cout << endl;
 	    cout << "Final Residual at "<<_niters<<": "<< *rNorm <<endl;
 	    break;}
@@ -622,60 +610,6 @@ class PhononModel : public Model
 
     updateHeatFlux();	  
   }
-
-  /*void advanceCOMET(const int niters)
-  {  
-    
-    T tol=_options.absTolerance;
-    T aveResid=-1;
-    T residChange=1;
-    int exit=0;
-
-    for(int n=0;n<niters;n++)
-      {
-	if(exit==1)
-	  {
-	    break;
-	  }
-
-	const int numMeshes=_meshes.size();
-	for(int msh=0;msh<numMeshes;msh++)
-	  {
-	    const Mesh& mesh=*_meshes[msh];
-	    const BCcellArray& BCArray=*(_BCells[msh]);
-	    const BCfaceArray& BCfArray=*(_BFaces[msh]);
-	    COMETDiscretizer<T> CDisc(mesh,_geomFields,_macro,
-				      _kspace,_bcMap,BCArray,BCfArray);
-
-	    CDisc.setfgFinder();
-	    CDisc.findResid();
-	    
-	    if(aveResid==-1)
-	      aveResid=CDisc.getAveResid();
-	    else
-	      {
-		residChange=fabs(aveResid-CDisc.getAveResid()/aveResid);
-		aveResid=CDisc.getAveResid();
-	      }
-
-	    if(n%_options.showResidual==0)
-	      cout<<"[Iteration: "<<n<<" || Residual Change: "<<residChange<<
-		" || Average Residual: "<<aveResid<<"]"<<endl;
-	    
-	    if(aveResid>tol)
-	      {
-		CDisc.COMETSolve();
-		callBoundaryConditions();
-	      }
-	    else
-	      {
-		exit=1;
-		break;
-	      }
-	  }
-      }
-    COMETupdateTL();
-    }*/
   
   void printTemp()
   {
