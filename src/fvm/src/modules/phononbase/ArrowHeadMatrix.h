@@ -222,7 +222,7 @@ class ArrowHeadMatrix : public MatrixJML<T>
   }
 
   void multiply(const TArray& x, TArray& b)
-    {
+  { //Ax=b
       int len=x.getLength();
       if(len==_order)
 	{
