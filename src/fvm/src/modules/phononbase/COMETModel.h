@@ -141,7 +141,6 @@ class COMETModel : public Model
 		 TArrptr evar=shared_ptr<TArray>(new TArray(numcells));
 		 TArrptr resid=shared_ptr<TArray>(new TArray(numcells));
 		 const T einit=mode.calce0(Tinit);
-		 e0sum+=einit*dk3/tau;
 		 *evar=einit;
 		 *e0var=einit;
 		 *resid=0.;
@@ -258,6 +257,8 @@ class COMETModel : public Model
 	 *TlResidCell=0.;
 	 _macro.TlResidual.addArray(cells,TlResidCell);
        }
+     applyTemperatureBoundaries();
+     _residual=updateResid(false);
      cout<<"Creating Coarse Levels..."<<endl;
      MakeCoarseModel(this);
      cout<<"Coarse Levels Completed."<<endl;
@@ -835,6 +836,7 @@ class COMETModel : public Model
 
 	FaceAreaField.addArray(outFaces,outFaceAreaPtr);
 	areaMagField.addArray(outFaces,outFaceAreaMagPtr);
+	cout<<"Level: "<<_level+1<<" Mesh: "<<n<<" Cells: "<<outCells.getSelfCount()<<endl;
 
 	if(smallestMesh<0)
 	  smallestMesh=outCells.getSelfCount();
@@ -1161,7 +1163,7 @@ class COMETModel : public Model
   
   void advance(const int iters)
   {
-    applyTemperatureBoundaries();
+    //applyTemperatureBoundaries();
     _residual=updateResid(false);
     int niters=0;
     const T absTol=_options.absTolerance;
@@ -1297,6 +1299,76 @@ class COMETModel : public Model
 	}
       return vals;
     }
+
+  void equilibrate()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh=*_meshes[n];
+	const StorageSite& cells=mesh.getCells();
+	const int numcells=cells.getCount();
+	const TArray& Tl=dynamic_cast<const TArray&>(_macro.temperature[cells]);
+	const int len=_kspace.getlength();
+
+	cout<<"Equilibrating cells to Lattice Temperature:"<<endl;
+	for(int c=0;c<numcells;c++)
+	  cout<<Tl[c]<<endl;
+	
+	for(int k=0;k<len;k++)
+	  {
+	    Tkvol& kvol=_kspace.getkvol(k);
+	    const int modes=kvol.getmodenum();
+	    for(int m=0;m<modes;m++)
+	      {
+		Tmode& mode=kvol.getmode(m);
+		Field& eField=mode.getfield();
+		TArray& eArray=dynamic_cast<TArray&>(eField[cells]);
+		for(int c=0;c<numcells;c++)
+		  eArray[c]=mode.calce0(Tl[c]);
+	      }
+	  }
+      }
+  }
+
+  ArrayBase& getLatticeTemp(const Mesh& mesh)
+  {
+    const StorageSite& cells=mesh.getCells();
+    TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[cells]);
+    return Tl;
+  }
+
+  void setStraightLine(const T T1, const T T2)
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh=*_meshes[n];
+	const StorageSite& cells=mesh.getCells();
+	const int numcells=cells.getCount();
+	const int selfcells=cells.getSelfCount();
+	TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[cells]);
+	const VectorT3Array& coords=dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+	T xmax(0.);
+	T xmin(0.);
+
+	for(int c=0;c<numcells;c++)
+	  {
+	    T x=coords[c][0];
+	    if(x>xmax)
+	      xmax=x;
+	    if(x<xmin)
+	      xmin=x;
+	  }
+	
+	for(int c=0;c<selfcells;c++)
+	  {
+	    T factor=(coords[c][0]-xmin)/(xmax-xmin);
+	    Tl[c]=T1+factor*(T2-T1);
+	  }
+
+      }
+  }
   
   void setBCMap(COMETBCMap* bcMap) {_bcMap=*bcMap;}
   void setCoarserLevel(TCOMET* cl) {_coarserLevel=cl;}

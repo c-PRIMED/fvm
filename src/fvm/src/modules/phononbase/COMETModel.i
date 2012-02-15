@@ -30,6 +30,10 @@ class COMETModel : public Model
   COMETBCMap& getBCs();
   T getResidual();
   ArrayBase* getValueArray(const Mesh& mesh, const int cell);
+  void equilibrate();
+  ArrayBase& getLatticeTemp(const Mesh& mesh);
+  void setStraightLine(const T T1,const T T2);
+  void applyTemperatureBoundaries();
   
  private:
   
