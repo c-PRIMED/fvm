@@ -4,6 +4,7 @@
 #include "NumType.h"
 #include "Vector.h"
 #include <sstream>
+#include "CRConnectivity.h"
 
 
 template <class T, int N>
