@@ -78,12 +78,13 @@ class COMETDiscretizer
       start=0;
     if(dir==-1)
       start=cellcount-1;
+    const int totalmodes=_kspace.gettotmodes();
+    TArray Bvec(totalmodes+1);
+    TArray Resid(totalmodes+1);
+    TArrow AMat(totalmodes+1);
     
     for(int c=start;((c<cellcount)&&(c>-1));c+=dir)
       {	
-	const int totalmodes=_kspace.gettotmodes();
-	TArray Bvec(totalmodes+1);
-	TArray Resid(totalmodes+1);
 		
 	if(_BCArray[c]==0)  //no reflections at all--interior cell or temperature boundary
 	  {
@@ -92,7 +93,7 @@ class COMETDiscretizer
 	  
 	    while(dt>_options.NewtonTol && NewtonIters<10)
 	      {
-		TArrow AMat(totalmodes+1);
+		
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
@@ -122,20 +123,20 @@ class COMETDiscretizer
 	    int NewtonIters=0;
 	    while(dt>_options.NewtonTol && NewtonIters<10)
 	      {
-		TSquare AMat(totalmodes+1);
+		TSquare AMatS(totalmodes+1);
 		Bvec.zero();
 		Resid.zero();
-		AMat.zero();
+		AMatS.zero();
 		
-		COMETConvection(c,AMat,Bvec);
-		COMETCollision(c,&AMat,Bvec);
-		COMETEquilibrium(c,&AMat,Bvec);
+		COMETConvection(c,AMatS,Bvec);
+		COMETCollision(c,&AMatS,Bvec);
+		COMETEquilibrium(c,&AMatS,Bvec);
 		  
 		if(level>0)
 		  addFAS(c,Bvec);
 	       
 		Resid=Bvec;
-		AMat.Solve(Bvec);
+		AMatS.Solve(Bvec);
 		
 		Distribute(c,Bvec,Resid);
 		updatee0(c);
@@ -151,7 +152,7 @@ class COMETDiscretizer
 	  
 	    while(dt>_options.NewtonTol && NewtonIters<10)
 	      {
-		TArrow AMat(totalmodes+1);
+
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
@@ -183,20 +184,20 @@ class COMETDiscretizer
 	    updateGhost(c);
 	    while(dt>_options.NewtonTol && NewtonIters<10)
 	      {
-		TSquare AMat(totalmodes+1);
+		TSquare AMatS(totalmodes+1);
 		Bvec.zero();
 		Resid.zero();
-		AMat.zero();
+		AMatS.zero();
 		
-		COMETConvection(c,AMat,Bvec);
-		COMETCollision(c,&AMat,Bvec);
-		COMETEquilibrium(c,&AMat,Bvec);
+		COMETConvection(c,AMatS,Bvec);
+		COMETCollision(c,&AMatS,Bvec);
+		COMETEquilibrium(c,&AMatS,Bvec);
 		
 		if(level>0)
 		  addFAS(c,Bvec);
 	       
 		Resid=Bvec;
-		AMat.Solve(Bvec);
+		AMatS.Solve(Bvec);
 		
 		Distribute(c,Bvec,Resid);
 		updatee0(c);
@@ -528,20 +529,23 @@ class COMETDiscretizer
     T traceSum=0.;
     TArray Bvec(totalmodes+1);
     TArray Resid(totalmodes+1);
+    TArray Dummy(totalmodes+1);
+    TArrow AMat(totalmodes+1);
     ResidSum.zero();
     Bsum.zero();
+    Dummy.zero();
     
     for(int c=0;c<cellcount;c++)
       {	
 	Bvec.zero();
 	Resid.zero();
+	Dummy.zero();
 
 	if(_BCArray[c]==0 || _BCArray[c]==2)  //Arrowhead
 	  {
-
 	    if(_BCArray[c]==2)
 	      updateGhost(c);
-	    TArrow AMat(totalmodes+1);
+
 	    AMat.zero();
 
 	    COMETConvection(c,AMat,Bvec);	
@@ -553,6 +557,23 @@ class COMETDiscretizer
 
 	    traceSum+=AMat.getTraceAbs();
 	    
+	    Resid=Bvec;
+	    Bvec.zero();
+	    Distribute(c,Bvec,Resid);
+	    ArrayAbs(Resid);
+	    ResidSum+=Resid;
+
+	    AMat.multiply(Resid,Bvec);
+	    Resid=Bvec;
+	    
+	    makeValueArray(c,Bvec);
+	    AMat.multiply(Bvec,Dummy);
+	    Bvec=Dummy;
+	    ArrayAbs(Bvec);
+	    ArrayAbs(Resid);
+	    Bsum+=Bvec;	    
+
+	    /* OLD VERSION
 	    Resid=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
@@ -564,26 +585,27 @@ class COMETDiscretizer
 	    ArrayAbs(Bvec);
 	    ArrayAbs(Resid);
 	    Bsum+=Bvec;
-	    ResidSum+=Resid;	    
+	    ResidSum+=Resid;*/
+	    
 	  }
 	else if(_BCArray[c]==1 || _BCArray[c]==3) //General Dense
 	  {
-	    TSquare AMat(totalmodes+1);
-	    AMat.zero();
+	    TSquare AMatS(totalmodes+1);
+	    AMatS.zero();
 	    
-	    COMETConvection(c,AMat,Bvec);	
-	    COMETCollision(c,&AMat,Bvec);
-	    COMETEquilibrium(c,&AMat,Bvec);
+	    COMETConvection(c,AMatS,Bvec);	
+	    COMETCollision(c,&AMatS,Bvec);
+	    COMETEquilibrium(c,&AMatS,Bvec);
 	    
 	    if(plusFAS)
 	      addFAS(c,Bvec);
 
-	    traceSum+=AMat.getTraceAbs();
+	    traceSum+=AMatS.getTraceAbs();
 	    Resid=Bvec;
 	    Bvec.zero();
 	    Distribute(c,Bvec,Resid);
 
-	    AMat.multiply(Resid,Bvec);
+	    AMatS.multiply(Resid,Bvec);
 	    Resid=Bvec;
 
 	    makeValueArray(c,Bvec);
@@ -596,9 +618,11 @@ class COMETDiscretizer
 	  throw CException("Unexpected value for boundary cell map.");
       }
 
+    //traceSum=0;  //added
     for(int o=0;o<totalmodes+1;o++)
       {
 	ResidScalar+=ResidSum[o];
+	//traceSum+=Bsum[o]; //added
       }
 
     ResidScalar/=traceSum;
