@@ -1311,9 +1311,9 @@ class COMETModel : public Model
 	const TArray& Tl=dynamic_cast<const TArray&>(_macro.temperature[cells]);
 	const int len=_kspace.getlength();
 
-	cout<<"Equilibrating cells to Lattice Temperature:"<<endl;
-	for(int c=0;c<numcells;c++)
-	  cout<<Tl[c]<<endl;
+	//cout<<"Equilibrating cells to Lattice Temperature:"<<endl;
+	//for(int c=0;c<numcells;c++)
+	  //cout<<Tl[c]<<endl;
 	
 	for(int k=0;k<len;k++)
 	  {
