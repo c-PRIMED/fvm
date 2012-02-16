@@ -88,7 +88,7 @@ class Build:
         for p in self.all_packages:
             self.pkglist[p.name] = p
 
-        # now built dependency list for all packages
+        # now build dependency list for all packages
         for p in self.all_packages:
             deps = []
             p.deps = []
@@ -119,6 +119,8 @@ class Build:
         ''' Add a package to the build list if it or its dependencies have changed. '''
         debug ('add_build %s [%s]' % (pkg, pkg.deps))
         if self.database[pkg.name + '-status'] == 'installed':
+            return 0
+        if pkg.installed():
             return 0
         deps_needed = 0
         for p in pkg.deps:
