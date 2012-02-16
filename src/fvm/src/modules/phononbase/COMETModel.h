@@ -446,7 +446,10 @@ class COMETModel : public Model
 	    newModelPtr->getBCs()=finerModel->getBCs();
 
 	    newModelPtr->initCoarse();
-	    newModelPtr->MakeCoarseModel(newModelPtr);
+	    if(newCount>3)
+	      newModelPtr->MakeCoarseModel(newModelPtr);
+	    else
+	      _options.maxLevels=newModelPtr->getLevel();
 	  }
       }
     else if(_options.AgglomerationMethod=="AMG")
