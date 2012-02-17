@@ -295,7 +295,7 @@ def copytree(src, dst, ctype):
             os.symlink(srcname, dstname)
 
 def set_python_path(dir, reset=False):
-    #py = find_executable('python')
+    py = find_executable('python')
     ver = os.popen("/bin/bash -c 'python -V 2>&1'").readline()
     try:
         a, b = re.compile(r'Python ([^.]*).([^.\n]*)').findall(ver)[0]
@@ -429,7 +429,7 @@ def python_path(name):
 def python_package(name, version):
     cmd = "python -c 'import %s; print %s.__version__'" % (name, name)
     try:
-        ver = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        ver = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=null).stdout.read()
         # parse version string and convert to numbers
         ver = re.findall(r'([\d]+)', ver)
         if not ver:

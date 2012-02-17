@@ -5,7 +5,7 @@
 Build definitions.
 """
 import os, glob, shelve, dirwalk, time, config, sys
-from build_utils import fatal, debug, verbose
+from build_utils import fatal, debug, verbose, python_path
 from tsort import topological_sort
 
 class Build:
@@ -113,15 +113,17 @@ class Build:
             if x != '' and eval(x):
                 if check_timestamp:
                     verbose(1, 'Checking required packages for %s: ' % p.name)
-                self.add_build(p, check_timestamp)
+                self.add_build(p, check_timestamp, True)
 
-    def add_build(self, pkg, check_timestamp):
+    def add_build(self, pkg, check_timestamp, force=False):
         ''' Add a package to the build list if it or its dependencies have changed. '''
-        debug ('add_build %s [%s]' % (pkg, pkg.deps))
+        debug ('add_build %s [%s] %s' % (pkg, pkg.deps, force))
         if self.database[pkg.name + '-status'] == 'installed':
             return 0
-        if pkg.installed():
-            return 0
+        if not force and pkg.installed():
+            path = python_path(pkg.name)
+            if os.path.commonprefix([path,self.libdir]) != self.libdir:
+                return 0
         deps_needed = 0
         for p in pkg.deps:
             deps_needed += self.add_build(p, check_timestamp)

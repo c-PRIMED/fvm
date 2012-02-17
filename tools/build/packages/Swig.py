@@ -16,6 +16,7 @@ class Swig(BuildPkg):
                 return True
         except:
             pass
+        print "swig NOT installed"        
         return False
 
     def _configure(self):
