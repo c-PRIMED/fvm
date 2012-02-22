@@ -126,7 +126,7 @@ class Build:
                 return 0
         deps_needed = 0
         for p in pkg.deps:
-            deps_needed += self.add_build(p, check_timestamp)
+            deps_needed += self.add_build(p, check_timestamp, force)
         if check_timestamp and deps_needed == 0:
             f, t = dirwalk.DirWalk(pkg.psdir).find_newest()
             debug('%s: %s\t%s' % (pkg.psdir, f, time.strftime("%b %d %Y %H:%M %Z", time.localtime(t))))
