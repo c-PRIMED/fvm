@@ -32,8 +32,9 @@ class Boost(BuildPkg):
             pass
         #print "ver=%s" % ver        
         a,b = re.findall(r'([^_]*)_([^_\n]*)',ver)[0]
-        #print "ver=%s.%s" % (a,b)        
-        if int(a) > 1 or int(b) > 45:
+        #print "ver=%s.%s" % (a,b)  
+        # PCL needs 1.45 but nothing else does      
+        if int(a) > 1 or int(b) > 40:
             return True
         return False
     
