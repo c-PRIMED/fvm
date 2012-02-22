@@ -113,8 +113,11 @@ class Build:
             if x != '' and eval(x):
                 if check_timestamp:
                     verbose(1, 'Checking required packages for %s: ' % p.name)
-                self.add_build(p, check_timestamp, True)
-
+                if p.name == 'python':
+                    self.add_build(p, check_timestamp, True)
+                else:
+                    self.add_build(p, check_timestamp)
+                    
     def add_build(self, pkg, check_timestamp, force=False):
         ''' Add a package to the build list if it or its dependencies have changed. '''
         debug ('add_build %s [%s] %s' % (pkg, pkg.deps, force))
