@@ -1,9 +1,9 @@
 from build_packages import *
 
 def h5py_version():
-    cmd = "python -c 'import h5py; print h5py.version.version'"
+    cmd = "python -c 'import h5py; print h5py.version.version' 2> /dev/null"
     try:
-        ver = subprocess.Popen(cmd, shell=True, stderr=null, stdout=subprocess.PIPE).stdout.read()        
+        ver = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()        
         return re.findall(r'([\d]+)', ver)
     except:
         return []

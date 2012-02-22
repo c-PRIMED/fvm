@@ -419,17 +419,17 @@ def find_executable(executable, path=None):
         return None
 
 def python_path(name):
-    cmd = "python -c 'import %s; print %s.__path__[0]'" % (name, name)
+    cmd = "python -c 'import %s; print %s.__path__[0]' 2> /dev/null" % (name, name)
     try:
-        path = subprocess.Popen(cmd, shell=True, stderr=null, stdout=subprocess.PIPE).stdout.read()
+        path = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except:
         path = ''
     return path
 
 def python_package(name, version):
-    cmd = "python -c 'import %s; print %s.__version__'" % (name, name)
+    cmd = "python -c 'import %s; print %s.__version__' 2> /dev/null" % (name, name)
     try:
-        ver = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=null).stdout.read()
+        ver = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
         # parse version string and convert to numbers
         ver = re.findall(r'([\d]+)', ver)
         if not ver:
