@@ -19,18 +19,22 @@ fvm.set_atype('double')
 
 print " "
 
+###############INPUTS############
+
 filename="1to1_6400"
 extension=".msh"
 Kn=0.01
 KnName='Kn_0.01'
 initialScale=1.e-4
 
-BZfile="graphene_data_lumped300"
+BZfile="graphene_data300"
 BZdisc=""
 levels=3
 T1=300
 T2=301
 dimension=3
+
+##################################
 
 eVtoJoule=1.60217646e-19
 
@@ -47,6 +51,7 @@ geomFields =  fvm.models.GeomFields('geom')
 metricsCalculator = fvm.models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
 
+## Computes thermal conductivity from Holland's model
 K_space=pa.KspaceA(BZfile+BZdisc+".txt",dimension,1)
 #K_space=pa.KspaceA(1,tau,vg,4e14,ntheta,nphi)
 kArray=(K_space.getHollandConductivity((T1+T2)/2)).asNumPyArray()
@@ -101,29 +106,40 @@ copts.relFactor=1
 copts.withNormal=0
 copts.NewtonTol=1e-4
 
+
+##### Specify boundary conditions on 4 sides ######
+
+
 #cBCs[4].bcType="reflecting"
 cBCs[4].bcType="temperature"
 cBCs[4]["specifiedTemperature"]=T1  #left for 1d
 cBCs[4]["specifiedReflection"]=0.
+
 #cBCs[5].bcType="temperature"
 cBCs[5].bcType="reflecting"
 cBCs[5]["specifiedReflection"]=1.
 cBCs[5]["specifiedTemperature"]=T2  # bot for .cas
 cBCs[5]["FullyImplicit"]=0
+
 #cBCs[6].bcType="reflecting"
 cBCs[6].bcType="temperature"
 cBCs[6]["specifiedReflection"]=0.
 cBCs[6]["specifiedTemperature"]=T2  #right for 1d, top for .cas
+
 cBCs[7].bcType="reflecting"
 #cBCs[7].bcType="temperature"
 cBCs[7]["specifiedTemperature"]=T1
 cBCs[7]["specifiedReflection"]=1.
 cBCs[7]["FullyImplicit"]=0
 
+#################################################
+
 print "Mesh file: "+filename
 print "Scaling: "+str(scale)
 print "BZ file: "+BZfile+BZdisc
 print "Max Levels: ",copts.maxLevels
+
+####### Initialize simulation ###############
 
 print "Initializing..."
 cmodel.init()
@@ -145,6 +161,8 @@ residFile=open('Residual.dat','w')
 resid=cmodel.getResidual()
 residFile.write(str(iteration)+' '+str(resid)+' '+str(end-begin)+'\n')
 
+
+###############Solver parameters############
 total=100
 step=1
 balTol=.01
@@ -152,6 +170,10 @@ relTol=1.e-10
 div_count=0
 relRes=1
 
+############################################
+
+
+########################## Main solution loop ################################
 while (balance>balTol or relRes>relTol) and iteration<total:
     begin=time.clock()
     cmodel.advance(step)
@@ -172,8 +194,14 @@ while (balance>balTol or relRes>relTol) and iteration<total:
     iteration+=step
     print iteration," : ",resid," : ",relRes," : ",wall4," ",wall6," ",balance*100.
 
-thcon=wall4*scale/FaceAreaMag/(T2-T1)
+################################################################################
+
+###########Post-processing############
+
+thcon=wall4*scale/FaceAreaMag/(T2-T1) #Thermal conductivity = flux/Area/gradT
     
+
+#### Compute heat flux
 residFile.close()
 resid=cmodel.getResidual()
 print "Final Residual:",resid
@@ -181,6 +209,8 @@ wall4=cmodel.HeatFluxIntegral(meshes[0],4)*eVtoJoule
 wall6=cmodel.HeatFluxIntegral(meshes[0],6)*eVtoJoule
 wall5=cmodel.HeatFluxIntegral(meshes[0],5)*eVtoJoule
 wall7=cmodel.HeatFluxIntegral(meshes[0],7)*eVtoJoule
+
+#### Print the required metrics
 print "Wall 4: ",wall4
 print "Wall 5: ",wall5
 print "Wall 6: ",wall6
@@ -198,6 +228,8 @@ print "Max Levels: ",copts.maxLevels
 K_space.findKnStats(scale)
 
 name_file=KnName+'_'+str(copts.maxLevels)+'levs'
+
+####Write simulation data to a VTK file to be read in paraview
 
 writer = exporters.VTKWriterA(geomFields,meshes,
                               name_file+'.vtk',
