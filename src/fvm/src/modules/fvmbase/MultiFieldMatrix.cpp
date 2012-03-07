@@ -5,7 +5,9 @@
 #include "StorageSite.h"
 #include "OneToOneIndexMap.h"
 #include "SpikeStorage.h"
-#include "mpi.h"
+#ifdef FVM_PARALLEL
+  #include "mpi.h"
+#endif
 
 MultiFieldMatrix::MultiFieldMatrix() :
   _matrices(),
