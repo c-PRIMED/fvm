@@ -17,6 +17,13 @@ struct KineticBC : public FloatVarDict<T>
       this->defineVar("specifiedDensity",T(1.0));
       this->defineVar("specifiedTemperature",T(1.0));
       this->defineVar("accommodationCoefficient",T(1.0));
+      this->defineVar("specifiedMassFlowRate",T(1.0));
+      this->defineVar("specifiedTauxx",T(1.0));
+      this->defineVar("specifiedTauyy",T(1.0));
+      this->defineVar("specifiedTauzz",T(1.0));
+      this->defineVar("specifiedTauxy",T(0.0));
+      this->defineVar("specifiedTauyz",T(0.0));
+      this->defineVar("specifiedTauzx",T(0.0));
   }
   string bcType;
 };
@@ -80,6 +87,7 @@ struct KineticModelOptions : public FloatVarDict<T>
    
 
     this->timeDiscretizationOrder=1;
+    this->CentralDifference=false;
     this->KineticLinearSolver = 0;
    
     this-> printCellNumber=0;
@@ -115,6 +123,8 @@ struct KineticModelOptions : public FloatVarDict<T>
   
   int NewtonsMethod_ktrial;
   int timeDiscretizationOrder;
+  bool CentralDifference;
+
   LinearSolver *KineticLinearSolver;
   int printCellNumber;
   int fgamma;

@@ -1,6 +1,6 @@
 #include "MacroFields.h"
 
-MacroFields::MacroFields(const string baseName) :
+MacroFields::MacroFields(const string baseName): //:FlowFields( baseName)
   velocity(baseName + ".velocity"),
   velocityResidual(baseName + ".velocityResidual"),
   velocityInjected(baseName + ".velocityInjected"),
@@ -18,11 +18,18 @@ MacroFields::MacroFields(const string baseName) :
   Tzx(baseName +".Tzx"),
   coeff(baseName +".coeff"),
   coeffg(baseName +".coeffg"),
-  Entropy(baseName +"Entropy"),
-  EntropyGenRate(baseName +"EntropyGenRate"), 
-  EntropyGenRate_Collisional(baseName +"EntropyGenRate_Collisional"),
-  force(baseName +"Force"),
-  Stress(baseName +"Stress"),
+  Entropy(baseName +".Entropy"),
+  EntropyGenRate(baseName +".EntropyGenRate"), 
+  EntropyGenRate_Collisional(baseName +".EntropyGenRate_Collisional"),
+  force(baseName +".Force"),
+  Stress(baseName +".Stress"),
+ 
+
+  InterfaceVelocity(baseName +".InterfaceVelocity"), 
+  InterfacePressure(baseName +".InterfacePressure"),
+  InterfaceStress(baseName +".InterfaceStress"),
+  InterfaceDensity(baseName +".InterfaceDensity"),
+  
   Knq(baseName+"Knq")//M300+M120+M102 for couette with uy
 
 {}
