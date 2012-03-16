@@ -1,3 +1,7 @@
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include "Mesh.h"
 
 #include "NumType.h"
@@ -202,6 +206,23 @@ public:
   void applyInterfaceBC(const int f) const
   {
     // do nothing
+    // the boundary cell could be either c0 or c1 at an interface
+    int cb = _faceCells(f,1);
+    T_Scalar sign(NumTypeTraits<T_Scalar>::getUnity());
+    if (cb < _cells.getSelfCount())
+    {
+        cb = _faceCells(f,0);
+        sign *= -1.0;
+    }
+    
+
+    _r[cb] = T_Scalar(0);
+
+    if (sign>0)
+      _assembler.getCoeff10(f) = NumTypeTraits<OffDiag>::getZero();
+    else
+      _assembler.getCoeff01(f) = NumTypeTraits<OffDiag>::getZero();
+    
   }
 
   void applyInterfaceBC() const
@@ -360,7 +381,7 @@ public:
         const StorageSite& cells = mesh.getCells();
 	//        const StorageSite& faces = mesh.getFaces();
 
-        shared_ptr<VectorT3Array> sCell(new VectorT3Array(cells.getCount()));
+        shared_ptr<VectorT3Array> sCell(new VectorT3Array(cells.getCountLevel1()));
 
         VectorT3 initialDeformation;
         initialDeformation[0] = _options["initialXRotation"];
@@ -369,19 +390,28 @@ public:
         *sCell = initialDeformation;
 
         _plateFields.deformation.addArray(cells,sCell);
+	_plateFields.deformation.syncLocal();
 
         if (_options.transient)
         {
 	    _plateFields.volume0.addArray(cells,
 					 dynamic_pointer_cast<ArrayBase>
 					 (_geomFields.volume[cells].newCopy()));
+            _plateFields.volume0.syncLocal();	
+	    				 
 	    _plateFields.deformationN1.addArray(cells,
                                             dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
+            _plateFields.deformationN1.syncLocal();
+	    					    
             _plateFields.deformationN2.addArray(cells,
-					    dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));            
+					    dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
+            _plateFields.deformationN2.syncLocal();
+	    					                
             if (_options.timeDiscretizationOrder > 1)
 	      _plateFields.deformationN3.addArray(cells,
 					    dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
+              _plateFields.deformationN3.syncLocal();					    
+					    
 	    if(_options.variableTimeStep)
 	    {
 		_options.timeStepN1 = _options["timeStep"];
@@ -389,68 +419,83 @@ public:
 	    }
         }
         
-        shared_ptr<VectorT3Array> stressField(new VectorT3Array(cells.getCount()));
+        shared_ptr<VectorT3Array> stressField(new VectorT3Array(cells.getCountLevel1()));
         stressField->zero();
         _plateFields.stress.addArray(cells,stressField);
+	_plateFields.stress.syncLocal();
                 
-        shared_ptr<VectorT4Array> devStressField(new VectorT4Array((cells.getCount())*(_options.nz+1)));
+        shared_ptr<VectorT4Array> devStressField(new VectorT4Array((cells.getCountLevel1())*(_options.nz+1)));
         devStressField->zero();
         _plateFields.devStress.addArray(cells,devStressField);
+	_plateFields.devStress.syncLocal();
 
-        shared_ptr<TArray> VMStressField(new TArray((cells.getCount())*(_options.nz+1)));
+        shared_ptr<TArray> VMStressField(new TArray((cells.getCountLevel1())*(_options.nz+1)));
         VMStressField->zero();
         _plateFields.VMStress.addArray(cells,VMStressField);
+	_plateFields.VMStress.syncLocal();
 
-        shared_ptr<TArray> VMStressOutField(new TArray(cells.getCount()));
+        shared_ptr<TArray> VMStressOutField(new TArray(cells.getCountLevel1()));
         VMStressOutField->zero();
         _plateFields.VMStressOut.addArray(cells,VMStressOutField);
+	_plateFields.VMStressOut.syncLocal();
 
-        shared_ptr<VectorT4Array> plasticStrainField(new VectorT4Array((cells.getCount())*(_options.nz+1)));
+        shared_ptr<VectorT4Array> plasticStrainField(new VectorT4Array((cells.getCountLevel1())*(_options.nz+1)));
         plasticStrainField->zero();
         _plateFields.plasticStrain.addArray(cells,plasticStrainField);
+	_plateFields.plasticStrain.syncLocal();
 
-        shared_ptr<VectorT3Array> plasticStrainOutField(new VectorT3Array(cells.getCount()));
+        shared_ptr<VectorT3Array> plasticStrainOutField(new VectorT3Array(cells.getCountLevel1()));
         plasticStrainOutField->zero();
         _plateFields.plasticStrainOut.addArray(cells,plasticStrainOutField);
+	_plateFields.plasticStrainOut.syncLocal();
 
-        shared_ptr<VectorT4Array> plasticStrainN1Field(new VectorT4Array((cells.getCount())*(_options.nz+1)));
+        shared_ptr<VectorT4Array> plasticStrainN1Field(new VectorT4Array((cells.getCountLevel1())*(_options.nz+1)));
         plasticStrainN1Field->zero();
         _plateFields.plasticStrainN1.addArray(cells,plasticStrainN1Field);
+	_plateFields.plasticStrainN1.syncLocal();
 
-        shared_ptr<VectorT3Array> plasticMomentField(new VectorT3Array(cells.getCount()));
+        shared_ptr<VectorT3Array> plasticMomentField(new VectorT3Array(cells.getCountLevel1()));
         plasticMomentField->zero();
         _plateFields.plasticMoment.addArray(cells,plasticMomentField); 
+	_plateFields.plasticMoment.syncLocal();
 
-        shared_ptr<TArray> rhoCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> rhoCell(new TArray(cells.getCountLevel1()));
         *rhoCell = vc["density"];
         _plateFields.density.addArray(cells,rhoCell);
+	_plateFields.density.syncLocal();
 
-        shared_ptr<TArray> ymCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> ymCell(new TArray(cells.getCountLevel1()));
         *ymCell = vc["ym"];
         _plateFields.ym.addArray(cells,ymCell);
+	_plateFields.ym.syncLocal();
 
-        shared_ptr<TArray> nuCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> nuCell(new TArray(cells.getCountLevel1()));
         *nuCell = vc["nu"];
         _plateFields.nu.addArray(cells,nuCell);
+	_plateFields.nu.syncLocal();
 
-        shared_ptr<TArray> forceCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> forceCell(new TArray(cells.getCountLevel1()));
         forceCell->zero();
         _plateFields.force.addArray(cells,forceCell);
+	_plateFields.force.syncLocal();
 
-        shared_ptr<TArray> thicknessCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> thicknessCell(new TArray(cells.getCountLevel1()));
         thicknessCell->zero();
         _plateFields.thickness.addArray(cells,thicknessCell);
+	_plateFields.thickness.syncLocal();
 
-        shared_ptr<TArray> accelerationCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> accelerationCell(new TArray(cells.getCountLevel1()));
         accelerationCell->zero();
         _plateFields.acceleration.addArray(cells,accelerationCell);
+	_plateFields.acceleration.syncLocal();
         
-        shared_ptr<VectorT3Array> velCell(new VectorT3Array(cells.getCount()));
+        shared_ptr<VectorT3Array> velCell(new VectorT3Array(cells.getCountLevel1()));
         velCell->zero();
         _plateFields.velocity.addArray(cells,velCell);
+	_plateFields.velocity.syncLocal();
 
 	//initial temparature gradient array
-	shared_ptr<VGradArray> rCell(new VGradArray(cells.getCount()));
+	shared_ptr<VGradArray> rCell(new VGradArray(cells.getCountLevel1()));
 	VGradType residualStress;
 	residualStress[0][0] = _options["residualStressXX"];
 	residualStress[0][1] = _options["residualStressXY"];
@@ -463,6 +508,7 @@ public:
 	residualStress[2][2] = _options["residualStressZZ"];
 	*rCell = residualStress;
 	_plateFields.residualStress.addArray(cells,rCell);
+	_plateFields.residualStress.syncLocal();
 
         // compute values of deformation flux
 
@@ -740,7 +786,17 @@ public:
 	}
 	*/
     }
-                
+        
+	
+#ifdef FVM_PARALLEL
+     int count = 1;
+     int allNeumannInt = int( allNeumann);
+     MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &allNeumannInt, count, MPI::INT, MPI::PROD);
+     allNeumann = bool(allNeumannInt);
+#endif
+	
+	
+	        
     if(allNeumann && !_options.transient)
     {
         const Mesh& mesh = *_meshes[0];
@@ -804,7 +860,7 @@ public:
     {
         const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getCountLevel1();
 	const VectorT3Array& w =
 	  dynamic_cast<const VectorT3Array&>(_plateFields.deformation[cells]);
 	const VectorT3Array& wN1 =
@@ -815,6 +871,7 @@ public:
 	for (int c=0; c<nCells; c++){
 	    velocity[c] = (w[c]-wN1[c])/timeStep;
 	}
+	
     }
   }
 	
@@ -836,7 +893,7 @@ public:
     {
         const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getCountLevel1();
 
 	TArray& acceleration =
 	  dynamic_cast<TArray&>(_plateFields.acceleration[cells]); 
@@ -929,7 +986,7 @@ public:
           (sField[sIndex]);
 	//const T deformationURF(_options["deformationURF"]);
 
-	const int nCells = cells.getCount();
+	const int nCells = cells.getCountLevel1();
 	for(int c=0;c<nCells;c++)
 	{
 	    w[c] += ww[c];
@@ -980,7 +1037,7 @@ public:
   {
     const StorageSite& cells = mesh.getCells();
 
-    const int nCells = cells.getCount();
+    const int nCells = cells.getCountLevel1();
 
     shared_ptr<VectorT3Array> momentPtr(new VectorT3Array(nCells));
     momentPtr->zero();

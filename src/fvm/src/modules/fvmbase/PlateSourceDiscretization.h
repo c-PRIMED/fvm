@@ -153,7 +153,7 @@ public:
     }
     //
 
-    const int nCells = cells.getCount();
+    const int nCells = cells.getCountLevel1();
     const T zero(0.0);
     const T half(0.5);
     const T one(1.0);
