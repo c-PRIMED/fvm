@@ -18,6 +18,7 @@ struct FluentZone
   int ID;
   int iBeg;
   int iEnd;
+  int partnerId;
   int threadType;
   string zoneName;
   string zoneType;
@@ -143,7 +144,7 @@ protected:
   shared_ptr<OneToOneIndexMap>
   getCommonNodeMap(const FluentCellZone& cz0, const FluentCellZone& cz1);
 
-  Mesh* createMesh(const int cellZoneID);
+  Mesh* createMesh(const int cellZoneID, Array<int>&);
 
 };
 #endif

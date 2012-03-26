@@ -221,6 +221,7 @@ FluentReader::readFaces(const int pass, const bool isBinary,
               fz->iBeg=iBeg-1;
               fz->iEnd=iEnd-1;
               fz->threadType=type;
+              fz->partnerId = -1;
               _faceZones[threadId]=fz;
               
               
@@ -399,6 +400,9 @@ FluentReader::readFacePairs(const int pass, const bool isBinary,
                                                 shared_ptr<Array<int> >(rightFaces));
 
       _facePairs[leftID] = shared_ptr<FluentFacePairs>(fp);
+      _faceZones[leftID]->partnerId = rightID;
+      _faceZones[rightID]->partnerId = leftID;
+      
 
   }
   else if ((pass == READ_COUNTS) || (pass == READ_MESH))
@@ -685,7 +689,8 @@ FluentReader::buildZones()
 }
       
 Mesh*
-FluentReader::createMesh(const int cellZoneID)
+FluentReader::createMesh(const int cellZoneID,
+                         Array<int>& globalToLocalCellMap)
 {
   const CRConnectivity& faceCells  = *_faceCells;
 
@@ -733,7 +738,7 @@ FluentReader::createMesh(const int cellZoneID)
 
       const int thisFZCount = fz.iEnd-fz.iBeg+1;
 
-      if (fz.zoneType == "interface")
+      if ((fz.zoneType == "interface") || (fz.partnerId != -1))
         mesh->createInterfaceGroup(thisFZCount,faceOffset,fzId);
       else
         mesh->createBoundaryFaceGroup(thisFZCount,faceOffset,fzId,fz.zoneType);
@@ -758,8 +763,6 @@ FluentReader::createMesh(const int cellZoneID)
 
   int numMeshCells = cz.iEnd-cz.iBeg+1;
 
-  Array<int> globalToLocalCellMap(_numCells+_numBoundaryFaces);
-  globalToLocalCellMap = -1;
 
   vector<int> interfaceCellList;
 
@@ -946,12 +949,19 @@ FluentReader::createMesh(const int cellZoneID)
 MeshList
 FluentReader::getMeshList()
 {
+
+  Array<int> globalToLocalCellMap(_numCells+_numBoundaryFaces);
+  globalToLocalCellMap = -1;
+
   MeshList meshes;
 
+  map<int, Mesh*> meshMap;
   foreach(const CellZonesMap::value_type& pos, _cellZones)
   {
       const FluentCellZone& cz = *(pos.second);
-      meshes.push_back(createMesh(cz.ID));
+      Mesh* mesh = createMesh(cz.ID, globalToLocalCellMap);
+      meshes.push_back(mesh);
+      meshMap[cz.ID] = mesh;
   }
 
   foreach(const CellZonesMap::value_type& pos, _cellZones)
@@ -992,6 +1002,55 @@ FluentReader::getMeshList()
 #endif
       
   }
+
+  foreach(const FacePairsMap::value_type& pos, _facePairs)
+  {
+      const FluentFacePairs& facePairs = *(pos.second);
+      const FluentFaceZone& leftFZ = *_faceZones[facePairs.leftID];
+      const FluentFaceZone& rightFZ = *_faceZones[facePairs.rightID];
+
+      const FluentCellZone& leftCZ = *_cellZones[leftFZ.leftCellZoneId];
+      const FluentCellZone& rightCZ = *_cellZones[rightFZ.leftCellZoneId];
+      
+      const Array<int>& leftFaces = *facePairs.leftFaces;
+      const Array<int>& rightFaces = *facePairs.rightFaces;
+
+      const CRConnectivity& faceCells = *_faceCells;
+      
+      Mesh* leftMesh = meshMap[leftFZ.leftCellZoneId];
+      Mesh* rightMesh = meshMap[rightFZ.leftCellZoneId];
+      
+      StorageSite& lCells = leftMesh->getCells();
+      StorageSite& rCells = rightMesh->getCells();
+
+      const int count = facePairs.count;
+
+      shared_ptr<Array<int> > lScatter(new Array<int>(count));
+      shared_ptr<Array<int> > rScatter(new Array<int>(count));
+      shared_ptr<Array<int> > lGather(new Array<int>(count));
+      shared_ptr<Array<int> > rGather(new Array<int>(count));
+
+      
+      for(int f=0; f<count; f++)
+      {
+          const int lf = leftFaces[f];
+          const int rf = rightFaces[f];
+
+          (*lScatter)[f] = globalToLocalCellMap[faceCells(lf,0)];
+          (*rScatter)[f] = globalToLocalCellMap[faceCells(rf,0)];
+          (*lGather)[f] = globalToLocalCellMap[faceCells(lf,1)];
+          (*rGather)[f] = globalToLocalCellMap[faceCells(rf,1)];
+          
+      }
+
+      lCells.getGatherMap()[&rCells] = lGather;
+      lCells.getScatterMap()[&rCells] = lScatter;
+      
+      rCells.getGatherMap()[&lCells] = rGather;
+      rCells.getScatterMap()[&lCells] = rScatter;
+  }
+
+  
   return meshes;
 }
 
