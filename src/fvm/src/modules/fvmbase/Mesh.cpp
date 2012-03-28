@@ -1508,12 +1508,17 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   
   const FaceGroup& fg = getFaceGroup(fgId);
   const StorageSite& fgSite = fg.site;
+
+  const FaceGroup& otherfg = otherMesh.getFaceGroup(otherFgId);
+  const StorageSite& otherfgSite = otherfg.site;
+
   StorageSite& cells = getCells();
 
 
   StorageSite& otherCells = otherMesh.getCells();
   
   const CRConnectivity& faceCells = getFaceCells(fgSite);
+  const CRConnectivity& otherFaceCells = otherMesh.getFaceCells(otherfgSite);
 
   const int count = fgSite.getSelfCount();
 
@@ -1534,12 +1539,13 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   // create a mapping from the cells in the left mesh to the smesh
   // cells using the faceCell connectivity
   map<int, int> leftCellsToSCells;
+  map<int, int> rightCellsToSCells;
   for(int f=0; f<count; f++)
   {
-      const int c0 = faceCells(f,0);
-      const int c1 = faceCells(f,1);
-      leftCellsToSCells[c0] = f;
-      leftCellsToSCells[c1] = f;
+      const int lc1 = faceCells(f,1);
+      const int rc1 = otherFaceCells(f,1);
+      leftCellsToSCells[lc1] = f;
+      rightCellsToSCells[rc1] = f;
   }
 
   // since there can be more than one face group in common between the
@@ -1582,10 +1588,10 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
       const int lcs = (*L2RScatterOrigPtr)[i];
       const int rcg = (*L2RGatherOrigPtr)[i];
       // if the left cell is in the current face groups neighbours it goes into the new1 
-      if (leftCellsToSCells.find(lcs) != leftCellsToSCells.end())
+      if (rightCellsToSCells.find(rcg) != rightCellsToSCells.end())
       {
           
-          const int sCell = leftCellsToSCells[lcs];
+          const int sCell = rightCellsToSCells[rcg];
 
           L2SScatterVector.push_back(lcs);
           L2SGatherVector.push_back(sCell+count);
@@ -1700,7 +1706,8 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   StorageSite& otherCells = otherMesh.getCells();
   
   const CRConnectivity& faceCells = getFaceCells(fgSite);
-
+  const CRConnectivity& otherFaceCells = otherMesh.getFaceCells(fgSiteOther);
+ 
   const int count = fgSite.getSelfCount();
 
   Mesh* shellMesh = new Mesh(_dimension);
@@ -1724,12 +1731,13 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   // create a mapping from the cells in the left mesh to the smesh
   // cells using the faceCell connectivity
   map<int, int> leftCellsToSCells;
+  map<int, int> rightCellsToSCells;
   for(int f=0; f<count; f++)
   {
-      const int c0 = faceCells(f,0);
-      const int c1 = faceCells(f,1);
-      leftCellsToSCells[c0] = f;
-      leftCellsToSCells[c1] = f;
+      const int lc1 = faceCells(f,1);
+      const int rc1 = otherFaceCells(f,1);
+      leftCellsToSCells[lc1] = f;
+      rightCellsToSCells[rc1] = f;
   }
 
   // since there can be more than one face group in common between the
@@ -1771,11 +1779,11 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   {
       const int lcs = (*L2RScatterOrigPtr)[i];
       const int rcg = (*L2RGatherOrigPtr)[i];
-      // if the left cell is in the current face groups neighbours it goes into the new1 
-      if (leftCellsToSCells.find(lcs) != leftCellsToSCells.end())
+      
+      if (rightCellsToSCells.find(rcg) != rightCellsToSCells.end())
       {
 	  //left shell cell is sCell
-          const int sCell = leftCellsToSCells[lcs];
+          const int sCell = rightCellsToSCells[rcg];
 
           L2SScatterVector.push_back(lcs);
           L2SGatherVector.push_back(sCell+3*count);
