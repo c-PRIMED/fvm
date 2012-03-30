@@ -56,9 +56,15 @@ public:
         T* newData = new T[newLength];
         if (_data)
         {
-            for(int i=0; i<_length; i++)
-              newData[i] = _data[i];
-            delete [] _data;
+	  int len;
+	  if(newLength<_length)
+	    len=newLength;
+	  else
+	    len=_length;
+
+	  for(int i=0; i<len; i++)
+	    newData[i] = _data[i];
+	  delete [] _data;
         }
         _data = newData;
         _length = newLength;
