@@ -9,12 +9,11 @@ class Output():
     def __init__(self, outputDir, probeIndex, sim):
         if os.path.isdir(outputDir) == False:
             os.mkdir(outputDir)
-        self.defFile = open(outputDir + 'deformation.dat', 'w')
-        self.forceFile = open(outputDir + 'force.dat', 'w') 
-        self.voltageFile = open(outputDir + 'voltage.dat', 'w')
+        self.defFile = open(outputDir + 'deformation.dat', 'a')
+        self.forceFile = open(outputDir + 'force.dat', 'a') 
+        self.voltageFile = open(outputDir + 'voltage.dat', 'a')
         self.sim = sim
         self.probeIndex = probeIndex
-        print 'probeIndex is %i' % self.probeIndex
         self.outputDir = outputDir
        
     def finish(self):
@@ -28,16 +27,21 @@ class Output():
         timeStep = self.sim.timeStep
         deformation = self.sim.deformation
         maxDef = deformation.min(axis = 0)
-        self.defFile.write('%e\t%e\t%e\t%e\n' % (globalTime, timeStep, 
-                deformation[self.probeIndex][2], maxDef[2]))
+        self.defFile.write('%e\t%e\t%e\t' % (globalTime, timeStep,maxDef[2]))
+        for i in range(0, len(self.probeIndex)):
+        	self.defFile.write('%e\t' % deformation[self.probeIndex[i]][2])
+        self.defFile.write('\n') 
         self.defFile.flush() 
 
-        vel = self.sim.vel
-        acc = self.sim.acc
+        vel = self.sim.velocity
+        acc = self.sim.acceleration
         eForce = self.sim.elecForceSum
         fForce = self.sim.flowForceSum
         cForce = self.sim.contactForceSum
-        self.forceFile.write('%e\t%e\t%e\t%e\t%e\t%e\n' % (globalTime, vel, acc, eForce, fForce, cForce))
+        self.forceFile.write('%e\t' % globalTime)
+        for i in range(0, len(self.probeIndex)):
+        	self.forceFile.write('%e\t' % vel[self.probeIndex[i]][2])
+        self.forceFile.write('%e\t%e\t%e\n' % (eForce, fForce, cForce))
         self.forceFile.flush()
 
         voltage = self.sim.voltage
@@ -72,6 +76,7 @@ class Output():
                                   False,0)
         writer.init()
         writer.writeVectorField(plateFields.deformation,"deformation")
+        writer.writeScalarField(plateFields.force, "force")
         writer.finish()
         
     def saveBeamBoundaryVTK(self, n):
