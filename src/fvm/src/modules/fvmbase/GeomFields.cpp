@@ -22,6 +22,7 @@ GeomFields::GeomFields(const string baseName) :
   displacementOptions(baseName+"displacementOptions"),
   ibType(baseName+"ibType"),
   ibTypeN1(baseName+"ibTypeN1"),
-  ibFaceIndex(baseName+"ibFaceIndex")
+  ibFaceIndex(baseName+"ibFaceIndex"),
+  fineToCoarse(baseName+"fineToCoarse")
 {}
 
