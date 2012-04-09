@@ -512,6 +512,25 @@ class COMETESBGKDiscretizer
 		count++;
 	    }
 	}
+        else if(_BCfArray[f]==-1)  //if the face in question is interface
+	  {
+            int count=1;
+            for(int dir=0;dir<_numDir;dir++)
+	      {
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+
+                if(c_dot_en>T_Scalar(0))
+		  {
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		  }
+                else
+                  BVec[count-1]-=flux*f[cell2];
+                count++;
+	      }
+	  }
     }
   }
 
@@ -716,10 +735,12 @@ class COMETESBGKDiscretizer
 
     TArray ResidSum(_numDir+3);
     TArray Bsum(_numDir+3);
+    TArray temp(_numDir+3+1);
     T traceSum=0.;
     T ResidScalar=0.;
     ResidSum.zero();
     Bsum.zero();
+    temp.zero();
 
     TArray Bvec(_numDir+3);
     TArray Resid(_numDir+3);
@@ -802,10 +823,29 @@ class COMETESBGKDiscretizer
     }
     for(int o=0;o<_numDir+3;o++)
     {
+        temp[o]=ResidSum[o];
+    }
+    temp[_numDir+3]=traceSum;
+
+    //MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, ResidSum.getData(), _numDir+3, MPI::DOUBLE, MPI::SUM);
+    //MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &traceSum, 1, MPI::DOUBLE, MPI::SUM);
+    MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, temp.getData(), _numDir+4, MPI::DOUBLE, MPI::SUM);
+
+    /*
+    for(int o=0;o<_numDir+3;o++)
+    {
 	ResidScalar+=ResidSum[o];
     }
 
     ResidScalar/=traceSum;
+    */
+
+    for(int o=0;o<_numDir+3;o++)
+      {
+        ResidScalar+=temp[o];
+      }
+
+    ResidScalar/=temp[_numDir+3];
 
     if(_aveResid==-1)
       {_aveResid=ResidScalar;}
