@@ -2,7 +2,7 @@ import fvm.fvmbaseExt as fvmbaseExt
 import fvm.models_atyped_double as models
 from FluentCase import FluentCase
 from Persistence import Persistence
-
+from math import *
 	
 class MeshSetup:
     
@@ -47,8 +47,10 @@ class MeshSetup:
 
         self.solidBoundaryMeshes = [m.extrude(1, self.beam_thickness, True) for m in self.solidMeshes]
         self.solidBoundaryMetricsCalculator = models.MeshMetricsCalculatorA(self.geomFields,self.solidBoundaryMeshes)
-        solidNodeCoord = self.solidMeshes[0].getNodeCoordinates().asNumPyArray()
-        solidBoundaryNodeCoord = self.solidBoundaryMeshes[0].getNodeCoordinates().asNumPyArray()
+        solidNodeCoordA = self.solidMeshes[0].getNodeCoordinates()
+        solidNodeCoord = solidNodeCoordA.asNumPyArray()
+        solidBoundaryNodeCoordA = self.solidBoundaryMeshes[0].getNodeCoordinates()
+        solidBoundaryNodeCoord = solidBoundaryNodeCoordA.asNumPyArray()
         ns = self.solidMeshes[0].getNodes().getSelfCount()
         nb = self.solidBoundaryMeshes[0].getNodes().getSelfCount()
         for n in range(0, ns):
@@ -60,7 +62,8 @@ class MeshSetup:
         if tag == 'solid' or tag == 'beam':
             for mesh in self.solidMeshes:
                 nodes = mesh.getNodes()
-                xNodes = mesh.getNodeCoordinates().asNumPyArray()
+                xNodesA = mesh.getNodeCoordinates()
+                xNodes = xNodesA.asNumPyArray()
                 xNodes[:,0] += dx
                 xNodes[:,1] += dy
                 xNodes[:,2] += dz
@@ -73,7 +76,8 @@ class MeshSetup:
         elif tag == 'fluid':
             for mesh in self.fluidMeshes:
                 nodes = mesh.getNodes()
-                xNodes = mesh.getNodeCoordinates().asNumPyArray()
+                xNodesA = mesh.getNodeCoordinates()
+                xNodes = xNodesA.asNumPyArray()
                 xNodes[:,0] += dx
                 xNodes[:,1] += dy
                 xNodes[:,2] += dz
@@ -87,7 +91,8 @@ class MeshSetup:
         if tag == 'solid' or tag == 'beam':
             for mesh in self.solidMeshes:
                 nodes = mesh.getNodes()
-                xNodes = mesh.getNodeCoordinates().asNumPyArray()
+                xNodesA = mesh.getNodeCoordinates()
+                xNodes = xNodesA.asNumPyArray()
                 xNodes[:,0] *= dx
                 xNodes[:,1] *= dy
                 xNodes[:,2] *= dz
@@ -100,7 +105,8 @@ class MeshSetup:
         elif tag == 'fluid':
             for mesh in self.fluidMeshes:
                 nodes = mesh.getNodes()
-                xNodes = mesh.getNodeCoordinates().asNumPyArray()
+                xNodesA = mesh.getNodeCoordinates()
+                xNodes = xNodesA.asNumPyArray()
                 xNodes[:,0] *= dx
                 xNodes[:,1] *= dy
                 xNodes[:,2] *= dz
@@ -112,6 +118,39 @@ class MeshSetup:
             print 'Error: wrong tag name in translate mesh: [ %s ]' % tag
             print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
     
+    def rotate(self, tag, axis, alfa):
+        if (tag == 'solid'  or tag == 'beam') and axis == 'y':
+            for  mesh in self.solidMeshes:
+                nodes = mesh.getNodes()
+                xNodesA = mesh.getNodeCoordinates()
+                xNodes = xNodesA.asNumPyArray()
+                nNodes = nodes.getCount()
+                for n in range(0, nNodes):
+                    x = xNodes[n,0]
+                    y = xNodes[n,2]
+                    xp = x*cos(alfa) - y*sin(alfa)
+                    yp = x*sin(alfa) + y*cos(alfa)
+                    xNodes[n,0] = xp
+                    xNodes[n,2] = yp
+            self.solidMetricsCalculator.init()
+            for  mesh in self.solidBoundaryMeshes:
+                nodes = mesh.getNodes()
+                xNodesA = mesh.getNodeCoordinates()
+                xNodes = xNodesA.asNumPyArray()
+                nNodes = nodes.getCount()
+                for n in range(0, nNodes):
+                    x = xNodes[n,0]
+                    y = xNodes[n,2]
+                    xp = x*cos(alfa) - y*sin(alfa)
+                    yp = x*sin(alfa) + y*cos(alfa)
+                    xNodes[n,0] = xp
+                    xNodes[n,2] = yp
+            self.solidBoundaryMetricsCalculator.init()
+            print 'rotate beam mesh. Done'
+            print '-------------------------------------------------------------'
+        else:
+            print 'not implemented yet'
+                    
     def createShell(self, interfaceID):
         if self.enableDielectric == True:
             numMeshes = len(self.fluidMeshes)
@@ -131,7 +170,8 @@ class MeshSetup:
             print '-------------------------------------------------------------'
             print 'solid mesh: number of local cells %i' % nSelfCells 
             print 'solid mesh: number of total cells %i' % nCells 
-            rCells = self.geomFields.coordinate[cells].asNumPyArray()
+            rCellsA = self.geomFields.coordinate[cells]
+            rCells = rCellsA.asNumPyArray()
             rMin = rCells.min(axis=0)
             rMax = rCells.max(axis=0)
             print 'solid mesh x range [ %e , %e ]' % (rMin[0], rMax[0])
@@ -150,7 +190,8 @@ class MeshSetup:
             print '-------------------------------------------------------------'
             print 'fluid mesh: number of local cells %i' % nSelfCells 
             print 'fluid mesh: number of total cells %i' % nCells 
-            rCells = self.geomFields.coordinate[cells].asNumPyArray()
+            rCellsA = self.geomFields.coordinate[cells]
+            rCells = rCellsA.asNumPyArray()
             rMin = rCells.min(axis=0)
             rMax = rCells.max(axis=0)
             print 'fluid mesh x range [ %e , %e ]' % (rMin[0], rMax[0])
@@ -163,7 +204,8 @@ class MeshSetup:
             nFaces = faces.getCount()
             print '--------------------------------------------------------------'
             print 'solid boundary mesh: number of faces %i' % nFaces
-            rCells = self.geomFields.coordinate[faces].asNumPyArray()
+            rCellsA = self.geomFields.coordinate[cells]
+            rCells = rCellsA.asNumPyArray()
             rMin = rCells.min(axis=0)
             rMax = rCells.max(axis=0)
             print 'solid boundary mesh x range [ %e , %e ]' % (rMin[0], rMax[0])
