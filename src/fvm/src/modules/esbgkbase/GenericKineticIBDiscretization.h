@@ -39,13 +39,19 @@ public:
 				  Field& varField,
 				  const double cx,
 				  const double cy,
-                                  const double cz) :
+                                  const double cz,
+				  const double uwall,
+				  const double vwall,
+				  const double wwall) :
   Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
     _cx(cx),
     _cy(cy),
-    _cz(cz)
+    _cz(cz),
+    _uwall(uwall),
+    _vwall(vwall),
+    _wwall(wwall)
 
 {}
 
@@ -85,7 +91,6 @@ public:
    const Field& areaField = _geomFields.area;
    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]); 
 
-
     // used for computing the average value in IBTYPE_BOUNDARY cells.
     // we can't use the xcell storage during the loop below since a
     // cell may have more than one ib face and the current value of
@@ -116,13 +121,13 @@ public:
             const int ibFace = ibFaceIndex[f];
             if (ibFace < 0)
               throw CException("invalid ib face index");
-            
             const X& xface = xib[ibFace];
             if (ibType[c0] == Mesh::IBTYPE_FLUID)
             {
 		const VectorT3 en = faceArea[f]/faceAreaMag[f];
 		const X c_dot_en = _cx*en[0]+_cy*en[1]+_cz*en[2];
-		if(c_dot_en <0 ){
+		const X wallv_dot_en = _uwall*en[0]+_vwall*en[1]+_wwall*en[2];
+		if(c_dot_en - wallv_dot_en <0 ){
 		  rCell[c0] += assembler.getCoeff01(f)*(xface-varcell[c1]);
 		  rCell[c1] = NumTypeTraits<X>::getZero();
 		  assembler.getCoeff01(f) = OffDiag(0);
@@ -148,7 +153,8 @@ public:
 	      {
 		const VectorT3 en = faceArea[f]/faceAreaMag[f];
 		const X c_dot_en = _cx*en[0]+_cy*en[1]+_cz*en[2];
-		if(c_dot_en > 0){
+		const X wallv_dot_en = _uwall*en[0]+_vwall*en[1]+_wwall*en[2];
+		if(c_dot_en - wallv_dot_en> 0){
 		  rCell[c1] += assembler.getCoeff10(f)*(xface-varcell[c0]);
 		  rCell[c0] = NumTypeTraits<X>::getZero();
 		  assembler.getCoeff10(f) = OffDiag(0);
@@ -202,6 +208,9 @@ private:
   const double _cx;
   const double _cy;
   const double _cz;
+  const double _uwall;
+  const double _vwall;
+  const double _wwall;
 };
 
 #endif
