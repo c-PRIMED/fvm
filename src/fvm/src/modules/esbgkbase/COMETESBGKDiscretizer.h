@@ -50,7 +50,7 @@ class COMETESBGKDiscretizer
  COMETESBGKDiscretizer(const Mesh& mesh, const GeomFields& geomfields, 
 		       MacroFields& macroFields, TQuad& quadrature, TDistFF& dsfPtr, 
 		       TDistFF& dsfPtr1, TDistFF& dsfPtr2, TDistFF& dsfEqPtrES, TDistFF& dsfPtrRes, TDistFF& dsfPtrFAS,
-		       const T dT, const int order, const bool transient,
+		       const T dT, const int order, const bool transient,const T underRelaxation,
 		       const T rho_init, const T T_init, const T MW,
 		       COMETBCMap& bcMap, map<int, vector<int> > faceReflectionArrayMap,
 		       const IntArray& BCArray, const IntArray& BCfArray,const IntArray& ZCArray):
@@ -76,6 +76,7 @@ class COMETESBGKDiscretizer
     _dT(dT),
     _order(order),
     _transient(transient),
+    _underRelaxation(underRelaxation),
     _rho_init(rho_init),
     _T_init(T_init),
     _MW(MW),
@@ -666,12 +667,12 @@ class COMETESBGKDiscretizer
     {
 	TArray& f = *_fArrays[direction];
 	TArray& fRes = *_fResArrays[direction];
-        f[cell]-=BVec[direction];
+        f[cell]-=_underRelaxation*BVec[direction];
 	fRes[cell]=-Rvec[direction];
     }
-    v[cell][0]-=BVec[_numDir];
-    v[cell][1]-=BVec[_numDir+1];
-    v[cell][2]-=BVec[_numDir+2];
+    v[cell][0]-=_underRelaxation*BVec[_numDir];
+    v[cell][1]-=_underRelaxation*BVec[_numDir+1];
+    v[cell][2]-=_underRelaxation*BVec[_numDir+2];
     vR[cell][0]=-Rvec[_numDir];
     vR[cell][1]=-Rvec[_numDir+1];
     vR[cell][2]=-Rvec[_numDir+2];
@@ -955,6 +956,7 @@ class COMETESBGKDiscretizer
   const T _dT;
   const int _order;
   const bool _transient;
+  const T _underRelaxation;
   const T _rho_init;
   const T _T_init;
   const T _MW;

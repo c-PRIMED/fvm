@@ -190,7 +190,7 @@ class COMETModel : public Model
 	  *vCell = initialVelocity;
 	  _macroFields.velocity.addArray(cells,vCell);
 
-          shared_ptr<IntArray> fineToCoarseCell(new IntArray(cells.getCountLevel1()));
+          shared_ptr<IntArray> fineToCoarseCell(new IntArray(cells.getCount()));
           *fineToCoarseCell = -1;
           _geomFields.fineToCoarse.addArray(cells,fineToCoarseCell);
 
@@ -500,7 +500,7 @@ class COMETModel : public Model
 	    for(int i=offSet;i<offSet+faceCount;i++)
 	      BCfArray[i]=-1;
 	    /*
-	    if(MPI::COMM_WORLD.Get_rank()!=-1)
+	    if(MPI::COMM_WORLD.Get_rank()==1)
 	      {
 		int fC = (mesh.getFaces()).getCount();
 		cout<<"level,rank,facecount,iID,offSet,ISize = "<<_level<<" "<<MPI::COMM_WORLD.Get_rank()<<" "<<fC<<" "<<fg.id<<" "<<offSet<<" "<<(offSet+faceCount)<<endl;
@@ -541,11 +541,13 @@ class COMETModel : public Model
 	      const int nCells = cells.getCount();
 	      Field& FineToCoarseField=(finerModel->getGeomFields()).fineToCoarse;
 	      const IntArray& coarseIndex=dynamic_cast<const IntArray&>(FineToCoarseField[cells]);
+	      
 	      /*	      
-	      if(MPI::COMM_WORLD.Get_rank()==11)
+	      if(MPI::COMM_WORLD.Get_rank()==1)
 		for(int c=0;c<nCells;c++)
 		  cout<<" after sync, rank, level, cell no and finetocoarse = "<<MPI::COMM_WORLD.Get_rank()<<" "<<_level<<" "<<c<<" "<<coarseIndex[c]<<endl;
-	      */    
+	      */	        
+ 
 	      syncGhostCoarsening(finerModel->getMeshList(),
 				  finerModel->getGeomFields(),
 				  *newMeshesPtr);
@@ -604,7 +606,9 @@ class COMETModel : public Model
 	      TCOMET* newModelPtr=new COMETModel(*newMeshesPtr,thisLevel,
                                                  _coarseGeomFields,
                                                  *newMacroPtr,*newQuadPtr);
-              cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;            
+	      MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &newCount, 1, MPI::INT, MPI::SUM);
+	      if(MPI::COMM_WORLD.Get_rank()==0)
+		cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;            
 	      newModelPtr->setFinerLevel(finerModel);
 	      finerModel->setCoarserLevel(newModelPtr);
 	      newModelPtr->getOptions()=finerModel->getOptions();
@@ -619,8 +623,11 @@ class COMETModel : public Model
 	      newModelPtr->ComputeCoarseMacroparameters();
 	      newModelPtr->ComputeCollisionfrequency();
 	      newModelPtr->initializeMaxwellianEq();
-    
-	      newModelPtr->MakeCoarseModel(newModelPtr);
+
+              if(newCount>_options.minCells)
+                newModelPtr->MakeCoarseModel(newModelPtr);
+              else
+                _options.maxLevels=newModelPtr->getLevel();
 	  }
       }
       else if(_options.AgglomerationMethod=="AMG")
@@ -2185,7 +2192,7 @@ map<string,shared_ptr<ArrayBase> >&
                           c2=inFaceinCells(f,1);
 
                         if(FineToCoarse[c2]==-1)
-                          if(areaMagArray[c2]>maxArea)
+                          if(areaMagArray[f]>maxArea)
                             pairWith=c2;
 		    }
 		}
@@ -2220,7 +2227,7 @@ map<string,shared_ptr<ArrayBase> >&
                         else
                           c2=inFaceinCells(f,1);
 
-                        if(areaMagArray[c2]>maxArea)
+                        if(areaMagArray[f]>maxArea)
                         {
                             pairWith=FineToCoarse[c2]; //coarse level cell
                             c2perm=c2;                 //fine level cell
@@ -2246,14 +2253,15 @@ map<string,shared_ptr<ArrayBase> >&
 		}
 	    }     
 	}
-		
+
         int coarseGhost=coarseCount;
 	_coarseSizes[&mesh]=coarseCount;
-	/*
-	if(MPI::COMM_WORLD.Get_rank()==11)
+
+	/*	
+	if(MPI::COMM_WORLD.Get_rank()==1)
 	  for(int c=0;c<inCells.getCount();c++)
 	    cout<<" in makecoarsemesh1 before boundary, rank,level,cell,index = "<<MPI::COMM_WORLD.Get_rank()<<" "<<_level<<" "<<c<<" "<<FineToCoarse[c]<<endl;
-	*/
+	*/	
 
         foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
         {
@@ -2270,8 +2278,9 @@ map<string,shared_ptr<ArrayBase> >&
 		coarseGhost++;
 	    }
 	}
+	
 	/*
-	if(MPI::COMM_WORLD.Get_rank()==11)
+	if(MPI::COMM_WORLD.Get_rank()==1)
 	  for(int c=0;c<inCells.getCount();c++)
 	    cout<<" in makecoarsemesh1, rank, level,cell,index = "<<MPI::COMM_WORLD.Get_rank()<<" "<<_level<<" "<<c<<" "<<FineToCoarse[c]<<endl;
 	*/
@@ -2313,14 +2322,7 @@ map<string,shared_ptr<ArrayBase> >&
 
 	/*** creating coarse level cells ***/
 	coarseCount = _coarseSizes[&mesh];
-	for(int c=0; c< inCellTotal; c++)
-	{
-	    if(outGhost<FineToCoarse[c])
-	      outGhost=FineToCoarse[c];
-	}
-	outGhost++;
-	outGhost-=coarseCount;
-
+	
 	int boundaryCell=0;
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	{
@@ -2343,21 +2345,30 @@ map<string,shared_ptr<ArrayBase> >&
 	else
 	  boundaryCell=0;
 
+	for(int c=0; c< inCellTotal; c++)
+	{
+            if(outGhost<FineToCoarse[c])
+              outGhost=FineToCoarse[c];
+	}
+        outGhost++;
+        outGhost-=coarseCount;
+
 	int interfaceCells = outGhost - boundaryCell;
+
+	/*	
+	if(MPI::COMM_WORLD.Get_rank()==1)
+	  cout<<"rank,level,inCellinternal, incelltotal,outCellInternal, outCellExternal, outInterface ="<<MPI::COMM_WORLD.Get_rank()<<" "<<_level<<" "<<inCellCount<<" and  "<<inCellTotal<<" and "<<coarseCount<<" and "<<outGhost<<" "<<interfaceCells<<endl;
+	*/
 	
 	/*
-	cout<<"rank,level,inCellinternal, incelltotal,outCellInternal, outCellExternal, outInterface ="<<MPI::COMM_WORLD.Get_rank()<<" "<<_level<<" "<<inCellCount<<" and  "<<inCellTotal<<" and "<<coarseCount<<" and "<<outGhost<<" "<<interfaceCells<<endl;
-	*/
-
-	/*
-	if(MPI::COMM_WORLD.Get_rank()==11)
+	if(MPI::COMM_WORLD.Get_rank()==1)
 	  for(int c=0;c<inCellTotal;c++)
 	    cout<<" in makecoarsemesh2, rank,level, cell,index = "<<MPI::COMM_WORLD.Get_rank()<<" "<<_level<<" "<<c<<" and "<<FineToCoarse[c]<<endl;
 	*/
 
         //outCells.setCount(coarseCount,inGhost);
 	outCells.setCount(coarseCount,outGhost);
-	outCells.setCountLevel1(coarseCount+outGhost);
+	//outCells.setCountLevel1(coarseCount+outGhost);
 	//outCells.setCountLevel1(coarseCount+outGhost+interfaceCells);
 	
 	/*** created coarse level cells ***/
@@ -2376,7 +2387,7 @@ map<string,shared_ptr<ArrayBase> >&
 
         CoarseToFineCells->finishAdd();
 
-        //connectivity between itself (cells) and its finer mesh cells. 
+        /*** connectivity between itself (cells) and its finer mesh cells ***/ 
         newMeshPtr.setConnectivity(outCells,inCells,CoarseToFineCells);
 
         CRPtr FineFacesCoarseCells=CRPtr(new CRConnectivity(inFaces,outCells));
@@ -2418,6 +2429,9 @@ map<string,shared_ptr<ArrayBase> >&
         CRPtr CoarseCellsFineFaces=FineFacesCoarseCells->getTranspose();
         CRPtr CellCellCoarse=CoarseCellsFineFaces->multiply(*FineFacesCoarseCells,true);
 
+	/*** coarse level cellcell connectivity created ***/ 
+
+	/*
         int counter=0;
         BArray counted(outCells.getCount());
         counted=false;
@@ -2433,111 +2447,99 @@ map<string,shared_ptr<ArrayBase> >&
               }
           }
 
-        outFaces.setCount(counter);
+	//outFaces.setCount(counter);
+	*/
 
-        CRPtr CoarseCellCoarseFace=CRPtr(new CRConnectivity(outCells,outFaces));
-        CoarseCellCoarseFace->initCount();
-
-        for(int c=0;c<outCells.getSelfCount();c++)
+        int countFaces=0;
+        int cCell0, cCell1;
+        for(int f=0;f<inFaceCount;f++)
         {
-            const int neibs=CellCellCoarse->getCount(c);
-            CoarseCellCoarseFace->addCount(c,neibs);
-	    /*	    
-	    if(MPI::COMM_WORLD.Get_rank()==0)
-	      {
-		cout<<"level,internal cell no and neighbor no = "<<_level<<" "<<c<<" and "<<neibs<<endl;
-                for(int j=0;j<neibs;j++)
-		  cout<<" cell number and neighbor number = "<<c<<" "<<(*CellCellCoarse)(c,j)<<endl;
-	      }
-	    */
-	}
-        for(int c=outCells.getSelfCount();c<outCells.getCount();c++)
-        {
-            const int neibs=CellCellCoarse->getCount(c);
-            CoarseCellCoarseFace->addCount(c,neibs);
-	    /*	    
-	    if(MPI::COMM_WORLD.Get_rank()==12)
-	      {
-		cout<<"level,external cell no and neighbor no = "<<_level<<" "<<c<<" and "<<neibs<<endl;
-		for(int j=0;j<neibs;j++)
-		  cout<<" cell number and neighbor number = "<<c<<" "<<(*CellCellCoarse)(c,j)<<endl;
-	      }
-	    */
-	}
-	
-        CoarseCellCoarseFace->finishCount();
-	
-	//make cell connectivity to interior faces.
-        IntArray neibCounter(outCells.getCount());
-        neibCounter=0;
-        counter=0;
-        counted=false;
-        for(int c=0;c<outCells.getSelfCount();c++)
-        {
-            counted[c]=true;
-            const int neibs=CellCellCoarse->getCount(c);
-            for(int n=0;n<neibs;n++)
+            cCell0=FineToCoarse[inFaceinCells(f,0)];
+            cCell1=FineToCoarse[inFaceinCells(f,1)];
+            if(cCell0!=cCell1)
             {
-                const int c1=(*CellCellCoarse)(c,n);
-                if(!counted[c1] && c1<outCells.getSelfCount())
-                {
-                    CoarseCellCoarseFace->add(c,counter);
-                    CoarseCellCoarseFace->add(c1,counter);
-                    counter++;
-                    neibCounter[c]++;
-                    neibCounter[c1]++;
-		}
+                countFaces++;
 	    }
 	}
 
-	//cout<<"hello 1 rank "<<MPI::COMM_WORLD.Get_rank()<<endl;
-	//make cell connectivity to boundary faces.
-        for(int c=outCells.getSelfCount();c<outCells.getCount();c++)
-        {
-	    /*	    
-	    const int c1=(*CellCellCoarse)(c,0);
-	    CoarseCellCoarseFace->add(c1,counter);
-	    CoarseCellCoarseFace->add(c,counter);
-	    counter++;
-            neibCounter[c]++;
-            neibCounter[c1]++;
-	    */
-	    
-            counted[c]=true;
-            const int neibs=CellCellCoarse->getCount(c);
-            for(int n=0;n<neibs;n++)
-            {
-                const int c1=(*CellCellCoarse)(c,n);
-                //if(!counted[c1] && c1<outCells.getSelfCount())
-		{
-		    CoarseCellCoarseFace->add(c,counter);
-                    CoarseCellCoarseFace->add(c1,counter);
-                    counter++;
-                    neibCounter[c]++;
-                    neibCounter[c1]++;
-		}
-	    }   
-	}
-	CoarseCellCoarseFace->finishAdd();
-	//cout<<"hello 2 rank "<<MPI::COMM_WORLD.Get_rank()<<endl;
-	
-	/*
-	if(MPI::COMM_WORLD.Get_rank()==0)
-	  for(int c=0;c<(coarseCount+outGhost);c++)
-	    {
-	      const int neibs=CoarseCellCoarseFace->getCount(c);
-		cout<<"rank 0,level no, cell no, number of faces = "<<_level<<" "<<c<<" "<<neibs<<endl;
-	    }
-	*/	
+	outFaces.setCount(countFaces);
 
-        CRPtr CoarseFaceCoarseCell=CoarseCellCoarseFace->getTranspose();
+	int inFaceGhost = 0;
+        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  inFaceGhost+=(*fgPtr).site.getCount();
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	  inFaceGhost+=(*fgPtr).site.getCount();
+	const int inInteriorFaces = inFaceCount - inFaceGhost;
+
+	const int del = inFaceCount - outFaces.getCount();
+
+	//const int interiorCount=outFaces.getCount()-inGhost;
+	const int interiorCount=inInteriorFaces-del;
+	//if(MPI::COMM_WORLD.Get_rank()==1)
+	//cout<<"level,outfaces, outghost, totalfaces = "<<_level<<" "<<interiorCount<<" "<<inGhost<<" "<<countFaces<<endl;
+	const StorageSite& interiorFaces=newMeshPtr.createInteriorFaceGroup(interiorCount);
+	
+        int inOffset=interiorCount;
+        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	{
+            const FaceGroup& fg=*fgPtr;
+            const int size=fg.site.getCount();
+            newMeshPtr.createBoundaryFaceGroup(size,inOffset,fg.id,fg.groupType);
+            inOffset+=size;
+	}
+
+        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	{
+            const FaceGroup& fg=*fgPtr;
+            const int size=fg.site.getCount();
+            newMeshPtr.createInterfaceGroup(size,inOffset,fg.id);
+            inOffset+=size;
+	}
+
+        CRPtr CoarseFaceCoarseCell=CRPtr(new CRConnectivity(outFaces,outCells));
+        CoarseFaceCoarseCell->initCount();
+
+        survivingFaces=0;
+        for(int f=0;f<inFaceCount;f++)
+        {
+            coarse0=FineToCoarse[inFaceinCells(f,0)];
+            coarse1=FineToCoarse[inFaceinCells(f,1)];
+            if(coarse0!=coarse1)
+            {
+                CoarseFaceCoarseCell->addCount(survivingFaces,2);
+		survivingFaces++;
+	    }
+	}
+	
+        CoarseFaceCoarseCell->finishCount();
+
+        //make non-zero's
+	survivingFaces=0;
+        for(int f=0;f<inFaceCount;f++)
+          {
+            fc0=inFaceinCells(f,0);
+            fc1=inFaceinCells(f,1);
+            cc0=FineToCoarse[fc0];
+            cc1=FineToCoarse[fc1];
+            if(cc0!=cc1)
+              {
+                CoarseFaceCoarseCell->add(survivingFaces,cc0);
+                CoarseFaceCoarseCell->add(survivingFaces,cc1);
+		survivingFaces++;
+              }
+          }
+	
+        CoarseFaceCoarseCell->finishAdd();
+
+	CRPtr CoarseCellCoarseFace=CoarseFaceCoarseCell->getTranspose();
 
         newMeshPtr.setConnectivity(outCells,outFaces,CoarseCellCoarseFace);
         newMeshPtr.setConnectivity(outFaces,outCells,CoarseFaceCoarseCell);
 
         CRPtr CoarseFacesFineFaces=CRPtr(new CRConnectivity(outFaces,inFaces));
         CoarseFacesFineFaces->initCount();
-	
+
+	survivingFaces=0;
 	for(int f=0;f<inFaceCount;f++)
           {
             int fc0=inFaceinCells(f,0);
@@ -2547,209 +2549,36 @@ map<string,shared_ptr<ArrayBase> >&
 
             if(cc1!=cc0)
               {
-                const int cfaces=CoarseCellCoarseFace->getCount(cc0);
-
-                for(int cf=0;cf<cfaces;cf++)
-                  {
-                    const int face=(*CoarseCellCoarseFace)(cc0,cf);
-                    const int tempc0=(*CoarseFaceCoarseCell)(face,0);
-                    const int tempc1=(*CoarseFaceCoarseCell)(face,1);
-                    
-                    if(((cc0==tempc0)&&(cc1==tempc1))||((cc1==tempc0)&&(cc0==tempc1)))
-                      {
-                        CoarseFacesFineFaces->addCount(face,1);
-                        break;
-                      }
-                  }
+		CoarseFacesFineFaces->addCount(survivingFaces,1);
+		survivingFaces++;
               }
           }
 	//cout<<"hello 3 rank "<<MPI::COMM_WORLD.Get_rank()<<endl;
         CoarseFacesFineFaces->finishCount();
 	
+	survivingFaces=0;
 	for(int f=0;f<inFaceCount;f++)
-          {
+        {
             int fc0=inFaceinCells(f,0);
             int fc1=inFaceinCells(f,1);
             const int cc0=FineToCoarse[fc0];
             const int cc1=FineToCoarse[fc1];
             if(cc1!=cc0)
-              {
-                const int cfaces=CoarseCellCoarseFace->getCount(cc0);
-
-                for(int cf=0;cf<cfaces;cf++)
-                  {
-                    const int face=(*CoarseCellCoarseFace)(cc0,cf);
-                    const int tempc0=(*CoarseFaceCoarseCell)(face,0);
-                    const int tempc1=(*CoarseFaceCoarseCell)(face,1);
-                    
-                    if(((cc0==tempc0)&&(cc1==tempc1))||((cc1==tempc0)&&(cc0==tempc1)))
-                      {
-                        CoarseFacesFineFaces->add(face,f);
-                        break;
-                      }
-                  }
-              }
-          }
+            {
+		CoarseFacesFineFaces->add(survivingFaces,f);
+		survivingFaces++;
+	    }
+	}
 	//cout<<"hello 4 rank "<<MPI::COMM_WORLD.Get_rank()<<endl;
         CoarseFacesFineFaces->finishAdd();
 
-        int boundaryMin = -1;
-        for(int f=0;f<outFaces.getCount();f++)
-          {
-	    if(((*CoarseFaceCoarseCell)(f,0)==coarseCount)||((*CoarseFaceCoarseCell)(f,1)==coarseCount))
-	      {
-		boundaryMin = f;
-		break;
-	      }
-          }
-
-	//const int interiorCount=outFaces.getCount()-inGhost;
-	const int interiorCount=boundaryMin;
-
 	/*
-	if(MPI::COMM_WORLD.Get_rank()==27)
+	if(MPI::COMM_WORLD.Get_rank()==1)
 	{
 	    for(int f=0;f<outFaces.getCount();f++)
 	    {
 		cout<<"level,rank,face,neighbor = "<<_level<<" "<<MPI::COMM_WORLD.Get_rank()<<" "<<f<<" "<<(*CoarseFaceCoarseCell)(f,0)<<" "<<(*CoarseFaceCoarseCell)(f,1)<<endl;
 	    }
-	}
-	*/
-
-        const StorageSite& interiorFaces=newMeshPtr.createInteriorFaceGroup(interiorCount);
-
-        int inOffset=interiorCount;
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-        {
-            const FaceGroup& fg=*fgPtr;
-            const int size=fg.site.getCount();
-            newMeshPtr.createBoundaryFaceGroup(size,inOffset,fg.id,fg.groupType);
-            inOffset+=size;
-	}
-	
-	const FaceGroupList& faceGroupList = mesh.getInterfaceGroups();
-	for ( int i = 0; i < mesh.getInterfaceGroupCount(); i++ )
-	{
-	    int f0=-1;
-	    int ii=-1;
-	    for ( int j = 0; j < mesh.getInterfaceGroupCount(); j++ )
-	    {
-		const StorageSite& jSite = faceGroupList[j]->site;
-		const int jSize=jSite.getCount();
-		const CRConnectivity& jfaceCells=mesh.getFaceCells(jSite);
-		int min = 1e10;
-		int cJInterface = -1;
-		int coarseJFace = -1;
-		for(int f=0;f<jSize;f++)
-		{
-		    int jInterface = jfaceCells(f,1);
-		    if(jInterface<inCellCount)
-		      jInterface = jfaceCells(f,0);
-		    cJInterface = FineToCoarse[jInterface];
-		    for(int jj=0;jj<CoarseCellCoarseFace->getCount(cJInterface);jj++)
-		    {
-			coarseJFace = (*CoarseCellCoarseFace)(cJInterface,jj);
-			if(min>coarseJFace)
-			  min=coarseJFace;
-		    }
-		}
-		if(min==inOffset)
-		{
-		    ii=j;
-		    break;
-		}
-	    }
-	    int id = faceGroupList[ii]->id;
-	    const StorageSite& site = faceGroupList[ii]->site;
-	    const int size=site.getCount();
-	    const int offset = site.getOffset();
-            const CRConnectivity& IfaceCells=mesh.getFaceCells(site);
-            int coarseInterface = -1;
-            int coarseFace = -1;
-            int cfc = 0;
-            BArray counted(outFaces.getCount());
-            counted=false;
-            for(int f=0;f<size;f++)
-	      {
-                int fineInterface = IfaceCells(f,1);
-                if(fineInterface<inCellCount)
-                  fineInterface = IfaceCells(f,0);
-                coarseInterface = FineToCoarse[fineInterface];
-                for(int j=0;j<CoarseCellCoarseFace->getCount(coarseInterface);j++)
-                  {
-		    /*
-                    if(MPI::COMM_WORLD.Get_rank()==1)
-                      {
-                        cout<<"level,rank,id,size,face,cface in level = "<<(_level)<<" "<<MPI::COMM_WORLD.Get_rank()<<" "<<id<<" "<<size<<" "<<offset<<" \
-"<<fineInterface<<" "<<coarseInterface<<" "<<f<<" "<<(*CoarseCellCoarseFace)(coarseInterface,j)<<endl;
-                      }
-		    */
-                    coarseFace = (*CoarseCellCoarseFace)(coarseInterface,j);
-                    if(!counted[coarseFace])
-                      {
-                        counted[coarseFace]=true;
-                        cfc++;
-                      }
-                  }
-		
-	      }
-	    /*
-            if(MPI::COMM_WORLD.Get_rank()==27)
-              {
-                cout<<"rank,int,boun,inOffset,interface in level = "<<MPI::COMM_WORLD.Get_rank()<<" "<<interiorCount<<" "<<boundaryCell<<" "<<(_level+1)<<" \
-"<<inOffset<<" "<<cfc<<endl;
-              }
-	    */
-            int interfaceSize = cfc;
-            newMeshPtr.createInterfaceGroup(interfaceSize,inOffset,id);
-            inOffset+=interfaceSize;
-	}
-	
-	/*
-	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
-        {
-            const FaceGroup& fg=*fgPtr;
-            const int size=fg.site.getCount();
-            const StorageSite& site = fg.site;
-	    const int offset = site.getOffset();
-            const CRConnectivity& IfaceCells=mesh.getFaceCells(site);
-	    int coarseInterface = -1;
-	    int coarseFace = -1;
-	    int cfc = 0;
-	    BArray counted(outFaces.getCount());
-	    counted=false;
-            for(int f=0;f<size;f++)
-            {
-		int fineInterface = IfaceCells(f,1);
-		if(fineInterface<inCellCount)
-		  fineInterface = IfaceCells(f,0);
-		coarseInterface = FineToCoarse[fineInterface];
-		for(int j=0;j<CoarseCellCoarseFace->getCount(coarseInterface);j++)
-		  {
-		    
-		    if(MPI::COMM_WORLD.Get_rank()==27)
-		      {
-			cout<<"level,rank,id,size,face,cface in level = "<<(_level)<<" "<<MPI::COMM_WORLD.Get_rank()<<" "<<fg.id<<" "<<size<<" "<<offset<<" "<<fineInterface<<" "<<coarseInterface<<" "<<f<<" "<<(*CoarseCellCoarseFace)(coarseInterface,j)<<endl;
-		      }
-		    
-		    coarseFace = (*CoarseCellCoarseFace)(coarseInterface,j);
-		    if(!counted[coarseFace])
-		      {
-			counted[coarseFace]=true;
-			cfc++;
-		      }
-		  }
-		
-	    }
-	      
-	    if(MPI::COMM_WORLD.Get_rank()==27)
-	      {
-		cout<<"rank,int,boun,inOffset,interface in level = "<<MPI::COMM_WORLD.Get_rank()<<" "<<interiorCount<<" "<<boundaryCell<<" "<<(_level+1)<<" "<<inOffset<<" "<<cfc<<endl;
-	      }
-	    
-	    int interfaceSize = cfc;
-	    newMeshPtr.createInterfaceGroup(interfaceSize,inOffset,fg.id);
-            inOffset+=interfaceSize;
 	}
 	*/	
 
@@ -2902,6 +2731,7 @@ map<string,shared_ptr<ArrayBase> >&
 	  for(int f=0; f< nFaces; f++)
           {
 	      const int c1= faceCells(f,1);// boundary cell
+	      //if(MPI::COMM_WORLD.Get_rank()==1)
 	      //cout<<"fgid, boundarycell, boundary coarse index = "<<fg.id<<" "<<c1<<" "<<coarseIndex[c1]<<endl;
 	      if(boundaryCell<coarseIndex[c1])
 		boundaryCell=coarseIndex[c1];
@@ -2929,7 +2759,7 @@ map<string,shared_ptr<ArrayBase> >&
 
           toIndicesMap[&oSite].push_back(&toIndices);
 	}
-      
+      /*
       foreach(const StorageSite::GatherMap::value_type pos, gatherMapLevel1)
 	{
           const StorageSite& oSite = *pos.first;
@@ -2937,7 +2767,7 @@ map<string,shared_ptr<ArrayBase> >&
 
           toIndicesMap[&oSite].push_back(&toIndices);
 	}
-      
+      */
       foreach(IndicesMap::value_type pos, toIndicesMap)
         {
           const StorageSite& oSite = *pos.first;
@@ -2971,10 +2801,10 @@ map<string,shared_ptr<ArrayBase> >&
                       gatherSet.insert( coarseIndex[fineIndex] );
                       coarseGhostSize++;
 		    }
-		  //if(MPI::COMM_WORLD.Get_rank()==27)
+		  //if(MPI::COMM_WORLD.Get_rank()==1)
 		  //cout<<"level,fineIndex, coarseIndex = "<<_level<<" "<<fineIndex<<" "<<coarseIndex[fineIndex]<<endl;
 		}
-	      //if(MPI::COMM_WORLD.Get_rank()==27)
+	      //if(MPI::COMM_WORLD.Get_rank()==1)
 	      //cout<<endl<<endl;
 	    }
 
@@ -3003,7 +2833,7 @@ map<string,shared_ptr<ArrayBase> >&
 
           fromIndicesMap[&oSite].push_back(&fromIndices);
 	}
-      
+      /*
       foreach(const StorageSite::GatherMap::value_type pos, scatterMapLevel1)
 	{
           const StorageSite& oSite = *pos.first;
@@ -3011,7 +2841,7 @@ map<string,shared_ptr<ArrayBase> >&
 
           fromIndicesMap[&oSite].push_back(&fromIndices);
 	}
-
+      */
       foreach(IndicesMap::value_type pos, fromIndicesMap)
 	{
           const StorageSite& oSite = *pos.first;
@@ -3069,7 +2899,7 @@ map<string,shared_ptr<ArrayBase> >&
 	COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,_macroFields,_quadrature,
 				       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
 				       _options["timeStep"],_options.timeDiscretizationOrder,
-				       _options.transient,_options["rho_init"], 
+				       _options.transient,_options.underRelaxation,_options["rho_init"], 
 				       _options["T_init"],_options["molecularWeight"],
 				       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
 
@@ -3121,7 +2951,7 @@ map<string,shared_ptr<ArrayBase> >&
 	COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,_macroFields,_quadrature,
 				       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
 				       _options["timeStep"],_options.timeDiscretizationOrder,
-				       _options.transient,_options["rho_init"], 
+				       _options.transient,_options.underRelaxation,_options["rho_init"], 
 				       _options["T_init"],_options["molecularWeight"],
 				       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
 

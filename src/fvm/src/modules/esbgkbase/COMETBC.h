@@ -92,6 +92,8 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->AgglomerationMethod="FaceArea";
     this->preSweeps=0;
     this->postSweeps=2;
+    this->underRelaxation=1.0;
+    this->minCells=1;
     this->CentralDifference=false;
     this->KineticLinearSolver = 0;
    
@@ -132,9 +134,11 @@ struct COMETModelOptions : public FloatVarDict<T>
   double relTolerance;
   int showResidual;
   int maxLevels;
+  double underRelaxation;
   string AgglomerationMethod;
   int preSweeps;
   int postSweeps;
+  int minCells;
   bool CentralDifference;
 
   LinearSolver *KineticLinearSolver;
