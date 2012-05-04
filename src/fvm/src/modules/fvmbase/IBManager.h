@@ -28,7 +28,20 @@ NearestCell
   double distanceSquared;
   vector<int> neighbors;
 };
+struct
+NearestIBFace
+{
+  NearestIBFace():
+    mesh(0),
+    IBFace(-1),
+    distanceSquared(0)
+  {}
 
+  const Mesh* mesh;
+  int IBFace;
+  double distanceSquared;
+  vector<int> neighbors;
+};
 struct   
 doubleIntStruct{
    double VALUE;
@@ -53,6 +66,8 @@ public:
   int fluidNeighborsPerIBFace;
   int fluidNeighborsPerSolidFace;
   int solidNeighborsPerIBFace;
+  int IBNeighborsPerSolidFace;
+  Mesh& _solidBoundaryMesh;
   
 private:
 
@@ -68,13 +83,18 @@ private:
   findNearestCellForSolidFaces(Mesh& mesh,
                                KSearchTree& fluidCellsTree,
                                vector<NearestCell>& nearest);
+  //void
+  //indNearestIBFaceForSolidFaces(Mesh& mesh,
+  //                            KSearchTree& IBFacesTree,
+  //                            vector<NearestIBFace>& nearestIB);
   
   void createSolidInterpolationStencil(Mesh& mesh,
+				       KSearchTree& IBFacesTree,
                                        vector<NearestCell>& nearest);
+				       // vector<NearestIBFace>& nearestIB);
   void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const;
 
   GeomFields& _geomFields;
-  Mesh& _solidBoundaryMesh;
   const MeshList _fluidMeshes;
 };
 #endif

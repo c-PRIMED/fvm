@@ -19,6 +19,7 @@ IBManager::IBManager(GeomFields& geomFields,
   fluidNeighborsPerIBFace(50),
   fluidNeighborsPerSolidFace(50),
   solidNeighborsPerIBFace(50),
+  IBNeighborsPerSolidFace(50),
   _geomFields(geomFields),
   _solidBoundaryMesh(solidBoundaryMesh),
   _fluidMeshes(fluidMeshes)
@@ -96,7 +97,8 @@ void IBManager::update()
       createIBFaces(fluidMesh);
   }
 
-  vector<NearestCell> solidFacesNearestCell(solidMeshFaces.getCount());
+ vector<NearestCell> solidFacesNearestCell(solidMeshFaces.getCount());
+ // vector<NearestIBFace> solidFacesNearestIBFace(solidMeshFaces.getCount());
   
   for (int n=0; n<numFluidMeshes; n++) {
       Mesh& fluidMesh = *_fluidMeshes[n];
@@ -105,23 +107,28 @@ void IBManager::update()
 
 	const StorageSite& cells = fluidMesh.getCells();
 	const int numCells = cells.getSelfCount();
-      
+	//	StorageSite& ibFaces = fluidMesh.getIBFaces();
+	//	const int nIBFaces = ibFaces.getCount();
 	IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
 
 	const Vec3DArray& cellCoords =
 	  dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
-      
+	//      	const Vec3DArray& ibFaceCoords =
+	//	  dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[ibFaces]);
 	KSearchTree fluidCellsTree;
-	
 	for(int c=0; c<numCells; c++)
 	  {
 	    if (cellIBType[c] == Mesh::IBTYPE_FLUID)
 	      fluidCellsTree.insert(cellCoords[c],c);
 	  }
-	
+	//	for(int c=0; c<nIBFaces; c++)
+	//	  {
+	//   	    IBFacesTree.insert(ibFaceCoords[c],c);
+	//	  }
 	createIBInterpolationStencil(fluidMesh,fluidCellsTree,solidMeshKSearchTree);
 	
 	findNearestCellForSolidFaces(fluidMesh,fluidCellsTree,solidFacesNearestCell);
+
       }
   }
   
@@ -163,11 +170,24 @@ void IBManager::update()
 
 
   for (int n=0; n<numFluidMeshes; n++)
-  {
-      Mesh& fluidMesh = *_fluidMeshes[n];
-      if (!fluidMesh.isShell())	
-	createSolidInterpolationStencil(fluidMesh,solidFacesNearestCell);
-      
+  {	
+    Mesh& fluidMesh = *_fluidMeshes[n]; 
+    if (!fluidMesh.isShell()){ 
+      StorageSite& ibFaces = fluidMesh.getIBFaces();
+      const StorageSite& faces = fluidMesh.getFaces();
+      const Vec3DArray& faceCoords =
+	  dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[faces]); 
+      const int nIBFaces = ibFaces.getCount();
+      const Array<int>& ibFaceIndices = fluidMesh.getIBFaceList();
+      KSearchTree IBFacesTree;
+      for(int c=0; c<nIBFaces; c++)
+	{
+	  const int gf=ibFaceIndices[c];
+	  IBFacesTree.insert(faceCoords[gf],c);
+	}
+      //      findNearestIBFaceForSolidFaces(fluidMesh,IBFacesTree,solidFacesNearestIBFace);
+      createSolidInterpolationStencil(fluidMesh,IBFacesTree,solidFacesNearestCell);
+     }   
   }
 
 }
@@ -591,6 +611,7 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   shared_ptr<CRConnectivity> ibFaceToSolid
     (new CRConnectivity(ibFaces,solidMeshFaces));
 
+
   //const CRConnectivity& cellCells  = mesh.getCellCells();
   const CRConnectivity& cellCells2 = mesh.getCellCells2();
   IntArray& cellIBType = dynamic_cast<IntArray&>(_geomFields.ibType[cells]);
@@ -769,9 +790,54 @@ IBManager::findNearestCellForSolidFaces(Mesh& mesh,
 }
 
 
+
+// void
+// IBManager::findNearestIBFaceForSolidFaces(Mesh& mesh,
+//                                         KSearchTree& IBFacesTree,
+//                                         vector<NearestIBFace>& nearestIB)
+                                           
+// {
+//   const StorageSite& cells = mesh.getCells();
+//   const StorageSite& solidMeshFaces = _solidBoundaryMesh.getFaces();
+//   StorageSite& ibFaces = mesh.getIBFaces();
+//   const int nSolidFaces = solidMeshFaces.getCount();
+//   const Vec3DArray& cellCentroid =
+//     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
+
+//   const Vec3DArray& solidFaceCentroid =
+//     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
+//   const Vec3DArray& IBFaceCentroid =
+//     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[ibFaces]);
+
+//   for(int f=0; f<nSolidFaces; f++)
+//   {
+//       Array<int> IBNeighbors(1);
+//       IBNeighbors[0] = -9999;
+//       const Vec3D& xf = solidFaceCentroid[f];
+//       IBFacesTree.findNeighbors(xf, 1, IBNeighbors);
+//       if ( IBNeighbors[0] != -9999 ){
+//          const int c = IBNeighbors[0];
+//          const Vec3D& xc = IBFaceCentroid[c];
+//          const double distanceSquared = mag2(xf-xc);
+//          NearestIBFace& nc = nearestIB[f];
+//          if ((nc.mesh == 0) || (nc.distanceSquared > distanceSquared))
+//          {
+//             nc.mesh = &mesh;
+//             nc.IBFace = c;
+//             nc.distanceSquared = distanceSquared;
+//          }
+//       }
+
+//    }
+
+// }
+
+
 void
 IBManager::createSolidInterpolationStencil(Mesh& mesh,
+					   KSearchTree& IBFacesTree,
                                            vector<NearestCell>& nearest)
+					   // vector<NearestIBFace>& nearestIB)
                                            
 {
   const StorageSite& cells = mesh.getCells();
@@ -779,7 +845,7 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
 
   const Vec3DArray& cellCoords =
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
-
+  StorageSite& ibFaces = mesh.getIBFaces();
   const Vec3DArray& solidMeshCoords =
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
 
@@ -791,10 +857,18 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
 
   shared_ptr<CRConnectivity> solidFacesToCells
     (new CRConnectivity(solidMeshFaces,cells));
-  
+  shared_ptr<CRConnectivity> solidToIBFaces
+    (new CRConnectivity(solidMeshFaces,ibFaces));
   solidFacesToCells->initCount();
-
+  solidToIBFaces->initCount();
   Array<int> desiredNeighbors(fluidNeighborsPerSolidFace);
+  Array<int> desiredNeighborsforIBFaces(IBNeighborsPerSolidFace);
+  for(int f=0; f<nSolidFaces; f++)
+  {
+      solidToIBFaces->addCount(f,IBNeighborsPerSolidFace);
+  }
+
+  solidToIBFaces->finishCount();
   
   for(int f=0; f<nSolidFaces; f++)
   {
@@ -870,6 +944,7 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
   
   solidFacesToCells->finishCount();
 
+
   for(int f=0; f<nSolidFaces; f++)
   {
       NearestCell& nc = nearest[f];
@@ -889,6 +964,18 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
   
   solidFacesToCells->finishAdd();
   mesh.setConnectivity(solidMeshFaces,cells,solidFacesToCells);
+ 
+ for(int f=0; f<nSolidFaces; f++)
+  {
+      // the index of this ib face in the mesh faces
+    const Vec3D& xf = solidMeshCoords[f];
+    IBFacesTree.findNeighbors(xf, IBNeighborsPerSolidFace, desiredNeighborsforIBFaces);
+    for(int n=0; n< IBNeighborsPerSolidFace; n++)
+      solidToIBFaces->add(f, desiredNeighborsforIBFaces[n]);
+  }
+ solidToIBFaces->finishAdd();
+ mesh.setConnectivity(solidMeshFaces,ibFaces,solidToIBFaces);
+
 #ifdef FVM_PARALLEL
 #if 0
   CRConnectivityPrintFile( *solidFacesToCells, "solidFacesToCells", MPI::COMM_WORLD.Get_rank() );

@@ -444,7 +444,7 @@ public:
 
           _flowFields.velocity.addArray(ibFaces,ibV);
 
-       }
+	}
     }
 
   }
@@ -1247,8 +1247,8 @@ public:
         r.zero();
         for(int f=0; f<nFaces; f++)
         {
-            const int c0 = faceCells(f,0);
-            const int c1 = faceCells(f,1);
+	  const int c0 = faceCells(f,0);
+	  const int c1 = faceCells(f,1);
 
             r[c0] += massFlux[f];
             r[c1] -= massFlux[f];
