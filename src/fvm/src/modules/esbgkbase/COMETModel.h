@@ -2904,11 +2904,16 @@ map<string,shared_ptr<ArrayBase> >&
 				       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
 
         CDisc.setfgFinder();
+	
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+	
+#if 0
 	for(int dir=0;dir<numDir;dir++)
 	  {
 	    Field& fnd = *_dsfPtr.dsf[dir];
 	    fnd.syncLocal();
 	  }
+#endif  
 	CDisc.COMETSolve(1,_level); //forward
 	//callCOMETBoundaryConditions();
 	ComputeCOMETMacroparameters();
@@ -2917,12 +2922,15 @@ map<string,shared_ptr<ArrayBase> >&
 	if (_options.fgamma==0){initializeMaxwellianEq();}
 	else{ EquilibriumDistributionBGK();}
 	if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
-        
+      
+        Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0        
         for(int dir=0;dir<numDir;dir++)
           {
             Field& fnd = *_dsfPtr.dsf[dir];
             fnd.syncLocal();
           }
+#endif          
 	CDisc.COMETSolve(-1,_level); //reverse
 	if((num==1)||(num==0&&_level==0))
 	{
@@ -2957,11 +2965,15 @@ map<string,shared_ptr<ArrayBase> >&
 
         CDisc.setfgFinder();
 	const int numDir=_quadrature.getDirCount();
+	
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
 	for(int dir=0;dir<numDir;dir++)
 	{
 	    Field& fnd = *_dsfPtr.dsf[dir];
 	    fnd.syncLocal();
 	}
+#endif
         CDisc.findResid(addFAS);
         currentResid=CDisc.getAveResid();
 
@@ -3313,6 +3325,7 @@ map<string,shared_ptr<ArrayBase> >&
   TQuad& getQuadrature() {return _quadrature;}
   MacroFields& getMacro() {return _macroFields;}
   T getResidual() {return _residual;}
+  
     
 
  private:

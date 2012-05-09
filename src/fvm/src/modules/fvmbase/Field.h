@@ -41,6 +41,12 @@ public:
   
   void syncLocal();
   
+  ArrayMap& getArrayMap() { return _arrays;}
+    
+  GhostArrayMap& getGhostArrayMap() { return _ghostArrays;}
+    
+  static void syncLocalVectorFields(std::vector<Field*>& dsf);
+
 
   const string getName() const {return _name;}
 
@@ -58,6 +64,11 @@ private:
   int  get_request_size();
   int  get_request_size_scatter_level1();
   int  get_request_size_gather_level1();
+  
+  static void   createSyncGatherArraysVectorFields(const StorageSite& site, Field& field, const size_t numDir);
+  static void   syncScatterVectorFields(const StorageSite& site, std::vector<Field*> & dsf);
+  static void   syncGatherVectorFields(const StorageSite& site,  std::vector<Field*>& dsf);
+  static int    get_request_size(Field& field);
 
   void syncLocalLevel1();
 

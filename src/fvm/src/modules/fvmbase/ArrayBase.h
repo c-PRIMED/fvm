@@ -26,10 +26,10 @@ public:
          const int length) const=0;
 
   virtual void
-  scatter(ArrayBase& other_, const ArrayBase& indices) const=0;
+  scatter(ArrayBase& other_, const ArrayBase& indices, const int offset=0) const=0;
 
   virtual void
-  gather(const ArrayBase& other_, const ArrayBase& indices) = 0;
+  gather(const ArrayBase& other_, const ArrayBase& indices, const int offset=0) = 0;
 
   virtual void
   setSubsetFromSubset(const ArrayBase& other, const ArrayBase& fromIndices,

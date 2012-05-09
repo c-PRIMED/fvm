@@ -331,21 +331,21 @@ public:
   }
 
   virtual void
-  scatter(ArrayBase& other_, const ArrayBase& indices_) const
+  scatter(ArrayBase& other_, const ArrayBase& indices_, const int offset=0) const
   {
     const Array<int>& indices = dynamic_cast<const Array<int>& >(indices_);
     Array& other = dynamic_cast<Array& >(other_);
     for(int ii=0; ii<indices.getLength(); ii++)
-        other[ii] = _data[indices[ii]];
+        other[offset+ii] = _data[indices[ii]];
   }
 
   virtual void
-  gather(const ArrayBase& other_, const ArrayBase& indices_)
+  gather(const ArrayBase& other_, const ArrayBase& indices_, const int offset=0)
   {
     const Array<int>& indices = dynamic_cast<const Array<int>& >(indices_);
     const Array& other = dynamic_cast<const Array& >(other_);
     for(int ii=0; ii<indices.getLength(); ii++)
-      _data[indices[ii]] = other[ii];
+      _data[indices[ii]] = other[offset+ii];
   }
 
   virtual shared_ptr<Array>
