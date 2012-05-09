@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Sympy(BuildPkg):
-    requires = ['scipy']
+    requires = ['scipy', 'python']
 
     def _installed(self):
         return python_package('sympy', [0,7,0])

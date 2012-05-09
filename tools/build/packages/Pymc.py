@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Pymc(BuildPkg):
-    requires = ['scipy', 'matplotlib']
+    requires = ['scipy', 'matplotlib', 'python']
 
     def _installed(self):
         return python_package('pymc', [2,0,0])

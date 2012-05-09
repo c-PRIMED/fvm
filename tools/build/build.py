@@ -114,7 +114,12 @@ class Build:
                 if check_timestamp:
                     verbose(1, 'Checking required packages for %s: ' % p.name)
                 if p.name == 'python':
+                    # FIXME: major hack
                     self.add_build(p, check_timestamp, True)
+                    self.add_build([p for p in self.all_packages if p.name == 'matplotlib'][0], check_timestamp, True)
+                    self.add_build([p for p in self.all_packages if p.name == 'scipy'][0], check_timestamp, True)
+                    self.add_build([p for p in self.all_packages if p.name == 'nose'][0], check_timestamp, True)
+                    self.add_build([p for p in self.all_packages if p.name == 'sympy'][0], check_timestamp, True)
                 else:
                     self.add_build(p, check_timestamp)
                     
