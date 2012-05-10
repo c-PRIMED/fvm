@@ -6,6 +6,11 @@
 #include <map>
 #include <cmath>
 #include <vector>
+
+#ifdef FVM_PARALLEL
+  #include <mpi.h>
+#endif
+
 #include "Model.h"
 
 #include "Array.h"
@@ -3179,7 +3184,19 @@ map<string,shared_ptr<ArrayBase> >&
     _residual=updateResid(false);
     _initialResidual=_residual;
     T residualRatio(1.0);
-    cout<<"Initial Residual:"<<_initialResidual<<"  ResidualRatio: "<<residualRatio<<endl;
+    
+#ifdef FVM_PARALLEL    
+    if ( MPI::COMM_WORLD.Get_rank() == 0 )
+        cout<<"Initial Residual:"<<_initialResidual<<"  ResidualRatio: "<<residualRatio<<endl;
+#endif
+
+
+#ifndef FVM_PARALLEL    
+    cout << "Initial Residual:"<<_initialResidual<<"  ResidualRatio: "<<residualRatio<<endl;
+#endif	
+    
+    
+    
     int niters=0;
     const T absTol=_options.absoluteTolerance;
     const T relTol=_options.relativeTolerance;
