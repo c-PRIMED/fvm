@@ -33,7 +33,7 @@ struct FaceGroup
     groupType(groupType_)
   {}
   
-  const StorageSite site;
+  StorageSite site;
   const int id;
   string groupType;
 };
@@ -303,7 +303,9 @@ public:
   void findCommonNodes(Mesh& other);
   void findCommonFaces(StorageSite& faces, StorageSite& otherFaces,
                        const GeomFields& geomFields);
-
+  bool COMETfindCommonFaces(StorageSite& faces, StorageSite& otherFaces,
+			    const GeomFields& geomFields);
+  
   Mesh* extractBoundaryMesh();
   Mesh* extrude(int nz, double zmax, bool boundaryOnly=false);
 
