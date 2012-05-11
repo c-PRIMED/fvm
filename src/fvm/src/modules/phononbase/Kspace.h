@@ -12,12 +12,16 @@
 #include "SquareTensor.h"
 
 template<class T>
+class DensityOfStates;
+
+template<class T>
 class Kspace
 {
 
  public:
 
   typedef Kspace<T> Tkspace;
+  typedef vector<Tkspace*> TkspList;
   typedef Array<T> TArray;
   typedef Vector<T,3> Tvec;
   typedef Array<Tvec> TvecArray;
@@ -33,6 +37,9 @@ class Kspace
   typedef typename Tmode::Reflptr Reflptr;
   typedef typename Tmode::Refl_pair Refl_pair;
   typedef typename Tmode::Refl_Map Refl_Map;
+  typedef pair<TArray*, TArray*> BinAndTrans;
+  typedef map<Tkspace*,pair<TArray*,TArray*> > TransmissionMap;
+  typedef typename Tkspace::TransmissionMap::iterator TransIt;
 
  Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi) :
   _length(ntheta*nphi),
@@ -57,7 +64,7 @@ class Kspace
 		vg[0]=vgmag*sin(theta)*sin(phi);
 		vg[1]=vgmag*sin(theta)*cos(phi);
 		vg[2]=vgmag*cos(theta);
-		dk3=2.*sin(theta)*sin(dtheta/2.)*dphi;
+		dk3=2.*sin(theta)*sin(dtheta/2.)*dphi*8/pow(pi,3)*(pow(.5,2)+pow(.5,3)/12.);
 		Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode(vg,omega,tau));
 		modeptr->setIndex(count);
 		count++;
@@ -90,7 +97,7 @@ class Kspace
      cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
 
      _length=kPoints*directions;
-     int count=0;
+     int count=1;
 
      for(int k=0;k<_length;k++)
        {
@@ -262,6 +269,7 @@ class Kspace
   //void setvol(int n,Tkvol k) {*_Kmesh[n]=k;}
   Tkvol& getkvol(int n) const {return *_Kmesh[n];}
   int getlength() const {return _length;}
+  T gethbar() {return 6.582119e-16;}
   int gettotmodes()
   {
     return (_Kmesh[0]->getmodenum())*_length;
@@ -301,7 +309,7 @@ class Kspace
     T deltaT=1.;
     T newguess;
     int iters=0;
-    while((deltaT>1e-6)&&(iters<100))
+    while((deltaT>1e-6)&&(iters<10))
       {
 	gete0_tau(guess,e0_tau,de0_taudT);
 	deltaT=(e0_tau-e_sum)/de0_taudT;
@@ -310,6 +318,43 @@ class Kspace
 	guess=newguess;
 	iters++;
       }	
+  }
+
+  void calcTemp(T& guess, const T e_sum, const Tvec An)
+  {
+    T e0;
+    T de0dT;
+    T deltaT=1.;
+    T newguess;
+    int iters=0;
+    while((deltaT>1e-6)&&(iters<10))
+      {
+	gete0(guess, e0, de0dT,An);
+	deltaT=(e0-e_sum)/de0dT;
+	newguess=guess-deltaT;
+	deltaT=fabs(deltaT/guess);
+	guess=newguess;
+	iters++;
+      }	
+  }
+
+  T calcModeTemp(T guess, const T e_sum, const T m)
+  {
+    T e0;
+    T de0dT;
+    T deltaT=1.;
+    T newguess;
+    int iters=0;
+    while((deltaT>1e-6)&&(iters<10))
+      {
+	gete0(guess, e0, de0dT,m);
+	deltaT=(e0-e_sum)/de0dT;
+	newguess=guess-deltaT;
+	deltaT=fabs(deltaT/guess);
+	guess=newguess;
+	iters++;
+      }
+    return guess;
   }
 
   void gete0_tau(T& Tguess, T& e0tau, T& de0taudT)
@@ -327,6 +372,43 @@ class Kspace
 	    e0tau+=mode.calce0tau(Tguess)*dk3;
 	    de0taudT+=mode.calcde0taudT(Tguess)*dk3;
 	  }
+      }
+  }
+
+  void gete0(const T Tguess, T& e0, T& de0dT, const Tvec An)
+  {
+    e0=0.;
+    de0dT=0.;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    Tvec vg=mode.getv();
+	    T vdota=vg[0]*An[0]+vg[1]*An[1]+vg[2]*An[2];
+	    if(vdota>0)
+	      {
+		e0+=mode.calce0(Tguess)*dk3;
+		de0dT+=mode.calcde0dT(Tguess)*dk3;
+	      }
+	  }
+      }
+  }
+
+  void gete0(const T Tguess, T& e0, T& de0dT, const T m)
+  {
+    e0=0.;
+    de0dT=0.;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	T dk3=kv.getdk3();
+	Tmode& mode=kv.getmode(m);
+	e0+=mode.calce0(Tguess)*dk3;
+	de0dT+=mode.calcde0dT(Tguess)*dk3;
       }
   }
 
@@ -430,8 +512,8 @@ class Kspace
     Tvec vg2=mode2.getv();
     Tvec sn1=vg1;///sqrt(pow(vg1[0],2)+pow(vg1[1],2)+pow(vg1[2],2));
     Tvec sn2=vg2;///sqrt(pow(vg2[0],2)+pow(vg2[1],2)+pow(vg2[2],2));
-    T sn1dotso=fabs(sn1[0]*so[0]+sn1[1]*so[1]+sn1[2]*so[2]-vo);
-    T sn2dotso=fabs(sn2[0]*so[0]+sn2[1]*so[1]+sn2[2]*so[2]-vo);
+    T sn1dotso=fabs(sn1[0]*so[0]+sn1[1]*so[1]+sn1[2]*so[2]-pow(vo,2));
+    T sn2dotso=fabs(sn2[0]*so[0]+sn2[1]*so[1]+sn2[2]*so[2]-pow(vo,2));
     
     if (sn2dotso<sn1dotso)
       {
@@ -447,7 +529,7 @@ class Kspace
 	Tmode& temp_mode=getkvol(k).getmode(m);
 	Tvec vgt=temp_mode.getv();
 	const Tvec sn=vgt;///sqrt(pow(vgt[0],2)+pow(vgt[1],2)+pow(vgt[2],2));
-	const T sndotso=fabs(sn[0]*so[0]+sn[1]*so[1]+sn[2]*so[2]-vo);
+	const T sndotso=fabs(sn[0]*so[0]+sn[1]*so[1]+sn[2]*so[2]-pow(vo,2));
 	
 	if(sndotso<sn1dotso)
 	  {
@@ -500,6 +582,9 @@ class Kspace
 	newKvol->copyKvol(copyFromKspace.getkvol(i));
 	_Kmesh.push_back(newKvol);
       }
+
+    setDOS(*copyFromKspace.getDOSptr());
+
   }
 
   T FindBallisticHeatRate(const Tvec An,const T T1,const T T2)
@@ -623,6 +708,177 @@ class Kspace
       for(int j=0;j<3;j++)
 	out(i,j)=v1[i]*v2[j];
   }
+
+  void setTransmission(Tkspace& toKspace, ArrayBase* freqBins, ArrayBase* transArray)
+  {
+    BinAndTrans* BTPtr=new BinAndTrans;
+    BTPtr->first=dynamic_cast<TArray*>(freqBins);
+    BTPtr->second=dynamic_cast<TArray*>(transArray);
+    _transMap[&toKspace]=*BTPtr;
+  }
+  
+  T findTransmission(Tkspace& toKspace, const T freq)
+  {
+    TArray& freqBins=*_transMap[&toKspace].first;
+    TArray& trans=*_transMap[&toKspace].second;
+
+    int minInd=0;
+    int maxInd=freqBins.getLength()-1;
+
+    if(freq<freqBins[minInd] || freq>freqBins[maxInd])
+      throw CException("Frequency not in the given range!");
+
+    while(1)
+      {
+	int mid=floor((minInd+maxInd)/2.);
+	T midFreq=freqBins[mid];
+
+	if(freq>midFreq)
+	  {
+	    minInd=mid;
+	    if(freq<=freqBins[minInd+1])
+	      return trans[minInd];
+	  }
+	else
+	  {
+	    maxInd=mid;
+	    if(freq>freqBins[maxInd-1])
+	      return trans[maxInd-1];
+	  }
+      }
+
+  }
+  
+  TArray& getTransArray(Tkspace& toKspace)
+    {return *_transMap[&toKspace].second;}
+  
+  T calcBallisticInterface(Tkspace& kspace1, const Tvec& An, const T T0, const T T1)
+  {
+    T heatRate0(0.);
+    T heatRate1(0.);
+    const int k1len=kspace1.getlength();
+    const T DK0=getDK3();
+    
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	T dk3=kvol.getdk3();
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Tvec vg=mode.getv();
+	    const T VdotA=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
+	    
+	    if(VdotA>0.)
+	      {
+		const T e0=mode.calce0(T0);
+		const T t01=findTransmission(kspace1,mode.getomega());
+		heatRate0+=t01*VdotA*dk3*e0/DK0;
+	      }
+	  }
+      }
+    
+    for(int k=0;k<k1len;k++)
+      {
+	Tkvol& kvol=kspace1.getkvol(k);
+	T dk3=kvol.getdk3();
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Tvec vg=mode.getv();
+	    const T VdotA=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
+	    
+	    if(VdotA<0.)
+	      {
+		const T e0=mode.calce0(T1);
+		const T t10=kspace1.findTransmission(*this,mode.getomega());
+		heatRate1+=t10*VdotA*dk3*e0/DK0;
+	      }
+	  }
+      }
+
+    heatRate1/=heatRate0;
+    heatRate1=1+heatRate1;
+    heatRate1*=heatRate0*DK0;
+    
+    return heatRate1;
+  }
+
+  T calcDiffuseE(Tkspace& kspace1, const Tvec& An, const T T0, const T T1)
+  {
+    T heatRate0(0.);
+    T heatRate1(0.);
+    const int k1len=kspace1.getlength();
+    const T DK0=getDK3();
+    
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	T dk3=kvol.getdk3();
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Tvec vg=mode.getv();
+	    const T VdotA=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
+	    
+	    if(VdotA>0.)
+	      {
+		const T e0=mode.calce0(T0);
+		const T t01=findTransmission(kspace1,mode.getomega());
+		heatRate0+=t01*VdotA*dk3*e0/DK0;
+	      }
+	  }
+      }
+    
+    T sumVdotA(0.);
+
+    for(int k=0;k<k1len;k++)
+      {
+	Tkvol& kvol=kspace1.getkvol(k);
+	T dk3=kvol.getdk3();
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Tvec vg=mode.getv();
+	    const T VdotA=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
+	    
+	    if(VdotA<0.)
+	      {
+		const T e0=mode.calce0(T1);
+		const T t10=kspace1.findTransmission(*this,mode.getomega());
+		heatRate1-=(1.-t10)*VdotA*dk3*e0/DK0;
+	      }
+	    else
+	      sumVdotA+=VdotA*dk3/DK0;
+	  }
+      }
+
+    heatRate1=heatRate0/sumVdotA+heatRate1/sumVdotA;
+    
+    return heatRate1;
+  }
+
+  void giveTransmissions()
+  {
+    TransmissionMap& coarseTrans=_coarseKspace->getTransMap();
+
+    for(TransIt it=_transMap.begin();it!=_transMap.end();it++)
+      {
+	Tkspace* fineToKspace=it->first;
+	Tkspace* coarseToKspace=fineToKspace->getCoarseKspace();
+	coarseTrans[coarseToKspace]=(it->second);
+      }
+  }
+
+  void setDOS(DensityOfStates<T>& DOS) {_DOS=&DOS;}
+  DensityOfStates<T>* getDOSptr() {return _DOS;}
+  void setCoarseKspace(Tkspace* cK) {_coarseKspace=cK;}
+  Tkspace* getCoarseKspace() {return _coarseKspace;}
+  TransmissionMap& getTransMap() {return _transMap;}
   
  private:
 
@@ -631,6 +887,9 @@ class Kspace
   int _length;
   Volvec _Kmesh;
   T _totvol;    //total Kspace volume
+  TransmissionMap _transMap;
+  DensityOfStates<T>* _DOS;
+  Tkspace* _coarseKspace;
   
 };
 

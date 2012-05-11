@@ -43,21 +43,25 @@ class COMETDiscretizer
   typedef map<int,VecInt2> FaceToFg;
   typedef typename Tmode::Refl_pair Refl_pair;
   typedef SquareTensor<T,3> T3Tensor;
+  typedef KSConnectivity<T> TKConnectivity;
+  typedef TKConnectivity* TKCptr;
+  typedef vector<TKCptr> TKClist;
+  typedef map<int, TKClist> FgTKClistMap;
 
  COMETDiscretizer(const Mesh& mesh, const GeomFields& geomfields, 
 		  PhononMacro& macro, Tkspace& kspace, COMETBCMap& bcMap,
-		  const IntArray& BCArray, const IntArray& BCfArray, COpts& options):
+		  const IntArray& BCArray, const IntArray& BCfArray, COpts& options,
+		  const FgTKClistMap& FgToKsc):
   _mesh(mesh),
     _geomFields(geomfields),
     _cells(mesh.getCells()),
     _faces(mesh.getFaces()),
     _cellFaces(mesh.getCellFaces()),
     _faceCells(mesh.getAllFaceCells()),
-    _areaMagField(_geomFields.areaMag),
-    _faceAreaMag((dynamic_cast<const TArray&>(_areaMagField[_faces]))),
-    _areaField(_geomFields.area),
-    _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces])),
+    _faceAreaMag((dynamic_cast<const TArray&>(_geomFields.areaMag[_faces]))),
+    _faceArea(dynamic_cast<const VectorT3Array&>(_geomFields.area[_faces])),
     _cellVolume(dynamic_cast<const TArray&>(_geomFields.volume[_cells])),
+    _cellCoords(dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_cells])),
     _macro(macro),
     _kspace(kspace),
     _bcMap(bcMap),
@@ -66,7 +70,8 @@ class COMETDiscretizer
     _aveResid(-1.),
     _residChange(-1.),
     _fgFinder(),
-    _options(options)
+    _options(options),
+    _FaceToKSC(FgToKsc)
     {}
 
   void COMETSolve(const int dir,const int level)
@@ -171,10 +176,12 @@ class COMETDiscretizer
 		AMat.Solve(Bvec);
 
 		Distribute(c,Bvec,Resid);
+		dt=fabs(Bvec[totalmodes]);
 		updatee0(c);
 		updateGhost(c);
+		//if(!_FaceToKSC.empty())
+		//  correctInterface(c,Bvec);
 		NewtonIters++;
-		dt=fabs(Bvec[totalmodes]);
 	      }
 	  }
 	else if(_BCArray[c]==3) //Mix Implicit/Explicit reflecting boundary
@@ -213,30 +220,36 @@ class COMETDiscretizer
     
   }
 
-  void COMETConvection(const int cell, TArrow& Amat, TArray& BVec)
+  void COMETConvection(const int cell0, TArrow& Amat, TArray& BVec)
   {
     /* This is the COMET discretization for cells that do not
        do not have a face which is a reflecting boundary.  When
        there is a face with a reflecting boundary, we can no longer
        use an arrowhead matrix as the structure becomes unknown a priori.
      */
-    const int neibcount=_cellFaces.getCount(cell);
+    const int neibcount=_cellFaces.getCount(cell0);
     
     for(int j=0;j<neibcount;j++)
       {
-	const int f=_cellFaces(cell,j);
-	int cell2=_faceCells(f,1);
-	const int klen=_kspace.getlength();
+	const int f=_cellFaces(cell0,j);
+	int cell1=_faceCells(f,1);
 	VectorT3 Af=_faceArea[f];
-
+	if(cell1==cell0)
+	  {
+	    cell1=_faceCells(f,0);
+	    Af*=-1.;
+	  }
+	const int klen=_kspace.getlength();
+	
+	//VectorT3 c0Pos=_cellCoords[cell0];
+	//VectorT3 c1Pos=_cellCoords[cell1];
+	//VectorT3 c1c0dist=c1Pos-c0Pos;
+	//T AdotDist=c1c0dist[0]*Af[0]+c1c0dist[1]*Af[1]+c1c0dist[2]*Af[2];    
+	//if(AdotDist<0.)
+	//  Af=Af*(-1.);
+	
 	T flux;
 
-	if(cell2==cell)
-	  {
-	    Af=Af*(-1.);
-	    cell2=_faceCells(f,0);
-	  }
-	
 	for(int k=0;k<klen;k++)
 	  {
 	    Tkvol& kvol=_kspace.getkvol(k);
@@ -252,10 +265,10 @@ class COMETDiscretizer
 		if(flux>T_Scalar(0))
 		  {
 		    Amat.getElement(count,count)-=flux;
-		    BVec[count-1]-=flux*eArray[cell];
+		    BVec[count-1]-=flux*eArray[cell0];
 		  }
 		else
-		  BVec[count-1]-=flux*eArray[cell2];
+		  BVec[count-1]-=flux*eArray[cell1];
 		
 	      }
 	  }	   	
@@ -572,21 +585,6 @@ class COMETDiscretizer
 	    ArrayAbs(Bvec);
 	    ArrayAbs(Resid);
 	    Bsum+=Bvec;	    
-
-	    /* OLD VERSION
-	    Resid=Bvec;
-	    Bvec.zero();
-	    Distribute(c,Bvec,Resid);
-
-	    AMat.multiply(Resid,Bvec);
-	    Resid=Bvec;
-	    
-	    makeValueArray(c,Bvec);
-	    ArrayAbs(Bvec);
-	    ArrayAbs(Resid);
-	    Bsum+=Bvec;
-	    ResidSum+=Resid;*/
-	    
 	  }
 	else if(_BCArray[c]==1 || _BCArray[c]==3) //General Dense
 	  {
@@ -787,10 +785,10 @@ class COMETDiscretizer
   {
     const int neibcount=_cellFaces.getCount(cell);
     const int klen=_kspace.getlength();
-    TArray SumVdotA(neibcount);
     TArray SumEVdotA(neibcount);
+    TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    T DK3=_kspace.getDK3();
 
-    SumVdotA.zero();
     SumEVdotA.zero();
 
     //first loop to sum up the diffuse reflection
@@ -825,9 +823,8 @@ class COMETDiscretizer
 		    
 		    if(VdotA>0)
 		      {
-			eArray[cell2]=eArray[cell];
-			SumVdotA[j]+=VdotA*dk3;
-			SumEVdotA[j]+=VdotA*dk3*eArray[cell];
+			eArray[cell2]=eArray[cell]*refl;
+			SumEVdotA[j]+=dk3*eArray[cell]/DK3;
 		      }
 		    else
 		      {
@@ -840,6 +837,26 @@ class COMETDiscretizer
 		      }
 		  }
 	      }
+	  }
+      }
+
+    T wallTemp(Tl[cell]);
+    for(int j=0;j<neibcount;j++)
+      {
+	const int f=_cellFaces(cell,j);
+	if(_BCfArray[f]==3)
+	  {
+	    int cell2=_faceCells(f,1);
+	    VectorT3 Af=_faceArea[f];
+	    if(cell2==cell)
+	      {
+		Af=Af*-1.;
+		cell2=_faceCells(f,0);
+	      }
+	    T esum=SumEVdotA[j]*DK3;
+	    _kspace.calcTemp(wallTemp,esum,Af);
+	    SumEVdotA[j]=wallTemp;
+	    Tl[cell2]=wallTemp;
 	  }
       }
 
@@ -864,7 +881,6 @@ class COMETDiscretizer
 		    const T oneMinusRefl=1.-refl;
 		    int cell2=_faceCells(f,1);
 		    VectorT3 Af=_faceArea[f];
-		    const T eDiffuse=SumEVdotA[j]/SumVdotA[j];
 		    
 		    if(cell2==cell)
  		      {
@@ -875,11 +891,41 @@ class COMETDiscretizer
 		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
 		    
 		    if(VdotA<0)
-		      eArray[cell2]+=eDiffuse*oneMinusRefl;
+		      eArray[cell2]+=mode.calce0(SumEVdotA[j])*oneMinusRefl;
+		    else
+		      eArray[cell2]+=mode.calce0(SumEVdotA[j])*oneMinusRefl;
+
 		  }
 	      }
 	  }
       }
+  }
+
+  void correctInterface(const int cell0, TArray& Bvec)
+  {
+    const int klen=_kspace.gettotmodes();
+    TArray Correction(klen+1);
+
+    const int neibcount=_cellFaces.getCount(cell0);
+    for(int j=0;j<neibcount;j++)
+      {
+	const int f=_cellFaces(cell0,j);
+	if(_BCfArray[f]==4)
+	  {
+	    int Fgid=findFgId(f);
+	    const FaceGroup& fg=_mesh.getFaceGroup(Fgid);
+	    const StorageSite& faces0=fg.site;
+	    const int offset=faces0.getOffset();
+	    int cell1=_faceCells(f,1);
+	    if(cell1==cell0)
+	      cell1=_faceCells(f,0);
+	    const TKConnectivity& TKC=*(_FaceToKSC.find(Fgid)->second)[f-offset];
+	    TKC.multiplySelf(Bvec,Correction);
+	    Bvec.zero();
+	    Distribute(cell1,Correction, Bvec);
+	  }
+      }
+
   }
     
   void updateeShifted()
@@ -954,17 +1000,17 @@ class COMETDiscretizer
   }
   
  private:
+
   const Mesh& _mesh;
   const GeomFields& _geomFields;
   const StorageSite& _cells;
   const StorageSite& _faces;
   const CRConnectivity& _cellFaces;
   const CRConnectivity& _faceCells;
-  const Field& _areaMagField;
   const TArray& _faceAreaMag;
-  const Field& _areaField;
   const VectorT3Array& _faceArea;
   const TArray& _cellVolume;
+  const VectorT3Array& _cellCoords;
   PhononMacro& _macro;
   Tkspace& _kspace;
   COMETBCMap& _bcMap;
@@ -974,6 +1020,7 @@ class COMETDiscretizer
   T _residChange;
   FaceToFg _fgFinder;
   COpts _options;
+  const FgTKClistMap& _FaceToKSC;
   
 };
 

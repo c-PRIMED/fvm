@@ -35,15 +35,21 @@ class Kspace
   ArrayBase* getVelocities();
   ArrayBase* getReflectionArray(const Mesh& mesh, const int FgId);
   ArrayBase* getHollandConductivity(const T Tl);
+  void setTransmission(Kspace<T>& toKspace, ArrayBase* freqBins, ArrayBase* transArray);
+  T calcBallisticInterface(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
+  T calcDiffuseE(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
+  void setDOS(DensityOfStates<T>& DOS);
 
   %extend{
-    Kspace<T>* getSelfPointer() {return self;}
-    std::vector<Kspace<T>*> MakeList()
+    std::vector<Kspace<T>*>& MakeList()
       {
-	std::vector<Kspace<T>*> newList;
-	newList.push_back(self);
-	return newList;
+	std::vector<Kspace<T>*>* newList=new std::vector<Kspace<T>*>();
+	newList->push_back(self);
+	return *newList;
       }
+
+    void AddToList(std::vector<Kspace<T>*>& toList)
+    {toList.push_back(self);}
   }
   
  private:
@@ -52,12 +58,15 @@ class Kspace
   //num volumes
   int _length;
   Volvec _Kmesh;
+  T _totvol; 
   T _totvol;    //total Kspace volume
+  TransmissionMap _trasMap;
+  DensityOfStates* _DOS;
   
 };
 
 
 %template(KspaceA) Kspace< ATYPE_STR >;
 
-typedef std::vector<Kspace<ATYPE_STR>*> KList;
-%template(KList) std::vector<Kspace<ATYPE_STR>*>;
+typedef std::vector<Kspace<ATYPE_STR>*> TkspList;
+%template(TkspList) std::vector<Kspace<ATYPE_STR>*>;

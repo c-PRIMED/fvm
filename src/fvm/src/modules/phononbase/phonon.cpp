@@ -4,6 +4,9 @@
 #include "Kspace.h"
 template class Kspace<ATYPE>;
 
+#include "DensityOfStates.h"
+template class DensityOfStates<ATYPE>;
+
 #include "PhononModel.h"
 template class PhononModel<ATYPE>;
 

@@ -8,4 +8,4 @@ env.createATypedSharedLibrary('phonon_atyped','phonon.cpp',['models_atyped','fvm
 
 env.createSwigModule('phononbaseExt','nontemp.i',['fvmbase','rlog','phononbase','cgal'])
 
-env.createATypedSwigModule('phonon_atyped','phonon.i',['models_atyped','phonon_atyped','fvmbase','rlog','phononbase'])
+env.createATypedSwigModule('phonon_atyped',['phonon.i'],['phonon_atyped','phononbase','fvmbase','rlog','cgal','blas'])

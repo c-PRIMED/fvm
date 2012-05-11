@@ -17,6 +17,7 @@
 using namespace std;
 
 %include "Kspace.i"
+%include "DensityOfStates.i"
 %include "PhononModel.i"
 %include "PhononBoundary.i"
 %include "COMETModel.i"

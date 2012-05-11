@@ -16,9 +16,12 @@ class COMETModel : public Model
   typedef Vector<T,3> VectorT3;
   typedef COMETModel<T> TCOMET;
   typedef shared_ptr<TCOMET> TCOMETPtr;
+  typedef Tkspace* TkspPtr;
+  typedef vector<TkspPtr> TkspList;
+  typedef map<int,int> MeshKspaceMap;
 
   COMETModel(const MeshList& meshes,const int level,GeomFields& geomFields,
-	     Tkspace& kspace,PhononMacro& macro);
+	     TkspList& kspaces,PhononMacro& macro);
   
   void init();
   void updateTL();
@@ -28,18 +31,20 @@ class COMETModel : public Model
   VectorT3 getWallAreaVector(const Mesh& mesh, const int faceGroupId);
   COMETModelOptions<T>& getOptions();
   COMETBCMap& getBCs();
+  MeshKspaceMap& getMKMap();
   T getResidual();
   ArrayBase* getValueArray(const Mesh& mesh, const int cell);
   void equilibrate();
   ArrayBase& getLatticeTemp(const Mesh& mesh);
   void setStraightLine(const T T1,const T T2);
   void applyTemperatureBoundaries();
+  void initFromOld();
   
  private:
   
   const int _level; 
   GeomFields& _geomFields;
-  Tkspace& _kspace;
+  TkspList& _kspaces;
   PhononMacro& _macro;
   TCOMET* _finestLevel;
   TCOMET* _coarserLevel;
@@ -49,6 +54,7 @@ class COMETModel : public Model
   BCfaceList _BFaces;
   BCcellList _BCells;
   T _residual;
+  MeshKspaceMap _MeshKspaceMap;
 
 };
 
@@ -74,6 +80,7 @@ struct COMETModelOptions : public FloatVarDict<T>
   double relFactor;
   bool withNormal;
   double NewtonTol;
+  int BinsPerBand;
 };
 
 %template(COMETBCA) COMETBC<ATYPE_STR>;
@@ -81,3 +88,4 @@ struct COMETModelOptions : public FloatVarDict<T>
 %template(COMETBCList) std::vector<COMETBC< ATYPE_STR >* >;
 %template(COMETBCsMap) std::map<int,COMETBC< ATYPE_STR >* >;
 %template(COMETModelA) COMETModel<ATYPE_STR>;
+%template(COMETMKmap) std::map<int,int>;

@@ -33,7 +33,14 @@ class DensityOfStates
   void binMode(const int mode, const int noBins, const T minw, const T maxw)
   {
     const T dwStar=1./T(noBins);
-    const T Deltaw=maxw-minw;
+    T Deltaw;
+    if(minw==0.)
+      Deltaw=maxw;
+    else
+      {
+	T ratio=minw/maxw;
+	Deltaw=(1-ratio)*maxw;
+      }
     TArray modeBounds(noBins+1);
     TArray modeMids(noBins);
     IntArray BinKcount(noBins);
@@ -41,7 +48,7 @@ class DensityOfStates
     IntArrList modeKpts;
 
     for(int i=0;i<noBins+1;i++)
-      modeBounds[i]=i*dwStar*Deltaw+minw;
+      modeBounds[i]=floor(i*dwStar*Deltaw+minw);
     
     for(int i=0;i<noBins;i++)
       modeMids[i]=(modeBounds[i]+modeBounds[i+1])/2.;
@@ -82,7 +89,7 @@ class DensityOfStates
     _FreqMids.resize(otherDOS.getFreqMidsT().getLength());
     _FreqMids.copyFrom(otherDOS.getFreqMidsT());
     _FreqBounds.resize(otherDOS.getFreqBinsT().getLength());
-    _FreqMids.copyFrom(otherDOS.getFreqBinsT());
+    _FreqBounds.copyFrom(otherDOS.getFreqBinsT());
     _BinKpts=otherDOS.getKptsList();
     _BinModes=otherDOS.getMList();
     setDensity();
@@ -181,9 +188,10 @@ class DensityOfStates
     return outSum;
   }
   
-  ArrayBase* makeDMMtransmission(DensityOfStates& otherDOS, const T Temp)
+  ArrayBase* makeDMMtransmission(DensityOfStates& otherDOS, const T Temp, const bool merge)
   {
-    mergeBins(otherDOS, true);
+    if(merge)
+      mergeBins(otherDOS, true);
     
     const int freqCount=_FreqMids.getLength();
     TArray* trans=new TArray(freqCount);
@@ -199,7 +207,10 @@ class DensityOfStates
 	const int f1=otherDOS.findBin(w0);
 	const T mat0sum=sumOutgoing(n,f0,Temp);
 	const T mat1sum=otherDOS.sumOutgoing(-n,f1,Temp);
-	(*trans)[f0]=mat1sum/(mat1sum+mat0sum);
+	if(mat1sum==0. && mat0sum==0.)
+	  (*trans)[f0]=0.;
+	else
+	  (*trans)[f0]=1./(1.+mat0sum/mat1sum);
       }
     return trans;
   }
@@ -343,35 +354,27 @@ class DensityOfStates
 
     _FreqBounds.resize(newBounds.getLength());
     _FreqBounds.copyFrom(newBounds);
-    refineBins();
+    //refineBins();
     setMids();
 
     IntArray BinPop(_FreqMids.getLength());
     BinPop.zero();
     int searchStart(0);
 
-    for(int k=0; k<old.getLength()-1;k++)
+    const int klen=_kspace.getlength();
+
+    for(int k=0;k<klen;k++)
       {
-	const T oTop=old[k+1];
-	const T oBot=old[k];
-	IntArray& klist=*_BinKpts[k];
-	const int plusKs=klist.getLength();
-	
-	for(int l=searchStart;l<_FreqBounds.getLength();l++)
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int modenum=kvol.getmodenum();
+	for(int mode=0;mode<modenum;mode++)
 	  {
-	    if(_FreqBounds[l]>=oBot && _FreqBounds[l]<oTop)
-	      BinPop[l]+=plusKs;
-	    if(_FreqBounds[l]>=oTop)
-	      {
-		searchStart=l;
-		break;
-	      }
+	    T omega=_kspace.getkvol(k).getmode(mode).getomega();
+	    int bin=findBin(_FreqBounds, omega);
+	    BinPop[bin]++;
 	  }
       }
 
-    IntArrList oldBinKpts=_BinKpts;
-    IntArrList oldBinModes=_BinModes;
-    TArrList oldModeFractions=_ModeFractions;
     _BinKpts.resize(_FreqMids.getLength());
     _BinModes.resize(_FreqMids.getLength());
     _ModeFractions.resize(_FreqMids.getLength());
@@ -388,39 +391,19 @@ class DensityOfStates
       }
 
     BinPop.zero();
-    searchStart=0;
-    for(int k=0; k<old.getLength()-1;k++)
+    for(int k=0;k<klen;k++)
       {
-	const T oTop=old[k+1];
-	const T oBot=old[k];
-	const T dif=oTop-oBot;
-	IntArray& klist=*oldBinKpts[k];
-	IntArray& mlist=*oldBinModes[k];
-	TArray& fraclist=*oldModeFractions[k];
-	
-	for(int l=searchStart;l<_FreqBounds.getLength();l++)
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int modenum=kvol.getmodenum();
+	for(int mode=0;mode<modenum;mode++)
 	  {
-	    if(_FreqBounds[l]>=oBot && _FreqBounds[l]<oTop)
-	      {
-		const T masterDif=_FreqBounds[l+1]-_FreqBounds[l];
-		const T coeff=masterDif/dif;
-		IntArray& newKArray=*_BinKpts[l];
-		IntArray& newMArray=*_BinModes[l];
-		TArray& newFArray=*_ModeFractions[l];
-		
-		for(int addInd=0;addInd<klist.getLength();addInd++)
-		  {
-		    newKArray[BinPop[l]]=klist[addInd];
-		    newMArray[BinPop[l]]=mlist[addInd];
-		    newFArray[BinPop[l]]=coeff*fraclist[addInd];
-		    BinPop[l]++;
-		  }
-	      }
-	    if(_FreqBounds[l]==oTop)
-	      {
-		searchStart=l;
-		break;
-	      }
+	    T omega=_kspace.getkvol(k).getmode(mode).getomega();
+	    int bin=findBin(_FreqBounds, omega);
+	    IntArray& binKArray=*_BinKpts[bin];
+	    IntArray& binMArray=*_BinModes[bin];
+	    binKArray[BinPop[bin]]=k;
+	    binMArray[BinPop[bin]]=mode;
+	    BinPop[bin]++;
 	  }
       }
 
@@ -428,6 +411,46 @@ class DensityOfStates
     if(original)
       otherDOS.mergeBins(oldSelf,false);
     
+  }
+
+  void refineBins()
+  {
+    int newBinCount(0);
+    const T eps=1.e-9;
+    TArray old(_FreqBounds.getLength());
+    old.copyFrom(_FreqBounds);
+    int i(0);
+    
+    while(i<_FreqBounds.getLength()-1)
+      {
+	T dif=1.-_FreqBounds[i+1]/_FreqBounds[i];
+	if(dif<eps)
+	  {
+	    old[newBinCount]=_FreqBounds[i];
+	    newBinCount++;
+	    i+=2;
+	  }
+	else
+	  {
+	    old[newBinCount]=_FreqBounds[i];
+	    newBinCount++;
+	    i++;
+	  }
+      }
+    old[newBinCount]=_FreqBounds[_FreqBounds.getLength()-1];
+
+    _FreqBounds.resize(newBinCount+1);
+    for(int j=0;j<newBinCount+1;j++)
+      _FreqBounds[j]=old[j];
+  }
+
+  ArrayBase* makeDMMreflection(ArrayBase* trans)
+  {
+    TArray* Ttrans=dynamic_cast<TArray*>(trans);
+    TArray* refl=new TArray(Ttrans->getLength());
+    for(int i=0;i<Ttrans->getLength();i++)
+      (*refl)[i]=1.-(*Ttrans)[i];
+    return refl;
   }
 
  private:
@@ -701,34 +724,6 @@ class DensityOfStates
     _FreqMids.resize(_FreqBounds.getLength()-1);
     for(int i=0;i<_FreqBounds.getLength()-1;i++)
       _FreqMids[i]=(_FreqBounds[i]+_FreqBounds[i+1])/2.;
-  }
-
-  void refineBins()
-  {
-    int newBinCount(0);
-    TArray refined(_FreqBounds.getLength());
-    int i(0);
-
-    while(i<_FreqBounds.getLength()-1)
-      {
-	if(_FreqBounds[i+1]-_FreqBounds[i]<1.)
-	  {
-	    refined[newBinCount]=_FreqBounds[i];
-	    newBinCount++;
-	    i+=2;
-	  }
-	else
-	  {
-	    refined[newBinCount]=_FreqBounds[i];
-	    newBinCount++;
-	    i++;
-	  }
-      }
-    refined[newBinCount]=_FreqBounds[_FreqBounds.getLength()-1];
-
-    _FreqBounds.resize(newBinCount+1);
-    for(int j=0;j<newBinCount+1;j++)
-      _FreqBounds[j]=refined[j];
   }
   
   TArray _FreqMids;

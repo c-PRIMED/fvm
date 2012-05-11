@@ -12,6 +12,7 @@
 #include "COMETBC.h"
 #include "PhononMacro.h"
 #include "COMETBoundary.h"
+#include "COMETInterface.h"
 
 
 template<class T>
@@ -24,13 +25,18 @@ class COMETModel : public Model
   typedef Array<VectorT3> VectorT3Array;
   typedef shared_ptr<VectorT3Array> VT3Ptr;
   typedef Kspace<T> Tkspace;
+  typedef Tkspace* TkspPtr;
+  typedef vector<Tkspace*> TkspList;
   typedef kvol<T> Tkvol;
   typedef pmode<T> Tmode;
   typedef Array<bool> BArray;
   typedef Array<int> IntArray;
+  typedef shared_ptr<IntArray> IntArrPtr;
   typedef Array<T> TArray;
   typedef shared_ptr<TArray> TArrptr;
   typedef map<int,COMETBC<T>*> COMETBCMap;
+  typedef vector<COMETIC<T>*> IClist;
+  typedef map<int,int> MeshKspaceMap;
   typedef COMETModel<T> TCOMET;
   typedef shared_ptr<TCOMET> TCOMETPtr;
   typedef COMETModelOptions<T> TCModOpts;
@@ -52,51 +58,59 @@ class COMETModel : public Model
   typedef Array<int> BCcellArray;
   typedef shared_ptr<BCcellArray> BCellPtr;
   typedef vector<BCellPtr> BCcellList;
+  typedef vector<IntArrPtr> MeshICmap;
+  typedef KSConnectivity<T> TKConnectivity;
+  typedef TKConnectivity* TKCptr;
+  typedef vector<TKCptr> TKClist;
+  typedef map<int, TKClist> FgTKClistMap;
+  typedef vector<shared_ptr<Field> > FieldVector;
   
  COMETModel(const MeshList& meshes, const int level, GeomFields& geomFields,
-	    Tkspace& kspace, PhononMacro& macro):
+	    TkspList& kspaces, PhononMacro& macro):
   Model(meshes),
     _level(level),
     _geomFields(geomFields),
-    _kspace(kspace),
+    _kspaces(kspaces),
     _macro(macro),
-    _residual(0.0)
-    {
-      const int numMeshes = _meshes.size();
-      
-      for (int n=0; n<numMeshes; n++)
-	{
-	  const Mesh& mesh = *_meshes[n];
-	  const StorageSite& faces=mesh.getFaces();
-	  const StorageSite& cells=mesh.getCells();
-	  const int faceCount=faces.getCount();
-	  const int cellCount=cells.getSelfCount();
-	  
-	  BfacePtr BFptr(new BCfaceArray(faceCount));
-	  BFptr->zero();
-	  _BFaces.push_back(BFptr);
-	  
-	  BCellPtr BCptr(new BCcellArray(cellCount));
-	  _BCells.push_back(BCptr);
-	  BCptr->zero();
-	  
-	  if(_level==0)
-	    {
-	      foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-		{
-		  const FaceGroup& fg = *fgPtr;
-		  if (_bcMap.find(fg.id) == _bcMap.end())
-		    {
-		      COMETBC<T> *bc(new COMETBC<T>()); 
-		      _bcMap[fg.id] = bc;
-		    }
-		}
-	    }
-	}	  
-    }
+    _residual(1.0),
+    _MeshToIC()
+      {
+	const int numMeshes = _meshes.size();
+	for (int n=0; n<numMeshes; n++)
+	  {
+	    Mesh& mesh = *_meshes[n];
+	    const StorageSite& faces=mesh.getFaces();
+	    const StorageSite& cells=mesh.getCells();
+	    const int faceCount=faces.getCount();
+	    const int cellCount=cells.getCount();
+	    _MeshKspaceMap[n]=-1; //mesh map not set
+	    
+	    BfacePtr BFptr(new BCfaceArray(faceCount));
+	    BFptr->zero();
+	    _BFaces.push_back(BFptr);
+	    
+	    BCellPtr BCptr(new BCcellArray(cellCount));
+	    _BCells.push_back(BCptr);
+	    BCptr->zero();
+	    
+	    if(_level==0)
+	      {
+		foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    if (_bcMap.find(fg.id) == _bcMap.end())
+		      {
+			COMETBC<T> *bc(new COMETBC<T>()); 
+			_bcMap[fg.id] = bc;
+		      }
+		  }
+	      }
+	  }	  
+      }
   
   TCModOpts& getOptions() {return _options;}
   COMETBCMap& getBCs() {return _bcMap;}
+  MeshKspaceMap& getMKMap() {return _MeshKspaceMap;}
 
   void init()
   {
@@ -105,8 +119,13 @@ class COMETModel : public Model
 
      for (int n=0;n<numMeshes;n++)
        {
-	 const Mesh& mesh=*_meshes[n];
-	 const int numK=_kspace.getlength();
+	 Mesh& mesh=*_meshes[n];
+	 if(_MeshKspaceMap[n]==-1)
+	   throw CException("Have not set the Kspace for this Mesh!!");
+	 Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	 BCfaceArray& BCfArray=*(_BFaces[n]);
+	 BCcellArray& BCArray=*(_BCells[n]);
+	 const int numK=kspace.getlength();
 	 const StorageSite& cells=mesh.getCells();
 	 const int numcells=cells.getCount();
 	 VectorT3 lamTemp;
@@ -121,19 +140,30 @@ class COMETModel : public Model
 	 _macro.temperature.addArray(cells,TLcell);
 	 _macro.deltaT.addArray(cells,deltaTcell);
 	 _macro.lam.addArray(cells,lamArray);
-	 
-	 T e0sum=0.;
+
+	 int modeCount=kspace.getkvol(0).getmodenum();
+	 FieldVector* FieldVecPtr=new FieldVector();
+
+	 for(int mode=0;mode<modeCount;mode++)
+	   {
+	     shared_ptr<Field> modeField(new Field("mode"));
+	     shared_ptr<TArray> modeTemp(new TArray(numcells));
+	     *modeTemp=Tinit;
+	     modeField->addArray(cells,modeTemp);
+	     FieldVecPtr->push_back(modeField);
+	   }
+
+	 _macro.BranchTemperatures[n]=FieldVecPtr;
 	 
 	 for (int k=0;k<numK;k++)
 	   {
-	     Tkvol& kv=_kspace.getkvol(k);
+	     Tkvol& kv=kspace.getkvol(k);
 	     const int numM=kv.getmodenum();
 	     const T dk3=kv.getdk3();
 
 	     for (int m=0;m<numM;m++)
 	       {
 		 Tmode& mode=kv.getmode(m);
-		 T tau=mode.gettau();
 		 Field& efield=mode.getfield();
 		 Field& e0field=mode.gete0field();
 		 Field& resfield=mode.getresid();
@@ -162,53 +192,13 @@ class COMETModel : public Model
 		 VectorT3 si=vg/vmag;
 		 VectorT3 so;
 		 
-		 BCfaceArray& BCfArray=*(_BFaces[n]);
-		 BCcellArray& BCArray=*(_BCells[n]);
+		 //reflections
 		 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 		   {
 		     const FaceGroup& fg = *fgPtr;
 		     if(_bcMap[fg.id]->bcType == "reflecting")
 		       {
 			 const StorageSite& faces = fg.site;
-			 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
-			 const int faceCount=faces.getCount();
-			 const int offSet=faces.getOffset();
-			 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
-
-			 if(Imp)
-			   {
-			     for(int i=offSet;i<offSet+faceCount;i++)
-			       BCfArray[i]=2;  //implicit boundary
-			   }
-			 else
-			   {
-			     for(int i=offSet;i<offSet+faceCount;i++)
-			       BCfArray[i]=3;  //explicit boundary
-			   }
-
-			 if(Imp)
-			   {
-			     for(int i=0;i<faceCount;i++)
-			       {
-				 int cell1=BfaceCells(i,0);
-				 if(BCArray[cell1]==0)
-				   BCArray[cell1]=1;    //implicit boundary only
-				 else if(BCArray[cell1]==2)
-				   BCArray[cell1]=3;  //mix implicit/explicit boundary
-			       }
-			   }
-			 else
-			   {
-			     for(int i=0;i<faceCount;i++)
-			       {
-				 int cell1=BfaceCells(i,0);
-				 if(BCArray[cell1]==0)
-				   BCArray[cell1]=2;  //explicit boundary only
-				 else if (BCArray[cell1]==1)
-				   BCArray[cell1]=3;  //mix implicit/explicit boundary
-			       }
-			   }
-			 
 			 const Field& AreaMagField=_geomFields.areaMag;
 			 const TArray& AreaMag=
 			   dynamic_cast<const TArray&>(AreaMagField[faces]);
@@ -224,12 +214,13 @@ class COMETModel : public Model
 			     so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
 			     T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
 			     so/=soMag;
+			     so*=vmag;
 			     Refl_pair refls;
 			     Refl_pair reflsFrom;
-			     _kspace.findSpecs(dk3,vmag,m,so,refls);
+			     kspace.findSpecs(dk3,vmag,m,so,refls);
 			     rmap[fg.id]=refls;
 			     const int k1=refls.first.second;
-			     Tmode& mode2=_kspace.getkvol(k1).getmode(m);
+			     Tmode& mode2=kspace.getkvol(k1).getmode(m);
 			     Refl_Map& rmap2=mode2.getreflmap();
 			     reflsFrom.first.second=-1;
 			     reflsFrom.second.second=k;
@@ -238,25 +229,379 @@ class COMETModel : public Model
 		       }
 		     else
 		       {
-			 const StorageSite& faces = fg.site;
-			 const int faceCount=faces.getCount();
-			 const int offSet=faces.getOffset();
 			 Refl_pair refls;
 			 refls.first.second=-1;
 			 refls.second.second=-1;
 			 rmap[fg.id]=refls;
-
-			 for(int i=offSet;i<offSet+faceCount;i++)
-			   BCfArray[i]=1;
 		       }
 		   }
-	       }    
+	       }
 	   }
 	 
 	 shared_ptr<TArray> TlResidCell(new TArray(numcells));
 	 *TlResidCell=0.;
 	 _macro.TlResidual.addArray(cells,TlResidCell);
+
+	 //setting facegroups
+	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	   {
+	     FaceGroup& fg = *fgPtr;
+	     if(_bcMap[fg.id]->bcType == "reflecting")
+	       {
+		 const StorageSite& faces = fg.site;
+		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+		 const int faceCount=faces.getCount();
+		 const int offSet=faces.getOffset();
+		 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
+		 
+		 if(Imp)
+		   {
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=2;  //implicit boundary
+		   }
+		 else
+		   {
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=3;  //explicit boundary
+		   }
+		 
+		 if(Imp)
+		   {
+		     for(int i=0;i<faceCount;i++)
+		       {
+			 int cell1=BfaceCells(i,0);
+			 if(BCArray[cell1]==0)
+			   BCArray[cell1]=1;    //implicit boundary only
+			 else if(BCArray[cell1]==2)
+			   BCArray[cell1]=3;  //mix implicit/explicit boundary
+		       }
+		   }
+		 else
+		   {
+		     for(int i=0;i<faceCount;i++)
+		       {
+			 int cell1=BfaceCells(i,0);
+			 if(BCArray[cell1]==0)
+			   BCArray[cell1]=2;  //explicit boundary only
+			 else if (BCArray[cell1]==1)
+			   BCArray[cell1]=3;  //mix implicit/explicit boundary
+		       }
+		   }
+	       }
+	     else if(_bcMap[fg.id]->bcType == "temperature")
+	       {
+		 const StorageSite& faces = fg.site;
+		 const int faceCount=faces.getCount();
+		 const int offSet=faces.getOffset();
+		 
+		 for(int i=offSet;i<offSet+faceCount;i++)
+		   BCfArray[i]=1;
+	       }
+	     else if(_bcMap[fg.id]->bcType == "Interface")
+	       {		 
+		 StorageSite& faces0 = fg.site;
+		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
+		 const int faceCount=faces0.getCount();
+		 const int offSet=faces0.getOffset();
+
+		 for(int i=offSet;i<offSet+faceCount;i++)
+		   {
+		     BCfArray[i]=4;  //Interface boundary
+		     int cell0=BfaceCells(i-offSet,0);
+		     int cell1=BfaceCells(i-offSet,1);
+		     BCArray[cell0]=2;  //always treated explicitly
+		     BCArray[cell1]=4; //interface ghost cells need to be labeled
+		   }
+		 
+		 bool doneAlready=false;
+		 foreach(const COMETIC<T>* icPtr, _IClist)
+		   {
+		     if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
+		       {
+			 doneAlready=true;
+			 break;
+		       }
+		   }
+		 
+		 bool foundMatch=false;
+		 if(!doneAlready)
+		   {
+		     StorageSite* faces1Ptr=NULL;
+		     int otherFgID,otherMid;
+		     for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
+		       {
+			 const Mesh& otherMesh=*_meshes[otherMeshID];
+			 foreach(const FaceGroupPtr otherfgPtr, otherMesh.getBoundaryFaceGroups())
+			   {
+			     foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
+			     if(foundMatch)
+			       {
+				 otherFgID=otherfgPtr->id;
+				 otherMid=otherMeshID;
+				 faces1Ptr=&(otherfgPtr->site);
+				 break;
+			       }
+			   }
+			 if(foundMatch)
+			   break;
+		       }
+		     
+		     if(foundMatch)
+		       {
+			 StorageSite& faces1=*faces1Ptr;
+			 const Mesh& mesh1=*_meshes[otherMid];
+			 COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
+							  otherFgID, faces1.getCount()));
+			 
+			 if(_bcMap[fg.id]->InterfaceModel!="DMM")
+			   icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
+			 
+			 setLocalScatterMaps(mesh, faces0, mesh1, faces1);
+
+			 _IClist.push_back(icPtr);
+		       }
+		     else if(!doneAlready && !foundMatch)
+		       {
+			 cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
+			 throw CException("Could not find a matching face group!");
+		       }
+		   }
+	       }// end if interface 
+	   }//end facegroup loop
+
+       }//end meshes loop
+     
+     //Make map from mesh to IC
+     IntArray ICcount(numMeshes);
+     ICcount.zero();
+     
+     foreach(const COMETIC<T>* icPtr, _IClist)
+       {
+	 ICcount[icPtr->MeshID0]++;
+	 ICcount[icPtr->MeshID1]++;
        }
+
+     for(int i=0;i<numMeshes;i++)
+       {
+	 IntArrPtr MeshToIC(new IntArray(ICcount[i]));
+	 _MeshToIC.push_back(MeshToIC);
+       }
+     
+     ICcount.zero();
+     const int listSize=_IClist.size();
+     for(int ic=0;ic<listSize;ic++)
+       {
+	 const COMETIC<T>* icPtr=_IClist[ic];
+	 (*(_MeshToIC[icPtr->MeshID0]))[ICcount[icPtr->MeshID0]]=ic;
+	 (*(_MeshToIC[icPtr->MeshID1]))[ICcount[icPtr->MeshID1]]=ic;
+	 ICcount[icPtr->MeshID0]++;
+	 ICcount[icPtr->MeshID1]++;
+       }
+
+     COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
+
+     for(int ic=0;ic<listSize;ic++)
+       {
+	 COMETIC<T>* icPtr=_IClist[ic];
+	 if(icPtr->InterfaceModel=="DMM")
+	   ComInt.makeDMMcoeffs(*icPtr);
+	 /*
+	 const int mid0=icPtr->MeshID0;
+	 const int mid1=icPtr->MeshID1;
+	 ComInt.updateOtherGhost(*icPtr,mid0,false);
+	 ComInt.updateOtherGhost(*icPtr,mid1,false);
+	 */
+       }
+     
+     applyTemperatureBoundaries();
+     _residual=updateResid(false);
+     cout<<"Creating Coarse Levels..."<<endl;
+     MakeCoarseModel(this);
+     cout<<"Coarse Levels Completed."<<endl;
+  }
+
+  void initFromOld()
+  {
+    const int numMeshes=_meshes.size();
+
+     for (int n=0;n<numMeshes;n++)
+       {
+	 Mesh& mesh=*_meshes[n];
+
+	 BCfaceArray& BCfArray=*(_BFaces[n]);
+	 BCcellArray& BCArray=*(_BCells[n]);
+	 const StorageSite& cells=mesh.getCells();
+	 const int numcells=cells.getCount();
+
+	 //setting facegroups
+	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	   {
+	     FaceGroup& fg = *fgPtr;
+	     if(_bcMap[fg.id]->bcType == "reflecting")
+	       {
+		 const StorageSite& faces = fg.site;
+		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+		 const int faceCount=faces.getCount();
+		 const int offSet=faces.getOffset();
+		 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
+		 
+		 if(Imp)
+		   {
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=2;  //implicit boundary
+		   }
+		 else
+		   {
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=3;  //explicit boundary
+		   }
+		 
+		 if(Imp)
+		   {
+		     for(int i=0;i<faceCount;i++)
+		       {
+			 int cell1=BfaceCells(i,0);
+			 if(BCArray[cell1]==0)
+			   BCArray[cell1]=1;    //implicit boundary only
+			 else if(BCArray[cell1]==2)
+			   BCArray[cell1]=3;  //mix implicit/explicit boundary
+		       }
+		   }
+		 else
+		   {
+		     for(int i=0;i<faceCount;i++)
+		       {
+			 int cell1=BfaceCells(i,0);
+			 if(BCArray[cell1]==0)
+			   BCArray[cell1]=2;  //explicit boundary only
+			 else if (BCArray[cell1]==1)
+			   BCArray[cell1]=3;  //mix implicit/explicit boundary
+		       }
+		   }
+	       }
+	     else if(_bcMap[fg.id]->bcType == "temperature")
+	       {
+		 const StorageSite& faces = fg.site;
+		 const int faceCount=faces.getCount();
+		 const int offSet=faces.getOffset();
+		 
+		 for(int i=offSet;i<offSet+faceCount;i++)
+		   BCfArray[i]=1;
+	       }
+	     else if(_bcMap[fg.id]->bcType == "Interface")
+	       {		 
+		 StorageSite& faces0 = fg.site;
+		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
+		 const int faceCount=faces0.getCount();
+		 const int offSet=faces0.getOffset();
+
+		 for(int i=offSet;i<offSet+faceCount;i++)
+		   {
+		     BCfArray[i]=4;  //Interface boundary
+		     int cell0=BfaceCells(i-offSet,0);
+		     int cell1=BfaceCells(i-offSet,1);
+		     BCArray[cell0]=2;  //always treated explicitly
+		     BCArray[cell1]=4; //interface ghost cells need to be labeled
+		   }
+		 
+		 bool doneAlready=false;
+		 foreach(const COMETIC<T>* icPtr, _IClist)
+		   {
+		     if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
+		       {
+			 doneAlready=true;
+			 break;
+		       }
+		   }
+		 
+		 bool foundMatch=false;
+		 if(!doneAlready)
+		   {
+		     StorageSite* faces1Ptr=NULL;
+		     int otherFgID,otherMid;
+		     for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
+		       {
+			 const Mesh& otherMesh=*_meshes[otherMeshID];
+			 foreach(const FaceGroupPtr otherfgPtr, otherMesh.getBoundaryFaceGroups())
+			   {
+			     foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
+			     if(foundMatch)
+			       {
+				 otherFgID=otherfgPtr->id;
+				 otherMid=otherMeshID;
+				 faces1Ptr=&(otherfgPtr->site);
+				 break;
+			       }
+			   }
+			 if(foundMatch)
+			   break;
+		       }
+		     
+		     if(foundMatch)
+		       {
+			 StorageSite& faces1=*faces1Ptr;
+			 const Mesh& mesh1=*_meshes[otherMid];
+			 COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
+							  otherFgID, faces1.getCount()));
+			 
+			 if(_bcMap[fg.id]->InterfaceModel!="DMM")
+			   icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
+
+			 _IClist.push_back(icPtr);
+		       }
+		     else if(!doneAlready && !foundMatch)
+		       {
+			 cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
+			 throw CException("Could not find a matching face group!");
+		       }
+		   }
+	       }// end if interface 
+	   }//end facegroup loop
+
+       }//end meshes loop
+     
+     //Make map from mesh to IC
+     IntArray ICcount(numMeshes);
+     ICcount.zero();
+     
+     foreach(const COMETIC<T>* icPtr, _IClist)
+       {
+	 ICcount[icPtr->MeshID0]++;
+	 ICcount[icPtr->MeshID1]++;
+       }
+
+     for(int i=0;i<numMeshes;i++)
+       {
+	 IntArrPtr MeshToIC(new IntArray(ICcount[i]));
+	 _MeshToIC.push_back(MeshToIC);
+       }
+     
+     ICcount.zero();
+     const int listSize=_IClist.size();
+     for(int ic=0;ic<listSize;ic++)
+       {
+	 const COMETIC<T>* icPtr=_IClist[ic];
+	 (*(_MeshToIC[icPtr->MeshID0]))[ICcount[icPtr->MeshID0]]=ic;
+	 (*(_MeshToIC[icPtr->MeshID1]))[ICcount[icPtr->MeshID1]]=ic;
+	 ICcount[icPtr->MeshID0]++;
+	 ICcount[icPtr->MeshID1]++;
+       }
+
+     COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
+
+     for(int ic=0;ic<listSize;ic++)
+       {
+	 COMETIC<T>* icPtr=_IClist[ic];
+	 if(icPtr->InterfaceModel=="DMM")
+	   ComInt.makeDMMcoeffs(*icPtr);
+	 /*
+	 const int mid0=icPtr->MeshID0;
+	 const int mid1=icPtr->MeshID1;
+	 ComInt.updateOtherGhost(*icPtr,mid0,false);
+	 ComInt.updateOtherGhost(*icPtr,mid1,false);
+	 */
+       }
+     
      applyTemperatureBoundaries();
      _residual=updateResid(false);
      cout<<"Creating Coarse Levels..."<<endl;
@@ -271,8 +616,9 @@ class COMETModel : public Model
 
      for (int n=0;n<numMeshes;n++)
        {
-	 const Mesh& mesh=*_meshes[n];
-	 const int numK=_kspace.getlength();
+	 Mesh& mesh=*_meshes[n];
+	 Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	 const int numK=kspace.getlength();
 	 const StorageSite& cells=mesh.getCells();
 	 const int numcells=cells.getCount();
 	 
@@ -283,13 +629,10 @@ class COMETModel : public Model
 	 _macro.temperature.addArray(cells,TLcell);
 	 _macro.deltaT.addArray(cells,deltaTcell);
 	 
-	 T e0sum=0.;
-	 
 	 for (int k=0;k<numK;k++)
 	   {
-	     Tkvol& kv=_kspace.getkvol(k);
+	     Tkvol& kv=kspace.getkvol(k);
 	     const int numM=kv.getmodenum();
-	     const T dk3=kv.getdk3();
 
 	     for (int m=0;m<numM;m++)
 	       {
@@ -305,7 +648,6 @@ class COMETModel : public Model
 		 TArrptr FAS=TArrptr(new TArray(numcells));
 		 TArrptr inj=TArrptr(new TArray(numcells));
 		 const T einit=mode.calce0(Tinit);
-		 e0sum+=einit*dk3;
 		 *evar=einit;
 		 *inj=einit;
 		 *e0var=einit;
@@ -316,65 +658,134 @@ class COMETModel : public Model
 		 e0field.addArray(cells,e0var);
 		 resfield.addArray(cells,resid);
 		 FASfield.addArray(cells,FAS);
+		 
+	       }
+	   }
 
-		 BCfaceArray& BCfArray=*(_BFaces[n]);
-		 BCcellArray& BCArray=*(_BCells[n]);
-		 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	 BCfaceArray& BCfArray=*(_BFaces[n]);
+	 BCcellArray& BCArray=*(_BCells[n]);
+	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	   {
+	     FaceGroup& fg = *fgPtr;
+	     if(_bcMap[fg.id]->bcType == "reflecting")
+	       {
+		 const StorageSite& faces = fg.site;
+		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+		 const int faceCount=faces.getCount();
+		 const int offSet=faces.getOffset();
+		 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
+		 
+		 if(Imp)
 		   {
-		     const FaceGroup& fg = *fgPtr;
-		     if(_bcMap[fg.id]->bcType == "reflecting")
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=2;  //implicit boundary
+		   }
+		 else
+		   {
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=3;  //explicit boundary
+		   }
+		 
+		 if(Imp)
+		   {
+		     for(int i=0;i<faceCount;i++)
 		       {
-			 const StorageSite& faces = fg.site;
-			 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
-			 const int faceCount=faces.getCount();
-			 const int offSet=faces.getOffset();
-			 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
-			 
-			 if(Imp)
+			 int cell1=BfaceCells(i,0);
+			 if(BCArray[cell1]==0)
+			   BCArray[cell1]=1;    //implicit boundary only
+			 else if(BCArray[cell1]==2)
+			   BCArray[cell1]=3;  //mix implicit/explicit boundary
+		       }
+		   }
+		 else
+		   {
+		     for(int i=0;i<faceCount;i++)
+		       {
+			 int cell1=BfaceCells(i,0);
+			 if(BCArray[cell1]==0)
+			   BCArray[cell1]=2;  //explicit boundary only
+			 else if (BCArray[cell1]==1)
+			   BCArray[cell1]=3;  //mix implicit/explicit boundary
+		       }
+		   }
+	       }
+	     else if(_bcMap[fg.id]->bcType == "temperature")
+	       {
+		 const StorageSite& faces = fg.site;
+		 const int faceCount=faces.getCount();
+		 const int offSet=faces.getOffset();
+		 
+		 for(int i=offSet;i<offSet+faceCount;i++)
+		   BCfArray[i]=1;
+	       }
+	     else if(_bcMap[fg.id]->bcType == "Interface")
+	       {		 
+		 StorageSite& faces0 = fg.site;
+		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
+		 const int faceCount=faces0.getCount();
+		 const int offSet=faces0.getOffset();
+		 
+		 for(int i=offSet;i<offSet+faceCount;i++)
+		   {
+		     BCfArray[i]=4;  //Interface boundary
+		     int cell0=BfaceCells(i-offSet,0);
+		     BCArray[cell0]=2;  //always treated explicitly
+		   }
+		 
+		 bool doneAlready=false;
+		 foreach(const COMETIC<T>* icPtr, _IClist)
+		   {
+		     if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
+		       {
+			 doneAlready=true;
+			 break;
+		       }
+		   }
+		 
+		 if(!doneAlready)
+		   {
+		     bool foundMatch=false;
+		     StorageSite* faces1Ptr=NULL;
+		     int otherFgID,otherMid;
+		     for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
+		       {
+			 const Mesh& otherMesh=*_meshes[otherMeshID];
+			 foreach(const FaceGroupPtr otherfgPtr, otherMesh.getBoundaryFaceGroups())
 			   {
-			     for(int i=offSet;i<offSet+faceCount;i++)
-			       BCfArray[i]=2;  //implicit boundary
-			   }
-			 else
-			   {
-			     for(int i=offSet;i<offSet+faceCount;i++)
-			       BCfArray[i]=3;  //explicit boundary
-			   }
-			 
-			 if(Imp)
-			   {
-			     for(int i=0;i<faceCount;i++)
+			     foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
+			     if(foundMatch)
 			       {
-				 int cell1=BfaceCells(i,0);
-				 if(BCArray[cell1]==0)
-				   BCArray[cell1]=1;    //implicit boundary only
-				 else if(BCArray[cell1]==2)
-				   BCArray[cell1]=3;  //mix implicit/explicit boundary
+				 otherFgID=otherfgPtr->id;
+				 otherMid=otherMeshID;
+				 faces1Ptr=&(otherfgPtr->site);
+				 break;
 			       }
 			   }
-			 else
-			   {
-			     for(int i=0;i<faceCount;i++)
-			       {
-				 int cell1=BfaceCells(i,0);
-				 if(BCArray[cell1]==0)
-				   BCArray[cell1]=2;  //explicit boundary only
-				 else if (BCArray[cell1]==1)
-				   BCArray[cell1]=3;  //mix implicit/explicit boundary
-			       }
-			   }
+			 if(foundMatch)
+			   break;
+		       }
+		     
+		     if(foundMatch)
+		       {
+			 StorageSite& faces1=*faces1Ptr;
+			 const Mesh& mesh1=*_meshes[otherMid];
+			 COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
+							  otherFgID, faces1.getCount()));
+			 
+			 if(_bcMap[fg.id]->InterfaceModel!="DMM")
+			   icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
+			 
+			 setLocalScatterMaps(mesh, faces0, mesh1, faces1);
+			 
+			 _IClist.push_back(icPtr);
 		       }
 		     else
 		       {
-			 const StorageSite& faces = fg.site;
-			 const int faceCount=faces.getCount();
-			 const int offSet=faces.getOffset();
-			 
-			 for(int i=offSet;i<offSet+faceCount;i++)
-			   BCfArray[i]=1;
+			 cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
+			 throw CException("Could not find a matching face group!");
 		       }
 		   }
-	       }    
+	       }
 	   }
 	 
 	 TArrptr TlResidCell(new TArray(numcells));
@@ -387,7 +798,71 @@ class COMETModel : public Model
 	 *TlFAS=0.;
 	 _macro.TlFASCorrection.addArray(cells,TlFAS);
        }
+
+     //Make map from mesh to IC
+     IntArray ICcount(numMeshes);
+     ICcount.zero();
+     
+     foreach(const COMETIC<T>* icPtr, _IClist)
+       {
+	 ICcount[icPtr->MeshID0]++;
+	 ICcount[icPtr->MeshID1]++;
+       }
+     
+     for(int i=0;i<numMeshes;i++)
+       {
+	 IntArrPtr MeshToIC(new IntArray(ICcount[i]));
+	 _MeshToIC.push_back(MeshToIC);
+       }
+     
+     ICcount.zero();
+     const int listSize=_IClist.size();
+     for(int ic=0;ic<listSize;ic++)
+       {
+	 const COMETIC<T>* icPtr=_IClist[ic];
+	 (*(_MeshToIC[icPtr->MeshID0]))[ICcount[icPtr->MeshID0]]=ic;
+	 (*(_MeshToIC[icPtr->MeshID1]))[ICcount[icPtr->MeshID1]]=ic;
+	 ICcount[icPtr->MeshID0]++;
+	 ICcount[icPtr->MeshID1]++;
+       }
+     
+     COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
+	 
+     for(int ic=0;ic<listSize;ic++)
+       {
+	 COMETIC<T>* icPtr=_IClist[ic];
+	 if(icPtr->InterfaceModel=="DMM")
+	   ComInt.makeDMMcoeffs(*icPtr);
+	 //const int mid0=icPtr->MeshID0;
+	 //const int mid1=icPtr->MeshID1;
+	 //ComInt.updateOtherGhost(*icPtr,mid0);
+	 //ComInt.updateOtherGhost(*icPtr,mid1);
+       }
+     
      applyTemperatureBoundaries();
+  }
+
+  void setLocalScatterMaps(const Mesh& mesh0, StorageSite& faces0, const Mesh& mesh1,StorageSite& faces1)
+  {//makes the IntArray for the indices of the cells1 to which the cells0 scatter
+    
+    const IntArray& common01=*(faces0.getCommonMap()[&faces1]);
+    IntArrPtr scatter01(new IntArray(faces0.getCount()));
+    IntArrPtr scatter10(new IntArray(faces0.getCount()));
+    const CRConnectivity& faceCells0=mesh0.getFaceCells(faces0);
+    const CRConnectivity& faceCells1=mesh1.getFaceCells(faces1);
+
+    for(int i=0;i<faces0.getCount();i++)
+      {
+	const int f01=common01[i];
+	const int c01=faceCells1(f01,1);
+	const int c10=faceCells0(i,1);
+	(*scatter01)[i]=c01;
+	(*scatter10)[i]=c10;
+      }
+
+    faces0.getScatterMap()[&faces1]=scatter01;
+    faces1.getScatterMap()[&faces0]=scatter10;
+    
   }
 
   void applyTemperatureBoundaries()
@@ -397,13 +872,14 @@ class COMETModel : public Model
     for(int n=0;n<numMeshes;n++)
       {
 	const Mesh& mesh=*_meshes[n];
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	  {
 	    const FaceGroup& fg = *fgPtr;
 	    const StorageSite& faces = fg.site;
 	    const COMETBC<T>& bc = *_bcMap[fg.id];
 	    
-	    COMETBoundary<T> cbc(faces, mesh,_geomFields,_kspace,_options,fg.id);
+	    COMETBoundary<T> cbc(faces, mesh,_geomFields,kspace,_options,fg.id);
 
 	    if(bc.bcType=="temperature")
 	      {	      
@@ -427,10 +903,10 @@ class COMETModel : public Model
 	if(thisLevel<maxLevs)  //assumes # of levels will always work for the mesh
 	  {
 	    MeshList* newMeshesPtr=new MeshList;
-	    Tkspace* newKspacePtr=new Tkspace();
+	    TkspList* newKspacesPtr=new TkspList;
 	    PhononMacro* newMacroPtr=new PhononMacro("coarse");
 
-	    newKspacePtr->CopyKspace(finerModel->getKspace());
+	    MakeNewKspaces(finerModel->getKspaces(),*newKspacesPtr);
 
 	    int newCount= MakeCoarseMesh(finerModel->getMeshList(),
 					 finerModel->getGeomFields(),
@@ -438,12 +914,13 @@ class COMETModel : public Model
 	    	    
 	    TCOMET* newModelPtr=new COMETModel(*newMeshesPtr,thisLevel,
 					       finerModel->getGeomFields(),
-					       *newKspacePtr,*newMacroPtr);
+					       *newKspacesPtr,*newMacroPtr);
 	    
 	    newModelPtr->setFinerLevel(finerModel);
 	    finerModel->setCoarserLevel(newModelPtr);
 	    newModelPtr->getOptions()=finerModel->getOptions();
 	    newModelPtr->getBCs()=finerModel->getBCs();
+	    newModelPtr->getMKMap()=finerModel->getMKMap();
 
 	    newModelPtr->initCoarse();
 	    if(newCount>3)
@@ -458,6 +935,22 @@ class COMETModel : public Model
       throw CException("Unknown agglomeration method.");
   }
 
+  void MakeNewKspaces(TkspList& inList, TkspList& outList)
+  {
+    const int len=inList.size();
+    for(int i=0;i<len;i++)
+      {
+	TkspPtr newKspacePtr=TkspPtr(new Tkspace());
+	newKspacePtr->CopyKspace(*inList[i]);
+	inList[i]->setCoarseKspace(newKspacePtr);
+	outList.push_back(newKspacePtr);
+      }
+    
+    for(int i=0;i<len;i++)
+      inList[i]->giveTransmissions();
+
+  }
+
   int MakeCoarseMesh(const MeshList& inMeshes, GeomFields& inGeomFields,
 		      MeshList& outMeshes)
   {
@@ -469,8 +962,8 @@ class COMETModel : public Model
 	const Mesh& mesh=*inMeshes[n];
 	const int dim=mesh.getDimension();
 	Mesh* newMeshPtr=new Mesh(dim);
-
 	outMeshes.push_back(newMeshPtr);
+	newMeshPtr->setID(n);
 
 	const StorageSite& inCells=mesh.getCells();
 	StorageSite& outCells=newMeshPtr->getCells();
@@ -775,30 +1268,45 @@ class COMETModel : public Model
 	  {
 	    const FaceGroup& fg=*fgPtr;
 	    const int size=fg.site.getCount();
-	    newMeshPtr->createBoundaryFaceGroup(size,inOffset,fg.id,fg.groupType);
+	    const StorageSite& newBoundarySite=newMeshPtr->createBoundaryFaceGroup(
+										   size,inOffset,fg.id,fg.groupType);
+	    const VectorT3Array& oldFgCoords=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[fg.site]);
+	    VT3Ptr newFgCoordsPtr=VT3Ptr(new VectorT3Array(size));
+	    (*newFgCoordsPtr)=oldFgCoords;
+	    inGeomFields.coordinate.addArray(newBoundarySite,newFgCoordsPtr);
 	    inOffset+=size;
 	  }
 
 	//now make the geom fields
 	const int outCellsCount=outCells.getSelfCount();
+	VT3Ptr outCellCoordsPtr=VT3Ptr(new VectorT3Array(outCellsCount));
 	TArrptr outCellVolumePtr=TArrptr(new TArray(outCellsCount));
 	TArray& outCV=*outCellVolumePtr;
+	VectorT3Array& outCoords=*outCellCoordsPtr;
 	outCV=0.;
 
 	Field& VolumeField=inGeomFields.volume;
 	const TArray& inCV=dynamic_cast<const TArray&>(VolumeField[inCells]);
+	const VectorT3Array& inCoords=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[inCells]);
 
 	for(int c=0;c<outCellsCount;c++)
 	  {
 	    const int fineCount=CoarseToFineCells->getCount(c);
+	    VectorT3 newCoord;
+	    newCoord[0]=0.;
+	    newCoord[1]=0.;
+	    newCoord[2]=0.;
 	    for(int i=0;i<fineCount;i++)
 	      {
 		int fc=(*CoarseToFineCells)(c,i);
 		outCV[c]+=inCV[fc];
+		newCoord+=inCoords[fc]*inCV[fc];
 	      }
+	    outCoords[c]=newCoord/outCV[c];
 	  }
 	
 	VolumeField.addArray(outCells,outCellVolumePtr);
+	inGeomFields.coordinate.addArray(outCells,outCellCoordsPtr);
 
 	const int outFacesCount=outFaces.getCount();
 	VT3Ptr outFaceAreaPtr=VT3Ptr(new VectorT3Array(outFacesCount));
@@ -876,51 +1384,111 @@ class COMETModel : public Model
   void doSweeps(const int sweeps)
   {
     for(int sweepNo=0;sweepNo<sweeps;sweepNo++)
-      smooth();
+      {
+	smooth(1);
+	smooth(-1);
+      }
+    //applyTemperatureBoundaries();
   }
 
-  void smooth()
+  void smooth(int dir)
   {
-    const T relFactor=_options.relFactor;
+
     const int numMeshes=_meshes.size();
-    for(int msh=0;msh<numMeshes;msh++)
+    int start;
+    if(dir==1)
+      start=0;
+    else
+      start=numMeshes-1;
+
+    for(int msh=start;((msh<numMeshes)&&(msh>-1));msh+=dir)
       {
 	const Mesh& mesh=*_meshes[msh];
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[msh]];
+	FgTKClistMap FgToKsc;
+
+	if(!_MeshToIC.empty())
+	  {
+	    IntArray& ICs=*_MeshToIC[msh];
+	    const int totIC=ICs.getLength();
+	    for(int i=0;i<totIC;i++)
+	      {
+		COMETIC<T>& ic=*_IClist[ICs[i]];
+		int fgid=ic.getSelfFaceID(msh);
+		FgToKsc[fgid]=ic.getKConnectivity(fgid);
+	      }
+	  }
+	
 	const BCcellArray& BCArray=*(_BCells[msh]);
 	const BCfaceArray& BCfArray=*(_BFaces[msh]);
+
 	COMETDiscretizer<T> CDisc(mesh,_geomFields,_macro,
-				  _kspace,_bcMap,BCArray,BCfArray,_options);
+				  kspace,_bcMap,BCArray,BCfArray,_options,
+				  FgToKsc);
 
 	CDisc.setfgFinder();
-	CDisc.COMETSolve(1,_level); //forward
-	CDisc.COMETSolve(-1,_level); //reverse
-      }
-  }
 
+	CDisc.COMETSolve(dir,_level); //forward
+      }
+
+    COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
+    
+    const int listSize=_IClist.size();
+    for(int ic=0;ic<listSize;ic++)
+      {
+	COMETIC<T>* icPtr=_IClist[ic];
+	const int mid0=icPtr->MeshID0;
+	const int mid1=icPtr->MeshID1;
+	if(icPtr->InterfaceModel=="DMM")
+	  ComInt.makeDMMcoeffs(*icPtr);
+	ComInt.updateOtherGhost(*icPtr,mid0,_level!=0);
+	ComInt.updateOtherGhost(*icPtr,mid1,_level!=0);
+      }
+    
+  }
+  
   T updateResid(const bool addFAS)
   {
     const int numMeshes=_meshes.size();
-    T lowResid=-1.;
+
+    COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
+    const int listSize=_IClist.size();
+    for(int ic=0;ic<listSize;ic++)
+      {
+	COMETIC<T>* icPtr=_IClist[ic];
+	//const int mid0=icPtr->MeshID0;
+	//const int mid1=icPtr->MeshID1;
+	if(icPtr->InterfaceModel=="DMM")
+	  ComInt.makeDMMcoeffs(*icPtr);
+	ComInt.updateResid(*icPtr,addFAS);
+	//ComInt.updateOtherGhost(*icPtr,mid0);
+	//ComInt.updateOtherGhost(*icPtr,mid1);
+      }
+    
+    T highResid=-1.;
     T currentResid;
     for(int msh=0;msh<numMeshes;msh++)
       {
 	const Mesh& mesh=*_meshes[msh];
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[msh]];
 	const BCcellArray& BCArray=*(_BCells[msh]);
 	const BCfaceArray& BCfArray=*(_BFaces[msh]);
+	FgTKClistMap FgToKsc;
 	COMETDiscretizer<T> CDisc(mesh,_geomFields,_macro,
-				  _kspace,_bcMap,BCArray,BCfArray,_options);
+				  kspace,_bcMap,BCArray,BCfArray,_options,
+				  FgToKsc);
 	
 	CDisc.setfgFinder();
 	CDisc.findResid(addFAS);
 	currentResid=CDisc.getAveResid();
 
-	if(lowResid<0)
-	  lowResid=currentResid;
+	if(highResid<0)
+	  highResid=currentResid;
 	else
-	  if(currentResid<lowResid)
-	    lowResid=currentResid;
+	  if(currentResid>highResid)
+	    highResid=currentResid;
       }
-    return lowResid;
+    return highResid;
   }
 
   void cycle()
@@ -929,11 +1497,7 @@ class COMETModel : public Model
     
     if(_level+1<_options.maxLevels)
       {
-	if(_level==0)
-	  updateResid(false);
-	else
-	  updateResid(true);
-
+	updateResid(_level!=0);
 	injectResid();
 	_coarserLevel->sete0();
 	_coarserLevel->makeFAS();
@@ -941,6 +1505,9 @@ class COMETModel : public Model
 	correctSolution();
       }
     
+    //if(_level==_options.maxLevels-1 && _level!=0)
+    //doSweeps(10);
+    //else
     doSweeps(_options.postSweeps);
   }
 
@@ -951,8 +1518,10 @@ class COMETModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& finerMesh=*_meshes[n];
+	int Knum=_MeshKspaceMap[n];
+	Tkspace& finerKspace=*_kspaces[Knum];
 	const Mesh& coarserMesh=*(_coarserLevel->getMeshList())[n];
-	Tkspace& coarserKspace=_coarserLevel->getKspace();
+	Tkspace& coarserKspace=_coarserLevel->getKspace(Knum);
 	PhononMacro& coarserMacro=_coarserLevel->getMacro();
 	const StorageSite& finerCells=finerMesh.getCells();
 	const StorageSite& coarserCells=coarserMesh.getCells();
@@ -961,11 +1530,12 @@ class COMETModel : public Model
 	const TArray& finerVol=dynamic_cast<TArray&>(_geomFields.volume[finerCells]);
 
 	const int cellCount=coarserCells.getSelfCount();
+	const int cellTotCount=coarserCells.getCount();
 
-	const int klen=_kspace.getlength();
+	const int klen=finerKspace.getlength();
 	for(int k=0;k<klen;k++)
 	  {
-	    Tkvol& kvol=_kspace.getkvol(k);
+	    Tkvol& kvol=finerKspace.getkvol(k);
 	    Tkvol& ckvol=coarserKspace.getkvol(k);
 	    const int numModes=kvol.getmodenum();
 	    for(int m=0;m<numModes;m++)
@@ -998,8 +1568,18 @@ class COMETModel : public Model
 		    coarserVar[c]/=coarserVol[c];
 		    coarserInj[c]=coarserVar[c];
 		  }
-		
-		
+
+		for(int c=cellCount;c<cellTotCount;c++)
+		  {
+		    coarserVar[c]=0.;
+		    coarserFAS[c]=0.;
+		    
+		    const int cell=CoarserToFiner(c,0);
+		    coarserVar[c]+=finerVar[cell];
+		    coarserFAS[c]+=finerRes[cell];	
+		    coarserInj[c]=coarserVar[c];
+		  }
+	       
 	      }
 	  }
 	
@@ -1035,12 +1615,13 @@ class COMETModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh=*_meshes[n];
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
 	const StorageSite& cells=mesh.getCells();
 
-	const int klen=_kspace.getlength();
+	const int klen=kspace.getlength();
 	for(int k=0;k<klen;k++)
 	  {
-	    Tkvol& kvol=_kspace.getkvol(k);
+	    Tkvol& kvol=kspace.getkvol(k);
 	    const int numModes=kvol.getmodenum();
 	    for(int m=0;m<numModes;m++)
 	      {
@@ -1065,14 +1646,15 @@ class COMETModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh=*_meshes[n];
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
 	const StorageSite& cells=mesh.getCells();
 	const int cellCount=cells.getSelfCount();
 	TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[cells]);
 
-	const int klen=_kspace.getlength();
+	const int klen=kspace.getlength();
 	for(int k=0;k<klen;k++)
 	  {
-	    Tkvol& kvol=_kspace.getkvol(k);
+	    Tkvol& kvol=kspace.getkvol(k);
 	    const int numModes=kvol.getmodenum();
 	    for(int m=0;m<numModes;m++)
 	      {
@@ -1086,6 +1668,22 @@ class COMETModel : public Model
 	      }
 	  }
       }
+
+    /*
+    COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
+
+    const int listSize=_IClist.size();
+    for(int ic=0;ic<listSize;ic++)
+      {
+	COMETIC<T>* icPtr=_IClist[ic];
+	const int mid0=icPtr->MeshID0;
+	const int mid1=icPtr->MeshID1;
+	if(icPtr->InterfaceModel=="DMM")
+	  ComInt.makeDMMcoeffs(*icPtr);
+	ComInt.updateOtherGhost(*icPtr,mid0);
+	ComInt.updateOtherGhost(*icPtr,mid1);
+      }
+    */
   }
 
   void correctSolution()
@@ -1095,19 +1693,23 @@ class COMETModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& finerMesh=*_meshes[n];
+	int Knum=_MeshKspaceMap[n];
+	Tkspace& finerKspace=*_kspaces[Knum];
 	const Mesh& coarserMesh=*(_coarserLevel->getMeshList())[n];
-	Tkspace& coarserKspace=_coarserLevel->getKspace();
+	Tkspace& coarserKspace=_coarserLevel->getKspace(Knum);
 	PhononMacro& coarserMacro=_coarserLevel->getMacro();
 	const StorageSite& finerCells=finerMesh.getCells();
 	const StorageSite& coarserCells=coarserMesh.getCells();
 	const CRConnectivity& CoarserToFiner=coarserMesh.getConnectivity(coarserCells,finerCells);
+	BCcellArray& BCArray=*(_BCells[n]);
 	
 	const int cellCount=coarserCells.getSelfCount();
+	const int cellTotCount=coarserCells.getCount();
 	
-	const int klen=_kspace.getlength();
+	const int klen=finerKspace.getlength();
 	for(int k=0;k<klen;k++)
 	  {
-	    Tkvol& kvol=_kspace.getkvol(k);
+	    Tkvol& kvol=finerKspace.getkvol(k);
 	    Tkvol& ckvol=coarserKspace.getkvol(k);
 	    const int numModes=kvol.getmodenum();
 	    for(int m=0;m<numModes;m++)
@@ -1128,7 +1730,20 @@ class COMETModel : public Model
 		    
 		    for(int fc=0;fc<fineCount;fc++)
 		      finerArray[CoarserToFiner(c,fc)]+=correction;
-		  }	
+		  }
+
+		for(int c=cellCount;c<cellTotCount;c++)
+		  {
+		    if(BCArray[c]==4)  //correct interface cells only
+		      {
+			const int fineCount=CoarserToFiner.getCount(c);
+			const T correction=coarserArray[c]-injArray[c];
+			
+			for(int fc=0;fc<fineCount;fc++)
+			  finerArray[CoarserToFiner(c,fc)]+=correction;
+		      }
+		  }
+
 	      }
 	  }
 
@@ -1153,20 +1768,20 @@ class COMETModel : public Model
     for(int n=0;n<numMeshes;n++)
       {
 	const Mesh& mesh=*_meshes[n];
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];	
 	const StorageSite& cells = mesh.getCells();
 	const int numcells = cells.getCount();
-	const T tauTot=_kspace.calcTauTot();
+	const T tauTot=kspace.calcTauTot();
 	TArray& TL=dynamic_cast<TArray&>(_macro.temperature[cells]);
 	TArray& e0Array=dynamic_cast<TArray&>(_macro.e0[cells]);
 	
 	for(int c=0;c<numcells;c++)
-	  _kspace.NewtonSolve(TL[c],e0Array[c]*tauTot);
+	  kspace.NewtonSolve(TL[c],e0Array[c]*tauTot);
       }
   }
   
   void advance(const int iters)
   {
-    //applyTemperatureBoundaries();
     _residual=updateResid(false);
     int niters=0;
     const T absTol=_options.absTolerance;
@@ -1175,20 +1790,25 @@ class COMETModel : public Model
     while((niters<iters) && (_residual>absTol))
       {
 	cycle();
+
 	niters++;
 	_residual=updateResid(false);
 	if(niters%show==0)
 	  cout<<"Iteration:"<<niters<<" Residual:"<<_residual<<endl;
 	
       }
+    
     applyTemperatureBoundaries();
-    //cout<<endl<<"Total Iterations:"<<niters<<" Residual:"<<_residual<<endl;
+    calcModeTemps();
   }
 
   T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
   {
     T r(0.);
     bool found = false;
+    const int n=mesh.getID();
+    Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+    const T DK3=kspace.getDK3();
     foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
         const FaceGroup& fg = *fgPtr;
@@ -1201,9 +1821,9 @@ class COMETModel : public Model
 	    const Field& areaField=_geomFields.area;
 	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
 	    
-	    for(int k=0;k<_kspace.getlength();k++)
+	    for(int k=0;k<kspace.getlength();k++)
 	      {
-		Tkvol& kv=_kspace.getkvol(k);
+		Tkvol& kv=kspace.getkvol(k);
 		int modenum=kv.getmodenum();
 		for(int m=0;m<modenum;m++)
 		  {
@@ -1216,7 +1836,7 @@ class COMETModel : public Model
 			const VectorT3 An=faceArea[f];
 			const int c1=faceCells(f,1);
 			const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
-			r += eval[c1]*vgdotAn*dk3;
+			r += eval[c1]*vgdotAn*dk3/DK3;
 		      }
 		  }
 	      }
@@ -1225,7 +1845,7 @@ class COMETModel : public Model
       }
     if (!found)
       throw CException("getHeatFluxIntegral: invalid faceGroupID");
-    return r;
+    return r*DK3;
   }
 
   T getWallArea(const Mesh& mesh, const int faceGroupId)
@@ -1282,14 +1902,16 @@ class COMETModel : public Model
   ArrayBase* getValueArray(const Mesh& mesh, const int cell)
     {
       //only returns the e" values, not the lattice temperature
-      const int allModes=_kspace.gettotmodes();
+      const int n=mesh.getID();
+      Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+      const int allModes=kspace.gettotmodes();
       TArray* vals=new TArray(allModes);
       const StorageSite& cells=mesh.getCells();
-      const int len=_kspace.getlength();
+      const int len=kspace.getlength();
       int count=0;
       for(int k=0;k<len;k++)
 	{
-	  Tkvol& kvol=_kspace.getkvol(k);
+	  Tkvol& kvol=kspace.getkvol(k);
 	  const int modes=kvol.getmodenum();
 	  for(int m=0;m<modes;m++)
 	    {
@@ -1309,18 +1931,15 @@ class COMETModel : public Model
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh=*_meshes[n];
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
 	const StorageSite& cells=mesh.getCells();
 	const int numcells=cells.getCount();
 	const TArray& Tl=dynamic_cast<const TArray&>(_macro.temperature[cells]);
-	const int len=_kspace.getlength();
-
-	//cout<<"Equilibrating cells to Lattice Temperature:"<<endl;
-	//for(int c=0;c<numcells;c++)
-	  //cout<<Tl[c]<<endl;
+	const int len=kspace.getlength();
 	
 	for(int k=0;k<len;k++)
 	  {
-	    Tkvol& kvol=_kspace.getkvol(k);
+	    Tkvol& kvol=kspace.getkvol(k);
 	    const int modes=kvol.getmodenum();
 	    for(int m=0;m<modes;m++)
 	      {
@@ -1372,6 +1991,47 @@ class COMETModel : public Model
 
       }
   }
+
+  void calcModeTemps()
+  {
+    const int numMeshes=_meshes.size();
+    for (int n=0;n<numMeshes;n++)
+       {
+	 Mesh& mesh=*_meshes[n];
+	 if(_MeshKspaceMap[n]==-1)
+	   throw CException("Have not set the Kspace for this Mesh!!");
+	 Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	 const int numK=kspace.getlength();
+	 const StorageSite& cells=mesh.getCells();
+	 const int numcells=cells.getCount();
+	 FieldVector& FieldVec=*_macro.BranchTemperatures[n];
+	 const int modeCount=FieldVec.size();
+	 TArray eSum(numcells);
+	 const TArray& TL=dynamic_cast<const TArray&>(_macro.temperature[cells]);
+	 
+	 for(int m=0;m<modeCount;m++)
+	   {
+	     eSum.zero();
+	     Field& modeField=*FieldVec[m];
+	     TArray& modeTemp=dynamic_cast<TArray&>(modeField[cells]);
+
+	     for(int k=0;k<numK;k++)
+	       {
+		 T dk3=kspace.getkvol(k).getdk3();
+		 Tmode& mode=kspace.getkvol(k).getmode(m);
+		 Field& eField=mode.getfield();
+		 TArray& eArray=dynamic_cast<TArray&>(eField[cells]);
+		 
+		 for(int c=0;c<numcells;c++)
+		   eSum[c]+=eArray[c]*dk3;
+	       }
+
+	     for(int c=0;c<numcells;c++)
+	       modeTemp[c]=kspace.calcModeTemp(TL[c],eSum[c],m);
+	   }
+
+       }
+  }
   
   void setBCMap(COMETBCMap* bcMap) {_bcMap=*bcMap;}
   void setCoarserLevel(TCOMET* cl) {_coarserLevel=cl;}
@@ -1379,7 +2039,8 @@ class COMETModel : public Model
   int getLevel() {return _level;}
   const MeshList& getMeshList() {return _meshes;}
   GeomFields& getGeomFields() {return _geomFields;}
-  Tkspace& getKspace() {return _kspace;}
+  TkspList& getKspaces() {return _kspaces;}
+  Tkspace& getKspace(const int i) {return *_kspaces[i];}
   PhononMacro& getMacro() {return _macro;}
   T getResidual() {return _residual;}
 
@@ -1387,7 +2048,7 @@ class COMETModel : public Model
 
   const int _level;    //0 being the finest level
   GeomFields& _geomFields;
-  Tkspace& _kspace;
+  TkspList& _kspaces;
   PhononMacro& _macro;
   TCOMET* _finestLevel;
   TCOMET* _coarserLevel;
@@ -1397,6 +2058,9 @@ class COMETModel : public Model
   BCfaceList _BFaces;
   BCcellList _BCells;
   T _residual;
+  MeshKspaceMap _MeshKspaceMap;
+  IClist _IClist;
+  MeshICmap _MeshToIC;
 
 };
 
