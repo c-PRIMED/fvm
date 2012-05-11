@@ -1031,8 +1031,10 @@ Mesh::findCommonFaces(StorageSite& faces, StorageSite& otherFaces,
           
           (*otherCommonFaces)[f] = closestFace;
           (*myCommonFaces)[closestFace] = f;
-          
       }
+      else
+	throw CException("Not a match");
+      
   }
   
   faces.getCommonMap()[&otherFaces] = myCommonFaces;
@@ -1040,6 +1042,74 @@ Mesh::findCommonFaces(StorageSite& faces, StorageSite& otherFaces,
   
 }
 
+bool
+Mesh::COMETfindCommonFaces(StorageSite& faces, StorageSite& otherFaces,
+                      const GeomFields& geomFields)
+{
+  const int count(faces.getCount());
+  if (count != otherFaces.getCount())
+    return false;
+
+  const Array<VecD3>& coords =
+    dynamic_cast<const Array<VecD3>& >(geomFields.coordinate[faces]);
+  
+  const Array<VecD3>& otherCoords =
+    dynamic_cast<const Array<VecD3>& >(geomFields.coordinate[otherFaces]);
+
+  const Array<VecD3>& area =
+    dynamic_cast<const Array<VecD3>& >(geomFields.area[faces]);
+  
+  const Array<VecD3>& otherArea =
+    dynamic_cast<const Array<VecD3>& >(geomFields.area[otherFaces]);
+
+  KSearchTree thisFacesTree(coords);
+  
+  int neibs;
+  if(otherCoords.getLength()>1)
+    neibs=2;
+  else
+    neibs=1;
+
+  Array<int> closest(neibs);
+
+  shared_ptr<IntArray> myCommonFaces(new IntArray(count));
+  shared_ptr<IntArray> otherCommonFaces(new IntArray(count));
+  
+  for(int f=0; f<count; f++)
+  {
+      thisFacesTree.findNeighbors(otherCoords[f],neibs,closest);
+      
+      const int closestFace = closest[0];
+      double dist0 = mag(otherCoords[f] - coords[closestFace]);
+      
+      // distance between the two closest point used as scale
+      
+      double distScale; 
+      if(neibs==2)
+	distScale=mag(coords[closest[0]] - coords[closest[1]])*epsilon;
+      else
+	distScale=sqrt(sqrt((area[f].mag2())))*0.00001;
+      
+      if (dist0 < distScale)
+      {
+          double crossProductMag(mag2(cross(otherArea[f],area[closestFace])));
+          if (crossProductMag > mag2(otherArea[f])*epsilon)
+            return false;
+          
+          (*otherCommonFaces)[f] = closestFace;
+          (*myCommonFaces)[closestFace] = f;
+      }
+      else
+	return false;
+      
+  }
+  
+  faces.getCommonMap()[&otherFaces] = myCommonFaces;
+  otherFaces.getCommonMap()[&faces] = otherCommonFaces;
+
+  return true;
+  
+}
 
 Mesh*
 Mesh::extractBoundaryMesh()
