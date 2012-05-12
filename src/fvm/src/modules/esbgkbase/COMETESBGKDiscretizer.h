@@ -139,7 +139,7 @@ class COMETESBGKDiscretizer
    void COMETSolve(const int sweep, const int level)
    {
     const int cellcount=_cells.getSelfCount();
-
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
     int start;
 
     if(sweep==1)
@@ -155,6 +155,7 @@ class COMETESBGKDiscretizer
 
     for(int c=start;((c<cellcount)&&(c>-1));c+=sweep)
     {
+      if (ibType[c] == Mesh::IBTYPE_FLUID){
         for(int dir=0;dir<_numDir;dir++)
 	  fVal[dir]=(*_fArrays[dir])[c];
 	if(_BCArray[c]==0)
@@ -205,6 +206,7 @@ class COMETESBGKDiscretizer
 	}
         else
           throw CException("Unexpected value for boundary cell map.");
+      }
     }
   }
 
@@ -244,13 +246,15 @@ class COMETESBGKDiscretizer
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec, const int cellcount)
   {
     const int neibcount=_cellFaces.getCount(cell);
-
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
+    const StorageSite& ibFaces = _mesh.getIBFaces();
+    const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[_faces]);
     for(int j=0;j<neibcount;j++)
     {
-        const int f=_cellFaces(cell,j);
-        int cell2=_faceCells(f,1);
-        VectorT3 Af=_faceArea[f];
-        VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+        const int face=_cellFaces(cell,j);
+        int cell2=_faceCells(face,1);
+        VectorT3 Af=_faceArea[face];
+        VectorT3 en = _faceArea[face]/_faceAreaMag[face];
 
         T flux;
 
@@ -258,7 +262,7 @@ class COMETESBGKDiscretizer
 	{
             Af=Af*(-1.);
             en=en*(-1.);
-            cell2=_faceCells(f,0);
+            cell2=_faceCells(face,0);
 	}
 	
 	int count=1;
@@ -274,7 +278,20 @@ class COMETESBGKDiscretizer
 		BVec[count-1]-=flux*f[cell];
 	    }
 	    else
-	      BVec[count-1]-=flux*f[cell2];
+	    {
+                if (((ibType[cell] == Mesh::IBTYPE_FLUID) && (ibType[cell2] == Mesh::IBTYPE_BOUNDARY)) ||
+                    ((ibType[cell2] == Mesh::IBTYPE_FLUID) && (ibType[cell] == Mesh::IBTYPE_BOUNDARY)))
+		{
+                    const int ibFace = ibFaceIndex[face];
+                    if (ibFace < 0)
+                      throw CException("invalid ib face index");
+                    Field& fnd = *_dsfPtr.dsf[dir];
+                    const TArray& fIB = dynamic_cast<const TArray&>(fnd[ibFaces]);
+                    BVec[count-1]-=flux*fIB[ibFace];
+		}
+                else 
+                  BVec[count-1]-=flux*f[cell2];
+	    }
 	    count++;
 	}
     }
@@ -285,15 +302,17 @@ class COMETESBGKDiscretizer
   {
 
     const int neibcount=_cellFaces.getCount(cell);
-
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
+    const StorageSite& ibFaces = _mesh.getIBFaces();
+    const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[_faces]);
     const T one(1.0);
 
     for(int j=0;j<neibcount;j++)
     {
-	const int f=_cellFaces(cell,j);
-	int cell2=_faceCells(f,1);
-	VectorT3 Af=_faceArea[f];
-	VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+	const int face=_cellFaces(cell,j);
+	int cell2=_faceCells(face,1);
+	VectorT3 Af=_faceArea[face];
+	VectorT3 en = _faceArea[face]/_faceAreaMag[face];
 
 	T flux;
 
@@ -301,12 +320,12 @@ class COMETESBGKDiscretizer
 	{
 	    Af=Af*(-1.);
 	    en=en*(-1.);
-	    cell2=_faceCells(f,0);
+	    cell2=_faceCells(face,0);
 	}	
        
-	if(_BCfArray[f]==2) //If the face in question is a reflecting wall
+	if(_BCfArray[face]==2) //If the face in question is a reflecting wall
 	{
-	    int Fgid=findFgId(f);
+	    int Fgid=findFgId(face);
 	    T uwall = (*(_bcMap[Fgid]))["specifiedXVelocity"];
 	    T vwall = (*(_bcMap[Fgid]))["specifiedYVelocity"];
 	    T wwall = (*(_bcMap[Fgid]))["specifiedZVelocity"];
@@ -367,9 +386,9 @@ class COMETESBGKDiscretizer
 	    } 
 	}
         /*
-	else if(_BCfArray[f]==3) //If the face in question is a inlet velocity face
+	else if(_BCfArray[face]==3) //If the face in question is a inlet velocity face
 	{ 
-	    int Fgid=findFgId(f); 
+	    int Fgid=findFgId(face); 
 	    map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(Fgid);
 	    const vector<int>& vecReflection=(*pos).second;
 	    const T pi(acos(-1.0));
@@ -427,7 +446,7 @@ class COMETESBGKDiscretizer
 	    }
 	}
 	*/
-        else if(_BCfArray[f]==4)  //if the face in question is zero derivative
+        else if(_BCfArray[face]==4)  //if the face in question is zero derivative
 	{
             int count=1;
             for(int dir=0;dir<_numDir;dir++)
@@ -449,7 +468,7 @@ class COMETESBGKDiscretizer
 		count++;
 	    }
 	}
-        else if(_BCfArray[f]==5)  //if the face in question is specified pressure
+        else if(_BCfArray[face]==5)  //if the face in question is specified pressure
 	{
             int count=1;
             for(int dir=0;dir<_numDir;dir++)
@@ -468,9 +487,9 @@ class COMETESBGKDiscretizer
                 count++;
 	    }
 	}
-        else if(_BCfArray[f]==6) //If the face in question is a symmetry wall
+        else if(_BCfArray[face]==6) //If the face in question is a symmetry wall
 	{
-            int Fgid=findFgId(f);
+            int Fgid=findFgId(face);
             map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(Fgid);
             const vector<int>& vecReflection=(*pos).second;
 
@@ -494,7 +513,7 @@ class COMETESBGKDiscretizer
                 count++;
 	    }
 	}
-	else if(_BCfArray[f]==0)  //if the face in question is not reflecting
+	else if(_BCfArray[face]==0)  //if the face in question is not reflecting
 	{
 	    int count=1;
 	    for(int dir=0;dir<_numDir;dir++)
@@ -509,11 +528,24 @@ class COMETESBGKDiscretizer
 		    BVec[count-1]-=flux*f[cell];
 		}
 		else
-		  BVec[count-1]-=flux*f[cell2];
+		{                 
+                    if (((ibType[cell] == Mesh::IBTYPE_FLUID) && (ibType[cell2] == Mesh::IBTYPE_BOUNDARY)) ||
+                        ((ibType[cell2] == Mesh::IBTYPE_FLUID) && (ibType[cell] == Mesh::IBTYPE_BOUNDARY)))
+		    {
+                        const int ibFace = ibFaceIndex[face];
+                        if (ibFace < 0)
+                          throw CException("invalid ib face index");
+                        Field& fnd = *_dsfPtr.dsf[dir];
+                        const TArray& fIB = dynamic_cast<const TArray&>(fnd[ibFaces]);
+                        BVec[count-1]-=flux*fIB[ibFace];
+		    }
+                    else 
+                      BVec[count-1]-=flux*f[cell2];
+		}
 		count++;
 	    }
 	}
-        else if(_BCfArray[f]==-1)  //if the face in question is interface
+        else if(_BCfArray[face]==-1)  //if the face in question is interface
 	  {
             int count=1;
             for(int dir=0;dir<_numDir;dir++)
@@ -733,6 +765,7 @@ class COMETESBGKDiscretizer
   void findResid(const bool plusFAS)
   {
     const int cellcount=_cells.getSelfCount();
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
 
     TArray ResidSum(_numDir+3);
     TArray Bsum(_numDir+3);
@@ -751,6 +784,7 @@ class COMETESBGKDiscretizer
 
     for(int c=0;c<cellcount;c++)
     {
+      if (ibType[c] == Mesh::IBTYPE_FLUID){
         for(int dir=0;dir<_numDir;dir++)
 	  fVal[dir]=(*_fArrays[dir])[c];
 	if(_BCArray[c]==0)
@@ -821,6 +855,7 @@ class COMETESBGKDiscretizer
 	}
 	else
           throw CException("Unexpected value for boundary cell map.");
+      }
     }
     for(int o=0;o<_numDir+3;o++)
     {
