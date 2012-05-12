@@ -106,6 +106,25 @@ struct COMETIC
 
     throw CException("Mesh not apart of this interface!");
   }
+
+  void clearConnections()
+  {
+
+    if(!Connect0to1.empty())
+      {
+	for(int i=0;i<Connect0to1.size();i++)
+	  {
+	    Connect0to1[i]->emptyConnections();
+	    delete Connect0to1[i];
+	    Connect1to0[i]->emptyConnections();
+	    delete Connect1to0[i];
+	  }
+	
+	Connect0to1.clear();
+	Connect1to0.clear();
+      }
+    
+  }
   
   string InterfaceModel;
   TKClist Connect0to1;
