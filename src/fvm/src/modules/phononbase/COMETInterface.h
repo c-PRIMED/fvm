@@ -67,6 +67,8 @@ class COMETInterface
     const T binNos=freqMids.getLength();
     const TArray& transArray01=kspace0.getTransArray(kspace1);
 
+    ic.clearConnections();
+
     for(int f=0;f<faceCount;f++)
       {
 	const VectorT3& An=faceAreaArray[f];
