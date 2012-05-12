@@ -26,6 +26,40 @@ class KSConnectivity
 	_empty.second=emptyT;
       }
 
+  void emptyConnections()
+  {
+    
+    for(int i=0;i<_SelfToOther.size();i++)
+      {
+	if(_SelfToOther[i]!=NULL)
+	  {
+	    IntArray* iptr=(_SelfToOther[i])->first;
+	    delete iptr;
+	    delete (_SelfToOther[i])->second;
+	    delete _SelfToOther[i];
+	  }
+      }
+
+    _SelfToOther.clear();
+
+    for(int i=0;i<_SelfToSelf.size();i++)
+      {
+	if(_SelfToSelf[i]!=NULL)
+	  {
+	    IntArray* iptr=(_SelfToSelf[i])->first;
+	    delete iptr;
+	    delete (_SelfToSelf[i])->second;
+	    delete _SelfToSelf[i];
+	  }
+      }
+    
+    _SelfToSelf.clear();
+
+    delete _empty.first;
+    delete _empty.second;
+
+  }
+
   void setColumnLength(const int len) {_colLen=len;}
 
   void makeOther(const int index, const int length)
