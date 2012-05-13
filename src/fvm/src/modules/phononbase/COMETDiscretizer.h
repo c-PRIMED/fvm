@@ -663,7 +663,7 @@ class COMETDiscretizer
 
   void setfgFinder()
   {
-    foreach(const FaceGroupPtr fgPtr, _mesh.getBoundaryFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, _mesh.getAllFaceGroups())
       {
 	const FaceGroup& fg=*fgPtr;
 	const int off=fg.site.getOffset();

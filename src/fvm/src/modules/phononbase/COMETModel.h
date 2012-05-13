@@ -95,17 +95,17 @@ class COMETModel : public Model
 	    
 	    if(_level==0)
 	      {
-		foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+		foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 		  {
 		    const FaceGroup& fg = *fgPtr;
-		    if (_bcMap.find(fg.id) == _bcMap.end())
+		    if (_bcMap.find(fg.id) == _bcMap.end() && fg.id!=0)
 		      {
 			COMETBC<T> *bc(new COMETBC<T>()); 
 			_bcMap[fg.id] = bc;
 		      }
 		  }
 	      }
-	  }	  
+	  }
       }
   
   TCModOpts& getOptions() {return _options;}
@@ -193,184 +193,191 @@ class COMETModel : public Model
 		 VectorT3 so;
 		 
 		 //reflections
-		 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+		 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 		   {
 		     const FaceGroup& fg = *fgPtr;
-		     if(_bcMap[fg.id]->bcType == "reflecting")
+		     if(fg.id!=0)
 		       {
-			 const StorageSite& faces = fg.site;
-			 const Field& AreaMagField=_geomFields.areaMag;
-			 const TArray& AreaMag=
-			   dynamic_cast<const TArray&>(AreaMagField[faces]);
-			 const Field& AreaDirField=_geomFields.area;
-			 const VectorT3Array& AreaDir=
-			   dynamic_cast<const VectorT3Array&>(AreaDirField[faces]);
-			 
-			 const VectorT3 n=AreaDir[0]/AreaMag[0];
-			 const T sidotn=si[0]*n[0]+si[1]*n[1]+si[2]*n[2];
-			 
-			 if (sidotn > T_Scalar(0.0))
+			 if(_bcMap[fg.id]->bcType == "reflecting")
 			   {
-			     so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
-			     T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
-			     so/=soMag;
-			     so*=vmag;
-			     Refl_pair refls;
-			     Refl_pair reflsFrom;
-			     kspace.findSpecs(dk3,vmag,m,so,refls);
-			     rmap[fg.id]=refls;
-			     const int k1=refls.first.second;
-			     Tmode& mode2=kspace.getkvol(k1).getmode(m);
-			     Refl_Map& rmap2=mode2.getreflmap();
-			     reflsFrom.first.second=-1;
-			     reflsFrom.second.second=k;
-			     rmap2[fg.id]=reflsFrom;
+			     const StorageSite& faces = fg.site;
+			     const Field& AreaMagField=_geomFields.areaMag;
+			     const TArray& AreaMag=
+			       dynamic_cast<const TArray&>(AreaMagField[faces]);
+			     const Field& AreaDirField=_geomFields.area;
+			     const VectorT3Array& AreaDir=
+			       dynamic_cast<const VectorT3Array&>(AreaDirField[faces]);
+			     
+			     const VectorT3 n=AreaDir[0]/AreaMag[0];
+			     const T sidotn=si[0]*n[0]+si[1]*n[1]+si[2]*n[2];
+			     
+			     if (sidotn > T_Scalar(0.0))
+			       {
+				 so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
+				 T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
+				 so/=soMag;
+				 so*=vmag;
+				 Refl_pair refls;
+				 Refl_pair reflsFrom;
+				 kspace.findSpecs(dk3,vmag,m,so,refls);
+				 rmap[fg.id]=refls;
+				 const int k1=refls.first.second;
+				 Tmode& mode2=kspace.getkvol(k1).getmode(m);
+				 Refl_Map& rmap2=mode2.getreflmap();
+				 reflsFrom.first.second=-1;
+				 reflsFrom.second.second=k;
+				 rmap2[fg.id]=reflsFrom;
+			       }
+			     else
+			       {
+				 Refl_pair refls;
+				 refls.first.second=-1;
+				 refls.second.second=-1;
+				 rmap[fg.id]=refls;
+			       }
 			   }
-		       }
-		     else
-		       {
-			 Refl_pair refls;
-			 refls.first.second=-1;
-			 refls.second.second=-1;
-			 rmap[fg.id]=refls;
 		       }
 		   }
 	       }
 	   }
+	 
 	 
 	 shared_ptr<TArray> TlResidCell(new TArray(numcells));
 	 *TlResidCell=0.;
 	 _macro.TlResidual.addArray(cells,TlResidCell);
 
 	 //setting facegroups
-	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 	   {
 	     FaceGroup& fg = *fgPtr;
-	     if(_bcMap[fg.id]->bcType == "reflecting")
+	     if(fg.id!=0)
 	       {
-		 const StorageSite& faces = fg.site;
-		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
-		 const int faceCount=faces.getCount();
-		 const int offSet=faces.getOffset();
-		 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
-		 
-		 if(Imp)
+		 if(_bcMap[fg.id]->bcType == "reflecting")
 		   {
-		     for(int i=offSet;i<offSet+faceCount;i++)
-		       BCfArray[i]=2;  //implicit boundary
-		   }
-		 else
-		   {
-		     for(int i=offSet;i<offSet+faceCount;i++)
-		       BCfArray[i]=3;  //explicit boundary
-		   }
-		 
-		 if(Imp)
-		   {
-		     for(int i=0;i<faceCount;i++)
+		     const StorageSite& faces = fg.site;
+		     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+		     const int faceCount=faces.getCount();
+		     const int offSet=faces.getOffset();
+		     const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
+		     
+		     if(Imp)
 		       {
-			 int cell1=BfaceCells(i,0);
-			 if(BCArray[cell1]==0)
-			   BCArray[cell1]=1;    //implicit boundary only
-			 else if(BCArray[cell1]==2)
-			   BCArray[cell1]=3;  //mix implicit/explicit boundary
+			 for(int i=offSet;i<offSet+faceCount;i++)
+			   BCfArray[i]=2;  //implicit boundary
 		       }
-		   }
-		 else
-		   {
-		     for(int i=0;i<faceCount;i++)
+		     else
 		       {
-			 int cell1=BfaceCells(i,0);
-			 if(BCArray[cell1]==0)
-			   BCArray[cell1]=2;  //explicit boundary only
-			 else if (BCArray[cell1]==1)
-			   BCArray[cell1]=3;  //mix implicit/explicit boundary
-		       }
-		   }
-	       }
-	     else if(_bcMap[fg.id]->bcType == "temperature")
-	       {
-		 const StorageSite& faces = fg.site;
-		 const int faceCount=faces.getCount();
-		 const int offSet=faces.getOffset();
-		 
-		 for(int i=offSet;i<offSet+faceCount;i++)
-		   BCfArray[i]=1;
-	       }
-	     else if(_bcMap[fg.id]->bcType == "Interface")
-	       {		 
-		 StorageSite& faces0 = fg.site;
-		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
-		 const int faceCount=faces0.getCount();
-		 const int offSet=faces0.getOffset();
-
-		 for(int i=offSet;i<offSet+faceCount;i++)
-		   {
-		     BCfArray[i]=4;  //Interface boundary
-		     int cell0=BfaceCells(i-offSet,0);
-		     int cell1=BfaceCells(i-offSet,1);
-		     BCArray[cell0]=2;  //always treated explicitly
-		     BCArray[cell1]=4; //interface ghost cells need to be labeled
-		   }
-		 
-		 bool doneAlready=false;
-		 foreach(const COMETIC<T>* icPtr, _IClist)
-		   {
-		     if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
-		       {
-			 doneAlready=true;
-			 break;
-		       }
-		   }
-		 
-		 bool foundMatch=false;
-		 if(!doneAlready)
-		   {
-		     StorageSite* faces1Ptr=NULL;
-		     int otherFgID,otherMid;
-		     for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
-		       {
-			 const Mesh& otherMesh=*_meshes[otherMeshID];
-			 foreach(const FaceGroupPtr otherfgPtr, otherMesh.getBoundaryFaceGroups())
-			   {
-			     foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
-			     if(foundMatch)
-			       {
-				 otherFgID=otherfgPtr->id;
-				 otherMid=otherMeshID;
-				 faces1Ptr=&(otherfgPtr->site);
-				 break;
-			       }
-			   }
-			 if(foundMatch)
-			   break;
+			 for(int i=offSet;i<offSet+faceCount;i++)
+			   BCfArray[i]=3;  //explicit boundary
 		       }
 		     
-		     if(foundMatch)
+		     if(Imp)
 		       {
-			 StorageSite& faces1=*faces1Ptr;
-			 const Mesh& mesh1=*_meshes[otherMid];
-			 COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
-							  otherFgID, faces1.getCount()));
-			 
-			 if(_bcMap[fg.id]->InterfaceModel!="DMM")
-			   icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
-			 
-			 setLocalScatterMaps(mesh, faces0, mesh1, faces1);
-
-			 _IClist.push_back(icPtr);
+			 for(int i=0;i<faceCount;i++)
+			   {
+			     int cell1=BfaceCells(i,0);
+			     if(BCArray[cell1]==0)
+			       BCArray[cell1]=1;    //implicit boundary only
+			     else if(BCArray[cell1]==2)
+			       BCArray[cell1]=3;  //mix implicit/explicit boundary
+			   }
 		       }
-		     else if(!doneAlready && !foundMatch)
+		     else
 		       {
-			 cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
-			 throw CException("Could not find a matching face group!");
+			 for(int i=0;i<faceCount;i++)
+			   {
+			     int cell1=BfaceCells(i,0);
+			     if(BCArray[cell1]==0)
+			       BCArray[cell1]=2;  //explicit boundary only
+			     else if (BCArray[cell1]==1)
+			       BCArray[cell1]=3;  //mix implicit/explicit boundary
+			   }
 		       }
 		   }
-	       }// end if interface 
+		 else if(_bcMap[fg.id]->bcType == "temperature")
+		   {
+		     const StorageSite& faces = fg.site;
+		     const int faceCount=faces.getCount();
+		     const int offSet=faces.getOffset();
+		     
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=1;
+		   }
+		 else if(_bcMap[fg.id]->bcType == "Interface")
+		   {		 
+		     StorageSite& faces0 = fg.site;
+		     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
+		     const int faceCount=faces0.getCount();
+		     const int offSet=faces0.getOffset();
+		     
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       {
+			 BCfArray[i]=4;  //Interface boundary
+			 int cell0=BfaceCells(i-offSet,0);
+			 int cell1=BfaceCells(i-offSet,1);
+			 BCArray[cell0]=2;  //always treated explicitly
+			 BCArray[cell1]=4; //interface ghost cells need to be labeled
+		       }
+		     
+		     bool doneAlready=false;
+		     foreach(const COMETIC<T>* icPtr, _IClist)
+		       {
+			 if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
+			   {
+			     doneAlready=true;
+			     break;
+			   }
+		       }
+		     
+		     bool foundMatch=false;
+		     if(!doneAlready)
+		       {
+			 StorageSite* faces1Ptr=NULL;
+			 int otherFgID,otherMid;
+			 for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
+			   {
+			     const Mesh& otherMesh=*_meshes[otherMeshID];
+			     foreach(const FaceGroupPtr otherfgPtr, otherMesh.getAllFaceGroups())
+			       {
+				 foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
+				 if(foundMatch)
+				   {
+				     otherFgID=otherfgPtr->id;
+				     otherMid=otherMeshID;
+				     faces1Ptr=&(otherfgPtr->site);
+				     break;
+				   }
+			       }
+			     if(foundMatch)
+			       break;
+			   }
+			 
+			 if(foundMatch)
+			   {
+			     StorageSite& faces1=*faces1Ptr;
+			     const Mesh& mesh1=*_meshes[otherMid];
+			     COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
+							      otherFgID, faces1.getCount()));
+			     
+			     if(_bcMap[fg.id]->InterfaceModel!="DMM")
+			       icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
+			     
+			     setLocalScatterMaps(mesh, faces0, mesh1, faces1);
+			     
+			     _IClist.push_back(icPtr);
+			   }
+			 else if(!doneAlready && !foundMatch)
+			   {
+			     cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
+			     throw CException("Could not find a matching face group!");
+			   }
+		       }
+		   }// end if interface 
+	       }
 	   }//end facegroup loop
-
+	 
        }//end meshes loop
-     
+
      //Make map from mesh to IC
      IntArray ICcount(numMeshes);
      ICcount.zero();
@@ -434,130 +441,133 @@ class COMETModel : public Model
 	 const int numcells=cells.getCount();
 
 	 //setting facegroups
-	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 	   {
 	     FaceGroup& fg = *fgPtr;
-	     if(_bcMap[fg.id]->bcType == "reflecting")
+	     if(fg.id!=0)
 	       {
-		 const StorageSite& faces = fg.site;
-		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
-		 const int faceCount=faces.getCount();
-		 const int offSet=faces.getOffset();
-		 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
-		 
-		 if(Imp)
+		 if(_bcMap[fg.id]->bcType == "reflecting")
 		   {
-		     for(int i=offSet;i<offSet+faceCount;i++)
-		       BCfArray[i]=2;  //implicit boundary
-		   }
-		 else
-		   {
-		     for(int i=offSet;i<offSet+faceCount;i++)
-		       BCfArray[i]=3;  //explicit boundary
-		   }
-		 
-		 if(Imp)
-		   {
-		     for(int i=0;i<faceCount;i++)
+		     const StorageSite& faces = fg.site;
+		     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+		     const int faceCount=faces.getCount();
+		     const int offSet=faces.getOffset();
+		     const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
+		     
+		     if(Imp)
 		       {
-			 int cell1=BfaceCells(i,0);
-			 if(BCArray[cell1]==0)
-			   BCArray[cell1]=1;    //implicit boundary only
-			 else if(BCArray[cell1]==2)
-			   BCArray[cell1]=3;  //mix implicit/explicit boundary
+			 for(int i=offSet;i<offSet+faceCount;i++)
+			   BCfArray[i]=2;  //implicit boundary
 		       }
-		   }
-		 else
-		   {
-		     for(int i=0;i<faceCount;i++)
+		     else
 		       {
-			 int cell1=BfaceCells(i,0);
-			 if(BCArray[cell1]==0)
-			   BCArray[cell1]=2;  //explicit boundary only
-			 else if (BCArray[cell1]==1)
-			   BCArray[cell1]=3;  //mix implicit/explicit boundary
-		       }
-		   }
-	       }
-	     else if(_bcMap[fg.id]->bcType == "temperature")
-	       {
-		 const StorageSite& faces = fg.site;
-		 const int faceCount=faces.getCount();
-		 const int offSet=faces.getOffset();
-		 
-		 for(int i=offSet;i<offSet+faceCount;i++)
-		   BCfArray[i]=1;
-	       }
-	     else if(_bcMap[fg.id]->bcType == "Interface")
-	       {		 
-		 StorageSite& faces0 = fg.site;
-		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
-		 const int faceCount=faces0.getCount();
-		 const int offSet=faces0.getOffset();
-
-		 for(int i=offSet;i<offSet+faceCount;i++)
-		   {
-		     BCfArray[i]=4;  //Interface boundary
-		     int cell0=BfaceCells(i-offSet,0);
-		     int cell1=BfaceCells(i-offSet,1);
-		     BCArray[cell0]=2;  //always treated explicitly
-		     BCArray[cell1]=4; //interface ghost cells need to be labeled
-		   }
-		 
-		 bool doneAlready=false;
-		 foreach(const COMETIC<T>* icPtr, _IClist)
-		   {
-		     if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
-		       {
-			 doneAlready=true;
-			 break;
-		       }
-		   }
-		 
-		 bool foundMatch=false;
-		 if(!doneAlready)
-		   {
-		     StorageSite* faces1Ptr=NULL;
-		     int otherFgID,otherMid;
-		     for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
-		       {
-			 const Mesh& otherMesh=*_meshes[otherMeshID];
-			 foreach(const FaceGroupPtr otherfgPtr, otherMesh.getBoundaryFaceGroups())
-			   {
-			     foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
-			     if(foundMatch)
-			       {
-				 otherFgID=otherfgPtr->id;
-				 otherMid=otherMeshID;
-				 faces1Ptr=&(otherfgPtr->site);
-				 break;
-			       }
-			   }
-			 if(foundMatch)
-			   break;
+			 for(int i=offSet;i<offSet+faceCount;i++)
+			   BCfArray[i]=3;  //explicit boundary
 		       }
 		     
-		     if(foundMatch)
+		     if(Imp)
 		       {
-			 StorageSite& faces1=*faces1Ptr;
-			 const Mesh& mesh1=*_meshes[otherMid];
-			 COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
-							  otherFgID, faces1.getCount()));
-			 
-			 if(_bcMap[fg.id]->InterfaceModel!="DMM")
-			   icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
-
-			 _IClist.push_back(icPtr);
+			 for(int i=0;i<faceCount;i++)
+			   {
+			     int cell1=BfaceCells(i,0);
+			     if(BCArray[cell1]==0)
+			       BCArray[cell1]=1;    //implicit boundary only
+			     else if(BCArray[cell1]==2)
+			       BCArray[cell1]=3;  //mix implicit/explicit boundary
+			   }
 		       }
-		     else if(!doneAlready && !foundMatch)
+		     else
 		       {
-			 cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
-			 throw CException("Could not find a matching face group!");
+			 for(int i=0;i<faceCount;i++)
+			   {
+			     int cell1=BfaceCells(i,0);
+			     if(BCArray[cell1]==0)
+			       BCArray[cell1]=2;  //explicit boundary only
+			     else if (BCArray[cell1]==1)
+			       BCArray[cell1]=3;  //mix implicit/explicit boundary
+			   }
 		       }
 		   }
-	       }// end if interface 
+		 else if(_bcMap[fg.id]->bcType == "temperature")
+		   {
+		     const StorageSite& faces = fg.site;
+		     const int faceCount=faces.getCount();
+		     const int offSet=faces.getOffset();
+		     
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=1;
+		   }
+		 else if(_bcMap[fg.id]->bcType == "Interface")
+		   {		 
+		     StorageSite& faces0 = fg.site;
+		     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
+		     const int faceCount=faces0.getCount();
+		     const int offSet=faces0.getOffset();
+		     
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       {
+			 BCfArray[i]=4;  //Interface boundary
+			 int cell0=BfaceCells(i-offSet,0);
+			 int cell1=BfaceCells(i-offSet,1);
+			 BCArray[cell0]=2;  //always treated explicitly
+			 BCArray[cell1]=4; //interface ghost cells need to be labeled
+		       }
+		     
+		     bool doneAlready=false;
+		     foreach(const COMETIC<T>* icPtr, _IClist)
+		       {
+			 if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
+			   {
+			     doneAlready=true;
+			     break;
+			   }
+		       }
+		     
+		     bool foundMatch=false;
+		     if(!doneAlready)
+		       {
+			 StorageSite* faces1Ptr=NULL;
+			 int otherFgID,otherMid;
+			 for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
+			   {
+			     const Mesh& otherMesh=*_meshes[otherMeshID];
+			     foreach(const FaceGroupPtr otherfgPtr, otherMesh.getAllFaceGroups())
+			       {
+				 foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
+				 if(foundMatch)
+				   {
+				     otherFgID=otherfgPtr->id;
+				     otherMid=otherMeshID;
+				     faces1Ptr=&(otherfgPtr->site);
+				     break;
+				   }
+			       }
+			     if(foundMatch)
+			       break;
+			   }
+			 
+			 if(foundMatch)
+			   {
+			     StorageSite& faces1=*faces1Ptr;
+			     const Mesh& mesh1=*_meshes[otherMid];
+			     COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
+							      otherFgID, faces1.getCount()));
+			     
+			     if(_bcMap[fg.id]->InterfaceModel!="DMM")
+			       icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
+			     
+			     _IClist.push_back(icPtr);
+			   }
+			 else if(!doneAlready && !foundMatch)
+			   {
+			     cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
+			     throw CException("Could not find a matching face group!");
+			   }
+		       }
+		   }// end if interface 
+	       }
 	   }//end facegroup loop
-
+	 
        }//end meshes loop
      
      //Make map from mesh to IC
@@ -664,125 +674,128 @@ class COMETModel : public Model
 
 	 BCfaceArray& BCfArray=*(_BFaces[n]);
 	 BCcellArray& BCArray=*(_BCells[n]);
-	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 	   {
 	     FaceGroup& fg = *fgPtr;
-	     if(_bcMap[fg.id]->bcType == "reflecting")
+	     if(fg.id!=0)
 	       {
-		 const StorageSite& faces = fg.site;
-		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
-		 const int faceCount=faces.getCount();
-		 const int offSet=faces.getOffset();
-		 const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
-		 
-		 if(Imp)
+		 if(_bcMap[fg.id]->bcType == "reflecting")
 		   {
-		     for(int i=offSet;i<offSet+faceCount;i++)
-		       BCfArray[i]=2;  //implicit boundary
-		   }
-		 else
-		   {
-		     for(int i=offSet;i<offSet+faceCount;i++)
-		       BCfArray[i]=3;  //explicit boundary
-		   }
-		 
-		 if(Imp)
-		   {
-		     for(int i=0;i<faceCount;i++)
-		       {
-			 int cell1=BfaceCells(i,0);
-			 if(BCArray[cell1]==0)
-			   BCArray[cell1]=1;    //implicit boundary only
-			 else if(BCArray[cell1]==2)
-			   BCArray[cell1]=3;  //mix implicit/explicit boundary
-		       }
-		   }
-		 else
-		   {
-		     for(int i=0;i<faceCount;i++)
-		       {
-			 int cell1=BfaceCells(i,0);
-			 if(BCArray[cell1]==0)
-			   BCArray[cell1]=2;  //explicit boundary only
-			 else if (BCArray[cell1]==1)
-			   BCArray[cell1]=3;  //mix implicit/explicit boundary
-		       }
-		   }
-	       }
-	     else if(_bcMap[fg.id]->bcType == "temperature")
-	       {
-		 const StorageSite& faces = fg.site;
-		 const int faceCount=faces.getCount();
-		 const int offSet=faces.getOffset();
-		 
-		 for(int i=offSet;i<offSet+faceCount;i++)
-		   BCfArray[i]=1;
-	       }
-	     else if(_bcMap[fg.id]->bcType == "Interface")
-	       {		 
-		 StorageSite& faces0 = fg.site;
-		 const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
-		 const int faceCount=faces0.getCount();
-		 const int offSet=faces0.getOffset();
-		 
-		 for(int i=offSet;i<offSet+faceCount;i++)
-		   {
-		     BCfArray[i]=4;  //Interface boundary
-		     int cell0=BfaceCells(i-offSet,0);
-		     BCArray[cell0]=2;  //always treated explicitly
-		   }
-		 
-		 bool doneAlready=false;
-		 foreach(const COMETIC<T>* icPtr, _IClist)
-		   {
-		     if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
-		       {
-			 doneAlready=true;
-			 break;
-		       }
-		   }
-		 
-		 if(!doneAlready)
-		   {
-		     bool foundMatch=false;
-		     StorageSite* faces1Ptr=NULL;
-		     int otherFgID,otherMid;
-		     for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
-		       {
-			 const Mesh& otherMesh=*_meshes[otherMeshID];
-			 foreach(const FaceGroupPtr otherfgPtr, otherMesh.getBoundaryFaceGroups())
-			   {
-			     foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
-			     if(foundMatch)
-			       {
-				 otherFgID=otherfgPtr->id;
-				 otherMid=otherMeshID;
-				 faces1Ptr=&(otherfgPtr->site);
-				 break;
-			       }
-			   }
-			 if(foundMatch)
-			   break;
-		       }
+		     const StorageSite& faces = fg.site;
+		     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+		     const int faceCount=faces.getCount();
+		     const int offSet=faces.getOffset();
+		     const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
 		     
-		     if(foundMatch)
+		     if(Imp)
 		       {
-			 StorageSite& faces1=*faces1Ptr;
-			 const Mesh& mesh1=*_meshes[otherMid];
-			 COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
-							  otherFgID, faces1.getCount()));
-			 
-			 if(_bcMap[fg.id]->InterfaceModel!="DMM")
-			   icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
-			 
-			 setLocalScatterMaps(mesh, faces0, mesh1, faces1);
-			 
-			 _IClist.push_back(icPtr);
+			 for(int i=offSet;i<offSet+faceCount;i++)
+			   BCfArray[i]=2;  //implicit boundary
 		       }
 		     else
 		       {
-			 cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
-			 throw CException("Could not find a matching face group!");
+			 for(int i=offSet;i<offSet+faceCount;i++)
+			   BCfArray[i]=3;  //explicit boundary
+		       }
+		     
+		     if(Imp)
+		       {
+			 for(int i=0;i<faceCount;i++)
+			   {
+			     int cell1=BfaceCells(i,0);
+			     if(BCArray[cell1]==0)
+			       BCArray[cell1]=1;    //implicit boundary only
+			     else if(BCArray[cell1]==2)
+			       BCArray[cell1]=3;  //mix implicit/explicit boundary
+			   }
+		       }
+		     else
+		       {
+			 for(int i=0;i<faceCount;i++)
+			   {
+			     int cell1=BfaceCells(i,0);
+			     if(BCArray[cell1]==0)
+			       BCArray[cell1]=2;  //explicit boundary only
+			     else if (BCArray[cell1]==1)
+			       BCArray[cell1]=3;  //mix implicit/explicit boundary
+			   }
+		       }
+		   }
+		 else if(_bcMap[fg.id]->bcType == "temperature")
+		   {
+		     const StorageSite& faces = fg.site;
+		     const int faceCount=faces.getCount();
+		     const int offSet=faces.getOffset();
+		     
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       BCfArray[i]=1;
+		   }
+		 else if(_bcMap[fg.id]->bcType == "Interface")
+		   {		 
+		     StorageSite& faces0 = fg.site;
+		     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces0);
+		     const int faceCount=faces0.getCount();
+		     const int offSet=faces0.getOffset();
+		     
+		     for(int i=offSet;i<offSet+faceCount;i++)
+		       {
+			 BCfArray[i]=4;  //Interface boundary
+			 int cell0=BfaceCells(i-offSet,0);
+			 BCArray[cell0]=2;  //always treated explicitly
+		       }
+		     
+		     bool doneAlready=false;
+		     foreach(const COMETIC<T>* icPtr, _IClist)
+		       {
+			 if(icPtr->FgID1==fg.id && icPtr->MeshID1==mesh.getID())
+			   {
+			     doneAlready=true;
+			     break;
+			   }
+		       }
+		     
+		     if(!doneAlready)
+		       {
+			 bool foundMatch=false;
+			 StorageSite* faces1Ptr=NULL;
+			 int otherFgID,otherMid;
+			 for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
+			   {
+			     const Mesh& otherMesh=*_meshes[otherMeshID];
+			     foreach(const FaceGroupPtr otherfgPtr, otherMesh.getAllFaceGroups())
+			       {
+				 foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
+				 if(foundMatch)
+				   {
+				     otherFgID=otherfgPtr->id;
+				     otherMid=otherMeshID;
+				     faces1Ptr=&(otherfgPtr->site);
+				     break;
+				   }
+			       }
+			     if(foundMatch)
+			       break;
+			   }
+			 
+			 if(foundMatch)
+			   {
+			     StorageSite& faces1=*faces1Ptr;
+			     const Mesh& mesh1=*_meshes[otherMid];
+			     COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
+							      otherFgID, faces1.getCount()));
+			     
+			     if(_bcMap[fg.id]->InterfaceModel!="DMM")
+			       icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
+			     
+			     setLocalScatterMaps(mesh, faces0, mesh1, faces1);
+			     
+			     _IClist.push_back(icPtr);
+			   }
+			 else
+			   {
+			     cout<<"Face Group: "<<fg.id<<" MeshID: "<<mesh.getID()<<endl;
+			     throw CException("Could not find a matching face group!");
+			   }
 		       }
 		   }
 	       }
@@ -873,20 +886,23 @@ class COMETModel : public Model
       {
 	const Mesh& mesh=*_meshes[n];
 	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
-	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 	  {
 	    const FaceGroup& fg = *fgPtr;
-	    const StorageSite& faces = fg.site;
-	    const COMETBC<T>& bc = *_bcMap[fg.id];
-	    
-	    COMETBoundary<T> cbc(faces, mesh,_geomFields,kspace,_options,fg.id);
-
-	    if(bc.bcType=="temperature")
-	      {	      
-		FloatValEvaluator<T>
-		  bTemperature(bc.getVal("specifiedTemperature"),faces);
-	  
-		cbc.applyTemperatureWall(bTemperature);
+	    if(fg.id!=0)
+	      {   
+		const StorageSite& faces = fg.site;
+		const COMETBC<T>& bc = *_bcMap[fg.id];
+		
+		COMETBoundary<T> cbc(faces, mesh,_geomFields,kspace,_options,fg.id);
+		
+		if(bc.bcType=="temperature")
+		  {	      
+		    FloatValEvaluator<T>
+		      bTemperature(bc.getVal("specifiedTemperature"),faces);
+		    
+		    cbc.applyTemperatureWall(bTemperature);
+		  }
 	      }
 	  }
       }
@@ -1264,17 +1280,20 @@ class COMETModel : public Model
 	const StorageSite& interiorFaces=newMeshPtr->createInteriorFaceGroup(interiorCount);
 
 	int inOffset=interiorCount;
-	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
 	  {
 	    const FaceGroup& fg=*fgPtr;
-	    const int size=fg.site.getCount();
-	    const StorageSite& newBoundarySite=newMeshPtr->createBoundaryFaceGroup(
-										   size,inOffset,fg.id,fg.groupType);
-	    const VectorT3Array& oldFgCoords=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[fg.site]);
-	    VT3Ptr newFgCoordsPtr=VT3Ptr(new VectorT3Array(size));
-	    (*newFgCoordsPtr)=oldFgCoords;
-	    inGeomFields.coordinate.addArray(newBoundarySite,newFgCoordsPtr);
-	    inOffset+=size;
+	    if(fg.id!=0)
+	       {
+		 const int size=fg.site.getCount();
+		 const StorageSite& newBoundarySite=newMeshPtr->createBoundaryFaceGroup(
+											size,inOffset,fg.id,fg.groupType);
+		 const VectorT3Array& oldFgCoords=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[fg.site]);
+		 VT3Ptr newFgCoordsPtr=VT3Ptr(new VectorT3Array(size));
+		 (*newFgCoordsPtr)=oldFgCoords;
+		 inGeomFields.coordinate.addArray(newBoundarySite,newFgCoordsPtr);
+		 inOffset+=size;
+	       }
 	  }
 
 	//now make the geom fields
@@ -1809,7 +1828,7 @@ class COMETModel : public Model
     const int n=mesh.getID();
     Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
     const T DK3=kspace.getDK3();
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
       {
         const FaceGroup& fg = *fgPtr;
         if (fg.id == faceGroupId)
@@ -1852,7 +1871,7 @@ class COMETModel : public Model
   {
     T r(0.);
     bool found = false;
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
       {
         const FaceGroup& fg = *fgPtr;
         if (fg.id == faceGroupId)
@@ -1879,7 +1898,7 @@ class COMETModel : public Model
     VectorT3 An;
     An=0.;
     bool found = false;
-    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
       {
 	const FaceGroup& fg = *fgPtr;
 	if (fg.id == faceGroupId)
