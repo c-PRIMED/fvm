@@ -8,7 +8,7 @@ struct ThermalBC : public FloatVarDict<T>
   {
       this->defineVar("specifiedTemperature",T(300.0));
       this->defineVar("specifiedHeatFlux",T(0.0));
-      
+      this->defineVar("timeStep",T(1.0)); 
   }
   string bcType;
 };
@@ -19,6 +19,9 @@ struct ThermalVC : public FloatVarDict<T>
   ThermalVC()
   {
       this->defineVar("thermalConductivity",T(1.0));
+      this->defineVar("density", T(1.0));
+      this->defineVar("specificHeat", T(1.0));
+      	
   }
   string vcType;
 };
@@ -29,16 +32,20 @@ struct ThermalModelOptions : public FloatVarDict<T>
   ThermalModelOptions()
   {
     this->defineVar("initialTemperature",T(300.0));
+    this->defineVar("timeStep", T(1e-7));
     this->relativeTolerance=1e-8;
     this->absoluteTolerance=1e-16;
     this->linearSolver = 0;
     this->useCentralDifference=false;
+    this->transient=false;
+    this->timeDiscretizationOrder = 1;
   }
   double relativeTolerance;
   double absoluteTolerance;
   bool useCentralDifference;
   LinearSolver *linearSolver;
-
+  bool transient;
+  int timeDiscretizationOrder;
 #ifndef SWIG
   LinearSolver& getLinearSolver()
   {
