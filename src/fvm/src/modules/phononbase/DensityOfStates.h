@@ -83,6 +83,85 @@ class DensityOfStates
     addMode(modeBounds, modeMids, modeKpts, mode);
 
   }
+
+  void binEntireKspace(const int noBins, const T minw, const T maxw)
+  {
+    const T dwStar=1./T(noBins);
+    T Deltaw;
+    if(minw==0.)
+      Deltaw=maxw;
+    else
+      {
+	T ratio=minw/maxw;
+	Deltaw=(1-ratio)*maxw;
+      }
+    TArray modeBounds(noBins+1);
+    TArray modeMids(noBins);
+    IntArray BinKcount(noBins);
+    IntArray BinMcount(noBins);
+    BinKcount.zero();
+    BinMcount.zero();
+    IntArrList modeKpts;
+    IntArrList Mpts;
+
+    for(int i=0;i<noBins+1;i++)
+      modeBounds[i]=floor(i*dwStar*Deltaw+minw);
+    
+    for(int i=0;i<noBins;i++)
+      modeMids[i]=(modeBounds[i]+modeBounds[i+1])/2.;
+    
+    const int klen=_kspace.getlength();
+
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kv=_kspace.getkvol(k);
+	const int modeNum=kv.getmodenum();
+	for(int m=0;m<modeNum;m++)
+	  {
+	    T omega=kv.getmode(m).getomega();
+	    int bin=findBin(modeBounds, omega);
+	    BinKcount[bin]++;
+	    BinMcount[bin]++;
+	  }
+      }
+
+    for(int i=0;i<noBins;i++)
+      {
+	IntArrayPtr newArrPtr=IntArrayPtr(new IntArray(BinKcount[i]));
+	IntArrayPtr newArrPtr1=IntArrayPtr(new IntArray(BinKcount[i]));
+	newArrPtr->zero();
+	newArrPtr1->zero();
+	modeKpts.push_back(newArrPtr);
+	Mpts.push_back(newArrPtr1);
+      }
+    
+    BinKcount.zero();
+    BinMcount.zero();
+    
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kv=_kspace.getkvol(k);
+	const int modeNum=kv.getmodenum();
+	for(int m=0;m<modeNum;m++)
+	  {
+	    T omega=kv.getmode(m).getomega();
+	    int bin=findBin(modeBounds, omega);
+	    IntArray& binArray=*modeKpts[bin];
+	    IntArray& mbinArray=*Mpts[bin];
+	    binArray[BinKcount[bin]]=k;
+	    mbinArray[BinKcount[bin]]=m;
+	    BinKcount[bin]++;
+	  }
+      }
+
+    _FreqMids.resize(noBins);
+    _FreqMids.copyFrom(modeMids);
+    _FreqBounds.resize(noBins+1);
+    _FreqBounds.copyFrom(modeBounds);
+    _BinKpts=modeKpts;
+    _BinModes=Mpts;
+
+  }
   
   void copyDOS(DensityOfStates& otherDOS)
   {

@@ -19,6 +19,7 @@ class DensityOfStates
 
   DensityOfStates(const Tkspace& kspace);
   void binMode(const int mode, const int noBins, const T minw, const T maxw);
+  void binEntireKspace(const int noBins, const T minw, const T maxw);
   void setDensity();
   void saveNormDOS(const char* filename);
   ArrayBase* makeDMMtransmission(DensityOfStates& otherDOS, const T Temp, const bool merge);
