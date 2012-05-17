@@ -865,8 +865,9 @@ class COMETESBGKDiscretizer
 
     //MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, ResidSum.getData(), _numDir+3, MPI::DOUBLE, MPI::SUM);
     //MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &traceSum, 1, MPI::DOUBLE, MPI::SUM);
+#ifdef FVM_PARALLEL
     MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, temp.getData(), _numDir+4, MPI::DOUBLE, MPI::SUM);
-
+#endif
     /*
     for(int o=0;o<_numDir+3;o++)
     {

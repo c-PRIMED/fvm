@@ -620,9 +620,11 @@ class COMETModel : public Model
 	      TCOMET* newModelPtr=new COMETModel(*newMeshesPtr,thisLevel,
                                                  _coarseGeomFields,
                                                  *newMacroPtr,*newQuadPtr);
+#ifdef FVM_PARALLEL
 	      MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &newCount, 1, MPI::INT, MPI::SUM);
 	      if(MPI::COMM_WORLD.Get_rank()==0)
 		cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;            
+#endif
 	      newModelPtr->setFinerLevel(finerModel);
 	      finerModel->setCoarserLevel(newModelPtr);
 	      newModelPtr->getOptions()=finerModel->getOptions();
@@ -741,9 +743,12 @@ class COMETModel : public Model
               TCOMET* newModelPtr=new COMETModel(*newMeshesPtr,thisLevel,
                                                  _coarseGeomFields,
                                                  *newMacroPtr,*newQuadPtr);
+#ifdef FVM_PARALLEL
 	      MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &newCount, 1, MPI::INT, MPI::SUM);
               if(MPI::COMM_WORLD.Get_rank()==0)
-                cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;            
+                cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;
+#endif
+
               newModelPtr->setFinerLevel(finerModel);
               finerModel->setCoarserLevel(newModelPtr);
               newModelPtr->getOptions()=finerModel->getOptions();
@@ -4448,9 +4453,10 @@ map<string,shared_ptr<ArrayBase> >&
         if(niters==1)
           _initialResidual=_residual;
 	residualRatio=_residual/_initialResidual;
+#ifdef FVM_PARALLEL
         if((niters%show==0)&&(MPI::COMM_WORLD.Get_rank()==0))
           cout<<"Iteration:"<<niters<<" Residual:"<<_residual<<"  ResidualRatio: "<<residualRatio<<endl;
-
+#endif
       }
     callCOMETBoundaryConditions();
     //cout<<endl<<"Total Iterations:"<<niters<<" Residual:"<<_residual<<endl;
