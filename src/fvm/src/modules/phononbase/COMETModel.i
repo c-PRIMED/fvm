@@ -39,6 +39,7 @@ class COMETModel : public Model
   void setStraightLine(const T T1,const T T2);
   void applyTemperatureBoundaries();
   void initFromOld();
+  T calcDomainStats();
   
  private:
   

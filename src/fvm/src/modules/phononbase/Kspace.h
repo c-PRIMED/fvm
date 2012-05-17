@@ -50,9 +50,11 @@ class Kspace
 	const double pi=3.141592653;
 	T theta;
 	T phi;
-	T dtheta=pi/ntheta;
+	T dtheta=pi/ntheta/2.;
 	T dphi=2.*pi/nphi;
 	T dk3;
+	const T Kmax=pi/a;
+	const T Ktot=pi*pow(Kmax,3.)*4./3./pow((2.*pi),3.);
 	Tvec vg;
 	int count=1;
 	for(int t=0;t<ntheta;t++)
@@ -64,7 +66,7 @@ class Kspace
 		vg[0]=vgmag*sin(theta)*sin(phi);
 		vg[1]=vgmag*sin(theta)*cos(phi);
 		vg[2]=vgmag*cos(theta);
-		dk3=2.*sin(theta)*sin(dtheta/2.)*dphi*8/pow(pi,3)*(pow(.5,2)+pow(.5,3)/12.);
+		dk3=sin(theta)*sin(dtheta/2.)*dtheta/pi*Ktot;
 		Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode(vg,omega,tau));
 		modeptr->setIndex(count);
 		count++;
@@ -73,6 +75,7 @@ class Kspace
 		_totvol+=dk3;
 	      }
 	  }
+	//cout<<"Total volume: "<<_totvol<<endl;
       }
 
  Kspace()

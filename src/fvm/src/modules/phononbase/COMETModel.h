@@ -230,10 +230,10 @@ class COMETModel : public Model
 			       }
 			     else
 			       {
-				 Refl_pair refls;
-				 refls.first.second=-1;
-				 refls.second.second=-1;
-				 rmap[fg.id]=refls;
+				 //Refl_pair refls;
+				 //refls.first.second=-1;
+				 //refls.second.second=-1;
+				 //rmap[fg.id]=refls;
 			       }
 			   }
 		       }
@@ -1023,7 +1023,10 @@ class COMETModel : public Model
 			
 			if(FineToCoarse[c2]==-1)
 			  if(areaMagArray[f]>maxArea)
-			    pairWith=c2;
+			    {
+			      pairWith=c2;
+			      maxArea=areaMagArray[f];
+			    }
 		      }
 		  }
 		
@@ -1061,6 +1064,7 @@ class COMETModel : public Model
 			  {
 			    pairWith=FineToCoarse[c2]; //coarse level cell
 			    c2perm=c2;                 //fine level cell
+			    maxArea=areaMagArray[f];
 			  }
 		      }
 		  }
@@ -2050,6 +2054,87 @@ class COMETModel : public Model
 	   }
 
        }
+  }
+
+  T calcDomainStats()
+  {
+    const int numMeshes=_meshes.size();
+    TArray meshVols(numMeshes);
+    T totalVol(0.);
+    meshVols.zero();
+    T interfaceArea(0.);
+    T interfaceAreaX(0.);
+    T interfaceAreaY(0.);
+    T interfaceAreaZ(0.);
+
+    for (int n=0;n<numMeshes;n++)
+      {
+	 Mesh& mesh=*_meshes[n];
+	 const StorageSite& cells=mesh.getCells();
+	 const StorageSite& faces=mesh.getFaces();
+	 const int numcells=cells.getCount();
+	 const  TArray& vol=dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+	 
+	 for(int c=0;c<cells.getSelfCount();c++)
+	   meshVols[n]+=vol[c];
+
+	 totalVol+=meshVols[n];
+
+	 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+	   {
+	     const FaceGroup& fg = *fgPtr;
+	     if(fg.id!=0)
+	       {
+		 if(_bcMap[fg.id]->bcType == "Interface")
+		   {
+		     const StorageSite& faces=fg.site;
+		     const int numFaces=faces.getCount();
+		     const Field& AreaMagField=_geomFields.areaMag;
+		     const Field& AreaDirField=_geomFields.area;
+		     const TArray& AreaMag=
+		       dynamic_cast<const TArray&>(AreaMagField[faces]);
+		     const VectorT3Array& AreaDir=
+		       dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+		     
+		     for(int f=0;f<numFaces;f++)
+		       {
+			 interfaceArea+=AreaMag[f];
+			 interfaceAreaX+=fabs(AreaDir[f][0]);
+			 interfaceAreaY+=fabs(AreaDir[f][1]);
+			 interfaceAreaZ+=fabs(AreaDir[f][2]);
+		       }
+
+		   }
+	       }
+	   }
+      }
+
+    interfaceArea/=2.;
+    interfaceAreaX/=2.;
+    interfaceAreaY/=2.;
+    interfaceAreaZ/=2.;
+
+    for (int n=0;n<numMeshes;n++)
+      {
+	Mesh& mesh=*_meshes[n];
+	const StorageSite& cells=mesh.getCells();
+	cout<<endl;
+	cout<<"Mesh: "<<n<<endl;
+	cout<<"Self Cell Count: "<<cells.getSelfCount()<<endl;
+	cout<<"Ghost Cell Count: "<<cells.getCount()-cells.getSelfCount()<<endl;
+	cout<<"Mesh Volume: "<<meshVols[n]<<endl;
+      }
+
+    cout<<endl;
+    cout<<"Total Volume: "<<totalVol<<endl;
+    cout<<"Interface Area: "<<interfaceArea<<endl;
+    cout<<"Interface Area (X): "<<interfaceAreaX<<endl;
+    cout<<"Interface Area (Y): "<<interfaceAreaY<<endl;
+    cout<<"Interface Area (Z): "<<interfaceAreaZ<<endl;
+    cout<<"Area/Volume: "<<interfaceArea/totalVol<<endl;
+    cout<<"Volume/Area: "<<totalVol/interfaceArea<<endl;
+    return interfaceArea/totalVol;
+    
   }
   
   void setBCMap(COMETBCMap* bcMap) {_bcMap=*bcMap;}
