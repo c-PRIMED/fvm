@@ -95,10 +95,12 @@ class BuildPkg(Build):
 
         dir = os.popen("/bin/bash -c 'tar -%stf %s 2> /dev/null'" % (compress, src)).readline().split()[0]
         if dir.startswith('%s/' % name):
-
             # workaround for tars missing --strip-components
-            os.system('tar -C %s -%sxf %s' % (os.path.join(self.sdir, '..'), compress, src))
-            os.renames(os.path.join(self.sdir, '..', name), self.sdir)
+            sdir = os.path.abspath(os.path.join(self.sdir, '..'))
+            os.system('tar -C %s -%sxf %s' % (sdir, compress, src))
+            
+            print 'RENAMING',os.path.join(sdir, name), self.sdir
+            os.renames(os.path.join(sdir, name), self.sdir)
         else:
             os.system('tar -C %s -%sxf %s' % (self.sdir, compress, src))
 
