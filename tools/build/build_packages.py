@@ -98,8 +98,6 @@ class BuildPkg(Build):
             # workaround for tars missing --strip-components
             sdir = os.path.abspath(os.path.join(self.sdir, '..'))
             os.system('tar -C %s -%sxf %s' % (sdir, compress, src))
-            
-            print 'RENAMING',os.path.join(sdir,name), self.sdir
             os.rmdir(self.sdir)            
             os.renames(os.path.join(sdir,name), self.sdir)
         else:

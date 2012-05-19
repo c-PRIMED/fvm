@@ -120,6 +120,7 @@ class Build:
                     self.add_build([p for p in self.all_packages if p.name == 'scipy'][0], check_timestamp, True)
                     self.add_build([p for p in self.all_packages if p.name == 'nose'][0], check_timestamp, True)
                     self.add_build([p for p in self.all_packages if p.name == 'sympy'][0], check_timestamp, True)
+                    self.add_build([p for p in self.all_packages if p.name == 'h5py'][0], check_timestamp, True)
                 else:
                     self.add_build(p, check_timestamp)
                     
