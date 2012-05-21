@@ -6,13 +6,15 @@ from math import *
 	
 class MeshSetup:
     
-    def __init__(self, beam, fluid, beam_thickness, beam_width, beam_length, gap, dielectric_thickness=0, enableDielectric=False):
+    def __init__(self, beam, fluid, beam_thickness, beam_width, beam_length, gap, 
+    	         dielectric_thickness=0, dielectric_length=200e-6, enableDielectric=False):
         self.beamCaseFile = beam
         self.fluidCaseFile = fluid
         self.beam_thickness = beam_thickness
         self.beam_width = beam_width
         self.beam_length = beam_length
         self.dielectric_thickness = dielectric_thickness
+        self.dielectric_length = dielectric_length
         self.gap = gap
         self.probeIndex = 0
         self.enableDielectric = enableDielectric
