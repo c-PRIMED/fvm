@@ -647,7 +647,8 @@ public:
             }
 	    else if (bc.bcType == "SpecialDielectricBoundary")
 	    {
-	    	const T specifiedPotential(bc["specifiedPotential"]);
+	    	FloatValEvaluator<T> bT(bc.getVal("specifiedPotential"), faces);
+	    	//const T specifiedPotential(bc["specifiedPotential"]);
 	    	const T dielectric_thickness = _constants["dielectric_thickness"];
 	    	const T dielectric_constant = _constants["dielectric_constant"] * E0_SI;
 	    	const T coeff = dielectric_constant / dielectric_thickness;
@@ -655,10 +656,11 @@ public:
 	    	_avgCharge = -1e4;
 	    	//const T src = _avgCharge * dielectric_thickness;
 	    	const T src = 0;
-	    	gbc. applyDielectricInterfaceBC(coeff, specifiedPotential, src);
+	    	for(int f=0; f<nFaces; f++)
+			gbc.applyDielectricInterfaceBC(f, coeff, bT[f], src);
 	    }
 	    else
-              throw CException(bc.bcType + " not implemented for ElectricModel");
+                throw CException(bc.bcType + " not implemented for ElectricModel");
         }
 
         foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
