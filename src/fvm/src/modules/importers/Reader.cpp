@@ -1,5 +1,6 @@
 #include "Reader.h"
 #include <errno.h>
+#include <stdlib.h>
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
