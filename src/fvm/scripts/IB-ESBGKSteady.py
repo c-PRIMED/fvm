@@ -42,123 +42,37 @@ def saveVTK(nstep, pd):
     writer2.init()
     writer2.writeVectorField()
     writer2.finish()
-  
-
-
-def checkMarking(n, pd):
-
-    cells = pd.fluidMeshes[0].getCells()
-    nCells = cells.getCount()
-    cellCoords = pd.geomFields.coordinate[cells].asNumPyArray()
-
-    fluidFile = open("fluidCells_" + str(pd.globalCount) + ".dat", "w")
-    solidFile = open("solidCells_" + str(pd.globalCount) + ".dat", "w")
-    IBFile = open("IBCells_" + str(pd.globalCount) + ".dat", "w")
-
-    cellIBType = pd.geomFields.ibType[cells].asNumPyArray()
-    for c in range (0, nCells):    
-        ibtype = cellIBType[c]
-        if ibtype == -1:
-            fluidFile.write("%e\t%e\t%e\n" % (cellCoords[c][0], cellCoords[c][1], cellCoords[c][2]))
-        elif ibtype == -2:
-            IBFile.write("%e\t%e\t%e\n" % (cellCoords[c][0], cellCoords[c][1], cellCoords[c][2]))
-        elif ibtype == -3:
-            solidFile.write("%e\t%e\t%e\n" % (cellCoords[c][0], cellCoords[c][1], cellCoords[c][2]))
-        elif ibtype == -5:
-            print ("%i\t%i\t%e\t%e\n" % (c,ibtype,  cellCoords[c][0], cellCoords[c][1]))
-
-               
-    fluidFile.close()
-    solidFile.close()
-    IBFile.close()
-
-            
-def unsteadyAdvance(pd, numTimeSteps):
+             
+def steadyAdvance(pd, numIterationsPerStep):
     
-    for n in range(0, numTimeSteps):
-
-        sbMeshFaces = pd.solidBoundaryMeshes[0].getFaces()
-
         #-------------update IBM----------------#
-        print "***       update IBM  at  %i           ***" % n
+#        print "***       update IBM  at  %i           ***" % n
+        sbMeshFaces = pd.solidBoundaryMeshes[0].getFaces()
         pd.ibManager.update()
         pd.ibManager.fluidNeighborsPerIBFace = 4
         pd.ibManager.solidNeighborsPerIBFace = 4
         pd.ibManager.fluidNeighborsPerSolidFace = 6
         
         pd.fluidMetricsCalculator.computeIBInterpolationMatrices(sbMeshFaces)
-        pd.fluidMetricsCalculator.computeSolidInterpolationMatrices(sbMeshFaces)     
-         
-        #------------solve fluid ---------------#
-        print "***      solving flow model  at globalCount %i    ***" % pd.globalCount
-        bcMap = esbgk1.getBCMap()    
-        esbgk1.callBoundaryConditions()
-        esbgk1.computeSolidFaceDsf(sbMeshFaces,1)       
-        esbgk1.ConservationofMFSolid(sbMeshFaces)
-        esbgk1.computeIBFaceDsf(sbMeshFaces,1)
-        esbgk1.advance(numIterationsPerStep,sbMeshFaces)
+        pd.fluidMetricsCalculator.computeSolidInterpolationMatrices(sbMeshFaces)  
 
-        if (n%pd.saveFrequency == 0):
-            tecplotESBGKIB.esbgkTecplotFile(pd.fluidMeshes,pd.macroFields,pd.geomFields,"quad","timestep_" + str(pd.globalCount) + ".dat")
+        for n in range(0, numIterationsPerStep):
+         
+            #------------solve fluid ---------------#
+##        print "***      solving flow model  at globalCount %i    ***" % pd.globalCount
+            bcMap = esbgk1.getBCMap()    
+            esbgk1.callBoundaryConditions()
+            esbgk1.computeSolidFaceDsf(sbMeshFaces,1)       
+            esbgk1.ConservationofMFSolid(sbMeshFaces)
+            esbgk1.computeIBFaceDsf(sbMeshFaces,1)
+            esbgk1.advance(1,sbMeshFaces)
+
+            if (n%pd.saveFrequency == 0):
+                tecplotESBGKIB.esbgkTecplotFile(pd.fluidMeshes,pd.macroFields,pd.geomFields,"quad","timestep_" + str(n) + ".dat")
 ##     To blank the IB faces in tecplot file -in the software /plot/blanking/active blank
 ##     when collisionfrequency is greater than 0       
        
-        #---------------update time -------------------------#
-        if esbgk1options.transient:    
-            esbgk1.updateTime()
-            esbgk1.EntropyGeneration()
-        pd.globalTime += pd.timeStep
-        pd.globalCount += 1
- #---------------boundary update -------------------------#
-        for mesh in pd.solidMeshes:
-            nodes = mesh.getNodes()
-            xNodes = mesh.getNodeCoordinates().asNumPyArray()
-            xNodes[:,0] += 0.0
-            xNodes[:,1] += 0.0
-            xNodes[:,2] += 0.0
-        pd.solidMetricsCalculator.init()
-
-        for mesh in pd.solidBoundaryMeshes:
-            nodes = mesh.getNodes()
-            xNodes = mesh.getNodeCoordinates().asNumPyArray()
-            xNodes[:,0] += 0.0
-            xNodes[:,1] += 0.0
-            xNodes[:,2] += 0.0
-        pd.solidBoundaryMetricsCalculator.init()       
-      
-
-        for mesh in pd.solidMeshes:
-            cells = mesh.getCells()
-            nSelfCells = cells.getSelfCount()
-            nCells = cells.getCount()
-            print '---------------------------------------------------------'
-            print 'solid mesh: number of local cells %i' % nSelfCells 
-            print 'solid mesh: number of total cells %i' % nCells 
-            rCells = pd.geomFields.coordinate[cells].asNumPyArray()
-            rMin = rCells.min(axis=0)
-            rMax = rCells.max(axis=0)
-            print 'solid mesh x range [ %e , %e ]' % (rMin[0], rMax[0])
-            print 'solid mesh y range [ %e , %e ]' % (rMin[1], rMax[1])
-            print 'solid mesh z range [ %e , %e ]' % (rMin[2], rMax[2])
-            if rMin[2] != 0.0 or rMax[2] != 0.0:
-                print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-                print 'Error: beam mesh is not centered at zero Z direction!'
-                print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-                print '-------------------------------------------------------------'
-
-        for mesh in pd.solidBoundaryMeshes:
-            faces = mesh.getFaces()
-            nFaces = faces.getCount()
-            print '--------------------------------------------------------------'
-            print 'solid boundary mesh: number of faces %i' % nFaces
-            rCells = pd.geomFields.coordinate[faces].asNumPyArray()
-            rMin = rCells.min(axis=0)
-            rMax = rCells.max(axis=0)
-            print 'solid boundary mesh x range [ %e , %e ]' % (rMin[0], rMax[0])
-            print 'solid boundary mesh y range [ %e , %e ]' % (rMin[1], rMax[1])
-            print 'solid boudnary mesh z range [ %e , %e ]' % (rMin[2], rMax[2])
-            print '--------------------------------------------------------------'
-              
+             
                
 ### ========================== properties and parameters ===============================###
 pd = ProblemDefinition()
@@ -182,12 +96,11 @@ beamLeft = 3
 
 #user option
 pd.ibMethod=1; #1 for Interpolation 2 for Relaxation (Relaxation is not available)
-numTimeSteps = 50
-numIterationsPerStep=30
+numTimeSteps = 1
+numIterationsPerStep=15000
 pd.output_interval =5
 output_Coeff=5
 frequency = 133862.96;
-pd.timeStep = 1.0/(frequency*100.)
 relTol=1e-7;
 absTol=1e-22;
 
@@ -230,7 +143,6 @@ elif (gas == 'Nitrogen'):
 pd.u_init=(2.0*8314.0*T_init/molecularWeight)**0.5
 pd.ubeam=-2.0/pd.u_init;
 tbeam=1.0
-print ' timeStep ',pd.timeStep
 
 
 
@@ -238,7 +150,7 @@ print ' timeStep ',pd.timeStep
 
 #pd = ProblemDefinition()
 
-pd.timeStepND=pd.timeStep/pd.nondimlength*pd.u_init
+##pd.timeStepND=pd.timeStep/pd.nondimlength*pd.u_init
 fileBase = "/home/ba01/u140/cpekarda/Couette/CPMesh/"
 outfile = None
 if __name__ == '__main__' and fileBase is None:
@@ -435,7 +347,7 @@ if 5 in bcMap:
 
 vcMap=esbgk1.getVCMap()
 print "initializing bcs"        
-esbgk1options.setVar('timeStep',pd.timeStepND)
+##esbgk1options.setVar('timeStep',pd.timeStepND)
 esbgk1options.relativeTolerance=relTol;
 esbgk1options.absoluteTolerance=absTol;
 
@@ -480,12 +392,12 @@ pd.ibManager.solidNeighborsPerIBFace = 4
 pd.ibManager.fluidNeighborsPerSolidFace = 6
 
 pd.ibManager.update()
-checkMarking(0, pd)
+#checkMarking(0, pd)
 
 t1 = time.time()
 
                     
-unsteadyAdvance(pd,numTimeSteps)
+steadyAdvance(pd,numIterationsPerStep)
 
 
 
