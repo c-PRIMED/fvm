@@ -727,11 +727,12 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
       foreach(int nb, nc.neighbors)
       {
           ibFaceToCells->add(f,nb);
-	  ///if (f==200){
-	  //  cout << f << " " <<  nb << endl;
-	  //  cout << "face coordinate " << solidMeshCoords[f] << endl;
-	  //  cout << "cell coordinate " << cellCoords[nb] << endl;
-	  //}
+// 	  if (f==42){
+// 	    cout << f << " " <<  nb << endl;
+// 	    const int gf = ibFaceIndices[f];
+// 	    cout << "face coordinate " << faceCentroid[gf] << endl;
+// 	    cout << "cell coordinate " << cellCoords[nb] << endl;
+// 	  }
       }
   }
   
@@ -841,8 +842,11 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
                                            
 {
   const StorageSite& cells = mesh.getCells();
+  const StorageSite& faces = mesh.getFaces();
+  const int nFaces = faces.getCount();
   const StorageSite& solidMeshFaces = _solidBoundaryMesh.getFaces();
-
+  const Vec3DArray& faceCoords =
+    dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[faces]);
   const Vec3DArray& cellCoords =
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[cells]);
   StorageSite& ibFaces = mesh.getIBFaces();
@@ -969,10 +973,18 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
   {
       // the index of this ib face in the mesh faces
     const Vec3D& xf = solidMeshCoords[f];
+    const Array<int>& ibFaceIndices = mesh.getIBFaceList();
     IBFacesTree.findNeighbors(xf, IBNeighborsPerSolidFace, desiredNeighborsforIBFaces);
-    for(int n=0; n< IBNeighborsPerSolidFace; n++)
+    for(int n=0; n< IBNeighborsPerSolidFace; n++){
       solidToIBFaces->add(f, desiredNeighborsforIBFaces[n]);
+ //    if (f==20){
+//        cout << f << " " <<  desiredNeighborsforIBFaces[n]<< endl;
+//        cout << "face coordinate " << solidMeshCoords[f] << endl;
+//        cout << "cell coordinate " << faceCoords[ibFaceIndices[desiredNeighborsforIBFaces[n]]] << endl;
+      //   }
+    }
   }
+
  solidToIBFaces->finishAdd();
  mesh.setConnectivity(solidMeshFaces,ibFaces,solidToIBFaces);
 
@@ -981,7 +993,6 @@ IBManager::createSolidInterpolationStencil(Mesh& mesh,
   CRConnectivityPrintFile( *solidFacesToCells, "solidFacesToCells", MPI::COMM_WORLD.Get_rank() );
 #endif
 #endif 
-
 }
 
 
