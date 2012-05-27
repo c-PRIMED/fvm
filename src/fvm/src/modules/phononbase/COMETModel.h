@@ -1290,8 +1290,9 @@ class COMETModel : public Model
 
 	//now make the geom fields
 	const int outCellsCount=outCells.getSelfCount();
-	VT3Ptr outCellCoordsPtr=VT3Ptr(new VectorT3Array(outCellsCount));
-	TArrptr outCellVolumePtr=TArrptr(new TArray(outCellsCount));
+	const int outCellsTotCount=outCells.getCount();
+	VT3Ptr outCellCoordsPtr=VT3Ptr(new VectorT3Array(outCellsTotCount));
+	TArrptr outCellVolumePtr=TArrptr(new TArray(outCellsTotCount));
 	TArray& outCV=*outCellVolumePtr;
 	VectorT3Array& outCoords=*outCellCoordsPtr;
 	outCV=0.;
@@ -1315,6 +1316,21 @@ class COMETModel : public Model
 	      }
 	    outCoords[c]=newCoord/outCV[c];
 	  }
+
+	for(int c=outCellsCount;c<outCellsTotCount;c++)
+	  {
+	    const int fineCount=CoarseToFineCells->getCount(c);
+	    VectorT3 newCoord;
+	    newCoord[0]=0.;
+	    newCoord[1]=0.;
+	    newCoord[2]=0.;
+	    for(int i=0;i<fineCount;i++)
+	      {
+		int fc=(*CoarseToFineCells)(c,i);
+		newCoord+=inCoords[fc];
+	      }
+	    outCoords[c]=newCoord;
+	  }	
 	
 	VolumeField.addArray(outCells,outCellVolumePtr);
 	inGeomFields.coordinate.addArray(outCells,outCellCoordsPtr);
