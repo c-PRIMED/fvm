@@ -522,6 +522,23 @@ class COMETModel : public Model
                 BCfArray[i]=7;
 	    }
 	}
+
+        int count = 0;
+        for(int c=0;c<nCells;c++)
+	{
+            if(ibType[c] != Mesh::IBTYPE_FLUID)
+              count++;
+	}
+#ifdef FVM_PARALLEL
+	MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &count, 1, MPI::INT, MPI::SUM);
+        if((MPI::COMM_WORLD.Get_rank()==0)&&(_level==0))
+          cout<<"number of non-fluid cells in mesh at level "<<_level<<" = "<<count<<endl;
+#endif
+        
+#ifndef FVM_PARALLEL
+        if(_level==0)
+          cout<<"number of non-fluid cells in mesh at level "<<_level<<" = "<<count<<endl;
+#endif
 	_niters  =0;
 	_initialKmodelNorm = MFRPtr();
 	//_initialKmodelvNorm = MFRPtr();
@@ -625,6 +642,11 @@ class COMETModel : public Model
 	      if(MPI::COMM_WORLD.Get_rank()==0)
 		cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;            
 #endif
+
+#ifndef FVM_PARALLEL
+	      cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;
+#endif
+
 	      newModelPtr->setFinerLevel(finerModel);
 	      finerModel->setCoarserLevel(newModelPtr);
 	      newModelPtr->getOptions()=finerModel->getOptions();
@@ -652,7 +674,7 @@ class COMETModel : public Model
 	throw CException("Unknown agglomeration method.");
     }
 
-    void MakeIBCoarseModel(TCOMET* finerModel)
+    void MakeIBCoarseModel(TCOMET* finerModel, const StorageSite& solidFaces)
     {
 
       if(_options.AgglomerationMethod=="FaceArea")
@@ -749,6 +771,10 @@ class COMETModel : public Model
                 cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;
 #endif
 
+#ifndef FVM_PARALLEL
+              cout<<"Number of cells in level "<<thisLevel<<"  is "<<newCount<<endl;
+#endif
+
               newModelPtr->setFinerLevel(finerModel);
               finerModel->setCoarserLevel(newModelPtr);
               newModelPtr->getOptions()=finerModel->getOptions();
@@ -756,12 +782,12 @@ class COMETModel : public Model
               newModelPtr->getVCMap()=finerModel->getVCMap();
 
               for (int n=0; n<numMeshes; n++)
-		{
+	      {
                   const Mesh& mesh = *_meshes[n];
                   const StorageSite& fineIBFaces = mesh.getIBFaces();
                   StorageSite& coarseIBFaces = *_siteMap[&fineIBFaces];
                   for(int dir=0;dir<_quadrature.getDirCount();dir++)
-		    {
+		  {
                       Field& fnd = *_dsfPtr.dsf[dir];
                       const TArray& fIB = dynamic_cast<const TArray&>(fnd[fineIBFaces]);
                       shared_ptr<TArray> cIBV(new TArray(coarseIBFaces.getCount()));
@@ -772,8 +798,13 @@ class COMETModel : public Model
                       TArray& cIB = dynamic_cast<TArray&>(cfnd[coarseIBFaces]);
                       for(int i=0;i<coarseIBFaces.getCount();i++)
                         cIB[i]=fIB[i];
-		    }
-		}
+		  }
+
+		  shared_ptr<VectorT3Array> coarseSolidVel(new VectorT3Array(solidFaces.getCount()));
+		  const VectorT3Array& fineSolidVel = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[solidFaces]);
+		  *coarseSolidVel = fineSolidVel;
+		  newMacroPtr->velocity.addArray(solidFaces,coarseSolidVel);
+	      }
               
               newModelPtr->init();
               newModelPtr->InitializeMacroparameters();
@@ -785,7 +816,7 @@ class COMETModel : public Model
               newModelPtr->initializeMaxwellianEq();
 
               if(newCount>_options.minCells)
-                newModelPtr->MakeIBCoarseModel(newModelPtr);
+                newModelPtr->MakeIBCoarseModel(newModelPtr,solidFaces);
               else
                 _options.maxLevels=newModelPtr->getLevel();
             }
@@ -4134,17 +4165,83 @@ map<string,shared_ptr<ArrayBase> >&
       smooth(num);
   }
 
+  void doSweeps(const int sweeps, const int num, const StorageSite& solidFaces)
+  {
+    for(int sweepNo=0;sweepNo<sweeps;sweepNo++)
+      smooth(num,solidFaces);
+  }
+
+  void smooth(const int num,const StorageSite& solidFaces)
+  {
+    const int numDir=_quadrature.getDirCount();
+    const int numMeshes=_meshes.size();
+    for(int msh=0;msh<numMeshes;msh++)
+    {
+        const Mesh& mesh=*_meshes[msh];
+        const BCcellArray& BCArray=*(_BCells[msh]);
+        const BCfaceArray& BCfArray=*(_BFaces[msh]);
+        const BCcellArray& ZCArray=*(_ZCells[msh]);
+        COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,solidFaces,_macroFields,_quadrature,
+                                       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
+                                       _options["timeStep"],_options.timeDiscretizationOrder,
+                                       _options.transient,_options.underRelaxation,_options["rho_init"], 
+                                       _options["T_init"],_options["molecularWeight"],
+                                       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
+
+        CDisc.setfgFinder();
+
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+
+#if 0
+        for(int dir=0;dir<numDir;dir++)
+          {
+            Field& fnd = *_dsfPtr.dsf[dir];
+            fnd.syncLocal();
+          }
+#endif  
+        CDisc.COMETSolve(1,_level); //forward
+        //callCOMETBoundaryConditions();
+        ComputeCOMETMacroparameters();
+        ComputeCollisionfrequency();
+        //update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
+        if (_options.fgamma==0){initializeMaxwellianEq();}
+        else{ EquilibriumDistributionBGK();}
+        if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
+      
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0        
+        for(int dir=0;dir<numDir;dir++)
+          {
+            Field& fnd = *_dsfPtr.dsf[dir];
+            fnd.syncLocal();
+          }
+#endif          
+        CDisc.COMETSolve(-1,_level); //reverse
+        if((num==1)||(num==0&&_level==0))
+	  {
+            //callCOMETBoundaryConditions();
+            ComputeCOMETMacroparameters();
+            ComputeCollisionfrequency();
+            //update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
+            if (_options.fgamma==0){initializeMaxwellianEq();}
+            else{ EquilibriumDistributionBGK();}
+            if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+	  }
+      }
+  }
+
   void smooth(const int num)
   {
     const int numDir=_quadrature.getDirCount();
     const int numMeshes=_meshes.size();
     for(int msh=0;msh<numMeshes;msh++)
-      {
+    {
         const Mesh& mesh=*_meshes[msh];
         const BCcellArray& BCArray=*(_BCells[msh]);
         const BCfaceArray& BCfArray=*(_BFaces[msh]);
 	const BCcellArray& ZCArray=*(_ZCells[msh]);
-	COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,_macroFields,_quadrature,
+	shared_ptr<StorageSite> solidFaces(new StorageSite(-1));
+	COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,*solidFaces,_macroFields,_quadrature,
 				       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
 				       _options["timeStep"],_options.timeDiscretizationOrder,
 				       _options.transient,_options.underRelaxation,_options["rho_init"], 
@@ -4157,10 +4254,10 @@ map<string,shared_ptr<ArrayBase> >&
 	
 #if 0
 	for(int dir=0;dir<numDir;dir++)
-	  {
+	{
 	    Field& fnd = *_dsfPtr.dsf[dir];
 	    fnd.syncLocal();
-	  }
+	}
 #endif  
 	CDisc.COMETSolve(1,_level); //forward
 	//callCOMETBoundaryConditions();
@@ -4174,10 +4271,10 @@ map<string,shared_ptr<ArrayBase> >&
         Field::syncLocalVectorFields( _dsfPtr.dsf );
 #if 0        
         for(int dir=0;dir<numDir;dir++)
-          {
+        {
             Field& fnd = *_dsfPtr.dsf[dir];
             fnd.syncLocal();
-          }
+	}
 #endif          
 	CDisc.COMETSolve(-1,_level); //reverse
 	if((num==1)||(num==0&&_level==0))
@@ -4199,12 +4296,54 @@ map<string,shared_ptr<ArrayBase> >&
     T lowResid=-1.;
     T currentResid;
     for(int msh=0;msh<numMeshes;msh++)
+    {
+        const Mesh& mesh=*_meshes[msh];
+        const BCcellArray& BCArray=*(_BCells[msh]);
+        const BCfaceArray& BCfArray=*(_BFaces[msh]);
+        const BCcellArray& ZCArray=*(_ZCells[msh]);
+	shared_ptr<StorageSite> solidFaces(new StorageSite(-1));
+        COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,*solidFaces,_macroFields,_quadrature,
+                                       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
+                                       _options["timeStep"],_options.timeDiscretizationOrder,
+                                       _options.transient,_options.underRelaxation,_options["rho_init"], 
+                                       _options["T_init"],_options["molecularWeight"],
+                                       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
+
+        CDisc.setfgFinder();
+        const int numDir=_quadrature.getDirCount();
+
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
+        for(int dir=0;dir<numDir;dir++)
+	{
+            Field& fnd = *_dsfPtr.dsf[dir];
+            fnd.syncLocal();
+	}
+#endif
+        CDisc.findResid(addFAS);
+        currentResid=CDisc.getAveResid();
+
+        if(lowResid<0)
+          lowResid=currentResid;
+        else
+          if(currentResid<lowResid)
+            lowResid=currentResid;
+    }
+    return lowResid;
+  }
+
+  T updateResid(const bool addFAS,const StorageSite& solidFaces)
+  {
+    const int numMeshes=_meshes.size();
+    T lowResid=-1.;
+    T currentResid;
+    for(int msh=0;msh<numMeshes;msh++)
       {
         const Mesh& mesh=*_meshes[msh];
         const BCcellArray& BCArray=*(_BCells[msh]);
         const BCfaceArray& BCfArray=*(_BFaces[msh]);
 	const BCcellArray& ZCArray=*(_ZCells[msh]);
-	COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,_macroFields,_quadrature,
+	COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,solidFaces,_macroFields,_quadrature,
 				       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
 				       _options["timeStep"],_options.timeDiscretizationOrder,
 				       _options.transient,_options.underRelaxation,_options["rho_init"], 
@@ -4238,11 +4377,43 @@ map<string,shared_ptr<ArrayBase> >&
   {
     doSweeps(_options.preSweeps,1);
     if(_level+1<_options.maxLevels)
-      {
+    {
         if(_level==0)
           updateResid(false);
         else
           updateResid(true);
+
+        injectResid();
+        _coarserLevel->ComputeCOMETMacroparameters();
+        _coarserLevel->ComputeCollisionfrequency();
+        if (_options.fgamma==0){_coarserLevel->initializeMaxwellianEq();}
+        else{_coarserLevel->EquilibriumDistributionBGK();}
+        if (_options.fgamma==2){_coarserLevel->EquilibriumDistributionESBGK();}
+
+        _coarserLevel->makeFAS();
+        _coarserLevel->cycle();
+        correctSolution();
+
+        ComputeCOMETMacroparameters();
+        ComputeCollisionfrequency();
+        if (_options.fgamma==0){initializeMaxwellianEq();}
+        else{EquilibriumDistributionBGK();}
+        if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+    }
+
+    doSweeps(_options.postSweeps,0);
+  }
+
+
+  void cycle(const StorageSite& solidFaces)
+  {
+    doSweeps(_options.preSweeps,1,solidFaces);
+    if(_level+1<_options.maxLevels)
+      {
+        if(_level==0)
+          updateResid(false,solidFaces);
+        else
+          updateResid(true,solidFaces);
 
         injectResid();
 	_coarserLevel->ComputeCOMETMacroparameters();
@@ -4251,8 +4422,8 @@ map<string,shared_ptr<ArrayBase> >&
 	else{_coarserLevel->EquilibriumDistributionBGK();}
 	if (_options.fgamma==2){_coarserLevel->EquilibriumDistributionESBGK();}     
 
-        _coarserLevel->makeFAS();
-        _coarserLevel->cycle();
+        _coarserLevel->makeFAS(solidFaces);
+        _coarserLevel->cycle(solidFaces);
         correctSolution();
 	
         ComputeCOMETMacroparameters();
@@ -4262,7 +4433,7 @@ map<string,shared_ptr<ArrayBase> >&
         if (_options.fgamma==2){EquilibriumDistributionESBGK();}	
       }
     
-    doSweeps(_options.postSweeps,0);
+    doSweeps(_options.postSweeps,0,solidFaces);
   }
 
   void injectResid()
@@ -4351,6 +4522,34 @@ map<string,shared_ptr<ArrayBase> >&
         const Mesh& mesh=*_meshes[n];
         const StorageSite& cells=mesh.getCells();
 
+        const int numDir = _quadrature.getDirCount();
+        for(int dir=0;dir<numDir;dir++)
+	{
+            Field& fndRes = *_dsfPtrRes.dsf[dir];
+            Field& fndFAS = *_dsfPtrFAS.dsf[dir];
+            TArray& fRes = dynamic_cast<TArray&>(fndRes[cells]);
+            TArray& fFAS = dynamic_cast<TArray&>(fndFAS[cells]);
+
+            fFAS-=fRes;
+	}
+
+        VectorT3Array& vR = dynamic_cast<VectorT3Array&>(_macroFields.velocityResidual[cells]);
+        VectorT3Array& vF = dynamic_cast<VectorT3Array&>(_macroFields.velocityFASCorrection[cells]);
+
+        vF-=vR;
+    }
+  }
+
+  void makeFAS(const StorageSite& solidFaces)
+  {
+    updateResid(false,solidFaces);
+
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh=*_meshes[n];
+        const StorageSite& cells=mesh.getCells();
+
 	const int numDir = _quadrature.getDirCount();
         for(int dir=0;dir<numDir;dir++)
         {
@@ -4430,6 +4629,52 @@ map<string,shared_ptr<ArrayBase> >&
     
 #ifdef FVM_PARALLEL    
     if ( MPI::COMM_WORLD.Get_rank() == 0 )
+      cout<<"Initial Residual:"<<_initialResidual<<"  ResidualRatio: "<<residualRatio<<endl;
+#endif
+
+
+#ifndef FVM_PARALLEL    
+    cout << "Initial Residual:"<<_initialResidual<<"  ResidualRatio: "<<residualRatio<<endl;
+#endif
+    
+    
+    
+    int niters=0;
+    const T absTol=_options.absoluteTolerance;
+    const T relTol=_options.relativeTolerance;
+    const int show=_options.showResidual;
+
+    while((niters<iters) && ((_residual>absTol)&&(residualRatio>relTol)))
+      {
+        cycle();
+        niters++;
+        _residual=updateResid(false);
+        if(niters==1)
+          _initialResidual=_residual;
+        residualRatio=_residual/_initialResidual;
+#ifdef FVM_PARALLEL
+        if((niters%show==0)&&(MPI::COMM_WORLD.Get_rank()==0))
+          cout<<"Iteration:"<<niters<<" Residual:"<<_residual<<"  ResidualRatio: "<<residualRatio<<endl;
+#endif
+
+#ifndef FVM_PARALLEL
+        if(niters%show==0)
+          cout<<"Iteration:"<<niters<<" Residual:"<<_residual<<"  ResidualRatio: "<<residualRatio<<endl;
+#endif
+      }
+    callCOMETBoundaryConditions();
+    //cout<<endl<<"Total Iterations:"<<niters<<" Residual:"<<_residual<<endl;
+  }
+
+  T advance(const int iters,const StorageSite& solidFaces)
+  {
+    callCOMETBoundaryConditions();
+    _residual=updateResid(false,solidFaces);
+    _initialResidual=_residual;
+    T residualRatio(1.0);
+    
+#ifdef FVM_PARALLEL    
+    if ( MPI::COMM_WORLD.Get_rank() == 0 )
         cout<<"Initial Residual:"<<_initialResidual<<"  ResidualRatio: "<<residualRatio<<endl;
 #endif
 
@@ -4447,9 +4692,9 @@ map<string,shared_ptr<ArrayBase> >&
 
     while((niters<iters) && ((_residual>absTol)&&(residualRatio>relTol)))
       {
-        cycle();
+        cycle(solidFaces);
         niters++;
-        _residual=updateResid(false);
+        _residual=updateResid(false,solidFaces);
         if(niters==1)
           _initialResidual=_residual;
 	residualRatio=_residual/_initialResidual;
@@ -4457,13 +4702,20 @@ map<string,shared_ptr<ArrayBase> >&
         if((niters%show==0)&&(MPI::COMM_WORLD.Get_rank()==0))
           cout<<"Iteration:"<<niters<<" Residual:"<<_residual<<"  ResidualRatio: "<<residualRatio<<endl;
 #endif
+
+#ifndef FVM_PARALLEL
+        if(niters%show==0)
+          cout<<"Iteration:"<<niters<<" Residual:"<<_residual<<"  ResidualRatio: "<<residualRatio<<endl;
+#endif
       }
     callCOMETBoundaryConditions();
+    return _residual;
     //cout<<endl<<"Total Iterations:"<<niters<<" Residual:"<<_residual<<endl;
   }
   
-  void  computeSurfaceForce(const StorageSite& solidFaces, bool perUnitArea)
+  void  computeSurfaceForce(const StorageSite& solidFaces, bool perUnitArea, bool IBM=0)
   {
+    typedef CRMatrixTranspose<T,T,T> IMatrix;
     
     const int nSolidFaces = solidFaces.getCount();
     
@@ -4486,55 +4738,82 @@ map<string,shared_ptr<ArrayBase> >&
         const Mesh& mesh = *_meshes[n];
         const StorageSite& cells = mesh.getCells();
         
-	const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
-	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-	const TArray& wts = dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-	
+        const VectorT3Array& v = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[cells]);
+        const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+        const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+        const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+        const TArray& wts = dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+
         const CRConnectivity& solidFacesToCells
           = mesh.getConnectivity(solidFaces,cells);
         const IntArray& sFCRow = solidFacesToCells.getRow();
         const IntArray& sFCCol = solidFacesToCells.getCol(); 
 
-	const T Lx=_options["nonDimLx"];
-	const T Ly=_options["nonDimLy"];
-	const T Lz=_options["nonDimLz"];
+        const T Lx=_options["nonDimLx"];
+        const T Ly=_options["nonDimLy"];
+        const T Lz=_options["nonDimLz"];
     
-	
-	const int N123= _quadrature.getDirCount(); 	
-	
-	const int selfCount = cells.getSelfCount();
-	for(int f=0; f<nSolidFaces; f++){
-	  
-	  StressTensor<T> stress = NumTypeTraits<StressTensor<T> >::getZero();
-         
-	  for(int j=0;j<N123;j++){
-	    Field& fnd = *_dsfPtr.dsf[j];
-	    const TArray& f_dsf = dynamic_cast<const TArray&>(fnd[cells]);
-	    for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
-	      {
-            
-		const int c = sFCCol[nc];            
-                if ( c < selfCount ){
-		   stress[0] +=pow((cx[j]-v[c][0]),2.0)*f_dsf[c]*wts[j];
-		   stress[1] +=pow((cy[j]-v[c][1]),2.0)*f_dsf[c]*wts[j];
-		   stress[2] +=pow((cz[j]-v[c][2]),2.0)*f_dsf[c]*wts[j];
-		   stress[3] +=(cx[j]-v[c][0])*(cy[j]-v[c][1])*f_dsf[c]*wts[j];
-		   stress[4] +=(cy[j]-v[c][1])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
-		   stress[5] +=(cx[j]-v[c][0])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
-                }
-	      }
-	  }
+
+        const int N123= _quadrature.getDirCount(); 
+
+        const int selfCount = cells.getSelfCount();
+        for(int f=0; f<nSolidFaces; f++){
           
-	  
-	  const VectorT3& Af = solidFaceArea[f];
-	  force[f][0] = Af[0]*Ly*Lz*stress[0] + Af[1]*Lz*Lx*stress[3] + Af[2]*Lx*Ly*stress[5];
-	  force[f][1] = Af[0]*Ly*Lz*stress[3] + Af[1]*Lz*Lx*stress[1] + Af[2]*Lx*Ly*stress[4];
-	  force[f][2] = Af[0]*Ly*Lz*stress[5] + Af[1]*Lz*Lx*stress[4] + Af[2]*Ly*Ly*stress[2];
-	  if (perUnitArea){
-	    force[f] /= solidFaceAreaMag[f];}
-	}
+          StressTensor<T> stress = NumTypeTraits<StressTensor<T> >::getZero();
+          
+          if (IBM){
+	    GeomFields::SSPair key1(&solidFaces,&cells);
+            const IMatrix& mIC =
+              dynamic_cast<const IMatrix&>
+              (*_geomFields._interpolationMatrices[key1]);
+            const Array<T>& iCoeffs = mIC.getCoeff();
+            for(int j=0;j<N123;j++){
+              Field& fnd = *_dsfPtr.dsf[j];
+              const TArray& f_dsf = dynamic_cast<const TArray&>(fnd[cells]);
+              for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+                {
+                  
+                  const int c = sFCCol[nc];            
+                  const T coeff = iCoeffs[nc];
+                  stress[0] -=coeff*pow((cx[j]-v[c][0]),2.0)*f_dsf[c]*wts[j];
+                  stress[1] -=coeff*pow((cy[j]-v[c][1]),2.0)*f_dsf[c]*wts[j];
+                  stress[2] -=coeff*pow((cz[j]-v[c][2]),2.0)*f_dsf[c]*wts[j];
+                  stress[3] -=coeff*(cx[j]-v[c][0])*(cy[j]-v[c][1])*f_dsf[c]*wts[j];
+                  stress[4] -=coeff*(cy[j]-v[c][1])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
+                  stress[5] -=coeff*(cx[j]-v[c][0])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
+                }
+            }
+          }
+          else
+            {
+              for(int j=0;j<N123;j++){
+                Field& fnd = *_dsfPtr.dsf[j];
+                const TArray& f_dsf = dynamic_cast<const TArray&>(fnd[cells]);
+                for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+                  {
+                  
+                    const int c = sFCCol[nc];            
+                    if ( c < selfCount ){
+                      stress[0] +=pow((cx[j]-v[c][0]),2.0)*f_dsf[c]*wts[j];
+                      stress[1] +=pow((cy[j]-v[c][1]),2.0)*f_dsf[c]*wts[j];
+                      stress[2] +=pow((cz[j]-v[c][2]),2.0)*f_dsf[c]*wts[j];
+                      stress[3] +=(cx[j]-v[c][0])*(cy[j]-v[c][1])*f_dsf[c]*wts[j];
+                      stress[4] +=(cy[j]-v[c][1])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
+                      stress[5] +=(cx[j]-v[c][0])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
+                    }
+                  }
+              }
+
+            }
+
+          
+          const VectorT3& Af = solidFaceArea[f];
+          force[f][0] = Af[0]*Ly*Lz*stress[0] + Af[1]*Lz*Lx*stress[3] + Af[2]*Lx*Ly*stress[5];
+          force[f][1] = Af[0]*Ly*Lz*stress[3] + Af[1]*Lz*Lx*stress[1] + Af[2]*Lx*Ly*stress[4];
+          force[f][2] = Af[0]*Ly*Lz*stress[5] + Af[1]*Lz*Lx*stress[4] + Af[2]*Ly*Ly*stress[2];
+          if (perUnitArea){
+            force[f] /= solidFaceAreaMag[f];}
+        }
       }
   }
   

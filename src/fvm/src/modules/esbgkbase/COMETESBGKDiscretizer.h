@@ -47,7 +47,7 @@ class COMETESBGKDiscretizer
   typedef DistFunctFields<T> TDistFF;
   typedef Quadrature<T> TQuad;
 
- COMETESBGKDiscretizer(const Mesh& mesh, const GeomFields& geomfields, 
+  COMETESBGKDiscretizer(const Mesh& mesh, const GeomFields& geomfields, const StorageSite& solidFaces,
 		       MacroFields& macroFields, TQuad& quadrature, TDistFF& dsfPtr, 
 		       TDistFF& dsfPtr1, TDistFF& dsfPtr2, TDistFF& dsfEqPtrES, TDistFF& dsfPtrRes, TDistFF& dsfPtrFAS,
 		       const T dT, const int order, const bool transient,const T underRelaxation,
@@ -58,6 +58,7 @@ class COMETESBGKDiscretizer
     _geomFields(geomfields),
     _cells(mesh.getCells()),
     _faces(mesh.getFaces()),
+    _solidFaces(solidFaces),
     _cellFaces(mesh.getCellFaces()),
     _faceCells(mesh.getAllFaceCells()),
     _areaMagField(_geomFields.areaMag),
@@ -265,22 +266,27 @@ class COMETESBGKDiscretizer
             cell2=_faceCells(face,0);
 	}
 	
-	int count=1;
-	for(int dir=0;dir<_numDir;dir++)
+        int count=1;
+        for(int dir=0;dir<_numDir;dir++)
 	{
-	    const TArray& f = *_fArrays[dir];
-	    flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
-	    const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
-	    
-	    if(c_dot_en>T_Scalar(0))
+            const TArray& f = *_fArrays[dir];
+            flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+            const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+            
+            if (((ibType[cell] == Mesh::IBTYPE_FLUID) && (ibType[cell2] == Mesh::IBTYPE_BOUNDARY)) ||
+                ((ibType[cell2] == Mesh::IBTYPE_FLUID) && (ibType[cell] == Mesh::IBTYPE_BOUNDARY)))
 	    {
-		Amat.getElement(count,count)-=flux;
-		BVec[count-1]-=flux*f[cell];
-	    }
-	    else
-	    {
-                if (((ibType[cell] == Mesh::IBTYPE_FLUID) && (ibType[cell2] == Mesh::IBTYPE_BOUNDARY)) ||
-                    ((ibType[cell2] == Mesh::IBTYPE_FLUID) && (ibType[cell] == Mesh::IBTYPE_BOUNDARY)))
+                VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[_solidFaces]);
+                const T uwall = v[1][0];
+                const T vwall = v[1][1];
+                const T wwall = v[1][2];
+                const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+                if((c_dot_en-wallV_dot_en)>T_Scalar(0))
+		{
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		}
+                else
 		{
                     const int ibFace = ibFaceIndex[face];
                     if (ibFace < 0)
@@ -289,14 +295,21 @@ class COMETESBGKDiscretizer
                     const TArray& fIB = dynamic_cast<const TArray&>(fnd[ibFaces]);
                     BVec[count-1]-=flux*fIB[ibFace];
 		}
+	    }
+            else
+	    {
+                if(c_dot_en>T_Scalar(0))
+		{
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		}
                 else 
                   BVec[count-1]-=flux*f[cell2];
 	    }
-	    count++;
+            count++;
 	}
     }
   }
-
 
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec)
   {
@@ -513,57 +526,75 @@ class COMETESBGKDiscretizer
                 count++;
 	    }
 	}
-	else if(_BCfArray[face]==0)  //if the face in question is not reflecting
+        else if(_BCfArray[face]==7)  //if the face in question is not reflecting
 	{
-	    int count=1;
-	    for(int dir=0;dir<_numDir;dir++)
-	    {
-                const TArray& f = *_fArrays[dir];
-		flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
-		const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
-		
-		if(c_dot_en>T_Scalar(0))
-		{
-		    Amat.getElement(count,count)-=flux;
-		    BVec[count-1]-=flux*f[cell];
-		}
-		else
-		{                 
-                    if (((ibType[cell] == Mesh::IBTYPE_FLUID) && (ibType[cell2] == Mesh::IBTYPE_BOUNDARY)) ||
-                        ((ibType[cell2] == Mesh::IBTYPE_FLUID) && (ibType[cell] == Mesh::IBTYPE_BOUNDARY)))
-		    {
-                        const int ibFace = ibFaceIndex[face];
-                        if (ibFace < 0)
-                          throw CException("invalid ib face index");
-                        Field& fnd = *_dsfPtr.dsf[dir];
-                        const TArray& fIB = dynamic_cast<const TArray&>(fnd[ibFaces]);
-                        BVec[count-1]-=flux*fIB[ibFace];
-		    }
-                    else 
-                      BVec[count-1]-=flux*f[cell2];
-		}
-		count++;
-	    }
-	}
-        else if(_BCfArray[face]==-1)  //if the face in question is interface
-	  {
             int count=1;
             for(int dir=0;dir<_numDir;dir++)
-	      {
+	    {
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+
+                VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[_solidFaces]);
+                const T uwall = v[1][0];
+                const T vwall = v[1][1];
+                const T wwall = v[1][2];
+                const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+                if((c_dot_en-wallV_dot_en)>T_Scalar(0))
+		{
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		}
+                else
+		{
+                    const int ibFace = ibFaceIndex[face];
+                    if (ibFace < 0)
+                      throw CException("invalid ib face index");
+                    Field& fnd = *_dsfPtr.dsf[dir];
+                    const TArray& fIB = dynamic_cast<const TArray&>(fnd[ibFaces]);
+                    BVec[count-1]-=flux*fIB[ibFace];
+		}
+                count++;
+	    }
+	}
+        else if(_BCfArray[face]==0)  //if the face in question is not reflecting
+	{
+            int count=1;
+            for(int dir=0;dir<_numDir;dir++)
+	    {
                 const TArray& f = *_fArrays[dir];
                 flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
                 const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
 
                 if(c_dot_en>T_Scalar(0))
-		  {
+		{
                     Amat.getElement(count,count)-=flux;
                     BVec[count-1]-=flux*f[cell];
-		  }
+		}
                 else
                   BVec[count-1]-=flux*f[cell2];
                 count++;
-	      }
-	  }
+	    }
+	}
+        else if(_BCfArray[face]==-1)  //if the face in question is interface
+	{
+            int count=1;
+            for(int dir=0;dir<_numDir;dir++)
+	    {
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+
+                if(c_dot_en>T_Scalar(0))
+		{
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		}
+                else
+                  BVec[count-1]-=flux*f[cell2];
+                count++;
+	    }
+	}
     }
   }
 
@@ -974,6 +1005,7 @@ class COMETESBGKDiscretizer
   const GeomFields& _geomFields;
   const StorageSite& _cells;
   const StorageSite& _faces;
+  const StorageSite& _solidFaces;
   const CRConnectivity& _cellFaces;
   const CRConnectivity& _faceCells;
   const Field& _areaMagField;
