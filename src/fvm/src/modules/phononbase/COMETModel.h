@@ -13,6 +13,7 @@
 #include "PhononMacro.h"
 #include "COMETBoundary.h"
 #include "COMETInterface.h"
+#include <time.h>
 
 
 template<class T>
@@ -410,14 +411,10 @@ class COMETModel : public Model
      for(int ic=0;ic<listSize;ic++)
        {
 	 COMETIC<T>* icPtr=_IClist[ic];
+
 	 if(icPtr->InterfaceModel=="DMM")
 	   ComInt.makeDMMcoeffs(*icPtr);
-	 /*
-	 const int mid0=icPtr->MeshID0;
-	 const int mid1=icPtr->MeshID1;
-	 ComInt.updateOtherGhost(*icPtr,mid0,false);
-	 ComInt.updateOtherGhost(*icPtr,mid1,false);
-	 */
+
        }
      
      applyTemperatureBoundaries();
@@ -604,12 +601,6 @@ class COMETModel : public Model
 	 COMETIC<T>* icPtr=_IClist[ic];
 	 if(icPtr->InterfaceModel=="DMM")
 	   ComInt.makeDMMcoeffs(*icPtr);
-	 /*
-	 const int mid0=icPtr->MeshID0;
-	 const int mid1=icPtr->MeshID1;
-	 ComInt.updateOtherGhost(*icPtr,mid0,false);
-	 ComInt.updateOtherGhost(*icPtr,mid1,false);
-	 */
        }
      
      applyTemperatureBoundaries();
@@ -846,10 +837,7 @@ class COMETModel : public Model
 	 COMETIC<T>* icPtr=_IClist[ic];
 	 if(icPtr->InterfaceModel=="DMM")
 	   ComInt.makeDMMcoeffs(*icPtr);
-	 //const int mid0=icPtr->MeshID0;
-	 //const int mid1=icPtr->MeshID1;
-	 //ComInt.updateOtherGhost(*icPtr,mid0);
-	 //ComInt.updateOtherGhost(*icPtr,mid1);
+
        }
      
      applyTemperatureBoundaries();
@@ -1451,7 +1439,8 @@ class COMETModel : public Model
 
 	CDisc.setfgFinder();
 
-	CDisc.COMETSolve(dir,_level); //forward
+	
+	CDisc.COMETSolve(dir,_level); 
       }
 
     COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
@@ -1462,12 +1451,13 @@ class COMETModel : public Model
 	COMETIC<T>* icPtr=_IClist[ic];
 	const int mid0=icPtr->MeshID0;
 	const int mid1=icPtr->MeshID1;
+
 	if(icPtr->InterfaceModel=="DMM")
-	  ComInt.makeDMMcoeffs(*icPtr);
+	  ComInt.remakeDMMcoeffs(*icPtr);
 	ComInt.updateOtherGhost(*icPtr,mid0,_level!=0);
 	ComInt.updateOtherGhost(*icPtr,mid1,_level!=0);
       }
-    
+
   }
   
   T updateResid(const bool addFAS)
@@ -1475,21 +1465,19 @@ class COMETModel : public Model
     const int numMeshes=_meshes.size();
 
     COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
+
     const int listSize=_IClist.size();
     for(int ic=0;ic<listSize;ic++)
       {
 	COMETIC<T>* icPtr=_IClist[ic];
-	//const int mid0=icPtr->MeshID0;
-	//const int mid1=icPtr->MeshID1;
 	if(icPtr->InterfaceModel=="DMM")
-	  ComInt.makeDMMcoeffs(*icPtr);
+	  ComInt.remakeDMMcoeffs(*icPtr);
 	ComInt.updateResid(*icPtr,addFAS);
-	//ComInt.updateOtherGhost(*icPtr,mid0);
-	//ComInt.updateOtherGhost(*icPtr,mid1);
       }
-    
+
     T highResid=-1.;
     T currentResid;
+
     for(int msh=0;msh<numMeshes;msh++)
       {
 	const Mesh& mesh=*_meshes[msh];
@@ -1511,6 +1499,7 @@ class COMETModel : public Model
 	  if(currentResid>highResid)
 	    highResid=currentResid;
       }
+
     return highResid;
   }
 
@@ -1691,22 +1680,6 @@ class COMETModel : public Model
 	      }
 	  }
       }
-
-    /*
-    COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
-
-    const int listSize=_IClist.size();
-    for(int ic=0;ic<listSize;ic++)
-      {
-	COMETIC<T>* icPtr=_IClist[ic];
-	const int mid0=icPtr->MeshID0;
-	const int mid1=icPtr->MeshID1;
-	if(icPtr->InterfaceModel=="DMM")
-	  ComInt.makeDMMcoeffs(*icPtr);
-	ComInt.updateOtherGhost(*icPtr,mid0);
-	ComInt.updateOtherGhost(*icPtr,mid1);
-      }
-    */
   }
 
   void correctSolution()
