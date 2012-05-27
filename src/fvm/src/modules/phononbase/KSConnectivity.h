@@ -146,6 +146,32 @@ class KSConnectivity
       }
   }
 
+  void resetOther(const int SelfIndex, const int position, const int OtherIndex, const T coeff)
+  {
+    if(_SelfToOther[SelfIndex]!=NULL)
+      {
+	CouplingPair& Cpair=*_SelfToOther[SelfIndex];
+	IntArray& positArray=(*Cpair.first);
+	TArray& coeffArray=(*Cpair.second);
+	const int length=positArray.getLength();
+	if(position<length)
+	  {
+	    positArray[position]=OtherIndex;
+	    coeffArray[position]=coeff;
+	  }
+	else
+	  {
+	    cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
+	    throw CException("Out of bounds for Other!");
+	  }
+      }
+    else
+      {
+	cout<<"Index "<<SelfIndex<<endl;
+	throw CException("Other Connectivity Not Made Yet!");
+      }
+  }
+
   void setSelf(const int SelfIndex, const int position, const int OtherIndex, const T coeff)
   {
     if(_SelfToSelf[SelfIndex]!=NULL)
@@ -166,6 +192,32 @@ class KSConnectivity
 		cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
 		throw CException("Self Connection has already been set!");
 	      }
+	  }
+	else
+	  {
+	    cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
+	    throw CException("Out of bounds for Self!");
+	  }
+      }
+    else
+      {
+	cout<<"Index "<<SelfIndex<<endl;
+	throw CException("Self Connectivity Not Made Yet!");
+      }
+  }
+
+  void resetSelf(const int SelfIndex, const int position, const int OtherIndex, const T coeff)
+  {
+    if(_SelfToSelf[SelfIndex]!=NULL)
+      {
+	CouplingPair& Cpair=*_SelfToSelf[SelfIndex];
+	IntArray& positArray=(*Cpair.first);
+	TArray& coeffArray=(*Cpair.second);
+	const int length=positArray.getLength();
+	if(position<length)
+	  {
+	    positArray[position]=OtherIndex;
+	    coeffArray[position]=coeff;
 	  }
 	else
 	  {
