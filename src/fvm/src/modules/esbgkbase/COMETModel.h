@@ -3107,303 +3107,443 @@ map<string,shared_ptr<ArrayBase> >&
     }
   }
 
-  void computeIBFaceDsf(const StorageSite& solidFaces,const int method)
+ void computeIBFaceDsf(const StorageSite& solidFaces,const int method,const int RelaxDistribution=0)
   {
     typedef CRMatrixTranspose<T,T,T> IMatrix;
     typedef CRMatrixTranspose<T,VectorT3,VectorT3> IMatrixV3;
     if (method==1){
-      const int numMeshes = _meshes.size();
-      const int numFields= _quadrature.getDirCount(); 
-      for (int direction = 0; direction < numFields; direction++)
-        {
-          Field& fnd = *_dsfPtr.dsf[direction];
-          for (int n=0; n<numMeshes; n++)
-            {         
-              const Mesh& mesh = *_meshes[n];
-              if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
-              
-                const StorageSite& cells = mesh.getCells();
-                const StorageSite& ibFaces = mesh.getIBFaces();
-              
-		GeomFields::SSPair key1(&ibFaces,&cells);
-              const IMatrix& mIC =
-                dynamic_cast<const IMatrix&>
-                (*_geomFields._interpolationMatrices[key1]);
-              
-              IMatrix mICV(mIC);
-           
+    const int numMeshes = _meshes.size();
+    const int numFields= _quadrature.getDirCount(); 
+    for (int direction = 0; direction < numFields; direction++)
+      {
+	Field& fnd = *_dsfPtr.dsf[direction];
+	for (int n=0; n<numMeshes; n++)
+	  {	    
+	    const Mesh& mesh = *_meshes[n];
+	    if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	      
+	      const StorageSite& cells = mesh.getCells();
+	      const StorageSite& ibFaces = mesh.getIBFaces();
+	      
+	      GeomFields::SSPair key1(&ibFaces,&cells);
+	      const IMatrix& mIC =
+		dynamic_cast<const IMatrix&>
+		(*_geomFields._interpolationMatrices[key1]);
+	      
+	      IMatrix mICV(mIC);
+	   
 
-              GeomFields::SSPair key2(&ibFaces,&solidFaces);
+           GeomFields::SSPair key2(&ibFaces,&solidFaces);
            const IMatrix& mIP =
-             dynamic_cast<const IMatrix&>
-             (*_geomFields._interpolationMatrices[key2]);
+	     dynamic_cast<const IMatrix&>
+	     (*_geomFields._interpolationMatrices[key2]);
 
            IMatrix mIPV(mIP);
-           
+	   
 
            shared_ptr<TArray> ibV(new TArray(ibFaces.getCount()));
        
            const TArray& cV =
-             dynamic_cast<const TArray&>(fnd[cells]);
-           const TArray& pV =
-             dynamic_cast<const TArray&>(fnd[solidFaces]);
+            dynamic_cast<const TArray&>(fnd[cells]);
+	   const TArray& pV =
+	     dynamic_cast<const TArray&>(fnd[solidFaces]);
 
            ibV->zero();
 
            mICV.multiplyAndAdd(*ibV,cV);
-           mIPV.multiplyAndAdd(*ibV,pV);
+   	   mIPV.multiplyAndAdd(*ibV,pV);
 
 #if 0
-           ofstream debugFile;
-           stringstream ss(stringstream::in | stringstream::out);
-           ss <<  MPI::COMM_WORLD.Get_rank();
-           string  fname1 = "IBVelocity_proc" +  ss.str() + ".dat";
-           debugFile.open(fname1.c_str());
-
-           //debug use
-           const Array<int>& ibFaceList = mesh.getIBFaceList();
-           const StorageSite& faces = mesh.getFaces();
-        const VectorT3Array& faceCentroid = 
+        ofstream debugFile;
+	stringstream ss(stringstream::in | stringstream::out);
+        ss <<  MPI::COMM_WORLD.Get_rank();
+	string  fname1 = "IBVelocity_proc" +  ss.str() + ".dat";
+	debugFile.open(fname1.c_str());
+	
+	//debug use
+	const Array<int>& ibFaceList = mesh.getIBFaceList();
+	const StorageSite& faces = mesh.getFaces();
+	const VectorT3Array& faceCentroid = 
           dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
-        const double angV = 1.0;
-        VectorT3 center;
-        center[0]=0.;
-        center[1]=0.;
-        center[2]=0.;
+	const double angV = 1.0;
+	VectorT3 center;
+	center[0]=0.;
+	center[1]=0.;
+	center[2]=0.;	
 
-        for(int f=0; f<ibFaces.getCount();f++){
-          int fID = ibFaceList[f];
-          debugFile << "f=" <<   f << setw(10) <<  "   fID = " <<  fID << "  faceCentroid = " << faceCentroid[fID] << " ibV = " << (*ibV)[f] << endl;
-        }
-          
-        debugFile.close();
+	for(int f=0; f<ibFaces.getCount();f++){
+	  int fID = ibFaceList[f];
+	  debugFile << "f=" <<   f << setw(10) <<  "   fID = " <<  fID << "  faceCentroid = " << faceCentroid[fID] << " ibV = " << (*ibV)[f] << endl;
+	}
+	  
+	 debugFile.close();
 #endif
 
 
-        fnd.addArray(ibFaces,ibV);
-        /*        FILE * pFile; */
-        /*        pFile = fopen("ib2.dat","a");                   */
-        /*         TArray& f = dynamic_cast< TArray&>(fnd[ibFaces]); */
-        /*         for(int k=1;k< ibFaces.getCount();k++){ */
-        /*           fprintf(pFile,"%E\n",f[k]); */
-        /*         } */
+          fnd.addArray(ibFaces,ibV);
+/* 	  FILE * pFile; */
+/* 	  pFile = fopen("ib2.dat","a"); 	    	  */
+/* 	   TArray& f = dynamic_cast< TArray&>(fnd[ibFaces]); */
+/* 	   for(int k=1;k< ibFaces.getCount();k++){ */
+/* 	     fprintf(pFile,"%E\n",f[k]); */
+/* 	   } */
     
-        /*     fclose(pFile); */
-              }
-              /*     const int numFields= _quadrature.getDirCount();  */
-              /*          const StorageSite& ibFaces = mesh.getIBFaces(); */
-              /*          FILE * pFile; */
-              /*      pFile = fopen("ib3.dat","a"); */
-              /*      for (int j=0; j<numDirections; j++) */
-              /*        { */
-              /*          Field& fnd = *_dsfPtr.dsf[j]; */
-              /*          TArray& f = dynamic_cast< TArray&>(fnd[ibFaces]); */
-              /*          for(int k=1;k< ibFaces.getCount();k++){ */
-              /*            fprintf(pFile,"%E\n",f[k]); */
-              /*          } */
-              /*        } */
-              /*      fclose(pFile); */
-            }
-        }
+/*     fclose(pFile); */
+	}
+	/*     const int numFields= _quadrature.getDirCount();  */
+/* 	    const StorageSite& ibFaces = mesh.getIBFaces(); */
+/* 	    FILE * pFile; */
+/* 	pFile = fopen("ib3.dat","a"); */
+/* 	for (int j=0; j<numDirections; j++) */
+/* 	  { */
+/* 	    Field& fnd = *_dsfPtr.dsf[j]; */
+/* 	    TArray& f = dynamic_cast< TArray&>(fnd[ibFaces]); */
+/* 	    for(int k=1;k< ibFaces.getCount();k++){ */
+/* 	      fprintf(pFile,"%E\n",f[k]); */
+/* 	    } */
+/* 	  } */
+/* 	fclose(pFile); */
+	  }
+      }
     }
 
     if (method==2){
-      //Step3: Interpolate new macroparameters
-      const int numMeshes = _meshes.size(); 
+      const int numMeshes = _meshes.size();
+	const int nSolidFaces = solidFaces.getCount();
+ 
+	shared_ptr<TArray> muSolid(new TArray(nSolidFaces));
+	*muSolid =0;
+	_macroFields.viscosity.addArray(solidFaces,muSolid);
+
+	shared_ptr<TArray> nueSolid(new TArray(nSolidFaces));
+	*nueSolid =0;
+	_macroFields.collisionFrequency.addArray(solidFaces,nueSolid);
+
+	const T rho_init=_options["rho_init"]; 
+	const T T_init= _options["T_init"]; 
+	const T mu_w= _options["mu_w"];
+	const T Tmuref= _options["Tmuref"];
+	const T muref= _options["muref"];
+	const T R=8314.0/_options["molecularWeight"];
+	const T nondim_length=_options["nonDimLt"];
+
+	const T mu0=rho_init*R* T_init*nondim_length/pow(2*R* T_init,0.5);  
+	
+	TArray& density = dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
+	TArray& viscosity = dynamic_cast<TArray&>(_macroFields.viscosity[solidFaces]);
+	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
+	TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[solidFaces]);
+
+	for(int c=0; c<nSolidFaces;c++)
+	  {
+	    viscosity[c]= muref*pow(temperature[c]*T_init/ Tmuref,mu_w); // viscosity power law
+	    collisionFrequency[c]=density[c]*temperature[c]/viscosity[c]*mu0;
+	  }
+	
+	if(_options.fgamma==2){
+	  for(int c=0; c<nSolidFaces;c++)
+	    collisionFrequency[c]=_options.Prandtl*collisionFrequency[c];
+	}
+	
+ 
+
+
+   for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+
+	  const StorageSite& cells = mesh.getCells();
+	  const StorageSite& ibFaces = mesh.getIBFaces();
+        
+	  GeomFields::SSPair key1(&ibFaces,&cells);
+	  const IMatrix& mIC =
+	    dynamic_cast<const IMatrix&>
+	    (*_geomFields._interpolationMatrices[key1]);
+	      
+	  IMatrix mICV(mIC);
+	  IMatrixV3 mICV3(mIC);  
+
+	  GeomFields::SSPair key2(&ibFaces,&solidFaces);
+	  const IMatrix& mIP =
+	    dynamic_cast<const IMatrix&>
+	    (*_geomFields._interpolationMatrices[key2]);
+
+	  IMatrix mIPV(mIP);
+	  IMatrixV3 mIPV3(mIP);    
+
+	  shared_ptr<TArray> ibVtemp(new TArray(ibFaces.getCount()));
+	  shared_ptr<TArray> ibVnue(new TArray(ibFaces.getCount()));
+	  shared_ptr<TArray> ibVdensity(new TArray(ibFaces.getCount()));
+	  shared_ptr<VectorT3Array> ibVvel(new VectorT3Array(ibFaces.getCount()));
+	  
+	  const TArray& cTemp  = 
+	    dynamic_cast<TArray&>(_macroFields.temperature[cells]);
+	  const VectorT3Array& cVel = 
+	    dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
+	  const TArray& cDensity  = 
+	    dynamic_cast<TArray&>(_macroFields.density[cells]);
+	  const TArray& sDensity  = 
+	    dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
+	  const TArray& cNue  = 
+	    dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
+	  const TArray& sNue  = 
+	    dynamic_cast<TArray&>(_macroFields.collisionFrequency[solidFaces]);
+	  const TArray& sTemp  = 
+	    dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
+	  const VectorT3Array& sVel = 
+	    dynamic_cast<VectorT3Array&>(_macroFields.velocity[solidFaces]);
+	  
+	  ibVnue->zero(); 
+	  ibVtemp->zero();
+	  ibVvel->zero(); 
+	  ibVdensity->zero(); 
+
+	   //nue interpolation (cells)
+	  mICV.multiplyAndAdd(*ibVnue,cNue);
+	  mIPV.multiplyAndAdd(*ibVnue,sNue);
+	  _macroFields.collisionFrequency.addArray(ibFaces,ibVnue);
+	  //temperature interpolation (cells+solidfaces)         
+	  mICV.multiplyAndAdd(*ibVtemp,cTemp);
+	  mIPV.multiplyAndAdd(*ibVtemp,sTemp);
+	  _macroFields.temperature.addArray(ibFaces,ibVtemp);
+	  //density interpolation (cells+solidfaces)         
+	  mICV.multiplyAndAdd(*ibVdensity,cDensity);
+	  mIPV.multiplyAndAdd(*ibVdensity,sDensity);
+	  _macroFields.density.addArray(ibFaces,ibVdensity);
+	  //velocity interpolation (cells+solidfaces) 
+	  mICV3.multiplyAndAdd(*ibVvel,cVel);
+	  mIPV3.multiplyAndAdd(*ibVvel,sVel);
+	  _macroFields.velocity.addArray(ibFaces,ibVvel);
+
+
+	}
+      }
+
+   const int f_out = 1;
+   if (f_out ==1){
+     //Step 2 Find fgamma using macroparameters
+     const int numMeshes = _meshes.size();
       for (int n=0; n<numMeshes; n++)
-        {
-          const Mesh& mesh = *_meshes[n];
-          if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	{
+	  const Mesh& mesh = *_meshes[n];
+	  if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	    const int numDirections = _quadrature.getDirCount();
+	    const StorageSite& ibFaces = mesh.getIBFaces();
+	    const int nibFaces=ibFaces.getCount();
+	    const double pi=_options.pi;
+	    const TArray& ibTemp  =
+	      dynamic_cast<TArray&>(_macroFields.temperature[ibFaces]);
+	    const VectorT3Array& ibVel =
+	      dynamic_cast<VectorT3Array&>(_macroFields.velocity[ibFaces]);
+	    const TArray& ibDensity  =
+	      dynamic_cast<TArray&>(_macroFields.density[ibFaces]);
 
-            const StorageSite& cells = mesh.getCells();
-            const StorageSite& ibFaces = mesh.getIBFaces();
-            
-	    GeomFields::SSPair key1(&ibFaces,&cells);
-            const IMatrix& mIC =
-              dynamic_cast<const IMatrix&>
-              (*_geomFields._interpolationMatrices[key1]);
-              
-            IMatrix mICV(mIC);
+	    for (int j=0; j<numDirections; j++)
+	      {
+		shared_ptr<TArray> ibFndPtrEqES(new TArray(nibFaces));
+		TArray&  ibFndEqES= *ibFndPtrEqES;
+		ibFndPtrEqES->zero();	
+		Field& fndEqES = *_dsfEqPtrES.dsf[j];
 
-	    GeomFields::SSPair key2(&ibFaces,&solidFaces);
-          const IMatrix& mIP =
-            dynamic_cast<const IMatrix&>
-            (*_geomFields._interpolationMatrices[key2]);
+		for (int i=0; i<nibFaces; i++)
+		  {
+		    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+		    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+		    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+		    const T ibu = ibVel[i][0];
+		    const T ibv = ibVel[i][1];
+		    const T ibw = ibVel[i][2];
+		    ibFndEqES[i]=ibDensity[i]/pow(pi*ibTemp[i],1.5)*exp(-(pow(cx[j]-ibu,2.0)+pow(cy[j]-ibv,2.0)+pow(cz[j]-ibw,2.0))/ibTemp[i]);
+		  }
+		fndEqES.addArray(ibFaces,ibFndPtrEqES);
+	      }
+	  }
+	}
+    }
+    else if(f_out==2)
+      {
+	//Step 2 Find fgamma using interpolation (only ESBGK for now)
+	for (int n=0; n<numMeshes; n++)
+	  {
+	    const int numFields= _quadrature.getDirCount();
+	    for (int direction = 0; direction < numFields; direction++)
+	  {
+	    Field& fndEqES = *_dsfEqPtrES.dsf[direction];
+	    const Mesh& mesh = *_meshes[n];
+	    if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 
-          IMatrix mIPV(mIP); 
+	      const StorageSite& cells = mesh.getCells();
+	      const StorageSite& ibFaces = mesh.getIBFaces();
+        
+	      GeomFields::SSPair key1(&ibFaces,&cells);
+	      const IMatrix& mIC =
+		dynamic_cast<const IMatrix&>
+		(*_geomFields._interpolationMatrices[key1]);
+	      
+	      IMatrix mICV(mIC);
 
-          shared_ptr<TArray> ibVdensity(new TArray(ibFaces.getCount()));
-  
+	      GeomFields::SSPair key2(&ibFaces,&solidFaces);
+	      const IMatrix& mIP =
+		dynamic_cast<const IMatrix&>
+		(*_geomFields._interpolationMatrices[key2]);
+	      
+	      IMatrix mIPV(mIP);
 
-          const TArray& cDensity  = 
-            dynamic_cast<TArray&>(_macroFields.density[cells]);
-          const TArray& sDensity  = 
-            dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
-          
-          ibVdensity->zero(); 
+	      shared_ptr<TArray> ibVf(new TArray(ibFaces.getCount()));
+	  
+	      const TArray& cf =
+		dynamic_cast<const TArray&>(fndEqES[cells]);
+	  
+	      ibVf->zero();
+	      
+	      //distribution function interpolation (cells)
+	      mICV.multiplyAndAdd(*ibVf,cf);
+	      fndEqES.addArray(ibFaces,ibVf);
 
-          //density interpolation (cells)         
-          mICV.multiplyAndAdd(*ibVdensity,cDensity);
-          mIPV.multiplyAndAdd(*ibVdensity,sDensity);
-          _macroFields.density.addArray(ibFaces,ibVdensity);
-
-          }
-        }
-
-      //Step3: Relax Distribution function from ibfaces to solid face
-
-      const int numDirections = _quadrature.getDirCount();
-      for (int j=0; j<numDirections; j++)
-        {
-          for (int n=0; n<numMeshes; n++)
-            {
-              const Mesh& mesh = *_meshes[n];
-              const StorageSite& ibFaces = mesh.getIBFaces();
-              const StorageSite& faces = mesh.getFaces();
-              const StorageSite& cells = mesh.getCells();
-              const CRConnectivity& faceCells = mesh.getAllFaceCells();
-                  const CRConnectivity& ibFacesTosolidFaces
-                    = mesh.getConnectivity(ibFaces,solidFaces);
-                  const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
-                  const IntArray& sFCRow = ibFacesTosolidFaces.getRow();
-                  const IntArray& sFCCol = ibFacesTosolidFaces.getCol();
-                  const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[faces]);
-                  //    const int nibFaces = ibFaces.getCount();
-                  const int nFaces = faces.getCount();
-                  Field& fnd = *_dsfPtr.dsf[j];
-                  TArray& dsf = dynamic_cast< TArray&>(fnd[solidFaces]);
-                  TArray& dsfIB = dynamic_cast< TArray&>(fnd[ibFaces]);
-                  Field& fndEqES = *_dsfEqPtrES.dsf[j];
-                  TArray& dsfEqES = dynamic_cast< TArray&>(fndEqES[ibFaces]);
+	    }
+	  }
+	  }
+      }
+       //Step3: Relax Distribution function from ibfaces to solid face
+    for (int n=0; n<numMeshes; n++)
+      {
+	const int numDirections = _quadrature.getDirCount();
+	for (int j=0; j<numDirections; j++)
+	    {
+		  const Mesh& mesh = *_meshes[n];
+		  if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+		    const StorageSite& ibFaces = mesh.getIBFaces();
+		    const StorageSite& faces = mesh.getFaces();
+		    const StorageSite& cells = mesh.getCells();
+		    const CRConnectivity& faceCells = mesh.getAllFaceCells();
+		    const CRConnectivity& ibFacesTosolidFaces
+		      = mesh.getConnectivity(ibFaces,solidFaces);
+		    const IntArray& ibFaceIndices = mesh.getIBFaceList();
+		    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+		    const IntArray& sFCRow = ibFacesTosolidFaces.getRow();
+		    const IntArray& sFCCol = ibFacesTosolidFaces.getCol();
+		    const int nibFaces = ibFaces.getCount();
+		    const int nFaces = faces.getCount();
+		    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+		    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+		    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+		    Field& fnd = *_dsfPtr.dsf[j];
+		    TArray& dsf = dynamic_cast< TArray&>(fnd[solidFaces]);
+		    TArray& dsfIB = dynamic_cast< TArray&>(fnd[ibFaces]);
+		    Field& fndEqES = *_dsfEqPtrES.dsf[j];
+		    TArray& dsfEqES = dynamic_cast< TArray&>(fndEqES[ibFaces]);
       
-		  GeomFields::SSPair key1(&solidFaces,&cells);
-                  const IMatrix& mIC =
-                    dynamic_cast<const IMatrix&>
-                    (*_geomFields._interpolationMatrices[key1]);
+		    GeomFields::SSPair key1(&solidFaces,&cells);
+		    const IMatrix& mIC =
+		      dynamic_cast<const IMatrix&>
+		      (*_geomFields._interpolationMatrices[key1]);
 
-                  const Array<T>& iCoeffs = mIC.getCoeff();
+		    const Array<T>& iCoeffs = mIC.getCoeff();
 
+		    for(int f=0; f<nibFaces; f++)
+		      {
+			dsfIB[f]=0.0;				  
+			double distIBSolidInvSum(0.0);
+			for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+			  {
+			    const int c = sFCCol[nc];
+			    const int faceIB= ibFaceIndices[f];
+			    const VectorT3Array& solidFaceCentroid =
+			      dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
+			    const VectorT3Array& faceCentroid =
+			      dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+			      
+			      double distIBSolid (0.0);
+			      // based on distance - will be thought
+			      distIBSolid = sqrt(pow((faceCentroid[faceIB][0]-solidFaceCentroid[c][0]),2)+
+						 pow((faceCentroid[faceIB][1]-solidFaceCentroid[c][1]),2)+
+						 pow((faceCentroid[faceIB][2]-solidFaceCentroid[c][2]),2));
+			      distIBSolidInvSum += 1/pow(distIBSolid,RelaxDistribution);
+			    }
+			for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+			  {
+			    const int c = sFCCol[nc];
+			    const VectorT3Array& solidFaceCentroid =
+				dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
+			      const VectorT3Array& faceCentroid =
+				dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+			      const TArray& nue  =
+				dynamic_cast<TArray&>(_macroFields.collisionFrequency[ibFaces]);
+			      const TArray& nueC  =
+				dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
+			      const int faceIB= ibFaceIndices[f];
+			      // const T coeff = iCoeffs[nc];
+			      double time_to_wall (0.0);
+			      double distIBSolid (0.0);
+			      // based on distance - will be thought
+			      distIBSolid = sqrt(pow((faceCentroid[faceIB][0]-solidFaceCentroid[c][0]),2)+
+						 pow((faceCentroid[faceIB][1]-solidFaceCentroid[c][1]),2)+
+						 pow((faceCentroid[faceIB][2]-solidFaceCentroid[c][2]),2));
+			      time_to_wall = -1*(pow(distIBSolid,2)/(cx[j]*(faceCentroid[faceIB][0]-solidFaceCentroid[c][0])+(cy[j]+0.004814)*(faceCentroid[faceIB][1]-solidFaceCentroid[c][1])+cz[j]*(faceCentroid[faceIB][2]-solidFaceCentroid[c][2])));
+			      if(time_to_wall<0)
+				time_to_wall = 0;
+			     /*  if(ibFace==50) */
+/* 				cout << nue[ibFace]*time_to_wall << endl; */
+			      
+			      dsfIB[f] += (dsfEqES[f]-(dsfEqES[f]-dsf[c])*exp(-time_to_wall*nue[f]))/(pow(distIBSolid,RelaxDistribution)*distIBSolidInvSum);
+			      // cout << "dsf at 50"<<dsfEqES[50] << endl; 
+			  }
 
-                  for(int f=0; f<nFaces; f++)
-                    {
-                      const int c0 = faceCells(f,0);
-                      const int c1 = faceCells(f,1);
+		      }
+		  }
+	    }
+      }
 
-                      if (((ibType[c0] == Mesh::IBTYPE_FLUID) && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
-                          ((ibType[c1] == Mesh::IBTYPE_FLUID) && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
-                        {
-                          //  for(int f=0; f<nibFaces; f++)
-                          //    {
-                          //             StressTensor<T> stress = NumTypeTraits<StressTensor<T> >::getZero();
-
-                          const int ibFace = ibFaceIndex[f];
-                          if (ibFace < 0)
-                            throw CException("invalid ib face index");
-                          
-                          double distIBSolidInvSum(0.0);
-                          for(int nc = sFCRow[ibFace]; nc<sFCRow[ibFace+1]; nc++)
-                            {
-                              const int c = sFCCol[nc];
-                              const VectorT3Array& solidFaceCentroid =
-                                dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
-                              const VectorT3Array& faceCentroid =
-                                dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
-                              
-                              double distIBSolid (0.0);
-                              // based on distance - will be thought
-                              distIBSolid = sqrt(pow((faceCentroid[f][0]-solidFaceCentroid[c][0]),2)+
-                                                 pow((faceCentroid[f][1]-solidFaceCentroid[c][1]),2)+
-                                                 pow((faceCentroid[f][2]-solidFaceCentroid[c][2]),2));
-                              distIBSolidInvSum += 1/distIBSolid;
-                            }
-
-                          for(int nc = sFCRow[ibFace]; nc<sFCRow[ibFace+1]; nc++)
-                            {
-                              const int c = sFCCol[nc];
-                              const VectorT3Array& solidFaceCentroid =
-                                dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
-                              const VectorT3Array& faceCentroid =
-                                dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
-                              const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-                              const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-                              const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-                              const TArray& nue  =
-                                dynamic_cast<TArray&>(_macroFields.collisionFrequency[ibFaces]);
-                              const T coeff = iCoeffs[nc];
-                              double time_to_wall (0.0);
-                              double distIBSolid (0.0);
-                              // based on distance - will be thought
-                              distIBSolid = sqrt(pow((faceCentroid[f][0]-solidFaceCentroid[c][0]),2)+
-                                                 pow((faceCentroid[f][1]-solidFaceCentroid[c][1]),2)+
-                                                 pow((faceCentroid[f][2]-solidFaceCentroid[c][2]),2));
-                              time_to_wall = abs(pow(distIBSolid,2)/(cx[j]*(faceCentroid[f][0]-solidFaceCentroid[c][0])+(cy[j]+0.004814)*(faceCentroid[f][1]-
-                                                                                                                                          solidFaceCentroid[c
-																			    ][1])+cz[j]*(faceCentroid[f][2]-solidFaceCentroid[c][2])));
-                              /*  if(ibFace==50) */
-                              /*                              cout << nue[ibFace]*time_to_wall << endl; */
-                              
-                              dsfIB[ibFace] += (dsfEqES[ibFace]-(dsfEqES[ibFace]-dsf[c])*exp(-time_to_wall*nue[ibFace]/10))/(distIBSolid*distIBSolidInvSum);
-                              //      /pow(distIBSolid,2);
-                              ///distIBSolid;
-
-                            }
-
-                        }
-                    }
-            }
-        }
-
-      /*        FILE * pFile; */
-      /*        pFile = fopen("ib2.dat","a"); */
-      /*        for (int j=0; j<numDirections; j++) */
-      /*          { */
-      /*            Field& fnd = *_dsfPtr.dsf[j]; */
-      /*            TArray& f = dynamic_cast< TArray&>(fnd[ibFaces]); */
-      /*            for(int k=1;k< ibFaces.getCount();k++){ */
-      /*              fprintf(pFile,"%E\n",f[k]); */
-      /*            } */
-      /*          } */
-      /*            fclose(pFile); */
+/* 	  FILE * pFile; */
+/* 	  pFile = fopen("ib2.dat","a"); */
+/* 	  for (int j=0; j<numDirections; j++) */
+/* 	    { */
+/* 	      Field& fnd = *_dsfPtr.dsf[j]; */
+/* 	      TArray& f = dynamic_cast< TArray&>(fnd[ibFaces]); */
+/* 	      for(int k=1;k< ibFaces.getCount();k++){ */
+/* 		fprintf(pFile,"%E\n",f[k]); */
+/* 	      } */
+/* 	    } */
+/* 	      fclose(pFile); */
     }
   }
-
   void computeSolidFacePressure(const StorageSite& solidFaces)
   {
     typedef CRMatrixTranspose<T,T,T> IMatrix;
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
-        const Mesh& mesh = *_meshes[n];
-        if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	const Mesh& mesh = *_meshes[n];
+	if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 
-          const StorageSite& cells = mesh.getCells();
+	  const StorageSite& cells = mesh.getCells();
   
 	  GeomFields::SSPair key1(&solidFaces,&cells);
-          const IMatrix& mIC =
-            dynamic_cast<const IMatrix&>
-            (*_geomFields._interpolationMatrices[key1]);
-          
-          IMatrix mICV(mIC);
+	  const IMatrix& mIC =
+	    dynamic_cast<const IMatrix&>
+	    (*_geomFields._interpolationMatrices[key1]);
+	  
+	  IMatrix mICV(mIC);
   
 
-          shared_ptr<TArray> ibP(new TArray(solidFaces.getCount()));
-          
-          const TArray& cP  = 
-            dynamic_cast<TArray&>(_macroFields.pressure[cells]);
+	  shared_ptr<TArray> ibP(new TArray(solidFaces.getCount()));
+	  
+	  const TArray& cP  = 
+	    dynamic_cast<TArray&>(_macroFields.pressure[cells]);
 
-          ibP->zero(); 
-
-
-          //nue interpolation (cells)
-          mICV.multiplyAndAdd(*ibP,cP);
-          _macroFields.pressure.addArray(solidFaces,ibP);
+	  ibP->zero(); 
 
 
-        }
+	   //nue interpolation (cells)
+           mICV.multiplyAndAdd(*ibP,cP);
+           _macroFields.pressure.addArray(solidFaces,ibP);
+
+
+	}
       }
   }
-
-  void computeSolidFaceDsf(const StorageSite& solidFaces,const int method)
+  void computeSolidFaceDsf(const StorageSite& solidFaces,const int method,const int RelaxDistribution=0)
   {
     typedef CRMatrixTranspose<T,T,T> IMatrix;
     typedef CRMatrixTranspose<T,VectorT3,VectorT3> IMatrixV3;
@@ -3411,753 +3551,1343 @@ map<string,shared_ptr<ArrayBase> >&
     if (method==1){
       const int numMeshes = _meshes.size();
       for (int n=0; n<numMeshes; n++)
-        {
+	{
 
-          for (int direction = 0; direction < numFields; direction++) {
-            Field& fnd = *_dsfPtr.dsf[direction]; 
+	  for (int direction = 0; direction < numFields; direction++) {
+	    Field& fnd = *_dsfPtr.dsf[direction]; 
 
-            const Mesh& mesh = *_meshes[n];
-            if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
-            
-              const StorageSite& cells = mesh.getCells();
-              
-            
+	    const Mesh& mesh = *_meshes[n];
+	    if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	    
+	      const StorageSite& cells = mesh.getCells();
+	      
+	    
 	      GeomFields::SSPair key1(&solidFaces,&cells);
-            const IMatrix& mIC =
-              dynamic_cast<const IMatrix&>
-              (*_geomFields._interpolationMatrices[key1]);
+	      const IMatrix& mIC =
+		dynamic_cast<const IMatrix&>
+		(*_geomFields._interpolationMatrices[key1]);
+	      
+	      IMatrix mICV(mIC);
+	      shared_ptr<TArray> ibV(new TArray(solidFaces.getCount()));
+ 	   
+	      const TArray& cV =
+		dynamic_cast<const TArray&>(fnd[cells]);
 
-            IMatrix mICV(mIC);
-            shared_ptr<TArray> ibV(new TArray(solidFaces.getCount()));
-           
-              const TArray& cV =
-                dynamic_cast<const TArray&>(fnd[cells]);
+	      ibV->zero();        
+	     
+	      mICV.multiplyAndAdd(*ibV,cV);
 
-              ibV->zero();        
-             
-              mICV.multiplyAndAdd(*ibV,cV);
 
 /* #if 0 */
 /*         ofstream debugFile; */
-/*      stringstream ss(stringstream::in | stringstream::out); */
+/* 	stringstream ss(stringstream::in | stringstream::out); */
 /*         ss <<  MPI::COMM_WORLD.Get_rank(); */
-/*      string  fname1 = "IBVelocity_proc" +  ss.str() + ".dat"; */
-/*      debugFile.open(fname1.c_str()); */
-
-/*      //debug use */
-/*      const Array<int>& ibFaceList = mesh.getIBFaceList(); */
-/*      const StorageSite& faces = mesh.getFaces(); */
-/*      const VectorT3Array& faceCentroid =  */
+/* 	string  fname1 = "IBVelocity_proc" +  ss.str() + ".dat"; */
+/* 	debugFile.open(fname1.c_str()); */
+	
+/* 	//debug use */
+/* 	const Array<int>& ibFaceList = mesh.getIBFaceList(); */
+/* 	const StorageSite& faces = mesh.getFaces(); */
+/* 	const VectorT3Array& faceCentroid =  */
 /*           dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]); */
-/*      const double angV = 1.0; */
-/*      VectorT3 center; */
-/*      center[0]=0.; */
-/*      center[1]=0.; */
-/*      center[2]=0.;    */
+/* 	const double angV = 1.0; */
+/* 	VectorT3 center; */
+/* 	center[0]=0.; */
+/* 	center[1]=0.; */
+/* 	center[2]=0.;	 */
 
-/*      for(int f=0; f<ibFaces.getCount();f++){ */
-/*        int fID = ibFaceList[f]; */
-/*        debugFile << "f=" <<   f << setw(10) <<  "   fID = " <<  fID << "  faceCentroid = " << faceCentroid[fID] << " ibV = " << (*ibV)[f] << endl; */
-/*      } */
-          
-/*       debugFile.close(); */
+/* 	for(int f=0; f<ibFaces.getCount();f++){ */
+/* 	  int fID = ibFaceList[f]; */
+/* 	  debugFile << "f=" <<   f << setw(10) <<  "   fID = " <<  fID << "  faceCentroid = " << faceCentroid[fID] << " ibV = " << (*ibV)[f] << endl; */
+/* 	} */
+	  
+/* 	 debugFile.close(); */
 /* #endif */
-              fnd.addArray(solidFaces,ibV);
-            }
-          }
+	      fnd.addArray(solidFaces,ibV);
+	  }
+	}
 /* #ifdef FVM_PARALLEL */
-/*              shared_ptr<TArray> ibVT(new TArray(solidFaces.getCount())); */
-/*      ibVT->zero();   */
-/*      TArray&  ibVTA= *ibVT; */
-/*      for(int k=1;k<16 ;k++){ */
-/*        if ( MPI::COMM_WORLD.Get_rank() == k ){ */
-/*          for(int f=0; f<solidFaces.getCount(); f++) */
-/*            { */
-/*              ibVTA[f]=ibVTA[f]+ibVA[f]; */
-/*            } */
-/*        } */
-/*      } */
-//MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &ibVA, solidFaces.getCount(), MPI::DOUBLE, MPI::SUM);
+/*       	shared_ptr<TArray> ibVT(new TArray(solidFaces.getCount())); */
+/* 	ibVT->zero();   */
+/* 	TArray&  ibVTA= *ibVT; */
+/* 	for(int k=1;k<16 ;k++){ */
+/* 	  if ( MPI::COMM_WORLD.Get_rank() == k ){ */
+/* 	    for(int f=0; f<solidFaces.getCount(); f++) */
+/* 	      { */
+/* 		ibVTA[f]=ibVTA[f]+ibVA[f]; */
+/* 	      } */
+/* 	  } */
+/* 	} */
+	    //	MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &ibVA, solidFaces.getCount(), MPI::DOUBLE, MPI::SUM);
 /* #endif */
-          // fnd.addArray(solidFaces,ibV);
-        }
+	// fnd.addArray(solidFaces,ibV);
+      }
 /*       //#ifdef FVM_PARALLEL */
 /*       //      MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &ibV, 1, MPI::DOUBLE, MPI::SUM); */
-/*       //#endif                */
-      
-/*      //   fnd.addArray(solidFaces,ibV); */
-/*   if ( MPI::COMM_WORLD.Get_rank() == 0 ){ */
-/*      int direction=1; */
-/*      FILE * pFile; */
-/*      pFile = fopen("sf2_proc0.dat","w"); */
+/*       //#endif		 */
+
+/* 	//   fnd.addArray(solidFaces,ibV); */
+    /*   if ( MPI::COMM_WORLD.Get_rank() == 0 ){ */
+/* 	int direction=1; */
+/* 	FILE * pFile; */
+/* 	pFile = fopen("sf2_proc0.dat","w"); */
    
-/*      Field& fnd = *_dsfPtr.dsf[direction]; */
-/*      TArray& f = dynamic_cast< TArray&>(fnd[solidFaces]); */
-/*      for(int k=1;k< solidFaces.getCount();k++){ */
-/*        fprintf(pFile,"%E\n",f[k]); */
-/*      } */
-/*      fclose(pFile); */
+/* 	Field& fnd = *_dsfPtr.dsf[direction]; */
+/* 	TArray& f = dynamic_cast< TArray&>(fnd[solidFaces]); */
+/* 	for(int k=1;k< solidFaces.getCount();k++){ */
+/* 	  fprintf(pFile,"%E\n",f[k]); */
+/* 	} */
+/* 	fclose(pFile); */
 /*       } */
 
     
      
 /*       if ( MPI::COMM_WORLD.Get_rank() == 1 ){ */
-/*      int direction=1; */
-/*      FILE * pFile; */
-/*      pFile = fopen("sf2_proc1.dat","w"); */
-
-/*      Field& fnd = *_dsfPtr.dsf[direction]; */
-/*      TArray& f = dynamic_cast< TArray&>(fnd[solidFaces]); */
-/*      for(int k=1;k< solidFaces.getCount();k++){ */
-/*        fprintf(pFile,"%E\n",f[k]); */
-/*      } */
-/*      fclose(pFile); */
+/* 	int direction=1; */
+/* 	FILE * pFile; */
+/* 	pFile = fopen("sf2_proc1.dat","w"); */
+	
+/* 	Field& fnd = *_dsfPtr.dsf[direction]; */
+/* 	TArray& f = dynamic_cast< TArray&>(fnd[solidFaces]); */
+/* 	for(int k=1;k< solidFaces.getCount();k++){ */
+/* 	  fprintf(pFile,"%E\n",f[k]); */
+/* 	} */
+/* 	fclose(pFile); */
 /*       } */
-
-      for (int n=0; n<numMeshes; n++)
-	{
-          const Mesh& mesh = *_meshes[n];
-          if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
-
-            const StorageSite& cells = mesh.getCells();
-            const StorageSite& ibFaces = mesh.getIBFaces();
-        
-	    GeomFields::SSPair key1(&ibFaces,&cells);
-          const IMatrix& mIC =
-            dynamic_cast<const IMatrix&>
-            (*_geomFields._interpolationMatrices[key1]);
-              
-          IMatrix mICV(mIC);
-          IMatrixV3 mICV3(mIC);  
-
-          GeomFields::SSPair key2(&ibFaces,&solidFaces);
-          const IMatrix& mIP =
-            dynamic_cast<const IMatrix&>
-            (*_geomFields._interpolationMatrices[key2]);
-
-          IMatrix mIPV(mIP);
-          IMatrixV3 mIPV3(mIP);    
-
-          shared_ptr<TArray> ibVtemp(new TArray(ibFaces.getCount()));
-          shared_ptr<TArray> ibVnue(new TArray(ibFaces.getCount()));
-          shared_ptr<TArray> ibVdensity(new TArray(ibFaces.getCount()));
-          shared_ptr<VectorT3Array> ibVvel(new VectorT3Array(ibFaces.getCount()));
-          
-          const TArray& cTemp  = 
-            dynamic_cast<TArray&>(_macroFields.temperature[cells]);
-          const VectorT3Array& cVel = 
-            dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
-          const TArray& cDensity  = 
-            dynamic_cast<TArray&>(_macroFields.density[cells]);
-          const TArray& sDensity  = 
-            dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
-          const TArray& cNue  = 
-            dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
-          const TArray& sTemp  = 
-            dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
-          const VectorT3Array& sVel = 
-            dynamic_cast<VectorT3Array&>(_macroFields.velocity[solidFaces]);
-          
-          ibVnue->zero(); 
-          ibVtemp->zero();
-          ibVvel->zero(); 
-          ibVdensity->zero(); 
-
-          //nue interpolation (cells)
-          mICV.multiplyAndAdd(*ibVnue,cNue);
-          _macroFields.collisionFrequency.addArray(ibFaces,ibVnue);
-          //temperature interpolation (cells+solidfaces)         
-          mICV.multiplyAndAdd(*ibVtemp,cTemp);
-          mIPV.multiplyAndAdd(*ibVtemp,sTemp);
-          _macroFields.temperature.addArray(ibFaces,ibVtemp);
-          //density interpolation (cells+solidfaces)         
-          mICV.multiplyAndAdd(*ibVdensity,cDensity);
-          mIPV.multiplyAndAdd(*ibVdensity,sDensity);
-          _macroFields.density.addArray(ibFaces,ibVdensity);
-          //velocity interpolation (cells+solidfaces) 
-          mICV3.multiplyAndAdd(*ibVvel,cVel);
-          mIPV3.multiplyAndAdd(*ibVvel,sVel);
-          _macroFields.velocity.addArray(ibFaces,ibVvel);
-
-
-          }
-	}
-
-      const int f_out = 2;
-      if (f_out ==1){
-        //Step 2 Find fgamma using macroparameters
-        const int numMeshes = _meshes.size();
-        for (int n=0; n<numMeshes; n++)
-          {
-            const Mesh& mesh = *_meshes[n];
-            if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
-              const int numDirections = _quadrature.getDirCount();
-              const StorageSite& ibFaces = mesh.getIBFaces();
-              const int nibFaces=ibFaces.getCount();
-              const double pi=_options.pi;
-            const TArray& ibTemp  =
-              dynamic_cast<TArray&>(_macroFields.temperature[ibFaces]);
-            const VectorT3Array& ibVel =
-              dynamic_cast<VectorT3Array&>(_macroFields.velocity[ibFaces]);
-            const TArray& ibDensity  =
-              dynamic_cast<TArray&>(_macroFields.density[ibFaces]);
-            shared_ptr<TArray> ibFndPtrEqES(new TArray(nibFaces));
-            TArray&  ibFndEqES= *ibFndPtrEqES;
-            ibFndPtrEqES->zero();
-
-            for (int j=0; j<numDirections; j++)
-              {
-
-                Field& fndEqES = *_dsfEqPtrES.dsf[j];
-
-                for (int i=0; i<nibFaces; i++)
-                  {
-                    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-                    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-                    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-                    const T ibu = ibVel[i][0];
-                    const T ibv = ibVel[i][1];
-                    const T ibw = ibVel[i][2];
-                    ibFndEqES[i]=ibDensity[i]/pow(pi*ibTemp[i],1.5)*exp(-(pow(cx[j]-ibu,2.0)+pow(cy[j]-ibv,2.0)+pow(cz[j]-ibw,2.0))/ibTemp[i]);
-                  }
-                fndEqES.addArray(ibFaces,ibFndPtrEqES);
-              }
-            }
-          }
-      }
-      else if(f_out==2)
-        {
-          //Step 2 Find fgamma using interpolation (only ESBGK for now)
-          for (int n=0; n<numMeshes; n++)
-            {
-              const int numFields= _quadrature.getDirCount();
-              for (int direction = 0; direction < numFields; direction++)
-                {
-                  Field& fndEqES = *_dsfEqPtrES.dsf[direction];
-                  const Mesh& mesh = *_meshes[n];
-                  if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
-
-                    const StorageSite& cells = mesh.getCells();
-                    const StorageSite& ibFaces = mesh.getIBFaces();
-        
-		    GeomFields::SSPair key1(&ibFaces,&cells);
-              const IMatrix& mIC =
-                dynamic_cast<const IMatrix&>
-                (*_geomFields._interpolationMatrices[key1]);
-              
-              IMatrix mICV(mIC);
-
-	      GeomFields::SSPair key2(&ibFaces,&solidFaces);
-              const IMatrix& mIP =
-                dynamic_cast<const IMatrix&>
-                (*_geomFields._interpolationMatrices[key2]);
-              
-              IMatrix mIPV(mIP);
-
-              shared_ptr<TArray> ibVf(new TArray(ibFaces.getCount()));
-          
-              const TArray& cf =
-                dynamic_cast<const TArray&>(fndEqES[cells]);
-          
-              ibVf->zero();
-              
-              //distribution function interpolation (cells)
-              mICV.multiplyAndAdd(*ibVf,cf);
-              fndEqES.addArray(ibFaces,ibVf);
-
-                  }
-                }
-            }
-        }
-      for (int n=0; n<numMeshes; n++)
-        {
-          const int numFields= _quadrature.getDirCount();
-          for (int direction = 0; direction < numFields; direction++)
-            {
-              Field& fnd = *_dsfPtr.dsf[direction];
-              const Mesh& mesh = *_meshes[n];
-              const StorageSite& ibFaces = mesh.getIBFaces();
-              if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
-                shared_ptr<TArray> ibVf(new TArray(ibFaces.getCount()));
-                ibVf->zero(); 
-                fnd.addArray(ibFaces,ibVf);
-              }
-            }
-        }
     }
     if (method==2){
 
-      //Step 1 Interpolate Macroparameters and f to IBface
+   // Step0: Compute Interpolation Matrices from (only) Cells to IBFaces
       const int numMeshes = _meshes.size();
       for (int n=0; n<numMeshes; n++)
-        {
-          const Mesh& mesh = *_meshes[n];
-          if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+      {
+	const Mesh& mesh = *_meshes[n];
+	
+	if (mesh.isShell() || mesh.getIBFaces().getCount()==0)
+	  return;
+  	
+	typedef CRMatrixTranspose<T,T,T> IMatrix;
+	typedef map<int,double> IntDoubleMap;
+  
+	const StorageSite& ibFaces = mesh.getIBFaces();
+	const StorageSite& cells = mesh.getCells();
+	const StorageSite& faces = mesh.getFaces();
+	const CRConnectivity& ibFaceToCells = mesh.getConnectivity(ibFaces,cells);
+	// const CRConnectivity& ibFaceToParticles
+	//   = mesh.getConnectivity(ibFaces,mpmParticles);
 
-            const StorageSite& cells = mesh.getCells();
-            const StorageSite& ibFaces = mesh.getIBFaces();
-        
-	    GeomFields::SSPair key1(&ibFaces,&cells);
-          const IMatrix& mIC =
-            dynamic_cast<const IMatrix&>
-            (*_geomFields._interpolationMatrices[key1]);
-              
-          IMatrix mICV(mIC);
-          IMatrixV3 mICV3(mIC);  
+	const VectorT3Array& xFaces =
+	  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
 
-          GeomFields::SSPair key2(&ibFaces,&solidFaces);
-          const IMatrix& mIP =
-            dynamic_cast<const IMatrix&>
-            (*_geomFields._interpolationMatrices[key2]);
+	const VectorT3Array& xCells =
+	  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
 
-          IMatrix mIPV(mIP);
-          IMatrixV3 mIPV3(mIP);    
+	const Array<int>& ibFCRow = ibFaceToCells.getRow();
+	const Array<int>& ibFCCol = ibFaceToCells.getCol();
+  
+	const int nIBFaces = ibFaces.getCount();
 
-          shared_ptr<TArray> ibVtemp(new TArray(ibFaces.getCount()));
-          shared_ptr<TArray> ibVnue(new TArray(ibFaces.getCount()));
-          shared_ptr<TArray> ibVdensity(new TArray(ibFaces.getCount()));
-          shared_ptr<VectorT3Array> ibVvel(new VectorT3Array(ibFaces.getCount()));
-          
-          const TArray& cTemp  = 
-            dynamic_cast<TArray&>(_macroFields.temperature[cells]);
-          const VectorT3Array& cVel = 
-            dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
-          const TArray& cDensity  = 
-            dynamic_cast<TArray&>(_macroFields.density[cells]);
-          const TArray& sDensity  = 
-            dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
-          const TArray& cNue  = 
-            dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
-          const TArray& sTemp  = 
-            dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
-          const VectorT3Array& sVel = 
-            dynamic_cast<VectorT3Array&>(_macroFields.velocity[solidFaces]);
-          
-          ibVnue->zero(); 
-          ibVtemp->zero();
-          ibVvel->zero(); 
-          ibVdensity->zero(); 
+	const Array<int>& ibFaceIndices = mesh.getIBFaceList();
+  
+	shared_ptr<IMatrix> cellToIB(new IMatrix(ibFaceToCells));
 
-          //nue interpolation (cells)
-          mICV.multiplyAndAdd(*ibVnue,cNue);
-          _macroFields.collisionFrequency.addArray(ibFaces,ibVnue);
-          //temperature interpolation (cells+solidfaces)         
-          mICV.multiplyAndAdd(*ibVtemp,cTemp);
-          mIPV.multiplyAndAdd(*ibVtemp,sTemp);
-          _macroFields.temperature.addArray(ibFaces,ibVtemp);
-          //density interpolation (cells+solidfaces)         
-          mICV.multiplyAndAdd(*ibVdensity,cDensity);
-          mIPV.multiplyAndAdd(*ibVdensity,sDensity);
-          _macroFields.density.addArray(ibFaces,ibVdensity);
-          //velocity interpolation (cells+solidfaces) 
-          mICV3.multiplyAndAdd(*ibVvel,cVel);
-          mIPV3.multiplyAndAdd(*ibVvel,sVel);
-          _macroFields.velocity.addArray(ibFaces,ibVvel);
+	Array<T>& cellToIBCoeff = cellToIB->getCoeff();
 
+	const bool is2D = mesh.getDimension() == 2;
+	const bool is3D = mesh.getDimension() == 3;
+  
+	/***********************************************************************/
+	// default is to use linear least square interpolation
+	// if the matrix determinant is too small
+	// then switch to distance weighted interpolation
+	/***********************************************************************/
+	
+	/**********linear least square interpolation*********/
+	// X=x-xf  Y=y-yf  Z=Z-zf
+	//matrix M=[1 X1 Y1 Z1]
+	//         [1 X2 Y2 Z2]
+	//         ...........
+	//         [1 Xn Yn Zn]
+	//coefficient matrix A=[a, b, c, d]T
+	//velocity element v = M * A
+	//linear relation v = a + b*X + c*Y + d*Z
+	//to make least square
+	//matrix A = (M(T)*M)^(-1)*M(T)*v
+	//so, velocity at face is vface = a + b*Xf + c*Yf + d*Zf = a
+	//which is the first row of matrix A
+	//so, the weight function should be the first row of  (M(T)*M)^(-1)*M(T)
+	//note Q = M(T)*M  and Qinv = Q^(-1)
+	//the following code is to calculate it
+	//insteading of doing full matrix operation, only nessesary operation on entries are performed
+	//when dealing with coodinates with small numbers, like in micrometers
+	//scaling the coodinates does not change the coefficients but improve the matrix quality
 
-          }
-        }
-      cout<< "cem01";
-      for (int n=0; n<numMeshes; n++)
-        {
-          const int numFields= _quadrature.getDirCount();
-          for (int direction = 0; direction < numFields; direction++)
-            {
-              Field& fnd = *_dsfPtr.dsf[direction];
-              const Mesh& mesh = *_meshes[n];
-              if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	// FILE * fp = fopen("/home/lin/work/app-memosa/src/fvm/verification/Structure_Electrostatics_Interaction/2D_beam/test/coeff.dat", "w");
 
-                const StorageSite& cells = mesh.getCells();
-                const StorageSite& ibFaces = mesh.getIBFaces();
-        
-		GeomFields::SSPair key1(&ibFaces,&cells);
-              const IMatrix& mIC =
-                dynamic_cast<const IMatrix&>
-                (*_geomFields._interpolationMatrices[key1]);
-              
-              IMatrix mICV(mIC);
+#if 1
 
-              GeomFields::SSPair key2(&ibFaces,&solidFaces);
-              const IMatrix& mIP =
-                dynamic_cast<const IMatrix&>
-                (*_geomFields._interpolationMatrices[key2]);
-              
-              IMatrix mIPV(mIP);
+#if  0
+	ofstream   debugFileFluid;
+	ofstream   debugFileSolid;
+	stringstream ss(stringstream::in | stringstream::out);
+	ss <<  MPI::COMM_WORLD.Get_rank();
+	string  fname1 = "IBinterpolationFluid_proc" +  ss.str() + ".dat";
+	string  fname2 = "IBinterpolationSolid_proc" +  ss.str() + ".dat";
+	debugFileFluid.open( fname1.c_str() );
+	debugFileSolid.open( fname2.c_str() );
+	ss.str("");
+	const Array<int>&  localToGlobal = mesh.getLocalToGlobal();
+	const CRConnectivity& faceCells  = mesh.getAllFaceCells();
+#endif
 
-              shared_ptr<TArray> ibVf(new TArray(ibFaces.getCount()));
-          
-              const TArray& cf =
-                dynamic_cast<const TArray&>(fnd[cells]);
-          
-              ibVf->zero();
+	for(int n=0; n<nIBFaces; n++)
+	  {
+	    const int f = ibFaceIndices[n];
+	    T wt(0);
+	    T wtSum(0);
+	    T det(0);
+	    int nnb(0);
+	    T scale(1.0e6);
+                 
+	    SquareMatrix<T,4>  Q(NumTypeTraits<T>::getZero());
+	    SquareMatrix<T,4>  Qinv(NumTypeTraits<T>::getZero());
+	    SquareMatrix<T,3>  QQ(NumTypeTraits<T>::getZero());
+	    SquareMatrix<T,3>  QQinv(NumTypeTraits<T>::getZero());
+      
+	    for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++){	
+	      const int c = ibFCCol[nc];
+	      VectorT3 dr((xCells[c]-xFaces[f])*scale);
+	      //if (f ==200){
+	      //    cout << f <<"      " << c <<endl;
+	      //    cout << xCells[c] << endl;
+	      //    cout << xFaces[f] << endl;
+	      //  }
+	      Q(0,0) += 1.0;
+	      Q(0,1) += dr[0];
+	      Q(0,2) += dr[1];
+	      Q(0,3) += dr[2];
+	      Q(1,1) += dr[0]*dr[0];
+	      Q(1,2) += dr[0]*dr[1];
+	      Q(1,3) += dr[0]*dr[2];
+	      Q(2,2) += dr[1]*dr[1];
+	      Q(2,3) += dr[1]*dr[2];
+	      Q(3,3) += dr[2]*dr[2];      
+	      nnb++;
+	    }
 
-              //distribution function interpolation (cells)
-              mICV.multiplyAndAdd(*ibVf,cf);
-              fnd.addArray(ibFaces,ibVf);
+/*  for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++) */
+/*       { */
+/* 	const int p = ibFPCol[np]; */
+/* 	VectorT3 dr((xParticles[p]-xFaces[f])*scale); */
+/*   	Q(0,0) += 1.0; */
+/* 	Q(0,1) += dr[0]; */
+/* 	Q(0,2) += dr[1]; */
+/* 	Q(0,3) += dr[2]; */
+/* 	Q(1,1) += dr[0]*dr[0]; */
+/* 	Q(1,2) += dr[0]*dr[1]; */
+/* 	Q(1,3) += dr[0]*dr[2]; */
+/* 	Q(2,2) += dr[1]*dr[1]; */
+/* 	Q(2,3) += dr[1]*dr[2]; */
+/* 	Q(3,3) += dr[2]*dr[2];       */
+/* 	nnb++; */
+/*       } */
+      
+	    //if (nnb < 4)
+	    //throw CException("not enough cell or particle neighbors for ib face to interpolate!");
 
-              }
-            }
-        }
-      cout<< "cem02";
-      const int f_out = 1;
-      if (f_out ==1){
-        //Step 2 Find fgamma using macroparameters
-        const int numMeshes = _meshes.size();
-        for (int n=0; n<numMeshes; n++)
-          {
-            const Mesh& mesh = *_meshes[n];
-            if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
-              const int numDirections = _quadrature.getDirCount();
-              const StorageSite& ibFaces = mesh.getIBFaces();
-              const int nibFaces=ibFaces.getCount();
-              const double pi=_options.pi;
-            const TArray& ibTemp  =
-              dynamic_cast<TArray&>(_macroFields.temperature[ibFaces]);
-            const VectorT3Array& ibVel =
-              dynamic_cast<VectorT3Array&>(_macroFields.velocity[ibFaces]);
-            const TArray& ibDensity  =
-              dynamic_cast<TArray&>(_macroFields.density[ibFaces]);
+      //symetric matrix
+      for(int i=0; i<4; i++){
+	for(int j=0; j<i; j++){
+	  Q(i,j) = Q(j,i);
+	}
+      }    
 
-            for (int j=0; j<numDirections; j++)
-              {
-                shared_ptr<TArray> ibFndPtrEqES(new TArray(nibFaces));
-                TArray&  ibFndEqES= *ibFndPtrEqES;
+      // calculate the determinant of the matrix Q
+      // if 3D mesh, then det(Q)
+      // if 2D mesh, then det(QQ) where QQ is the 3x3 subset of Q
+      
 
-                ibFndPtrEqES->zero();
-
-                Field& fndEqES = *_dsfEqPtrES.dsf[j];
-
-                for (int i=0; i<nibFaces; i++)
-                  {
-                    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-                    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-                    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-                    const T ibu = ibVel[i][0];
-                    const T ibv = ibVel[i][1];
-                    const T ibw = ibVel[i][2];
-                    ibFndEqES[i]=ibDensity[i]/pow(pi*ibTemp[i],1.5)*exp(-(pow(cx[j]-ibu,2.0)+pow(cy[j]-ibv,2.0)+pow(cz[j]-ibw,2.0))/ibTemp[i]);
-                  }
-                fndEqES.addArray(ibFaces,ibFndPtrEqES);
-              }
-            }
-          }
+      if (is2D) {	
+	for(int i=0; i<3; i++){
+	  for(int j=0; j<3; j++){
+	    QQ(i,j)=Q(i,j);
+	  }
+	}  	
+	det =  determinant(QQ);
       }
-      cout<< "cem03";
+
+      if (is3D) {
+	det = determinant(Q, 4);
+      }
+            
+      // linear least square interpolation if the matrix is not singular
+      //if (nnb >=10){
+      if (fabs(det) > 1.0 ){  
+	if(is2D){
+	  QQinv = inverse(QQ);
+	  for(int i=0; i<3; i++){
+	    for(int j=0; j<3; j++){
+	      Qinv(i,j)=QQinv(i,j);
+	    }
+	  }
+	}
+
+	if(is3D){
+	  Qinv = inverse(Q, 4);
+	}
+
+	//calculate Qinv*M(T) get the first row element, put in coeffMatrix
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)	  {
+	  const int c = ibFCCol[nc];
+          VectorT3 dr((xCells[c]-xFaces[f])*scale);
+	  wt = Qinv(0,0);
+	  for (int i=1; i<=3; i++){
+	    wt += Qinv(0,i)*dr[i-1];
+	  }
+	  cellToIBCoeff[nc] = wt;
+	  wtSum += wt;	  
+	}
+/* 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)	  { */
+/*           const int p = ibFPCol[np]; */
+/*           VectorT3 dr((xParticles[p]-xFaces[f])*scale); */
+/* 	  wt = Qinv(0,0); */
+/* 	  for (int i=1; i<=3; i++){ */
+/* 	    wt += Qinv(0,i)*dr[i-1]; */
+/* 	  } */
+/* 	  particlesToIBCoeff[np] = wt; */
+/* 	  wtSum += wt;	  */
+/* 	} */
+
+	
+	if (wtSum > 1.01 || wtSum < 0.99)
+	  cout << "face " << n <<" has wrong wtsum  " << wtSum << endl;
+	/*
+	cout << n << endl;
+	cout << "ibface  " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)	  {
+	  const int c = ibFCCol[nc];
+	  cout << "fluid cells " << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << " " <<cellToIBCoeff[nc] <<  endl;
+	}
+	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)	  {
+	  const int p = ibFPCol[np];
+	  cout << "particles " << xParticles[p][0] << " " << xParticles[p][1] << " " << xParticles[p][2] << " " << particlesToIBCoeff[np] << endl; 
+	}
+	*/
+
+#if 0    
+      const int cell0 = localToGlobal[ faceCells(f,0) ];
+      const int cell1 = localToGlobal[ faceCells(f,1) ];
+      debugFileFluid << "ibface =  " << n << "   " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] <<  
+                        " cell0 = "  << std::min(cell0,cell1) << " cell1 = " << std::max(cell0,cell1) << endl;
+      map<int, double> cellToValue;
+      map<int, int> globalToLocal;
+   
+      for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++){
+          const int localID = ibFCCol[nc];
+	  const int c = localToGlobal[ibFCCol[nc]];
+          globalToLocal[c] = localID;
+          cellToValue[c] = cellToIBCoeff[nc];
+ 
+	  //debugFile <<  "    glblcellID = " << c << ", cellToIBCoeff[" << n << "] = " << cellToIBCoeff[nc] <<  endl;
+      }
+      foreach( IntDoubleMap::value_type& pos, cellToValue){
+         const int c = pos.first;
+         const double value =pos.second;
+         debugFileFluid <<  "    glblcellID = " << c <<  "  localCellID = " << globalToLocal[c]  <<  ", cellToIBCoeff[" << n << "] = " << value <<  endl;
+      }
+
+      debugFileSolid << "ibface  = " << n << "   " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] <<  endl;
+      cellToValue.clear();
+      for(int nc=ibFPRow[n]; nc<ibFPRow[n+1]; nc++){
+          cellToValue[ibFPCol[nc]] = particlesToIBCoeff[nc];
+      }
+       foreach( IntDoubleMap::value_type& pos, cellToValue){
+          const int c = pos.first;
+          const double value =pos.second;
+          debugFileSolid <<  "    GlobalSolidFaceID = " << c << ", solidToIBCoeff[" << n << "] = " << value <<  endl;
+       } 
+
+    
+#endif 
+	
+      } 
+
+      
+      else {     //if matrix is singular, use distance weighted interpolation
+	//cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
+	//cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
+	  {	  
+          const int c = ibFCCol[nc];
+          VectorT3 dr(xCells[c]-xFaces[f]);
+          T wt = 1.0/dot(dr,dr);
+          cellToIBCoeff[nc] = wt;
+          wtSum += wt;
+          nnb++;
+	  //cout << "fluid cells " << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << " " << endl;  
+	  }
+/* 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++) */
+/* 	  { */
+/* 	  const int p = ibFPCol[np]; */
+/*           VectorT3 dr(xParticles[p]-xFaces[f]); */
+/*           T wt = 1.0/dot(dr,dr); */
+/*           particlesToIBCoeff[np] = wt; */
+/*           wtSum += wt; */
+/*           nnb++; */
+/* 	  //cout << "particles " << xParticles[p][0] << " " << xParticles[p][1] << " " << xParticles[p][2] << " " << endl;  */
+/* 	  } */
+
+	if (nnb == 0)
+	  throw CException("no cell or particle neighbors for ib face");
+      
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
+	  {
+	    cellToIBCoeff[nc] /= wtSum;	    
+	  }
+
+/* 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++) */
+/* 	  { */
+/* 	    particlesToIBCoeff[np] /= wtSum;	     */
+/* 	  } */
+
+      }	
+  } 
+#endif
+
+#if 0
+      debugFileFluid.close();
+      debugFileSolid.close();
+#endif
+
+  
+  //fclose(fp);
+#if 0
+
+  /**********second order least square interpolation*********/
+  // X=x-xf  Y=y-yf  Z=Z-zf
+  //matrix M=[1 X1 Y1 Z1 X1*X1 Y1*Y1 Z1*Z1 X1*Y1 Y1*Z1 X1*Z1]
+  //         [1 X2 Y2 Z2 ...................................]
+  //         ...........
+  //         [1 Xn Yn Zn Xn*Xn Yn*Yn Zn*Zn Xn*Yn Yn*Zn Xn*Zn]
+  //coefficient matrix A=[a0, a1, a2, a3, a4, a5, a6, a7, a8, a9]T
+  //velocity element v = M * A
+  //linear relation v = a0 + a1*X + a2*Y + a3*Z + a4*X*X + a5*Y*Y + a6*Z*Z + a7*X*Y + a8*Y*Z + a9*X*Z
+  //to make least square
+  //matrix A = (M(T)*M)^(-1)*M(T)*v
+  //so, velocity at face is vface = a0
+  //which is the first row of matrix A
+  //so, the weight function should be the first row of  (M(T)*M)^(-1)*M(T)
+  //note Q = M(T)*M  and Qinv = Q^(-1)
+  //the following code is to calculate it
+  //insteading of doing full matrix operation, only nessesary operation on entries are performed
+
+ 
+
+  for(int n=0; n<nIBFaces; n++)
+  {
+      const int f = ibFaceIndices[n];
+      T wt(0);
+      int nnb(0);
+      T scale(1.0e6);
+
+      if (is2D){
+	const int size = 6;
+	SquareMatrix<T,size>  Q(SquareMatrix<T,size>::zero());
+	SquareMatrix<T,size>  Qinv(0);
+	//cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++) {
+	  const int c = ibFCCol[nc];
+	  VectorT3 dr((xCells[c]-xFaces[f])*scale);
+	  //cout << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << " " << endl;  
+	  
+	  Q(0,0) += 1.0;
+	  Q(0,1) += dr[0];
+	  Q(0,2) += dr[1];
+	  Q(0,3) += dr[0]*dr[0];
+	  Q(0,4) += dr[1]*dr[1];
+	  Q(0,5) += dr[0]*dr[1];
+	  
+	  Q(1,1) += dr[0]*dr[0];
+	  Q(1,2) += dr[0]*dr[1];
+	  Q(1,3) += dr[0]*dr[0]*dr[0];
+	  Q(1,4) += dr[0]*dr[1]*dr[1];
+	  Q(1,5) += dr[0]*dr[0]*dr[1];
+	  
+	  Q(2,2) += dr[1]*dr[1];
+	  Q(2,3) += dr[1]*dr[0]*dr[0];
+	  Q(2,4) += dr[1]*dr[1]*dr[1];
+	  Q(2,5) += dr[1]*dr[0]*dr[1];
+	  
+	  Q(3,3) += dr[0]*dr[0]*dr[0]*dr[0];
+	  Q(3,4) += dr[0]*dr[0]*dr[1]*dr[1];
+	  Q(3,5) += dr[0]*dr[0]*dr[0]*dr[1];
+	  
+	  Q(4,4) += dr[1]*dr[1]*dr[1]*dr[1];
+	  Q(4,5) += dr[1]*dr[1]*dr[0]*dr[1];
+	  
+	  Q(5,5) += dr[0]*dr[1]*dr[0]*dr[1];
+	  
+	  nnb++;
+	}
+	
+/* 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)   { */
+/* 	  const int p = ibFPCol[np]; */
+/* 	  VectorT3 dr((xParticles[p]-xFaces[f])*scale); */
+/* 	  //cout << xParticles[p][0] << " " << xParticles[p][1] << " " << xParticles[p][2] << " " << endl;  */
+
+/* 	  Q(0,0) += 1.0; */
+/* 	  Q(0,1) += dr[0]; */
+/* 	  Q(0,2) += dr[1]; */
+/* 	  Q(0,3) += dr[0]*dr[0]; */
+/* 	  Q(0,4) += dr[1]*dr[1]; */
+/* 	  Q(0,5) += dr[0]*dr[1]; */
+	  
+/* 	  Q(1,1) += dr[0]*dr[0]; */
+/* 	  Q(1,2) += dr[0]*dr[1]; */
+/* 	  Q(1,3) += dr[0]*dr[0]*dr[0]; */
+/* 	  Q(1,4) += dr[0]*dr[1]*dr[1]; */
+/* 	  Q(1,5) += dr[0]*dr[0]*dr[1]; */
+	  
+/* 	  Q(2,2) += dr[1]*dr[1]; */
+/* 	  Q(2,3) += dr[1]*dr[0]*dr[0]; */
+/* 	  Q(2,4) += dr[1]*dr[1]*dr[1]; */
+/* 	  Q(2,5) += dr[1]*dr[0]*dr[1]; */
+	  
+/* 	  Q(3,3) += dr[0]*dr[0]*dr[0]*dr[0]; */
+/* 	  Q(3,4) += dr[0]*dr[0]*dr[1]*dr[1]; */
+/* 	  Q(3,5) += dr[0]*dr[0]*dr[0]*dr[1]; */
+	  
+/* 	  Q(4,4) += dr[1]*dr[1]*dr[1]*dr[1]; */
+/* 	  Q(4,5) += dr[1]*dr[1]*dr[0]*dr[1]; */
+	  
+/* 	  Q(5,5) += dr[0]*dr[1]*dr[0]*dr[1]; */
+	  
+/* 	  nnb++; */
+/* 	} */
+
+	if (nnb < size)
+	  throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+      
+	//symetric matrix
+	for(int i=0; i<size; i++){
+	  for(int j=0; j<i; j++){
+	    Q(i,j)=Q(j,i);
+	  }
+	}
+        
+	  //calculate the inverse of Q(6x6)
+	Qinv = inverse(Q, size);
+            
+	//calculate Qinv*M(T) get the first row element, put in coeffMatrix
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)    {
+	  const int c = ibFCCol[nc];
+	  VectorT3 dr((xCells[c]-xFaces[f])*scale);
+	  wt = Qinv(0,0);
+	  wt += Qinv(0,1)*dr[0];
+	  wt += Qinv(0,2)*dr[1];
+	  wt += Qinv(0,3)*dr[0]*dr[0];
+	  wt += Qinv(0,4)*dr[1]*dr[1];
+	  wt += Qinv(0,5)*dr[0]*dr[1];
+	  cellToIBCoeff[nc] = wt;
+	  //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
+	}
+/* 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)    { */
+/* 	  const int p = ibFPCol[np]; */
+/* 	  VectorT3 dr((xParticles[p]-xFaces[f])*scale); */
+/* 	  wt = Qinv(0,0); */
+/* 	  wt += Qinv(0,1)*dr[0]; */
+/* 	  wt += Qinv(0,2)*dr[1]; */
+/* 	  wt += Qinv(0,3)*dr[0]*dr[0]; */
+/* 	  wt += Qinv(0,4)*dr[1]*dr[1]; */
+/* 	  wt += Qinv(0,5)*dr[0]*dr[1]; */
+/* 	  particlesToIBCoeff[np] = wt; */
+/* 	  // cout<<n<<" particles  "<<np<<" "<<particlesToIBCoeff[np]<<endl; */
+/* 	} */
+      }
+	  
+      if (is3D)	{
+	const int size = 10;
+	SquareMatrix<T,size>  Q(0);
+	SquareMatrix<T,size>  Qinv(0);
+	
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
+	    {
+	      const int c = ibFCCol[nc];
+	      VectorT3 dr((xCells[c]-xFaces[f])*scale);	  
+	      Q(0,0) += 1.0;
+	      Q(0,1) += dr[0];
+	      Q(0,2) += dr[1];
+	      Q(0,3) += dr[2];
+	      Q(0,4) += dr[0]*dr[0];
+	      Q(0,5) += dr[1]*dr[1];
+	      Q(0,6) += dr[2]*dr[2];
+	      Q(0,7) += dr[0]*dr[1];
+	      Q(0,8) += dr[1]*dr[2];
+	      Q(0,9) += dr[0]*dr[2];
+	      
+	      Q(1,1) += dr[0]*dr[0];
+	      Q(1,2) += dr[0]*dr[1];
+	      Q(1,3) += dr[0]*dr[2];
+	      Q(1,4) += dr[0]*dr[0]*dr[0];
+	      Q(1,5) += dr[0]*dr[1]*dr[1];
+	      Q(1,6) += dr[0]*dr[2]*dr[2];
+	      Q(1,7) += dr[0]*dr[0]*dr[1];
+	      Q(1,8) += dr[0]*dr[1]*dr[2];
+	      Q(1,9) += dr[0]*dr[0]*dr[2];
+	      
+	      Q(2,2) += dr[1]*dr[1];
+	      Q(2,3) += dr[1]*dr[2];
+	      Q(2,4) += dr[1]*dr[0]*dr[0];
+	      Q(2,5) += dr[1]*dr[1]*dr[1];
+	      Q(2,6) += dr[1]*dr[2]*dr[2];
+	      Q(2,7) += dr[1]*dr[0]*dr[1];
+	      Q(2,8) += dr[1]*dr[1]*dr[2];
+	      Q(2,9) += dr[1]*dr[0]*dr[2];
+	      
+	      Q(3,3) += dr[2]*dr[2];     
+	      Q(3,4) += dr[2]*dr[0]*dr[0];
+	      Q(3,5) += dr[2]*dr[1]*dr[1];
+	      Q(3,6) += dr[2]*dr[2]*dr[2];
+	      Q(3,7) += dr[2]*dr[0]*dr[1];
+	      Q(3,8) += dr[2]*dr[1]*dr[2];
+	      Q(3,8) += dr[2]*dr[0]*dr[2];
+	      
+	      Q(4,4) += dr[0]*dr[0]*dr[0]*dr[0];
+	      Q(4,5) += dr[0]*dr[0]*dr[1]*dr[1];
+	      Q(4,6) += dr[0]*dr[0]*dr[2]*dr[2];
+	      Q(4,7) += dr[0]*dr[0]*dr[0]*dr[1];
+	      Q(4,8) += dr[0]*dr[0]*dr[1]*dr[2];
+	      Q(4,9) += dr[0]*dr[0]*dr[0]*dr[2];
+	      
+	      Q(5,5) += dr[1]*dr[1]*dr[1]*dr[1];
+	      Q(5,6) += dr[1]*dr[1]*dr[2]*dr[2];
+	      Q(5,7) += dr[1]*dr[1]*dr[0]*dr[1];
+	      Q(5,8) += dr[1]*dr[1]*dr[1]*dr[2];
+	      Q(5,9) += dr[1]*dr[1]*dr[0]*dr[2];
+	      
+	      Q(6,6) += dr[2]*dr[2]*dr[2]*dr[2];
+	      Q(6,7) += dr[2]*dr[2]*dr[0]*dr[1];
+	      Q(6,8) += dr[2]*dr[2]*dr[1]*dr[2];
+	      Q(6,9) += dr[2]*dr[2]*dr[0]*dr[2];
+	      
+	      Q(7,7) += dr[0]*dr[1]*dr[0]*dr[1];
+	      Q(7,8) += dr[0]*dr[1]*dr[1]*dr[2];
+	      Q(7,9) += dr[0]*dr[1]*dr[0]*dr[2];
+	      
+	      Q(8,8) += dr[1]*dr[2]*dr[1]*dr[2];
+	      Q(8,9) += dr[1]*dr[2]*dr[0]*dr[2];
+	      
+	      Q(9,9) += dr[0]*dr[2]*dr[0]*dr[2];
+	      
+	      nnb++;
+	    }
+	/* for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++) */
+/* 	    { */
+/* 	      const int p = ibFPCol[np]; */
+/* 	      VectorT3 dr((xParticles[p]-xFaces[f])*scale); */
+/* 	      Q(0,0) += 1.0; */
+/* 	      Q(0,1) += dr[0]; */
+/* 	      Q(0,2) += dr[1]; */
+/* 	      Q(0,3) += dr[2]; */
+/* 	      Q(0,4) += dr[0]*dr[0]; */
+/* 	      Q(0,5) += dr[1]*dr[1]; */
+/* 	      Q(0,6) += dr[2]*dr[2]; */
+/* 	      Q(0,7) += dr[0]*dr[1]; */
+/* 	      Q(0,8) += dr[1]*dr[2]; */
+/* 	      Q(0,9) += dr[0]*dr[2]; */
+	      
+/* 	      Q(1,1) += dr[0]*dr[0]; */
+/* 	      Q(1,2) += dr[0]*dr[1]; */
+/* 	      Q(1,3) += dr[0]*dr[2]; */
+/* 	      Q(1,4) += dr[0]*dr[0]*dr[0]; */
+/* 	      Q(1,5) += dr[0]*dr[1]*dr[1]; */
+/* 	      Q(1,6) += dr[0]*dr[2]*dr[2]; */
+/* 	      Q(1,7) += dr[0]*dr[0]*dr[1]; */
+/* 	      Q(1,8) += dr[0]*dr[1]*dr[2]; */
+/* 	      Q(1,9) += dr[0]*dr[0]*dr[2]; */
+	      
+/* 	      Q(2,2) += dr[1]*dr[1]; */
+/* 	      Q(2,3) += dr[1]*dr[2]; */
+/* 	      Q(2,4) += dr[1]*dr[0]*dr[0]; */
+/* 	      Q(2,5) += dr[1]*dr[1]*dr[1]; */
+/* 	      Q(2,6) += dr[1]*dr[2]*dr[2]; */
+/* 	      Q(2,7) += dr[1]*dr[0]*dr[1]; */
+/* 	      Q(2,8) += dr[1]*dr[1]*dr[2]; */
+/* 	      Q(2,9) += dr[1]*dr[0]*dr[2]; */
+	      
+/* 	      Q(3,3) += dr[2]*dr[2];      */
+/* 	      Q(3,4) += dr[2]*dr[0]*dr[0]; */
+/* 	      Q(3,5) += dr[2]*dr[1]*dr[1]; */
+/* 	      Q(3,6) += dr[2]*dr[2]*dr[2]; */
+/* 	      Q(3,7) += dr[2]*dr[0]*dr[1]; */
+/* 	      Q(3,8) += dr[2]*dr[1]*dr[2]; */
+/* 	      Q(3,8) += dr[2]*dr[0]*dr[2]; */
+	      
+/* 	      Q(4,4) += dr[0]*dr[0]*dr[0]*dr[0]; */
+/* 	      Q(4,5) += dr[0]*dr[0]*dr[1]*dr[1]; */
+/* 	      Q(4,6) += dr[0]*dr[0]*dr[2]*dr[2]; */
+/* 	      Q(4,7) += dr[0]*dr[0]*dr[0]*dr[1]; */
+/* 	      Q(4,8) += dr[0]*dr[0]*dr[1]*dr[2]; */
+/* 	      Q(4,9) += dr[0]*dr[0]*dr[0]*dr[2]; */
+	      
+/* 	      Q(5,5) += dr[1]*dr[1]*dr[1]*dr[1]; */
+/* 	      Q(5,6) += dr[1]*dr[1]*dr[2]*dr[2]; */
+/* 	      Q(5,7) += dr[1]*dr[1]*dr[0]*dr[1]; */
+/* 	      Q(5,8) += dr[1]*dr[1]*dr[1]*dr[2]; */
+/* 	      Q(5,9) += dr[1]*dr[1]*dr[0]*dr[2]; */
+	      
+/* 	      Q(6,6) += dr[2]*dr[2]*dr[2]*dr[2]; */
+/* 	      Q(6,7) += dr[2]*dr[2]*dr[0]*dr[1]; */
+/* 	      Q(6,8) += dr[2]*dr[2]*dr[1]*dr[2]; */
+/* 	      Q(6,9) += dr[2]*dr[2]*dr[0]*dr[2]; */
+	      
+/* 	      Q(7,7) += dr[0]*dr[1]*dr[0]*dr[1]; */
+/* 	      Q(7,8) += dr[0]*dr[1]*dr[1]*dr[2]; */
+/* 	      Q(7,9) += dr[0]*dr[1]*dr[0]*dr[2]; */
+	      
+/* 	      Q(8,8) += dr[1]*dr[2]*dr[1]*dr[2]; */
+/* 	      Q(8,9) += dr[1]*dr[2]*dr[0]*dr[2]; */
+	      
+/* 	      Q(9,9) += dr[0]*dr[2]*dr[0]*dr[2];       */
+	      
+/* 	      nnb++; */
+/* 	    } */
+	
+	if (nnb < size)
+	  throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+	  
+	  //symetric matrix
+	for(int i=0; i<size; i++){
+	  for(int j=0; j<i; j++){
+	      Q(i,j)=Q(j,i);
+	  }
+	}
+           
+	//calculate the inverse of Q(10x10)
+	Qinv = inverse(Q, size);
+      
+      
+	//calculate Qinv*M(T) get the first row element, put in coeffMatrix
+	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
+	    {
+	      const int c = ibFCCol[nc];
+	      VectorT3 dr((xCells[c]-xFaces[f])*scale);
+	      wt = Qinv(0,0);
+	      wt += Qinv(0,1)*dr[0];
+	      wt += Qinv(0,2)*dr[1];
+	      wt += Qinv(0,3)*dr[2];
+	      wt += Qinv(0,4)*dr[0]*dr[0];
+	      wt += Qinv(0,5)*dr[1]*dr[1];
+	      wt += Qinv(0,6)*dr[2]*dr[2];
+	      wt += Qinv(0,7)*dr[0]*dr[1];
+	      wt += Qinv(0,8)*dr[1]*dr[2];
+	      wt += Qinv(0,9)*dr[0]*dr[2];
+	      cellToIBCoeff[nc] = wt;
+	      //cout<<n<<" cells "<<nc<<" "<<cellToIBCoeff[nc]<<endl;
+	    }
+/* 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++) */
+/* 	    { */
+/* 	      const int p = ibFPCol[np]; */
+/* 	      VectorT3 dr((xParticles[p]-xFaces[f])*scale); */
+/* 	      wt = Qinv(0,0); */
+/* 	      wt += Qinv(0,1)*dr[0]; */
+/* 	      wt += Qinv(0,2)*dr[1]; */
+/* 	      wt += Qinv(0,3)*dr[2]; */
+/* 	      wt += Qinv(0,4)*dr[0]*dr[0]; */
+/* 	      wt += Qinv(0,5)*dr[1]*dr[1]; */
+/* 	      wt += Qinv(0,6)*dr[2]*dr[2]; */
+/* 	      wt += Qinv(0,7)*dr[0]*dr[1]; */
+/* 	      wt += Qinv(0,8)*dr[1]*dr[2]; */
+/* 	      wt += Qinv(0,9)*dr[0]*dr[2]; */
+/* 	      particlesToIBCoeff[np] = wt; */
+/* 	      // cout<<n<<" particles  "<<np<<" "<<particlesToIBCoeff[np]<<endl; */
+/* 	    } */
+      }
+  }
+#endif
+    
+  const int numFields= _quadrature.getDirCount();
+  for (int direction = 0; direction < numFields; direction++)
+    {
+      Field& fnd = *_dsfPtr.dsf[direction];
+      const Mesh& mesh = *_meshes[n];
+      if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	
+	const StorageSite& cells = mesh.getCells();
+	const StorageSite& ibFaces = mesh.getIBFaces();
+        
+	const CRConnectivity& ibFacesToCells
+	  = mesh.getConnectivity(ibFaces,cells);
+
+	const IntArray& sFCRow = ibFacesToCells.getRow();
+	const IntArray& sFCCol = ibFacesToCells.getCol();
+	
+	const TArray& cf =
+	  dynamic_cast<const TArray&>(fnd[cells]);
+
+	shared_ptr<TArray> ibVf(new TArray(ibFaces.getCount()));
+	ibVf->zero();
+	TArray&  ibVfA= *ibVf;
+
+/* 	      GeomFields::SSPair key1(&solidFaces,&cells);
+/*         const IMatrix& mIC = */
+/*           dynamic_cast<const IMatrix&> */
+/*           (*_geomFields._interpolationMatrices[key1]); */
+
+//	const Array<T>& iCoeffs = cellToIB.getCoeff();
+        
+	for(int f=0; f<nIBFaces; f++)
+	  {
+	    
+	    for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+	      {
+		const int c = sFCCol[nc];
+		
+		const T coeff = cellToIBCoeff[nc];
+               
+		ibVfA[f] += coeff*cf[c];
+	/* 	if(f==40) */
+/* 		  cout<< "cell value: "<<cf[c]<<"ibva: "<<ibVfA[f]<<endl; */
+	      }
+	  }
+	fnd.addArray(ibFaces,ibVf);
+           
+      }
+    }
+      }
+      const int nSolidFaces = solidFaces.getCount();
+ 
+      shared_ptr<TArray> muSolid(new TArray(nSolidFaces));
+      *muSolid =0;
+      _macroFields.viscosity.addArray(solidFaces,muSolid);
+      
+      shared_ptr<TArray> nueSolid(new TArray(nSolidFaces));
+      *nueSolid =0;
+      _macroFields.collisionFrequency.addArray(solidFaces,nueSolid);
+
+      const T rho_init=_options["rho_init"]; 
+      const T T_init= _options["T_init"]; 
+      const T mu_w= _options["mu_w"];
+      const T Tmuref= _options["Tmuref"];
+      const T muref= _options["muref"];
+      const T R=8314.0/_options["molecularWeight"];
+      const T nondim_length=_options["nonDimLt"];
+      
+      const T mu0=rho_init*R* T_init*nondim_length/pow(2*R* T_init,0.5);  
+	
+      TArray& density = dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
+      TArray& viscosity = dynamic_cast<TArray&>(_macroFields.viscosity[solidFaces]);
+      TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
+      TArray& collisionFrequency = dynamic_cast<TArray&>(_macroFields.collisionFrequency[solidFaces]);
+
+      for(int c=0; c<nSolidFaces;c++)
+	{
+	  viscosity[c]= muref*pow(temperature[c]*T_init/ Tmuref,mu_w); // viscosity power law
+	  collisionFrequency[c]=density[c]*temperature[c]/viscosity[c]*mu0;
+	}
+	
+      if(_options.fgamma==2){
+	for(int c=0; c<nSolidFaces;c++)
+	  collisionFrequency[c]=_options.Prandtl*collisionFrequency[c];
+      }
+	
+
+
+
+	    /*   GeomFields::SSPair key1(&ibFaces,&cells); */
+/* 	      const IMatrix& mIC = */
+/* 		dynamic_cast<const IMatrix&> */
+/* 		(*_geomFields._interpolationMatrices[key1]); */
+	      
+/* 	      IMatrix mICV(*cellToIB); */
+
+/* 	 /\*      GeomFields::SSPair key2(&ibFaces,&solidFaces); *\/ */
+/* /\* 	      const IMatrix& mIP = *\/ */
+/* /\* 		dynamic_cast<const IMatrix&> *\/ */
+/* /\* 		(*_geomFields._interpolationMatrices[key2]); *\/ */
+	      
+/* /\* 	      IMatrix mIPV(mIP); *\/ */
+
+/* 	      shared_ptr<TArray> ibVf(new TArray(ibFaces.getCount())); */
+	  
+/* 	      const TArray& cf = */
+/* 		dynamic_cast<const TArray&>(fnd[cells]); */
+	  
+/* 	      ibVf->zero(); */
+
+/* 	      //distribution function interpolation (cells) */
+/* 	      mICV.multiplyAndAdd(*ibVf,cf); */
+/* 	      fnd.addArray(ibFaces,ibVf); */
+
+/* 	    } */
+/* 	  } */
+/* } */
+
+     //Step 1 Interpolate Macroparameters and f to IBface
+      for (int n=0; n<numMeshes; n++)
+	{
+	  const Mesh& mesh = *_meshes[n];
+	  if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+
+	    const StorageSite& cells = mesh.getCells();
+	    const StorageSite& ibFaces = mesh.getIBFaces();
+        
+	  GeomFields::SSPair key1(&ibFaces,&cells);
+	  const IMatrix& mIC =
+	    dynamic_cast<const IMatrix&>
+	    (*_geomFields._interpolationMatrices[key1]);
+	      
+	  IMatrix mICV(mIC);
+	  IMatrixV3 mICV3(mIC);  
+
+	  GeomFields::SSPair key2(&ibFaces,&solidFaces);
+	  const IMatrix& mIP =
+	    dynamic_cast<const IMatrix&>
+	    (*_geomFields._interpolationMatrices[key2]);
+
+	  IMatrix mIPV(mIP);
+	  IMatrixV3 mIPV3(mIP);    
+
+	  shared_ptr<TArray> ibVtemp(new TArray(ibFaces.getCount()));
+	  shared_ptr<TArray> ibVnue(new TArray(ibFaces.getCount()));
+	  shared_ptr<TArray> ibVdensity(new TArray(ibFaces.getCount()));
+	  shared_ptr<VectorT3Array> ibVvel(new VectorT3Array(ibFaces.getCount()));
+	  
+	  const TArray& cTemp  = 
+	    dynamic_cast<TArray&>(_macroFields.temperature[cells]);
+	  const VectorT3Array& cVel = 
+	    dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
+	  const TArray& cDensity  = 
+	    dynamic_cast<TArray&>(_macroFields.density[cells]);
+	  const TArray& sDensity  = 
+	    dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
+	  const TArray& cNue  = 
+	    dynamic_cast<TArray&>(_macroFields.collisionFrequency[cells]);
+	  const TArray& sNue  = 
+	    dynamic_cast<TArray&>(_macroFields.collisionFrequency[solidFaces]);
+	  const TArray& sTemp  = 
+	    dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
+	  const VectorT3Array& sVel = 
+	    dynamic_cast<VectorT3Array&>(_macroFields.velocity[solidFaces]);
+	  
+	  ibVnue->zero(); 
+	  ibVtemp->zero();
+	  ibVvel->zero(); 
+	  ibVdensity->zero(); 
+
+	   //nue interpolation (cells)
+           mICV.multiplyAndAdd(*ibVnue,cNue);
+	   mIPV.multiplyAndAdd(*ibVnue,sNue);
+           _macroFields.collisionFrequency.addArray(ibFaces,ibVnue);
+	   //temperature interpolation (cells+solidfaces)         
+	   mICV.multiplyAndAdd(*ibVtemp,cTemp);
+	   mIPV.multiplyAndAdd(*ibVtemp,sTemp);
+           _macroFields.temperature.addArray(ibFaces,ibVtemp);
+	   //density interpolation (cells+solidfaces)         
+	   mICV.multiplyAndAdd(*ibVdensity,cDensity);
+	   mIPV.multiplyAndAdd(*ibVdensity,sDensity);
+           _macroFields.density.addArray(ibFaces,ibVdensity);
+	   //velocity interpolation (cells+solidfaces) 
+	   mICV3.multiplyAndAdd(*ibVvel,cVel);
+	   mIPV3.multiplyAndAdd(*ibVvel,sVel);
+           _macroFields.velocity.addArray(ibFaces,ibVvel);
+
+
+	  }
+	}
+    const int f_out = 1;
+    if (f_out ==1){
+      //Step 2 Find fgamma using macroparameters
+      const int numMeshes = _meshes.size();
+      for (int n=0; n<numMeshes; n++)
+	{
+	  const Mesh& mesh = *_meshes[n];
+	  if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	    const int numDirections = _quadrature.getDirCount();
+	    const StorageSite& ibFaces = mesh.getIBFaces();
+	    const int nibFaces=ibFaces.getCount();
+	    const double pi=_options.pi;
+	    const TArray& ibTemp  =
+	      dynamic_cast<TArray&>(_macroFields.temperature[ibFaces]);
+	    const VectorT3Array& ibVel =
+	      dynamic_cast<VectorT3Array&>(_macroFields.velocity[ibFaces]);
+	    const TArray& ibDensity  =
+	      dynamic_cast<TArray&>(_macroFields.density[ibFaces]);
+
+	    for (int j=0; j<numDirections; j++)
+	      {
+		shared_ptr<TArray> ibFndPtrEqES(new TArray(nibFaces));
+		TArray&  ibFndEqES= *ibFndPtrEqES;
+		
+		ibFndPtrEqES->zero();
+
+		Field& fndEqES = *_dsfEqPtrES.dsf[j];
+
+		for (int i=0; i<nibFaces; i++)
+		  {
+		    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+		    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+		    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+		    const T ibu = ibVel[i][0];
+		    const T ibv = ibVel[i][1];
+		    const T ibw = ibVel[i][2];
+		    ibFndEqES[i]=ibDensity[i]/pow(pi*ibTemp[i],1.5)*exp(-(pow(cx[j]-ibu,2.0)+pow(cy[j]-ibv,2.0)+pow(cz[j]-ibw,2.0))/ibTemp[i]);
+		  }
+		fndEqES.addArray(ibFaces,ibFndPtrEqES);
+	      }
+	  }
+	}
+    }
+
       //Step3: Relax Distribution function from ibfaces to solid face
-      for (int n=0; n<numMeshes; n++)
-        {
-          const Mesh& mesh = *_meshes[n];
-          const StorageSite& ibFaces = mesh.getIBFaces();
-         const CRConnectivity& solidFacesToibFaces
-           = mesh.getConnectivity(solidFaces,ibFaces);
-         
-         const IntArray& sFCRow = solidFacesToibFaces.getRow();
-         const IntArray& sFCCol = solidFacesToibFaces.getCol();
-         const int numDirections = _quadrature.getDirCount();
-         for (int j=0; j<numDirections; j++)
-           {
-             const int nSolidFaces = solidFaces.getCount();
-             shared_ptr<TArray> solidFndPtr(new TArray(nSolidFaces));
-             TArray&  solidFnd= *solidFndPtr;
-             solidFndPtr->zero(); 
-             Field& fnd = *_dsfPtr.dsf[j];
+    for (int n=0; n<numMeshes; n++)
+      {
+	const int numDirections = _quadrature.getDirCount();
+	for (int j=0; j<numDirections; j++)
+	  {
+	    const int nSolidFaces = solidFaces.getCount();
+	    shared_ptr<TArray> solidFndPtr(new TArray(nSolidFaces));
+	    solidFndPtr->zero(); 
+	    TArray&  solidFnd= *solidFndPtr;
+	    Field& fnd = *_dsfPtr.dsf[j];
+	    Field& fndEqES = *_dsfEqPtrES.dsf[j];
+	    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	
+	    const Mesh& mesh = *_meshes[n];
+	    if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+	      const StorageSite& ibFaces = mesh.getIBFaces();
+	      const CRConnectivity& solidFacesToibFaces
+		= mesh.getConnectivity(solidFaces,ibFaces);
+	      const IntArray& ibFaceIndices = mesh.getIBFaceList();
+	      const IntArray& sFCRow = solidFacesToibFaces.getRow();
+	      const IntArray& sFCCol = solidFacesToibFaces.getCol();
+	      TArray& dsf = dynamic_cast< TArray&>(fnd[ibFaces]);  
+	      TArray& dsfEqES = dynamic_cast< TArray&>(fndEqES[ibFaces]);
+	    
+	      for(int f=0; f<nSolidFaces; f++)
+		{
+		  double distIBSolidInvSum(0.0);
+		  for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+		    {
+		      const StorageSite& faces = mesh.getFaces();
+		      const int c = sFCCol[nc];
+		      const int faceIB= ibFaceIndices[c];
+		      const VectorT3Array& solidFaceCentroid =
+			dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
+		      const VectorT3Array& faceCentroid =
+			dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+	      
+		      double distIBSolid (0.0);
+		      // based on distance - will be thought
+		      distIBSolid = sqrt(pow((faceCentroid[faceIB][0]-solidFaceCentroid[f][0]),2)+
+					 pow((faceCentroid[faceIB][1]-solidFaceCentroid[f][1]),2)+
+					 pow((faceCentroid[faceIB][2]-solidFaceCentroid[f][2]),2));
+			distIBSolidInvSum += 1/pow(distIBSolid,RelaxDistribution);
 
-             for(int f=0; f<nSolidFaces; f++)
-               {
-                 //             StressTensor<T> stress = NumTypeTraits<StressTensor<T> >::getZero();
-                 for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
-                   {
-                     const int c = sFCCol[nc];
-                     const StorageSite& faces = mesh.getFaces();
-                     const VectorT3Array& solidFaceCentroid =
-                       dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
-                     const VectorT3Array& faceCentroid =
-                       dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
-                     const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-                     const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-                     const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-                     Field& fnd = *_dsfPtr.dsf[j];
-                     TArray& dsf = dynamic_cast< TArray&>(fnd[ibFaces]);
-                     Field& fndEqES = *_dsfEqPtrES.dsf[j];
-                     TArray& dsfEqES = dynamic_cast< TArray&>(fndEqES[ibFaces]);
-                     T time_to_wall (0.0);
-                     T distIBSolid (0.0);
-                     // based on distance - will be thought
-                     distIBSolid = (pow(pow((faceCentroid[c][0]-solidFaceCentroid[f][0]),2)+
-                                        pow((faceCentroid[c][1]-solidFaceCentroid[f][1]),2)+
-                                        pow((faceCentroid[c][2]-solidFaceCentroid[f][2]),2),0.5));
-                     const TArray& nue  =
-                       dynamic_cast<TArray&>(_macroFields.collisionFrequency[ibFaces]);
-		     time_to_wall = abs(pow(distIBSolid,2)/(cx[j]*(faceCentroid[c][0]-solidFaceCentroid[f][0])+cy[j]*
-							  (faceCentroid[c][1]-solidFaceCentroid[f][1])+cz[j]*(faceCentroid[c][2]-solidFaceCentroid[f][2])));
-                     solidFnd[f] += (dsfEqES[c]-(dsfEqES[c]-dsf[c])*exp(-time_to_wall*nue[c]));                     
-                   }
-                 fnd.addArray(solidFaces,solidFndPtr);
-               }
-           }
-        }
+
+		      /*  if (f==100){ */
+		      /* 		       cout << f << " " <<  c  << endl; */
+/* 		       cout << "face coordinate " << solidFaceCentroid[f] << endl; */
+/* 		       cout << "cell coordinate " << faceCentroid[ibFaceIndices[c]] << endl; */
+/* 		     } */
+		    }
+
+
+		 //             StressTensor<T> stress = NumTypeTraits<StressTensor<T> >::getZero();
+		  for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
+		    {
+		      const int c = sFCCol[nc];
+		      const StorageSite& faces = mesh.getFaces();
+		      const VectorT3Array& solidFaceCentroid =
+			dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
+		      const VectorT3Array& faceCentroid =
+			dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+		      const int faceIB= ibFaceIndices[c];
+		      T time_to_wall (0.0);
+		      T distIBSolid (0.0);
+		      distIBSolid = sqrt(pow((faceCentroid[faceIB][0]-solidFaceCentroid[f][0]),2)+
+					 pow((faceCentroid[faceIB][1]-solidFaceCentroid[f][1]),2)+
+					 pow((faceCentroid[faceIB][2]-solidFaceCentroid[f][2]),2));
+		      // based on distance - will be thought
+
+		      const TArray& nue  =
+			dynamic_cast<TArray&>(_macroFields.collisionFrequency[ibFaces]);
+		      time_to_wall = (pow(distIBSolid,2)/(cx[j]*(faceCentroid[faceIB][0]-solidFaceCentroid[f][0])+(cy[j]+0.004814)*(faceCentroid[faceIB][1]-solidFaceCentroid[f][1])+cz[j]*(faceCentroid[faceIB][2]-solidFaceCentroid[f][2])));
+		      if(time_to_wall<0)
+			time_to_wall = 0;
+			  
+		      solidFnd[f] += (dsfEqES[c]-(dsfEqES[c]-dsf[c])*exp(-time_to_wall*nue[c]))/(pow(distIBSolid,RelaxDistribution)*distIBSolidInvSum);
+		    }
+
+		}
+	      fnd.addArray(solidFaces,solidFndPtr);
+	    }
+	  }
+      }
      
-      FILE * pFile;
-      pFile = fopen("f.dat","a");  
+  /*   FILE * pFile; */
+/*     pFile = fopen("f.dat","a");   */
 
-      for (int n=0; n<numMeshes; n++)
-        {
-          const int numFields= _quadrature.getDirCount(); 
-          const int nSolidFaces = solidFaces.getCount();
-          for(int n=0;n< nSolidFaces;n++)
-            {
-              for(int j=0;j< numFields;j++)
-                {
-                  Field& fnd = *_dsfPtr.dsf[j];
-                  TArray& f = dynamic_cast< TArray&>(fnd[solidFaces]);
-                  fprintf(pFile,"%E\n",f[n]);
-                }
-            }
-        }
+/*    for (int n=0; n<numMeshes; n++) */
+/*       { */
+/*       const int numFields= _quadrature.getDirCount(); 	 */
+/*       const int nSolidFaces = solidFaces.getCount(); */
+/*       for(int n=0;n< nSolidFaces;n++) */
+/* 	{ */
+/* 	  for(int j=0;j< numFields;j++) */
+/* 	    { */
+/* 	      Field& fnd = *_dsfPtr.dsf[j]; */
+/* 	      TArray& f = dynamic_cast< TArray&>(fnd[solidFaces]);	 */
+/* 	      fprintf(pFile,"%E\n",f[n]); */
+/* 	    } */
+/* 	} */
+/*       } */
     }
   }
+  
+ void correctMassDeficit()
+ {
 
-  void correctMassDeficit()
-  {
-
-    const int numMeshes = _meshes.size();
-    T netFlux(0.0);
+ const int numMeshes = _meshes.size();
+ T netFlux(0.0);
      
-    for (int n=0; n<numMeshes; n++)
-      {
+  for (int n=0; n<numMeshes; n++)
+    {
         const Mesh& mesh = *_meshes[n];
-        const StorageSite& ibFaces = mesh.getIBFaces();
+	const StorageSite& ibFaces = mesh.getIBFaces();
         const StorageSite& cells = mesh.getCells();
-        const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+	const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
         const StorageSite& faces = mesh.getFaces();
-        const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-        const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-        const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-        const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-        const int numDirections = _quadrature.getDirCount();
-        const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[faces]);
-        const VectorT3Array& faceArea =
-          dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-        const TArray& faceAreaMag =
-          dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
-        const CRConnectivity& faceCells = mesh.getAllFaceCells();
-        const int nibFaces = ibFaces.getCount();
+	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+	const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+	const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+	const int numDirections = _quadrature.getDirCount();
+	const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[faces]);
+	const VectorT3Array& faceArea =
+       	      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+	const TArray& faceAreaMag =
+	  dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
+	const CRConnectivity& faceCells = mesh.getAllFaceCells();
+	const int nibFaces = ibFaces.getCount();
 
-        for(int f=0; f<nibFaces; f++)
-          {
-            const int c0 = faceCells(f,0);
-            const int c1 = faceCells(f,1);
-            if (((ibType[c0] == Mesh::IBTYPE_FLUID) && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
-                ((ibType[c1] == Mesh::IBTYPE_FLUID) && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
-              {
-                const int ibFace = ibFaceIndex[f];
-                if (ibFace < 0)
-                  throw CException("invalid ib face index");
-                if (ibType[c0] == Mesh::IBTYPE_FLUID)
-                  {
-                    const VectorT3 en = faceArea[f]/faceAreaMag[f]; 
-                    for (int j=0; j<numDirections; j++)
-                      {
-                        const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
-                        Field& fnd = *_dsfPtr.dsf[j];
-                        TArray& dsf = dynamic_cast<TArray&>(fnd[ibFaces]); 
-
-                        netFlux -= dsf[f]*c_dot_en*wts[j]/abs(c_dot_en);
-                      }
-              
-                  }
-                else
-                  {
-                    const VectorT3 en = faceArea[f]/faceAreaMag[f]; 
-                    for (int j=0; j<numDirections; j++)
-                      {
-                        const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
-                        Field& fnd = *_dsfPtr.dsf[j];
-                        TArray& dsf = dynamic_cast<TArray&>(fnd[ibFaces]); 
-
-                        netFlux += dsf[f]*c_dot_en*wts[j]/abs(c_dot_en);
-                      }
-                  }         
-              }
-          }
-      }  
+	for(int f=0; f<nibFaces; f++)
+	  {
+	    const int c0 = faceCells(f,0);
+	    const int c1 = faceCells(f,1);
+	    if (((ibType[c0] == Mesh::IBTYPE_FLUID) && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+		((ibType[c1] == Mesh::IBTYPE_FLUID) && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+	      {
+		const int ibFace = ibFaceIndex[f];
+		if (ibFace < 0)
+		  throw CException("invalid ib face index");
+		if (ibType[c0] == Mesh::IBTYPE_FLUID)
+		  {
+		    const VectorT3 en = faceArea[f]/faceAreaMag[f]; 
+		    for (int j=0; j<numDirections; j++)
+		      {
+			const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
+			Field& fnd = *_dsfPtr.dsf[j];
+			TArray& dsf = dynamic_cast<TArray&>(fnd[ibFaces]); 
+		
+			netFlux -= dsf[f]*c_dot_en*wts[j]/abs(c_dot_en);
+		      }
+	      
+		  }
+		else
+		  {
+		    const VectorT3 en = faceArea[f]/faceAreaMag[f]; 
+		    for (int j=0; j<numDirections; j++)
+		      {
+			const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
+			Field& fnd = *_dsfPtr.dsf[j];
+			TArray& dsf = dynamic_cast<TArray&>(fnd[ibFaces]); 
+		
+			netFlux += dsf[f]*c_dot_en*wts[j]/abs(c_dot_en);
+		      }
+		  }	    
+	      }
+	  }
+    }  
 
 #ifdef FVM_PARALLEL
-    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &netFlux, 1, MPI::DOUBLE, MPI::SUM);
-#endif
+  MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &netFlux, 1, MPI::DOUBLE, MPI::SUM);
+#endif	
 
-    T volumeSum(0.);
-
-    for (int n=0; n<numMeshes; n++)
-      {
-        const Mesh& mesh = *_meshes[n];
-        const StorageSite& cells = mesh.getCells();
-        const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
-        const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-        for(int c=0; c<cells.getSelfCount(); c++)
-          if (ibType[c] == Mesh::IBTYPE_FLUID)
-            volumeSum += cellVolume[c];
-      }
+  T volumeSum(0.);
+		
+  for (int n=0; n<numMeshes; n++)
+    {
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& cells = mesh.getCells();
+      const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+      const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+      for(int c=0; c<cells.getSelfCount(); c++)
+	if (ibType[c] == Mesh::IBTYPE_FLUID)
+	  volumeSum += cellVolume[c];
+		  }
 #ifdef FVM_PARALLEL
-    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &volumeSum, 1, MPI::DOUBLE, MPI::SUM);
-#endif
+  MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &volumeSum, 1, MPI::DOUBLE, MPI::SUM);
+#endif	
 
-    netFlux /= volumeSum;
-    for (int n=0; n<numMeshes; n++)
-      {
-        const Mesh& mesh = *_meshes[n];
-        const StorageSite& cells = mesh.getCells();
-        const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
-        const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
-        const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-                                     
-        for(int c=0; c<cells.getSelfCount(); c++)
-          {
-            if (ibType[c] == Mesh::IBTYPE_FLUID){
-              const int numDirections = _quadrature.getDirCount();
-              T cellMass(0.0);
-              for (int j=0; j<numDirections; j++)
-                {
-                  Field& fnd = *_dsfPtr.dsf[j];
-                  TArray& dsf = dynamic_cast< TArray&>(fnd[cells]);
-                  cellMass += wts[j]*dsf[c];
-                }
+  netFlux /= volumeSum;
+  for (int n=0; n<numMeshes; n++)
+    {
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& cells = mesh.getCells();
+      const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+      const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+      const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+			             
+      for(int c=0; c<cells.getSelfCount(); c++)
+	{
+	  if (ibType[c] == Mesh::IBTYPE_FLUID){
+	    const int numDirections = _quadrature.getDirCount();
+	    T cellMass(0.0);
+	    for (int j=0; j<numDirections; j++)
+	      {
+		Field& fnd = *_dsfPtr.dsf[j];
+		TArray& dsf = dynamic_cast< TArray&>(fnd[cells]);
+		cellMass += wts[j]*dsf[c];
+	      }
 
-              for (int j=0; j<numDirections; j++)
-                {
-                  Field& fnd = *_dsfPtr.dsf[j];
-                  TArray& dsf = dynamic_cast< TArray&>(fnd[cells]);
-                  Field& feqES = *_dsfEqPtrES.dsf[j]; //for fgamma_2
-                  TArray& fgam = dynamic_cast< TArray&>(feqES[cells]);
-                  fgam[c] = fgam[c]*(1+netFlux*cellVolume[c]/cellMass);
-                  dsf[c] = dsf[c]*(1+netFlux*cellVolume[c]/cellMass);
-                }
-            }
+	    for (int j=0; j<numDirections; j++)
+	      {
+		Field& fnd = *_dsfPtr.dsf[j];
+		TArray& dsf = dynamic_cast< TArray&>(fnd[cells]);
+		Field& feqES = *_dsfEqPtrES.dsf[j]; //for fgamma_2
+		TArray& fgam = dynamic_cast< TArray&>(feqES[cells]);
+		fgam[c] = fgam[c]*(1+netFlux*cellVolume[c]/cellMass);
+		dsf[c] = dsf[c]*(1+netFlux*cellVolume[c]/cellMass);
+	      }
+	  }
 
-          }
-      }
-  }
+	}
+    }
+ }
 
-  void ConservationofMassCheck()
-  {
-    const int numMeshes = _meshes.size();
-    T ndens_tot(0.0) ;
+ void ConservationofMassCheck()
+ {
+  const int numMeshes = _meshes.size();
+  T ndens_tot(0.0) ;
      
-    for (int n=0; n<numMeshes; n++)
-      {
+  for (int n=0; n<numMeshes; n++)
+    {
         const Mesh& mesh = *_meshes[n];
         const StorageSite& cells = mesh.getCells();
-        const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+	const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
         const StorageSite& faces = mesh.getFaces();
-        const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-        const int numDirections = _quadrature.getDirCount();
-        const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[faces]);
-        const VectorT3Array& faceArea =
-          dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
-        const TArray& faceAreaMag =
-          dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
-        const CRConnectivity& faceCells = mesh.getAllFaceCells();
-        const int nFaces = faces.getCount();
+	const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+	const int numDirections = _quadrature.getDirCount();
+	const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[faces]);
+	const VectorT3Array& faceArea =
+       	      dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);
+	const TArray& faceAreaMag =
+	  dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
+	const CRConnectivity& faceCells = mesh.getAllFaceCells();
+	const int nFaces = faces.getCount();
 
-        for(int c=0; c<cells.getCount(); c++)
-          {
-            if (ibType[c] == Mesh::IBTYPE_FLUID)
-              {
-                for (int j=0; j<numDirections; j++)
-                  {
-                    Field& fnd = *_dsfPtr.dsf[j];
-                    TArray& dsf = dynamic_cast< TArray&>(fnd[cells]);
-                    ndens_tot += wts[j]*dsf[c];
-                  }
-              }
-          }
-      }
+	for(int c=0; c<cells.getCount(); c++)
+	  {
+	  if (ibType[c] == Mesh::IBTYPE_FLUID)
+	    {
+	      for (int j=0; j<numDirections; j++)
+		{
+		  Field& fnd = *_dsfPtr.dsf[j];
+		  TArray& dsf = dynamic_cast< TArray&>(fnd[cells]);
+		  ndens_tot += wts[j]*dsf[c];
+		}
+	    }
+	  }
+    }
     cout << "Hello, I have" << ndens_tot << "number density";
-  }
+ }
 
-  void ConservationofMFSolid(const StorageSite& solidFaces) const
-  {
+ void ConservationofMFSolid(const StorageSite& solidFaces) const
+ {
     const double pi=_options.pi;
     const double epsilon=_options.epsilon_ES;
   
     //  const StorageSite& solidMeshFaces = _solidBoundaryMesh._IBManager.getFaces();
-    const int nSolidFaces = solidFaces.getCount();
-    const int numMeshes = _meshes.size();
-    for (int n=0; n<numMeshes; n++)
-      { 
-        const Mesh& mesh = *_meshes[n];
-        if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){ 
+      const int nSolidFaces = solidFaces.getCount();
+      const int numMeshes = _meshes.size();
+      for (int n=0; n<numMeshes; n++)
+ 	{ 
+	  const Mesh& mesh = *_meshes[n];
+	  if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){ 
 
-          for (int i=0; i<nSolidFaces; i++)
-            {
-              const int numDirections = _quadrature.getDirCount();
-              const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
-              const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
-              const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
-                    const VectorT3Array& solidFaceCentroid =
-                      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[solidFaces]);
-                    const VectorT3Array& solidFaceArea =
-                      dynamic_cast<const VectorT3Array&>(_geomFields.area[solidFaces]);
-                    const TArray& solidFaceAreaMag =
-                      dynamic_cast<const TArray&>(_geomFields.areaMag[solidFaces]);
-                    const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
-                    VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[solidFaces]);
-                    TArray& density  = dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
-                    //XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]);
-                    TArray& temperature  = dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
-                    const T uwall = v[i][0];
-                    const T vwall = v[i][1];
-                    const T wwall = v[i][2];
-                    //cout << "uwall " << uwall << endl;
-                    const T Twall = temperature[i];
+	    for (int i=0; i<nSolidFaces; i++)
+	      {
+		    const int numDirections = _quadrature.getDirCount();
+		    const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
+		    const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
+		    const TArray& cz = dynamic_cast<const TArray&>(*_quadrature.czPtr);
+		    const VectorT3Array& solidFaceCentroid =
+		      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[solidFaces]);
+		    const VectorT3Array& solidFaceArea =
+		      dynamic_cast<const VectorT3Array&>(_geomFields.area[solidFaces]);
+		    const TArray& solidFaceAreaMag =
+		      dynamic_cast<const TArray&>(_geomFields.areaMag[solidFaces]);
+		    const TArray& wts= dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
+		    VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[solidFaces]);
+		    TArray& density  = dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
+		    //XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]);
+		    TArray& temperature  = dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
+		    const T uwall = v[i][0];
+		    const T vwall = v[i][1];
+		    const T wwall = v[i][2];
+		    //cout << "uwall " << uwall << endl;
+		    const T Twall = temperature[i];
 
-                    T Nmr(0.0) ;
-                    T Dmr(0.0) ;
-                    T incomFlux(0.0);
+		    T Nmr(0.0) ;
+		    T Dmr(0.0) ;
+		    T incomFlux(0.0);
 
-                    for (int j=0; j<numDirections; j++)
-                      {
-                        Field& fnd = *_dsfPtr.dsf[j];
-                        TArray& dsf = dynamic_cast< TArray&>(fnd[solidFaces]);
-                        const VectorT3 en = solidFaceArea[i]/solidFaceAreaMag[i];
-                        const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
-                        const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
-                        const T fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
+		    for (int j=0; j<numDirections; j++)
+		      {		
+			Field& fnd = *_dsfPtr.dsf[j];
+			TArray& dsf = dynamic_cast< TArray&>(fnd[solidFaces]);
+			const VectorT3 en = solidFaceArea[i]/solidFaceAreaMag[i];
+			const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
+			const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+			const T fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
 
-                        if (c_dot_en-wallV_dot_en > 0) //incoming
-                          {
-                            Dmr = Dmr - fwall*wts[j]*(c_dot_en-wallV_dot_en);
-                            incomFlux=incomFlux-dsf[i]*wts[j]*(c_dot_en-wallV_dot_en);
-                          }
-                        else
-                          {
-                            Nmr = Nmr + dsf[i]*wts[j]*(c_dot_en-wallV_dot_en);
-                          }
-                      }
-                    const T nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
+			if (c_dot_en-wallV_dot_en > 0) //incoming
+			  {
+			    Dmr = Dmr - fwall*wts[j]*(c_dot_en-wallV_dot_en);
+			    incomFlux=incomFlux-dsf[i]*wts[j]*(c_dot_en-wallV_dot_en);
+			  }
+			else
+			  {
+			    Nmr = Nmr + dsf[i]*wts[j]*(c_dot_en-wallV_dot_en);
+			  }
+		      }
+		    const T nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
 
-                    density[i]=nwall;
-                    
-                    //if (c0==80)cout <<"incoming" << incomFlux <<" outgoing" <<Nmr <<endl;
-                    for (int j=0; j<numDirections; j++)
-                      {
-                        Field& fnd = *_dsfPtr.dsf[j];
-                        TArray& dsf = dynamic_cast< TArray&>(fnd[solidFaces]);
-                        const VectorT3 en = solidFaceArea[i]/solidFaceAreaMag[i];
-                        const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
-                        const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
-                        if (c_dot_en-wallV_dot_en > 0)
-                          {
-                            dsf[i] = nwall/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
-                          }
-                  
-                        else
-                          dsf[i]=dsf[i];
-                      }
-            }
-        }
-      }
-  }
+		    density[i]=nwall;
+		    
+		    //if (c0==80)cout <<"incoming" << incomFlux <<" outgoing" <<Nmr <<endl;
+		    for (int j=0; j<numDirections; j++)
+		      {
+			Field& fnd = *_dsfPtr.dsf[j];
+			TArray& dsf = dynamic_cast< TArray&>(fnd[solidFaces]);
+			const VectorT3 en = solidFaceArea[i]/solidFaceAreaMag[i];
+			const T c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
+			const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+			if (c_dot_en-wallV_dot_en > 0)
+			  {
+			    dsf[i] = nwall/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
+			  }
+		  
+			else
+			  dsf[i]=dsf[i];
+		      }
+		  }
+	  }
+		  }
+ }
 
   void doSweeps(const int sweeps, const int num)
   {
