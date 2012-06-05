@@ -39,6 +39,7 @@ class Kspace
   T calcBallisticInterface(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
   T calcDiffuseE(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
   void setDOS(DensityOfStates<T>& DOS);
+  void setCp(const T cp);
 
   %extend{
     std::vector<Kspace<T>*>& MakeList()

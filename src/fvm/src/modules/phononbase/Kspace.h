@@ -81,6 +81,22 @@ class Kspace
  Kspace()
       {}
 
+ void setCp(const T cp)
+ {//input the total specific heat in eV/m^3/K
+   
+   for(int k=0;k<_length;k++)
+     {
+       Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    mode.getcpRef()=cp/_totvol;
+	  }
+     }
+ }
+
  Kspace(const char* filename,const int dimension)
    {
      ifstream fp_in;
@@ -427,6 +443,23 @@ class Kspace
 	  {
 	    Tmode& mode=kv.getmode(m);
 	    de0taudT+=mode.calcde0taudT(Tl)*dk3;
+	  }
+      }
+    return de0taudT;
+  }
+
+  T getde0taudTgray()
+  {
+    T de0taudT=0.;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    de0taudT+=mode.calcde0taudTgray()*dk3;
 	  }
       }
     return de0taudT;
