@@ -59,6 +59,7 @@ class pmode
       T& getTauRef() {return _tau;}
       T& getTauNRef() {return _tauN;}
       T& getOmegaRef() {return _omega;}
+      T& getcpRef() {return _cp;}
       Refl_Map& getreflmap() {return _reflections;}
       Refl_Map getreflmapValue() {return _reflections;}
       Refl_pair& getReflpair(int i) {return _reflections[i];}
@@ -80,6 +81,7 @@ class pmode
 	
 	return e0kp;
       }
+      T calce0gray(T Tl) {return (Tl-200)*_cp;}
       T calce0tau(T Tl)
       {
 	const T hbar=6.582119e-16;  // (eV s)
@@ -90,6 +92,7 @@ class pmode
 	
 	return e0kp;
       }
+      T calce0taugray(T Tl) {return (Tl-200)*_cp/_tau;}
       T calcde0taudT(T Tl)
       {
 	const T hbar=6.582119e-16;  // (eV s)
@@ -101,6 +104,7 @@ class pmode
 	
 	return e0kp;
       }
+      T calcde0taudTgray() {return _cp/_tau;}
       T calcde0dT(T Tl)
       {
 	const T hbar=6.582119e-16;  // (eV s)
