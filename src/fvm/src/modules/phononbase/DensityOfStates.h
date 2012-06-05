@@ -266,6 +266,31 @@ class DensityOfStates
     
     return outSum;
   }
+
+  T sumOutgoingGray(const VectorT3& n, const int fBin, const T Temp)
+  {
+    T outSum(0.);
+    
+    if(fBin>=0)
+      {
+	const IntArray& Kpts=getKIndices(fBin);
+	const IntArray& Mpts=getMIndices(fBin);
+	for(int i=0;i<Kpts.getLength();i++)
+	  {
+	    const int k=Kpts[i];
+	    const int m=Mpts[i];
+	    const VectorT3 vg=_kspace.getkvol(k).getmode(m).getv();
+	    const T vdot=vg[0]*n[0]+vg[1]*n[1]+vg[2]*n[2];
+	    if(vdot>0.)
+	      {
+		const T dk3=_kspace.getkvol(k).getdk3();
+		outSum+=dk3*vdot*_kspace.getkvol(k).getmode(m).calce0gray(Temp);
+	      }
+	  }
+      }
+    
+    return outSum;
+  }
   
   ArrayBase* makeDMMtransmission(DensityOfStates& otherDOS, const T Temp, const bool merge)
   {
@@ -284,8 +309,8 @@ class DensityOfStates
       {
 	T w0=_FreqMids[f0];
 	const int f1=otherDOS.findBin(w0);
-	const T mat0sum=sumOutgoing(n,f0,Temp);
-	const T mat1sum=otherDOS.sumOutgoing(-n,f1,Temp);
+	const T mat0sum=sumOutgoingGray(n,f0,Temp);
+	const T mat1sum=otherDOS.sumOutgoingGray(-n,f1,Temp);
 	if(mat1sum==0. && mat0sum==0.)
 	  (*trans)[f0]=0.;
 	else
