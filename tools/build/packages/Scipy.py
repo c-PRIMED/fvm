@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Scipy(BuildPkg):
-    requires = ['numpy', 'python']
+    requires = ['numpy', 'python', 'umfpack']
 
     def _installed(self):
         return python_package('scipy', [0,7,1])
