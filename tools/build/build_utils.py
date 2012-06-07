@@ -326,8 +326,7 @@ def set_python_path(dir, reset=False):
 def write_env(bld, cwd, cname):
     idir = os.path.join(bld.blddir, "include")
     # write out env.csh for people who haven't yet learned bash
-    env_name = os.path.join(cwd, 'env.csh')
-    c_name = os.path.join(cwd, 'env-%s.csh' % cname)
+    env_name = os.path.join(cwd, 'env-%s.csh' % cname)
     f = open(env_name, 'w')
     for cmd in config('ALL', 'before'):
         exp = re.findall(r'export (\S+)=(\S+)', cmd)
@@ -364,11 +363,9 @@ def write_env(bld, cwd, cname):
     print >> f, "\n# Need this to recompile MPM in its directory."
     print >> f, "setenv MEMOSA_CONFNAME %s" % cname
     f.close()
-    shutil.copy2(env_name, c_name)
 
     # write out env.sh
-    env_name = os.path.join(cwd, 'env.sh')
-    c_name = os.path.join(cwd, 'env-%s.sh' % cname)
+    env_name = os.path.join(cwd, 'env-%s.sh' % cname)
     f = open(env_name, 'w')
     for cmd in config('ALL', 'before'):
         f.write('%s\n' % cmd)
@@ -387,8 +384,7 @@ def write_env(bld, cwd, cname):
     print >> f, "\n# Need this to recompile MPM in its directory."
     print >> f, "export MEMOSA_CONFNAME=%s" % cname
     f.close()
-    shutil.copy2(env_name, c_name)
-    return c_name
+    return env_name
 
 
 def find_executable(executable, path=None):
