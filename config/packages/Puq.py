@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Puq(BuildPkg):
-    requires = ['mpi4py', 'h5py', 'scipy', 'matplotlib', 'nose', 'pystatistics', 'sympy', 'time']
+    requires = ['mpi4py', 'h5py', 'scipy', 'matplotlib', 'nose', 'jsonpickle', 'sympy', 'time']
     copy_sources = 1
     def _build(self):
         return self.sys_log("make -j%s" % (jobs(self.name)))
