@@ -66,7 +66,7 @@ class DistFunctFields
 	{
 	  const Mesh& mesh = *_meshes[n];
 	  const StorageSite& cells = mesh.getCells();
-	  const int nCells = cells.getCount();
+	  const int nCells = cells.getCountLevel1();
 	  double pi(3.14159);
 	  
 	  const TArray& density = dynamic_cast<const TArray&>(macroPr.density[cells]);
@@ -87,7 +87,7 @@ class DistFunctFields
 	  for(int j=0;j<numFields;j++){
 	    Field& fnd= *dsf[j]; 
 	    
-	    shared_ptr<TArray> fcPtr(new TArray(cells.getCount()));
+	    shared_ptr<TArray> fcPtr(new TArray(cells.getCountLevel1()));
 	    
 	    fnd.addArray(cells,fcPtr);
 	    
@@ -126,7 +126,7 @@ class DistFunctFields
 	{
 	  const Mesh& mesh = *_meshes[n];
 	  const StorageSite& cells = mesh.getCells();
-	  const int nCells = cells.getCount();
+	  const int nCells = cells.getCountLevel1();
 
 	  double pi(3.14159);
 	 
@@ -136,7 +136,7 @@ class DistFunctFields
 	  //const TArray& dcxyz = dynamic_cast<const TArray&>(*_quadrature.dcxyzPtr);
 	  for(int j=0;j<numFields;j++){
 	    Field& fnd= *dsf[j]; 
-	    shared_ptr<TArray> fcPtr(new TArray(cells.getCount()));
+	    shared_ptr<TArray> fcPtr(new TArray(cells.getCountLevel1()));
 	    
 	    fnd.addArray(cells,fcPtr);
 	    
@@ -162,7 +162,7 @@ class DistFunctFields
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getCountLevel1();
 	double pi(3.14159);
 	
 	const TArray& density = dynamic_cast<const TArray&>(macroPr.density[cells]);
@@ -193,7 +193,7 @@ class DistFunctFields
       {
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
-	const int nCells = cells.getCount();
+	const int nCells = cells.getCountLevel1();
 	double pi(3.14159);
 	
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);

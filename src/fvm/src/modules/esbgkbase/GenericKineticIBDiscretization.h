@@ -40,18 +40,17 @@ public:
 				  const double cx,
 				  const double cy,
                                   const double cz,
-				  const double uwall,
-				  const double vwall,
-				  const double wwall) :
+				  MacroFields& macroFields) :
   Discretization(meshes),
     _geomFields(geomFields),
     _varField(varField),
     _cx(cx),
     _cy(cy),
     _cz(cz),
-    _uwall(uwall),
-    _vwall(vwall),
-    _wwall(wwall)
+    _macroFields(macroFields)
+    //    _uwall(uwall),
+    //    _vwall(vwall),
+    //    _wwall(wwall)
 
 {}
 
@@ -59,10 +58,9 @@ public:
                   MultiField& xField, MultiField& rField)
   {
     const StorageSite& ibFaces = mesh.getIBFaces();
-
-    if (ibFaces.getCount() == 0)
+     if (ibFaces.getCount() == 0)
       return;
-    
+    VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[ibFaces]);  
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getFaces();
     
@@ -99,7 +97,7 @@ public:
     // in the following arrays and after all the faces have been
     // visited, overwrite any boundary cell values with the average of
     // all the ib faces
-    const int nCells = cells.getCount();
+    const int nCells = cells.getCountLevel1();
     XArray xB(nCells);
     Array<int> wB(nCells);
 
@@ -122,11 +120,14 @@ public:
             if (ibFace < 0)
               throw CException("invalid ib face index");
             const X& xface = xib[ibFace];
+	    const X uwall = v[ibFace][0];
+	    const X vwall = v[ibFace][1];
+	    const X wwall = v[ibFace][2];
             if (ibType[c0] == Mesh::IBTYPE_FLUID)
             {
 		const VectorT3 en = faceArea[f]/faceAreaMag[f];
 		const X c_dot_en = _cx*en[0]+_cy*en[1]+_cz*en[2];
-		const X wallv_dot_en = _uwall*en[0]+_vwall*en[1]+_wwall*en[2];
+		const X wallv_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
 		if(c_dot_en - wallv_dot_en <0 ){
 		  rCell[c0] += assembler.getCoeff01(f)*(xface-varcell[c1]);
 		  rCell[c1] = NumTypeTraits<X>::getZero();
@@ -153,7 +154,7 @@ public:
 	      {
 		const VectorT3 en = faceArea[f]/faceAreaMag[f];
 		const X c_dot_en = _cx*en[0]+_cy*en[1]+_cz*en[2];
-		const X wallv_dot_en = _uwall*en[0]+_vwall*en[1]+_wwall*en[2];
+		const X wallv_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
 		if(c_dot_en - wallv_dot_en> 0){
 		  rCell[c1] += assembler.getCoeff10(f)*(xface-varcell[c0]);
 		  rCell[c0] = NumTypeTraits<X>::getZero();
@@ -208,9 +209,10 @@ private:
   const double _cx;
   const double _cy;
   const double _cz;
-  const double _uwall;
-  const double _vwall;
-  const double _wwall;
+  MacroFields& _macroFields;
+  //  const double _uwall;
+  //  const double _vwall;
+  //  const double _wwall;
 };
 
 #endif
