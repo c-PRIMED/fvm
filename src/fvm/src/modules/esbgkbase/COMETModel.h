@@ -2386,14 +2386,17 @@ map<string,shared_ptr<ArrayBase> >&
 
                         if(FineToCoarse[c2]==-1)
                           if(areaMagArray[f]>maxArea)
-                            pairWith=c2;
+			  {
+			      pairWith=c2;
+			      maxArea=areaMagArray[f];
+			  }
 		    }
 		}
 		
                 if(pairWith!=-1)
                 {
                     FineToCoarse[c]=coarseCount;
-                    FineToCoarse[c2]=coarseCount;
+                    FineToCoarse[pairWith]=coarseCount;
                     coarseCount++;
 		}
 	    }
@@ -2407,7 +2410,7 @@ map<string,shared_ptr<ArrayBase> >&
                 const int neibCount=inCellinFaces.getCount(c);
                 T maxArea=0.;
                 int c2,c2perm;
-                pairWith=-1;
+                pairWith=-2;
 
                 for(int neib=0;neib<neibCount;neib++)
                 {
@@ -2424,11 +2427,12 @@ map<string,shared_ptr<ArrayBase> >&
                         {
                             pairWith=FineToCoarse[c2]; //coarse level cell
                             c2perm=c2;                 //fine level cell
+			    maxArea=areaMagArray[f];
 			}
 		    }
 		}
 
-                if(pairWith==-1)
+                if(pairWith==-2)
                 {
                     FineToCoarse[c]=coarseCount;
                     coarseCount++;
