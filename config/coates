@@ -42,7 +42,8 @@ python:
 	Build=1
 
 before:
-	module load cmake openmpi-1.5.4-gcc64/4.5.1 hdf5-1.8.5/gcc-4.5.1 swig atlas CGAL
-	export HDF5_DIR=apps/rhel5/graphics/x86_64/gnu/gcc-4.5.1/hdf5-1.8.5-patch1
+	module load cmake boost/1.47.0 openmpi/1.5.4_gcc-4.5.1 hdf5/1.8.5_gcc-4.5.1 swig atlas cgal/3.6
+	export HDF5_DIR=/apps/rhel5/graphics/x86_64/gnu/gcc-4.5.1/hdf5-1.8.5-patch1
+
 
 
