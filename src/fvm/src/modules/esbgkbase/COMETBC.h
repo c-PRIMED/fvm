@@ -92,6 +92,8 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->AgglomerationMethod="FaceArea";
     this->preSweeps=0;
     this->postSweeps=2;
+    this->preCoarsestSweeps=1;
+    this->postCoarsestSweeps=1;
     this->underRelaxation=1.0;
     this->minCells=1;
     this->CentralDifference=false;
@@ -138,6 +140,8 @@ struct COMETModelOptions : public FloatVarDict<T>
   string AgglomerationMethod;
   int preSweeps;
   int postSweeps;
+  int preCoarsestSweeps;
+  int postCoarsestSweeps;
   int minCells;
   bool CentralDifference;
 

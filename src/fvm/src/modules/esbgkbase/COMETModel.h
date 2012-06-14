@@ -2357,13 +2357,17 @@ map<string,shared_ptr<ArrayBase> >&
         const CRConnectivity& inCellinFaces=mesh.getCellFaces();
         const CRConnectivity& inFaceinCells=mesh.getFaceCells(inFaces);
         Field& areaMagField=inGeomFields.areaMag;
+        Field& areaField=inGeomFields.area;
         const TArray& areaMagArray=dynamic_cast<const TArray&>(areaMagField[inFaces]);
+	const VectorT3Array& areaArray=dynamic_cast<const VectorT3Array&>(areaField[inFaces]);
         const BCfaceArray& inBCfArray=*(_BFaces[n]);
 
 	const IntArray& ibType = dynamic_cast<const IntArray&>(inGeomFields.ibType[inCells]);
 
 	//first sweep to make initial pairing
         int pairWith;
+        Array<bool> marker(inFaceCount);
+        Array<bool> marked(inCellCount);
 	for(int c=0;c<inCellCount;c++)
         {
 	    if((FineToCoarse[c]<0)&&(ibType[c] == Mesh::IBTYPE_FLUID)) //dont bother if im already paired
@@ -2373,6 +2377,14 @@ map<string,shared_ptr<ArrayBase> >&
                 pairWith=-1;
                 T maxArea=0.;
                 int c2;
+                for(int i=0; i<inFaceCount; i++)
+		{
+                    marker[i] = false;
+		}
+                for(int i=0; i<inCellCount; i++)
+		{
+                    marked[i] = false;
+		}
                 for(int neib=0;neib<neibCount;neib++)
                 {
                     const int f=inCellinFaces(c,neib);
@@ -2384,12 +2396,35 @@ map<string,shared_ptr<ArrayBase> >&
                         else
                           c2=inFaceinCells(f,1);
 
+                        VectorT3 tempArea;
+                        if((FineToCoarse[c2]==-1)&&(!marked[c2]))
+			{
+                            marker[f]=true;
+                            marked[c2]=true;
+                            for(int face=0;face<inFaceCount;face++)
+			    {
+                                if((c==inFaceinCells(face,0))&&(c2==inFaceinCells(face,1)))
+                                  tempArea+=areaArray[face];
+                                else if((c2==inFaceinCells(face,0))&&(c==inFaceinCells(face,1)))
+                                  tempArea-=areaArray[face];
+			    }
+			}
+
+                        if((FineToCoarse[c2]==-1)&&(marker[f]))
+                          if(mag(tempArea)>maxArea)
+			  {
+                              pairWith=c2;
+                              maxArea=mag(tempArea);
+			  }
+
+			/*
                         if(FineToCoarse[c2]==-1)
                           if(areaMagArray[f]>maxArea)
 			  {
 			      pairWith=c2;
 			      maxArea=areaMagArray[f];
 			  }
+			*/
 		    }
 		}
 		
@@ -2411,6 +2446,14 @@ map<string,shared_ptr<ArrayBase> >&
                 T maxArea=0.;
                 int c2,c2perm;
                 pairWith=-2;
+                for(int i=0; i<inFaceCount; i++)
+		{
+                    marker[i] = false;
+		}
+                for(int i=0; i<inCellCount; i++)
+		{
+                    marked[i] = false;
+		}
 
                 for(int neib=0;neib<neibCount;neib++)
                 {
@@ -2423,12 +2466,36 @@ map<string,shared_ptr<ArrayBase> >&
                         else
                           c2=inFaceinCells(f,1);
 
+			VectorT3 tempArea;
+                        if(!marked[c2])
+			{
+                            marker[f]=true;
+                            marked[c2]=true;
+                            for(int face=0;face<inFaceCount;face++)
+			    {
+                                if((c==inFaceinCells(face,0))&&(c2==inFaceinCells(face,1)))
+                                  tempArea+=areaArray[face];
+                                else if((c2==inFaceinCells(face,0))&&(c==inFaceinCells(face,1)))
+                                  tempArea-=areaArray[face];
+			    }
+			}
+			
+                        if(marker[f])
+                          if(mag(tempArea)>maxArea)
+			  {
+                              pairWith=FineToCoarse[c2]; //coarse level cell
+                              c2perm=c2;                 //fine level cell
+                              maxArea=mag(tempArea);
+			  }
+
+			/*
                         if(areaMagArray[f]>maxArea)
                         {
                             pairWith=FineToCoarse[c2]; //coarse level cell
                             c2perm=c2;                 //fine level cell
 			    maxArea=areaMagArray[f];
 			}
+			*/
 		    }
 		}
 
@@ -5109,7 +5176,10 @@ map<string,shared_ptr<ArrayBase> >&
 
   void cycle()
   {
-    doSweeps(_options.preSweeps,1);
+    if(_level+1<_options.maxLevels)
+      doSweeps(_options.preSweeps,1);
+    else
+      doSweeps(_options.preCoarsestSweeps,1);
     if(_level+1<_options.maxLevels)
     {
         if(_level==0)
@@ -5134,14 +5204,24 @@ map<string,shared_ptr<ArrayBase> >&
         else{EquilibriumDistributionBGK();}
         if (_options.fgamma==2){EquilibriumDistributionESBGK();}
     }
-
-    doSweeps(_options.postSweeps,0);
+    if(_level+1<_options.maxLevels)
+      doSweeps(_options.postSweeps,0);
+    else
+    {
+	if(_options.postCoarsestSweeps==1)
+	  doSweeps(_options.postCoarsestSweeps,0);
+        else if(_options.postCoarsestSweeps>1)
+          doSweeps(_options.postCoarsestSweeps,1);
+    }
   }
 
 
   void cycle(const StorageSite& solidFaces)
   {
-    doSweeps(_options.preSweeps,1,solidFaces);
+    if(_level+1<_options.maxLevels)
+      doSweeps(_options.preSweeps,1,solidFaces);
+    else
+      doSweeps(_options.preCoarsestSweeps,1,solidFaces);
     if(_level+1<_options.maxLevels)
       {
         if(_level==0)
@@ -5166,8 +5246,15 @@ map<string,shared_ptr<ArrayBase> >&
         else{EquilibriumDistributionBGK();}
         if (_options.fgamma==2){EquilibriumDistributionESBGK();}	
       }
-    
-    doSweeps(_options.postSweeps,0,solidFaces);
+    if(_level+1<_options.maxLevels)
+      doSweeps(_options.postSweeps,0,solidFaces);
+    else
+    {
+        if(_options.postCoarsestSweeps==1)
+          doSweeps(_options.postCoarsestSweeps,0,solidFaces);
+        else if(_options.postCoarsestSweeps>1)
+          doSweeps(_options.postCoarsestSweeps,1,solidFaces);
+    }
   }
 
   void injectResid()
