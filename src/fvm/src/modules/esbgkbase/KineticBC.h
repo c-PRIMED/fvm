@@ -82,6 +82,7 @@ struct KineticModelOptions : public FloatVarDict<T>
     this->Tolerance=1e-4;
     this->printNormalizedResiduals = true;
     this->transient = false;
+    this->ibm_enable = false;
    
     this->fgamma=2;
    
@@ -111,6 +112,7 @@ struct KineticModelOptions : public FloatVarDict<T>
   bool printNormalizedResiduals;
   double Tolerance;
   bool transient;
+  bool ibm_enable;
  
   double BoltzmannConstant;
   double Planck;

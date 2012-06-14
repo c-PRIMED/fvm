@@ -48,10 +48,6 @@ public:
     _cy(cy),
     _cz(cz),
     _macroFields(macroFields)
-    //    _uwall(uwall),
-    //    _vwall(vwall),
-    //    _wwall(wwall)
-
 {}
 
   void discretize(const Mesh& mesh, MultiFieldMatrix& matrix,
@@ -136,18 +132,6 @@ public:
 		  xB[c1] += xface;
 		  wB[c1]++;
 	      }
-	      
-/* 		      else{ */
-/* 			const Diag dFluxdXC1 =  -dRdXDiag[c1]; */
-/* 			const X xc0mxc1 = varcell[c0]-varcell[c1]; */
-/* 			dRdXDiag[c0] += dFluxdXC1; */
-/* 			rCell[c0] += dFluxdXC1*xc0mxc1; */
-/* 			assembler.getCoeff01(f) = 0; */
-/* 			dRdXDiag[c1] = NumTypeTraits<Diag>::getNegativeUnity(); */
-/* 			assembler.getCoeff10(f) =  NumTypeTraits<OffDiag>::getUnity(); */
-/* 			rCell[c1] = xc0mxc1; */
-/* 			dRdX.setBoundary(c1); */
-/* 		      } */
 	    }
 	
             else
@@ -163,17 +147,6 @@ public:
 		  xB[c0] += xface;
 		  wB[c0]++;
 		}	
-/* 		      else{ */
-/* 			const Diag dFluxdXC1 =  -dRdXDiag[c0]; */
-/* 			const X xc0mxc1 = varcell[c1]-varcell[c0]; */
-/* 			dRdXDiag[c1] += dFluxdXC1; */
-/* 			rCell[c1] += dFluxdXC1*xc0mxc1; */
-/* 			assembler.getCoeff10(f) = 0; */
-/* 			dRdXDiag[c0] = NumTypeTraits<Diag>::getNegativeUnity(); */
-/* 			assembler.getCoeff01(f) =  NumTypeTraits<OffDiag>::getUnity(); */
-/* 			rCell[c0] = xc0mxc1; */
-/* 			dRdX.setBoundary(c0); */
-/* 		      } */
 	      }
         }
         else if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
@@ -210,9 +183,6 @@ private:
   const double _cy;
   const double _cz;
   MacroFields& _macroFields;
-  //  const double _uwall;
-  //  const double _vwall;
-  //  const double _wwall;
 };
 
 #endif
