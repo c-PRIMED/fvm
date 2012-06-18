@@ -23,12 +23,15 @@ struct PhononMacro
   Field heatFlux;
   Field lam;
   FieldVectorMap BranchTemperatures;
+  FieldVector CellColors;
+  FieldVector plottingCellColors;
 
   Field zero;                     //used to fill in continuityResidual
   Field one;                      //used to fill in density
 
   Field& getModeTemp(int mesh, int mode);
-
+  Field& getColorField(int level);
+  Field& getPlotColorField(int level);
 };
 
 #endif

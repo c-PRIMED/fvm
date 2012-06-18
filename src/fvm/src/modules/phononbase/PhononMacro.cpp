@@ -10,6 +10,7 @@ PhononMacro::PhononMacro(const std::string baseName) :
   heatFlux(baseName + ".heatFlux"),
   lam(baseName + ".lam"),
   BranchTemperatures(),
+  CellColors(),
   zero(baseName + "zero"),
   one(baseName + "one")
 {}
@@ -28,3 +29,9 @@ Field& PhononMacro::getModeTemp(int mesh, int mode)
     }
   throw CException("Don't have FieldVector for that mesh!");
 }
+
+Field& PhononMacro::getColorField(int level)
+{return *CellColors[level];}
+
+Field& PhononMacro::getPlotColorField(int level)
+{return *plottingCellColors[level];}
