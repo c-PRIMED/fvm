@@ -40,7 +40,9 @@ class COMETModel : public Model
   void applyTemperatureBoundaries();
   void initFromOld();
   T calcDomainStats();
-  
+  void makeCellColors(const int level);
+  void makePlotColors(const int level);
+
  private:
   
   const int _level; 
@@ -56,7 +58,9 @@ class COMETModel : public Model
   BCcellList _BCells;
   T _residual;
   MeshKspaceMap _MeshKspaceMap;
-
+  IClist _IClist;
+  MeshICmap _MeshToIC;
+ 
 };
 
 template <class T>
