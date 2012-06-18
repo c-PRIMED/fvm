@@ -23,6 +23,7 @@ class Kspace
   typedef Kspace<T> Tkspace;
   typedef vector<Tkspace*> TkspList;
   typedef Array<T> TArray;
+  typedef shared_ptr<TArray> TArrPtr;
   typedef Vector<T,3> Tvec;
   typedef Array<Tvec> TvecArray;
   typedef Array<int> IntArray;
@@ -915,6 +916,63 @@ class Kspace
   void setCoarseKspace(Tkspace* cK) {_coarseKspace=cK;}
   Tkspace* getCoarseKspace() {return _coarseKspace;}
   TransmissionMap& getTransMap() {return _transMap;}
+  T& gete(const int cell, const int count) {return (*_e)[cell*gettotmodes()+count];}
+  T& gete0(const int cell, const int count) {return (*_e0)[cell*gettotmodes()+count];}
+  T& getInj(const int cell, const int count) {return (*_injected)[cell*gettotmodes()+count];}
+  T& getRes(const int cell, const int count) {return (*_residual)[cell*gettotmodes()+count];}
+  T& getFas(const int cell, const int count) {return (*_FASCorrection)[cell*gettotmodes()+count];}
+  int getGlobalIndex(const int cell, const int count) {return cell*gettotmodes()+count;}
+  void seteArray(TArrPtr ePtr) {_e=ePtr;}
+  void sete0Array(TArrPtr e0Ptr) {_e0=e0Ptr;}
+  void setInjArray(TArrPtr InjPtr) {_injected=InjPtr;}
+  void setResArray(TArrPtr ResPtr) {_residual=ResPtr;}
+  void setFASArray(TArrPtr FASPtr) {_FASCorrection=FASPtr;}
+  TArray& geteArray() {return *_e;}
+  TArray& gete0Array() {return *_e0;}
+  TArray& getInjArray() {return *_injected;}
+  TArray& getResArray() {return *_residual;}
+  TArray& getFASArray() {return *_FASCorrection;}
+  void geteCellVals(const int c, TArray& o)
+  {
+    int start=getGlobalIndex(c,0);
+    int end=start+gettotmodes();
+    for(int i=start; i<end; i++)
+      o[i-start]=(*_e)[i];
+  }
+
+  void seteCellVals(const int c, const TArray& o)
+  {
+    int start=getGlobalIndex(c,0);
+    int end=start+gettotmodes();
+    for(int i=start; i<end; i++)
+      (*_e)[i]=o[i-start];
+  }
+
+  void setResidCell(const int c, const TArray& o)
+  {
+    int start=getGlobalIndex(c,0);
+    int end=start+gettotmodes();
+    for(int i=start; i<end; i++)
+      (*_residual)[i]=o[i-start];
+  }
+
+  void addFAS(const int c, TArray& Bvec)
+  {
+    int start=getGlobalIndex(c,0);
+    int end=start+gettotmodes();
+    for(int i=start; i<end; i++)
+      Bvec[i-start]-=(*_FASCorrection)[i];
+  }
+
+  void addFASint(const int c, TArray& Bvec)
+  {
+    int start=getGlobalIndex(c,0);
+    int end=start+gettotmodes();
+    for(int i=start; i<end; i++)
+      Bvec[i-start]+=(*_FASCorrection)[i];
+  }
+
+  void makeFAS() {(*_FASCorrection)-=(*_residual);}
   
  private:
 
@@ -926,6 +984,11 @@ class Kspace
   TransmissionMap _transMap;
   DensityOfStates<T>* _DOS;
   Tkspace* _coarseKspace;
+  TArrPtr _e;
+  TArrPtr _e0;
+  TArrPtr _injected;
+  TArrPtr _residual;
+  TArrPtr _FASCorrection;
   
 };
 
