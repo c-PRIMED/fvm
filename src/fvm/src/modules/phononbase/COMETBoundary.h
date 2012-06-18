@@ -32,7 +32,7 @@ class COMETBoundary
   COMETBoundary(const StorageSite& faces,
 		const Mesh& mesh,
 		const GeomFields& geomFields,
-		const Tkspace& kspace,
+		Tkspace& kspace,
 		COMETModelOptions<T>& opts,
 		const int fg_id):
   _faces(faces),
@@ -44,7 +44,8 @@ class COMETBoundary
     _faceArea(dynamic_cast<const VectorT3Array&>(_areaField[_faces])),
     _options(opts),
     _kspace(kspace), 
-    _fg_id(fg_id)
+    _fg_id(fg_id),
+    _eArray(kspace.geteArray())
     {}
 
   void applyTemperatureWall(FloatValEvaluator<T>& bTemp) const
@@ -71,16 +72,17 @@ class COMETBoundary
 	for (int m=0;m<numM;m++)
 	  {
 	    Tmode& mode=kv.getmode(m);
-	    Field& efield=mode.getfield();
 	    VectorT3 vg = mode.getv();
-	    TArray& e_val = dynamic_cast<TArray&>(efield[_cells]);
+	    const int index=mode.getIndex()-1;
 	    const VectorT3 en = _faceArea[f];
 	    const T vg_dot_en = vg[0]*en[0]+vg[1]*en[1]+vg[2]*en[2];
+	    const int c0ind=_kspace.getGlobalIndex(c0,index);
+	    const int c1ind=_kspace.getGlobalIndex(c1,index);
 	    
 	    if (vg_dot_en > T_Scalar(0.0))
-	      e_val[c1]=e_val[c0];
+	      _eArray[c1ind]=_eArray[c0ind];
 	    else
-	      e_val[c1]=mode.calce0(Twall);
+	      _eArray[c1ind]=mode.calce0(Twall);
 	  }	
       }
   }
@@ -95,8 +97,9 @@ class COMETBoundary
   const Field& _areaField;
   const VectorT3Array& _faceArea;
   COMETModelOptions<T>& _options;
-  const Tkspace& _kspace;
+  Tkspace& _kspace;
   const int _fg_id;
+  TArray& _eArray;
 };
 
 #endif
