@@ -361,9 +361,27 @@ class COMETInterface
 	    IntArray pos1self(k1kpts.getLength());
 	    IntArray pos0other(k0kpts.getLength());
 	    IntArray pos1other(k1kpts.getLength());
+
+	    /*
 	    const T t01=transArray01[binIndx];
 	    const T r01=1.-t01;
 	    const T t10=r01;
+	    const T r10=1-t10;
+	    */
+
+	    VectorT3 normal;
+	    normal[0]=1.;
+	    normal[0]=0.;
+	    normal[0]=0.;
+	    
+	    T eout0T0=dos0.sumOutgoing(normal,binIndx,(TL0+TL1)/2.);
+	    T eout1T0=dos1.sumOutgoing(-normal,binIndx,(TL0+TL1)/2.);
+	    const T t01=1./(1.+eout0T0/eout1T0);
+	    const T r01=1-t01;
+
+	    //T eout0T1=dos0.sumOutgoing(normal,binIndx,TL1);
+	    //T eout1T1=dos1.sumOutgoing(-normal,binIndx,TL1);
+	    const T t10=r01;//1./(1.+eout1T1/eout0T1);
 	    const T r10=1-t10;
 
 	    T in0sum(0.);
@@ -554,7 +572,7 @@ class COMETInterface
 	Kconn1.multiplySelf(vals1,reflected);
 	transmitted+=reflected;
 	if(plusFAS)
-	  addFAS(Mid1,cell1ghost,transmitted);
+	  kspace1.addFASint(cell1ghost,transmitted);
 	Distribute(Mid1,cell1ghost,transmitted);	
       }
   }
@@ -615,7 +633,7 @@ class COMETInterface
 	transmitted01+=reflected10;
 	transmitted01-=currentSol1; //now transmitted01 is the residual
 	if(plusFAS)
-	  addFAS(Mid1,cell1ghost,transmitted01);
+	  kspace1.addFASint(cell1ghost,transmitted01);
 	DistributeResid(Mid1,cell1ghost,transmitted01);
 
 	Kconn0.multiplyOther(vals1,transmitted10);
@@ -623,7 +641,7 @@ class COMETInterface
 	transmitted10+=reflected01;
 	transmitted10-=currentSol0; //now transmitted10 is the residual
 	if(plusFAS)
-	  addFAS(Mid0,cell0ghost,transmitted10);
+	  kspace0.addFASint(cell0ghost,transmitted10);
 	DistributeResid(Mid0,cell0ghost,transmitted10);
       }
   }
@@ -638,19 +656,7 @@ class COMETInterface
 
     if(klen+1==o.getLength())
       {
-	for(int k=0;k<kpts;k++)
-	  {
-	    Tkvol& kvol=kspace.getkvol(k);
-	    const int numModes=kvol.getmodenum();
-	    for(int m=0;m<numModes;m++)
-	      {
-		Tmode& mode=kvol.getmode(m);
-		const int count=mode.getIndex()-1;
-		Field& efield=mode.getfield();
-		TArray& eArray=dynamic_cast<TArray&>(efield[cells]);
-		o[count]=eArray[c];
-	      }
-	  }
+	kspace.geteCellVals(c,o);
 	o[klen]=0.;
       }
     else
@@ -693,20 +699,7 @@ class COMETInterface
     
     if(klen+1==BVec.getLength())
       {
-	for(int k=0;k<kpts;k++)
-	  {
-	    Tkvol& kvol=kspace.getkvol(k);
-	    const int numModes=kvol.getmodenum();
-	    for(int m=0;m<numModes;m++)
-	      {
-		Tmode& mode=kvol.getmode(m);
-		const int count=mode.getIndex();
-		Field& efield=mode.getfield();
-		TArray& eArray=dynamic_cast<TArray&>(efield[cells]);
-		eArray[cell]=BVec[count-1];
-	      }
-	  }
-	
+	kspace.seteCellVals(cell, BVec);
 	TArray& TlArray=dynamic_cast<TArray&>(_macro.temperature[cells]);
 	TlArray[cell]=BVec[klen];
       }
@@ -724,22 +717,7 @@ class COMETInterface
     
     if(klen+1==BVec.getLength())
       {
-	for(int k=0;k<kpts;k++)
-	  {
-	    Tkvol& kvol=kspace.getkvol(k);
-	    const int numModes=kvol.getmodenum();
-	    for(int m=0;m<numModes;m++)
-	      {
-		Tmode& mode=kvol.getmode(m);
-		const int count=mode.getIndex();
-		Field& rfield=mode.getresid();
-		TArray& rArray=dynamic_cast<TArray&>(rfield[cells]);
-		rArray[cell]=BVec[count-1];
-	      }
-	  }
-	
-	//TArray& TlArray=dynamic_cast<TArray&>(_macro.temperature[cells]);
-	//TlArray[cell]=BVec[klen];
+	kspace.setResidCell(cell, BVec);
       }
     else
       throw CException("DistributeResid: Array not the same size as the k-space!");
@@ -787,6 +765,8 @@ class COMETInterface
       n*=-1.;
     
     T sume(0.);
+    TArray eArray(kspace.gettotmodes());
+    kspace.geteCellVals(cell0, eArray);
 
     for(int k=0;k<kpts;k++)
       {
@@ -800,9 +780,8 @@ class COMETInterface
 	    T VdotN=vg[0]*n[0]+vg[1]*n[1]+vg[2]*n[2];
 	    if(VdotN>0)
 	      {
-		Field& efield=mode.getfield();
-		TArray& eArray=dynamic_cast<TArray&>(efield[cells]);
-		sume+=eArray[cell0]*dk3;
+		int index=mode.getIndex()-1;
+		sume+=eArray[index]*dk3;
 	      }
 	  }
       }
