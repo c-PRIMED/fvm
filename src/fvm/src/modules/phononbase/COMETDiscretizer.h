@@ -71,7 +71,10 @@ class COMETDiscretizer
     _residChange(-1.),
     _fgFinder(),
     _options(options),
-    _FaceToKSC(FgToKsc)
+    _FaceToKSC(FgToKsc),
+    _eArray(kspace.geteArray()),
+    _e0Array(kspace.gete0Array()),
+    _resArray(kspace.getResArray())
     {}
 
   void COMETSolve(const int dir,const int level)
@@ -179,8 +182,8 @@ class COMETDiscretizer
 		dt=fabs(Bvec[totalmodes]);
 		updatee0(c);
 		updateGhost(c);
-		//if(!_FaceToKSC.empty())
-		//  correctInterface(c,Bvec);
+		if(!_FaceToKSC.empty())
+		  correctInterface(c,Bvec);
 		NewtonIters++;
 	      }
 	  }
@@ -241,13 +244,6 @@ class COMETDiscretizer
 	  }
 	const int klen=_kspace.getlength();
 	
-	//VectorT3 c0Pos=_cellCoords[cell0];
-	//VectorT3 c1Pos=_cellCoords[cell1];
-	//VectorT3 c1c0dist=c1Pos-c0Pos;
-	//T AdotDist=c1c0dist[0]*Af[0]+c1c0dist[1]*Af[1]+c1c0dist[2]*Af[2];    
-	//if(AdotDist<0.)
-	//  Af=Af*(-1.);
-	
 	T flux;
 
 	for(int k=0;k<klen;k++)
@@ -259,16 +255,15 @@ class COMETDiscretizer
 		Tmode& mode=kvol.getmode(m);
 		const int count=mode.getIndex();
 		VectorT3 vg=mode.getv();
-		Field& efield=mode.getfield();
-		TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
 		flux=vg[0]*Af[0]+vg[1]*Af[1]+vg[2]*Af[2];
+		
 		if(flux>T_Scalar(0))
 		  {
 		    Amat.getElement(count,count)-=flux;
-		    BVec[count-1]-=flux*eArray[cell0];
+		    BVec[count-1]-=flux*_eArray[_kspace.getGlobalIndex(cell0,count-1)];
 		  }
 		else
-		  BVec[count-1]-=flux*eArray[cell1];
+		  BVec[count-1]-=flux*_eArray[_kspace.getGlobalIndex(cell1,count-1)];
 		
 	      }
 	  }	   	
@@ -411,6 +406,7 @@ class COMETDiscretizer
     const int order=totalmodes+1;
     TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
     T coeff;
+    int cellIndex=_kspace.getGlobalIndex(cell,0);
     
     for(int k=0;k<klen;k++)
       {
@@ -421,16 +417,13 @@ class COMETDiscretizer
 	    Tmode& mode=kvol.getmode(m);
 	    const int count=mode.getIndex();
 	    T tau=mode.gettau();
-	    T de0dT=mode.calcde0dT(Tlold[cell]);
-	    Field& efield=mode.getfield();
-	    Field& e0field=mode.gete0field();
-	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
-	    TArray& e0Array=dynamic_cast<TArray&>(e0field[_cells]);
+	    T de0dT=mode.calcde0dT(Tlold[cell]);//mode.getcp();
 	    coeff=_cellVolume[cell]/tau;
 	    Amat->getElement(count,order)+=coeff*de0dT;
 	    Amat->getElement(count,count)-=coeff;
-	    BVec[count-1]-=coeff*eArray[cell];
-	    BVec[count-1]+=coeff*e0Array[cell];
+	    BVec[count-1]-=coeff*_eArray[cellIndex];
+	    BVec[count-1]+=coeff*_e0Array[cellIndex];
+	    cellIndex++;
 	  }
       }
     
@@ -442,8 +435,9 @@ class COMETDiscretizer
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
     TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    const T tauTot=_kspace.getde0taudT(Tlold[cell]);
+    const T tauTot=_kspace.getde0taudT(Tlold[cell]);//getde0taudTgray();
     T coeff;
+    int cellIndex=_kspace.getGlobalIndex(cell,0);
     
     for(int k=0;k<klen;k++)
       {
@@ -456,13 +450,10 @@ class COMETDiscretizer
 	    const int count=mode.getIndex();
 	    T tau=mode.gettau();
 	    coeff=dk3/tau/tauTot;
-	    Field& efield=mode.getfield();
-	    Field& e0field=mode.gete0field();
-	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
-	    TArray& e0Array=dynamic_cast<TArray&>(e0field[_cells]);
 	    Amat->getElement(order,count)+=coeff;
-	    BVec[totalmodes]+=coeff*eArray[cell];
-	    BVec[totalmodes]-=coeff*e0Array[cell];
+	    BVec[totalmodes]+=coeff*_eArray[cellIndex];
+	    BVec[totalmodes]-=coeff*_e0Array[cellIndex];
+	    cellIndex++;
 	  }
       }
     Amat->getElement(order,order)=-1.;
@@ -506,6 +497,7 @@ class COMETDiscretizer
   {
     const int klen=_kspace.getlength();
     const int totalmodes=_kspace.gettotmodes();
+    int cellIndex=_kspace.getGlobalIndex(cell,0);
 
     for(int k=0;k<klen;k++)
       {
@@ -514,13 +506,10 @@ class COMETDiscretizer
 	for(int m=0;m<numModes;m++)
 	  {
 	    Tmode& mode=kvol.getmode(m);
-	    const int count=mode.getIndex();
-	    Field& efield=mode.getfield();
-	    Field& resfield=mode.getresid();
-	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
-	    TArray& resArray=dynamic_cast<TArray&>(resfield[_cells]);
-	    eArray[cell]-=BVec[count-1];
-	    resArray[cell]=-Rvec[count-1];
+	    const int count=mode.getIndex()-1;
+	    _eArray[cellIndex]-=BVec[count];
+	    _resArray[cellIndex]=-Rvec[count];
+	    cellIndex++;
 	  }
       }
     
@@ -700,6 +689,7 @@ class COMETDiscretizer
   {
     int klen=_kspace.getlength();
     const int totmodes=_kspace.gettotmodes();
+    int cellIndex=_kspace.getGlobalIndex(c,0);
     for(int k=0;k<klen;k++)
       {
 	Tkvol& kvol=_kspace.getkvol(k);
@@ -708,9 +698,8 @@ class COMETDiscretizer
 	  {
 	    Tmode& mode=kvol.getmode(m);
 	    const int count=mode.getIndex()-1;
-	    Field& efield=mode.getfield();
-	    TArray& eArray=dynamic_cast<TArray&>(efield[_cells]);
-	    o[count]=eArray[c];
+	    o[count]=_eArray[cellIndex];
+	    cellIndex++;
 	  }
       }
     TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
@@ -719,21 +708,8 @@ class COMETDiscretizer
 
   void addFAS(const int c, TArray& bVec)
   {
-    int klen=_kspace.getlength();
     const int totmodes=_kspace.gettotmodes();
-    for(int k=0;k<klen;k++)
-      {
-	Tkvol& kvol=_kspace.getkvol(k);
-	const int numModes=kvol.getmodenum();
-	for(int m=0;m<numModes;m++)
-	  {
-	    Tmode& mode=kvol.getmode(m);
-	    const int count=mode.getIndex()-1;
-	    Field& fasField=mode.getFASfield();
-	    TArray& fasArray=dynamic_cast<TArray&>(fasField[_cells]);
-	    bVec[count]-=fasArray[c];
-	  }
-      }
+    _kspace.addFAS(c,bVec);
     TArray& fasArray=dynamic_cast<TArray&>(_macro.TlFASCorrection[_cells]);
     bVec[totmodes]-=fasArray[c];
   }
@@ -744,19 +720,19 @@ class COMETDiscretizer
    
     const T cellCount=_cells.getSelfCount();
     int klen=_kspace.getlength();
-    for(int k=0;k<klen;k++)
+    for(int c=0;c<cellCount;c++)
       {
-	Tkvol& kvol=_kspace.getkvol(k);
-	const int numModes=kvol.getmodenum();
-	for(int m=0;m<numModes;m++)
+	int cellIndex=_kspace.getGlobalIndex(c,0);
+	for(int k=0;k<klen;k++)
 	  {
-	    Tmode& mode=kvol.getmode(m);
-	    Field& e0Field=mode.gete0field();
-	    TArray& e0Array=dynamic_cast<TArray&>(e0Field[_cells]);
-	    
-	    for(int c=0;c<cellCount;c++)
-	      e0Array[c]=mode.calce0(Tl[c]);
-	      
+	    Tkvol& kvol=_kspace.getkvol(k);
+	    const int numModes=kvol.getmodenum();
+	    for(int m=0;m<numModes;m++)
+	      {
+		Tmode& mode=kvol.getmode(m);
+		_e0Array[cellIndex]=mode.calce0(Tl[c]);
+		cellIndex++;
+	      }
 	  }
       }
   }
@@ -766,6 +742,7 @@ class COMETDiscretizer
     TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
 
     int klen=_kspace.getlength();
+    int cellIndex=_kspace.getGlobalIndex(c,0);
     for(int k=0;k<klen;k++)
       {
 	Tkvol& kvol=_kspace.getkvol(k);
@@ -773,10 +750,8 @@ class COMETDiscretizer
 	for(int m=0;m<numModes;m++)
 	  {
 	    Tmode& mode=kvol.getmode(m);
-	    Field& e0Field=mode.gete0field();
-	    TArray& e0Array=dynamic_cast<TArray&>(e0Field[_cells]);
-	    
-	    e0Array[c]=mode.calce0(Tl[c]);
+	    _e0Array[cellIndex]=mode.calce0(Tl[c]);
+	    cellIndex++;
 	  }
       }
   }
@@ -785,61 +760,67 @@ class COMETDiscretizer
   {
     const int neibcount=_cellFaces.getCount(cell);
     const int klen=_kspace.getlength();
-    TArray SumEVdotA(neibcount);
+    //TArray SumEVdotA(neibcount);
     TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
     T DK3=_kspace.getDK3();
 
-    SumEVdotA.zero();
+    //SumEVdotA.zero();
 
-    //first loop to sum up the diffuse reflection
-    for(int k=0;k<klen;k++)
+    for(int j=0;j<neibcount;j++)
       {
-	Tkvol& kvol=_kspace.getkvol(k);
-	const int numModes=kvol.getmodenum();
-	T dk3=kvol.getdk3();
-	for(int m=0;m<numModes;m++)
+
+	const int f=_cellFaces(cell,j);
+	if(_BCfArray[f]==3)
 	  {
-	    Tmode& mode=kvol.getmode(m);
-	    Field& eField=mode.getfield();
-	    TArray& eArray=dynamic_cast<TArray&>(eField[_cells]);
-	    VectorT3 vg=mode.getv();
-	    for(int j=0;j<neibcount;j++)
+	    int Fgid=findFgId(f);
+	    const T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
+	    int cell2=_faceCells(f,1);
+	    VectorT3 Af=_faceArea[f];
+		    
+	    if(cell2==cell)
 	      {
-		const int f=_cellFaces(cell,j);
-		if(_BCfArray[f]==3)
+		Af=Af*-1.;
+		cell2=_faceCells(f,0);
+	      }
+
+	    const int cellstart=_kspace.getGlobalIndex(cell,0);
+	    int cellIndex=_kspace.getGlobalIndex(cell,0);
+	    int cell2Index=_kspace.getGlobalIndex(cell2,0);
+
+	    //first loop to sum up the diffuse reflection
+	    for(int k=0;k<klen;k++)
+	      {
+		Tkvol& kvol=_kspace.getkvol(k);
+		const int numModes=kvol.getmodenum();
+		T dk3=kvol.getdk3();
+		for(int m=0;m<numModes;m++)
 		  {
-		    int Fgid=findFgId(f);
-		    const T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
-		    int cell2=_faceCells(f,1);
-		    VectorT3 Af=_faceArea[f];
-		    
-		    if(cell2==cell)
- 		      {
-			Af=Af*-1.;
-			cell2=_faceCells(f,0);
-		      }
-		    
+		    Tmode& mode=kvol.getmode(m);
+		    VectorT3 vg=mode.getv();
 		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
 		    
 		    if(VdotA>0)
 		      {
-			eArray[cell2]=eArray[cell]*refl;
-			SumEVdotA[j]+=dk3*eArray[cell]/DK3;
+			_eArray[cell2Index]=_eArray[cellIndex]*refl;
+			//SumEVdotA[j]+=dk3*_eArray[cellIndex]/DK3;
 		      }
 		    else
 		      {
 			Refl_pair& rpairs=mode.getReflpair(Fgid);
 			const int kk=rpairs.second.second;
 			Tkvol& kkvol=_kspace.getkvol(kk);
-			Field& eeField=kkvol.getmode(m).getfield();
-			TArray& eeArray=dynamic_cast<TArray&>(eeField[_cells]);
-			eArray[cell2]=eeArray[cell]*refl;
+			Tmode& refMode=kkvol.getmode(m);
+			const int rIndex=cellstart+refMode.getIndex()-1;
+			_eArray[cell2Index]=_eArray[rIndex]*refl;
 		      }
+		    cellIndex++;
+		    cell2Index++;
 		  }
 	      }
 	  }
       }
 
+    /*
     T wallTemp(Tl[cell]);
     for(int j=0;j<neibcount;j++)
       {
@@ -899,6 +880,7 @@ class COMETDiscretizer
 	      }
 	  }
       }
+    */
   }
 
   void correctInterface(const int cell0, TArray& Bvec)
@@ -1021,6 +1003,9 @@ class COMETDiscretizer
   FaceToFg _fgFinder;
   COpts _options;
   const FgTKClistMap& _FaceToKSC;
+  TArray& _eArray;
+  TArray& _e0Array;
+  TArray& _resArray;
   
 };
 
