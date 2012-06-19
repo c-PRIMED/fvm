@@ -8,7 +8,8 @@ struct ThermalBC : public FloatVarDict<T>
   {
       this->defineVar("specifiedTemperature",T(300.0));
       this->defineVar("specifiedHeatFlux",T(0.0));
-      this->defineVar("timeStep",T(1.0)); 
+      this->defineVar("convectiveCoefficient", T(0.0));
+      this->defineVar("farFieldTemperature", T(300.0));
   }
   string bcType;
 };

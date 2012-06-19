@@ -21,6 +21,7 @@
 #include "GradientModel.h"
 #include "GenericIBDiscretization.h"
 #include "SourceDiscretization.h"
+#include "TimeDerivativeDiscretization.h"
 
 template<class T>
 class ThermalModel<T>::Impl
@@ -91,6 +92,13 @@ public:
         *tCell = _options["initialTemperature"];
         _thermalFields.temperature.addArray(cells,tCell);
 	
+	if(_options.transient)
+	  {
+	    _thermalFields.temperatureN1.addArray(cells, dynamic_pointer_cast<ArrayBase>(tCell->newCopy()));
+	    if (_options.timeDiscretizationOrder > 1)
+	      _thermalFields.temperatureN2.addArray(cells, dynamic_pointer_cast<ArrayBase>(tCell->newCopy()));
+	  }
+
 	//conductivity
         shared_ptr<TArray> condCell(new TArray(cells.getCountLevel1()));
         *condCell = vc["thermalConductivity"];
@@ -110,6 +118,11 @@ public:
 	shared_ptr<TArray> oneCell(new TArray(cells.getCountLevel1()));
 	*oneCell = T(1.0);
 	_thermalFields.one.addArray(cells,oneCell);
+
+	//create specific heat field   rho*Cp
+	shared_ptr<TArray> cp(new TArray(cells.getCount()));
+	*cp = vc["density"] * vc["specificHeat"];
+	_thermalFields.specificHeat.addArray(cells, cp);
 
 	//initial temparature gradient array
 	shared_ptr<TGradArray> gradT(new TGradArray(cells.getCountLevel1()));
@@ -221,7 +234,7 @@ public:
     _temperatureGradientModel.compute();
     
     DiscrList discretizations;
-    
+   
     shared_ptr<Discretization>
       dd(new DiffusionDiscretization<T,T,T>
 	 (_meshes,_geomFields,
@@ -229,7 +242,7 @@ public:
 	  _thermalFields.conductivity,
 	  _thermalFields.temperatureGradient));
     discretizations.push_back(dd);
-    
+   
     shared_ptr<Discretization>
       cd(new ConvectionDiscretization<T,T,T>
 	 (_meshes,_geomFields,
@@ -249,11 +262,25 @@ public:
 	  _thermalFields.source));
     discretizations.push_back(sd);
     
+    if (_options.transient)
+      {
+	shared_ptr<Discretization>
+	  td(new TimeDerivativeDiscretization<T, T, T>
+	     (_meshes, _geomFields, 
+	      _thermalFields.temperature, 
+	      _thermalFields.temperatureN1,
+	      _thermalFields.temperatureN2,
+	      _thermalFields.specificHeat,
+	      _options["timeStep"]));
+	discretizations.push_back(td);
+      }
+    
     shared_ptr<Discretization>
       ibm(new GenericIBDiscretization<T,T,T>
 	  (_meshes,_geomFields,_thermalFields.temperature));
       
     discretizations.push_back(ibm);
+    
 
     Linearizer linearizer;
 
@@ -303,18 +330,33 @@ public:
                     }
                 }
                 else
-                  gbc.applyDirichletBC(bT);
+                    gbc.applyDirichletBC(bT);
             }
             else if (bc.bcType == "SpecifiedHeatFlux")
             {
-                const T specifiedFlux(bc["specifiedHeatFlux"]);
-                gbc.applyNeumannBC(specifiedFlux);
+                FloatValEvaluator<T>
+                    bHeatFlux(bc.getVal("specifiedHeatFlux"),faces);
+                    
+                const int nFaces = faces.getCount();
+                                
+                for(int f=0; f<nFaces; f++)
+                    {                        
+                        gbc.applyNeumannBC(f, bHeatFlux[f]);
+                    }                              
             }
-            else if ((bc.bcType == "Symmetry"))
+            else if (bc.bcType == "Symmetry")
             {
                  T zeroFlux(NumTypeTraits<T>::getZero());
                  gbc.applyNeumannBC(zeroFlux);
             }
+	    else if (bc.bcType == "Convective")
+	    {
+	        FloatValEvaluator<T> hCoeff(bc.getVal("convectiveCoefficient"), faces);
+	        FloatValEvaluator<T> Xinf(bc.getVal("farFieldTemperature"), faces);
+		const int nFaces = faces.getCount();
+		for(int f=0; f<nFaces; f++)
+		    gbc.applyConvectionBC(f, hCoeff[f], Xinf[f]);
+	    }
             else
               throw CException(bc.bcType + " not implemented for ThermalModel");
         }
@@ -404,6 +446,32 @@ public:
         }
     }
   }
+
+
+  void updateTime()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)    {
+     
+      const Mesh& mesh = *_meshes[n];
+      const StorageSite& cells = mesh.getCells();
+      const int nCells = cells.getCountLevel1();
+	
+      TArray& temperature =
+          dynamic_cast<TArray&>(_thermalFields.temperature[cells]);
+      TArray& temperatureN1 =
+          dynamic_cast<TArray&>(_thermalFields.temperatureN1[cells]);
+     
+      if (_options.timeDiscretizationOrder > 1)
+        {
+	  TArray& temperatureN2 =
+	    dynamic_cast<TArray&>(_thermalFields.temperatureN2[cells]);
+	  temperatureN2 = temperatureN1;
+        }
+      temperatureN1 = temperature;
+    }
+  }
+
 
 #if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
   
@@ -615,4 +683,11 @@ T
 ThermalModel<T>::getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
 {
   return _impl->getHeatFluxIntegral(mesh, faceGroupId);
+}
+
+template<class T>
+void
+ThermalModel<T>::updateTime()
+{
+  _impl->updateTime();
 }
