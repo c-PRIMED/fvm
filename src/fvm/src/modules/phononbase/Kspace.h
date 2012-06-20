@@ -505,6 +505,7 @@ class Kspace
     Tvec vg1=getkvol(0).getmode(0).getv();
     T vmag1=sqrt(pow(vg1[0],2)+pow(vg1[1],2)+pow(vg1[2],2));
     T tau1=getkvol(0).getmode(0).gettau();
+    T npol(getkvol(0).getmodenum());
     minKn=vmag1*tau1;
 
     for(int k=0;k<_length;k++)
@@ -518,7 +519,7 @@ class Kspace
 	    Tvec vg=mode.getv();
 	    T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
 	    T tau=mode.gettau();
-	    AveKn+=vmag*tau*dk3;
+	    AveKn+=vmag*tau*dk3/_totvol;
 	    if(vmag*tau>maxKn)
 	      maxKn=vmag*tau;
 	    if(vmag*tau<minKn)
@@ -526,8 +527,8 @@ class Kspace
 
 	  }
       }
-    AveKn/=_totvol;
     AveKn/=length;
+    AveKn/=npol;
     maxKn/=length;
     minKn/=length;
 
