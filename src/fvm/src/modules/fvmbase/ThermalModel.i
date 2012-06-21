@@ -26,6 +26,7 @@ struct ThermalModelOptions : public FloatVarDict<T>
   double absoluteTolerance;
   LinearSolver *linearSolver;
   bool useCentralDifference;
+  bool transient;
 }; 
 
 
