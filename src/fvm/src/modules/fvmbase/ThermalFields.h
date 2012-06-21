@@ -10,6 +10,9 @@ struct ThermalFields
   ThermalFields(const string baseName);
 
   Field temperature;
+  Field temperatureN1;
+  Field temperatureN2;
+  Field specificHeat;
   Field heatFlux;
   Field temperatureGradient;
   Field conductivity;
