@@ -87,7 +87,7 @@ print 'Specific Heat:',K_space.calcSpecificHeat(300)*eVtoJoule
 #this method calculates the average, max, and minimum Kn for the given kspace.
 #the return value is the average Kn.
 kn0=float(K_space.findKnStats(scale))
-avemfp=kn0*initialScale
+avemfp=kn0*scale
 print "Average mean free path", avemfp
 
 
