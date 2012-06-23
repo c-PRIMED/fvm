@@ -23,6 +23,7 @@ GeomFields::GeomFields(const string baseName) :
   ibType(baseName+"ibType"),
   ibTypeN1(baseName+"ibTypeN1"),
   ibFaceIndex(baseName+"ibFaceIndex"),
-  fineToCoarse(baseName+"fineToCoarse")
+  fineToCoarse(baseName+"fineToCoarse"),
+  finestToCoarse(baseName+"finestToCoarse")
 {}
 

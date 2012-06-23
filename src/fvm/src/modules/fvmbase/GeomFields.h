@@ -34,7 +34,8 @@ struct GeomFields
   Field ibType;
   Field ibTypeN1;
   Field ibFaceIndex;
-  Field fineToCoarse; 
+  Field fineToCoarse;
+  Field finestToCoarse;
   // this file gets directly included in a swig ineterface definition
   // file hence protect the following
 #ifndef SWIG
