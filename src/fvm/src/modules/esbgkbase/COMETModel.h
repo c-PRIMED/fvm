@@ -2425,6 +2425,7 @@ map<string,shared_ptr<ArrayBase> >&
         int pairWith;
         Array<bool> marker(inFaceCount);
         Array<bool> marked(inCellCount);
+	const T zero(0.);
 	for(int c=0;c<inCellCount;c++)
         {
 	    if((FineToCoarse[c]<0)&&(ibType[c] == Mesh::IBTYPE_FLUID)) //dont bother if im already paired
@@ -2454,6 +2455,9 @@ map<string,shared_ptr<ArrayBase> >&
                           c2=inFaceinCells(f,1);
 
                         VectorT3 tempArea;
+			tempArea[0]=zero;
+			tempArea[1]=zero;
+			tempArea[2]=zero;
                         if((FineToCoarse[c2]==-1)&&(!marked[c2]))
 			{
                             marker[f]=true;
@@ -2524,6 +2528,9 @@ map<string,shared_ptr<ArrayBase> >&
                           c2=inFaceinCells(f,1);
 
 			VectorT3 tempArea;
+                        tempArea[0]=zero;
+                        tempArea[1]=zero;
+                        tempArea[2]=zero;
                         if(!marked[c2])
 			{
                             marker[f]=true;
