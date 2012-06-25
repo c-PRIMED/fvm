@@ -94,6 +94,8 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->postSweeps=2;
     this->preCoarsestSweeps=1;
     this->postCoarsestSweeps=1;
+    this->method=1;
+    this->relaxDistribution=0;
     this->underRelaxation=1.0;
     this->minCells=1;
     this->CentralDifference=false;
@@ -142,6 +144,8 @@ struct COMETModelOptions : public FloatVarDict<T>
   int postSweeps;
   int preCoarsestSweeps;
   int postCoarsestSweeps;
+  int method;
+  int relaxDistribution;
   int minCells;
   bool CentralDifference;
 

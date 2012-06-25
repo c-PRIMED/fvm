@@ -821,6 +821,16 @@ class COMETModel : public Model
 		  const VectorT3Array& fineSolidVel = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[solidFaces]);
 		  *coarseSolidVel = fineSolidVel;
 		  newMacroPtr->velocity.addArray(solidFaces,coarseSolidVel);
+
+                  shared_ptr<TArray> coarseSolidDensity(new TArray(solidFaces.getCount()));
+                  const TArray& fineSolidDensity = dynamic_cast<const TArray&>(_macroFields.density[solidFaces]);
+                  *coarseSolidDensity = fineSolidDensity;
+                  newMacroPtr->density.addArray(solidFaces,coarseSolidDensity);
+
+                  shared_ptr<TArray> coarseSolidTemperature(new TArray(solidFaces.getCount()));
+                  const TArray& fineSolidTemperature = dynamic_cast<const TArray&>(_macroFields.temperature[solidFaces]);
+                  *coarseSolidTemperature = fineSolidTemperature;
+                  newMacroPtr->temperature.addArray(solidFaces,coarseSolidTemperature);
 	      }
               
               newModelPtr->init();
@@ -3421,23 +3431,26 @@ map<string,shared_ptr<ArrayBase> >&
    for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
+	const Mesh& fMesh = *_finestMeshes[n];
 	if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 
 	  const StorageSite& cells = mesh.getCells();
+	  const StorageSite& fCells = fMesh.getCells();
 	  const StorageSite& ibFaces = mesh.getIBFaces();
-        
-	  GeomFields::SSPair key1(&ibFaces,&cells);
+	  const StorageSite& fIbFaces = fMesh.getIBFaces();        
+
+	  GeomFields::SSPair key1(&fIbFaces,&fCells);
 	  const IMatrix& mIC =
 	    dynamic_cast<const IMatrix&>
-	    (*_geomFields._interpolationMatrices[key1]);
+	    (*_finestGeomFields._interpolationMatrices[key1]);
 	      
 	  IMatrix mICV(mIC);
 	  IMatrixV3 mICV3(mIC);  
 
-	  GeomFields::SSPair key2(&ibFaces,&solidFaces);
+	  GeomFields::SSPair key2(&fIbFaces,&solidFaces);
 	  const IMatrix& mIP =
 	    dynamic_cast<const IMatrix&>
-	    (*_geomFields._interpolationMatrices[key2]);
+	    (*_finestGeomFields._interpolationMatrices[key2]);
 
 	  IMatrix mIPV(mIP);
 	  IMatrixV3 mIPV3(mIP);    
@@ -3467,22 +3480,39 @@ map<string,shared_ptr<ArrayBase> >&
 	  ibVnue->zero(); 
 	  ibVtemp->zero();
 	  ibVvel->zero(); 
-	  ibVdensity->zero(); 
+	  ibVdensity->zero();
+
+
+	  Field& FinestToCoarseField=_finestGeomFields.finestToCoarse;
+	  const Array<Vector<int,25> >& FinestToCoarse=dynamic_cast<const Array<Vector<int,25> >&>(FinestToCoarseField[fCells]);
+
+	  TArray cFTemp(fCells.getCount());
+	  VectorT3Array cFVel(fCells.getCount());
+	  TArray cFDensity(fCells.getCount());
+	  TArray cFNue(fCells.getCount());
+
+           for(int c=0;c<fCells.getCount();c++)
+	   {
+	       cFTemp[c]=cTemp[FinestToCoarse[c][_level]];
+	       cFVel[c]=cVel[FinestToCoarse[c][_level]];
+	       cFDensity[c]=cDensity[FinestToCoarse[c][_level]];
+	       cFNue[c]=cNue[FinestToCoarse[c][_level]];
+	   }
 
 	   //nue interpolation (cells)
-	  mICV.multiplyAndAdd(*ibVnue,cNue);
+	  mICV.multiplyAndAdd(*ibVnue,cFNue);
 	  mIPV.multiplyAndAdd(*ibVnue,sNue);
 	  _macroFields.collisionFrequency.addArray(ibFaces,ibVnue);
 	  //temperature interpolation (cells+solidfaces)         
-	  mICV.multiplyAndAdd(*ibVtemp,cTemp);
+	  mICV.multiplyAndAdd(*ibVtemp,cFTemp);
 	  mIPV.multiplyAndAdd(*ibVtemp,sTemp);
 	  _macroFields.temperature.addArray(ibFaces,ibVtemp);
 	  //density interpolation (cells+solidfaces)         
-	  mICV.multiplyAndAdd(*ibVdensity,cDensity);
+	  mICV.multiplyAndAdd(*ibVdensity,cFDensity);
 	  mIPV.multiplyAndAdd(*ibVdensity,sDensity);
 	  _macroFields.density.addArray(ibFaces,ibVdensity);
 	  //velocity interpolation (cells+solidfaces) 
-	  mICV3.multiplyAndAdd(*ibVvel,cVel);
+	  mICV3.multiplyAndAdd(*ibVvel,cFVel);
 	  mIPV3.multiplyAndAdd(*ibVvel,sVel);
 	  _macroFields.velocity.addArray(ibFaces,ibVvel);
 
@@ -3588,17 +3618,19 @@ map<string,shared_ptr<ArrayBase> >&
 	      MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE,dsf.getData(),solidFaces.getCount() , MPI::DOUBLE, MPI::SUM);
 #endif
 	      const Mesh& mesh = *_meshes[n];
+	      const Mesh& fMesh = *_finestMeshes[n];
 	      if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 		const StorageSite& ibFaces = mesh.getIBFaces();
+		const StorageSite& fIbFaces = fMesh.getIBFaces();
 		TArray& dsfIB = dynamic_cast< TArray&>(fnd[ibFaces]);
 		Field& fndEqES = *_dsfEqPtrES.dsf[j];
 		TArray& dsfEqES = dynamic_cast< TArray&>(fndEqES[ibFaces]);
-		const StorageSite& faces = mesh.getFaces();
+		const StorageSite& faces = fMesh.getFaces();
 		const StorageSite& cells = mesh.getCells();
 		const CRConnectivity& faceCells = mesh.getAllFaceCells();
 		const CRConnectivity& ibFacesTosolidFaces
-		  = mesh.getConnectivity(ibFaces,solidFaces);
-		const IntArray& ibFaceIndices = mesh.getIBFaceList();
+		  = fMesh.getConnectivity(fIbFaces,solidFaces);
+		const IntArray& ibFaceIndices = fMesh.getIBFaceList();
 		const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
 		const IntArray& sFCRow = ibFacesTosolidFaces.getRow();
 		const IntArray& sFCCol = ibFacesTosolidFaces.getCol();
@@ -3618,9 +3650,9 @@ map<string,shared_ptr<ArrayBase> >&
 			const int c = sFCCol[nc];
 			const int faceIB= ibFaceIndices[f];
 			const VectorT3Array& solidFaceCentroid =
-			  dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
+			  dynamic_cast<const VectorT3Array&> (_finestGeomFields.coordinate[solidFaces]);
 			const VectorT3Array& faceCentroid =
-			  dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+			  dynamic_cast<const VectorT3Array&> (_finestGeomFields.coordinate[faces]);
 			      
 			double distIBSolid (0.0);
 			// based on distance - will be thought
@@ -3633,9 +3665,9 @@ map<string,shared_ptr<ArrayBase> >&
 		      {
 			const int c = sFCCol[nc];
 			const VectorT3Array& solidFaceCentroid =
-			  dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
+			  dynamic_cast<const VectorT3Array&> (_finestGeomFields.coordinate[solidFaces]);
 			const VectorT3Array& faceCentroid =
-			  dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+			  dynamic_cast<const VectorT3Array&> (_finestGeomFields.coordinate[faces]);
 			const TArray& nue  =
 			  dynamic_cast<TArray&>(_macroFields.collisionFrequency[ibFaces]);
 			const int faceIB= ibFaceIndices[f];
@@ -3979,7 +4011,8 @@ map<string,shared_ptr<ArrayBase> >&
       for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
-          
+	const Mesh& fMesh = *_finestMeshes[n];       
+   
 	const int numFields= _quadrature.getDirCount();
 	for (int direction = 0; direction < numFields; direction++)
 	  {
@@ -3989,13 +4022,18 @@ map<string,shared_ptr<ArrayBase> >&
 	    if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 	
 	      const StorageSite& cells = mesh.getCells();
+	      const StorageSite& fCells = fMesh.getCells();
 	      const StorageSite& faces = mesh.getFaces();
+	      const StorageSite& fFaces = fMesh.getFaces();
 	      const StorageSite& ibFaces = mesh.getIBFaces();
-	
-	      GeomFields::SSPair key1(&faces,&cells);
+	      const StorageSite& fIbFaces = fMesh.getIBFaces();	
+
+	      //GeomFields::SSPair key1(&faces,&cells);
+	      GeomFields::SSPair key1(&fFaces,&fCells);
+	      //GeomFields::SSPair key1(&fIbFaces,&fCells);
 	      const IMatrix& mIC =
 		dynamic_cast<const IMatrix&>
-		(*_geomFields._interpolationMatrices[key1]);
+		(*_finestGeomFields._interpolationMatrices[key1]);
 	      
 	      IMatrix mICV(mIC);
 	  
@@ -4004,15 +4042,27 @@ map<string,shared_ptr<ArrayBase> >&
 	      const TArray& cfEq =
 		dynamic_cast<const TArray&>(fndEqES[cells]);
 
+	      Field& FinestToCoarseField=_finestGeomFields.finestToCoarse;
+	      const Array<Vector<int,25> >& FinestToCoarse=dynamic_cast<const Array<Vector<int,25> >&>(FinestToCoarseField[fCells]);
+
+	      TArray cFf(fCells.getCount());
+	      TArray cFfEq(fCells.getCount());
+
+	      for(int c=0;c<fCells.getCount();c++)
+	      {
+		  cFf[c]=cf[FinestToCoarse[c][_level]];
+		  cFfEq[c]=cfEq[FinestToCoarse[c][_level]];
+	      }
+
 	      shared_ptr<TArray> ibVf(new TArray(ibFaces.getCount()));
 	      ibVf->zero();
 	      if (_options.fgamma==2){
 		shared_ptr<TArray> ibVfEq(new TArray(ibFaces.getCount()));
 		ibVfEq->zero();
-		mICV.multiplyAndAdd(*ibVfEq,cfEq);
+		mICV.multiplyAndAdd(*ibVfEq,cFfEq);
 		fndEqES.addArray(ibFaces,ibVfEq);
 	      }
-	      mICV.multiplyAndAdd(*ibVf,cf);
+	      mICV.multiplyAndAdd(*ibVf,cFf);
 	      fnd.addArray(ibFaces,ibVf);
            
       }
@@ -4058,23 +4108,26 @@ map<string,shared_ptr<ArrayBase> >&
       for (int n=0; n<numMeshes; n++)
 	{
 	  const Mesh& mesh = *_meshes[n];
+	  const Mesh& fMesh = *_finestMeshes[n];
 	  if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 
 	    const StorageSite& cells = mesh.getCells();
+	    const StorageSite& fCells = fMesh.getCells();
 	    const StorageSite& ibFaces = mesh.getIBFaces();
-        
-	  GeomFields::SSPair key1(&ibFaces,&cells);
+	    const StorageSite& fIbFaces = fMesh.getIBFaces();        
+
+	  GeomFields::SSPair key1(&fIbFaces,&fCells);
 	  const IMatrix& mIC =
 	    dynamic_cast<const IMatrix&>
-	    (*_geomFields._interpolationMatrices[key1]);
+	    (*_finestGeomFields._interpolationMatrices[key1]);
 	      
 	  IMatrix mICV(mIC);
 	  IMatrixV3 mICV3(mIC);  
 
-	  GeomFields::SSPair key2(&ibFaces,&solidFaces);
+	  GeomFields::SSPair key2(&fIbFaces,&solidFaces);
 	  const IMatrix& mIP =
 	    dynamic_cast<const IMatrix&>
-	    (*_geomFields._interpolationMatrices[key2]);
+	    (*_finestGeomFields._interpolationMatrices[key2]);
 
 	  IMatrix mIPV(mIP);
 	  IMatrixV3 mIPV3(mIP);    
@@ -4106,20 +4159,37 @@ map<string,shared_ptr<ArrayBase> >&
 	  ibVvel->zero(); 
 	  ibVdensity->zero(); 
 
+
+          Field& FinestToCoarseField=_finestGeomFields.finestToCoarse;
+          const Array<Vector<int,25> >& FinestToCoarse=dynamic_cast<const Array<Vector<int,25> >&>(FinestToCoarseField[fCells]);
+
+          TArray cFTemp(fCells.getCount());
+          VectorT3Array cFVel(fCells.getCount());
+          TArray cFDensity(fCells.getCount());
+          TArray cFNue(fCells.getCount());
+
+	  for(int c=0;c<fCells.getCount();c++)
+	  {
+	      cFTemp[c]=cTemp[FinestToCoarse[c][_level]];
+	      cFVel[c]=cVel[FinestToCoarse[c][_level]];
+	      cFDensity[c]=cDensity[FinestToCoarse[c][_level]];
+	      cFNue[c]=cNue[FinestToCoarse[c][_level]];
+	  }	  
+
 	   //nue interpolation (cells)
-           mICV.multiplyAndAdd(*ibVnue,cNue);
+           mICV.multiplyAndAdd(*ibVnue,cFNue);
 	   mIPV.multiplyAndAdd(*ibVnue,sNue);
            _macroFields.collisionFrequency.addArray(ibFaces,ibVnue);
 	   //temperature interpolation (cells+solidfaces)         
-	   mICV.multiplyAndAdd(*ibVtemp,cTemp);
+	   mICV.multiplyAndAdd(*ibVtemp,cFTemp);
 	   mIPV.multiplyAndAdd(*ibVtemp,sTemp);
            _macroFields.temperature.addArray(ibFaces,ibVtemp);
 	   //density interpolation (cells+solidfaces)         
-	   mICV.multiplyAndAdd(*ibVdensity,cDensity);
+	   mICV.multiplyAndAdd(*ibVdensity,cFDensity);
 	   mIPV.multiplyAndAdd(*ibVdensity,sDensity);
            _macroFields.density.addArray(ibFaces,ibVdensity);
 	   //velocity interpolation (cells+solidfaces) 
-	   mICV3.multiplyAndAdd(*ibVvel,cVel);
+	   mICV3.multiplyAndAdd(*ibVvel,cFVel);
 	   mIPV3.multiplyAndAdd(*ibVvel,sVel);
            _macroFields.velocity.addArray(ibFaces,ibVvel);
 
@@ -4167,7 +4237,7 @@ map<string,shared_ptr<ArrayBase> >&
 	      }
 	  }
 	}
-    }
+      }
 
       //Step3: Relax Distribution function from ibfaces to solid face
 	const int numDirections = _quadrature.getDirCount();
@@ -4185,11 +4255,13 @@ map<string,shared_ptr<ArrayBase> >&
 	    for (int n=0; n<numMeshes; n++)
 	      {
 		const Mesh& mesh = *_meshes[n];
+		const Mesh& fMesh = *_finestMeshes[n];
 		if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 		  const StorageSite& ibFaces = mesh.getIBFaces();
+		  const StorageSite& fIbFaces = fMesh.getIBFaces();
 		  const CRConnectivity& solidFacesToibFaces
-		    = mesh.getConnectivity(solidFaces,ibFaces);
-		  const IntArray& ibFaceIndices = mesh.getIBFaceList();
+		    = fMesh.getConnectivity(solidFaces,fIbFaces);
+		  const IntArray& ibFaceIndices = fMesh.getIBFaceList();
 		  const IntArray& sFCRow = solidFacesToibFaces.getRow();
 		  const IntArray& sFCCol = solidFacesToibFaces.getCol();
 		  TArray& dsf = dynamic_cast< TArray&>(fnd[ibFaces]);  
@@ -4201,13 +4273,13 @@ map<string,shared_ptr<ArrayBase> >&
 		      double distIBSolidInvSum(0.0);
 		  for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
 		    {
-		      const StorageSite& faces = mesh.getFaces();
+		      const StorageSite& faces = fMesh.getFaces();
 		      const int c = sFCCol[nc];
 		      const int faceIB= ibFaceIndices[c];
 		      const VectorT3Array& solidFaceCentroid =
-			dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
+			dynamic_cast<const VectorT3Array&> (_finestGeomFields.coordinate[solidFaces]);
 		      const VectorT3Array& faceCentroid =
-			dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+			dynamic_cast<const VectorT3Array&> (_finestGeomFields.coordinate[faces]);
 	      
 		      double distIBSolid (0.0);
 		      // based on distance - will be thought
@@ -4219,11 +4291,11 @@ map<string,shared_ptr<ArrayBase> >&
 		  for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
 		    {
 		      const int c = sFCCol[nc];
-		      const StorageSite& faces = mesh.getFaces();
+		      const StorageSite& faces = fMesh.getFaces();
 		      const VectorT3Array& solidFaceCentroid =
-			dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[solidFaces]);
+			dynamic_cast<const VectorT3Array&> (_finestGeomFields.coordinate[solidFaces]);
 		      const VectorT3Array& faceCentroid =
-			dynamic_cast<const VectorT3Array&> (_geomFields.coordinate[faces]);
+			dynamic_cast<const VectorT3Array&> (_finestGeomFields.coordinate[faces]);
 		      const int faceIB= ibFaceIndices[c];
 		      T time_to_wall (0.0);
 		      T distIBSolid (0.0);
@@ -4670,10 +4742,10 @@ map<string,shared_ptr<ArrayBase> >&
         if (_options.fgamma==0){initializeMaxwellianEq();}
         else{ EquilibriumDistributionBGK();}
         if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
-        computeSolidFaceDsf(solidFaces,1);
+        computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
         ConservationofMFSolid(solidFaces);
-        computeIBFaceDsf(solidFaces,1);
-      
+        computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
+	
 	Field::syncLocalVectorFields( _dsfPtr.dsf );
 #if 0        
         for(int dir=0;dir<numDir;dir++)
@@ -4692,9 +4764,9 @@ map<string,shared_ptr<ArrayBase> >&
             if (_options.fgamma==0){initializeMaxwellianEq();}
             else{ EquilibriumDistributionBGK();}
             if (_options.fgamma==2){EquilibriumDistributionESBGK();}
-	    computeSolidFaceDsf(solidFaces,1);
+	    computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
 	    ConservationofMFSolid(solidFaces);
-	    computeIBFaceDsf(solidFaces,1);
+	    computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
 	  }
       }
   }
@@ -4903,9 +4975,9 @@ map<string,shared_ptr<ArrayBase> >&
         if (_options.fgamma==0){_coarserLevel->initializeMaxwellianEq();}
 	else{_coarserLevel->EquilibriumDistributionBGK();}
 	if (_options.fgamma==2){_coarserLevel->EquilibriumDistributionESBGK();}     
-        _coarserLevel->computeSolidFaceDsf(solidFaces,1);
+        _coarserLevel->computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
         _coarserLevel->ConservationofMFSolid(solidFaces);
-        _coarserLevel->computeIBFaceDsf(solidFaces,1);
+        _coarserLevel->computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
 
         _coarserLevel->makeFAS(solidFaces);
         _coarserLevel->cycle(solidFaces);
@@ -4916,9 +4988,9 @@ map<string,shared_ptr<ArrayBase> >&
         if (_options.fgamma==0){initializeMaxwellianEq();}
         else{EquilibriumDistributionBGK();}
         if (_options.fgamma==2){EquilibriumDistributionESBGK();}
-        computeSolidFaceDsf(solidFaces,1);
+        computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
         ConservationofMFSolid(solidFaces);
-        computeIBFaceDsf(solidFaces,1);
+        computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
       }
     if(_level+1<_options.maxLevels)
       doSweeps(_options.postSweeps,0,solidFaces);
