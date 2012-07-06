@@ -305,7 +305,7 @@ class Simulator():
         
 	
 
-        if tag == 'pullin' and self.farDistance < 0.5e-6:
+        if tag == 'pullin' and self.cloestDistance < 0.2e-6:
             return False
         if tag == 'pullout' and self.farDistance > self.gap2*0.8:
             return False        	
