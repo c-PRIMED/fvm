@@ -526,7 +526,7 @@ class COMETESBGKDiscretizer
                 count++;
 	    }
 	}
-        else if(_BCfArray[face]==7)  //if the face in question is not reflecting
+        else if(_BCfArray[face]==7)  //if the face in question is an ibFace
 	{
             int count=1;
             for(int dir=0;dir<_numDir;dir++)
@@ -566,7 +566,7 @@ class COMETESBGKDiscretizer
                 flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
                 const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
 
-                if(c_dot_en>T_Scalar(0))
+		if(c_dot_en>T_Scalar(0))
 		{
                     Amat.getElement(count,count)-=flux;
                     BVec[count-1]-=flux*f[cell];

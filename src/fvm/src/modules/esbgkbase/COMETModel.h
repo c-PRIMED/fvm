@@ -192,7 +192,7 @@ class COMETModel : public Model
 	  const StorageSite& cells = mesh.getCells();
 	  const StorageSite& fCells = fMesh.getCells();	  
 
-	  const int nCells = cells.getCount();
+	  const int nCells = cells.getCountLevel1();
 	  shared_ptr<VectorT3Array> vCell(new VectorT3Array(nCells));
 	  
 	  VectorT3 initialVelocity;
@@ -202,18 +202,23 @@ class COMETModel : public Model
 	  *vCell = initialVelocity;
 	  _macroFields.velocity.addArray(cells,vCell);
 
-          shared_ptr<IntArray> fineToCoarseCell(new IntArray(cells.getCount()));
+          shared_ptr<IntArray> fineToCoarseCell(new IntArray(nCells));
           *fineToCoarseCell = -1;
           _geomFields.fineToCoarse.addArray(cells,fineToCoarseCell);
 
           if((_ibm==1)&&(_level==0))
           {
-              shared_ptr<Array<Vector<int,25> > >finestToCoarseCell(new Array<Vector<int,25> >(fCells.getCount()));
+	      _geomFields.ibType.syncLocal();
+              shared_ptr<Array<Vector<int,25> > >finestToCoarseCell(new Array<Vector<int,25> >(fCells.getCountLevel1()));
               Vector<int,25> initialIndex;
               for(int k=0;k<25;k++)
                 initialIndex[k]=-1;
               *finestToCoarseCell = initialIndex;
               _finestGeomFields.finestToCoarse.addArray(fCells,finestToCoarseCell);
+              Field& FinestToCoarseField=_finestGeomFields.finestToCoarse;
+              Array<Vector<int,25> >& FinestToCoarse=dynamic_cast<Array<Vector<int,25> >&>(FinestToCoarseField[fCells]);
+              for(int c=0;c<nCells;c++)
+                FinestToCoarse[c][_level]=c;
           }
 	  
 	  shared_ptr<TArray> pCell(new TArray(nCells));
@@ -230,17 +235,17 @@ class COMETModel : public Model
 	  //*muCell = vc["viscosity"];
 	  _macroFields.viscosity.addArray(cells,muCell);
 
-	  shared_ptr<TArray> tempCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> tempCell(new TArray(nCells));
 	  *tempCell = _options["operatingTemperature"];
 	  _macroFields.temperature.addArray(cells,tempCell);
 
-	  shared_ptr<TArray> collFreqCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> collFreqCell(new TArray(nCells));
 	  *collFreqCell = 0.;
 	  //*collFreqCell = vc["viscosity"];
 	  _macroFields.collisionFrequency.addArray(cells,collFreqCell);
 	  
 	  //coeffs for perturbed BGK distribution function
-	  shared_ptr<VectorT5Array> coeffCell(new VectorT5Array(cells.getCount()));
+	  shared_ptr<VectorT5Array> coeffCell(new VectorT5Array(nCells));
 	  VectorT5 initialCoeff;
 	  initialCoeff[0] = 1.0;
 	  initialCoeff[1] = 1.0;
@@ -251,7 +256,7 @@ class COMETModel : public Model
 	  _macroFields.coeff.addArray(cells,coeffCell);
 	  
 	  //coeffs for perturbed BGK distribution function
-	  shared_ptr<VectorT10Array> coeffgCell(new VectorT10Array(cells.getCount()));
+	  shared_ptr<VectorT10Array> coeffgCell(new VectorT10Array(nCells));
 	  VectorT10 initialCoeffg;
 	  initialCoeffg[0] = 1.0;
 	  initialCoeffg[1] = 1.0;
@@ -267,40 +272,40 @@ class COMETModel : public Model
 	  _macroFields.coeffg.addArray(cells,coeffgCell);
 	  
 	  // used for ESBGK equilibrium distribution function
-	  shared_ptr<TArray> tempxxCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> tempxxCell(new TArray(cells.getCountLevel1()));
 	  *tempxxCell = _options["operatingTemperature"]/3;
 	  _macroFields.Txx.addArray(cells,tempxxCell);
 	  
-	  shared_ptr<TArray> tempyyCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> tempyyCell(new TArray(cells.getCountLevel1()));
 	  *tempyyCell = _options["operatingTemperature"]/3;
 	  _macroFields.Tyy.addArray(cells,tempyyCell);
 	  
-	  shared_ptr<TArray> tempzzCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> tempzzCell(new TArray(cells.getCountLevel1()));
 	  *tempzzCell = _options["operatingTemperature"]/3;
 	  _macroFields.Tzz.addArray(cells,tempzzCell);
 	  
-	  shared_ptr<TArray> tempxyCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> tempxyCell(new TArray(cells.getCountLevel1()));
 	  *tempxyCell = 0.0;
 	  _macroFields.Txy.addArray(cells,tempxyCell);
 	  
-	  shared_ptr<TArray> tempyzCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> tempyzCell(new TArray(cells.getCountLevel1()));
 	  *tempyzCell = 0.0;
 	  _macroFields.Tyz.addArray(cells,tempyzCell);
 	  
-	  shared_ptr<TArray> tempzxCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> tempzxCell(new TArray(cells.getCountLevel1()));
 	  *tempzxCell = 0.0;
 	  _macroFields.Tzx.addArray(cells,tempzxCell);
 	  
 	//Entropy and Entropy Generation Rate for switching
-	  shared_ptr<TArray> EntropyCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> EntropyCell(new TArray(cells.getCountLevel1()));
 	  *EntropyCell = 0.0;
 	  _macroFields.Entropy.addArray(cells,EntropyCell);
 	  
-	  shared_ptr<TArray> EntropyGenRateCell(new TArray(cells.getCount()));
+	  shared_ptr<TArray> EntropyGenRateCell(new TArray(cells.getCountLevel1()));
 	  *EntropyGenRateCell = 0.0;
 	  _macroFields.EntropyGenRate.addArray(cells,EntropyGenRateCell);
 
-	  shared_ptr<TArray> EntropyGenRateColl(new TArray(cells.getCount()));
+	  shared_ptr<TArray> EntropyGenRateColl(new TArray(cells.getCountLevel1()));
 	  *EntropyGenRateColl = 0.0;
 	  _macroFields.EntropyGenRate_Collisional.addArray(cells,EntropyGenRateColl);
 	  
@@ -317,7 +322,7 @@ class COMETModel : public Model
         _macroFields.Stress.addArray(cells,stressCell);
 
 	//Knq=M300+M120+M102 for Couette with uy
-        shared_ptr<TArray> KnqCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> KnqCell(new TArray(cells.getCountLevel1()));
         *KnqCell = 0.0;
         _macroFields.Knq.addArray(cells,KnqCell);
 
@@ -541,7 +546,7 @@ class COMETModel : public Model
 	}
 
         int count = 0;
-        for(int c=0;c<nCells;c++)
+        for(int c=0;c<cells.getSelfCount();c++)
 	{
             if(ibType[c] != Mesh::IBTYPE_FLUID)
               count++;
@@ -734,6 +739,7 @@ class COMETModel : public Model
                   const StorageSite& fineSite = mesh.getCells();
                   StorageSite& coarseSite = *_siteMap[&fineSite];
                   const StorageSite::ScatterMap& fineScatterMap = fineSite.getScatterMap();
+		  const StorageSite::ScatterMap& fineScatterMapLevel1 = fineSite.getScatterMapLevel1();
 		  StorageSite::ScatterMap& coarseScatterMap = coarseSite.getScatterMap();
 
                   foreach(const StorageSite::ScatterMap::value_type& pos, fineScatterMap)
@@ -762,7 +768,37 @@ class COMETModel : public Model
                       coarseScatterMap[&coarseOSite] = _coarseScatterMaps[sskey];
                     }
                   
+                  foreach(const StorageSite::ScatterMap::value_type& pos, fineScatterMapLevel1)
+                  {
+                      const StorageSite& fineOSite = *pos.first;
+                      SSPair sskey(&fineSite,&fineOSite);
+                      if (_coarseScatterMaps.find(sskey) != _coarseScatterMaps.end())
+                      {
+
+#ifdef FVM_PARALLEL
+                          // the ghost site will not have its corresponding coarse
+                          // site created yet so we create it here
+                          if (_siteMap.find(&fineOSite) == _siteMap.end())
+                          {
+                              shared_ptr<StorageSite> ghostSite
+                                (new StorageSite(-1));
+                              ghostSite->setGatherProcID ( fineOSite.getGatherProcID() );
+                              ghostSite->setScatterProcID( fineOSite.getScatterProcID() );
+                              ghostSite->setTag( fineOSite.getTag() );
+                              StorageSite& coarseOSite = *ghostSite;
+                              _siteMap[&fineOSite]=&coarseOSite;
+                              _sharedSiteMap[&fineOSite]=ghostSite;
+			  }
+#endif
+
+                          StorageSite& coarseOSite = *_siteMap[&fineOSite];
+                          
+                          coarseScatterMap[&coarseOSite] = _coarseScatterMaps[sskey];
+		      }
+		  }
+
                   const StorageSite::GatherMap& fineGatherMap = fineSite.getGatherMap();
+		  const StorageSite::GatherMap& fineGatherMapLevel1 = fineSite.getGatherMapLevel1();
 		  StorageSite::GatherMap& coarseGatherMap = coarseSite.getGatherMap();
                   foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMap)
                     {
@@ -772,12 +808,32 @@ class COMETModel : public Model
 
                       coarseGatherMap[&coarseOSite] = _coarseGatherMaps[sskey];
                     }
+                  foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMapLevel1)
+                  {
+                      const StorageSite& fineOSite = *pos.first;
+                      SSPair sskey(&fineSite,&fineOSite);
+                      if (_coarseGatherMaps.find(sskey) != _coarseGatherMaps.end())
+                      {
+                          foreach(SiteMap::value_type tempPos, _siteMap)
+                          {
+                              const StorageSite& tempOSite = *tempPos.first;
+                              if(fineOSite.getTag()==tempOSite.getTag())
+                              {
+                                  //StorageSite& coarseOSite = *_siteMap[&fineOSite];
+                                  StorageSite& coarseOSite = *_siteMap[&tempOSite];
+                                  coarseGatherMap[&coarseOSite] = _coarseGatherMaps[sskey];
+			      }
+			  }
+		      }
+		  } 
                   
                 }
               
               int newCount= MakeCoarseMesh2(finerModel->getMeshList(),
                                             finerModel->getGeomFields(),_coarseGeomFields,
                                             *newMeshesPtr);
+
+	      _coarseGeomFields.ibType.syncLocal();
 
               TCOMET* newModelPtr=new COMETModel(*newMeshesPtr,thisLevel,
                                                  _coarseGeomFields,
@@ -802,19 +858,22 @@ class COMETModel : public Model
 	      {
                   const Mesh& mesh = *_meshes[n];
                   const StorageSite& fineIBFaces = mesh.getIBFaces();
-                  StorageSite& coarseIBFaces = *_siteMap[&fineIBFaces];
-                  for(int dir=0;dir<_quadrature.getDirCount();dir++)
+		  if(fineIBFaces.getCount()>0)
 		  {
-                      Field& fnd = *_dsfPtr.dsf[dir];
-                      const TArray& fIB = dynamic_cast<const TArray&>(fnd[fineIBFaces]);
-                      shared_ptr<TArray> cIBV(new TArray(coarseIBFaces.getCount()));
-                      cIBV->zero();
-                      DistFunctFields<T>& coarserdsf = _coarserLevel->getdsf();
-                      Field& cfnd = *coarserdsf.dsf[dir];
-                      cfnd.addArray(coarseIBFaces,cIBV);
-                      TArray& cIB = dynamic_cast<TArray&>(cfnd[coarseIBFaces]);
-                      for(int i=0;i<coarseIBFaces.getCount();i++)
-                        cIB[i]=fIB[i];
+		      StorageSite& coarseIBFaces = *_siteMap[&fineIBFaces];
+		      for(int dir=0;dir<_quadrature.getDirCount();dir++)
+		      {
+			  Field& fnd = *_dsfPtr.dsf[dir];
+			  const TArray& fIB = dynamic_cast<const TArray&>(fnd[fineIBFaces]);
+			  shared_ptr<TArray> cIBV(new TArray(coarseIBFaces.getCount()));
+			  cIBV->zero();
+			  DistFunctFields<T>& coarserdsf = _coarserLevel->getdsf();
+			  Field& cfnd = *coarserdsf.dsf[dir];
+			  cfnd.addArray(coarseIBFaces,cIBV);
+			  TArray& cIB = dynamic_cast<TArray&>(cfnd[coarseIBFaces]);
+			  for(int i=0;i<coarseIBFaces.getCount();i++)
+			    cIB[i]=fIB[i];
+		      }
 		  }
 
 		  shared_ptr<VectorT3Array> coarseSolidVel(new VectorT3Array(solidFaces.getCount()));
@@ -872,8 +931,7 @@ class COMETModel : public Model
       Array<Vector<int,25> >& FinestToCoarse=dynamic_cast<Array<Vector<int,25> >&>(FinestToCoarseField[fCells]);
 
       if(_level==0)
-        for(int c=0;c<nFCells;c++)
-          FinestToCoarse[c][_level]=c;
+        MakeParallel();
       else
       {
 	  for(int dir=0;dir<_quadrature.getDirCount();dir++)
@@ -892,6 +950,16 @@ class COMETModel : public Model
           
           _coarserLevel->MakeCoarseIndex(solidFaces);
       }
+    }
+
+    void MakeParallel()
+    {
+
+      for(int dir=0;dir<_quadrature.getDirCount();dir++)
+	{
+          Field& fnd = *_dsfPtr.dsf[dir];
+          fnd.syncLocal();
+	}
     }
     
   void InitializeMacroparameters()
@@ -2672,7 +2740,8 @@ map<string,shared_ptr<ArrayBase> >&
 
 	/*** creating coarse level cells ***/
 	coarseCount = _coarseSizes[&mesh];
-	
+	int interfaceCellsLevel0 = _coarseGhostSizes[&mesh];	
+
 	int boundaryCell=0;
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	{
@@ -2695,7 +2764,7 @@ map<string,shared_ptr<ArrayBase> >&
 	else
 	  boundaryCell=0;
 
-	for(int c=0; c< inCellTotal; c++)
+	for(int c=0; c< inCells.getCountLevel1(); c++)
 	{
             if(outGhost<FineToCoarse[c])
               outGhost=FineToCoarse[c];
@@ -2716,23 +2785,21 @@ map<string,shared_ptr<ArrayBase> >&
 	    cout<<" in makecoarsemesh2, rank,level, cell,index = "<<MPI::COMM_WORLD.Get_rank()<<" "<<_level<<" "<<c<<" and "<<FineToCoarse[c]<<endl;
 	*/
 
-        //outCells.setCount(coarseCount,inGhost);
-	outCells.setCount(coarseCount,outGhost);
-	//outCells.setCountLevel1(coarseCount+outGhost);
-	//outCells.setCountLevel1(coarseCount+outGhost+interfaceCells);
-	
+        outCells.setCount(coarseCount,boundaryCell+interfaceCellsLevel0);
+        outCells.setCountLevel1(coarseCount+outGhost);        
+
 	/*** created coarse level cells ***/
 
 	//make the coarse cell to fine cell connectivity.
 	CRPtr CoarseToFineCells=CRPtr(new CRConnectivity(outCells,inCells));
         CoarseToFineCells->initCount();
 	
-        for(int c=0;c<inCellTotal;c++)
+        for(int c=0;c<inCells.getCountLevel1();c++)
           CoarseToFineCells->addCount(FineToCoarse[c],1);
 
         CoarseToFineCells->finishCount();
 
-        for(int c=0;c<inCellTotal;c++)
+        for(int c=0;c<inCells.getCountLevel1();c++)
           CoarseToFineCells->add(FineToCoarse[c],c);
 
         CoarseToFineCells->finishAdd();
@@ -2887,13 +2954,13 @@ map<string,shared_ptr<ArrayBase> >&
         newMeshPtr.setConnectivity(outFaces,outCells,CoarseFaceCoarseCell);
 
         Field& coarseIbTypeField=coarseGeomFields.ibType;
-        shared_ptr<IntArray> ibTypePtr(new IntArray(outCells.getCount()));
+        shared_ptr<IntArray> ibTypePtr(new IntArray(outCells.getCountLevel1()));
         *ibTypePtr = Mesh::IBTYPE_FLUID;
         coarseIbTypeField.addArray(outCells,ibTypePtr);
 
         IntArray& coarseIBType = dynamic_cast<IntArray&>(coarseGeomFields.ibType[outCells]);
 
-        for(int c=0;c<inCellTotal;c++)
+        for(int c=0;c<inCellCount;c++)
           if(ibType[c] != Mesh::IBTYPE_FLUID)
             coarseIBType[FineToCoarse[c]]=ibType[c];
 
@@ -3084,8 +3151,12 @@ map<string,shared_ptr<ArrayBase> >&
       
       Field& FineToCoarseField=inGeomFields.fineToCoarse;
       IntArray& coarseIndex=dynamic_cast<IntArray&>(FineToCoarseField[inCells]);
+      IntArray tempIndex(inCells.getCountLevel1());
+      for(int c=0;c<inCells.getCountLevel1();c++)
+        tempIndex[c]=coarseIndex[c];
 
       int coarseGhostSize=0;
+      int tempGhostSize=0;
       //const int coarseSize = _coarseSizes.find(rowIndex)->second;
       //const int coarseSize = _coarseSizes[&mesh];
       int coarseSize = -1;
@@ -3123,23 +3194,77 @@ map<string,shared_ptr<ArrayBase> >&
       
       typedef map<const StorageSite*, vector<const Array<int>* > > IndicesMap;
       IndicesMap toIndicesMap;
+      IndicesMap tempIndicesMap;
 
       foreach(const StorageSite::GatherMap::value_type pos, gatherMap)
 	{
           const StorageSite& oSite = *pos.first;
+	  const Array<int>& tempIndices = *pos.second;
           const Array<int>& toIndices = *pos.second;
 
+	  tempIndicesMap[&oSite].push_back(&tempIndices);
           toIndicesMap[&oSite].push_back(&toIndices);
 	}
-      /*
+      
       foreach(const StorageSite::GatherMap::value_type pos, gatherMapLevel1)
 	{
           const StorageSite& oSite = *pos.first;
           const Array<int>& toIndices = *pos.second;
 
-          toIndicesMap[&oSite].push_back(&toIndices);
+          int found=0;
+          foreach(const StorageSite::GatherMap::value_type posLevel0, gatherMap)
+	  {
+              const StorageSite& oSiteLevel0 = *posLevel0.first;
+              if(oSite.getTag()==oSiteLevel0.getTag())
+	      {
+                  toIndicesMap[&oSiteLevel0].push_back(&toIndices);
+                  found=1;
+	      }
+	  }
+          
+          if(found==0)
+            toIndicesMap[&oSite].push_back(&toIndices);
 	}
-      */
+
+      foreach(IndicesMap::value_type pos, tempIndicesMap)
+      {
+          const StorageSite& oSite = *pos.first;
+          const vector<const Array<int>* > tempIndicesArrays = pos.second;
+
+
+          map<int,int> otherToMyMapping;
+          UnorderedSet  gatherSet;
+
+          foreach(const Array<int>* tempIndicesPtr, tempIndicesArrays)
+	  {
+              const Array<int>& tempIndices = *tempIndicesPtr;
+              const int nGhostRows = tempIndices.getLength();
+              for(int ng=0; ng<nGhostRows; ng++)
+	      {
+                  const int fineIndex = tempIndices[ng];
+                  const int coarseOtherIndex = tempIndex[fineIndex];
+
+                  if (coarseOtherIndex < 0)
+                    continue;
+
+
+                  if (otherToMyMapping.find(coarseOtherIndex) !=
+                      otherToMyMapping.end())
+		  {
+                      
+                      tempIndex[fineIndex] = otherToMyMapping[coarseOtherIndex];
+		  }
+                  else
+		  {
+                      tempIndex[fineIndex] = tempGhostSize+coarseSize;
+                      otherToMyMapping[coarseOtherIndex] = tempIndex[fineIndex];
+                      gatherSet.insert( tempIndex[fineIndex] );
+                      tempGhostSize++;
+		  }
+	      }
+	  }
+      }
+      
       foreach(IndicesMap::value_type pos, toIndicesMap)
         {
           const StorageSite& oSite = *pos.first;
@@ -3205,15 +3330,27 @@ map<string,shared_ptr<ArrayBase> >&
 
           fromIndicesMap[&oSite].push_back(&fromIndices);
 	}
-      /*
+      
       foreach(const StorageSite::GatherMap::value_type pos, scatterMapLevel1)
 	{
           const StorageSite& oSite = *pos.first;
           const Array<int>& fromIndices = *pos.second;
 
-          fromIndicesMap[&oSite].push_back(&fromIndices);
+          int found=0;
+          foreach(const StorageSite::ScatterMap::value_type posLevel0, scatterMap)
+	    {
+              const StorageSite& oSiteLevel0 = *posLevel0.first;
+              if(oSite.getTag()==oSiteLevel0.getTag())
+		{
+                  fromIndicesMap[&oSiteLevel0].push_back(&fromIndices);
+                  found=1;
+		}
+	    }
+          
+          if(found==0)
+            fromIndicesMap[&oSite].push_back(&fromIndices);
 	}
-      */
+      
       foreach(IndicesMap::value_type pos, fromIndicesMap)
 	{
           const StorageSite& oSite = *pos.first;
@@ -3302,8 +3439,8 @@ map<string,shared_ptr<ArrayBase> >&
       
            const TArray& cV =
             dynamic_cast<const TArray&>(fnd[cells]);
-	   TArray cFV(fCells.getCount());
-	   for(int c=0;c<fCells.getCount();c++)
+	   TArray cFV(fCells.getCountLevel1());
+	   for(int c=0;c<fCells.getCountLevel1();c++)
 	     cFV[c]=cV[FinestToCoarse[c][_level]];
 
            ibV->zero();
@@ -3965,8 +4102,8 @@ map<string,shared_ptr<ArrayBase> >&
 
 	      const TArray& cV =
 		dynamic_cast<const TArray&>(fnd[cells]);
-              TArray cFV(fCells.getCount());
-              for(int c=0;c<fCells.getCount();c++)
+              TArray cFV(fCells.getCountLevel1());
+              for(int c=0;c<fCells.getCountLevel1();c++)
                 cFV[c]=cV[FinestToCoarse[c][_level]];
 
 	      ibV->zero();        
@@ -4725,16 +4862,17 @@ map<string,shared_ptr<ArrayBase> >&
 
         CDisc.setfgFinder();
 
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-
-#if 0
-        for(int dir=0;dir<numDir;dir++)
-          {
-            Field& fnd = *_dsfPtr.dsf[dir];
-            fnd.syncLocal();
-          }
+	//Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 1
+        MakeParallel();
 #endif  
         CDisc.COMETSolve(1,_level); //forward
+
+	//Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 1
+        MakeParallel();
+#endif
+
         //callCOMETBoundaryConditions();
         ComputeCOMETMacroparameters();
         ComputeCollisionfrequency();
@@ -4745,18 +4883,14 @@ map<string,shared_ptr<ArrayBase> >&
         computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
         ConservationofMFSolid(solidFaces);
         computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
-	
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0        
-        for(int dir=0;dir<numDir;dir++)
-          {
-            Field& fnd = *_dsfPtr.dsf[dir];
-            fnd.syncLocal();
-          }
-#endif          
+	          
         CDisc.COMETSolve(-1,_level); //reverse
         if((num==1)||(num==0&&_level==0))
 	  {
+            //Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 1
+            MakeParallel();
+#endif
             //callCOMETBoundaryConditions();
             ComputeCOMETMacroparameters();
             ComputeCollisionfrequency();
@@ -4894,13 +5028,9 @@ map<string,shared_ptr<ArrayBase> >&
         CDisc.setfgFinder();
 	const int numDir=_quadrature.getDirCount();
 	
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0
-	for(int dir=0;dir<numDir;dir++)
-	{
-	    Field& fnd = *_dsfPtr.dsf[dir];
-	    fnd.syncLocal();
-	}
+	//Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 1
+	MakeParallel();
 #endif
         CDisc.findResid(addFAS);
         currentResid=CDisc.getAveResid();
@@ -4974,7 +5104,8 @@ map<string,shared_ptr<ArrayBase> >&
 	_coarserLevel->ComputeCollisionfrequency();
         if (_options.fgamma==0){_coarserLevel->initializeMaxwellianEq();}
 	else{_coarserLevel->EquilibriumDistributionBGK();}
-	if (_options.fgamma==2){_coarserLevel->EquilibriumDistributionESBGK();}     
+	if (_options.fgamma==2){_coarserLevel->EquilibriumDistributionESBGK();}
+	_coarserLevel->MakeParallel();     
         _coarserLevel->computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
         _coarserLevel->ConservationofMFSolid(solidFaces);
         _coarserLevel->computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
@@ -4988,6 +5119,7 @@ map<string,shared_ptr<ArrayBase> >&
         if (_options.fgamma==0){initializeMaxwellianEq();}
         else{EquilibriumDistributionBGK();}
         if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+	MakeParallel();
         computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
         ConservationofMFSolid(solidFaces);
         computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
@@ -5329,6 +5461,7 @@ map<string,shared_ptr<ArrayBase> >&
           StressTensor<T> stress = NumTypeTraits<StressTensor<T> >::getZero();
           
           if (IBM){
+	    const VectorT3Array& vs = dynamic_cast<const VectorT3Array&>(_macroFields.velocity[solidFaces]);
 	    GeomFields::SSPair key1(&solidFaces,&cells);
             const IMatrix& mIC =
               dynamic_cast<const IMatrix&>
@@ -5337,6 +5470,14 @@ map<string,shared_ptr<ArrayBase> >&
             for(int j=0;j<N123;j++){
               Field& fnd = *_dsfPtr.dsf[j];
               const TArray& f_dsf = dynamic_cast<const TArray&>(fnd[cells]);
+              const TArray& fs_dsf = dynamic_cast<const TArray&>(fnd[solidFaces]);
+              stress[0] -=pow((cx[j]-vs[f][0]),2.0)*fs_dsf[f]*wts[j];
+              stress[1] -=pow((cy[j]-vs[f][1]),2.0)*fs_dsf[f]*wts[j];
+              stress[2] -=pow((cz[j]-vs[f][2]),2.0)*fs_dsf[f]*wts[j];
+              stress[3] -=(cx[j]-vs[f][0])*(cy[j]-vs[f][1])*fs_dsf[f]*wts[j];
+              stress[4] -=(cy[j]-vs[f][1])*(cz[j]-vs[f][2])*fs_dsf[f]*wts[j];
+              stress[5] -=(cx[j]-vs[f][0])*(cz[j]-vs[f][2])*fs_dsf[f]*wts[j];
+	      /*
               for(int nc = sFCRow[f]; nc<sFCRow[f+1]; nc++)
                 {
                   
@@ -5349,6 +5490,7 @@ map<string,shared_ptr<ArrayBase> >&
                   stress[4] -=coeff*(cy[j]-v[c][1])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
                   stress[5] -=coeff*(cx[j]-v[c][0])*(cz[j]-v[c][2])*f_dsf[c]*wts[j];
                 }
+	      */
             }
           }
           else
