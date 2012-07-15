@@ -611,6 +611,7 @@ class COMETModel : public Model
 		  const StorageSite& fineSite = mesh.getCells();
 		  StorageSite& coarseSite = *_siteMap[&fineSite];
 		  const StorageSite::ScatterMap& fineScatterMap = fineSite.getScatterMap();
+		  const StorageSite::ScatterMap& fineScatterMapLevel1 = fineSite.getScatterMapLevel1();
 		  StorageSite::ScatterMap& coarseScatterMap = coarseSite.getScatterMap();
 
 		  foreach(const StorageSite::ScatterMap::value_type& pos, fineScatterMap)
@@ -638,8 +639,38 @@ class COMETModel : public Model
 		      SSPair sskey(&fineSite,&fineOSite);
 		      coarseScatterMap[&coarseOSite] = _coarseScatterMaps[sskey];		
 		  }
+
+                  foreach(const StorageSite::ScatterMap::value_type& pos, fineScatterMapLevel1)
+		  {
+                      const StorageSite& fineOSite = *pos.first;
+                      SSPair sskey(&fineSite,&fineOSite);
+                      if (_coarseScatterMaps.find(sskey) != _coarseScatterMaps.end())
+		      {
+
+#ifdef FVM_PARALLEL
+                          // the ghost site will not have its corresponding coarse
+                          // site created yet so we create it here
+                          if (_siteMap.find(&fineOSite) == _siteMap.end())
+			  {
+                              shared_ptr<StorageSite> ghostSite
+                                (new StorageSite(-1));
+                              ghostSite->setGatherProcID ( fineOSite.getGatherProcID() );
+                              ghostSite->setScatterProcID( fineOSite.getScatterProcID() );
+                              ghostSite->setTag( fineOSite.getTag() );
+                              StorageSite& coarseOSite = *ghostSite;
+                              _siteMap[&fineOSite]=&coarseOSite;
+                              _sharedSiteMap[&fineOSite]=ghostSite;
+			  }
+#endif
+			  
+                          StorageSite& coarseOSite = *_siteMap[&fineOSite];
+
+                          coarseScatterMap[&coarseOSite] = _coarseScatterMaps[sskey];
+		      }
+		  }
 		  
 		  const StorageSite::GatherMap& fineGatherMap = fineSite.getGatherMap();
+		  const StorageSite::GatherMap& fineGatherMapLevel1 = fineSite.getGatherMapLevel1();
 		  StorageSite::GatherMap& coarseGatherMap = coarseSite.getGatherMap();
 		  foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMap)
 		  {
@@ -648,6 +679,25 @@ class COMETModel : public Model
 		      SSPair sskey(&fineSite,&fineOSite);
 
 		      coarseGatherMap[&coarseOSite] = _coarseGatherMaps[sskey];
+		  }
+
+                  foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMapLevel1)
+		  {
+                      const StorageSite& fineOSite = *pos.first;
+                      SSPair sskey(&fineSite,&fineOSite);
+                      if (_coarseGatherMaps.find(sskey) != _coarseGatherMaps.end())
+		      {
+                          foreach(SiteMap::value_type tempPos, _siteMap)
+			  {
+                              const StorageSite& tempOSite = *tempPos.first;
+                              if(fineOSite.getTag()==tempOSite.getTag())
+			      {
+                                  //StorageSite& coarseOSite = *_siteMap[&fineOSite];
+                                  StorageSite& coarseOSite = *_siteMap[&tempOSite];
+                                  coarseGatherMap[&coarseOSite] = _coarseGatherMaps[sskey];
+			      }
+			  }
+		      }
 		  }
 		  
 	      }
@@ -4925,14 +4975,9 @@ map<string,shared_ptr<ArrayBase> >&
 
         CDisc.setfgFinder();
 	
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-	
-#if 0
-	for(int dir=0;dir<numDir;dir++)
-	{
-	    Field& fnd = *_dsfPtr.dsf[dir];
-	    fnd.syncLocal();
-	}
+	//Field::syncLocalVectorFields( _dsfPtr.dsf );	
+#if 1
+	MakeParallel();
 #endif  
 	CDisc.COMETSolve(1,_level); //forward
 	//callCOMETBoundaryConditions();
@@ -4943,13 +4988,9 @@ map<string,shared_ptr<ArrayBase> >&
 	else{ EquilibriumDistributionBGK();}
 	if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
       
-        Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0        
-        for(int dir=0;dir<numDir;dir++)
-        {
-            Field& fnd = *_dsfPtr.dsf[dir];
-            fnd.syncLocal();
-	}
+        //Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 1        
+	MakeParallel();
 #endif          
 	CDisc.COMETSolve(-1,_level); //reverse
 	if((num==1)||(num==0&&_level==0))
@@ -4987,13 +5028,9 @@ map<string,shared_ptr<ArrayBase> >&
         CDisc.setfgFinder();
         const int numDir=_quadrature.getDirCount();
 
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0
-        for(int dir=0;dir<numDir;dir++)
-	{
-            Field& fnd = *_dsfPtr.dsf[dir];
-            fnd.syncLocal();
-	}
+	//Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 1
+        MakeParallel();
 #endif
         CDisc.findResid(addFAS);
         currentResid=CDisc.getAveResid();
