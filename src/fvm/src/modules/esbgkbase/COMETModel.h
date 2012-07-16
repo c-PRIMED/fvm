@@ -981,7 +981,7 @@ class COMETModel : public Model
       Array<Vector<int,25> >& FinestToCoarse=dynamic_cast<Array<Vector<int,25> >&>(FinestToCoarseField[fCells]);
 
       if(_level==0)
-        MakeParallel();
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
       else
       {
 	  for(int dir=0;dir<_quadrature.getDirCount();dir++)
