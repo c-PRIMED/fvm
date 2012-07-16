@@ -4912,14 +4912,14 @@ map<string,shared_ptr<ArrayBase> >&
 
         CDisc.setfgFinder();
 
-	//Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 1
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
         MakeParallel();
 #endif  
         CDisc.COMETSolve(1,_level); //forward
 
-	//Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 1
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
         MakeParallel();
 #endif
 
@@ -4937,8 +4937,8 @@ map<string,shared_ptr<ArrayBase> >&
         CDisc.COMETSolve(-1,_level); //reverse
         if((num==1)||(num==0&&_level==0))
 	  {
-            //Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 1
+            Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
             MakeParallel();
 #endif
             //callCOMETBoundaryConditions();
@@ -4975,8 +4975,8 @@ map<string,shared_ptr<ArrayBase> >&
 
         CDisc.setfgFinder();
 	
-	//Field::syncLocalVectorFields( _dsfPtr.dsf );	
-#if 1
+	Field::syncLocalVectorFields( _dsfPtr.dsf );	
+#if 0
 	MakeParallel();
 #endif  
 	CDisc.COMETSolve(1,_level); //forward
@@ -4988,8 +4988,8 @@ map<string,shared_ptr<ArrayBase> >&
 	else{ EquilibriumDistributionBGK();}
 	if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
       
-        //Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 1        
+        Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0        
 	MakeParallel();
 #endif          
 	CDisc.COMETSolve(-1,_level); //reverse
@@ -5028,8 +5028,8 @@ map<string,shared_ptr<ArrayBase> >&
         CDisc.setfgFinder();
         const int numDir=_quadrature.getDirCount();
 
-	//Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 1
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
         MakeParallel();
 #endif
         CDisc.findResid(addFAS);
@@ -5065,8 +5065,8 @@ map<string,shared_ptr<ArrayBase> >&
         CDisc.setfgFinder();
 	const int numDir=_quadrature.getDirCount();
 	
-	//Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 1
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
 	MakeParallel();
 #endif
         CDisc.findResid(addFAS);
@@ -5156,7 +5156,10 @@ map<string,shared_ptr<ArrayBase> >&
         if (_options.fgamma==0){initializeMaxwellianEq();}
         else{EquilibriumDistributionBGK();}
         if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+	Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
 	MakeParallel();
+#endif
         computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
         ConservationofMFSolid(solidFaces);
         computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
