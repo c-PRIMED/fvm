@@ -55,8 +55,8 @@ class KSConnectivity
     
     _SelfToSelf.clear();
 
-    delete _empty.first;
-    delete _empty.second;
+    //delete _empty.first;
+    //delete _empty.second;
 
   }
 
@@ -294,6 +294,241 @@ class KSConnectivity
       }
     else
       throw CException("Matrix size does not agree with vectors!");
+  }
+  
+  int getSelfSize() {return _SelfToSelf.size();}
+  int getOtherSize() {return _SelfToOther.size();}
+  bool isSelfNull(const int i) {return _SelfToSelf[i]==NULL;}
+  bool isOtherNull(const int i) {return _SelfToOther[i]==NULL;}
+  int getColSize() {return _colLen;}
+
+  void copyFrom(KSConnectivity& from)
+  {
+    emptyConnections();
+
+    //Copy SelfToSelf connections first
+    
+    int Arows=from.getSelfSize();
+    for(int i=0;i<Arows;i++)
+      {
+	if(isSelfNull(i))
+	  {
+	    _SelfToSelf.push_back(NULL);
+	  }
+	else
+	  {
+	    const IntArray& cIndex=getSelfIndices(i);
+	    const TArray& cCoeff=getSelfCoeffs(i);
+	    const int newSize=cIndex.getLength();
+	    IntArray* newIntsPtr=new IntArray(newSize);
+	    TArray* newCoeffsPtr=new TArray(newSize);
+	    *newIntsPtr=cIndex;
+	    *newCoeffsPtr=cCoeff;
+	    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
+	    _SelfToSelf.push_back(newPairPtr);
+	  }
+      }
+
+    //Copy SelfToOther connections now
+
+    Arows=from.getOtherSize();
+    for(int i=0;i<Arows;i++)
+      {
+	if(isOtherNull(i))
+	  {
+	    _SelfToOther.push_back(NULL);
+	  }
+	else
+	  {
+	    const IntArray& cIndex=getOtherIndices(i);
+	    const TArray& cCoeff=getOtherCoeffs(i);
+	    const int newSize=cIndex.getLength();
+	    IntArray* newIntsPtr=new IntArray(newSize);
+	    TArray* newCoeffsPtr=new TArray(newSize);
+	    *newIntsPtr=cIndex;
+	    *newCoeffsPtr=cCoeff;
+	    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
+	    _SelfToOther.push_back(newPairPtr);
+	  }
+      }
+
+  }
+
+  void multiplySelf(const T x) const
+  {
+    const int Arows=_SelfToSelf.size();
+    for(int i=0;i<Arows;i++)
+      {
+	if(!isSelfNull(i))
+	  {
+	    TArray& cCoeff=getSelfCoeffs(i);
+	    for(int j=0;j<cCoeff.getLength();j++)
+	      cCoeff[j]*=x;
+	  }
+      }
+  }
+
+  void multiplyOther(const T x) const
+  {
+    const int Arows=_SelfToOther.size();
+    for(int i=0;i<Arows;i++)
+      {
+	if(!isOtherNull(i))
+	  {
+	    TArray& cCoeff=getOtherCoeffs(i);
+	    for(int j=0;j<cCoeff.getLength();j++)
+	      cCoeff[j]*=x;
+	  }
+      }
+  }
+
+  void addToSelf(KSConnectivity& added)
+  {
+    const int selfSize=getSelfSize();
+    if(selfSize==added.getSelfSize())
+      {
+	if(getColSize()==added.getColSize())
+	  {
+	    for(int i=0;i<selfSize;i++)
+	      {
+		if(isSelfNull(i) && !added.isSelfNull(i))
+		  {
+		    const IntArray& cIndex=added.getSelfIndices(i);
+		    const TArray& cCoeff=added.getSelfCoeffs(i);
+		    const int newSize=cIndex.getLength();
+		    IntArray* newIntsPtr=new IntArray(newSize);
+		    TArray* newCoeffsPtr=new TArray(newSize);
+		    *newIntsPtr=cIndex;
+		    *newCoeffsPtr=cCoeff;
+		    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
+		    _SelfToSelf[i]=newPairPtr;
+		  }
+		else if(!isSelfNull(i) && !added.isSelfNull(i))
+		  {
+		    const IntArray& myIndex=getSelfIndices(i);
+		    const TArray& myCoeff=getSelfCoeffs(i);
+		    TArray myExpand(1);
+		    expandArray(myIndex, myCoeff, myExpand);
+
+		    const IntArray& addIndex=added.getSelfIndices(i);
+		    const TArray& addCoeff=added.getSelfCoeffs(i);
+		    TArray addExpand(1);
+		    expandArray(addIndex, addCoeff, addExpand);
+
+		    myExpand+=addExpand;
+
+		    int newSize(0);
+		    for(int j=0;j<_colLen;j++)
+		      {
+			if(myExpand[j]>0)
+			  newSize++;
+		      }
+		    
+		    IntArray* newIntsPtr=new IntArray(newSize);
+		    TArray* newCoeffsPtr=new TArray(newSize);
+
+		    newSize=0;
+		    for(int j=0;j<_colLen;j++)
+		      {
+			if(myExpand[j]>0)
+			  {
+			    (*newIntsPtr)[newSize]=j;
+			    (*newCoeffsPtr)[newSize]=myExpand[j];
+			    newSize++;
+			  }
+		      }
+
+		    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
+		    delete _SelfToSelf[i];
+		    _SelfToSelf[i]=newPairPtr;
+		  }
+	      }
+	  }
+	else
+	  throw CException("addToSelf: Columns not the same size!");
+      }
+    else
+      throw CException("addToSelf: Rows not the same size!");
+  }
+
+  void addToOther(KSConnectivity& added)
+  {
+    const int otherSize=getOtherSize();
+    if(otherSize==added.getotherSize())
+      {
+	if(getColSize()==added.getColSize())
+	  {
+	    for(int i=0;i<otherSize;i++)
+	      {
+		if(isOtherNull(i) && !added.isOtherNull(i))
+		  {
+		    const IntArray& cIndex=added.getOtherIndices(i);
+		    const TArray& cCoeff=added.getOtherCoeffs(i);
+		    const int newSize=cIndex.getLength();
+		    IntArray* newIntsPtr=new IntArray(newSize);
+		    TArray* newCoeffsPtr=new TArray(newSize);
+		    *newIntsPtr=cIndex;
+		    *newCoeffsPtr=cCoeff;
+		    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
+		    _SelfToOther[i]=newPairPtr;
+		  }
+		else if(!isOtherNull(i) && !added.isOtherNull(i))
+		  {
+		    const IntArray& myIndex=getOtherIndices(i);
+		    const TArray& myCoeff=getOtherCoeffs(i);
+		    TArray myExpand(1);
+		    expandArray(myIndex, myCoeff, myExpand);
+
+		    const IntArray& addIndex=added.getOtherIndices(i);
+		    const TArray& addCoeff=added.getOtherCoeffs(i);
+		    TArray addExpand(1);
+		    expandArray(addIndex, addCoeff, addExpand);
+
+		    myExpand+=addExpand;
+
+		    int newSize(0);
+		    for(int j=0;j<_colLen;j++)
+		      {
+			if(myExpand[j]>0)
+			  newSize++;
+		      }
+		    
+		    IntArray* newIntsPtr=new IntArray(newSize);
+		    TArray* newCoeffsPtr=new TArray(newSize);
+
+		    newSize=0;
+		    for(int j=0;j<_colLen;j++)
+		      {
+			if(myExpand[j]>0)
+			  {
+			    (*newIntsPtr)[newSize]=j;
+			    (*newCoeffsPtr)[newSize]=myExpand[j];
+			    newSize++;
+			  }
+		      }
+
+		    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
+		    delete _SelfToOther[i];
+		    _SelfToOther[i]=newPairPtr;
+		  }
+	      }
+	  }
+	else
+	  throw CException("addToOther: Columns not the same size!");
+      }
+    else
+      throw CException("addToOther: Rows not the same size!");
+  }
+
+  void expandArray(const IntArray& indices, const TArray& compressed, TArray& expanded)
+  {
+    expanded.resize(_colLen);
+    expanded.zero();
+    const int len=indices.getLength();
+    
+    for(int i=0;i<len;i++)
+      expanded[indices[i]]=compressed[i];
+    
   }
   
  private:
