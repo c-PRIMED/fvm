@@ -783,8 +783,8 @@ Field::syncLocalVectorFieldsLevel1(std::vector<Field*> & dsf)
    
 #ifdef FVM_PARALLEL
    //SENDING
-   MPI::Request   request_send[ Field::get_request_size(field0) ];
-   MPI::Request   request_recv[ Field::get_request_size(field0) ];
+   MPI::Request   request_send[ Field::get_request_size_level1(field0) ];
+   MPI::Request   request_recv[ Field::get_request_size_level1(field0) ];
    int indxSend = 0;
    int indxRecv = 0;
    foreach(ArrayMap::value_type& pos, arrays){
@@ -819,7 +819,7 @@ Field::syncLocalVectorFieldsLevel1(std::vector<Field*> & dsf)
       }
    }
 
-   int count  = Field::get_request_size(field0);
+   int count  = Field::get_request_size_level1(field0);
    MPI::Request::Waitall( count, request_recv );
    MPI::Request::Waitall( count, request_send );
 #endif
@@ -855,4 +855,22 @@ Field::get_request_size(Field& field)
 }
 
 
+int
+Field::get_request_size_level1(Field& field)
+{
+   ArrayMap& arrays = field.getArrayMap();
+   int indx =  0;
+   foreach(ArrayMap::value_type& pos, arrays){
+      const StorageSite& site = *pos.first;
+      const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+      foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+          const StorageSite&  oSite = *mpos.first;
+          //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+          if ( oSite.getGatherProcID() != -1 )
+             indx++;
+      }
+   }
+   return indx;
+
+}
 

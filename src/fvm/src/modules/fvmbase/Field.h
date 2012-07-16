@@ -74,7 +74,8 @@ private:
   static void   syncScatterVectorFieldsLevel1(const StorageSite& site, std::vector<Field*> & dsf);
   static void   syncGatherVectorFieldsLevel1(const StorageSite& site,  std::vector<Field*>& dsf);
 
-  static int    get_request_size(Field& field);
+  static int    get_request_size(Field& field); 
+  static int    get_request_size_level1(Field& field);
 
   void syncLocalLevel1();
   static void syncLocalVectorFieldsLevel1(std::vector<Field*>& dsf);
