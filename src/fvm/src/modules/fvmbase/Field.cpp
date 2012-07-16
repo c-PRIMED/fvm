@@ -540,6 +540,26 @@ Field::createSyncGatherArraysVectorFields(const StorageSite& site, Field& field,
   }
 }
 
+void
+Field::createSyncGatherArraysVectorFieldsLevel1(const StorageSite& site, Field& field, const size_t numDir)
+{
+  ArrayBase& thisArray = field[site];
+  GhostArrayMap& ghostArrays = field.getGhostArrayMapLevel1();
+
+  const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+
+  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      EntryIndex e(&oSite, &site);
+      const Array<int>& toIndices = *(mpos.second);
+      if (ghostArrays.find(e) == ghostArrays.end())
+      {
+          ghostArrays[e] = thisArray.newSizedClone(toIndices.getLength() * numDir);
+      }	
+  }
+}
+
 
 void
 Field::syncScatterVectorFields(const StorageSite& site, std::vector<Field*> & dsf)
@@ -571,6 +591,39 @@ Field::syncScatterVectorFields(const StorageSite& site, std::vector<Field*> & ds
       } 
   }
 }
+
+void
+Field::syncScatterVectorFieldsLevel1(const StorageSite& site, std::vector<Field*> & dsf)
+{
+   
+  const size_t numDir = dsf.size();
+  Field& field0 = *dsf[0];
+  ArrayBase& thisArray0 = field0[site];
+  GhostArrayMap& ghostArrays = field0.getGhostArrayMapLevel1();
+      
+  const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+  
+  foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      EntryIndex e(&site, &oSite);	
+      const Array<int>& fromIndices = *(mpos.second);
+      if (ghostArrays.find(e) == ghostArrays.end()){
+        ghostArrays[e] = thisArray0.newSizedClone( fromIndices.getLength() * numDir );
+      }
+
+      const int chunkSize = fromIndices.getLength();	 
+      ArrayBase& ghostArray = *ghostArrays[e];	
+      for (size_t dir=0; dir < numDir; dir++){
+	Field& field = *dsf[dir];
+	const ArrayBase& thisArray = field[site];
+	const int offset = chunkSize * dir;
+        thisArray.scatter(ghostArray,fromIndices, offset);
+      } 
+  }
+}
+
+
 
 void
 Field::syncGatherVectorFields(const StorageSite& site,  std::vector<Field*>& dsf)
@@ -607,6 +660,40 @@ Field::syncGatherVectorFields(const StorageSite& site,  std::vector<Field*>& dsf
   }
 }
 
+void
+Field::syncGatherVectorFieldsLevel1(const StorageSite& site,  std::vector<Field*>& dsf)
+{
+  
+  const size_t  numDir = dsf.size();
+  Field& field0 = *dsf[0];
+  GhostArrayMap& ghostArrays = field0.getGhostArrayMapLevel1();
+     
+  const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+  
+  foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+  {
+      const StorageSite& oSite = *mpos.first;
+      const Array<int>& toIndices = *(mpos.second);
+      EntryIndex e(&oSite, &site);
+
+      if (ghostArrays.find(e) == ghostArrays.end())
+      {
+         ostringstream e;
+         e << "Field::syncScatter: ghost array not found for"
+           << &oSite << endl;
+         throw CException(e.str());
+      }
+
+      const ArrayBase& ghostArray = *ghostArrays[e];
+      const int chunkSize = toIndices.getLength();
+      for (size_t dir = 0; dir < numDir; dir++){
+	 Field& field = *dsf[dir];
+	 ArrayBase& thisArray = field[site];
+	 const size_t offset = dir * chunkSize;
+	 thisArray.gather(ghostArray,toIndices, offset);
+     }
+  }
+}
 void 
 Field::syncLocalVectorFields(std::vector<Field*> & dsf)
 {
@@ -671,7 +758,79 @@ Field::syncLocalVectorFields(std::vector<Field*> & dsf)
 
 
    //sycnLocal1
-   //syncLocalLevel1();
+   
+  Field::syncLocalVectorFieldsLevel1(dsf);
+} 
+ 
+void 
+Field::syncLocalVectorFieldsLevel1(std::vector<Field*> & dsf)
+{
+   // scatter first (prepare ship packages)
+   Field& field0 = *dsf[0];
+   ArrayMap& arrays = field0.getArrayMap();
+   foreach(ArrayMap::value_type& pos, arrays){ 
+      if ( pos.second->getLength() == pos.first->getCountLevel1() )
+          Field::syncScatterVectorFieldsLevel1(*pos.first, dsf);
+   }
+   
+   const size_t numDir = dsf.size();
+   foreach(ArrayMap::value_type& pos, arrays){
+      if ( pos.second->getLength() == pos.first->getCountLevel1() )   
+         Field::createSyncGatherArraysVectorFieldsLevel1(*pos.first, field0, numDir );
+   }
+     
+   GhostArrayMap& ghostArrays = field0.getGhostArrayMapLevel1();
+   
+#ifdef FVM_PARALLEL
+   //SENDING
+   MPI::Request   request_send[ Field::get_request_size(field0) ];
+   MPI::Request   request_recv[ Field::get_request_size(field0) ];
+   int indxSend = 0;
+   int indxRecv = 0;
+   foreach(ArrayMap::value_type& pos, arrays){
+      const StorageSite& site = *pos.first;
+      const StorageSite::ScatterMap& scatterMap = site.getScatterMapLevel1();
+      foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap){
+          const StorageSite&  oSite = *mpos.first;
+          //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+             EntryIndex e(&site,&oSite);
+             ArrayBase& sendArray = *ghostArrays[e];
+             int to_where  = oSite.getGatherProcID();
+             if ( to_where != -1 ){
+                int mpi_tag = oSite.getTag();
+                request_send[indxSend++] =  
+                     MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+             }
+      }
+      //RECIEVING
+      //getting values from other meshes to fill g
+      const StorageSite::GatherMap& gatherMap = site.getGatherMapLevel1();
+      foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap){
+         const StorageSite&  oSite = *mpos.first;
+         //checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+         EntryIndex e(&oSite,&site);
+         ArrayBase& recvArray = *ghostArrays[e];
+         int from_where       = oSite.getGatherProcID();
+         if ( from_where != -1 ){
+             int mpi_tag = oSite.getTag();
+             request_recv[indxRecv++] =  
+                    MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+         }
+      }
+   }
+
+   int count  = Field::get_request_size(field0);
+   MPI::Request::Waitall( count, request_recv );
+   MPI::Request::Waitall( count, request_send );
+#endif
+
+  // gather 
+  foreach(ArrayMap::value_type& pos, arrays){
+     if ( pos.second->getLength() == pos.first->getCountLevel1() )
+         Field::syncGatherVectorFieldsLevel1(*pos.first, dsf);
+  }	 
+
+
   
 }  
 

@@ -43,9 +43,11 @@ public:
   
   ArrayMap& getArrayMap() { return _arrays;}
     
-  GhostArrayMap& getGhostArrayMap() { return _ghostArrays;}
+  GhostArrayMap& getGhostArrayMap()       { return _ghostArrays;}
+  GhostArrayMap& getGhostArrayMapLevel1() { return _ghostArraysLevel1;}
     
   static void syncLocalVectorFields(std::vector<Field*>& dsf);
+  
 
 
   const string getName() const {return _name;}
@@ -68,9 +70,14 @@ private:
   static void   createSyncGatherArraysVectorFields(const StorageSite& site, Field& field, const size_t numDir);
   static void   syncScatterVectorFields(const StorageSite& site, std::vector<Field*> & dsf);
   static void   syncGatherVectorFields(const StorageSite& site,  std::vector<Field*>& dsf);
+  static void   createSyncGatherArraysVectorFieldsLevel1(const StorageSite& site, Field& field, const size_t numDir);
+  static void   syncScatterVectorFieldsLevel1(const StorageSite& site, std::vector<Field*> & dsf);
+  static void   syncGatherVectorFieldsLevel1(const StorageSite& site,  std::vector<Field*>& dsf);
+
   static int    get_request_size(Field& field);
 
   void syncLocalLevel1();
+  static void syncLocalVectorFieldsLevel1(std::vector<Field*>& dsf);
 
 
   //ArrayBase& getGhostArray(const StorageSite&);
