@@ -981,7 +981,7 @@ class COMETModel : public Model
       Array<Vector<int,25> >& FinestToCoarse=dynamic_cast<Array<Vector<int,25> >&>(FinestToCoarseField[fCells]);
 
       if(_level==0)
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
+	MakeParallel();
       else
       {
 	  for(int dir=0;dir<_quadrature.getDirCount();dir++)
@@ -1004,12 +1004,14 @@ class COMETModel : public Model
 
     void MakeParallel()
     {
-
+      Field::syncLocalVectorFields( _dsfPtr.dsf );
+#if 0
       for(int dir=0;dir<_quadrature.getDirCount();dir++)
 	{
           Field& fnd = *_dsfPtr.dsf[dir];
           fnd.syncLocal();
 	}
+#endif
     }
     
   void InitializeMacroparameters()
@@ -4912,16 +4914,11 @@ map<string,shared_ptr<ArrayBase> >&
 
         CDisc.setfgFinder();
 
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0
         MakeParallel();
-#endif  
+  
         CDisc.COMETSolve(1,_level); //forward
 
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0
         MakeParallel();
-#endif
 
         //callCOMETBoundaryConditions();
         ComputeCOMETMacroparameters();
@@ -4937,10 +4934,7 @@ map<string,shared_ptr<ArrayBase> >&
         CDisc.COMETSolve(-1,_level); //reverse
         if((num==1)||(num==0&&_level==0))
 	  {
-            Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0
             MakeParallel();
-#endif
             //callCOMETBoundaryConditions();
             ComputeCOMETMacroparameters();
             ComputeCollisionfrequency();
@@ -4975,10 +4969,8 @@ map<string,shared_ptr<ArrayBase> >&
 
         CDisc.setfgFinder();
 	
-	Field::syncLocalVectorFields( _dsfPtr.dsf );	
-#if 0
 	MakeParallel();
-#endif  
+
 	CDisc.COMETSolve(1,_level); //forward
 	//callCOMETBoundaryConditions();
 	ComputeCOMETMacroparameters();
@@ -4988,10 +4980,8 @@ map<string,shared_ptr<ArrayBase> >&
 	else{ EquilibriumDistributionBGK();}
 	if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
       
-        Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0        
 	MakeParallel();
-#endif          
+          
 	CDisc.COMETSolve(-1,_level); //reverse
 	if((num==1)||(num==0&&_level==0))
 	{
@@ -5028,10 +5018,8 @@ map<string,shared_ptr<ArrayBase> >&
         CDisc.setfgFinder();
         const int numDir=_quadrature.getDirCount();
 
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0
         MakeParallel();
-#endif
+
         CDisc.findResid(addFAS);
         currentResid=CDisc.getAveResid();
 
@@ -5065,10 +5053,8 @@ map<string,shared_ptr<ArrayBase> >&
         CDisc.setfgFinder();
 	const int numDir=_quadrature.getDirCount();
 	
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0
 	MakeParallel();
-#endif
+
         CDisc.findResid(addFAS);
         currentResid=CDisc.getAveResid();
 
@@ -5155,11 +5141,8 @@ map<string,shared_ptr<ArrayBase> >&
         ComputeCollisionfrequency();
         if (_options.fgamma==0){initializeMaxwellianEq();}
         else{EquilibriumDistributionBGK();}
-        if (_options.fgamma==2){EquilibriumDistributionESBGK();}
-	Field::syncLocalVectorFields( _dsfPtr.dsf );
-#if 0
+        if (_options.fgamma==2){EquilibriumDistributionESBGK();}    
 	MakeParallel();
-#endif
         computeSolidFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
         ConservationofMFSolid(solidFaces);
         computeIBFaceDsf(solidFaces,_options.method,_options.relaxDistribution);
