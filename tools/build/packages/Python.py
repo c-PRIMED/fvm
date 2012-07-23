@@ -1,6 +1,7 @@
 from build_packages import *
 
 class Python(BuildPkg):
+    requires=['tk']    
     def _installed(self):
         ver = subprocess.Popen('python -V', shell=True, stderr=subprocess.PIPE).stderr.read()
         a, b = re.findall(r'Python ([^.]*).([^.\n]*)', ver)[0]
