@@ -96,17 +96,20 @@ class EmissionDiscretization : public Discretization
 	
 	T_Scalar expt = (electron_trapdepth[i] - beta * sqrt(mag(electric_field[c]))) * QE / (K_SI * temperature);
 
-	if (expt < 0.0)
-	throw CException("exponential error in Emission model");
+	//if (expt < 0.0)
+	//throw CException("exponential error in Emission model");
+	if (expt > 0.0)
+	{
 
-	T_Scalar fluxCoeff = cellVolume[c] * poole_frenkel_emission_frequency * exp(-expt);
+	    T_Scalar fluxCoeff = cellVolume[c] * poole_frenkel_emission_frequency * exp(-expt);
 	
-	rCell[c][i] -= (fluxCoeff * xCell[c][i]);
+	    rCell[c][i] -= (fluxCoeff * xCell[c][i]);
 
-	diag[c](i,i) -= fluxCoeff;
-	//diag[c][i] -= fluxCoeff;
+	    diag[c](i,i) -= fluxCoeff;
+	    //diag[c][i] -= fluxCoeff;
 
-	rCell[c][nTrap] += fluxCoeff * xCell[c][i];
+	    rCell[c][nTrap] += fluxCoeff * xCell[c][i];
+	}
       }
     }
   }
