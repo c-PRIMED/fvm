@@ -733,6 +733,8 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
           nnb++;
 	  //cout << "fluid cells " << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << " " << endl;  
 	  }
+	if (nnb == 0)
+	  throw CException("no fluid cell for ib face");  
 	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)
 	  {
 	  const int p = ibFPCol[np];
@@ -745,7 +747,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 	  }
 
 	if (nnb == 0)
-	  throw CException("no cell or particle neighbors for ib face");
+	  throw CException("no solid neighbors for ib face");
       
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
 	  {
