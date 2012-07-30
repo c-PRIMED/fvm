@@ -89,7 +89,7 @@ class LinearizeInterfaceJump
 	 int temp = c0p;
 	 c0p = c1p;
 	 c1p = temp;
-       }
+	 }
 
        const X leftFlux = rParentCell[c1p]; // inward shell flux on the left
        const OffDiag dRC0dXC3 = parentmatrix.getCoeff(c1p,  c0p);
@@ -105,7 +105,7 @@ class LinearizeInterfaceJump
 	 int temp = c0o;
 	 c0o = c1o;
 	 c1o = temp;
-       }
+	 }
 
        const X rightFlux = rOtherCell[c1o]; // inward shell flux on the right
        const OffDiag dRC0dXC2 = othermatrix.getCoeff(c1o,  c0o);

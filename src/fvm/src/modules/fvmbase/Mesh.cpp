@@ -1808,6 +1808,26 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
       const int rc1 = otherFaceCells(f,1);
       leftCellsToSCells[lc1] = f;
       rightCellsToSCells[rc1] = f;
+
+      // The above assumes that faceCells(f,1) is the ghost cell.
+      // If we are splitting an interior face, one mesh will have correct
+      // (f,0) and (f,1) orientations and one will not, meaning that 
+      // faceCells(f,1) will return the interior cell instead of the 
+      // ghost cell.  To make up for this without having to check for 
+      // orientation, we will add both the interior and ghost cells
+      // to the map above.  This will make sure that all cells adjacent 
+      // to the specified facegroups have the scatter/gather maps adjusted.
+      // Without this, the cells with incorrect orientation would be
+      // passed over when rearraning scatter/gather because the lc1 or rc1
+      // would not show up in the original gather map of the facegroup,
+      // since it is actually an interior cell and in the scatter map.
+      
+      const int lc0 = faceCells(f,0);
+      const int rc0 = otherFaceCells(f,0);
+      leftCellsToSCells[lc0] = f;
+      rightCellsToSCells[rc0] = f;
+
+
   }
 
   // since there can be more than one face group in common between the

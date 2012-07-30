@@ -8,8 +8,8 @@ import fvm.exporters_atyped_double as exporters
 from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
-reader = FluentCase("../test/TwoMaterialTest.cas")
-#reader = FluentCase("/home/btrembacki/memosa/src/fvm/test/TwoMaterialTest.cas")
+reader = FluentCase("../test/TwoMaterialTestShadow.cas")
+#reader = FluentCase("/home/btrembacki/memosa/src/fvm/test/TwoMaterialTestShadow.cas")
 reader.read();
 meshes_case = reader.getMeshList()
 
@@ -20,8 +20,8 @@ meshes_case = reader.getMeshList()
 #
 # The phi values at the interface between the two meshes are related as follows:
 # Phi_other = A * Phi_parent + B 
-interfaceID = 9
-shellmesh = meshes_case[1].createDoubleShell(interfaceID, meshes_case[0], interfaceID)
+
+shellmesh = meshes_case[1].createDoubleShell(13, meshes_case[0], 9)
 meshes = [meshes_case[0], meshes_case[1], shellmesh]
 
 geomFields =  models.GeomFields('geom')
