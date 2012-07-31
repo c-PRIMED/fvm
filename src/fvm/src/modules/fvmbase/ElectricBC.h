@@ -86,6 +86,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
     this->defineVar("timeStep",T(0.1));
     this->defineVar("Interface_A_coeff",T(1.0));
     this->defineVar("Interface_B_coeff",T(0.0));
+    this->ButlerVolmer = false;
     this->electrostaticsTolerance=1e-8;
     this->chargetransportTolerance=1e-8;
     this->electrostaticsLinearSolver = 0;
@@ -121,6 +122,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
   bool drift_enable;
   bool diffusion_enable;  
   bool trapbandtunneling_enable;
+  bool ButlerVolmer;
 
   int timeDiscretizationOrder;
   LinearSolver *electrostaticsLinearSolver;

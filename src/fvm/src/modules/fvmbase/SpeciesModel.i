@@ -26,6 +26,7 @@ struct SpeciesModelOptions : public FloatVarDict<T>
   LinearSolver *linearSolver;
   bool useCentralDifference;
   bool transient;
+  bool ButlerVolmer;
   int timeDiscretizationOrder;
 }; 
 

@@ -37,6 +37,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
   bool diffusion_enable; 
   bool trapbandtunneling_enable; 
   bool printNormalizedResiduals;
+  bool ButlerVolmer;
   LinearSolver *electrostaticsLinearSolver;
   LinearSolver *chargetransportLinearSolver;
 }; 

@@ -23,7 +23,8 @@ ElectricFields::ElectricFields(const string baseName) :
   zero(baseName + "zero"),
   one(baseName + "one"),
   //oneD_column(baseName + "oneD_column"),
-  force(baseName + "force")
+  force(baseName + "force"),
+  speciesConcentration(baseName + "speciesConcentration")
   
 {}
 

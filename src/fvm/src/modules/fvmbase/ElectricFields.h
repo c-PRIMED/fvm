@@ -42,6 +42,8 @@ struct ElectricFields
   Field force;
   //Field oneD_column;              //the one dimensional columns used in dielectric chargine 1D model
   
+  //Fields for coupling to species model
+  Field speciesConcentration;
 };
 
 #endif

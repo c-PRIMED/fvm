@@ -9,7 +9,9 @@ SpeciesFields::SpeciesFields(const string baseName) :
   massFractionN1(baseName + ".massFractionN1"),
   massFractionN2(baseName + ".massFractionN2"),
   zero(baseName + "zero"),
-  one(baseName + "one")
+  one(baseName + "one"),
+  // For coupling to ElectricModel
+  elecPotential(baseName + "elecPotential")
 {}
 
 SpeciesModelFields::SpeciesModelFields(const string baseName) :

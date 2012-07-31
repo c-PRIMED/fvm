@@ -23,6 +23,7 @@
 #include "GenericIBDiscretization.h"
 #include "SourceDiscretization.h"
 #include "LinearizeInterfaceJump.h"
+#include "LinearizeSpeciesInterface.h"
 
 template<class T>
 class SpeciesModel<T>::Impl
@@ -131,6 +132,24 @@ public:
 	  VectorT3 CellCent = cellCentroid[c]; 
 	  (*mFCell)[c] = -0.05*CellCent[0] + 0.5;
 	  } */
+
+	/*//Initialize to specialized concentrations (for now)
+	const VectorT3Array& cellCentroid =
+	  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+
+	for (int c=0; c<cells.getCount(); c++)
+	  {
+	    VectorT3 CellCent = cellCentroid[c]; 
+	    if (n==0)
+	      {
+		(*mFCell)[c] = 1000.0;
+	      }
+	    elseif (n==1)
+	      {
+		(*mFCell)[c] = 0.0;
+
+		(*mFCell)[c] = -0.05*CellCent[0] + 0.5;
+		}*/
 	
 	sFields.massFraction.addArray(cells,mFCell);
 
@@ -197,7 +216,15 @@ public:
             sFields.massFlux.addArray(faces,fluxFace);
           
         }
-	
+
+	//electric potential (for coupling to ElectricModel)
+	// only needed once for each mesh (not depenedent on species)
+        if (m==0)
+	  {
+	    shared_ptr<TArray> ePotCell(new TArray(cells.getCount()));
+	    ePotCell->zero();
+	    sFields.elecPotential.addArray(cells,ePotCell);
+	  }
       }	
     
     sFields.diffusivity.syncLocal();
@@ -370,22 +397,36 @@ public:
     /* linearize shell mesh */
 
     for (int n=0; n<numMeshes; n++)
-    {
-      const Mesh& mesh = *_meshes[n];
-      if (mesh.isDoubleShell())
-	{
-	  const int parentMeshID = mesh.getParentMeshID();
-          const int otherMeshID = mesh.getOtherMeshID();
-	  const Mesh& parentMesh = *_meshes[parentMeshID];
-	  const Mesh& otherMesh = *_meshes[otherMeshID];
-
-	  LinearizeInterfaceJump<T, T, T> lsm (_options["A_coeff"],
+      {
+	const Mesh& mesh = *_meshes[n];
+	if (mesh.isDoubleShell())
+	  {
+	    const int parentMeshID = mesh.getParentMeshID();
+	    const int otherMeshID = mesh.getOtherMeshID();
+	    const Mesh& parentMesh = *_meshes[parentMeshID];
+	    const Mesh& otherMesh = *_meshes[otherMeshID];
+	  
+	    if (_options.ButlerVolmer)
+	      {
+		LinearizeSpeciesInterface<T, T, T> lbv (_options["A_coeff"],
 					       _options["B_coeff"],
-					       sFields.massFraction);
+					       _options["interfaceUnderRelax"],
+						  sFields.massFraction,
+						  sFields.elecPotential);
 
-	  lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
-	}
-    }
+		lbv.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+
+	      }
+	    else
+	      {
+		LinearizeInterfaceJump<T, T, T> lsm (_options["A_coeff"],
+						     _options["B_coeff"],
+						     sFields.massFraction);
+
+		lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	      }
+	  }
+      }
 
     /* boundary and interface condition */
 

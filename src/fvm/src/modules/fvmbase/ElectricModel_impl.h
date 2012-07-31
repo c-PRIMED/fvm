@@ -34,6 +34,7 @@
 #include "ElecDiagonalTensor.h"
 //#include "LinearizeDielectric.h"
 #include "LinearizeInterfaceJump.h"
+#include "LinearizePotentialInterface.h"
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
@@ -186,6 +187,12 @@ public:
 	      _electricFields.potential_flux.addArray(faces,pFlux);
 	      
 	    }
+
+	  //initial species concentration setup for linking to SpeciesModel
+	  shared_ptr<TArray> sCCell(new TArray(nCells));
+	  sCCell->zero();
+	  _electricFields.speciesConcentration.addArray(cells,sCCell);
+
 	}
 
 	//initilize fields in charge transport models
@@ -597,12 +604,25 @@ public:
           const int otherMeshID = mesh.getOtherMeshID();
 	  const Mesh& parentMesh = *_meshes[parentMeshID];
 	  const Mesh& otherMesh = *_meshes[otherMeshID];
-	  
-	  LinearizeInterfaceJump<T, T, T> lsm (_options["Interface_A_coeff"],
-					       _options["Interface_B_coeff"],
-					       _electricFields.potential);
 
-	  lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	  if (_options.ButlerVolmer)
+	    {
+	      LinearizePotentialInterface<T, T, T> lbv (_options["Interface_A_coeff"],
+							_options["Interface_B_coeff"],
+							_electricFields.potential,
+							_electricFields.speciesConcentration);
+
+	      lbv.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	    }
+	  else
+	    {
+	  
+	      LinearizeInterfaceJump<T, T, T> lsm (_options["Interface_A_coeff"],
+						   _options["Interface_B_coeff"],
+						   _electricFields.potential);
+
+	      lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	    }
 	}
     }
 

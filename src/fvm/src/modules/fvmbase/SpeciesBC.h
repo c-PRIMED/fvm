@@ -32,11 +32,13 @@ struct SpeciesModelOptions : public FloatVarDict<T>
     this->defineVar("A_coeff",T(1.0));
     this->defineVar("B_coeff",T(0.0));
     this->defineVar("timeStep",T(0.1));
+    this->defineVar("interfaceUnderRelax",T(1.0));
     this->relativeTolerance=1e-8;
     this->absoluteTolerance=1e-16;
     this->linearSolver = 0;
     this->useCentralDifference=false;
     this->transient = false;
+    this->ButlerVolmer = false;
     this->timeDiscretizationOrder=1;
   }
   double relativeTolerance;
@@ -44,6 +46,7 @@ struct SpeciesModelOptions : public FloatVarDict<T>
   bool useCentralDifference;
   LinearSolver *linearSolver;
   bool transient;
+  bool ButlerVolmer;
   int timeDiscretizationOrder;
 
 #ifndef SWIG

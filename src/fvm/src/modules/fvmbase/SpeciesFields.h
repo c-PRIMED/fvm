@@ -20,6 +20,8 @@ struct SpeciesFields
 
   Field zero;                     //used to fill in continuityResidual
   Field one;                      //used to fill in density
+
+  Field elecPotential;            // for coupling to ElectricModel
 };
 
 struct SpeciesModelFields
