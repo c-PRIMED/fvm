@@ -1802,32 +1802,29 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   // cells using the faceCell connectivity
   map<int, int> leftCellsToSCells;
   map<int, int> rightCellsToSCells;
+
+  // If we are splitting an interior face, one mesh will have correct
+  // (f,0) and (f,1) orientations and one will not, meaning that 
+  // faceCells(f,1) will return the interior cell instead of the 
+  // ghost cell.  Here we check for orientation and switch if needed.
+  int lDirection = 1;
+  int rDirection = 1;
+  if (faceCells(0,1) < cells.getSelfCount())
+    {
+      lDirection = 0;
+    }
+  if (otherFaceCells(0,1) < otherCells.getSelfCount())
+    {
+      rDirection = 0;
+    }
+
   for(int f=0; f<count; f++)
   {
-      const int lc1 = faceCells(f,1);
-      const int rc1 = otherFaceCells(f,1);
+    // add ghost(gather) cells to map
+      const int lc1 = faceCells(f,lDirection);
+      const int rc1 = otherFaceCells(f,rDirection);
       leftCellsToSCells[lc1] = f;
       rightCellsToSCells[rc1] = f;
-
-      // The above assumes that faceCells(f,1) is the ghost cell.
-      // If we are splitting an interior face, one mesh will have correct
-      // (f,0) and (f,1) orientations and one will not, meaning that 
-      // faceCells(f,1) will return the interior cell instead of the 
-      // ghost cell.  To make up for this without having to check for 
-      // orientation, we will add both the interior and ghost cells
-      // to the map above.  This will make sure that all cells adjacent 
-      // to the specified facegroups have the scatter/gather maps adjusted.
-      // Without this, the cells with incorrect orientation would be
-      // passed over when rearraning scatter/gather because the lc1 or rc1
-      // would not show up in the original gather map of the facegroup,
-      // since it is actually an interior cell and in the scatter map.
-      
-      const int lc0 = faceCells(f,0);
-      const int rc0 = otherFaceCells(f,0);
-      leftCellsToSCells[lc0] = f;
-      rightCellsToSCells[rc0] = f;
-
-
   }
 
   // since there can be more than one face group in common between the
@@ -1945,13 +1942,14 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   shared_ptr<CRConnectivity> sCellCells(new CRConnectivity(sMeshCells,sMeshCells));
   sCellCells->initCount();
 
-  // three neighbours for the first count cells, one for the rest, due to abnormal interface conditions
+  // three neighbours for interior cells, two for ghost, due to 
+  // potentially abnormal interface conditions
   for(int i=0; i<count; i++)
   {
       sCellCells->addCount(i,3);
-      sCellCells->addCount(i+count,1);
-      sCellCells->addCount(i+2*count,1);
-      sCellCells->addCount(i+3*count,1);
+      sCellCells->addCount(i+count,3);
+      sCellCells->addCount(i+2*count,2);
+      sCellCells->addCount(i+3*count,2);
   }
   
   sCellCells->finishCount();
@@ -1959,19 +1957,22 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   for(int i=0; i<count; i++)
   {
       // left shell cells
-      //sCellCells->add(i,i+3*count);
       sCellCells->add(i,i+count);
       sCellCells->add(i,i+2*count);
       sCellCells->add(i,i+3*count);
 
       // right shell cells
       sCellCells->add(i+count,i);
+      sCellCells->add(i+count,i+2*count);
+      sCellCells->add(i+count,i+3*count);
 
       // right ghost cells
       sCellCells->add(i+2*count,i);
+      sCellCells->add(i+2*count,i+count);
 
       // left ghost cells
       sCellCells->add(i+3*count,i);
+      sCellCells->add(i+3*count,i+count);
   }
 
   sCellCells->finishAdd();

@@ -135,6 +135,13 @@ class LinearizeInterfaceJump
        rCell[c1] = _A_coeff*xCell[c0] + _B_coeff - xCell[c1];
        offdiagC1_C0 = _A_coeff;
        diag[c1] = -1;
+
+       // set other coeffs to zero for right shell cell
+       OffDiag& offdiagC1_C2 = matrix.getCoeff(c1,  c2);
+       OffDiag& offdiagC1_C3 = matrix.getCoeff(c1,  c3);
+       offdiagC1_C2 = 0.0;
+       offdiagC1_C3 = 0.0;
+
    }
 
   }
