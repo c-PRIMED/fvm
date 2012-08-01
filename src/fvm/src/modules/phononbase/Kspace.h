@@ -89,7 +89,7 @@ class Kspace
      {
        Tkvol& kv=getkvol(k);
 	const int modenum=kv.getmodenum();
-	T dk3=kv.getdk3();
+	//	T dk3=kv.getdk3();
 	for(int m=0;m<modenum;m++)
 	  {
 	    Tmode& mode=kv.getmode(m);
@@ -449,6 +449,7 @@ class Kspace
     return de0taudT;
   }
 
+  /*
   T getde0taudTgray()
   {
     T de0taudT=0.;
@@ -465,6 +466,7 @@ class Kspace
       }
     return de0taudT;
   }
+  */
 
   T calcSpecificHeat(T Tl)
   {
@@ -507,6 +509,8 @@ class Kspace
     T tau1=getkvol(0).getmode(0).gettau();
     T npol(getkvol(0).getmodenum());
     minKn=vmag1*tau1;
+    if(minKn==0.)
+      minKn=1.;
 
     for(int k=0;k<_length;k++)
       {
@@ -522,7 +526,7 @@ class Kspace
 	    AveKn+=vmag*tau*dk3/_totvol;
 	    if(vmag*tau>maxKn)
 	      maxKn=vmag*tau;
-	    if(vmag*tau<minKn)
+	    if(vmag*tau<minKn && vmag*tau>0.)
 	      minKn=vmag*tau;
 
 	  }

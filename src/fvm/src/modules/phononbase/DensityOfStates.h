@@ -267,6 +267,7 @@ class DensityOfStates
     return outSum;
   }
 
+  /*
   T sumOutgoingGray(const VectorT3& n, const int fBin, const T Temp)
   {
     T outSum(0.);
@@ -290,7 +291,7 @@ class DensityOfStates
       }
     
     return outSum;
-  }
+    }*/
   
   ArrayBase* makeDMMtransmission(DensityOfStates& otherDOS, const T Temp, const bool merge)
   {
@@ -309,8 +310,8 @@ class DensityOfStates
       {
 	T w0=_FreqMids[f0];
 	const int f1=otherDOS.findBin(w0);
-	const T mat0sum=sumOutgoingGray(n,f0,Temp);
-	const T mat1sum=otherDOS.sumOutgoingGray(-n,f1,Temp);
+	const T mat0sum=sumOutgoing(n,f0,Temp);
+	const T mat1sum=otherDOS.sumOutgoing(-n,f1,Temp);
 	if(mat1sum==0. && mat0sum==0.)
 	  (*trans)[f0]=0.;
 	else
@@ -463,7 +464,7 @@ class DensityOfStates
 
     IntArray BinPop(_FreqMids.getLength());
     BinPop.zero();
-    int searchStart(0);
+    //int searchStart(0);
 
     const int klen=_kspace.getlength();
 

@@ -71,6 +71,13 @@ class pmode
       Field& getInjected() {return _injected;}
       Field& getresid() {return _residual;}
       Field& getFASfield() {return _FASCorrection;}
+
+      //========================//
+      //  Non Constant Cp Methods     //
+      //========================//
+
+      /*
+
       T calce0(T Tl)
       {
 	const T hbar=6.582119e-16;  // (eV s)
@@ -81,7 +88,6 @@ class pmode
 	
 	return e0kp;
       }
-      T calce0gray(T Tl) {return (Tl-200)*_cp;}
       T calce0tau(T Tl)
       {
 	const T hbar=6.582119e-16;  // (eV s)
@@ -92,7 +98,6 @@ class pmode
 	
 	return e0kp;
       }
-      T calce0taugray(T Tl) {return (Tl-200)*_cp/_tau;}
       T calcde0taudT(T Tl)
       {
 	const T hbar=6.582119e-16;  // (eV s)
@@ -104,7 +109,6 @@ class pmode
 	
 	return e0kp;
       }
-      T calcde0taudTgray() {return _cp/_tau;}
       T calcde0dT(T Tl)
       {
 	const T hbar=6.582119e-16;  // (eV s)
@@ -116,6 +120,18 @@ class pmode
 	
 	return e0kp; 
       }
+
+*/
+
+      //====================//
+      //  Constant Cp Methods     //
+      //====================//
+
+      T calce0(T Tl) {return (Tl-299.)*_cp;}
+      T calce0tau(T Tl) {return (Tl-299.)*_cp/_tau;}
+      T calcde0taudT(T Tl) {return _cp/_tau;}
+      T calcde0dT(T Tl) {return _cp;}
+
       
       T calcTensorPrefactor(T Tl)
       {
