@@ -75,6 +75,7 @@ struct COMETIC
     this->FgID0=fID0;
     this->MeshID1=mID1;
     this->FgID1=fID1;
+    this->FineToCoarse=NULL;
   }
 
   const TKClist& getKConnectivity(const int fgid) const
@@ -112,7 +113,7 @@ struct COMETIC
 
     if(!Connect0to1.empty())
       {
-	for(int i=0;i<Connect0to1.size();i++)
+	for(int i=0;i<int(Connect0to1.size());i++)
 	  {
 	    Connect0to1[i]->emptyConnections();
 	    delete Connect0to1[i];
@@ -133,6 +134,7 @@ struct COMETIC
   int FgID0;
   int MeshID1;
   int FgID1;
+  Array<int>* FineToCoarse;  //to be added to the finer model
   
 };
 
