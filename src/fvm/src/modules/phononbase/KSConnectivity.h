@@ -29,7 +29,7 @@ class KSConnectivity
   void emptyConnections()
   {
     
-    for(int i=0;i<_SelfToOther.size();i++)
+    for(int i=0;i<int(_SelfToOther.size());i++)
       {
 	if(_SelfToOther[i]!=NULL)
 	  {
@@ -42,7 +42,7 @@ class KSConnectivity
 
     _SelfToOther.clear();
 
-    for(int i=0;i<_SelfToSelf.size();i++)
+    for(int i=0;i<int(_SelfToSelf.size());i++)
       {
 	if(_SelfToSelf[i]!=NULL)
 	  {
@@ -354,28 +354,28 @@ class KSConnectivity
 
   }
 
-  void multiplySelf(const T x) const
+  void multiplySelf(const T x)
   {
     const int Arows=_SelfToSelf.size();
     for(int i=0;i<Arows;i++)
       {
 	if(!isSelfNull(i))
 	  {
-	    TArray& cCoeff=getSelfCoeffs(i);
+	    TArray& cCoeff=getSelfCoeffsPriv(i);
 	    for(int j=0;j<cCoeff.getLength();j++)
 	      cCoeff[j]*=x;
 	  }
       }
   }
 
-  void multiplyOther(const T x) const
+  void multiplyOther(const T x)
   {
     const int Arows=_SelfToOther.size();
     for(int i=0;i<Arows;i++)
       {
 	if(!isOtherNull(i))
 	  {
-	    TArray& cCoeff=getOtherCoeffs(i);
+	    TArray& cCoeff=getOtherCoeffsPriv(i);
 	    for(int j=0;j<cCoeff.getLength();j++)
 	      cCoeff[j]*=x;
 	  }
@@ -420,7 +420,7 @@ class KSConnectivity
 		    int newSize(0);
 		    for(int j=0;j<_colLen;j++)
 		      {
-			if(myExpand[j]>0)
+			if(fabs(myExpand[j])>0.)
 			  newSize++;
 		      }
 		    
@@ -430,7 +430,7 @@ class KSConnectivity
 		    newSize=0;
 		    for(int j=0;j<_colLen;j++)
 		      {
-			if(myExpand[j]>0)
+			if(fabs(myExpand[j])>0.)
 			  {
 			    (*newIntsPtr)[newSize]=j;
 			    (*newCoeffsPtr)[newSize]=myExpand[j];
@@ -454,7 +454,7 @@ class KSConnectivity
   void addToOther(KSConnectivity& added)
   {
     const int otherSize=getOtherSize();
-    if(otherSize==added.getotherSize())
+    if(otherSize==added.getOtherSize())
       {
 	if(getColSize()==added.getColSize())
 	  {
@@ -489,7 +489,7 @@ class KSConnectivity
 		    int newSize(0);
 		    for(int j=0;j<_colLen;j++)
 		      {
-			if(myExpand[j]>0)
+			if(fabs(myExpand[j])>0.)
 			  newSize++;
 		      }
 		    
@@ -499,7 +499,7 @@ class KSConnectivity
 		    newSize=0;
 		    for(int j=0;j<_colLen;j++)
 		      {
-			if(myExpand[j]>0)
+			if(fabs(myExpand[j])>0.)
 			  {
 			    (*newIntsPtr)[newSize]=j;
 			    (*newCoeffsPtr)[newSize]=myExpand[j];
@@ -532,6 +532,20 @@ class KSConnectivity
   }
   
  private:
+
+  TArray& getSelfCoeffsPriv(const int index)
+    {
+      if(_SelfToSelf[index]!=NULL)
+	return *(_SelfToSelf[index]->second);
+      return *(_empty.second);
+    }
+
+  TArray& getOtherCoeffsPriv(const int index)
+    {
+      if(_SelfToOther[index]!=NULL)
+	return *(_SelfToOther[index]->second);
+      return *(_empty.second);
+    }
 
   KSConnectivity(const KSConnectivity&);
   SelfToOther _SelfToOther;
