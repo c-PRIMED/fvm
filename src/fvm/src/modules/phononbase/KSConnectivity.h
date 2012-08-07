@@ -311,14 +311,14 @@ class KSConnectivity
     int Arows=from.getSelfSize();
     for(int i=0;i<Arows;i++)
       {
-	if(isSelfNull(i))
+	if(from.isSelfNull(i))
 	  {
 	    _SelfToSelf.push_back(NULL);
 	  }
 	else
 	  {
-	    const IntArray& cIndex=getSelfIndices(i);
-	    const TArray& cCoeff=getSelfCoeffs(i);
+	    const IntArray& cIndex=from.getSelfIndices(i);
+	    const TArray& cCoeff=from.getSelfCoeffs(i);
 	    const int newSize=cIndex.getLength();
 	    IntArray* newIntsPtr=new IntArray(newSize);
 	    TArray* newCoeffsPtr=new TArray(newSize);
@@ -334,14 +334,14 @@ class KSConnectivity
     Arows=from.getOtherSize();
     for(int i=0;i<Arows;i++)
       {
-	if(isOtherNull(i))
+	if(from. isOtherNull(i))
 	  {
 	    _SelfToOther.push_back(NULL);
 	  }
 	else
 	  {
-	    const IntArray& cIndex=getOtherIndices(i);
-	    const TArray& cCoeff=getOtherCoeffs(i);
+	    const IntArray& cIndex=from.getOtherIndices(i);
+	    const TArray& cCoeff=from.getOtherCoeffs(i);
 	    const int newSize=cIndex.getLength();
 	    IntArray* newIntsPtr=new IntArray(newSize);
 	    TArray* newCoeffsPtr=new TArray(newSize);

@@ -807,6 +807,7 @@ class COMETModel : public Model
 	 _macro.TlFASCorrection.addArray(cells,TlFAS);
        }
 
+     /*
      const int listSize=_IClist.size();
      for(int ic=0;ic<listSize;ic++)
        {
@@ -826,11 +827,9 @@ class COMETModel : public Model
 					   fgid1, faceCount));
 	 _IClist[ic]=icPtr2;
 
-	 //now to make agglomerated transmission/reflection operators.
-
        }
 
-     /*
+     
      //Make map from mesh to IC
      IntArray ICcount(numMeshes);
      ICcount.zero();
@@ -1558,11 +1557,8 @@ class COMETModel : public Model
     const StorageSite& inCells=mesh.getCells();
     const StorageSite& inFaces=mesh.getFaces();
     const int inCellCount=inCells.getSelfCount();
-    //const int inCellTotal=inCells.getCount();
-    //const int inFaceCount=inFaces.getCount();
     const CRConnectivity& inCellinFaces=mesh.getCellFaces();
     const CRConnectivity& inFaceinCells=mesh.getFaceCells(inFaces);
-    //const CRConnectivity& inCellinCells=mesh.getCellCells();
     Field& areaMagField=inGeomFields.areaMag;
     const TArray& areaMagArray=dynamic_cast<const TArray&>(areaMagField[inFaces]);
     const BCfaceArray& inBCfArray=*(_BFaces[m]);
@@ -1590,12 +1586,15 @@ class COMETModel : public Model
 		    else
 		      c2=inFaceinCells(f,1);
 			
-		    if(FineToCoarse[c2]==-1)
-		      if(areaMagArray[f]>maxArea)
-			{
-			  pairWith=c2;
-			  maxArea=areaMagArray[f];
-			}
+		    if(FineToCoarse[c2]==-1)  //not already paired
+		      {
+			if(areaMagArray[f]>maxArea)
+			  {
+			    pairWith=c2;
+			    maxArea=areaMagArray[f];
+			  }
+		      }
+
 		  }
 	      }
 		
@@ -1638,12 +1637,12 @@ class COMETModel : public Model
 		  }
 	      }
 		
-	    if(pairWith==-2)
+	    if(pairWith==-2)  //could not find suitable pair
 	      {
 		FineToCoarse[c]=coarseCount;
 		coarseCount++;
 	      }
-	    else
+	    else  //found cell to pair with
 	      {
 		if(FineToCoarse[c2perm]==-1)
 		  {
@@ -1652,7 +1651,7 @@ class COMETModel : public Model
 		    coarseCount++;
 		  }
 		else
-		  FineToCoarse[c]=pairWith;
+		  FineToCoarse[c]=FineToCoarse[c2perm];
 	      }
 	  }	    
       }
