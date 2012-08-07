@@ -304,7 +304,6 @@ class COMETInterface
     for(int ic=0;ic<listSize;ic++)
       {
 	COMETIC<T>& fineIC=*fineList[ic];
-	COMETIC<T>& coarseIC=*coarseList[ic];
 	const IntArray& FineToCoarse=*fineIC.FineToCoarse;
 	const int Mid0=fineIC.MeshID0;
 	const int Mid1=fineIC.MeshID1;
@@ -321,6 +320,9 @@ class COMETInterface
 	  dynamic_cast<const VectorT3Array&>(_geomFields.area[fineFaces0]);
 	TKClist& Fkclist01=fineIC.getKConnectivity(Fg0);
 	TKClist& Fkclist10=fineIC.getKConnectivity(Fg1);
+	COMETIC<T>* coarseICptr=new COMETIC<T>(Mid0,Fg0,Mid1,Fg1,faceCount);
+	coarseList[ic]=coarseICptr;
+	COMETIC<T>& coarseIC=*coarseICptr;
 	TKClist& Ckclist01=coarseIC.getKConnectivity(Fg0);
 	TKClist& Ckclist10=coarseIC.getKConnectivity(Fg1);
 	Tkspace& kspace0=*_KList[_MeshKspaceMap[Mid0]];
