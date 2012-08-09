@@ -1132,7 +1132,7 @@ class COMETModel : public Model
 			   partVec[2]*partVec[2]);
 
 	    ///break up face agglomeration if summed area is zero-ish
-	    if(sumMag/partMag<1.e-3)
+	    if(sumMag/partMag<0.5)
 	      {
 		sumVec-=partVec;
 		FaceFine2Coarse[f]=coarseFace;
