@@ -439,6 +439,11 @@ public:
         _plateFields.VMStressOut.addArray(cells,VMStressOutField);
 	_plateFields.VMStressOut.syncLocal();
 
+        shared_ptr<VectorT3Array> strainField(new VectorT3Array(cells.getCountLevel1()));
+        strainField->zero();
+        _plateFields.strain.addArray(cells,strainField);
+        _plateFields.strain.syncLocal();        
+
         shared_ptr<VectorT4Array> plasticStrainField(new VectorT4Array((cells.getCountLevel1())*(_options.nz+1)));
         plasticStrainField->zero();
         _plateFields.plasticStrain.addArray(cells,plasticStrainField);
@@ -1065,6 +1070,9 @@ public:
 
     VectorT3Array& plasticMoment =
       dynamic_cast<VectorT3Array&>(_plateFields.plasticMoment[cells]);
+
+    VectorT3Array& cellStrain =
+      dynamic_cast<VectorT3Array&>(_plateFields.strain[cells]);
     
     const T onethird(1.0/3.0);
     const T one(1.0);
@@ -1090,6 +1098,10 @@ public:
         cellStress[n][1] = six*moment[n][1]/pow(thickness[n],two);
         cellStress[n][2] = six*moment[n][2]/pow(thickness[n],two);
        
+        cellStrain[n][0] = (thickness[n]/two)*wg[0][0];
+        cellStrain[n][1] = (thickness[n]/two)*wg[1][1];
+        cellStrain[n][2] = (thickness[n]/two)*(wg[1][0]+wg[0][1]);
+
         T cellE = ym[n]/(one - pow(nu[n],two));
 
         int nn = n*(_options.nz+1);

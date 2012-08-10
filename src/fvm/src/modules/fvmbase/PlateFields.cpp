@@ -8,6 +8,7 @@ PlateFields::PlateFields(const string baseName) :
   devStress(baseName + ".devStress"),
   VMStress(baseName + ".VMStress"),
   VMStressOut(baseName + ".VMStressOut"),
+  strain(baseName + ".strain"),
   plasticStrain(baseName + ".plasticStrain"),
   plasticStrainOut(baseName + ".plasticStrainOut"),
   plasticStrainN1(baseName + ".plasticStrainN1"),
