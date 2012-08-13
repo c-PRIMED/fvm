@@ -67,6 +67,7 @@ template <class T>
 struct COMETBC : public FloatVarDict<T>
 {
   string bcType;
+  string InterfaceModel;
 }; 
 
 template<class T>

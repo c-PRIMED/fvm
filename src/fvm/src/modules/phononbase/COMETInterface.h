@@ -298,7 +298,58 @@ class COMETInterface
 
   }
 
-  void makeCoarseDMM(const IClist& fineList, IClist& coarseList)
+  void makeNoInterfaceCoeffs(COMETIC<T>& ic)
+  {//this only works if you have the same material on either side of the interface.
+    //it is just making the transmission operator the identity matrix and the
+    //reflection operator zeros.
+
+    const int Fid0=ic.FgID0;
+    const int Fid1=ic.FgID1;
+    const int Mid0=ic.MeshID0;
+    const int Mid1=ic.MeshID1;
+    const Mesh& mesh0=*_meshes[Mid0];
+    const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
+    const int faceCount=faces0.getCount();
+    Tkspace& kspace0=*_KList[_MeshKspaceMap[Mid0]];
+    Tkspace& kspace1=*_KList[_MeshKspaceMap[Mid1]];
+    TKClist& kclist01=ic.getKConnectivity(Fid0);
+    TKClist& kclist10=ic.getKConnectivity(Fid1);
+    
+    if(kspace0.gettotmodes()!=kspace1.gettotmodes())
+      throw CException("Must have the same wave vector space on either side.");
+
+    const int klen(kspace0.gettotmodes());
+
+    ic.clearConnections();
+
+    for(int f=0;f<faceCount;f++)
+      {
+	TKConn* conn01=new TKConn(klen+1);  //must include lattice connection (reason for +1)
+	TKConn* conn10=new TKConn(klen+1);
+	conn01->setColumnLength(klen+1);
+	conn10->setColumnLength(klen+1);
+
+	for(int i=0;i<klen;i++)
+	  {
+	    conn01->makeSelf(i,1);
+	    conn01->setSelf(i,0,i,0.);
+	    conn01->makeOther(i,1);
+	    conn01->setOther(i,0,i,1.);
+
+	    conn10->makeSelf(i,1);
+	    conn10->setSelf(i,0,i,0.);
+	    conn10->makeOther(i,1);
+	    conn10->setOther(i,0,i,1.);
+	  }
+
+	kclist01.push_back(conn01);
+	kclist10.push_back(conn10);
+
+      }
+      
+  }
+
+  void makeCoarseCoeffs(const IClist& fineList, IClist& coarseList)
   {
     const int listSize=fineList.size();
     for(int ic=0;ic<listSize;ic++)

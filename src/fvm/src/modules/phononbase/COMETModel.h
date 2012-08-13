@@ -353,8 +353,7 @@ class COMETModel : public Model
 			     COMETIC<T>* icPtr(new COMETIC<T>(n,fg.id,mesh1.getID(),
 							      otherFgID, faces1.getCount()));
 			     
-			     if(_bcMap[fg.id]->InterfaceModel!="DMM")
-			       icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
+			     icPtr->InterfaceModel=_bcMap[fg.id]->InterfaceModel;
 			     
 			     setLocalScatterMaps(mesh, faces0, mesh1, faces1);
 			     
@@ -406,6 +405,8 @@ class COMETModel : public Model
 	 COMETIC<T>* icPtr=_IClist[ic];
 	 if(icPtr->InterfaceModel=="DMM")
 	   ComInt.makeDMMcoeffs(*icPtr);
+	 else if(icPtr->InterfaceModel=="NoInterface")
+	   ComInt.makeNoInterfaceCoeffs(*icPtr);
        }
      
      applyTemperatureBoundaries();
@@ -958,7 +959,7 @@ class COMETModel : public Model
 	    newModelPtr->initCoarse();
 	    
 	    COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
-	    ComInt.makeCoarseDMM(finerModel->getIClist(),newModelPtr->getIClist());
+	    ComInt.makeCoarseCoeffs(finerModel->getIClist(),newModelPtr->getIClist());
 
 	    cout<<"Level: "<<newModelPtr->getLevel()<<endl<<endl;
 	    newModelPtr->calcDomainStats();
