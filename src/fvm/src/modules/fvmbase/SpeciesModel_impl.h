@@ -121,7 +121,20 @@ public:
 	//mass fraction
         shared_ptr<TArray> mFCell(new TArray(cells.getCount()));
 
-	*mFCell = _options["initialMassFraction"];
+	if (n==0)
+	  {
+	    *mFCell =_options["initialMassFraction0"];
+	  }
+	else if (n==1)
+	  {
+	    *mFCell = _options["initialMassFraction1"];;
+	  }
+	else
+	  {
+	    *mFCell =_options["initialMassFraction0"];
+	  }
+	
+	//*mFCell = _options["initialMassFraction"];
 
 	/* //Initialize to 1-D linear solution in x direction
 	const VectorT3Array& cellCentroid =

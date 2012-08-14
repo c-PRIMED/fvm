@@ -8,7 +8,7 @@ import fvm.exporters_atyped_double as exporters
 from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
-reader = FluentCase("../test/SpeciesTest.cas")
+reader = FluentCase("../test/TwoMaterialTest.cas")
 
 #import debug
 reader.read();
@@ -21,33 +21,40 @@ metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
 metricsCalculator.init()
 
 nSpecies = 1
+# species conditions
 smodel = models.SpeciesModelA(geomFields,meshes,nSpecies)
 bcmap = smodel.getBCMap(0)
 vcmap = smodel.getVCMap(0)
 
+vcRightZone = vcmap[0]
+vcLeftZone = vcmap[1]
 
-vcElectrode = vcmap[0]
-vcElectrode['massDiffusivity'] = 1e-6
+vcRightZone['massDiffusivity'] = 2.e-6
+vcLeftZone['massDiffusivity'] = 10.e-6
 
-bcLeft = bcmap[4]
-bcTop = bcmap[6]
-bcBottom = bcmap[5]
-bcRight = bcmap[3]
+bcLeft = bcmap[6]
+bcTop1 = bcmap[8]
+bcTop2 = bcmap[7]
+bcBottom1 = bcmap[4]
+bcBottom2 = bcmap[1]
+bcRight = bcmap[5]
 
 #Dirichlet on Left,Right
 bcLeft.bcType = 'SpecifiedMassFraction'
 bcRight.bcType = 'SpecifiedMassFraction'
 
-bcLeft.setVar('specifiedMassFraction', 1.0)
-bcRight.setVar('specifiedMassFraction', 0.0)
+bcLeft.setVar('specifiedMassFraction', 0.0)
+bcRight.setVar('specifiedMassFraction', 1.0)
 
-# Neumann on Bottom
-bcBottom.bcType = 'SpecifiedMassFlux'
-bcBottom.setVar('specifiedMassFlux', 0.0)
-
-# chage to Neumann on Top
-bcTop.bcType = 'SpecifiedMassFlux'
-bcTop.setVar('specifiedMassFlux', 0.0)
+# Neumann on Bottom,Top
+bcBottom1.bcType = 'SpecifiedMassFlux'
+bcBottom1.setVar('specifiedMassFlux', 0.0)
+bcTop1.bcType = 'SpecifiedMassFlux'
+bcTop1.setVar('specifiedMassFlux', 0.0)
+bcBottom2.bcType = 'SpecifiedMassFlux'
+bcBottom2.setVar('specifiedMassFlux', 0.0)
+bcTop2.bcType = 'SpecifiedMassFlux'
+bcTop2.setVar('specifiedMassFlux', 0.0)
 
 timeStep = 1e6 # large timestep due to large mesh dimesions and small diffusivity
 numTimeSteps = 50 #approximately steady state
@@ -75,7 +82,8 @@ def advanceUnsteady(smodel,geomFields,meshes,numTimeSteps,numIterPerTimeStep):
 soptions = smodel.getOptions()
 soptions.transient = True
 soptions.setVar('timeStep',timeStep)
-soptions.setVar('initialMassFraction',1.0)
+soptions.setVar('initialMassFraction0',0.75)
+soptions.setVar('initialMassFraction1',0.25)
 
 solver = fvmbaseExt.AMG()
 solver.relativeTolerance = 1e-14 #solver tolerance
@@ -89,12 +97,13 @@ soptions.linearSolver = solver
 #soptions.relativeTolerance=1e-16
 #soptions.absoluteTolerance=1e-16
 
-#bmodel.printBCs()
+#smodel.printBCs()
 smodel.init()
 advanceUnsteady(smodel,geomFields,meshes,numTimeSteps,numIterPerTimeStep)
 
+mesh = meshes[1]
+heatFlux = smodel.getMassFluxIntegral(mesh,6,0)
+print heatFlux
 mesh = meshes[0]
-print smodel.getMassFluxIntegral(mesh,3,0)
-print smodel.getMassFluxIntegral(mesh,4,0)
-print smodel.getMassFluxIntegral(mesh,5,0)
-print smodel.getMassFluxIntegral(mesh,6,0)
+heatFlux2 = smodel.getMassFluxIntegral(mesh,5,0)
+print heatFlux2
