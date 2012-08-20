@@ -47,6 +47,9 @@ def qsub(bp, cname):
                   'R': 'Running',
                   'X': 'Exited with error'
                   }
+    
+    has_torque = os.path.isdir('/var/spool/torque')
+           
     # first remove any old results
     os.system('/bin/rm -f run_tests.pbs.*')
 
@@ -58,7 +61,10 @@ def qsub(bp, cname):
 
     cpus = config.config('Testing', 'ncpus')
     nodes = config.config('Testing', 'nodes')
-    f.write('#PBS -l select=%s:ncpus=%s:mpiprocs=%s\n' % (nodes,cpus,cpus))
+    if has_torque:
+        f.write('#PBS -l nodes=%s:ppn=%s\n' % (nodes, cpus))
+    else:
+        f.write('#PBS -l select=%s:ncpus=%s:mpiprocs=%s\n' % (nodes,cpus,cpus))
     f.write('#PBS -l walltime=%s\n' % config.config('Testing', 'walltime'))
 
     f.write('cd $PBS_O_WORKDIR\n')
