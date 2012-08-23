@@ -1236,10 +1236,11 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatricesCells
 	Q(3,3) += dr[2]*dr[2];      
 	nnb++;
       }
-
-      //if (nnb < 4)
-	//throw CException("not enough cell or particle neighbors for ib face to interpolate!");
-
+     
+      if (nnb <=4){
+	throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+	
+      }
       //symetric matrix
       for(int i=0; i<4; i++){
 	for(int j=0; j<i; j++){
@@ -1264,7 +1265,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatricesCells
       if (is3D) {
 	det = determinant(Q, 4);
       }
-            
+      det = 0;   
       // linear least square interpolation if the matrix is not singular
       //if (nnb >=10){
       if (fabs(det) > 1.0 ){  
@@ -1293,56 +1294,17 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatricesCells
 	  wtSum += wt;	  
 	}
 	
-	if (wtSum > 1.01 || wtSum < 0.99)
-	  cout << "face " << n <<" has wrong wtsum  " << wtSum << endl;
-	/*
+		
 	cout << n << endl;
 	cout << "ibface  " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)	  {
 	  const int c = ibFCCol[nc];
 	  cout << "fluid cells " << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << " " <<cellToIBCoeff[nc] <<  endl;
 	}
-	for(int np=ibFPRow[n]; np<ibFPRow[n+1]; np++)	  {
-	  const int p = ibFPCol[np];
-	  cout << "particles " << xParticles[p][0] << " " << xParticles[p][1] << " " << xParticles[p][2] << " " << particlesToIBCoeff[np] << endl; 
-	}
-	*/
+	if (wtSum > 1.01 || wtSum < 0.99)
+	  cout << "face " << n <<" has wrong wtsum  " << wtSum << endl;
 
-#if 0    
-      const int cell0 = localToGlobal[ faceCells(f,0) ];
-      const int cell1 = localToGlobal[ faceCells(f,1) ];
-      debugFileFluid << "ibface =  " << n << "   " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] <<  
-                        " cell0 = "  << std::min(cell0,cell1) << " cell1 = " << std::max(cell0,cell1) << endl;
-      map<int, double> cellToValue;
-      map<int, int> globalToLocal;
-   
-      for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++){
-          const int localID = ibFCCol[nc];
-	  const int c = localToGlobal[ibFCCol[nc]];
-          globalToLocal[c] = localID;
-          cellToValue[c] = cellToIBCoeff[nc];
- 
-	  //debugFile <<  "    glblcellID = " << c << ", cellToIBCoeff[" << n << "] = " << cellToIBCoeff[nc] <<  endl;
-      }
-      foreach( IntDoubleMap::value_type& pos, cellToValue){
-         const int c = pos.first;
-         const double value =pos.second;
-         debugFileFluid <<  "    glblcellID = " << c <<  "  localCellID = " << globalToLocal[c]  <<  ", cellToIBCoeff[" << n << "] = " << value <<  endl;
-      } 
 
-      debugFileSolid << "ibface  = " << n << "   " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] <<  endl;
-      cellToValue.clear();
-      for(int nc=ibFPRow[n]; nc<ibFPRow[n+1]; nc++){
-          cellToValue[ibFPCol[nc]] = particlesToIBCoeff[nc];
-      }
-       foreach( IntDoubleMap::value_type& pos, cellToValue){
-          const int c = pos.first;
-          const double value =pos.second;
-          debugFileSolid <<  "    GlobalSolidFaceID = " << c << ", solidToIBCoeff[" << n << "] = " << value <<  endl;
-       } 
-
-    
-#endif 
 	
       }   
 
