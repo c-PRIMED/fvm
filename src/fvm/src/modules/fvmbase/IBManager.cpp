@@ -187,6 +187,7 @@ void IBManager::update()
 	}
       //      findNearestIBFaceForSolidFaces(fluidMesh,IBFacesTree,solidFacesNearestIBFace);
       createSolidInterpolationStencil(fluidMesh,IBFacesTree,solidFacesNearestCell);
+     
      }   
   }
 
@@ -624,16 +625,16 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   const Vec3DArray& solidMeshCoords =
     dynamic_cast<const Vec3DArray&>(_geomFields.coordinate[solidMeshFaces]);
 
-  Array<int> desiredNeighbors(fluidNeighborsPerSolidFace);
+  Array<int> desiredNeighbors(fluidNeighborsPerIBFace);
 
   ibFaceToCells->initCount();
   ibFaceToSolid->initCount();
-
+  
   for(int f=0; f<nIBFaces; f++)
   {
       ibFaceToSolid->addCount(f,solidNeighborsPerIBFace);
   }
-
+  
   ibFaceToSolid->finishCount();
 
   // in first pass we find the number of fluid cells and also set all the solid neighbors
@@ -661,6 +662,7 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
       
       if ((int) nc.neighbors.size() > fluidNeighborsPerIBFace)
           {
+	   
               // create a search tree to find the desired number of neighbors out of this set
               
               KSearchTree dtree;
@@ -717,10 +719,10 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
       for(int n=0; n<solidNeighborsPerIBFace; n++)
         ibFaceToSolid->add(f,solidNeighbors[n]);
   }
-
+ 
   ibFaceToCells->finishCount();
   ibFaceToSolid->finishAdd();
-
+ 
   for(int f=0; f<nIBFaces; f++)
   {
       NearestCell& nc = nearestCellForIBFace[f];
@@ -743,7 +745,7 @@ IBManager::createIBInterpolationStencil(Mesh& mesh,
   CRConnectivityPrintFile( *ibFaceToSolid, "ibFaceToSolid", MPI::COMM_WORLD.Get_rank() );
 #endif
 #endif
-
+  
   mesh.setConnectivity(ibFaces,cells,ibFaceToCells);
   mesh.setConnectivity(ibFaces,solidMeshFaces,ibFaceToSolid);
   

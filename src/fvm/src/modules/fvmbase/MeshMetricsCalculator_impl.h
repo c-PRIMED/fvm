@@ -1265,7 +1265,7 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatricesCells
       if (is3D) {
 	det = determinant(Q, 4);
       }
-      det = 0;   
+     
       // linear least square interpolation if the matrix is not singular
       //if (nnb >=10){
       if (fabs(det) > 1.0 ){  
@@ -1294,18 +1294,15 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatricesCells
 	  wtSum += wt;	  
 	}
 	
-		
-	cout << n << endl;
-	cout << "ibface  " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
-	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)	  {
-	  const int c = ibFCCol[nc];
-	  cout << "fluid cells " << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << " " <<cellToIBCoeff[nc] <<  endl;
-	}
-	if (wtSum > 1.01 || wtSum < 0.99)
-	  cout << "face " << n <<" has wrong wtsum  " << wtSum << endl;
-
-
-	
+	if (wtSum > 1.01 || wtSum < 0.99){
+	  cout << "face " << n <<" has wrong wtsum  " << wtSum << endl;	
+	  cout << n << endl;
+	  cout << "ibface  " <<  xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
+	  for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)	  {
+	    const int c = ibFCCol[nc];
+	    cout << "fluid cells " << xCells[c][0] << " " << xCells[c][1] << " " << xCells[c][2] << " " <<cellToIBCoeff[nc] <<  endl;
+	  }
+	}	
       }   
 
       
