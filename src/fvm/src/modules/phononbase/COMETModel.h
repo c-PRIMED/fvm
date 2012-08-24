@@ -1007,6 +1007,7 @@ class COMETModel : public Model
     const int numMeshes=inMeshes.size();
     vector<IntArrPtr> FineToCoarseList;
     IntArray CoarseCounts(numMeshes);
+    CoarseCounts=0;
     map<const StorageSite*, IntArray*> PreFacePairMap;
 
     for(int m=0;m<numMeshes;m++)
@@ -1017,10 +1018,31 @@ class COMETModel : public Model
 	IntArrPtr newFineToCoarsePtr(new IntArray(CellTotal));
 	*newFineToCoarsePtr=-1;
 	FineToCoarseList.push_back(newFineToCoarsePtr);
-	CoarseCounts[m]=coarsenInterior(m,mesh,*newFineToCoarsePtr,inGeomFields);
+	//CoarseCounts[m]=coarsenInterior(m,mesh,*newFineToCoarsePtr,inGeomFields);
       }
 
-    
+    //coarsen interfaces first
+    foreach(COMETIC<T>* icPtr, _IClist)
+      {
+	COMETIC<T>& ic=*icPtr;
+	const int Mid0=ic.MeshID0;
+	const int Mid1=ic.MeshID1;
+	IntArray& FineToCoarse0=*FineToCoarseList[Mid0];
+	IntArray& FineToCoarse1=*FineToCoarseList[Mid1];
+
+	coarsenInterfaceCells(ic, FineToCoarse0, FineToCoarse1, CoarseCounts[Mid0],
+			      CoarseCounts[Mid1], inGeomFields, inMeshes);
+      }
+
+    //coarsen interiors
+    for(int m=0;m<numMeshes;m++)
+      {
+	const Mesh& mesh=*inMeshes[m];
+	IntArray& FineToCoarse=*FineToCoarseList[m];
+	int coarseCount=coarsenInterior(m, mesh, FineToCoarse,
+					inGeomFields, CoarseCounts[m]);
+      }
+
     foreach(COMETIC<T>* icPtr, _IClist)
       {
 	COMETIC<T>& ic=*icPtr;
@@ -1032,6 +1054,7 @@ class COMETModel : public Model
 	const Mesh& mesh1=*inMeshes[Mid1];
 	const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
 	const StorageSite& faces1=mesh1.getFaceGroup(Fid1).site;
+	const StorageSite& cells0=mesh0.getCells();
 	const int f1Offset=faces1.getOffset();
 	const StorageSite& allFaces0=mesh0.getFaces();
 	const CRConnectivity& faceCells0=mesh0.getFaceCells(faces0);
@@ -1043,6 +1066,8 @@ class COMETModel : public Model
 	const int faceCount=faces0.getCount();
 	IntArray& FineToCoarse0=*FineToCoarseList[Mid0];
 	IntArray& FineToCoarse1=*FineToCoarseList[Mid1];
+	const int cCount0=CoarseCounts[Mid0];
+	const int cCount1=CoarseCounts[Mid1];
 
 	const CRPtr cellsIntGhost0Ptr=cellFaces0.multiply(faceCells0,true);
 	const CRConnectivity& cellsIntGhost0=*cellsIntGhost0Ptr;
@@ -1055,8 +1080,23 @@ class COMETModel : public Model
 	*FaceFine2CoarsePtr=-1;
 	IntArray& FaceFine2Coarse=*FaceFine2CoarsePtr;
 	ic.FineToCoarse=FaceFine2CoarsePtr;
-	
 
+	StorageSite preCoarse0(cCount0);
+
+	CRPtr preCoarseToFineCells0=CRPtr(new CRConnectivity(preCoarse0,cells0));
+
+	preCoarseToFineCells0->initCount();
+
+	for(int c=0;c<cells0.getSelfCount();c++)
+	  preCoarseToFineCells0->addCount(FineToCoarse0[c],1);
+	
+	preCoarseToFineCells0->finishCount();
+
+	for(int c=0;c<cells0.getSelfCount();c++)
+	  preCoarseToFineCells0->add(FineToCoarse0[c],c);
+
+	preCoarseToFineCells0->finishAdd();
+	
 	//initial pairing, no regard to zero summed area
 	int coarseFace(0);
 	for(int f=0;f<faceCount;f++)
@@ -1069,22 +1109,19 @@ class COMETModel : public Model
 		const int coarseC00=FineToCoarse0[c00];  //coarse indices
 		const int coarseC01=FineToCoarse1[c01];
 
-		const int c00neibs=cellCells0.getCount(c00);
-
-		for(int c00neib=0;c00neib<c00neibs;c00neib++)
+		const int cC00fineCnt=preCoarseToFineCells0->getCount(coarseC00);
+		for(int cC00fine=0;cC00fine<cC00fineCnt;cC00fine++)
 		  {
-		    const int c10=cellCells0(c00,c00neib);
-
-		    if(FineToCoarse0[c10]==coarseC00)  //are the cells paired
+		    const int fineCell=(*preCoarseToFineCells0)(coarseC00,cC00fine);
+		    if(fineCell!=c00)
 		      {
-			const int c10ghostCount=cellsIntGhost0.getCount(c10);
-
-			for(int ghost=0;ghost<c10ghostCount;ghost++)
+			const int fineGhostCount=cellsIntGhost0.getCount(fineCell);
+			for(int fineGhostNum=0;fineGhostNum<fineGhostCount;fineGhostNum)
 			  {
-			    const int c10ghost=cellsIntGhost0(c10,ghost);
-			    const int f10=cellFaces0(c10ghost,0);   //local numbering
+			    const int fineGhost=cellsIntGhost0(fineCell,fineGhostNum++);
+			    const int f10=cellFaces0(fineGhost,0);
 			    const int c11=faceCells1(f10,0);
-
+			    
 			    if(FineToCoarse1[c11]==coarseC01)
 			      {
 				if(FaceFine2Coarse[f10]==-1 && FaceFine2Coarse[f]==-1)
@@ -1098,6 +1135,7 @@ class COMETModel : public Model
 				else if(FaceFine2Coarse[f10]!=-1 && FaceFine2Coarse[f]==-1)
 				  FaceFine2Coarse[f]=FaceFine2Coarse[f10];
 			      }
+			    
 			  }
 		      }
 		  }
@@ -1133,7 +1171,7 @@ class COMETModel : public Model
 			   partVec[2]*partVec[2]);
 
 	    ///break up face agglomeration if summed area is zero-ish
-	    if(sumMag/partMag<0.5)
+	    if(sumMag/partMag<1.0)
 	      {
 		sumVec-=partVec;
 		FaceFine2Coarse[f]=coarseFace;
@@ -1157,7 +1195,12 @@ class COMETModel : public Model
 	outMeshes.push_back(newMeshPtr);
 	newMeshPtr->setID(n);
 	IntArray& FineToCoarse=*FineToCoarseList[n];
+	CoarseCounts[n]=correctSingleNeighbor(n, mesh, FineToCoarse,
+					      inGeomFields, CoarseCounts[n], PreFacePairMap);
+
 	int coarseCount=CoarseCounts[n];
+	//int coarseCount=coarsenInterior(n, mesh, FineToCoarse,
+	//				inGeomFields, CoarseCounts[n]);
 
 	const StorageSite& inCells=mesh.getCells();
 	StorageSite& outCells=newMeshPtr->getCells();
@@ -1168,7 +1211,8 @@ class COMETModel : public Model
 
 	const CRConnectivity& inFaceinCells=mesh.getFaceCells(inFaces);
 	Field& areaMagField=inGeomFields.areaMag;
-	const TArray& areaMagArray=dynamic_cast<const TArray&>(areaMagField[inFaces]);
+	const TArray& areaMagArray=
+	  dynamic_cast<const TArray&>(areaMagField[inFaces]);
 
 	Field& FaceAreaField=inGeomFields.area;
 	const VectorT3Array& inFA=
@@ -1270,18 +1314,37 @@ class COMETModel : public Model
 	CRPtr CoarseCellsFineFaces=FineFacesCoarseCells->getTranspose();
 	CRPtr CellCellCoarse=CoarseCellsFineFaces->multiply(*FineFacesCoarseCells,true);
 
-	int counter=0;
+	int counter=0;  //coarse face counter
 	BArray counted(outCells.getCount());
 	counted=false;
 	for(int c=0;c<outCells.getCount();c++)
 	  {
 	    counted[c]=true;
 	    const int neibs=CellCellCoarse->getCount(c);
+
 	    for(int n=0;n<neibs;n++)
 	      {
 		const int c1=(*CellCellCoarse)(c,n);
-		if(!counted[c1])
-		  counter++;
+		if(neibs>1)
+		  {
+		    if(!counted[c1])
+		      counter++;
+		  }
+		else  //gives two faces to cells with 1 neighbor
+		  {
+		    if(c>=outCells.getSelfCount())
+		      {
+			if(!counted[c1])
+			  counter++;
+		      }
+		    else  //interior cells
+		      {
+			if(counted[c1])
+			  counter++;
+			else
+			  counter+=2;
+		      }
+		  }
 	      }
 	  }
 
@@ -1294,13 +1357,13 @@ class COMETModel : public Model
 	  {
 	    const int neibs=CellCellCoarse->getCount(c);
 	    CoarseCellCoarseFace->addCount(c,neibs);
+	    if((neibs==1) && (c<outCells.getSelfCount()))   //adding 2 faces to cells with one neighbor
+	      CoarseCellCoarseFace->addCount(c,neibs);
 	  }
 
 	CoarseCellCoarseFace->finishCount();
 
 	//make cell connectivity to interior faces.
-	IntArray neibCounter(outCells.getCount());
-	neibCounter=0;
 	counter=0;
 	counted=false;
 	for(int c=0;c<outCells.getSelfCount();c++)
@@ -1310,13 +1373,32 @@ class COMETModel : public Model
 	    for(int n=0;n<neibs;n++)
 	      {
 		const int c1=(*CellCellCoarse)(c,n);
-		if(!counted[c1] && c1<outCells.getSelfCount())
+		if(neibs>1)
 		  {
-		    CoarseCellCoarseFace->add(c,counter);
-		    CoarseCellCoarseFace->add(c1,counter);
-		    counter++;
-		    neibCounter[c]++;
-		    neibCounter[c1]++;
+		    if(!counted[c1] && c1<outCells.getSelfCount())
+		      {
+			CoarseCellCoarseFace->add(c,counter);
+			CoarseCellCoarseFace->add(c1,counter);
+			counter++;
+		      }
+		  }
+		else
+		  {
+		    if(counted[c1] && c1<outCells.getSelfCount())
+		      {
+			CoarseCellCoarseFace->add(c,counter);
+			CoarseCellCoarseFace->add(c1,counter);
+			counter++;
+		      }
+		    else if(!counted[c1] && c1<outCells.getSelfCount())
+		      {
+			CoarseCellCoarseFace->add(c,counter);
+			CoarseCellCoarseFace->add(c1,counter);
+			counter++;
+			CoarseCellCoarseFace->add(c,counter);
+			CoarseCellCoarseFace->add(c1,counter);
+			counter++;
+		      }
 		  }
 	      }
 	  }
@@ -1328,8 +1410,6 @@ class COMETModel : public Model
 	    CoarseCellCoarseFace->add(c1,counter);
 	    CoarseCellCoarseFace->add(c,counter);
 	    counter++;
-	    neibCounter[c]++;
-	    neibCounter[c1]++;
 	  }
 
 	CoarseCellCoarseFace->finishAdd();
@@ -1342,12 +1422,23 @@ class COMETModel : public Model
 	CRPtr CoarseFacesFineFaces=CRPtr(new CRConnectivity(outFaces,inFaces));
 	CoarseFacesFineFaces->initCount();
 
+	VectorT3Array areaSum(outFaces.getCount());
+	areaSum.zero();
+
 	for(int f=0;f<inFaceCount;f++)
 	  {
 	    int fc0=inFaceinCells(f,0);
 	    int fc1=inFaceinCells(f,1);
 	    const int cc0=FineToCoarse[fc0];
 	    const int cc1=FineToCoarse[fc1];
+
+	    int cc0neibs=CellCellCoarse->getCount(cc0);
+	    int cc1neibs=CellCellCoarse->getCount(cc1);
+
+	    if(cc0>=outCells.getSelfCount())
+	      cc0neibs++;
+	    if(cc1>=outCells.getSelfCount())
+	      cc1neibs++;
 
 	    if(cc1!=cc0)
 	      {
@@ -1361,8 +1452,37 @@ class COMETModel : public Model
 		    
 		    if(((cc0==tempc0)&&(cc1==tempc1))||((cc1==tempc0)&&(cc0==tempc1)))
 		      {
-			CoarseFacesFineFaces->addCount(face,1);
-			break;
+			T sign(0);
+
+			if(cc1==tempc0)
+			   sign*=-1.;
+
+			areaSum[face]+=inFA[f]*sign;
+
+			if(cc1neibs>1 && cc0neibs>1)
+			  {
+			    CoarseFacesFineFaces->addCount(face,1);
+			    break;
+			  }
+			else
+			  {
+			    T sumMag=sqrt(areaSum[face][0]*areaSum[face][0]+
+					  areaSum[face][1]*areaSum[face][1]+
+					  areaSum[face][2]*areaSum[face][2]);
+
+			    T partMag=sqrt(inFA[f][0]*inFA[f][0]+
+					   inFA[f][1]*inFA[f][1]+
+					   inFA[f][2]*inFA[f][2]);
+			
+			    if(sumMag/partMag>.75)
+			      {
+				CoarseFacesFineFaces->addCount(face,1);
+				break;
+			      }
+			    else
+			      areaSum[face]-=inFA[f]*sign;
+
+			  }
 		      }
 		  }
 	      }
@@ -1370,12 +1490,23 @@ class COMETModel : public Model
 
 	CoarseFacesFineFaces->finishCount();
 
+	areaSum.zero();
+
 	for(int f=0;f<inFaceCount;f++)
 	  {
 	    int fc0=inFaceinCells(f,0);
 	    int fc1=inFaceinCells(f,1);
 	    const int cc0=FineToCoarse[fc0];
 	    const int cc1=FineToCoarse[fc1];
+
+	    int cc0neibs=CellCellCoarse->getCount(cc0);
+	    int cc1neibs=CellCellCoarse->getCount(cc1);
+
+	    if(cc0>=outCells.getSelfCount())
+	      cc0neibs++;
+	    if(cc1>=outCells.getSelfCount())
+	      cc1neibs++;
+	    
 	    if(cc1!=cc0)
 	      {
 		const int cfaces=CoarseCellCoarseFace->getCount(cc0);
@@ -1388,8 +1519,36 @@ class COMETModel : public Model
 		    
 		    if(((cc0==tempc0)&&(cc1==tempc1))||((cc1==tempc0)&&(cc0==tempc1)))
 		      {
-			CoarseFacesFineFaces->add(face,f);
-			break;
+
+			T sign(1);
+			if(cc1==tempc0)
+			  sign*=-1.;
+
+			areaSum[face]+=inFA[f]*sign;
+
+			if(cc1neibs>1 && cc0neibs>1)
+			  {
+			    CoarseFacesFineFaces->add(face,f);
+			    break;
+			  }
+			else
+			  {
+			    T sumMag=sqrt(areaSum[face][0]*areaSum[face][0]+
+					  areaSum[face][1]*areaSum[face][1]+
+					  areaSum[face][2]*areaSum[face][2]);
+			    
+			    T partMag=sqrt(inFA[f][0]*inFA[f][0]+
+					   inFA[f][1]*inFA[f][1]+
+					   inFA[f][2]*inFA[f][2]);
+			    
+			    if(sumMag/partMag>.75)
+			      {
+				CoarseFacesFineFaces->add(face,f);
+				break;
+			      }
+			    else
+			      areaSum[face]-=inFA[f]*sign;
+			  }
 		      }
 		  }
 	      }
@@ -1553,7 +1712,8 @@ class COMETModel : public Model
     return smallestMesh;
   }
 
-  int coarsenInterior(const int m, const Mesh& mesh, IntArray& FineToCoarse, GeomFields& inGeomFields)
+  int coarsenInterior(const int m, const Mesh& mesh, IntArray& FineToCoarse,
+		      GeomFields& inGeomFields, int& coarseCount)
   {
     const StorageSite& inCells=mesh.getCells();
     const StorageSite& inFaces=mesh.getFaces();
@@ -1566,7 +1726,6 @@ class COMETModel : public Model
 
     //first sweep to make initial pairing
     int pairWith;
-    int coarseCount(0);
     for(int c=0;c<inCellCount;c++)
       {
 	if(FineToCoarse[c]<0) //dont bother if im already paired
@@ -1657,6 +1816,395 @@ class COMETModel : public Model
 	  }	    
       }
     return coarseCount;
+  }
+
+  int correctSingleNeighbor(const int m, const Mesh& mesh, IntArray& FineToCoarse,
+			    GeomFields& inGeomFields, int& coarseCount,
+			    map<const StorageSite*, IntArray*> PreFacePairMap)
+  {
+
+    const StorageSite& inCells=mesh.getCells();
+    const int inCellTotal=inCells.getCount();
+    const StorageSite& inFaces=mesh.getFaces();
+    const int inFaceCount=inFaces.getCount();
+    const CRConnectivity& inFaceinCells=mesh.getFaceCells(inFaces);
+
+    int coarseGhost=coarseCount;
+    int outGhost(0);
+    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+      {
+	const FaceGroup& fg=*fgPtr;
+	if(fg.id!=0)
+	  {
+	    const CRConnectivity& faceCells=mesh.getFaceCells(fg.site);
+	    const int faceCount=fg.site.getCount();
+
+	    if(_bcMap[fg.id]->bcType == "Interface")
+	      {
+		IntArray& FaceFine2Coarse=*PreFacePairMap[&fg.site];
+		    
+		int coarseFaces(0);
+		for(int i=0;i<faceCount;i++)
+		  {
+		    const int cghost=faceCells(i,1);
+		    FineToCoarse[cghost]=FaceFine2Coarse[i]+coarseGhost;
+		    if(FaceFine2Coarse[i]>coarseFaces)
+		      coarseFaces=FaceFine2Coarse[i];
+		  }
+		coarseGhost+=coarseFaces+1;
+		outGhost+=coarseFaces+1;
+	      }
+	    else if(_bcMap[fg.id]->bcType == "temperature" ||
+		    _bcMap[fg.id]->bcType == "reflecting"	)
+	      {
+		for(int i=0;i<faceCount;i++)
+		  {
+		    const int cghost=faceCells(i,1);
+		    FineToCoarse[cghost]=coarseGhost;
+		    coarseGhost++;
+		    outGhost++;
+		  }
+	      }
+	  }
+      }
+
+    StorageSite preOutCells(coarseCount,outGhost);
+    CRPtr CoarseToFineCells=CRPtr(new CRConnectivity(preOutCells,inCells));
+    CoarseToFineCells->initCount();
+	
+    for(int c=0;c<inCellTotal;c++)
+      CoarseToFineCells->addCount(FineToCoarse[c],1);
+	
+    CoarseToFineCells->finishCount();
+
+    for(int c=0;c<inCellTotal;c++)
+      CoarseToFineCells->add(FineToCoarse[c],c);
+
+    CoarseToFineCells->finishAdd();
+
+    CRPtr FineFacesCoarseCells=CRPtr(new CRConnectivity(inFaces,preOutCells));
+    FineFacesCoarseCells->initCount();
+
+    //count surviving faces
+    int survivingFaces=0;
+    int coarse0, coarse1;
+    for(int f=0;f<inFaceCount;f++)
+      {
+	coarse0=FineToCoarse[inFaceinCells(f,0)];
+	coarse1=FineToCoarse[inFaceinCells(f,1)];
+	if(coarse0!=coarse1)
+	  {
+	    survivingFaces++;
+	    FineFacesCoarseCells->addCount(f,2);
+	  }
+      }
+	
+    FineFacesCoarseCells->finishCount();
+	
+    //make non-zero's
+    int fc0,fc1,cc0,cc1;
+    for(int f=0;f<inFaceCount;f++)
+      {
+	fc0=inFaceinCells(f,0);
+	fc1=inFaceinCells(f,1);
+	cc0=FineToCoarse[fc0];
+	cc1=FineToCoarse[fc1];
+	if(cc0!=cc1)
+	  {
+	    FineFacesCoarseCells->add(f,cc0);
+	    FineFacesCoarseCells->add(f,cc1);
+	  }
+      }
+
+    FineFacesCoarseCells->finishAdd();
+
+    CRPtr CoarseCellsFineFaces=FineFacesCoarseCells->getTranspose();
+    CRPtr CellCellCoarse=CoarseCellsFineFaces->multiply(*FineFacesCoarseCells,true);
+
+    for(int c=0;c<preOutCells.getSelfCount();c++)
+      {
+	if(CellCellCoarse->getCount(c)==1)
+	  {
+	    /*
+	    const int bigCoarse=(*CellCellCoarse)(c,0);
+	    const int fineCount=CoarseToFineCells->getCount(c);
+
+	    for(int j=0;j<fineCount;j++)
+	      {
+		const int fc=(*CoarseToFineCells)(c,j);
+		FineToCoarse[fc]=bigCoarse;
+	      }
+	    coarseCount-=1;
+	    */
+	    
+	    const int removal=(*CoarseToFineCells)(c,0);
+	    FineToCoarse[removal]=coarseCount;
+	    coarseCount++;
+	    
+	  }
+      }
+
+    return coarseCount;
+  }
+
+  void coarsenInterfaceCells(COMETIC<T>& ic, IntArray& f2c0, IntArray& f2c1, 
+			     int& count0, int& count1, GeomFields& inGeomFields, 
+			     const MeshList& inMeshes)
+  {
+    const int Mid0=ic.MeshID0;
+    const int Mid1=ic.MeshID1;
+    const int Fid0=ic.FgID0;
+    const int Fid1=ic.FgID1;
+    const Mesh& mesh0=*inMeshes[Mid0];
+    const Mesh& mesh1=*inMeshes[Mid1];
+    const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
+    const StorageSite& faces1=mesh1.getFaceGroup(Fid1).site;
+    const StorageSite& cells0=mesh0.getCells();
+    const StorageSite& globFaces0=mesh0.getFaces();
+    const CRConnectivity& faceCells0=mesh0.getFaceCells(faces0);
+    const CRConnectivity& faceCells1=mesh1.getFaceCells(faces1);
+    const CRConnectivity& cellCells0=mesh0.getCellCells();
+    const CRConnectivity& cellCells1=mesh1.getCellCells();
+    const CRConnectivity& globFaceCells0=mesh0.getAllFaceCells();
+    const CRConnectivity& globCellFaces0=mesh0.getCellFaces();
+    const int inFaceCount=faces0.getCount();
+    Field& areaMagField=inGeomFields.areaMag;
+    const TArray& areaMagArray0=dynamic_cast<const TArray&>(areaMagField[globFaces0]);
+    const BCfaceArray& inBCfArray0=*(_BFaces[Mid0]);
+
+    const CRPtr cellFaces0Ptr=faceCells0.getTranspose();
+    const CRConnectivity& cellFaces0=*cellFaces0Ptr;
+    const CRPtr cellsIntGhost0Ptr=cellFaces0.multiply(faceCells0,true);
+    const CRConnectivity& cellsIntGhost0=*cellsIntGhost0Ptr;
+
+    IntArray CoarseFineCount(cells0.getCount());
+    CoarseFineCount.zero();
+    
+    //agglomerate mesh0 first
+    int pairWith;
+
+    if(_level>=0)
+      {
+	for(int f=0;f<inFaceCount;f++)
+	  {
+	    const int c=faceCells0(f,0);
+	    const int cCoarse=CoarseFineCount[c];
+	    if(f2c0[c]<0 || cCoarse<2) //dont bother if im already paired
+	      {
+		//loop through all neighbors to find pairing
+		const int neibCount=cellCells0.getCount(c);
+		pairWith=-1;
+		T maxArea=0.;
+		int c2;
+		for(int neib=0;neib<neibCount;neib++)
+		  {
+		    const int fglob=globCellFaces0(c,neib);
+		    
+		    if(inBCfArray0[fglob]==0)  //not a boundary face
+		      {
+			if(c==globFaceCells0(fglob,1))
+			  c2=globFaceCells0(fglob,0);
+			else
+			  c2=globFaceCells0(fglob,1);
+			
+			int c2Coarse=f2c0[c2];
+			
+			if(c2Coarse==-1 || CoarseFineCount[c2Coarse]<2)  //not already paired
+			  {
+			    if(areaMagArray0[fglob]>maxArea)
+			      {
+				pairWith=c2;
+				maxArea=areaMagArray0[fglob];
+				if(cellsIntGhost0.getCount(c2)>0)  //pick first interface cell
+				  break;
+			      }
+			  }
+
+		      }
+		  }
+		
+		if(pairWith!=-1)
+		  {
+		    int c2Coarse=f2c0[pairWith];
+		    if(c2Coarse==-1 && f2c0[c]==-1)
+		      {
+			f2c0[pairWith]=count0;
+			f2c0[c]=count0;
+			CoarseFineCount[count0]++;
+			count0++;
+		      }
+		    else if(f2c0[c]==-1 && c2Coarse!=-1)
+		      f2c0[c]=c2Coarse;
+		    else if(f2c0[c]!=-1 && c2Coarse==-1)
+		      f2c0[pairWith]=f2c0[c];
+		  }
+	      }
+	  }
+      }
+    else
+      {
+	for(int f=0;f<inFaceCount;f++)
+	  {
+	    const int c=faceCells0(f,0);
+	    if(f2c0[c]<0) //dont bother if im already paired
+	      {
+		//loop through all neighbors to find pairing
+		const int neibCount=cellCells0.getCount(c);
+		pairWith=-1;
+		T maxArea=0.;
+		int c2;
+		for(int neib=0;neib<neibCount;neib++)
+		  {
+		    const int fglob=globCellFaces0(c,neib);
+		    
+		    if(inBCfArray0[fglob]==0)  //not a boundary face
+		      {
+			if(c==globFaceCells0(fglob,1))
+			  c2=globFaceCells0(fglob,0);
+			else
+			  c2=globFaceCells0(fglob,1);
+			
+			if(f2c0[c2]==-1)  //not already paired
+			  {
+			    if(areaMagArray0[fglob]>maxArea)
+			      {
+				pairWith=c2;
+				maxArea=areaMagArray0[fglob];
+			      }
+			  }
+
+		      }
+		  }
+		
+		if(pairWith!=-1)
+		  {
+		    f2c0[pairWith]=count0;
+		    f2c0[c]=count0;
+		    count0++;
+		  }
+	      }
+	  }
+      }
+
+    StorageSite preCoarse0(count0);
+    CRPtr preCoarseToFineCells0=CRPtr(new CRConnectivity(preCoarse0,cells0));
+    preCoarseToFineCells0->initCount();
+
+    for(int c=0;c<cells0.getSelfCount();c++)
+      if(f2c0[c]!=-1)
+	preCoarseToFineCells0->addCount(f2c0[c],1);
+
+
+    preCoarseToFineCells0->finishCount();
+
+    for(int c=0;c<cells0.getSelfCount();c++)
+      if(f2c0[c]!=-1)
+	preCoarseToFineCells0->add(f2c0[c],c);
+
+    preCoarseToFineCells0->finishAdd();
+
+    //now use mesh0 pairing to pair mesh1
+    for(int f=0;f<inFaceCount;f++)
+      {
+	const int c01=faceCells1(f,0);
+	const int c00=faceCells0(f,0);
+	if(f2c1[c01]<0 && f2c0[c00]>-1) //dont bother if im already paired, mesh0 must be paired
+	  {
+	    //const int neibCount0=cellCells0.getCount(c00);
+	    const int coarseC00=f2c0[c00];
+	    const int cC00fineCnt=preCoarseToFineCells0->getCount(coarseC00);
+	    
+	    for(int cC00fine=0;cC00fine<cC00fineCnt;cC00fine++) //(int neib0=0;neib0<neibCount0;neib0++)  //who is mesh0 paired with
+	      {
+		//const int c10=cellCells0(c00,neib0);
+		const int fineCell=(*preCoarseToFineCells0)(coarseC00,cC00fine);
+		if(fineCell!=c00)//(f2c0[c00]==f2c0[c10])
+		  {
+		    const int c10gNeibs=cellsIntGhost0.getCount(fineCell);  //cell is on an interface
+		    for(int c10ghost=0;c10ghost<c10gNeibs;c10ghost++)
+		      {
+			const int c10g=cellsIntGhost0(fineCell,c10ghost);
+			const int f10=cellFaces0(c10g,0);
+			const int c11=faceCells1(f10,0);
+			const int neibCount1=cellCells1.getCount(c01);
+			bool isNeib(false);
+			for(int c01neibs=0;c01neibs<neibCount1;c01neibs++)
+			  {
+			    if(cellCells1(c01,c01neibs)==c11)
+			      {
+				isNeib=true;
+				break;
+			      }
+			  }
+
+			if(isNeib)  //direct neighbor
+			  {
+			    if(f2c1[c11]>-1 && f2c1[c01]<0)  //other guy paired, im not
+			      f2c1[c01]=f2c1[c11];
+			    else if(f2c1[c01]>-1 && f2c1[c11]<0)  //im paired, other guy's not
+			      f2c1[c11]=f2c1[c01];
+			    else if(f2c1[c11]<0 && f2c1[c01]<0)  //both not paired
+			      {
+				f2c1[c11]=count1;
+				f2c1[c01]=count1;
+				count1++;
+			      }
+			  }
+			else if(_level==0)   //check for indirect neighbors
+			  {
+			    const int c11neibCnt=cellCells1.getCount(c11);
+			    int middleMan=-1;
+			    for(int c11nb=0;c11nb<c11neibCnt;c11nb++)
+			      {
+				const int c11neib=cellCells1(c11,c11nb);
+				for(int c01neibs=0;c01neibs<neibCount1;c01neibs++)
+				  {
+				    if(cellCells1(c01,c01neibs)==c11neib)
+				      {
+					middleMan=c11neib;
+					break;
+				      }
+				  }
+			      }
+			    if(middleMan!=-1)
+			      {
+				if(f2c1[middleMan]==-1)
+				  {
+				    if(f2c1[c11]<0 && f2c1[c01]<0)  //both not paired
+				      {
+					f2c1[c11]=count1;
+					f2c1[c01]=count1;
+					f2c1[middleMan]=count1;
+					count1++;
+				      }
+				    else if(f2c1[c11]>-1 && f2c1[c01]<0)  //other guy paired, im not
+				      {
+					f2c1[c01]=f2c1[c11];
+					f2c1[middleMan]=f2c1[c11];
+				      }
+				    else if(f2c1[c01]>-1 && f2c1[c11]<0)  //im paired, other guy's not
+				      {
+					f2c1[c11]=f2c1[c01];
+					f2c1[middleMan]=f2c1[c01];
+				      }
+				  }
+			      }
+			  }
+
+		      }
+		  }
+	      }
+
+	    /*
+	    if(f2c1[c01]==-1)  //still hasnt been paired -- means mesh0 cell wasnt paired.
+	      {
+		f2c1[c01]=count1;
+		count1++;
+	      }*/
+	    
+	  }
+      }
+    
   }
 
   void doSweeps(const int sweeps)
