@@ -33,6 +33,13 @@ struct StructureModelOptions : public FloatVarDict<T>
   bool residualStress;
   LinearSolver *deformationLinearSolver;
   LinearSolver *coupledLinearSolver;
+  bool creep;
+  int creepModel;
+  double A;
+  double B;
+  double m;
+  double n;
+  double Sy0;
 }; 
 
 //%template(Vector3) Vector<ATYPE_STR,3>;

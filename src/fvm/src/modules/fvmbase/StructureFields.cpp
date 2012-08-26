@@ -2,6 +2,7 @@
 
 StructureFields::StructureFields(const string baseName) :
   deformation(baseName + ".deformation"),
+  elasticDeformation(baseName + ".elasticDeformation"),
   deformationGradient(baseName + ".deformationGradient"),
   deformationFlux(baseName + ".deformationFlux"),
   eta(baseName + ".eta"),
@@ -14,6 +15,13 @@ StructureFields::StructureFields(const string baseName) :
   tractionX(baseName + ".tractionX"),
   tractionY(baseName + ".tractionY"),
   tractionZ(baseName + ".tractionZ"),
+  strainX(baseName + ".strainX"),
+  strainY(baseName + ".strainY"),
+  strainZ(baseName + ".strainZ"),
+  plasticDiagStrain(baseName + ".plasticDiagStrain"),
+  devStress(baseName + ".devStress"),
+  VMStress(baseName + ".VMStress"),
+  plasticStrain(baseName + ".plasticStrain"),
   temperature(baseName + ".temperature"),
   bodyForce(baseName + ".bodyForce"),
   volume0(baseName + ".volume0")

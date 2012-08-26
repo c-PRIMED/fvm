@@ -67,6 +67,13 @@ struct StructureModelOptions : public FloatVarDict<T>
     this->residualStress = false;
     this->deformationLinearSolver = 0;
     this->coupledLinearSolver = 0;
+    this->creep = false;
+    this->creepModel=1;
+    this->A = 0.03/3600.;
+    this->B = 1.8e8;
+    this->m = 2.0;
+    this->n = 2.0;
+    this->Sy0 = 1.0e9;
 
     this->incompressible = true;
   }
@@ -79,6 +86,13 @@ struct StructureModelOptions : public FloatVarDict<T>
   bool residualStress;
   LinearSolver *deformationLinearSolver;
   LinearSolver *coupledLinearSolver;
+  bool creep;
+  int creepModel;
+  double A;
+  double B;
+  double m;
+  double n;
+  double Sy0;
 
   bool incompressible;
 #ifndef SWIG

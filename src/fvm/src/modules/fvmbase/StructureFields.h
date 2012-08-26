@@ -9,6 +9,7 @@ struct StructureFields
   StructureFields(const string baseName);
 
   Field deformation;
+  Field elasticDeformation;
   Field deformationGradient;
   Field deformationFlux;
   Field eta;
@@ -21,6 +22,13 @@ struct StructureFields
   Field tractionX;
   Field tractionY;
   Field tractionZ;
+  Field strainX;
+  Field strainY;
+  Field strainZ;
+  Field plasticDiagStrain;
+  Field devStress;
+  Field VMStress;
+  Field plasticStrain;
   Field temperature;
   Field bodyForce;
   Field volume0;

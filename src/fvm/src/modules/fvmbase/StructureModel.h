@@ -44,6 +44,8 @@ public:
 
 
   void updateTime();
+  void creepInit();
+  void computeVMStress();
   void updateForceOnBoundary(const StorageSite& faceSite, const ArrayBase& bforceA, const map<int,int>& commonFacesMap, 
                              ArrayBase& fxA, ArrayBase& fyA, ArrayBase& fzA);
 
@@ -52,6 +54,9 @@ public:
   //Vector<T,3> getDeformationFluxIntegral(const Mesh& mesh, const int faceGroupID);
   //Vector<T,3> getDeformationDerivativeIntegral(const Mesh& mesh);
   void getTraction(const Mesh& mesh);
+  void getStrain(const Mesh& mesh);
+  void getPlasticDiagStrain(const Mesh& mesh);
+
 
   //  Vector<T,3> getPressureIntegralonIBFaces(const Mesh& mesh);
   //  Vector<T,3> getMomentumFluxIntegralonIBFaces(const Mesh& mesh);

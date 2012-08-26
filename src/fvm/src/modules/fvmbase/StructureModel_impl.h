@@ -20,6 +20,7 @@
 #include "DiffusionDiscretization.h"
 #include "TimeDerivativeStructureDiscretization.h"
 #include "StructureSourceDiscretization.h"
+#include "StructurePlasticDiscretization.h"
 #include "SourceDiscretization.h"
 #include "Underrelaxer.h"
 #include "AMG.h"
@@ -373,6 +374,21 @@ public:
 						      dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
         }
         
+        if (_options.creep)
+	{
+            _structureFields.elasticDeformation.addArray(cells,
+                                                         dynamic_pointer_cast<ArrayBase>(sCell->newCopy()));
+            shared_ptr<VGradArray> devStressField(new VGradArray(cells.getCountLevel1()));
+            devStressField->zero();
+            _structureFields.devStress.addArray(cells,devStressField);
+            shared_ptr<TArray> VMStressField(new TArray(cells.getCountLevel1()));
+            VMStressField->zero();
+            _structureFields.VMStress.addArray(cells,VMStressField);
+            shared_ptr<VGradArray> plasticStrainField(new VGradArray(cells.getCountLevel1()));
+            plasticStrainField->zero();
+            _structureFields.plasticStrain.addArray(cells,plasticStrainField);
+
+	}    
 
         shared_ptr<TArray> rhoCell(new TArray(cells.getCountLevel1()));
         *rhoCell = vc["density"];
@@ -462,6 +478,290 @@ public:
     }
   }
 
+  void creepInit()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+        const Mesh& mesh = *_meshes[n];
+
+        const StorageSite& cells = mesh.getCells();
+        VectorT3Array& w =
+          dynamic_cast<VectorT3Array&>(_structureFields.deformation[cells]);
+        VectorT3Array& ew =
+          dynamic_cast<VectorT3Array&>(_structureFields.elasticDeformation[cells]);
+        ew = w;
+
+        _deformationGradientModel.compute();
+        const VGradArray& wGradCell =
+          dynamic_cast<const VGradArray&>(_structureFields.deformationGradient[cells]);
+
+        const TArray& muCell =
+          dynamic_cast<const TArray&>(_structureFields.eta[cells]);
+
+        const TArray& lambdaCell =
+          dynamic_cast<const TArray&>(_structureFields.eta1[cells]);
+
+
+        VGradArray& devStress =
+          dynamic_cast<VGradArray&>(_structureFields.devStress[cells]);
+        TArray& VMStress =
+          dynamic_cast<TArray&>(_structureFields.VMStress[cells]);
+
+        const int nCells = cells.getCount();
+        const T onethird(1.0/3.0);
+        const T half(0.5);
+        const T twothirds(2.0/3.0);
+        const T six(6.0);
+        const T zero(0.0);
+
+        const VectorT3Array& xc =
+          dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+        T xm(1.0);
+        T xv(1.0);
+        T xI(1.0);
+        const T one(1.0);
+        const T two(2.0);
+        const T three(3.0);
+        const T four(4.0);
+        const T eight(8.0);
+        const T twelve(12.0);
+        const T xl(400.e-6);
+        const T mid(200.e-6);
+        const T th(4.e-6);
+        const T midh(2.e-6);
+        xI = pow(th,three)/twelve;
+
+        for(int k=0; k<nCells; k++)
+          {
+            const VGradType& wg = wGradCell[k];
+            VGradType wgPlusTranspose = wGradCell[k];
+            VGradType stress = wGradCell[k];
+            
+            for(int i=0;i<3;i++)
+              for(int j=0;j<3;j++)
+                wgPlusTranspose[i][j] += wg[j][i];
+
+            stress[0][0] = wgPlusTranspose[0][0]*muCell[k]+
+              (wg[0][0]+wg[1][1]+wg[2][2])*lambdaCell[k];
+            stress[0][1] = wgPlusTranspose[0][1]*muCell[k];
+            stress[0][2] = wgPlusTranspose[0][2]*muCell[k];
+            
+            stress[1][0] = wgPlusTranspose[1][0]*muCell[k];
+            stress[1][1] = wgPlusTranspose[1][1]*muCell[k]+
+              (wg[0][0]+wg[1][1]+wg[2][2])*lambdaCell[k];
+            stress[1][2] = wgPlusTranspose[1][2]*muCell[k];
+
+            stress[2][0] = wgPlusTranspose[2][0]*muCell[k];
+            stress[2][1] = wgPlusTranspose[2][1]*muCell[k];
+            stress[2][2] = wgPlusTranspose[2][2]*muCell[k]+
+              (wg[0][0]+wg[1][1]+wg[2][2])*lambdaCell[k];
+
+            if (mesh.getDimension() == 2)
+	      {         
+                stress[2][0] = zero;
+                stress[2][1] = zero;
+                stress[2][2] = zero;
+	      }
+            
+            /*            
+            if(xc[k][0]<=mid)
+            {
+                xm = -xl*two/eight+two*xc[k][0]/two;
+                xv = one;
+            }
+            else
+            {
+                xm = (two/eight)*(three*xl-four*xc[k][0]);
+                xv = -one;
+            }
+
+            stress[0][0] = -xm*(xc[k][1]-midh)/xI;
+            stress[0][1] = (three/two)*(xv/th)*(pow(midh,two)-
+                                                pow((xc[k][1]-midh),two))/pow(midh,two);
+            stress[0][2] = zero;
+            stress[1][0] = (three/two)*(xv/th)*(pow(midh,two)-
+                                                pow((xc[k][1]-midh),two))/pow(midh,two);
+            stress[1][1] = zero;
+            stress[1][2] = zero;
+            */
+
+            devStress[k] = stress;
+            const T trace = stress[0][0]+stress[1][1]+stress[2][2];
+            (devStress[k])[0][0] =  (devStress[k])[0][0] - onethird*trace;
+            (devStress[k])[1][1] =  (devStress[k])[1][1] - onethird*trace;
+            (devStress[k])[2][2] =  (devStress[k])[2][2] - onethird*trace;
+            
+            VMStress[k] = sqrt(half*(pow((stress[0][0]-stress[1][1]),2.0) +
+                                     pow((stress[1][1]-stress[2][2]),2.0) +
+                                     pow((stress[2][2]-stress[0][0]),2.0) +
+                                     six*(pow((stress[0][1]),2.0) +
+                                          pow((stress[1][2]),2.0) +
+                                          pow((stress[2][0]),2.0))));
+          }
+    
+      }
+  }
+
+  void computeVMStress()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+        const Mesh& mesh = *_meshes[n];
+
+        const StorageSite& cells = mesh.getCells();
+        VectorT3Array& w =
+          dynamic_cast<VectorT3Array&>(_structureFields.deformation[cells]);
+        _deformationGradientModel.compute();
+        const VGradArray& wGradCell =
+          dynamic_cast<const VGradArray&>(_structureFields.deformationGradient[cells]);
+
+        const TArray& muCell =
+          dynamic_cast<const TArray&>(_structureFields.eta[cells]);
+
+        const TArray& lambdaCell =
+          dynamic_cast<const TArray&>(_structureFields.eta1[cells]);
+
+        VGradArray& devStress =
+          dynamic_cast<VGradArray&>(_structureFields.devStress[cells]);
+        const VGradArray& plasticStrainCell =
+          dynamic_cast<VGradArray&>(_structureFields.plasticStrain[cells]);
+        TArray& VMStress =
+          dynamic_cast<TArray&>(_structureFields.VMStress[cells]);
+
+        const int nCells = cells.getCount();
+        const T onethird(1.0/3.0);
+        const T half(0.5);
+        const T twothirds(2.0/3.0);
+        const T two(2.0);
+        const T three(3.0);
+        const T six(6.0);
+        const T zero(0.0);
+
+        if (mesh.getDimension() == 3)
+          {
+            for(int k=0; k<nCells; k++)
+              {
+                const VGradType& wg = wGradCell[k];
+                VGradType wgPlusTranspose = wGradCell[k];
+                VGradType stress = wGradCell[k];
+                const VGradType pS = plasticStrainCell[k];
+
+                for(int i=0;i<3;i++)
+                  for(int j=0;j<3;j++)
+                    wgPlusTranspose[i][j] += wg[j][i];
+
+                stress[0][0] = wgPlusTranspose[0][0]*muCell[k]-
+                  two*pS[0][0]*muCell[k]+
+                  (wg[0][0]+wg[1][1]+wg[2][2])*lambdaCell[k];
+                stress[0][1] = wgPlusTranspose[0][1]*muCell[k]-
+                  two*pS[0][1]*muCell[k];
+                stress[0][2] = wgPlusTranspose[0][2]*muCell[k]-
+                  two*pS[0][2]*muCell[k];
+
+                stress[1][0] = wgPlusTranspose[1][0]*muCell[k]-
+                  two*pS[1][0]*muCell[k];
+                stress[1][1] = wgPlusTranspose[1][1]*muCell[k]-
+                  two*pS[1][1]*muCell[k]+
+                  (wg[0][0]+wg[1][1]+wg[2][2])*lambdaCell[k];
+                stress[1][2] = wgPlusTranspose[1][2]*muCell[k]-
+                  two*pS[1][2]*muCell[k];
+
+                stress[2][0] = wgPlusTranspose[2][0]*muCell[k]-
+                  two*pS[2][0]*muCell[k];
+                stress[2][1] = wgPlusTranspose[2][1]*muCell[k]-
+                  two*pS[2][1]*muCell[k];
+                stress[2][2] = wgPlusTranspose[2][2]*muCell[k]-
+                  two*pS[2][2]*muCell[k]+
+                  (wg[0][0]+wg[1][1]+wg[2][2])*lambdaCell[k];
+
+                if(_options.creepModel!=3)
+                  {
+                    stress[0][0]-=(pS[0][0]+pS[1][1]+pS[2][2])*lambdaCell[k];
+                    stress[1][1]-=(pS[0][0]+pS[1][1]+pS[2][2])*lambdaCell[k];
+                    stress[2][2]-=(pS[0][0]+pS[1][1]+pS[2][2])*lambdaCell[k];
+                  }
+
+                devStress[k] = stress;
+                const T trace = stress[0][0]+stress[1][1]+stress[2][2];
+                (devStress[k])[0][0] =  (devStress[k])[0][0] - onethird*trace;
+                (devStress[k])[1][1] =  (devStress[k])[1][1] - onethird*trace;
+                (devStress[k])[2][2] =  (devStress[k])[2][2] - onethird*trace;
+
+                VMStress[k] = sqrt(half*(pow((stress[0][0]-stress[1][1]),2.0) +
+                                         pow((stress[1][1]-stress[2][2]),2.0) +
+                                         pow((stress[2][2]-stress[0][0]),2.0) +
+                                         six*(pow((stress[0][1]),2.0) +
+                                              pow((stress[1][2]),2.0) +
+                                              pow((stress[2][0]),2.0))));
+              }
+          }
+        else
+          {
+            for(int k=0; k<nCells; k++)
+              {
+                const VGradType& wg = wGradCell[k];
+                VGradType wgPlusTranspose = wGradCell[k];
+                VGradType stress = wGradCell[k];
+                const VGradType pS = plasticStrainCell[k];
+
+                for(int i=0;i<3;i++)
+                  for(int j=0;j<3;j++)
+                    wgPlusTranspose[i][j] += wg[j][i];
+
+                stress[0][0] = wgPlusTranspose[0][0]*muCell[k]-
+                  two*pS[0][0]*muCell[k]+
+                  (wg[0][0]+wg[1][1]+wg[2][2])*lambdaCell[k];
+                stress[0][1] = wgPlusTranspose[0][1]*muCell[k]-
+                  two*pS[0][1]*muCell[k];
+                stress[0][2] = wgPlusTranspose[0][2]*muCell[k]-
+                  two*pS[0][2]*muCell[k];
+
+                stress[1][0] = wgPlusTranspose[1][0]*muCell[k]-
+                  two*pS[1][0]*muCell[k];
+                stress[1][1] = wgPlusTranspose[1][1]*muCell[k]-
+                  two*pS[1][1]*muCell[k]+
+                  (wg[0][0]+wg[1][1]+wg[2][2])*lambdaCell[k];
+                stress[1][2] = wgPlusTranspose[1][2]*muCell[k]-
+                  two*pS[1][2]*muCell[k];
+
+
+                if(_options.creepModel!=3)
+                  {
+                    stress[0][0]+=(pS[2][2])*lambdaCell[k];
+                    stress[1][1]+=(pS[2][2])*lambdaCell[k];
+                  }
+
+                stress[2][0] = zero;
+                stress[2][1] = zero;
+                stress[2][2] = zero;
+
+                devStress[k] = stress;
+                const T trace = stress[0][0]+stress[1][1]+stress[2][2];
+                (devStress[k])[0][0] =  (devStress[k])[0][0] - onethird*trace;
+                (devStress[k])[1][1] =  (devStress[k])[1][1] - onethird*trace;
+                (devStress[k])[2][2] =  (devStress[k])[2][2] - onethird*trace;
+                //devStress[k][2][2] = zero;
+                /*
+                VMStress[k] = sqrt((three/two)*(pow(devStress[k][0][0],2.0) +
+                                                pow(devStress[k][1][1],2.0) +
+                                                pow(devStress[k][2][2],2.0) +
+                                                two*(pow((devStress[k][0][1]),2.0) +
+                                                     pow((devStress[k][1][2]),2.0) +
+                                                     pow((devStress[k][2][0]),2.0))));
+		*/
+                VMStress[k] = sqrt(half*(pow((stress[0][0]-stress[1][1]),2.0) +
+                                         pow((stress[1][1]-stress[2][2]),2.0) +
+                                         pow((stress[2][2]-stress[0][0]),2.0) +
+                                         six*(pow((stress[0][1]),2.0) +
+                                              pow((stress[1][2]),2.0) +
+                                              pow((stress[2][0]),2.0))));
+
+              }       
+          }
+      }
+  }
   
   void initDeformationLinearization(LinearSystem& ls)
   {
@@ -640,32 +940,66 @@ public:
   {
     _deformationGradientModel.compute();
     DiscrList discretizations;
-            
-    shared_ptr<Discretization>
-      sd(new StructureSourceDiscretization<T,DiagTensorT3,DiagTensorT3>
-         (_meshes,_geomFields,
-          _structureFields.deformation,
-          _structureFields.eta,
-	  _structureFields.eta1,
-	  _structureFields.alpha,
-          _structureFields.deformationGradient,
-          _structureFields.temperature,
-          _options["operatingTemperature"],
-	  _options["residualXXStress"],
-	  _options["residualYYStress"],
-	  _options["residualZZStress"],
-	  _options.thermo,
-	  _options.residualStress));
-      
-    //    shared_ptr<Discretization>
-    //  bfd(new SourceDiscretization<VectorT3>
-    //     (_meshes,_geomFields,
-    //    _structureFields.deformation,
-    //    _structureFields.bodyForce));
-
-    discretizations.push_back(sd);
-    //discretizations.push_back(bfd);
     
+    if(!_options.creep)
+    {        
+	shared_ptr<Discretization>
+	  sd(new StructureSourceDiscretization<T,DiagTensorT3,DiagTensorT3>
+	     (_meshes,_geomFields,
+	      _structureFields.deformation,
+	      _structureFields.eta,
+	      _structureFields.eta1,
+	      _structureFields.alpha,
+	      _structureFields.deformationGradient,
+	      _structureFields.temperature,
+	      _options["operatingTemperature"],
+	      _options["residualXXStress"],
+	      _options["residualYYStress"],
+	      _options["residualZZStress"],
+	      _options.thermo,
+	      _options.residualStress));
+      
+	//    shared_ptr<Discretization>
+	//  bfd(new SourceDiscretization<VectorT3>
+	//     (_meshes,_geomFields,
+	//    _structureFields.deformation,
+	//    _structureFields.bodyForce));
+
+	discretizations.push_back(sd);
+	//discretizations.push_back(bfd);
+    }
+   
+    if (_options.creep)
+    {
+        shared_ptr<Discretization>
+          scd(new StructurePlasticDiscretization<T,DiagTensorT3,DiagTensorT3>
+              (_meshes,_geomFields,
+               _structureFields.deformation,
+               _structureFields.eta,
+               _structureFields.eta1,
+	       _structureFields.alpha,
+               _structureFields.deformationGradient,
+	       _structureFields.temperature,
+	       _options["operatingTemperature"],
+	       _options["residualXXStress"],
+	       _options["residualYYStress"],
+	       _options["residualZZStress"],
+	       _options.thermo,
+	       _options.residualStress,
+               _structureFields.devStress,
+               _structureFields.VMStress,
+               _structureFields.plasticStrain,
+               _options.A,
+               _options.B,
+               _options.m,
+               _options.n,
+               _options.Sy0,
+               _options["timeStep"],
+               _options.creepModel));
+
+        discretizations.push_back(scd);
+    }
+ 
     if (_options.transient && !explicitMode)
     {
         shared_ptr<Discretization>
@@ -1006,6 +1340,9 @@ public:
       const VGradArray& wGrad =
         dynamic_cast<const VGradArray&>(_structureFields.deformationGradient[cells]);
 
+      const VGradArray& plasticStrainCell =
+        dynamic_cast<VGradArray&>(_structureFields.plasticStrain[cells]);
+
       const TArray& eta = dynamic_cast<const TArray&>(_structureFields.eta[cells]);
       const TArray& eta1 = dynamic_cast<const TArray&>(_structureFields.eta1[cells]);
       const TArray& alpha = dynamic_cast<const TArray&>(_structureFields.alpha[cells]);
@@ -1020,6 +1357,7 @@ public:
       {
 	  const VGradType& wg = wGrad[n];
 	  VGradType wgPlusTranspose = wGrad[n];
+	  const VGradType& pS =  plasticStrainCell[n];
 	  	  	    
 	  for(int i=0;i<3;i++)
 	    for(int j=0;j<3;j++)
@@ -1062,10 +1400,96 @@ public:
 	      }
 	  }
 
+          if(_options.creep)
+          {
+              tractionX[n][0]-=(two*eta[n]*pS[0][0] + 
+                                (pS[0][0] + pS[1][1])*eta1[n]);
+              tractionX[n][1]-=(two*eta[n]*pS[0][1]);
+              tractionX[n][2]-=(two*eta[n]*pS[0][2]);
+
+              tractionY[n][0]-=(two*eta[n]*pS[1][0]);
+              tractionY[n][1]-=(two*eta[n]*pS[1][1] +
+                                (pS[0][0] + pS[1][1])*eta1[n]);
+              tractionY[n][2]-=(two*eta[n]*pS[1][2]);
+	  }
+
           if (mesh.getDimension() == 2)
           {
               tractionZ[n] = zero;
 	  }
+      }
+  }
+
+  void getStrain(const Mesh& mesh)
+  {
+    const StorageSite& cells = mesh.getCells();
+
+    const int nCells = cells.getSelfCount();
+
+    shared_ptr<VectorT3Array> strainXPtr(new VectorT3Array(nCells));
+    strainXPtr->zero();
+    _structureFields.strainX.addArray(cells,strainXPtr);
+    VectorT3Array& strainX = *strainXPtr;
+
+    shared_ptr<VectorT3Array> strainYPtr(new VectorT3Array(nCells));
+    strainYPtr->zero();
+    _structureFields.strainY.addArray(cells,strainYPtr);
+    VectorT3Array& strainY = *strainYPtr;
+
+    shared_ptr<VectorT3Array> strainZPtr(new VectorT3Array(nCells));
+    strainZPtr->zero();
+    _structureFields.strainZ.addArray(cells,strainZPtr);
+    VectorT3Array& strainZ = *strainZPtr;
+
+    _deformationGradientModel.compute();
+
+    const VGradArray& wGrad =
+      dynamic_cast<const VGradArray&>(_structureFields.deformationGradient[cells]);
+    
+    const T half(1./2.);
+    
+    for(int n=0; n<nCells; n++)
+      {
+        const VGradType& wg = wGrad[n];
+        VGradType wgPlusTranspose = wGrad[n];
+
+        for(int i=0;i<3;i++)
+          for(int j=0;j<3;j++)
+            wgPlusTranspose[i][j] += wg[j][i];
+
+        strainX[n][0] = half*wgPlusTranspose[0][0];
+        strainX[n][1] = half*wgPlusTranspose[0][1];
+        strainX[n][2] = half*wgPlusTranspose[0][2];
+
+        strainY[n][0] = half*wgPlusTranspose[1][0];
+        strainY[n][1] = half*wgPlusTranspose[1][1];
+        strainY[n][2] = half*wgPlusTranspose[1][2];
+
+        strainZ[n][0] = half*wgPlusTranspose[2][0];
+        strainZ[n][1] = half*wgPlusTranspose[2][1];
+        strainZ[n][2] = half*wgPlusTranspose[2][2];
+      }
+  }
+
+  void getPlasticDiagStrain(const Mesh& mesh)
+  {
+    const StorageSite& cells = mesh.getCells();
+
+    const int nCells = cells.getSelfCount();
+
+    shared_ptr<VectorT3Array> plasticDiagStrainPtr(new VectorT3Array(nCells));
+    plasticDiagStrainPtr->zero();
+    _structureFields.plasticDiagStrain.addArray(cells,plasticDiagStrainPtr);
+    VectorT3Array& plasticDiagStrain = *plasticDiagStrainPtr;
+
+    const VGradArray& plasticStrain =
+      dynamic_cast<const VGradArray&>(_structureFields.plasticStrain[cells]);
+
+    for(int n=0; n<nCells; n++)
+      {
+        plasticDiagStrain[n][0]=plasticStrain[n][0][0];
+        plasticDiagStrain[n][1]=plasticStrain[n][1][1];
+        plasticDiagStrain[n][2]=plasticStrain[n][0][1];
       }
   }
 
@@ -1309,6 +1733,33 @@ StructureModel<T>::finishExplicitAdvance()
   return _impl->finishExplicitAdvance();
 }
 
+template<class T>
+void
+StructureModel<T>::creepInit()
+{
+  _impl->creepInit();
+}
+
+template<class T>
+void
+StructureModel<T>::computeVMStress()
+{
+  _impl->computeVMStress();
+}
+
+template<class T>
+void
+StructureModel<T>::getStrain(const Mesh& mesh)
+{
+  return  _impl->getStrain(mesh);
+}
+
+template<class T>
+void
+StructureModel<T>::getPlasticDiagStrain(const Mesh& mesh)
+{
+  return  _impl->getPlasticDiagStrain(mesh);
+}
 
 template<class T>
 void
