@@ -86,6 +86,7 @@ struct ElectricModelOptions : public FloatVarDict<T>
     this->defineVar("timeStep",T(0.1));
     this->defineVar("Interface_A_coeff",T(1.0));
     this->defineVar("Interface_B_coeff",T(0.0));
+    this->defineVar("ButlerVolmerRRConstant",T(5.0e-7));
     this->ButlerVolmer = false;
     this->electrostaticsTolerance=1e-8;
     this->chargetransportTolerance=1e-8;

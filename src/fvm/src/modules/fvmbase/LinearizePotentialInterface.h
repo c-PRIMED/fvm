@@ -29,12 +29,16 @@ template<class X, class Diag, class OffDiag>
   typedef Array<VectorT3> VectorT3Array;
  
 
- LinearizePotentialInterface(const T_Scalar A_coeff, 
-			     const T_Scalar B_coeff,
+ LinearizePotentialInterface(const GeomFields& geomFields,
 			     Field& varField,
-			     Field& speciesConcentrationField):
-  _varField(varField),
+			     Field& speciesConcentrationField,
+			     const T_Scalar RRConstant,
+			     const T_Scalar A_coeff, 
+			     const T_Scalar B_coeff):
+    _geomFields(geomFields),
+    _varField(varField),
     _speciesConcentrationField(speciesConcentrationField),
+    _RRConstant(RRConstant),
     _A_coeff(A_coeff),
     _B_coeff(B_coeff)
     {}
@@ -71,6 +75,8 @@ template<class X, class Diag, class OffDiag>
     XArray& rParentCell = dynamic_cast<XArray&>(rField[cVarIndexParent]);
     CCMatrix& parentmatrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndexParent,cVarIndexParent)); 
     DiagArray& parentdiag = parentmatrix.getDiag();
+    const TArray& faceAreaMag =
+      dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
 
     // other mesh info
     const StorageSite& otherFaces = mesh.getOtherFaceGroupSite();
@@ -122,15 +128,16 @@ template<class X, class Diag, class OffDiag>
 	const int c2 = cellCells(f,1);
 	const int c3 = cellCells(f,2);
 
-	const T_Scalar k = 1.0e-09;
-	const T_Scalar csMax = 26000.0;
+	const T_Scalar Area = faceAreaMag[c0];
+	const T_Scalar F = 96485.0; //  C/mol
+	const T_Scalar k = _RRConstant*F; // m/s * C/mol
+	const T_Scalar csMax = 26000.0;// mol/m^3
 	const T_Scalar alpha_a = 0.5;
 	const T_Scalar alpha_c = 0.5;
-	const T_Scalar F = 96485.0; //  C/mol
 	const T_Scalar R = 8.314; //  J/mol/K
 	const T_Scalar Temp = 300.0; //  K
 	const T_Scalar U_ref = 0.1; // V 
-	//const T_Scalar i0_star = k*pow(_B_coeff,alpha_a)*pow((csMax-_A_coeff),alpha_a)*pow(_A_coeff,alpha_c);
+
 	T_Scalar Ce_star = eSpecConcCell[c0];
 	T_Scalar Cs_star = eSpecConcCell[c1];
        
@@ -145,7 +152,9 @@ template<class X, class Diag, class OffDiag>
 	  }
 	if (Cs_star > csMax){ Cs_star = 0.9*csMax; cout << "ERROR: Cs > CsMax" << endl;}
 
-	const T_Scalar i0_star = k*pow(Ce_star,alpha_a)*pow((csMax-Cs_star),alpha_a)*pow(Cs_star,alpha_c);
+	const T_Scalar i0_star = k*Area*pow(Ce_star,alpha_c)*pow((csMax-Cs_star),alpha_a);
+	//const T_Scalar i0_star = k*Area*pow(_B_coeff,alpha_a)*pow((csMax-_A_coeff),alpha_a)*pow(_A_coeff,alpha_c);
+
 	const T_Scalar C_a = alpha_a*F/R/Temp;
 	const T_Scalar C_c = alpha_c*F/R/Temp;
 	const T_Scalar Phis_star = xCell[c1];
@@ -200,8 +209,10 @@ template<class X, class Diag, class OffDiag>
   }
  private:
   
+  const GeomFields& _geomFields;
   Field& _varField;
   Field& _speciesConcentrationField;
+  const T_Scalar _RRConstant;
   const T_Scalar _A_coeff;
   const T_Scalar _B_coeff;
   

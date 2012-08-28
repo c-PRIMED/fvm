@@ -8,7 +8,7 @@ import fvm.exporters_atyped_double as exporters
 from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 
-reader = FluentCase("../test/TwoMaterialTest.cas")
+reader = FluentCase("../test/RadialTransfer.cas")
 reader.read();
 meshes_case = reader.getMeshList()
 
@@ -20,7 +20,7 @@ meshes_case = reader.getMeshList()
 # parent has to be electrolyte, other has to be solid electrode 
 # for B-V equations to work
 
-interfaceID = 9
+interfaceID = 4
 shellmesh = meshes_case[1].createDoubleShell(interfaceID, meshes_case[0], interfaceID)
 meshes = [meshes_case[0], meshes_case[1], shellmesh]
 
@@ -35,34 +35,20 @@ smodel = models.SpeciesModelA(geomFields,meshes,nSpecies)
 bcmap = smodel.getBCMap(0)
 vcmap = smodel.getVCMap(0)
 
-vcRightZone = vcmap[0] # solid electrode
-vcLeftZone = vcmap[1] # electrolyte
+vcElectrode = vcmap[0] # solid electrode on right
+vcElectrolyte = vcmap[1] # electrolyte on left
 
-vcRightZone['massDiffusivity'] = 1.e-9
-vcLeftZone['massDiffusivity'] = 1.e-9
+vcElectrode['massDiffusivity'] = 1.e-13
+vcElectrolyte['massDiffusivity'] = 2.66e-9
 
-bcLeft = bcmap[6]
-bcTop1 = bcmap[8]
-bcTop2 = bcmap[7]
-bcBottom1 = bcmap[4]
-bcBottom2 = bcmap[1]
-bcRight = bcmap[5]
+bcLeft = bcmap[5]
+bcRight = bcmap[6]
 
 #Dirichlet on Left,Right
 bcLeft.bcType = 'SpecifiedMassFraction'
 bcRight.bcType = 'SpecifiedMassFraction'
-bcLeft.setVar('specifiedMassFraction', 0.0)
-bcRight.setVar('specifiedMassFraction', 1000.0)
-
-# Neumann on Bottom,Top
-bcBottom1.bcType = 'SpecifiedMassFlux'
-bcBottom1.setVar('specifiedMassFlux', 0.0)
-bcTop1.bcType = 'SpecifiedMassFlux'
-bcTop1.setVar('specifiedMassFlux', 0.0)
-bcBottom2.bcType = 'SpecifiedMassFlux'
-bcBottom2.setVar('specifiedMassFlux', 0.0)
-bcTop2.bcType = 'SpecifiedMassFlux'
-bcTop2.setVar('specifiedMassFlux', 0.0)
+bcLeft.setVar('specifiedMassFraction', 5000.0)
+bcRight.setVar('specifiedMassFraction', 15000.0)
 
 soptions = smodel.getOptions()
 
@@ -70,10 +56,10 @@ soptions = smodel.getOptions()
 #soptions.setVar('A_coeff',0.72)
 #soptions.setVar('B_coeff',0.42)
 soptions.ButlerVolmer = True
-soptions.setVar('ButlerVolmerRRConstant',1.03643e-14)
+soptions.setVar('ButlerVolmerRRConstant',5.0e-7)
 soptions.setVar('interfaceUnderRelax',1.0)
-soptions.setVar('initialMassFraction0',750.0)
-soptions.setVar('initialMassFraction1',250.0)
+soptions.setVar('initialMassFraction0',15000.0)
+soptions.setVar('initialMassFraction1',5000.0)
 
 solver = fvmbaseExt.BCGStab()
 pc = fvmbaseExt.JacobiSolver()
@@ -98,38 +84,24 @@ emodel = models.ElectricModelA(geomFields,elecFields,meshes)
 bcmap2 = emodel.getBCMap()
 vcmap2 = emodel.getVCMap()
 
-vcRightZone = vcmap2[0] # solid electrode
-vcLeftZone = vcmap2[1] # electrolyte
+vcElectrode = vcmap2[0] # solid electrode on right
+vcElectrolyte = vcmap2[1] # electrolyte on left
 
-vcRightZone['dielectric_constant'] = 1.e10
-vcLeftZone['dielectric_constant'] = 1.e10
+vcElectrode['dielectric_constant'] = 4.29e11
+vcElectrolyte['dielectric_constant'] = 2.825e11
 
-bcLeft = bcmap2[6]
-bcTop1 = bcmap2[8]
-bcTop2 = bcmap2[7]
-bcBottom1 = bcmap2[4]
-bcBottom2 = bcmap2[1]
-bcRight = bcmap2[5]
+bcLeft = bcmap2[5]
+bcRight = bcmap2[6]
 
 #Dirichlet on Left,Right
 bcLeft.bcType = 'SpecifiedPotential'
 bcRight.bcType = 'SpecifiedPotential'
 bcLeft.setVar('specifiedPotential', 0.0)
-bcRight.setVar('specifiedPotential', 0.89754)
-
-# Neumann on Bottom,Top
-bcBottom1.bcType = 'SpecifiedPotentialFlux'
-bcBottom1.setVar('specifiedPotentialFlux', 0.0)
-bcTop1.bcType = 'SpecifiedPotentialFlux'
-bcTop1.setVar('specifiedPotentialFlux', 0.0)
-bcBottom2.bcType = 'SpecifiedPotentialFlux'
-bcBottom2.setVar('specifiedPotentialFlux', 0.0)
-bcTop2.bcType = 'SpecifiedPotentialFlux'
-bcTop2.setVar('specifiedPotentialFlux', 0.0)
+bcRight.setVar('specifiedPotential', 0.106037515)
 
 eoptions = emodel.getOptions()
 eoptions.ButlerVolmer = True
-eoptions.setVar('ButlerVolmerRRConstant',1.03643e-14)
+eoptions.setVar('ButlerVolmerRRConstant',5.0e-7)
 
 # A = c_S    B = c_E
 #eoptions.setVar('Interface_A_coeff',615.7)
@@ -158,13 +130,13 @@ smodel.init()
 # set the species number that cooresponds to potential model (Lithium)
 speciesFields = smodel.getSpeciesFields(0)
 
-for i in range(0,50):
+for i in range(0,10):
 
    # set the species concentrations for the species of interest (Lithium)
    elecFields.speciesConcentration = speciesFields.massFraction
 
    print "POTENTIAL MODEL"
-   emodel.advance(30)
+   emodel.advance(50)
 
    #set the potential for all species   
    for j in range(0,nSpecies):
@@ -172,15 +144,19 @@ for i in range(0,50):
       sFields.elecPotential = elecFields.potential
 
    print "SPECIES MODEL"
-   smodel.advance(30)
+   smodel.advance(25)
 
 mesh = meshes[1]
-massFlux = smodel.getMassFluxIntegral(mesh,6,0)
+massFlux = smodel.getMassFluxIntegral(mesh,5,0)
+massFlux2 = smodel.getMassFluxIntegral(mesh,4,0)
 print massFlux
-mesh = meshes[0]
-massFlux2 = smodel.getMassFluxIntegral(mesh,5,0)
 print massFlux2
 
+mesh = meshes[0]
+massFlux3 = smodel.getMassFluxIntegral(mesh,6,0)
+massFlux4 = smodel.getMassFluxIntegral(mesh,4,0)
+print massFlux3
+print massFlux4
 
 writer = exporters.VTKWriterA(geomFields,meshes_case,"testSpeciesModel.vtk",
                                          "TestSpecies",False,0)

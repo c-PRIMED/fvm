@@ -29,13 +29,17 @@ template<class X, class Diag, class OffDiag>
   typedef Array<VectorT3> VectorT3Array;
  
 
- LinearizeSpeciesInterface(const T_Scalar A_coeff, 
+ LinearizeSpeciesInterface(const GeomFields& geomFields,
+			   const T_Scalar RRConstant,
+			   const T_Scalar A_coeff, 
 			   const T_Scalar B_coeff,
 			   const T_Scalar interfaceUnderRelax,
 			   Field& varField,
 			   Field& elecPotentialField):
-  _varField(varField),
+    _geomFields(geomFields),
+    _varField(varField),
     _elecPotentialField(elecPotentialField),
+    _RRConstant(RRConstant),
     _A_coeff(A_coeff),
     _B_coeff(B_coeff),
     _interfaceUnderRelax(interfaceUnderRelax)
@@ -73,6 +77,8 @@ template<class X, class Diag, class OffDiag>
     XArray& rParentCell = dynamic_cast<XArray&>(rField[cVarIndexParent]);
     CCMatrix& parentmatrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndexParent,cVarIndexParent)); 
     DiagArray& parentdiag = parentmatrix.getDiag();
+    const TArray& faceAreaMag =
+      dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
 
     // other mesh info
     const StorageSite& otherFaces = mesh.getOtherFaceGroupSite();
@@ -124,11 +130,12 @@ template<class X, class Diag, class OffDiag>
 	const int c2 = cellCells(f,1);
 	const int c3 = cellCells(f,2);
 
-	const T_Scalar k = 1.e-9;
+	const T_Scalar Area = faceAreaMag[c0];
+	const T_Scalar F = 96485.0; //  C/mol
+	const T_Scalar k = _RRConstant*F;   //5.e-7*F;
 	const T_Scalar csMax = 26000.0;
 	const T_Scalar alpha_a = 0.5;
 	const T_Scalar alpha_c = 0.5;
-	const T_Scalar F = 96485.0; //  C/mol
 	const T_Scalar R = 8.314; //  J/mol/K
 	const T_Scalar Temp = 300.0; //  K
 	const T_Scalar U_ref = 0.1; // V
@@ -139,11 +146,11 @@ template<class X, class Diag, class OffDiag>
 	T_Scalar ce_star = xCell[c0];
 
 	// avoid nans
-	if (cs_star < 0.0){ cs_star = 1.0; cout << "ERROR: Cs < 0" << endl;}
+	if (cs_star < 0.0){ cs_star = 1.0; cout << "ERROR: Cs < 0, Cs=" << cs_star << endl;}
 	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 1.0;}
-	if (cs_star > csMax){ cs_star = 0.9*csMax; cout << "ERROR: Cs > CsMax" << endl;}
+	if (cs_star > csMax){ cs_star = 0.99*csMax; cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl;}
 
-	const T_Scalar i_star = C_0*k*pow(ce_star,alpha_a)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
+	const T_Scalar i_star = C_0*k*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a);
 
 	// avoid blowups
 	if (cs_star == 0.0){
@@ -154,8 +161,8 @@ template<class X, class Diag, class OffDiag>
 	  ce_star+=0.001; cout << "ERROR: Ce = 0" << endl;}
 	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
 
-	const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star));
-	const T_Scalar dIdCE_star = i_star*alpha_a/ce_star;
+	const T_Scalar dIdCS_star = i_star*(-1.0)*alpha_a/(csMax-cs_star);
+	const T_Scalar dIdCE_star = i_star*alpha_c/ce_star;
 
 	// left(parent) shell cell - 3 neighbors
 	// flux balance
@@ -163,11 +170,11 @@ template<class X, class Diag, class OffDiag>
 	OffDiag& offdiagC0_C2 = matrix.getCoeff(c0,  c2);
 	OffDiag& offdiagC0_C3 = matrix.getCoeff(c0,  c3);
 
-	rCell[c0] = otherFlux + parentFlux;
-	offdiagC0_C1 = dRC0dXC1;
-	offdiagC0_C3 = dRC0dXC3;
-	offdiagC0_C2 = dRC0dXC2;
-	diag[c0] = dRC0dXC0;
+	rCell[c0] = otherFlux*F + parentFlux*F;
+	offdiagC0_C1 = dRC0dXC1*F;
+	offdiagC0_C3 = dRC0dXC3*F;
+	offdiagC0_C2 = dRC0dXC2*F;
+	diag[c0] = dRC0dXC0*F;
 
 	// right(other) shell cell - 2 neighbors
 	// jump condition
@@ -206,8 +213,10 @@ template<class X, class Diag, class OffDiag>
   }
  private:
   
+  const GeomFields& _geomFields;
   Field& _varField;
   Field& _elecPotentialField;
+  const T_Scalar _RRConstant;
   const T_Scalar _A_coeff;
   const T_Scalar _B_coeff;
   const T_Scalar _interfaceUnderRelax;

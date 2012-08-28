@@ -127,13 +127,34 @@ public:
 	  }
 	else if (n==1)
 	  {
-	    *mFCell = _options["initialMassFraction1"];;
+	    *mFCell = _options["initialMassFraction1"];
 	  }
 	else
 	  {
 	    *mFCell =_options["initialMassFraction0"];
 	  }
 	
+	if (mesh.isDoubleShell())
+	  {
+	    char parentInitial[21];
+	    char otherInitial[21];
+	    sprintf(parentInitial, "initialMassFraction%d", mesh.getParentMeshID());
+	    sprintf(otherInitial, "initialMassFraction%d", mesh.getOtherMeshID());
+
+	    for (int c=0; c<cells.getSelfCount(); c++)
+	      {
+		if (c < cells.getSelfCount()/2)
+		  {
+		    (*mFCell)[c] = _options[parentInitial];
+		  }
+		else
+		  {
+		    (*mFCell)[c] = _options[otherInitial];
+		  }
+	      }
+	  }
+
+
 	//*mFCell = _options["initialMassFraction"];
 
 	/* //Initialize to 1-D linear solution in x direction
@@ -421,11 +442,13 @@ public:
 	  
 	    if (_options.ButlerVolmer)
 	      {
-		LinearizeSpeciesInterface<T, T, T> lbv (_options["A_coeff"],
-					       _options["B_coeff"],
-					       _options["interfaceUnderRelax"],
-						  sFields.massFraction,
-						  sFields.elecPotential);
+		LinearizeSpeciesInterface<T, T, T> lbv (_geomFields,
+							_options["ButlerVolmerRRConstant"],
+							_options["A_coeff"],
+							_options["B_coeff"],
+							_options["interfaceUnderRelax"],
+							sFields.massFraction,
+							sFields.elecPotential);
 
 		lbv.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 
@@ -541,6 +564,23 @@ public:
             found=true;
         }
     }
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+	  {
+            const StorageSite& faces = fg.site;
+            const int nFaces = faces.getCount();
+            const TArray& massFlux =
+              dynamic_cast<const TArray&>(sFields.massFlux[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += massFlux[f];
+            found=true;
+	  }
+    }
+
+
     if (!found)
       throw CException("getMassFluxIntegral: invalid faceGroupID");
     return r;

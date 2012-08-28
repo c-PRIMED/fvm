@@ -607,10 +607,12 @@ public:
 
 	  if (_options.ButlerVolmer)
 	    {
-	      LinearizePotentialInterface<T, T, T> lbv (_options["Interface_A_coeff"],
-							_options["Interface_B_coeff"],
+	      LinearizePotentialInterface<T, T, T> lbv (_geomFields,
 							_electricFields.potential,
-							_electricFields.speciesConcentration);
+							_electricFields.speciesConcentration,
+							_options["ButlerVolmerRRConstant"],
+							_options["Interface_A_coeff"],
+							_options["Interface_B_coeff"]);
 
 	      lbv.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	    }
