@@ -18,7 +18,7 @@ public:
   void recalculate();
   void updateTime();
   void recalculate_deform();
-  void computeIBInterpolationMatrices(const StorageSite& particles);
+  void computeIBInterpolationMatrices(const StorageSite& particles, const int option);
   void computeIBInterpolationMatricesCells();
   
   void eraseIBInterpolationMatrices(const StorageSite& particles);

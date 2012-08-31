@@ -460,7 +460,8 @@ template<class T>
 void
 MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 (const Mesh& mesh,
- const StorageSite& mpmParticles)
+ const StorageSite& mpmParticles, 
+ const int option=0)
 {
   if (mesh.isShell() || mesh.getIBFaces().getCount()==0)
   	return;
@@ -629,7 +630,8 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
             
       // linear least square interpolation if the matrix is not singular
       //if (nnb >=10){
-      if (fabs(det) > 1.0 ){  
+      //if (fabs(det) > 1.0 ){  
+      if (option == 0) {
 	if(is2D){
 	  QQinv = inverse(QQ);
 	  for(int i=0; i<3; i++){
@@ -719,8 +721,8 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 	
       }   
 
-      
-      else {     //if matrix is singular, use distance weighted interpolation
+      if (option == 1) 
+      {     //if matrix is singular, use distance weighted interpolation
 	//cout << "warning: IBM interpolation switched to distance weighted method for face " << f << endl;
 	//cout << xFaces[f][0] << " " << xFaces[f][1] << " " << xFaces[f][2] << " " << endl;
 	for(int nc=ibFCRow[n]; nc<ibFCRow[n+1]; nc++)
@@ -2362,13 +2364,13 @@ MeshMetricsCalculator<T>::computeIBandSolidInterpolationMatrices
 
 template<class T>
 void
-MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p)
+MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p, const int option=0)
 {
   const int numMeshes = _meshes.size();
   for (int n=0; n<numMeshes; n++)
   {
       const Mesh& mesh = *_meshes[n];
-      computeIBInterpolationMatrices(mesh,p);
+      computeIBInterpolationMatrices(mesh,p, option);
   }
 }
 template<class T>
