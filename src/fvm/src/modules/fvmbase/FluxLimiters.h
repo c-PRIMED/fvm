@@ -21,7 +21,11 @@ T vanAlbada1(const T r)
 
 template<class T>
 T ospre(const T r)
-{return 1.5*(pow(r,2)+r)/(pow(r,2)+r+1.);}
+{
+  if(r>0)
+    return 1.5*(pow(r,2)+r)/(pow(r,2)+r+1.);
+  return 0.;
+}
 
 
 #endif
