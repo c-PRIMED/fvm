@@ -4,7 +4,7 @@ class Scipy(BuildPkg):
     requires = ['numpy', 'python', 'umfpack']
 
     def _installed(self):
-        return python_package('scipy', [0,7,1])
+        return python_package('scipy', [0,11])
 
     def _install(self):
         do_env("LDFLAGS=")

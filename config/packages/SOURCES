@@ -1,6 +1,6 @@
 Python   pkgs/Python-2.7.3.tar.bz2
-Numpy    pkgs/numpy-1.5.1.tar.bz2
-Ipython  pkgs/ipython-0.12.1.tar.gz
+Numpy    pkgs/numpy-1.6.2.tar.gz
+Ipython  pkgs/ipython-0.13.tar.gz
 Mpi4py   pkgs/mpi4py-1.3.tar.bz2
 Nose     pkgs/nose-0.11.0.tar.gz
 Scons    pkgs/scons-local-1.2.0.tar.gz
@@ -18,10 +18,9 @@ MEMOSA   src/MEMOSA
 Puq      src/puq
 Hdf5	 pkgs/hdf5-1.8.4.tar.bz2
 Matplotlib	pkgs/matplotlib-1.1.0.tar.gz
-Scipy		pkgs/scipy-0.9.0.tar.gz
+Scipy		pkgs/scipy-0.11.0rc2.tar.gz
 Pygsl	pkgs/pygsl-0.9.5.tar.gz
 Gsl		pkgs/gsl-1.14.tar.gz
-Pystatistics pkgs/statistics-0.19.tar.gz
 Cgal	pkgs/CGAL-3.6.tar.gz
 Sympy	pkgs/sympy-0.7.1.tar.gz
 Time	pkgs/time-1.7.tar.gz
