@@ -34,15 +34,21 @@ template<class X, class Diag, class OffDiag>
 			   const T_Scalar A_coeff, 
 			   const T_Scalar B_coeff,
 			   const T_Scalar interfaceUnderRelax,
+			   const bool Anode,
+			   const bool Cathode,
 			   Field& varField,
+			   Field& mFN1,
 			   Field& elecPotentialField):
     _geomFields(geomFields),
     _varField(varField),
+    _mFN1(mFN1),
     _elecPotentialField(elecPotentialField),
     _RRConstant(RRConstant),
     _A_coeff(A_coeff),
     _B_coeff(B_coeff),
-    _interfaceUnderRelax(interfaceUnderRelax)
+    _interfaceUnderRelax(interfaceUnderRelax),
+    _Anode(Anode),
+    _Cathode(Cathode)
     {}
 
 
@@ -52,6 +58,10 @@ template<class X, class Diag, class OffDiag>
   {
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getParentFaceGroupSite();
+
+    // previous timestep shell mesh info
+    const XArray& PrevConc =
+      dynamic_cast<const XArray&>(_mFN1[cells]);
 
     // shell mesh info
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
@@ -88,6 +98,21 @@ template<class X, class Diag, class OffDiag>
     XArray& rOtherCell = dynamic_cast<XArray&>(rField[cVarIndexOther]);
     CCMatrix& othermatrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndexOther,cVarIndexOther)); 
     DiagArray& otherdiag = othermatrix.getDiag();
+
+    // set constants for entire shell
+    const T_Scalar F = 96485.0; //  C/mol
+    T_Scalar k = _RRConstant*F;   //m/s*C/mol;
+    T_Scalar csMax = 26000.0;
+    if (_Anode){
+      k = _RRConstant*F/5.0;
+      csMax = 26390.0;}
+    if (_Cathode){
+      k = _RRConstant*F;
+      csMax = 22860.0;}
+    const T_Scalar alpha_a = 0.5;
+    const T_Scalar alpha_c = 0.5;
+    const T_Scalar R = 8.314; //  J/mol/K
+    const T_Scalar Temp = 300.0; //  K
 
     for (int f=0; f<faces.getCount(); f++)
       {
@@ -131,26 +156,17 @@ template<class X, class Diag, class OffDiag>
 	const int c3 = cellCells(f,2);
 
 	const T_Scalar Area = faceAreaMag[c0];
-	const T_Scalar F = 96485.0; //  C/mol
-	const T_Scalar k = _RRConstant*F;   //5.e-7*F;
-	const T_Scalar csMax = 26000.0;
-	const T_Scalar alpha_a = 0.5;
-	const T_Scalar alpha_c = 0.5;
-	const T_Scalar R = 8.314; //  J/mol/K
-	const T_Scalar Temp = 300.0; //  K
-	const T_Scalar U_ref = 0.1; // V
-	const T_Scalar eta_star = ePotCell[c1] - ePotCell[c0] - U_ref;
-	//const T_Scalar eta_star = _A_coeff - _B_coeff - U_ref;
-	T_Scalar C_0 = exp(alpha_a*F*eta_star/R/Temp)-exp(-1.0*alpha_c*F*eta_star/R/Temp);
+
 	T_Scalar cs_star = xCell[c1];
 	T_Scalar ce_star = xCell[c0];
+
+	//cout << "cs_now: " << xCell[c1] << " Cs_Prev: " << PrevConc[c1] << endl;
+
 
 	// avoid nans
 	if (cs_star < 0.0){ cs_star = 1.0; cout << "ERROR: Cs < 0, Cs=" << cs_star << endl;}
 	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 1.0;}
 	if (cs_star > csMax){ cs_star = 0.99*csMax; cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl;}
-
-	const T_Scalar i_star = C_0*k*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a);
 
 	// avoid blowups
 	if (cs_star == 0.0){
@@ -159,6 +175,38 @@ template<class X, class Diag, class OffDiag>
 	  cs_star-=1; cout << "ERROR: Cs = CsMax" << endl;}
 	if (ce_star == 0.0){
 	  ce_star+=0.001; cout << "ERROR: Ce = 0" << endl;}
+
+	const T_Scalar SOC = xCell[cellCells(0,0)]/csMax;
+	T_Scalar U_ref = 0.1; // V
+	if (_Anode){
+	  U_ref = -0.16 + 1.32*exp(-3.0*SOC)+10.0*exp(-2000.0*SOC);
+	  if (U_ref < 0.0)
+	    {U_ref = 0.0; cout << "U_ref < 0" << endl;}
+	  if (U_ref > 1.2)
+	    {U_ref = 1.2; cout << "U_ref > 1.2" << endl;}
+	    }
+	if (_Cathode){
+	  U_ref = 4.19829 + 0.0565661*tanh(-14.5546*SOC + 8.60942) - 0.0275479*(1.0/pow((0.998432-SOC),0.492465) - 1.90111) - 0.157123*exp(-0.04738*pow(SOC,8.0)) + 0.810239*exp(-40.0*(SOC-0.133875));
+	  if (U_ref < 0.0)
+	    {U_ref = 0.0; cout << "U_ref < 0" << endl;}
+	  if (U_ref > 5.0)
+	    {U_ref = 5.0; cout << "U_ref > 5.0" << endl;}
+	    }
+
+	//cout << U_ref << endl;
+
+	/*if (_Anode){
+	  U_ref = 0.08;}
+	if (_Cathode){
+	  U_ref = 4.25133;}*/
+
+	const T_Scalar eta_star = ePotCell[c1] - ePotCell[c0] - U_ref;
+	//const T_Scalar eta_star = _A_coeff - _B_coeff - U_ref;
+	T_Scalar C_0 = exp(alpha_a*F*eta_star/R/Temp)-exp(-1.0*alpha_c*F*eta_star/R/Temp);
+
+	const T_Scalar i_star = C_0*k*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a);
+
+	// CURRENT SHOULD NOT BE ZERO
 	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
 
 	const T_Scalar dIdCS_star = i_star*(-1.0)*alpha_a/(csMax-cs_star);
@@ -202,12 +250,13 @@ template<class X, class Diag, class OffDiag>
 	diag[c1] = 1/_interfaceUnderRelax*diag[c1];
 
 	// some output of prevailing or starred values - useful for testing
+	/*
 	if (c0 == 0){
 	  cout << "C_0: " << C_0 << endl;
 	  cout << "C_s: " << cs_star << " C_e: " << ce_star << " i: " << i_star << " dIdCs: " << dIdCS_star << " dIdCe: " << dIdCE_star << endl;
 	  cout <<"Diag: " << diag[c1] << " dRdXc2: " << offdiagC1_C2 << " dRdXc0: " << offdiagC1_C0 << endl;
 	  cout << " " << endl;
-	}
+	  }*/
       }
 
   }
@@ -215,11 +264,14 @@ template<class X, class Diag, class OffDiag>
   
   const GeomFields& _geomFields;
   Field& _varField;
+  Field& _mFN1;
   Field& _elecPotentialField;
   const T_Scalar _RRConstant;
   const T_Scalar _A_coeff;
   const T_Scalar _B_coeff;
   const T_Scalar _interfaceUnderRelax;
+  const bool _Anode;
+  const bool _Cathode;
   
 };
 

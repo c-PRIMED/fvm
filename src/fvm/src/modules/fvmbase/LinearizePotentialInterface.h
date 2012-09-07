@@ -34,13 +34,17 @@ template<class X, class Diag, class OffDiag>
 			     Field& speciesConcentrationField,
 			     const T_Scalar RRConstant,
 			     const T_Scalar A_coeff, 
-			     const T_Scalar B_coeff):
+			     const T_Scalar B_coeff,
+			     const bool Anode,
+			     const bool Cathode):
     _geomFields(geomFields),
     _varField(varField),
     _speciesConcentrationField(speciesConcentrationField),
     _RRConstant(RRConstant),
     _A_coeff(A_coeff),
-    _B_coeff(B_coeff)
+    _B_coeff(B_coeff),
+    _Anode(Anode),
+    _Cathode(Cathode)
     {}
 
 
@@ -87,6 +91,25 @@ template<class X, class Diag, class OffDiag>
     CCMatrix& othermatrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndexOther,cVarIndexOther)); 
     DiagArray& otherdiag = othermatrix.getDiag();
 
+    // set constants for entire shell
+    const T_Scalar F = 96485.0; //  C/mol
+    T_Scalar k = _RRConstant*F; // m/s * C/mol
+    T_Scalar csMax = 26000.0;// mol/m^3
+    if (_Anode){
+      k = _RRConstant*F/5.0;
+      csMax = 26390.0;}
+    if (_Cathode){
+      k = _RRConstant*F;
+      csMax = 22860.0;}
+
+    const T_Scalar alpha_a = 0.5;
+    const T_Scalar alpha_c = 0.5;
+    const T_Scalar R = 8.314; //  J/mol/K
+    const T_Scalar Temp = 300.0; //  K
+    const T_Scalar C_a = alpha_a*F/R/Temp;
+    const T_Scalar C_c = alpha_c*F/R/Temp;
+
+
     for (int f=0; f<faces.getCount(); f++)
       {
 	//get parent mesh fluxes and coeffs
@@ -129,18 +152,11 @@ template<class X, class Diag, class OffDiag>
 	const int c3 = cellCells(f,2);
 
 	const T_Scalar Area = faceAreaMag[c0];
-	const T_Scalar F = 96485.0; //  C/mol
-	const T_Scalar k = _RRConstant*F; // m/s * C/mol
-	const T_Scalar csMax = 26000.0;// mol/m^3
-	const T_Scalar alpha_a = 0.5;
-	const T_Scalar alpha_c = 0.5;
-	const T_Scalar R = 8.314; //  J/mol/K
-	const T_Scalar Temp = 300.0; //  K
-	const T_Scalar U_ref = 0.1; // V 
-
 	T_Scalar Ce_star = eSpecConcCell[c0];
 	T_Scalar Cs_star = eSpecConcCell[c1];
        
+
+
 	//avoid nans during iterations
 	if (Ce_star < 0)
 	  {
@@ -152,14 +168,28 @@ template<class X, class Diag, class OffDiag>
 	  }
 	if (Cs_star > csMax){ Cs_star = 0.9*csMax; cout << "ERROR: Cs > CsMax" << endl;}
 
+	const T_Scalar SOC = eSpecConcCell[cellCells(0,0)]/csMax;
+	T_Scalar U_ref = 0.1; // V
+	if (_Anode){
+	  U_ref = -0.16 + 1.32*exp(-3.0*SOC)+10.0*exp(-2000.0*SOC);}
+	if (_Cathode){
+	  U_ref = 4.19829 + 0.0565661*tanh(-14.5546*SOC + 8.60942) - 0.0275479*(1.0/pow((0.998432-SOC),0.492465) - 1.90111) - 0.157123*exp(-0.04738*pow(SOC,8.0)) + 0.810239*exp(-40.0*(SOC-0.133875));}
+
+	/*if (_Anode){
+	  U_ref = 0.08;}
+	if (_Cathode){
+	  U_ref = 4.25133;}*/
+
+	//if (c0==0){cout << U_ref << endl;}
+
 	const T_Scalar i0_star = k*Area*pow(Ce_star,alpha_c)*pow((csMax-Cs_star),alpha_a);
 	//const T_Scalar i0_star = k*Area*pow(_B_coeff,alpha_a)*pow((csMax-_A_coeff),alpha_a)*pow(_A_coeff,alpha_c);
 
-	const T_Scalar C_a = alpha_a*F/R/Temp;
-	const T_Scalar C_c = alpha_c*F/R/Temp;
 	const T_Scalar Phis_star = xCell[c1];
 	const T_Scalar Phie_star = xCell[c0];
-	const T_Scalar eta_star = Phis_star-Phie_star-U_ref;
+	T_Scalar eta_star = Phis_star-Phie_star-U_ref;
+
+	//cout << eta_star << endl;
 
 	const T_Scalar i_star = i0_star*(exp(C_a*eta_star)-exp(-1*C_c*eta_star));
 	const T_Scalar dIdPhiS_star = i0_star*(C_a*exp(C_a*eta_star)+C_c*exp(-1*C_c*eta_star));
@@ -198,12 +228,15 @@ template<class X, class Diag, class OffDiag>
 	offdiagC1_C3 = 0.0;
 
 	// some output of prevailing values once per shell - useful for testing
+	/*
 	if (c0 == 0){
 	  cout << "i0_star: " << i0_star << endl;
 	  cout << "Phi_s: " << Phis_star << " Phi_e: " << Phie_star << " i: " << i_star << " Flux: " << otherFlux << " dIdPhis: " << dIdPhiS_star << " dIdPhie: " << dIdPhiE_star << endl;
 	  cout <<"Diag: " << diag[c1] << " dRdXc2: " << offdiagC1_C2 << " dRdXc0: " << offdiagC1_C0 << endl;
 	  cout << " " << endl;
-	}
+	  }*/
+
+	//cout << "ParentFlux: " << parentFlux << "  otherFlux: " << otherFlux << endl;
       }
 
   }
@@ -215,7 +248,9 @@ template<class X, class Diag, class OffDiag>
   const T_Scalar _RRConstant;
   const T_Scalar _A_coeff;
   const T_Scalar _B_coeff;
-  
+  const bool _Anode;
+  const bool _Cathode;
+
 };
 
 #endif

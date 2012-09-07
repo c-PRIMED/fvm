@@ -19,6 +19,7 @@ struct SpeciesVC : public FloatVarDict<T>
   SpeciesVC()
   {
       this->defineVar("massDiffusivity",T(1.e-9));
+      this->defineVar("initialMassFraction",T(1.0));
   }
   string vcType;
 };
@@ -28,11 +29,11 @@ struct SpeciesModelOptions : public FloatVarDict<T>
 {
   SpeciesModelOptions()
   {
-    this->defineVar("initialMassFraction0",T(1.0));
-    this->defineVar("initialMassFraction1",T(1.0));
     this->defineVar("A_coeff",T(1.0));
     this->defineVar("B_coeff",T(0.0));
     this->defineVar("ButlerVolmerRRConstant",T(5.0e-7));
+    this->defineVar("ButlerVolmerAnodeMeshID", int(-1));
+    this->defineVar("ButlerVolmerCathodeMeshID", int(-1));
     this->defineVar("timeStep",T(0.1));
     this->defineVar("interfaceUnderRelax",T(1.0));
     this->relativeTolerance=1e-8;

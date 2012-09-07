@@ -607,12 +607,24 @@ public:
 
 	  if (_options.ButlerVolmer)
 	    {
+	      bool Cathode = false;
+	      bool Anode = false;
+	      if (n == _options["ButlerVolmerCathodeMeshID"])
+		{
+		  Cathode = true;
+		}
+	      else if (n == _options["ButlerVolmerAnodeMeshID"])
+		{
+		  Anode = true;
+		}
 	      LinearizePotentialInterface<T, T, T> lbv (_geomFields,
 							_electricFields.potential,
 							_electricFields.speciesConcentration,
 							_options["ButlerVolmerRRConstant"],
 							_options["Interface_A_coeff"],
-							_options["Interface_B_coeff"]);
+							_options["Interface_B_coeff"],
+							Anode,
+							Cathode);
 
 	      lbv.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	    }

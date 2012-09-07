@@ -24,7 +24,7 @@ nSpecies = 1
 smodel = models.SpeciesModelA(geomFields,meshes,nSpecies)
 bcmap = smodel.getBCMap(0)
 vcmap = smodel.getVCMap(0)
-
+print "here"
 
 vcElectrode = vcmap[0]
 vcElectrode['massDiffusivity'] = 1e-6
@@ -69,13 +69,14 @@ def advanceUnsteady(smodel,geomFields,meshes,numTimeSteps,numIterPerTimeStep):
      writer.finish()
 
      smodel.advance(numIterPerTimeStep)
+
      print 'advancing to time step %i' % i
      smodel.updateTime()
 
 soptions = smodel.getOptions()
 soptions.transient = True
 soptions.setVar('timeStep',timeStep)
-soptions.setVar('initialMassFraction',1.0)
+soptions.setVar('initialMassFraction0',1.0)
 
 solver = fvmbaseExt.AMG()
 solver.relativeTolerance = 1e-14 #solver tolerance

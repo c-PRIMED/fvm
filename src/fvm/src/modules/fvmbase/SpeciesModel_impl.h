@@ -117,11 +117,38 @@ public:
 	}
 
 	const SpeciesVC<T>& vc = *(pos->second);
-      
+     
+
 	//mass fraction
         shared_ptr<TArray> mFCell(new TArray(cells.getCount()));
 
-	if (n==0)
+	if (!mesh.isDoubleShell())
+	  {
+	    *mFCell = vc["initialMassFraction"];
+	  }
+	else
+	  {
+	    // double shell mesh cells take on values of parents
+	    typename SpeciesVCMap::const_iterator posParent = svcmap.find(mesh.getParentMeshID());
+	    typename SpeciesVCMap::const_iterator posOther = svcmap.find(mesh.getOtherMeshID());
+	    const SpeciesVC<T>& vcP = *(posParent->second);
+	    const SpeciesVC<T>& vcO = *(posOther->second);
+
+	    for (int c=0; c<cells.getSelfCount(); c++)
+	      {
+		if (c < cells.getSelfCount()/2)
+		  {
+		    (*mFCell)[c] = vcP["initialMassFraction"];
+		  }
+		else
+		  {
+		    (*mFCell)[c] = vcO["initialMassFraction"];
+		  }
+	      }
+	  }
+
+
+	/*if (n==0)
 	  {
 	    *mFCell =_options["initialMassFraction0"];
 	  }
@@ -129,10 +156,22 @@ public:
 	  {
 	    *mFCell = _options["initialMassFraction1"];
 	  }
+	else if (n==2)
+	  {
+	    *mFCell = _options["initialMassFraction2"];
+	  }
+	else if (n==3)
+	  {
+	    *mFCell = _options["initialMassFraction3"];
+	  }
+	else if (n==4)
+	  {
+	    *mFCell = _options["initialMassFraction4"];
+	  }
 	else
 	  {
 	    *mFCell =_options["initialMassFraction0"];
-	  }
+	    }
 	
 	if (mesh.isDoubleShell())
 	  {
@@ -152,7 +191,7 @@ public:
 		    (*mFCell)[c] = _options[otherInitial];
 		  }
 	      }
-	  }
+	  }*/
 
 
 	//*mFCell = _options["initialMassFraction"];
@@ -442,12 +481,26 @@ public:
 	  
 	    if (_options.ButlerVolmer)
 	      {
+		bool Cathode = false;
+		bool Anode = false;
+		if (n == _options["ButlerVolmerCathodeMeshID"])
+		  {
+		    Cathode = true;
+		  }
+		else if (n == _options["ButlerVolmerAnodeMeshID"])
+		  {
+		    Anode = true;
+		  }
+		
 		LinearizeSpeciesInterface<T, T, T> lbv (_geomFields,
 							_options["ButlerVolmerRRConstant"],
 							_options["A_coeff"],
 							_options["B_coeff"],
 							_options["interfaceUnderRelax"],
+							Anode,
+							Cathode,
 							sFields.massFraction,
+							sFields.massFractionN1,
 							sFields.elecPotential);
 
 		lbv.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
