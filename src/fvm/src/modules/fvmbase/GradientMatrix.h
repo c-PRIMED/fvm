@@ -89,10 +89,22 @@ public:
   }
 
   template<class X>
-  void
-  computeFaceGradient(Gradient<X>& g, const Array<X>& x, int i) const
-  {
-    g.zero();
+    X
+    computeR(const Gradient<X>& g, const Array<X>& x, const Coord dist, int i, int j) const
+    {//Darwish and Moukalled, Int. J. H. M. T., 46 (2003) 599-611
+
+      X den=x[j]-x[i];
+      X num=2.*(g*dist);
+      if (den!=0.)
+	return num/den-1.;
+      return 0;
+    }
+
+  template<class X>
+    void
+    computeFaceGradient(Gradient<X>& g, const Array<X>& x, int i) const
+    {
+      g.zero();
    
     // for boundaries use the adjacent cell
     if (_row[i+1] - _row[i]  == 1)
