@@ -14,7 +14,7 @@ struct COMETBC : public FloatVarDict<T>
       this->defineVar("specifiedReflection",T(0.0));
       this->defineVar("FullyImplicit",false);
       this->InterfaceModel="DMM";
-      this->bcType="Interface";   //-- if it is not specified, default is interface
+      this->bcType="temperature";   //-- if it is not specified, default is interface
     }
   string bcType;
   string InterfaceModel;
@@ -42,6 +42,7 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->withNormal=false;
     this->NewtonTol=1e-4;
     this->BinsPerBand=10;
+    this->Convection="FirstOrder";
   }
   
   bool printNormalizedResiduals;
@@ -58,6 +59,7 @@ struct COMETModelOptions : public FloatVarDict<T>
   bool withNormal;
   double NewtonTol;
   int BinsPerBand;
+  string Convection;
 
 };
 

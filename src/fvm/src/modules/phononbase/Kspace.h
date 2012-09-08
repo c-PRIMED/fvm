@@ -1,6 +1,10 @@
 #ifndef _KSPACE_H_
 #define _KSPACE_H_
 
+#ifdef FVM_PARALLEL
+#include <mpi.h>
+#endif
+
 #include <iostream>
 #include <fstream>
 #include<string>
@@ -41,6 +45,8 @@ class Kspace
   typedef pair<TArray*, TArray*> BinAndTrans;
   typedef map<Tkspace*,pair<TArray*,TArray*> > TransmissionMap;
   typedef typename Tkspace::TransmissionMap::iterator TransIt;
+  typedef pair<const StorageSite*, const StorageSite*> EntryIndex;
+  typedef map<EntryIndex, shared_ptr<ArrayBase> > GhostArrayMap;
 
  Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi) :
   _length(ntheta*nphi),
@@ -80,7 +86,7 @@ class Kspace
       }
 
  Kspace()
-      {}
+    {}
 
  void setCp(const T cp)
  {//input the total specific heat in eV/m^3/K
@@ -978,6 +984,166 @@ class Kspace
   }
 
   void makeFAS() {(*_FASCorrection)-=(*_residual);}
+
+  void syncLocal(const StorageSite& site)
+  {
+    //package values to be sent/received
+    syncScatter(site);
+    createSyncGather(site);
+
+#ifdef FVM_PARALLEL
+    //SENDING
+    MPI::Request   request_send[get_request_size(site)];
+    MPI::Request   request_recv[get_request_size(site)];
+    int indxSend = 0;
+    int indxRecv = 0;
+
+    const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+    foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
+      {
+	const StorageSite&  oSite = *mpos.first;
+	//checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+	EntryIndex e(&site,&oSite);
+	ArrayBase& sendArray = *_ghostArrays[e];
+	int to_where  = oSite.getGatherProcID();
+	if ( to_where != -1 )
+	  {
+	    int mpi_tag = oSite.getTag();
+	    request_send[indxSend++] =  
+	      MPI::COMM_WORLD.Isend( sendArray.getData(), sendArray.getDataSize(), MPI::BYTE, to_where, mpi_tag );
+	  }
+      }
+
+    //RECIEVING
+    //getting values from other meshes to fill g
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+      {
+	const StorageSite&  oSite = *mpos.first;
+	//checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+	EntryIndex e(&oSite,&site);
+	ArrayBase& recvArray = *_ghostArrays[e];
+	int from_where       = oSite.getGatherProcID();
+	if ( from_where != -1 )
+	  {
+	    int mpi_tag = oSite.getTag();
+	    request_recv[indxRecv++] =  
+	      MPI::COMM_WORLD.Irecv( recvArray.getData(), recvArray.getDataSize(), MPI::BYTE, from_where, mpi_tag );
+	  }
+      }
+    
+
+    int count  = get_request_size(site);
+    MPI::Request::Waitall( count, request_recv );
+    MPI::Request::Waitall( count, request_send );
+#endif
+
+    syncGather(site);
+
+  }
+
+  void syncScatter(const StorageSite& site)
+  {
+    const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+
+    const int totModes=gettotmodes();
+
+    foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
+      {
+	const StorageSite& oSite = *mpos.first;
+	EntryIndex e(&site, &oSite);	
+	const Array<int>& fromIndices = *(mpos.second);
+
+	if (_ghostArrays.find(e) == _ghostArrays.end())
+	  _ghostArrays[e] = _e->newSizedClone( fromIndices.getLength()*totModes);
+
+	const int cellCount = fromIndices.getLength();	 
+	TArray& ghostArray = dynamic_cast<TArray&>(*_ghostArrays[e]);
+	
+	int ghostIndex(0);
+	for(int index=0;index<cellCount;index++)
+	  {
+	    const int c=fromIndices[index];
+	    for(int cKindex=getGlobalIndex(c,0);
+		cKindex<getGlobalIndex(c,0)+totModes;
+		cKindex++)
+	      {
+		ghostArray[ghostIndex]=(*_e)[cKindex];
+		ghostIndex++;
+	      }
+	  }
+
+      }
+  }
+
+  void createSyncGather(const StorageSite& site)
+  {
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+      {
+	const StorageSite& oSite = *mpos.first;
+	EntryIndex e(&oSite, &site);
+	const Array<int>& toIndices = *(mpos.second);
+	if (_ghostArrays.find(e) == _ghostArrays.end())
+	  _ghostArrays[e] = _e->newSizedClone(toIndices.getLength()*gettotmodes());
+      }
+
+  }
+  
+  void syncGather(const StorageSite& site)
+  {
+    const StorageSite::GatherMap& gatherMap = site.getGatherMap();
+
+    const int totModes=gettotmodes();
+
+    foreach(const StorageSite::GatherMap::value_type& mpos, gatherMap)
+      {
+	const StorageSite& oSite = *mpos.first;
+	const Array<int>& toIndices = *(mpos.second);
+	EntryIndex e(&oSite, &site);
+
+	if (_ghostArrays.find(e) == _ghostArrays.end())
+	  {
+	    ostringstream err;
+	    err << "Kspace::syncScatter: ghost array not found for"
+	      << &oSite << endl;
+	    throw CException(err.str());
+	  }
+
+	const TArray& ghostArray=dynamic_cast<const TArray&>(*_ghostArrays[e]);
+	const int cellCount=toIndices.getLength();
+
+	int ghostIndex(0);
+	for(int index=0;index<cellCount;index++)
+	  {
+	    const int c=toIndices[index];
+	    for(int cKindex=getGlobalIndex(c,0);
+		cKindex<getGlobalIndex(c,0)+totModes;
+		cKindex++)
+	      {
+		(*_e)[cKindex]=ghostArray[ghostIndex];
+		ghostIndex++;
+	      }
+	  }
+
+      }
+
+  }
+
+  int get_request_size(const StorageSite& site)
+  {
+    int indx(0);
+    const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+    foreach(const StorageSite::ScatterMap::value_type& mpos, scatterMap)
+      {
+	const StorageSite&  oSite = *mpos.first;
+	//checking if storage site is only site or ghost site, we only communicate ghost site ( oSite.getCount() == -1 ) 
+	if ( oSite.getGatherProcID() != -1 )
+	  indx++;
+      }
+    return indx++;
+  }
   
  private:
 
@@ -994,6 +1160,7 @@ class Kspace
   TArrPtr _injected;
   TArrPtr _residual;
   TArrPtr _FASCorrection;
+  GhostArrayMap _ghostArrays;
   
 };
 

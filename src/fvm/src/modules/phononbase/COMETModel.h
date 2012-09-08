@@ -153,6 +153,9 @@ class COMETModel : public Model
 	 _macro.deltaT.addArray(cells,deltaTcell);
 	 _macro.lam.addArray(cells,lamArray);
 
+	 shared_ptr<IntArray> f2c(new IntArray(numcells));
+	 _geomFields.fineToCoarse.addArray(cells, f2c);
+
 	 int modeCount=kspace.getkvol(0).getmodenum();
 	 FieldVector* FieldVecPtr=new FieldVector();
 
@@ -918,7 +921,11 @@ class COMETModel : public Model
 		    FloatValEvaluator<T>
 		      bTemperature(bc.getVal("specifiedTemperature"),faces);
 		    
-		    cbc.applyTemperatureWall(bTemperature);
+		    if(_level>0 || _options.Convection=="FirstOrder")
+		      cbc.applyTemperatureWallCoarse(bTemperature);
+		    else
+		      cbc.applyTemperatureWallFine(bTemperature);
+
 		  }
 	      }
 	  }
@@ -2229,6 +2236,8 @@ class COMETModel : public Model
 
     COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
 
+    applyTemperatureBoundaries();
+
     for(int msh=start;((msh<numMeshes)&&(msh>-1));msh+=dir)
       {
 	const Mesh& mesh=*_meshes[msh];
@@ -2256,9 +2265,12 @@ class COMETModel : public Model
 
 	CDisc.setfgFinder();
 
-	
-	CDisc.COMETSolve(dir,_level); 
+	swapGhostInfo();
 
+	if(_level>0 || _options.Convection=="FirstOrder")
+	  CDisc.COMETSolveCoarse(dir,_level); 
+	else
+	  CDisc.COMETSolveFine(dir,_level);
 	
 	if(!_MeshToIC.empty())
 	  {
@@ -2273,20 +2285,6 @@ class COMETModel : public Model
 	
       }
 
-    /*
-    const int listSize=_IClist.size();
-    for(int ic=0;ic<listSize;ic++)
-      {
-	COMETIC<T>* icPtr=_IClist[ic];
-	const int mid0=icPtr->MeshID0;
-	const int mid1=icPtr->MeshID1;
-
-	if(icPtr->InterfaceModel=="DMM" && _level==0)
-	  ComInt.remakeDMMcoeffs(*icPtr);
-	ComInt.updateOtherGhost(*icPtr,mid0,_level!=0);
-	ComInt.updateOtherGhost(*icPtr,mid1,_level!=0);
-      }*/
-    
   }
   
   T updateResid(const bool addFAS)
@@ -2307,6 +2305,8 @@ class COMETModel : public Model
     T highResid=-1.;
     T currentResid;
 
+    swapGhostInfo();
+
     for(int msh=0;msh<numMeshes;msh++)
       {
 	const Mesh& mesh=*_meshes[msh];
@@ -2319,7 +2319,11 @@ class COMETModel : public Model
 				  FgToKsc);
 	
 	CDisc.setfgFinder();
-	CDisc.findResid(addFAS);
+	if(_level>0 || _options.Convection=="FirstOrder")
+	  CDisc.findResidCoarse(addFAS);
+	else
+	  CDisc.findResidFine();
+
 	currentResid=CDisc.getAveResid();
 
 	if(highResid<0)
@@ -2330,6 +2334,18 @@ class COMETModel : public Model
       }
 
     return highResid;
+  }
+
+  void swapGhostInfo()
+  {
+    const int numMeshes=_meshes.size();
+    for(int msh=0;msh<numMeshes;msh++)
+      {
+	const Mesh& mesh=*_meshes[msh];
+	const StorageSite& cells=mesh.getCells();
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[msh]];
+	kspace.syncLocal(cells);
+      }
   }
 
   void cycle()
@@ -2647,7 +2663,7 @@ class COMETModel : public Model
 	
       }
     
-    applyTemperatureBoundaries();
+    //applyTemperatureBoundaries();
     //calcModeTemps();
   }
 

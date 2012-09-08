@@ -60,7 +60,6 @@ class Kspace
   int _length;
   Volvec _Kmesh;
   T _totvol; 
-  T _totvol;    //total Kspace volume
   TransmissionMap _trasMap;
   DensityOfStates* _DOS;
   
