@@ -19,6 +19,8 @@
 #include "SquareMatrix.h"
 #include "PhononMacro.h"
 #include "SquareTensor.h"
+#include "GradientModel.h"
+#include "FluxLimiters.h"
 
 template<class T>
 class COMETDiscretizer
@@ -47,6 +49,10 @@ class COMETDiscretizer
   typedef TKConnectivity* TKCptr;
   typedef vector<TKCptr> TKClist;
   typedef map<int, TKClist> FgTKClistMap;
+  typedef Gradient<T> GradType;
+  typedef Array<GradType> GradArray;
+  typedef GradientModel<T> GradModelType;
+  typedef typename GradModelType::GradMatrixType GradMatrix;
 
  COMETDiscretizer(const Mesh& mesh, const GeomFields& geomfields, 
 		  PhononMacro& macro, Tkspace& kspace, COMETBCMap& bcMap,
@@ -77,7 +83,7 @@ class COMETDiscretizer
     _resArray(kspace.getResArray())
     {}
 
-  void COMETSolve(const int dir,const int level)
+  void COMETSolveFine(const int dir,const int level)
   {
     const int cellcount=_cells.getSelfCount();
     int start;
@@ -90,6 +96,8 @@ class COMETDiscretizer
     TArray Bvec(totalmodes+1);
     TArray Resid(totalmodes+1);
     TArrow AMat(totalmodes+1);
+
+    GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
     
     for(int c=start;((c<cellcount)&&(c>-1));c+=dir)
       {	
@@ -99,14 +107,14 @@ class COMETDiscretizer
 	    T dt=1;
 	    int NewtonIters=0;
 	  
-	    while(dt>_options.NewtonTol && NewtonIters<10)
+	    while(dt>_options.NewtonTol && NewtonIters<50)
 	      {
 		
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
 		
-		COMETConvection(c,AMat,Bvec);
+		COMETConvectionFine(c,AMat,Bvec,gradMatrix);
 		COMETCollision(c,&AMat,Bvec);
 		COMETEquilibrium(c,&AMat,Bvec);
 
@@ -129,7 +137,7 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
-	    while(dt>_options.NewtonTol && NewtonIters<10)
+	    while(dt>_options.NewtonTol && NewtonIters<50)
 	      {
 		TSquare AMatS(totalmodes+1);
 		Bvec.zero();
@@ -156,16 +164,16 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
-	    updateGhost(c);
+	    updateGhostFine(c, gradMatrix);
 	  
-	    while(dt>_options.NewtonTol && NewtonIters<10)
+	    while(dt>_options.NewtonTol && NewtonIters<50)
 	      {
 
 		Bvec.zero();
 		Resid.zero();
 		AMat.zero();
 		
-		COMETConvection(c,AMat,Bvec);
+		COMETConvectionFine(c,AMat,Bvec,gradMatrix);
 		COMETCollision(c,&AMat,Bvec);
 		COMETEquilibrium(c,&AMat,Bvec);
 		
@@ -181,7 +189,7 @@ class COMETDiscretizer
 		Distribute(c,Bvec,Resid);
 		dt=fabs(Bvec[totalmodes]);
 		updatee0(c);
-		updateGhost(c);
+		updateGhostFine(c, gradMatrix);
 		if(!_FaceToKSC.empty())
 		  correctInterface(c,Bvec);
 		NewtonIters++;
@@ -191,8 +199,8 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
-	    updateGhost(c);
-	    while(dt>_options.NewtonTol && NewtonIters<10)
+	    updateGhostFine(c,gradMatrix);
+	    while(dt>_options.NewtonTol && NewtonIters<50)
 	      {
 		TSquare AMatS(totalmodes+1);
 		Bvec.zero();
@@ -211,7 +219,7 @@ class COMETDiscretizer
 		
 		Distribute(c,Bvec,Resid);
 		updatee0(c);
-		updateGhost(c);
+		updateGhostFine(c, gradMatrix);
 		NewtonIters++;
 		dt=fabs(Bvec[totalmodes]);
 	      }
@@ -223,13 +231,275 @@ class COMETDiscretizer
     
   }
 
-  void COMETConvection(const int cell0, TArrow& Amat, TArray& BVec)
+  void COMETSolveCoarse(const int dir,const int level)
+  {
+    const int cellcount=_cells.getSelfCount();
+    int start;
+
+    if(dir==1)
+      start=0;
+    if(dir==-1)
+      start=cellcount-1;
+    const int totalmodes=_kspace.gettotmodes();
+    TArray Bvec(totalmodes+1);
+    TArray Resid(totalmodes+1);
+    TArrow AMat(totalmodes+1);
+    
+    for(int c=start;((c<cellcount)&&(c>-1));c+=dir)
+      {	
+		
+	if(_BCArray[c]==0)  //no reflections at all--interior cell or temperature boundary
+	  {
+	    T dt=1;
+	    int NewtonIters=0;
+	  
+	    while(dt>_options.NewtonTol && NewtonIters<50)
+	      {
+		
+		Bvec.zero();
+		Resid.zero();
+		AMat.zero();
+		
+		COMETConvectionCoarse(c,AMat,Bvec);
+		COMETCollision(c,&AMat,Bvec);
+		COMETEquilibrium(c,&AMat,Bvec);
+
+		if(_options.withNormal)
+		  COMETShifted(c,&AMat,Bvec);
+		
+		if(level>0)
+		  addFAS(c,Bvec);
+		
+		Resid=Bvec;
+		AMat.Solve(Bvec);
+
+		Distribute(c,Bvec,Resid);
+		updatee0(c);
+		NewtonIters++;
+		dt=fabs(Bvec[totalmodes]);
+	      }
+	  }
+	else if(_BCArray[c]==1) //Implicit reflecting boundary only
+	  {
+	    T dt=1;
+	    int NewtonIters=0;
+	    while(dt>_options.NewtonTol && NewtonIters<50)
+	      {
+		TSquare AMatS(totalmodes+1);
+		Bvec.zero();
+		Resid.zero();
+		AMatS.zero();
+		
+		COMETConvection(c,AMatS,Bvec);
+		COMETCollision(c,&AMatS,Bvec);
+		COMETEquilibrium(c,&AMatS,Bvec);
+		  
+		if(level>0)
+		  addFAS(c,Bvec);
+	       
+		Resid=Bvec;
+		AMatS.Solve(Bvec);
+		
+		Distribute(c,Bvec,Resid);
+		updatee0(c);
+		NewtonIters++;
+		dt=fabs(Bvec[totalmodes]);
+	      }
+	  }
+	else if(_BCArray[c]==2)  //Explicit boundary only
+	  {
+	    T dt=1;
+	    int NewtonIters=0;
+	    updateGhostCoarse(c);
+	  
+	    while(dt>_options.NewtonTol && NewtonIters<50)
+	      {
+
+		Bvec.zero();
+		Resid.zero();
+		AMat.zero();
+		
+		COMETConvectionCoarse(c,AMat,Bvec);
+		COMETCollision(c,&AMat,Bvec);
+		COMETEquilibrium(c,&AMat,Bvec);
+		
+		if(_options.withNormal)
+		  COMETShifted(c,&AMat,Bvec);
+		
+		if(level>0)
+		  addFAS(c,Bvec);
+		
+		Resid=Bvec;
+		AMat.Solve(Bvec);
+
+		Distribute(c,Bvec,Resid);
+		dt=fabs(Bvec[totalmodes]);
+		updatee0(c);
+		updateGhostCoarse(c);
+		if(!_FaceToKSC.empty())
+		  correctInterface(c,Bvec);
+		NewtonIters++;
+	      }
+	  }
+	else if(_BCArray[c]==3) //Mix Implicit/Explicit reflecting boundary
+	  {
+	    T dt=1;
+	    int NewtonIters=0;
+	    updateGhostCoarse(c);
+	    while(dt>_options.NewtonTol && NewtonIters<50)
+	      {
+		TSquare AMatS(totalmodes+1);
+		Bvec.zero();
+		Resid.zero();
+		AMatS.zero();
+		
+		COMETConvection(c,AMatS,Bvec);
+		COMETCollision(c,&AMatS,Bvec);
+		COMETEquilibrium(c,&AMatS,Bvec);
+		
+		if(level>0)
+		  addFAS(c,Bvec);
+	       
+		Resid=Bvec;
+		AMatS.Solve(Bvec);
+		
+		Distribute(c,Bvec,Resid);
+		updatee0(c);
+		updateGhostCoarse(c);
+		NewtonIters++;
+		dt=fabs(Bvec[totalmodes]);
+	      }
+	  }
+	else
+	  throw CException("Unexpected value for boundary cell map.");
+
+      }
+    
+  }
+
+  void COMETConvectionFine(const int cell0, TArrow& Amat, 
+			   TArray& BVec, const GradMatrix& gMat)
   {
     /* This is the COMET discretization for cells that do not
        do not have a face which is a reflecting boundary.  When
        there is a face with a reflecting boundary, we can no longer
        use an arrowhead matrix as the structure becomes unknown a priori.
-     */
+    */
+    const int neibcount=_cellFaces.getCount(cell0);
+    GradArray Grads(_kspace.gettotmodes());
+    Grads.zero();
+
+    VectorT3 Gcoeff;
+
+    const VectorT3Array& faceCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_faces]);
+
+    for(int j=0;j<neibcount;j++)
+      {
+	const int f=_cellFaces(cell0,j);
+	int cell1=_faceCells(f,1);
+	if(cell1==cell0)
+	  cell1=_faceCells(f,0);
+	
+	Gcoeff=gMat.getCoeff(cell0, cell1);
+
+	int c0ind=_kspace.getGlobalIndex(cell0,0);
+	int c1ind=_kspace.getGlobalIndex(cell1,0);
+	
+	for(int k=0;k<_kspace.gettotmodes();k++)
+	  {
+	    Grads[k].accumulate(Gcoeff,_eArray[c1ind]-_eArray[c0ind]);
+	    c0ind++;
+	    c1ind++;
+	  }
+      }
+    
+    for(int j=0;j<neibcount;j++)
+      {
+	const int f=_cellFaces(cell0,j);
+	int cell1=_faceCells(f,1);
+	VectorT3 Af=_faceArea[f];
+	if(cell1==cell0)
+	  {
+	    cell1=_faceCells(f,0);
+	    Af*=-1.;
+	  }
+	const int klen=_kspace.getlength();
+
+	GradArray NeibGrads(_kspace.gettotmodes());
+	NeibGrads.zero();
+
+	const int neibcount1=_cellFaces.getCount(cell1);
+	for(int nj=0;nj<neibcount1;nj++)
+	  {
+	    const int f1=_cellFaces(cell1,nj);
+	    int cell11=_faceCells(f1,1);
+	    if(cell1==cell11)
+	      cell11=_faceCells(f1,0);
+	
+	    Gcoeff=gMat.getCoeff(cell1, cell11);
+	    T dif(0);
+
+	    int c1ind=_kspace.getGlobalIndex(cell1,0);
+	    int c11ind=_kspace.getGlobalIndex(cell11,0);
+	
+	    for(int k=0;k<_kspace.gettotmodes();k++)
+	      {
+		NeibGrads[k].accumulate(Gcoeff,_eArray[c11ind]-_eArray[c1ind]);
+		c11ind++;
+		c1ind++;
+	      }
+	  }
+	
+	T flux;
+
+	for(int k=0;k<klen;k++)
+	  {
+	    Tkvol& kvol=_kspace.getkvol(k);
+	    const int numModes=kvol.getmodenum();
+	    for(int m=0;m<numModes;m++)
+	      {
+		Tmode& mode=kvol.getmode(m);
+		const int count=mode.getIndex();
+		VectorT3 vg=mode.getv();
+		flux=vg[0]*Af[0]+vg[1]*Af[1]+vg[2]*Af[2];
+
+		const int c0ind=_kspace.getGlobalIndex(cell0,count-1);
+		const int c1ind=_kspace.getGlobalIndex(cell1,count-1);
+
+		GradType& grad=Grads[count-1];
+		GradType& neibGrad=NeibGrads[count-1];
+		
+		if(flux>T_Scalar(0))
+		  {
+		    VectorT3 rVec=_cellCoords[cell1]-_cellCoords[cell0];
+		    VectorT3 fVec=faceCoords[f]-_cellCoords[cell0];
+		    T r=gMat.computeR(grad,_eArray,rVec,c0ind,c1ind);
+		    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2])*superbee(r);
+		    Amat.getElement(count,count)-=flux;
+		    BVec[count-1]-=flux*(_eArray[c0ind]+SOU);
+		  }
+		else
+		  {
+		    VectorT3 rVec=_cellCoords[cell0]-_cellCoords[cell1];
+		    VectorT3 fVec=faceCoords[f]-_cellCoords[cell1];
+		    T r=gMat.computeR(neibGrad,_eArray,rVec,c1ind,c0ind);
+		    T SOU=(neibGrad[0]*fVec[0]+neibGrad[1]*fVec[1]+neibGrad[2]*fVec[2])*superbee(r);
+		    BVec[count-1]-=flux*(_eArray[c1ind]+SOU);
+		  }
+		
+	      }
+	  }	   	
+      }   
+  }
+
+  void COMETConvectionCoarse(const int cell0, TArrow& Amat, TArray& BVec)
+  {
+    /* This is the COMET discretization for cells that do not
+       do not have a face which is a reflecting boundary.  When
+       there is a face with a reflecting boundary, we can no longer
+       use an arrowhead matrix as the structure becomes unknown a priori.
+    */
     const int neibcount=_cellFaces.getCount(cell0);
     
     for(int j=0;j<neibcount;j++)
@@ -417,7 +687,7 @@ class COMETDiscretizer
 	    Tmode& mode=kvol.getmode(m);
 	    const int count=mode.getIndex();
 	    T tau=mode.gettau();
-	    T de0dT=mode.calcde0dT(Tlold[cell]);//mode.getcp();
+	    T de0dT=mode.calcde0dT(Tlold[cell]);
 	    coeff=_cellVolume[cell]/tau;
 	    Amat->getElement(count,order)+=coeff*de0dT;
 	    Amat->getElement(count,count)-=coeff;
@@ -521,7 +791,105 @@ class COMETDiscretizer
     TlResArray[cell]=-Rvec[totalmodes];
   }
 
-  void findResid(const bool plusFAS)
+  void findResidFine()
+  {
+    const int cellcount=_cells.getSelfCount();
+    const int totalmodes=_kspace.gettotmodes();
+    TArray ResidSum(totalmodes+1);
+    TArray Bsum(totalmodes+1);
+    T ResidScalar=0.;
+    T traceSum=0.;
+    TArray Bvec(totalmodes+1);
+    TArray Resid(totalmodes+1);
+    TArray Dummy(totalmodes+1);
+    TArrow AMat(totalmodes+1);
+    ResidSum.zero();
+    Bsum.zero();
+    Dummy.zero();
+
+    GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
+    
+    for(int c=0;c<cellcount;c++)
+      {	
+	Bvec.zero();
+	Resid.zero();
+	Dummy.zero();
+
+	if(_BCArray[c]==0 || _BCArray[c]==2)  //Arrowhead
+	  {
+	    if(_BCArray[c]==2)
+	      updateGhostFine(c, gradMatrix);
+
+	    AMat.zero();
+
+	    COMETConvectionFine(c,AMat,Bvec,gradMatrix);	
+	    COMETCollision(c,&AMat,Bvec);
+	    COMETEquilibrium(c,&AMat,Bvec);
+	    
+	    traceSum+=AMat.getTraceAbs();
+	    
+	    Resid=Bvec;
+	    Bvec.zero();
+	    Distribute(c,Bvec,Resid);
+	    ArrayAbs(Resid);
+	    ResidSum+=Resid;
+
+	    AMat.multiply(Resid,Bvec);
+	    Resid=Bvec;
+	    
+	    makeValueArray(c,Bvec);
+	    AMat.multiply(Bvec,Dummy);
+	    Bvec=Dummy;
+	    ArrayAbs(Bvec);
+	    ArrayAbs(Resid);
+	    Bsum+=Bvec;	    
+	  }
+	else if(_BCArray[c]==1 || _BCArray[c]==3) //General Dense
+	  {
+	    TSquare AMatS(totalmodes+1);
+	    AMatS.zero();
+	    
+	    COMETConvection(c,AMatS,Bvec);	
+	    COMETCollision(c,&AMatS,Bvec);
+	    COMETEquilibrium(c,&AMatS,Bvec);
+	    
+	    traceSum+=AMatS.getTraceAbs();
+	    Resid=Bvec;
+	    Bvec.zero();
+	    Distribute(c,Bvec,Resid);
+
+	    AMatS.multiply(Resid,Bvec);
+	    Resid=Bvec;
+
+	    makeValueArray(c,Bvec);
+	    ArrayAbs(Resid);
+	    ArrayAbs(Bvec);
+	    Bsum+=Bvec;
+	    ResidSum+=Resid;
+	  }
+	else
+	  throw CException("Unexpected value for boundary cell map.");
+      }
+
+    //traceSum=0;  //added
+    for(int o=0;o<totalmodes+1;o++)
+      {
+	ResidScalar+=ResidSum[o];
+	//traceSum+=Bsum[o]; //added
+      }
+
+    ResidScalar/=traceSum;
+
+    if(_aveResid==-1)
+      {_aveResid=ResidScalar;}
+    else
+      {
+	_residChange=fabs(_aveResid-ResidScalar)/_aveResid;
+	_aveResid=ResidScalar;
+      }
+  }
+
+  void findResidCoarse(const bool plusFAS)
   {
     const int cellcount=_cells.getSelfCount();
     const int totalmodes=_kspace.gettotmodes();
@@ -546,11 +914,11 @@ class COMETDiscretizer
 	if(_BCArray[c]==0 || _BCArray[c]==2)  //Arrowhead
 	  {
 	    if(_BCArray[c]==2)
-	      updateGhost(c);
+	      updateGhostCoarse(c);
 
 	    AMat.zero();
 
-	    COMETConvection(c,AMat,Bvec);	
+	    COMETConvectionCoarse(c,AMat,Bvec);	
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
 	    
@@ -756,13 +1124,182 @@ class COMETDiscretizer
       }
   }
 
-  void updateGhost(const int cell)
+  void updateGhostFine(const int cell, const GradMatrix& gMat)
   {
     const int neibcount=_cellFaces.getCount(cell);
     const int klen=_kspace.getlength();
     //TArray SumEVdotA(neibcount);
-    TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    T DK3=_kspace.getDK3();
+    //TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    //T DK3=_kspace.getDK3();
+
+    //SumEVdotA.zero();
+
+    const VectorT3Array& faceCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_faces]);
+
+    GradArray Grads(_kspace.gettotmodes());
+    Grads.zero();
+
+    VectorT3 Gcoeff;
+
+    for(int j=0;j<neibcount;j++)
+      {
+	const int f=_cellFaces(cell,j);
+	int cell1=_faceCells(f,1);
+	if(cell1==cell)
+	  cell1=_faceCells(f,0);
+	
+	Gcoeff=gMat.getCoeff(cell, cell1);
+
+	int c0ind=_kspace.getGlobalIndex(cell,0);
+	int c1ind=_kspace.getGlobalIndex(cell1,0);
+	
+	for(int k=0;k<_kspace.gettotmodes();k++)
+	  {
+	    Grads[k].accumulate(Gcoeff,_eArray[c1ind]-_eArray[c0ind]);
+	    c0ind++;
+	    c1ind++;
+	  }
+      }
+
+    for(int j=0;j<neibcount;j++)
+      {
+
+	const int f=_cellFaces(cell,j);
+	if(_BCfArray[f]==3)
+	  {
+	    int Fgid=findFgId(f);
+	    const T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
+	    int cell2=_faceCells(f,1);
+	    VectorT3 Af=_faceArea[f];
+		    
+	    if(cell2==cell)
+	      {
+		Af=Af*-1.;
+		cell2=_faceCells(f,0);
+	      }
+
+	    const int cellstart=_kspace.getGlobalIndex(cell,0);
+	    const int cell2start=_kspace.getGlobalIndex(cell2,0);
+	    int cellIndex=_kspace.getGlobalIndex(cell,0);
+	    int cell2Index=_kspace.getGlobalIndex(cell2,0);
+
+	    //first loop to sum up the diffuse reflection
+	    for(int k=0;k<klen;k++)
+	      {
+		Tkvol& kvol=_kspace.getkvol(k);
+		const int numModes=kvol.getmodenum();
+		//T dk3=kvol.getdk3();
+		for(int m=0;m<numModes;m++)
+		  {
+		    Tmode& mode=kvol.getmode(m);
+		    VectorT3 vg=mode.getv();
+		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
+		    const int count=mode.getIndex();
+		    
+		    GradType& grad=Grads[count-1];
+
+		    if(VdotA>0)
+		      {
+			VectorT3 rVec=_cellCoords[cell]-_cellCoords[cell2];
+			VectorT3 fVec=faceCoords[f]-_cellCoords[cell];
+			T r=gMat.computeR(grad,_eArray,rVec,cellIndex,cell2Index);
+			T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2])*superbee(r);
+			_eArray[cell2Index]=(_eArray[cellIndex]+SOU)*refl;
+			Refl_pair& rpairs=mode.getReflpair(Fgid);
+			const int kk=rpairs.first.second;
+			Tkvol& kkvol=_kspace.getkvol(kk);
+			Tmode& refMode=kkvol.getmode(m);
+			const int rIndex=cell2start+refMode.getIndex()-1;
+			_eArray[rIndex]=(_eArray[cellIndex]+SOU)*refl;
+			//SumEVdotA[j]+=dk3*_eArray[cellIndex]/DK3;
+		      }/*
+		    else
+		      {
+			Refl_pair& rpairs=mode.getReflpair(Fgid);
+			const int kk=rpairs.second.second;
+			Tkvol& kkvol=_kspace.getkvol(kk);
+			Tmode& refMode=kkvol.getmode(m);
+			const int rIndex=cellstart+refMode.getIndex()-1;
+			_eArray[cell2Index]=_eArray[rIndex]*refl;
+			}*/
+		    cellIndex++;
+		    cell2Index++;
+		  }
+	      }
+	  }
+      }
+
+    /*
+    T wallTemp(Tl[cell]);
+    for(int j=0;j<neibcount;j++)
+      {
+	const int f=_cellFaces(cell,j);
+	if(_BCfArray[f]==3)
+	  {
+	    int cell2=_faceCells(f,1);
+	    VectorT3 Af=_faceArea[f];
+	    if(cell2==cell)
+	      {
+		Af=Af*-1.;
+		cell2=_faceCells(f,0);
+	      }
+	    T esum=SumEVdotA[j]*DK3;
+	    _kspace.calcTemp(wallTemp,esum,Af);
+	    SumEVdotA[j]=wallTemp;
+	    Tl[cell2]=wallTemp;
+	  }
+      }
+
+    //second loop to add in the diffuse reflection
+    for(int k=0;k<klen;k++)
+      {
+        Tkvol& kvol=_kspace.getkvol(k);
+        const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    VectorT3 vg=mode.getv();
+	    Field& eField=mode.getfield();
+	    TArray& eArray=dynamic_cast<TArray&>(eField[_cells]);
+	    for(int j=0;j<neibcount;j++)
+	      {
+		const int f=_cellFaces(cell,j);
+		if(_BCfArray[f]==3)
+		  {
+		    int Fgid=findFgId(f);
+		    const T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
+		    const T oneMinusRefl=1.-refl;
+		    int cell2=_faceCells(f,1);
+		    VectorT3 Af=_faceArea[f];
+		    
+		    if(cell2==cell)
+ 		      {
+			Af=Af*-1.;
+			cell2=_faceCells(f,0);
+		      }
+		    
+		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
+		    
+		    if(VdotA<0)
+		      eArray[cell2]+=mode.calce0(SumEVdotA[j])*oneMinusRefl;
+		    else
+		      eArray[cell2]+=mode.calce0(SumEVdotA[j])*oneMinusRefl;
+
+		  }
+	      }
+	  }
+      }
+    */
+  }
+
+  void updateGhostCoarse(const int cell)
+  {
+    const int neibcount=_cellFaces.getCount(cell);
+    const int klen=_kspace.getlength();
+    //TArray SumEVdotA(neibcount);
+    //TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    //T DK3=_kspace.getDK3();
 
     //SumEVdotA.zero();
 
@@ -792,7 +1329,7 @@ class COMETDiscretizer
 	      {
 		Tkvol& kvol=_kspace.getkvol(k);
 		const int numModes=kvol.getmodenum();
-		T dk3=kvol.getdk3();
+		//T dk3=kvol.getdk3();
 		for(int m=0;m<numModes;m++)
 		  {
 		    Tmode& mode=kvol.getmode(m);
