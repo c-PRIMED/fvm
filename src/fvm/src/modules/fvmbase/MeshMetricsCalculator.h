@@ -37,7 +37,7 @@ public:
 
   void recalculate_deform();
 
-  void computeIBInterpolationMatrices(const StorageSite& particles, const int option);
+  void computeIBInterpolationMatrices(const StorageSite& particles, const int option=0);
 
   void computeIBInterpolationMatricesCells();
 
@@ -78,7 +78,7 @@ private:
 
   void computeIBInterpolationMatrices(const Mesh& mesh,
                                       const StorageSite& particles, 
-				      const int option);
+				      const int option=0);
   void computeIBInterpolationMatricesCells(const Mesh& mesh);
 
   void computeSolidInterpolationMatrices(const Mesh& mesh,

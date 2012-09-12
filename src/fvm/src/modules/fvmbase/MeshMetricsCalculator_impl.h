@@ -461,7 +461,7 @@ void
 MeshMetricsCalculator<T>::computeIBInterpolationMatrices
 (const Mesh& mesh,
  const StorageSite& mpmParticles, 
- const int option=0)
+ const int option)
 {
   if (mesh.isShell() || mesh.getIBFaces().getCount()==0)
   	return;
@@ -1239,10 +1239,10 @@ MeshMetricsCalculator<T>::computeIBInterpolationMatricesCells
 	nnb++;
       }
      
-      if (nnb <=4){
-	throw CException("not enough cell or particle neighbors for ib face to interpolate!");
+      //if (nnb <=4){
+      //	throw CException("not enough cell or particle neighbors for ib face to interpolate!");
 	
-      }
+      //}
       //symetric matrix
       for(int i=0; i<4; i++){
 	for(int j=0; j<i; j++){
@@ -2364,7 +2364,7 @@ MeshMetricsCalculator<T>::computeIBandSolidInterpolationMatrices
 
 template<class T>
 void
-MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p, const int option=0)
+MeshMetricsCalculator<T>::computeIBInterpolationMatrices(const StorageSite& p, const int option)
 {
   const int numMeshes = _meshes.size();
   for (int n=0; n<numMeshes; n++)
