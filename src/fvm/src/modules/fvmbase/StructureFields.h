@@ -32,6 +32,7 @@ struct StructureFields
   Field temperature;
   Field bodyForce;
   Field volume0;
+  Field creepConstant; 
 };
 
 #endif

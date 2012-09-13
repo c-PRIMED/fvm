@@ -24,6 +24,7 @@ StructureFields::StructureFields(const string baseName) :
   plasticStrain(baseName + ".plasticStrain"),
   temperature(baseName + ".temperature"),
   bodyForce(baseName + ".bodyForce"),
-  volume0(baseName + ".volume0")
+  volume0(baseName + ".volume0"),
+  creepConstant(baseName + ".creepConstant")
 {}
 

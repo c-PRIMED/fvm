@@ -392,7 +392,9 @@ public:
             shared_ptr<VGradArray> plasticStrainField(new VGradArray(cells.getCountLevel1()));
             plasticStrainField->zero();
             _structureFields.plasticStrain.addArray(cells,plasticStrainField);
-
+	    shared_ptr<TArray> acCell(new TArray(cells.getCountLevel1()));
+	    *acCell = _options.A;
+	    _structureFields.creepConstant.addArray(cells, acCell);
 	}    
 
         shared_ptr<TArray> rhoCell(new TArray(cells.getCountLevel1()));
@@ -1003,6 +1005,7 @@ public:
                _structureFields.devStress,
                _structureFields.VMStress,
                _structureFields.plasticStrain,
+	       _structureFields.creepConstant,
                _options.A,
                _options.B,
                _options.m,

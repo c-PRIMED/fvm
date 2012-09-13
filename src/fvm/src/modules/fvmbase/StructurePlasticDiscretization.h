@@ -48,7 +48,8 @@ public:
 				const Field& devStressField,
 				const Field& VMStressField,
 				Field& plasticStrainField,
-				const T& A,
+				Field& creepConstant,
+				T& A,
 				const T& B,
 				const T& mm,
 				const T& nn,
@@ -73,6 +74,7 @@ public:
     _devStressField(devStressField),
     _VMStressField(VMStressField),
     _plasticStrainField(plasticStrainField),
+    _creepConstant(creepConstant),
     _A(A),
     _B(B),
     _m(mm),
@@ -95,7 +97,8 @@ public:
       dynamic_cast<const TArray&>(_VMStressField[cells]);
     VGradArray& plasticStrain =
       dynamic_cast<VGradArray&>(_plasticStrainField[cells]);
-
+    const TArray& creepConstant = 
+      dynamic_cast<const TArray&> (_creepConstant[cells]);
     const int nCells = cells.getCount();
     const T zero(0.0);
     const T onethird(1.0/3.0);
@@ -111,7 +114,8 @@ public:
     {
         for(int n=0; n<nCells; n++)
         {
-            T VMPlasticStrain = sqrt(half*
+	    _A = creepConstant[n];
+	    T VMPlasticStrain = sqrt(half*
                                      (pow(((plasticStrain[n])[0][0]-(plasticStrain[n])[1][1]),2.0) +
                                       pow(((plasticStrain[n])[1][1]-(plasticStrain[n])[2][2]),2.0) +
                                       pow(((plasticStrain[n])[2][2]-(plasticStrain[n])[0][0]),2.0) +
@@ -131,7 +135,8 @@ public:
     {
         for(int n=0; n<nCells; n++)
         {
-            if (n==0)
+	    _A = creepConstant[n];
+	    if (n==0)
               cout<<"creep initiated"<<endl;
             T mult = (VMStress[n]/_B)-1.;
             if (mult<=zero)
@@ -526,7 +531,8 @@ private:
   const Field& _devStressField;
   const Field& _VMStressField;
   Field& _plasticStrainField;
-  const T _A;
+  Field& _creepConstant;
+  T _A;
   const T _B;
   const T _m;
   const T _n;
