@@ -64,6 +64,9 @@ class COMETModel : public Model
   typedef vector<TKCptr> TKClist;
   typedef map<int, TKClist> FgTKClistMap;
   typedef vector<shared_ptr<Field> > FieldVector;
+  typedef pair<const StorageSite*, const StorageSite*> SSPair;
+  typedef map<SSPair,shared_ptr<Array<int> > > ScatGathMaps;
+  typedef map<const StorageSite*, StorageSite*> SiteMap;   //fine to coarse
   
  COMETModel(const MeshList& meshes, const int level, GeomFields& geomFields,
 	    TkspList& kspaces, PhononMacro& macro):
@@ -76,9 +79,15 @@ class COMETModel : public Model
     _coarserLevel(NULL),
     _finerLevel(NULL),
     _residual(1.0),
-    _MeshToIC()
+    _MeshToIC(),
+    _rank(-1)
       {
 	const int numMeshes = _meshes.size();
+
+#ifdef FVM_PARALLEL
+	_rank=MPI::COMM_WORLD.Get_rank();
+#endif
+	
 	for (int n=0; n<numMeshes; n++)
 	  {
 	    Mesh& mesh = *_meshes[n];
@@ -98,10 +107,10 @@ class COMETModel : public Model
 	    
 	    if(_level==0)
 	      {
-		foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+		foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 		  {
 		    const FaceGroup& fg = *fgPtr;
-		    if (_bcMap.find(fg.id) == _bcMap.end() && fg.id!=0)
+		    if (_bcMap.find(fg.id) == _bcMap.end() && fg.id>0)
 		      {
 			COMETBC<T> *bc(new COMETBC<T>()); 
 			_bcMap[fg.id] = bc;
@@ -154,6 +163,7 @@ class COMETModel : public Model
 	 _macro.lam.addArray(cells,lamArray);
 
 	 shared_ptr<IntArray> f2c(new IntArray(numcells));
+	 *f2c=-1;
 	 _geomFields.fineToCoarse.addArray(cells, f2c);
 
 	 int modeCount=kspace.getkvol(0).getmodenum();
@@ -195,10 +205,10 @@ class COMETModel : public Model
 		     VectorT3 so;
 		 
 		     //reflections
-		     foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+		     foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 		       {
 			 const FaceGroup& fg = *fgPtr;
-			 if(fg.id!=0)
+			 if(fg.id>0)
 			   {
 			     if(_bcMap[fg.id]->bcType == "reflecting")
 			       {
@@ -244,10 +254,25 @@ class COMETModel : public Model
 	 _macro.TlResidual.addArray(cells,TlResidCell);
 
 	 //setting facegroups
-	 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+
+	 foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
 	   {
 	     FaceGroup& fg = *fgPtr;
-	     if(fg.id!=0)
+	     const StorageSite& faces = fg.site;
+	     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+
+	     const int faceCount=faces.getCount();
+	     const int offSet=faces.getOffset();
+
+	     for(int i=offSet;i<offSet+faceCount;i++)
+	       BCfArray[i]=-1;  //implicit boundary
+	   }
+	 
+
+	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	   {
+	     FaceGroup& fg = *fgPtr;
+	     if(fg.id>0)
 	       {
 		 if(_bcMap[fg.id]->bcType == "reflecting")
 		   {
@@ -334,7 +359,7 @@ class COMETModel : public Model
 			 for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
 			   {
 			     const Mesh& otherMesh=*_meshes[otherMeshID];
-			     foreach(const FaceGroupPtr otherfgPtr, otherMesh.getAllFaceGroups())
+			     foreach(const FaceGroupPtr otherfgPtr, otherMesh.getBoundaryFaceGroups())
 			       {
 				 foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
 				 if(foundMatch)
@@ -414,15 +439,19 @@ class COMETModel : public Model
      
      applyTemperatureBoundaries();
      _residual=updateResid(false);
-     cout<<"Creating Coarse Levels..."<<endl;
 
-     cout<<"Level: 0"<<endl<<endl;
-     calcDomainStats();
-     cout<<endl;
+     if(_options.DomainStats=="Loud")
+       {
+	 cout<<"Creating Coarse Levels on rank "<<_rank<<"..."<<endl;
+	 cout<<"Level: 0, rank: "<<_rank<<endl<<endl;
+	 calcDomainStats();
+	 cout<<endl;
+       }
 
      MakeCoarseModel(this);
      setFinestLevel(this);
-     cout<<"Coarse Levels Completed."<<endl;
+     if(_options.DomainStats=="Loud")
+       cout<<"Coarse Levels Completed on rank "<<_rank<<"."<<endl;
   }
 
   void initFromOld()
@@ -439,10 +468,10 @@ class COMETModel : public Model
 	 //const int numcells=cells.getCount();
 
 	 //setting facegroups
-	 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	   {
 	     FaceGroup& fg = *fgPtr;
-	     if(fg.id!=0)
+	     if(fg.id>0)
 	       {
 		 if(_bcMap[fg.id]->bcType == "reflecting")
 		   {
@@ -529,7 +558,7 @@ class COMETModel : public Model
 			 for(int otherMeshID=n+1;otherMeshID<numMeshes;otherMeshID++)
 			   {
 			     const Mesh& otherMesh=*_meshes[otherMeshID];
-			     foreach(const FaceGroupPtr otherfgPtr, otherMesh.getAllFaceGroups())
+			     foreach(const FaceGroupPtr otherfgPtr, otherMesh.getBoundaryFaceGroups())
 			       {
 				 foundMatch=mesh.COMETfindCommonFaces(faces0, otherfgPtr->site, _geomFields);
 				 if(foundMatch)
@@ -642,6 +671,10 @@ class COMETModel : public Model
 	 *TLcell=Tinit;
 	 _macro.temperature.addArray(cells,TLcell);
 	 _macro.deltaT.addArray(cells,deltaTcell);
+
+	 shared_ptr<IntArray> f2c(new IntArray(numcells));
+	 *f2c=-1;
+	 _geomFields.fineToCoarse.addArray(cells, f2c);
 	 
 	 for(int c=0;c<numcells;c++)
 	   {
@@ -669,10 +702,24 @@ class COMETModel : public Model
 
 	 BCfaceArray& BCfArray=*(_BFaces[n]);
 	 BCcellArray& BCArray=*(_BCells[n]);
-	 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+
+	 foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
 	   {
 	     FaceGroup& fg = *fgPtr;
-	     if(fg.id!=0)
+	     const StorageSite& faces = fg.site;
+	     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+
+	     const int faceCount=faces.getCount();
+	     const int offSet=faces.getOffset();
+
+	     for(int i=offSet;i<offSet+faceCount;i++)
+	       BCfArray[i]=-1;  
+	   }
+
+	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	   {
+	     FaceGroup& fg = *fgPtr;
+	     if(fg.id>0)
 	       {
 		 if(_bcMap[fg.id]->bcType == "reflecting")
 		   {
@@ -906,10 +953,10 @@ class COMETModel : public Model
       {
 	const Mesh& mesh=*_meshes[n];
 	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
-	foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	  {
 	    const FaceGroup& fg = *fgPtr;
-	    if(fg.id!=0)
+	    if(fg.id>0)
 	      {   
 		const StorageSite& faces = fg.site;
 		const COMETBC<T>& bc = *_bcMap[fg.id];
@@ -947,11 +994,31 @@ class COMETModel : public Model
 	    PhononMacro* newMacroPtr=new PhononMacro("coarse");
 
 	    MakeNewKspaces(finerModel->getKspaces(),*newKspacesPtr);
+	    
+	    IntArray CoarseCounts(_meshes.size());
+	    IntArray CoarseGhost(_meshes.size());
+	    map<const StorageSite*, IntArray*> PreFacePairMap;
+	    SiteMap siteMap;
 
-	    int newCount= MakeCoarseMesh(finerModel->getMeshList(),
-					 finerModel->getGeomFields(),
-					 *newMeshesPtr);
-	    	    
+	    MakeInteriorCoarseMesh(finerModel->getMeshList(), finerModel->getGeomFields(),
+				   *newMeshesPtr, CoarseCounts, PreFacePairMap, CoarseGhost, siteMap);
+
+	    _geomFields.fineToCoarse.syncLocal();
+
+#ifdef FVM_PARALLEL
+	    ScatGathMaps coarseScatterMaps;
+	    ScatGathMaps coarseGatherMaps;
+
+	    syncGhostCoarsening(finerModel->getMeshList(), finerModel->getGeomFields(),
+				*newMeshesPtr, coarseScatterMaps, coarseGatherMaps, CoarseCounts,
+				CoarseGhost);
+
+	    makeCoarseScatGath(finerModel->getMeshList(), siteMap, coarseScatterMaps, coarseGatherMaps);
+#endif
+
+	    int newCount=FinishCoarseMesh(finerModel->getMeshList(), finerModel->getGeomFields(),
+					  *newMeshesPtr, CoarseCounts, PreFacePairMap, CoarseGhost);
+
 	    TCOMET* newModelPtr=new COMETModel(*newMeshesPtr,thisLevel,
 					       finerModel->getGeomFields(),
 					       *newKspacesPtr,*newMacroPtr);
@@ -968,9 +1035,12 @@ class COMETModel : public Model
 	    COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
 	    ComInt.makeCoarseCoeffs(finerModel->getIClist(),newModelPtr->getIClist());
 
-	    cout<<"Level: "<<newModelPtr->getLevel()<<endl<<endl;
-	    newModelPtr->calcDomainStats();
-	    cout<<endl;
+	    if(_options.DomainStats=="Loud")
+	      {
+		cout<<"Level: "<<newModelPtr->getLevel()<<endl<<endl;
+		newModelPtr->calcDomainStats();
+		cout<<endl;
+	      }
 
 	    if(newCount>3)
 	      newModelPtr->MakeCoarseModel(newModelPtr);
@@ -1007,47 +1077,32 @@ class COMETModel : public Model
 
   }
 
-  int MakeCoarseMesh(const MeshList& inMeshes, GeomFields& inGeomFields,
-		      MeshList& outMeshes)
+  void MakeInteriorCoarseMesh(const MeshList& inMeshes, GeomFields& inGeomFields,
+			      MeshList& outMeshes, IntArray& CoarseCounts,
+			      map<const StorageSite*, IntArray*> PreFacePairMap, IntArray& CoarseGhost,
+			      SiteMap& siteMap)
   {
-
+    
     const int numMeshes=inMeshes.size();
-    vector<IntArrPtr> FineToCoarseList;
-    IntArray CoarseCounts(numMeshes);
     CoarseCounts=0;
-    map<const StorageSite*, IntArray*> PreFacePairMap;
-
-    for(int m=0;m<numMeshes;m++)
-      {
-	const Mesh& mesh=*inMeshes[m];
-	const StorageSite& Cells=mesh.getCells();
-	const int CellTotal=Cells.getCount();
-	IntArrPtr newFineToCoarsePtr(new IntArray(CellTotal));
-	*newFineToCoarsePtr=-1;
-	FineToCoarseList.push_back(newFineToCoarsePtr);
-	//CoarseCounts[m]=coarsenInterior(m,mesh,*newFineToCoarsePtr,inGeomFields);
-      }
 
     //coarsen interfaces first
     foreach(COMETIC<T>* icPtr, _IClist)
       {
 	COMETIC<T>& ic=*icPtr;
-	const int Mid0=ic.MeshID0;
-	const int Mid1=ic.MeshID1;
-	IntArray& FineToCoarse0=*FineToCoarseList[Mid0];
-	IntArray& FineToCoarse1=*FineToCoarseList[Mid1];
-
-	coarsenInterfaceCells(ic, FineToCoarse0, FineToCoarse1, CoarseCounts[Mid0],
-			      CoarseCounts[Mid1], inGeomFields, inMeshes);
+	coarsenInterfaceCells(ic, CoarseCounts, inGeomFields, inMeshes);
       }
 
     //coarsen interiors
     for(int m=0;m<numMeshes;m++)
       {
 	const Mesh& mesh=*inMeshes[m];
-	IntArray& FineToCoarse=*FineToCoarseList[m];
-	int coarseCount=coarsenInterior(m, mesh, FineToCoarse,
-					inGeomFields, CoarseCounts[m]);
+	const int dim=mesh.getDimension();
+	Mesh* newMeshPtr=new Mesh(dim);
+	outMeshes.push_back(newMeshPtr);
+	newMeshPtr->setID(m);
+	siteMap[&(mesh.getCells())]=&(newMeshPtr->getCells());
+	int coarseCount=coarsenInterior(m, mesh, inGeomFields, CoarseCounts[m]);
       }
 
     foreach(COMETIC<T>* icPtr, _IClist)
@@ -1062,6 +1117,7 @@ class COMETModel : public Model
 	const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
 	const StorageSite& faces1=mesh1.getFaceGroup(Fid1).site;
 	const StorageSite& cells0=mesh0.getCells();
+	const StorageSite& cells1=mesh1.getCells();
 	const int f1Offset=faces1.getOffset();
 	const StorageSite& allFaces0=mesh0.getFaces();
 	const CRConnectivity& faceCells0=mesh0.getFaceCells(faces0);
@@ -1071,8 +1127,8 @@ class COMETModel : public Model
 	const CRConnectivity& faceCells1=mesh1.getFaceCells(faces1);
 	const CRPtr cellFaces1Ptr=faceCells1.getTranspose();
 	const int faceCount=faces0.getCount();
-	IntArray& FineToCoarse0=*FineToCoarseList[Mid0];
-	IntArray& FineToCoarse1=*FineToCoarseList[Mid1];
+	IntArray& FineToCoarse0=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[cells0]);
+	IntArray& FineToCoarse1=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[cells1]);
 	const int cCount0=CoarseCounts[Mid0];
 	const int cCount1=CoarseCounts[Mid1];
 
@@ -1157,6 +1213,8 @@ class COMETModel : public Model
 	    //FaceFine2Coarse[f]=coarseFace;
 	    //coarseFace++;
 	  }
+
+
 	
 	//must check for zero summed area
 	VectorT3Array summedArea(coarseFace);
@@ -1192,24 +1250,309 @@ class COMETModel : public Model
 
       }
 
+    for(int n=0;n<numMeshes;n++)
+      {
+	const Mesh& mesh=*_meshes[n];
+	if(!_IClist.empty())
+	  {
+	    CoarseCounts[n]=correctSingleNeighbor(n, mesh, inGeomFields, 
+						  CoarseCounts[n], PreFacePairMap);
+	  }
+
+	IntArray& FineToCoarse=dynamic_cast<IntArray&>(
+						       inGeomFields.fineToCoarse[mesh.getCells()]);
+
+	CoarseGhost[n]=CoarseCounts[n];
+	int outGhost(0);
+
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  {
+	    const FaceGroup& fg=*fgPtr;
+	    if(fg.id>0)
+	      {
+		const CRConnectivity& faceCells=mesh.getFaceCells(fg.site);
+		const int faceCount=fg.site.getCount();
+
+		if(_bcMap[fg.id]->bcType == "Interface")
+		  {
+		    IntArray& FaceFine2Coarse=*PreFacePairMap[&fg.site];
+		    
+		    int coarseFaces(0);
+		    for(int i=0;i<faceCount;i++)
+		      {
+			const int cghost=faceCells(i,1);
+			FineToCoarse[cghost]=FaceFine2Coarse[i]+CoarseGhost[n];
+			if(FaceFine2Coarse[i]>coarseFaces)
+			  coarseFaces=FaceFine2Coarse[i];
+		      }
+		    CoarseGhost[n]+=coarseFaces+1;
+		    outGhost+=coarseFaces+1;
+		  }
+		else if(_bcMap[fg.id]->bcType == "temperature" ||
+			_bcMap[fg.id]->bcType == "reflecting"	)
+		  {
+		    for(int i=0;i<faceCount;i++)
+		      {
+			const int cghost=faceCells(i,1);
+			FineToCoarse[cghost]=CoarseGhost[n];
+			CoarseGhost[n]++;
+			outGhost++;
+		      }
+		  }
+	      }
+	  }
+
+      }
+
+  }
+
+  void syncGhostCoarsening(const MeshList& inMeshes, GeomFields& inGeomFields,
+			   MeshList& outMeshes, ScatGathMaps& coarseScatMaps,
+			   ScatGathMaps& coarseGathMaps, IntArray& coarseSizes, 
+			   IntArray& CoarseGhost)
+  {
+
+    const int numMeshes=inMeshes.size();
+    for(int n=0;n<numMeshes;n++)
+      {
+	const Mesh& mesh=*inMeshes[n];
+
+	const StorageSite& inCells=mesh.getCells();
+	const StorageSite& site=mesh.getCells();
+	const int inCellCount=inCells.getSelfCount();
+	const int inCellTotal=inCells.getCount();
+      
+	Field& FineToCoarseField=inGeomFields.fineToCoarse;
+	IntArray& coarseIndex=dynamic_cast<IntArray&>(FineToCoarseField[inCells]);
+	IntArray tempIndex(inCells.getCountLevel1());
+	for(int c=0;c<inCells.getCountLevel1();c++)
+	  tempIndex[c]=coarseIndex[c];
+
+	int coarseGhostSize=0;
+	int tempGhostSize=0;
+	int coarseSize= CoarseGhost[n];
+
+	const StorageSite::GatherMap&  gatherMap  = site.getGatherMap();
+
+	// collect all the toIndices arrays for each storage site from
+	// gatherMap
+      
+	typedef map<const StorageSite*, vector<const Array<int>* > > IndicesMap;
+	IndicesMap toIndicesMap;
+	//IndicesMap tempIndicesMap;
+
+	foreach(const StorageSite::GatherMap::value_type pos, gatherMap)
+	  {
+	    const StorageSite& oSite = *pos.first;
+	    //const Array<int>& tempIndices = *pos.second;
+	    const Array<int>& toIndices = *pos.second;
+
+	    //tempIndicesMap[&oSite].push_back(&tempIndices);
+	    toIndicesMap[&oSite].push_back(&toIndices);
+	  }
+	
+	/*
+	foreach(IndicesMap::value_type pos, tempIndicesMap)
+	  {
+	    const StorageSite& oSite = *pos.first;
+	    const vector<const Array<int>* > tempIndicesArrays = pos.second;
+
+	    map<int,int> otherToMyMapping;
+	    UnorderedSet  gatherSet;
+
+	    foreach(const Array<int>* tempIndicesPtr, tempIndicesArrays)
+	      {
+		const Array<int>& tempIndices = *tempIndicesPtr;
+		const int nGhostRows = tempIndices.getLength();
+		for(int ng=0; ng<nGhostRows; ng++)
+		  {
+		    const int fineIndex = tempIndices[ng];
+		    const int coarseOtherIndex = tempIndex[fineIndex];
+
+		    if (coarseOtherIndex < 0)
+		      continue;
+
+		    if (otherToMyMapping.find(coarseOtherIndex) !=
+			otherToMyMapping.end())
+		      {
+                      
+			tempIndex[fineIndex] = otherToMyMapping[coarseOtherIndex];
+		      }
+		    else
+		      {
+			tempIndex[fineIndex] = tempGhostSize+coarseSize;
+			otherToMyMapping[coarseOtherIndex] = tempIndex[fineIndex];
+			gatherSet.insert( tempIndex[fineIndex] );
+			tempGhostSize++;
+		      }
+		  }
+	      }
+	  }*/
+      
+	foreach(IndicesMap::value_type pos, toIndicesMap)
+	  {
+	    const StorageSite& oSite = *pos.first;
+	    const vector<const Array<int>* > toIndicesArrays = pos.second;
+
+          
+	    map<int,int> otherToMyMapping;
+	    UnorderedSet  gatherSet;
+
+	    foreach(const Array<int>* toIndicesPtr, toIndicesArrays)
+	      {
+		const Array<int>& toIndices = *toIndicesPtr;
+		const int nGhostRows = toIndices.getLength();
+		for(int ng=0; ng<nGhostRows; ng++)
+		  {
+		    const int fineIndex = toIndices[ng];
+		    const int coarseOtherIndex = coarseIndex[fineIndex];
+                  
+		    if (coarseOtherIndex < 0)
+		      continue;
+                  
+		    if (otherToMyMapping.find(coarseOtherIndex) !=
+			otherToMyMapping.end())
+		      {
+			coarseIndex[fineIndex] = otherToMyMapping[coarseOtherIndex];
+		      }
+		    else
+		      {
+			coarseIndex[fineIndex] = CoarseGhost[n];
+			otherToMyMapping[coarseOtherIndex] = coarseIndex[fineIndex];
+			gatherSet.insert( coarseIndex[fineIndex] );
+			CoarseGhost[n]++;
+		      }
+		  
+		  }
+
+	      }
+
+	    const int coarseMappersSize = otherToMyMapping.size();
+
+	    shared_ptr<Array<int> > coarseToIndices(new Array<int>(coarseMappersSize));
+
+	    for(int n = 0; n < gatherSet.size(); n++)
+	      (*coarseToIndices)[n]   = gatherSet.getData().at(n);
+	    
+	    SSPair sskey(&site,&oSite);
+	    coarseGathMaps [sskey] = coarseToIndices;
+
+	  }
+	
+	const StorageSite::ScatterMap& scatterMap = site.getScatterMap();
+      
+	IndicesMap fromIndicesMap;
+
+	foreach(const StorageSite::GatherMap::value_type pos, scatterMap)
+	  {
+	    const StorageSite& oSite = *pos.first;
+	    const Array<int>& fromIndices = *pos.second;
+
+	    fromIndicesMap[&oSite].push_back(&fromIndices);
+	  }
+      
+	foreach(IndicesMap::value_type pos, fromIndicesMap)
+	  {
+	    const StorageSite& oSite = *pos.first;
+	    const vector<const Array<int>* > fromIndicesArrays = pos.second;
+
+	    UnorderedSet  scatterSet;
+
+	    foreach(const Array<int>* fromIndicesPtr, fromIndicesArrays)
+	      {
+		const Array<int>& fromIndices = *fromIndicesPtr;
+		const int nGhostRows = fromIndices.getLength();
+		for(int ng=0; ng<nGhostRows; ng++)
+		  {
+		    const int fineIndex = fromIndices[ng];
+		    const int coarseOtherIndex = coarseIndex[fineIndex];
+		    if (coarseOtherIndex >= 0)
+		      scatterSet.insert( coarseOtherIndex );
+		  }
+
+	      }
+
+	    const int coarseMappersSize = scatterSet.size();
+          
+	    shared_ptr<Array<int> > coarseFromIndices(new Array<int>(coarseMappersSize));
+          
+	    for(int n = 0; n < scatterSet.size(); n++ ) 
+	      (*coarseFromIndices)[n] = scatterSet.getData().at(n);
+          
+	    SSPair sskey(&site,&oSite);
+	    coarseScatMaps[sskey] = coarseFromIndices;
+	    
+	  }
+	
+      }
+  }
+
+  void makeCoarseScatGath(const MeshList& inMeshes, SiteMap& siteMap,
+			   ScatGathMaps& coarseScatMaps, ScatGathMaps& coarseGathMaps)
+  {
+    const int numMeshes =_meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& fineSite = mesh.getCells();
+	StorageSite& coarseSite = *siteMap[&fineSite];
+	const StorageSite::ScatterMap& fineScatterMap = fineSite.getScatterMap();
+	StorageSite::ScatterMap& coarseScatterMap = coarseSite.getScatterMap();
+
+	foreach(const StorageSite::ScatterMap::value_type& pos, fineScatterMap)
+	  {
+	    const StorageSite& fineOSite = *pos.first;
+
+	    // the ghost site will not have its corresponding coarse
+	    // site created yet so we create it here
+	    if (siteMap.find(&fineOSite) == siteMap.end())
+	      {
+		StorageSite* ghostSite=new StorageSite(-1);
+		ghostSite->setGatherProcID (fineOSite.getGatherProcID());
+		ghostSite->setScatterProcID(fineOSite.getScatterProcID());
+		ghostSite->setTag( fineOSite.getTag() );
+		siteMap[&fineOSite]=ghostSite;
+	      }
+   
+	    StorageSite* coarseOSite = siteMap[&fineOSite];
+		      
+	    SSPair sskey(&fineSite,&fineOSite);
+	    coarseScatterMap[coarseOSite] = coarseScatMaps[sskey];
+
+	  }
+		  
+	const StorageSite::GatherMap& fineGatherMap = fineSite.getGatherMap();
+	StorageSite::GatherMap& coarseGatherMap = coarseSite.getGatherMap();
+
+	foreach(const StorageSite::GatherMap::value_type& pos, fineGatherMap)
+	  {
+	    const StorageSite& fineOSite = *pos.first;
+	    StorageSite& coarseOSite = *siteMap[&fineOSite];
+	    SSPair sskey(&fineSite,&fineOSite);
+
+	    coarseGatherMap[&coarseOSite] = coarseGathMaps[sskey];
+	  }
+		  
+      }
+  }
+
+  int FinishCoarseMesh(const MeshList& inMeshes, GeomFields& inGeomFields,
+		       MeshList& outMeshes, IntArray& CoarseCounts,
+		       map<const StorageSite*, IntArray*> PreFacePairMap,
+		       IntArray& coarseGhost)
+  {
+
+    const int numMeshes=inMeshes.size();
+
     int smallestMesh=-1;
     
     for(int n=0;n<numMeshes;n++)
       {
 	const Mesh& mesh=*inMeshes[n];
-	const int dim=mesh.getDimension();
-	Mesh* newMeshPtr=new Mesh(dim);
-	outMeshes.push_back(newMeshPtr);
-	newMeshPtr->setID(n);
-	IntArray& FineToCoarse=*FineToCoarseList[n];
-	CoarseCounts[n]=correctSingleNeighbor(n, mesh, FineToCoarse,
-					      inGeomFields, CoarseCounts[n], PreFacePairMap);
-
+	Mesh* newMeshPtr=outMeshes[n];
 	int coarseCount=CoarseCounts[n];
-	//int coarseCount=coarsenInterior(n, mesh, FineToCoarse,
-	//				inGeomFields, CoarseCounts[n]);
-
 	const StorageSite& inCells=mesh.getCells();
+	IntArray& FineToCoarse=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[inCells]);
 	StorageSite& outCells=newMeshPtr->getCells();
 	StorageSite& outFaces=newMeshPtr->getFaces();
 	const StorageSite& inFaces=mesh.getFaces();
@@ -1225,47 +1568,8 @@ class COMETModel : public Model
 	const VectorT3Array& inFA=
 	  dynamic_cast<const VectorT3Array&>(FaceAreaField[inFaces]);
 	
-	int coarseGhost=coarseCount;
-	int outGhost(0);
-	foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
-	  {
-	    const FaceGroup& fg=*fgPtr;
-	    if(fg.id!=0)
-	      {
-		const CRConnectivity& faceCells=mesh.getFaceCells(fg.site);
-		const int faceCount=fg.site.getCount();
-
-		if(_bcMap[fg.id]->bcType == "Interface")
-		  {
-		    IntArray& FaceFine2Coarse=*PreFacePairMap[&fg.site];
-		    
-		    int coarseFaces(0);
-		    for(int i=0;i<faceCount;i++)
-		      {
-			const int cghost=faceCells(i,1);
-			FineToCoarse[cghost]=FaceFine2Coarse[i]+coarseGhost;
-			if(FaceFine2Coarse[i]>coarseFaces)
-			  coarseFaces=FaceFine2Coarse[i];
-		      }
-		    coarseGhost+=coarseFaces+1;
-		    outGhost+=coarseFaces+1;
-		  }
-		else if(_bcMap[fg.id]->bcType == "temperature" ||
-			_bcMap[fg.id]->bcType == "reflecting"	)
-		  {
-		    for(int i=0;i<faceCount;i++)
-		      {
-			const int cghost=faceCells(i,1);
-			FineToCoarse[cghost]=coarseGhost;
-			coarseGhost++;
-			outGhost++;
-		      }
-		  }
-	      }
-	  }
-	
 	//make the coarse cell to fine cell connectivity.
-	outCells.setCount(coarseCount,outGhost);
+	outCells.setCount(CoarseCounts[n],coarseGhost[n]-CoarseCounts[n]);
 	CRPtr CoarseToFineCells=CRPtr(new CRConnectivity(outCells,inCells));
 	CoarseToFineCells->initCount();
 	
@@ -1284,31 +1588,25 @@ class COMETModel : public Model
 
 	CRPtr FineFacesCoarseCells=CRPtr(new CRConnectivity(inFaces,outCells));
 	FineFacesCoarseCells->initCount();
-	
+
 	//count surviving faces
-	int survivingFaces=0;
-	int coarse0, coarse1;
 	for(int f=0;f<inFaceCount;f++)
 	  {
-	    coarse0=FineToCoarse[inFaceinCells(f,0)];
-	    coarse1=FineToCoarse[inFaceinCells(f,1)];
+	    int coarse0=FineToCoarse[inFaceinCells(f,0)];
+	    int coarse1=FineToCoarse[inFaceinCells(f,1)];
 	    if(coarse0!=coarse1)
-	      {
-		survivingFaces++;
-		FineFacesCoarseCells->addCount(f,2);
-	      }
+	      FineFacesCoarseCells->addCount(f,2);
 	  }
 	
 	FineFacesCoarseCells->finishCount();
 	
 	//make non-zero's
-	int fc0,fc1,cc0,cc1;
 	for(int f=0;f<inFaceCount;f++)
 	  {
-	    fc0=inFaceinCells(f,0);
-	    fc1=inFaceinCells(f,1);
-	    cc0=FineToCoarse[fc0];
-	    cc1=FineToCoarse[fc1];
+	    int fc0=inFaceinCells(f,0);
+	    int fc1=inFaceinCells(f,1);
+	    int cc0=FineToCoarse[fc0];
+	    int cc1=FineToCoarse[fc1];
 	    if(cc0!=cc1)
 	      {
 		FineFacesCoarseCells->add(f,cc0);
@@ -1335,7 +1633,9 @@ class COMETModel : public Model
 		if(neibs>1)
 		  {
 		    if(!counted[c1])
-		      counter++;
+		      {
+			counter++;
+		      }
 		  }
 		else  //gives two faces to cells with 1 neighbor
 		  {
@@ -1410,17 +1710,86 @@ class COMETModel : public Model
 	      }
 	  }
 
+	const int coarseInteriorCount=counter;
+
+	//cell connectivity to boundary faces
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  {
+	    const FaceGroup& fg=*fgPtr;
+	    const int faceCount=fg.site.getCount();
+	    const CRConnectivity& inBfaceCells=mesh.getFaceCells(fg.site);
+
+	    if(fg.id>0)
+	      {
+		if(_bcMap[fg.id]->bcType == "Interface")
+		  {
+		    IntArray& FaceFine2Coarse=*PreFacePairMap[&fg.site];
+		    int coarseFaces(0);
+		    for(int i=0;i<faceCount;i++)
+		      if(FaceFine2Coarse[i]>coarseFaces)
+			coarseFaces=FaceFine2Coarse[i];
+		    coarseFaces+=1;
+		    
+		  }
+		else
+		  {
+		    const int faceCount=fg.site.getCount();
+		    for(int i=0;i<faceCount;i++)
+		      {
+			const int c1=inBfaceCells(i,1);   //fine ghost cell
+			const int cc1=FineToCoarse[c1];   //coarse ghost cell
+			const int cc2=(*CellCellCoarse)(cc1,0);  //coarse interior cell
+			CoarseCellCoarseFace->add(cc1,counter);
+			CoarseCellCoarseFace->add(cc2,counter);
+			counter++;
+		      }
+		  }
+	      }
+	  }
+
+	// have to count coarse interfaces (parallel) -- !!
+
+	foreach(const StorageSite::GatherMap::value_type pos, outCells.getGatherMap())
+	  {
+	    const StorageSite& oSite = *pos.first;
+	    const Array<int>& toIndices = *pos.second;
+
+	    int to_where  = oSite.getGatherProcID();
+	    if ( to_where != -1 )
+	      {
+		const int fgCount=toIndices.getLength();
+		
+		for(int i=0;i<fgCount;i++)
+		  {
+		    const int c1=toIndices[i];
+		    const int c1neibs=CellCellCoarse->getCount(c1);
+		    for(int j=0;j<c1neibs;j++)
+		      {
+			const int c2=(*CellCellCoarse)(toIndices[i],j);
+			CoarseCellCoarseFace->add(c2,counter);
+			CoarseCellCoarseFace->add(toIndices[i],counter);
+			counter++;
+		      }
+		  }
+	      }
+	  }
+
+	/*
 	//make cell connectivity to boundary faces.
 	for(int c=outCells.getSelfCount();c<outCells.getCount();c++)
 	  {
-	    const int c1=(*CellCellCoarse)(c,0);
-	    CoarseCellCoarseFace->add(c1,counter);
-	    CoarseCellCoarseFace->add(c,counter);
-	    counter++;
-	  }
+	    const int neibs=CellCellCoarse->getCount(c);
+	    for(int j=0;j<neibs;j++)
+	      {
+		const int c1=(*CellCellCoarse)(c,j);
+		CoarseCellCoarseFace->add(c1,counter);
+		CoarseCellCoarseFace->add(c,counter);
+		counter++;
+	      }
+	  }*/
 
 	CoarseCellCoarseFace->finishAdd();
-	
+
 	CRPtr CoarseFaceCoarseCell=CoarseCellCoarseFace->getTranspose();
 
 	newMeshPtr->setConnectivity(outCells,outFaces,CoarseCellCoarseFace);
@@ -1562,18 +1931,16 @@ class COMETModel : public Model
 	  }
 
 	CoarseFacesFineFaces->finishAdd();
-
-	const int interiorCount=outFaces.getCount()-outGhost;
 	
 	//const StorageSite& interiorFaces=
-	newMeshPtr->createInteriorFaceGroup(interiorCount);
+	newMeshPtr->createInteriorFaceGroup(coarseInteriorCount);
 
-	int inOffset=interiorCount;
-	foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+	int inOffset=coarseInteriorCount;
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	  {
 	    const FaceGroup& fg=*fgPtr;
 	    const int faceCount=fg.site.getCount();
-	    if(fg.id!=0)
+	    if(fg.id>0)
 	      {
 		if(_bcMap[fg.id]->bcType == "Interface")
 		  {
@@ -1603,6 +1970,33 @@ class COMETModel : public Model
 	      }
 	  }
 
+	// have to make coarse interface face groups -- !!
+
+	const StorageSite::GatherMap&  coarseGatherMap  = outCells.getGatherMap();
+
+	foreach(const StorageSite::GatherMap::value_type pos, coarseGatherMap)
+	  {
+	    const StorageSite& oSite = *pos.first;
+	    const Array<int>& toIndices = *pos.second;
+
+	    int to_where  = oSite.getGatherProcID();
+	    if ( to_where != -1 )
+	      {
+		const int cellCount=toIndices.getLength();
+		int faceCount(0);
+
+		for(int i=0;i<cellCount;i++)
+		  {
+		    const int c1=toIndices[i];
+		    faceCount+=CellCellCoarse->getCount(c1);
+		  }
+
+		const StorageSite& newBoundarySite=
+		  newMeshPtr->createInterfaceGroup(faceCount,inOffset,to_where);
+		inOffset+=faceCount;
+	      }
+	  }
+	
 	//now make the geom fields
 	const int outCellsCount=outCells.getSelfCount();
 	const int outCellsTotCount=outCells.getCount();
@@ -1644,7 +2038,7 @@ class COMETModel : public Model
 		int fc=(*CoarseToFineCells)(c,i);
 		newCoord+=inCoords[fc];
 	      }
-	    outCoords[c]=newCoord;
+	    outCoords[c]=newCoord;  ///needs to be changed
 	  }	
 	
 	VolumeField.addArray(outCells,outCellVolumePtr);
@@ -1719,7 +2113,7 @@ class COMETModel : public Model
     return smallestMesh;
   }
 
-  int coarsenInterior(const int m, const Mesh& mesh, IntArray& FineToCoarse,
+  int coarsenInterior(const int m, const Mesh& mesh, 
 		      GeomFields& inGeomFields, int& coarseCount)
   {
     const StorageSite& inCells=mesh.getCells();
@@ -1730,6 +2124,8 @@ class COMETModel : public Model
     Field& areaMagField=inGeomFields.areaMag;
     const TArray& areaMagArray=dynamic_cast<const TArray&>(areaMagField[inFaces]);
     const BCfaceArray& inBCfArray=*(_BFaces[m]);
+
+    IntArray& FineToCoarse=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[inCells]);
 
     //first sweep to make initial pairing
     int pairWith;
@@ -1825,8 +2221,8 @@ class COMETModel : public Model
     return coarseCount;
   }
 
-  int correctSingleNeighbor(const int m, const Mesh& mesh, IntArray& FineToCoarse,
-			    GeomFields& inGeomFields, int& coarseCount,
+  int correctSingleNeighbor(const int m, const Mesh& mesh,
+			    GeomFields& inGeomFields, int coarseCount,
 			    map<const StorageSite*, IntArray*> PreFacePairMap)
   {
 
@@ -1835,13 +2231,19 @@ class COMETModel : public Model
     const StorageSite& inFaces=mesh.getFaces();
     const int inFaceCount=inFaces.getCount();
     const CRConnectivity& inFaceinCells=mesh.getFaceCells(inFaces);
+    const IntArray& FineToCoarseConst=dynamic_cast<const IntArray&>
+      (inGeomFields.fineToCoarse[inCells]);
 
+    IntArray FineToCoarse(FineToCoarseConst.getLength());
+    FineToCoarse=FineToCoarseConst;
+    
     int coarseGhost=coarseCount;
     int outGhost(0);
-    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
 	const FaceGroup& fg=*fgPtr;
-	if(fg.id!=0)
+
+	if(fg.id>0)
 	  {
 	    const CRConnectivity& faceCells=mesh.getFaceCells(fg.site);
 	    const int faceCount=fg.site.getCount();
@@ -1872,7 +2274,24 @@ class COMETModel : public Model
 		    outGhost++;
 		  }
 	      }
+	  
 	  }
+      }
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+      {
+	const FaceGroup& fg=*fgPtr;
+	const CRConnectivity& faceCells=mesh.getFaceCells(fg.site);
+	const int faceCount=fg.site.getCount();
+	
+	for(int i=0;i<faceCount;i++)
+	  {
+	    const int cghost=faceCells(i,1);
+	    FineToCoarse[cghost]=coarseGhost;
+	    coarseGhost++;
+	    outGhost++;
+	  }
+	
       }
 
     StorageSite preOutCells(coarseCount,outGhost);
@@ -1909,13 +2328,12 @@ class COMETModel : public Model
     FineFacesCoarseCells->finishCount();
 	
     //make non-zero's
-    int fc0,fc1,cc0,cc1;
     for(int f=0;f<inFaceCount;f++)
       {
-	fc0=inFaceinCells(f,0);
-	fc1=inFaceinCells(f,1);
-	cc0=FineToCoarse[fc0];
-	cc1=FineToCoarse[fc1];
+	int fc0=inFaceinCells(f,0);
+	int fc1=inFaceinCells(f,1);
+	int cc0=FineToCoarse[fc0];
+	int cc1=FineToCoarse[fc1];
 	if(cc0!=cc1)
 	  {
 	    FineFacesCoarseCells->add(f,cc0);
@@ -1927,6 +2345,7 @@ class COMETModel : public Model
 
     CRPtr CoarseCellsFineFaces=FineFacesCoarseCells->getTranspose();
     CRPtr CellCellCoarse=CoarseCellsFineFaces->multiply(*FineFacesCoarseCells,true);
+
 
     for(int c=0;c<preOutCells.getSelfCount();c++)
       {
@@ -1954,9 +2373,8 @@ class COMETModel : public Model
     return coarseCount;
   }
 
-  void coarsenInterfaceCells(COMETIC<T>& ic, IntArray& f2c0, IntArray& f2c1, 
-			     int& count0, int& count1, GeomFields& inGeomFields, 
-			     const MeshList& inMeshes)
+  void coarsenInterfaceCells(COMETIC<T>& ic, IntArray& coarseCounts, 
+			     GeomFields& inGeomFields, const MeshList& inMeshes)
   {
     const int Mid0=ic.MeshID0;
     const int Mid1=ic.MeshID1;
@@ -1967,6 +2385,7 @@ class COMETModel : public Model
     const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
     const StorageSite& faces1=mesh1.getFaceGroup(Fid1).site;
     const StorageSite& cells0=mesh0.getCells();
+    const StorageSite& cells1=mesh1.getCells();
     const StorageSite& globFaces0=mesh0.getFaces();
     const CRConnectivity& faceCells0=mesh0.getFaceCells(faces0);
     const CRConnectivity& faceCells1=mesh1.getFaceCells(faces1);
@@ -1986,6 +2405,11 @@ class COMETModel : public Model
 
     IntArray CoarseFineCount(cells0.getCount());
     CoarseFineCount.zero();
+
+    IntArray& f2c0=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[cells0]);
+    IntArray& f2c1=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[cells1]);
+    int& count0=coarseCounts[Mid0];
+    int& count1=coarseCounts[Mid1];
     
     //agglomerate mesh0 first
     int pairWith;
@@ -2675,7 +3099,7 @@ class COMETModel : public Model
     Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
     TArray& eArray=kspace.geteArray();
     const T DK3=kspace.getDK3();
-    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
         const FaceGroup& fg = *fgPtr;
         if (fg.id == faceGroupId)
@@ -2718,7 +3142,7 @@ class COMETModel : public Model
   {
     T r(0.);
     bool found = false;
-    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
         const FaceGroup& fg = *fgPtr;
         if (fg.id == faceGroupId)
@@ -2745,7 +3169,7 @@ class COMETModel : public Model
     VectorT3 An;
     An=0.;
     bool found = false;
-    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
 	const FaceGroup& fg = *fgPtr;
 	if (fg.id == faceGroupId)
@@ -2934,10 +3358,10 @@ class COMETModel : public Model
 
 	 totalVol+=meshVols[n];
 
-	 foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+	 foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	   {
 	     const FaceGroup& fg = *fgPtr;
-	     if(fg.id!=0)
+	     if(fg.id>0)
 	       {
 		 if(_bcMap[fg.id]->bcType == "Interface")
 		   {
@@ -3159,7 +3583,7 @@ class COMETModel : public Model
 
   bool sameFaceGroup(const Mesh& mesh, const int f0, const int f1)
   {
-    foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
 	const FaceGroup& fg=*fgPtr;
 	const int off=fg.site.getOffset();
@@ -3204,6 +3628,7 @@ class COMETModel : public Model
   MeshKspaceMap _MeshKspaceMap;
   IClist _IClist;
   MeshICmap _MeshToIC;
+  int _rank;
 
 };
 

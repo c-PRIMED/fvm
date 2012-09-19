@@ -60,6 +60,7 @@ class COMETModel : public Model
   MeshKspaceMap _MeshKspaceMap;
   IClist _IClist;
   MeshICmap _MeshToIC;
+  int _rank;
  
 };
 
@@ -87,6 +88,8 @@ struct COMETModelOptions : public FloatVarDict<T>
   bool withNormal;
   double NewtonTol;
   int BinsPerBand;
+  string Convection;
+  string DomainStats;
 };
 
 %template(COMETBCA) COMETBC<ATYPE_STR>;

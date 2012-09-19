@@ -1020,7 +1020,7 @@ class COMETDiscretizer
 
   void setfgFinder()
   {
-    foreach(const FaceGroupPtr fgPtr, _mesh.getAllFaceGroups())
+    foreach(const FaceGroupPtr fgPtr, _mesh.getBoundaryFaceGroups())
       {
 	const FaceGroup& fg=*fgPtr;
 	const int off=fg.site.getOffset();
@@ -1042,6 +1042,7 @@ class COMETDiscretizer
 	if(id->second[0]<=faceIndex && id->second[1]>faceIndex)
 	  return id->first;
       }
+    cout<<"Face index: "<<faceIndex<<endl;
     throw CException("Didn't find matching FaceGroup!");
     return -1;
   }
@@ -1214,6 +1215,7 @@ class COMETDiscretizer
 			_eArray[rIndex]=(_eArray[cellIndex]+SOU)*refl;
 			//SumEVdotA[j]+=dk3*_eArray[cellIndex]/DK3;
 		      }/*
+			 //THERE IS AN ISSUE WITH ONLY DEALING WITH OUTGOING PHONONS!!
 		    else
 		      {
 			Refl_pair& rpairs=mode.getReflpair(Fgid);
@@ -1338,8 +1340,13 @@ class COMETDiscretizer
 		    
 		    if(VdotA>0)
 		      {
-			_eArray[cell2Index]=_eArray[cellIndex]*refl;
-			//SumEVdotA[j]+=dk3*_eArray[cellIndex]/DK3;
+			_eArray[cell2Index]=_eArray[cellIndex]*refl;/*
+			Refl_pair& rpairs=mode.getReflpair(Fgid);
+			const int kk=rpairs.first.second;
+			Tkvol& kkvol=_kspace.getkvol(kk);
+			Tmode& refMode=kkvol.getmode(m);
+			const int rIndex=cellstart+refMode.getIndex()-1;
+			_eArray[cell2Index]=_eArray[rIndex]*refl;*/
 		      }
 		    else
 		      {
