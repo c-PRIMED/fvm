@@ -37,7 +37,7 @@ metricsCalculator.init()
 
 nSpecies = 1
 
-timeStep = 25.0 
+timeStep = 25.0
 numTimeSteps = 182
 numIterPerTimeStep = 20 # nonlinear so multiple iterations per timestep needed
 
@@ -124,7 +124,7 @@ pc.verbosity=0
 solver.preconditioner = pc
 solver.relativeTolerance = 1e-14 #solver tolerance
 solver.absoluteTolerance = 1e-14 #solver tolerance
-solver.nMaxIterations = 1000
+solver.nMaxIterations = 100
 solver.maxCoarseLevels=30
 solver.verbosity=0
 soptions.linearSolver = solver
@@ -209,10 +209,6 @@ eoptions.setVar('initialPotential',0.0)
 
 def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numIterPerTimeStep):
 
-   speciesFields = smodel.getSpeciesFields(0)
-   elecFields.speciesConcentration = speciesFields.massFraction    
-   emodel.advance(200)
-
    for t in range(1,(numTimeSteps+1)):
 
      for i in range(0,numIterPerTimeStep):
@@ -221,15 +217,16 @@ def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numI
         elecFields.speciesConcentration = speciesFields.massFraction
 
         #print "POTENTIAL MODEL"
-        emodel.advance(5)
+        emodel.advance(20)
 
         #set the potential for all species   
         for j in range(0,nSpecies):
            sFields = smodel.getSpeciesFields(j)
            sFields.elecPotential = elecFields.potential
+           sFields.massFractionElectricModel = sFields.massFraction###
 
         #print "SPECIES MODEL"
-        smodel.advance(1)
+        smodel.advance(10)
 
         #emodel.init()
 
@@ -256,6 +253,11 @@ def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numI
 # initialize
 emodel.init()
 smodel.init()
+
+# initialize potential model to match with species model at time 0
+speciesFields = smodel.getSpeciesFields(0)
+elecFields.speciesConcentration = speciesFields.massFraction    
+emodel.advance(200)
 
 # write initial conditons
 writer = exporters.VTKWriterA(geomFields,meshes_case,'TimeStep_Species0.vtk',

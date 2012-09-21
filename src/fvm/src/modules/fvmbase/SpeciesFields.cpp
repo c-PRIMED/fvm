@@ -11,7 +11,8 @@ SpeciesFields::SpeciesFields(const string baseName) :
   zero(baseName + "zero"),
   one(baseName + "one"),
   // For coupling to ElectricModel
-  elecPotential(baseName + "elecPotential")
+  elecPotential(baseName + "elecPotential"),
+  massFractionElectricModel(baseName + ".massFractionElectricModel") // mass Fraction that the Electric model last used
 {}
 
 SpeciesModelFields::SpeciesModelFields(const string baseName) :

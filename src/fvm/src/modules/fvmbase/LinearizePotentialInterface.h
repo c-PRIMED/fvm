@@ -160,15 +160,16 @@ template<class X, class Diag, class OffDiag>
 	//avoid nans during iterations
 	if (Ce_star < 0)
 	  {
-	    cout << "ERROR: Ce_star < 0, Ce_star=" << Ce_star << endl; Ce_star = 1.0;
+	    cout << "ERROR: Ce_star < 0, Ce_star=" << Ce_star << endl; Ce_star = 0.0;
 	  }
 	if (Cs_star < 0)
 	  {
-	    cout << "ERROR: Cs_star < 0, Cs_star=" << Cs_star << endl; Cs_star = 1;
+	    cout << "ERROR: Cs_star < 0, Cs_star=" << Cs_star << endl; Cs_star = 0.0;
 	  }
 	if (Cs_star > csMax){ Cs_star = 0.9*csMax; cout << "ERROR: Cs > CsMax" << endl;}
 
 	const T_Scalar SOC = eSpecConcCell[cellCells(0,0)]/csMax;
+	//const T_Scalar SOC = Cs_star/csMax;
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
 	  U_ref = -0.16 + 1.32*exp(-3.0*SOC)+10.0*exp(-2000.0*SOC);}

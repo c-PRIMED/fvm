@@ -37,11 +37,11 @@ template<class X, class Diag, class OffDiag>
 			   const bool Anode,
 			   const bool Cathode,
 			   Field& varField,
-			   Field& mFN1,
+			   Field& mFElectricModel,
 			   Field& elecPotentialField):
     _geomFields(geomFields),
     _varField(varField),
-    _mFN1(mFN1),
+    _mFElectricModel(mFElectricModel),
     _elecPotentialField(elecPotentialField),
     _RRConstant(RRConstant),
     _A_coeff(A_coeff),
@@ -60,8 +60,8 @@ template<class X, class Diag, class OffDiag>
     const StorageSite& faces = mesh.getParentFaceGroupSite();
 
     // previous timestep shell mesh info
-    const XArray& PrevConc =
-      dynamic_cast<const XArray&>(_mFN1[cells]);
+    const XArray& mFElecModel =
+      dynamic_cast<const XArray&>(_mFElectricModel[cells]);
 
     // shell mesh info
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
@@ -164,19 +164,22 @@ template<class X, class Diag, class OffDiag>
 
 
 	// avoid nans
-	if (cs_star < 0.0){ cs_star = 1.0; cout << "ERROR: Cs < 0, Cs=" << cs_star << endl;}
-	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 1.0;}
-	if (cs_star > csMax){ cs_star = 0.99*csMax; cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl;}
+	if (cs_star < 0.0){ cout << "ERROR: Cs < 0, Cs=" << cs_star << endl; cs_star = 0.0;}
+	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 0.0;}
+	if (cs_star > csMax){ cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl; cs_star = csMax;}
 
-	// avoid blowups
+	/*// avoid blowups
 	if (cs_star == 0.0){
 	  cs_star+=1; cout << "ERROR: Cs = 0" << endl;}
 	if (cs_star == csMax){
 	  cs_star-=1; cout << "ERROR: Cs = CsMax" << endl;}
 	if (ce_star == 0.0){
-	  ce_star+=0.001; cout << "ERROR: Ce = 0" << endl;}
+	ce_star+=0.001; cout << "ERROR: Ce = 0" << endl;}*/
 
-	const T_Scalar SOC = xCell[cellCells(0,0)]/csMax;
+	const T_Scalar SOC =  mFElecModel[cellCells(0,0)]/csMax;
+	//const T_Scalar SOC =  mFElecModel[c1]/csMax;
+	//const T_Scalar SOC = xCell[cellCells(0,0)]/csMax;
+	//const T_Scalar SOC = cs_star/csMax;
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
 	  U_ref = -0.16 + 1.32*exp(-3.0*SOC)+10.0*exp(-2000.0*SOC);
@@ -257,6 +260,15 @@ template<class X, class Diag, class OffDiag>
 	  cout <<"Diag: " << diag[c1] << " dRdXc2: " << offdiagC1_C2 << " dRdXc0: " << offdiagC1_C0 << endl;
 	  cout << " " << endl;
 	  }*/
+
+	if (c0 == 0){
+	  if (_Cathode)
+	    {
+	      cout << "UrefAnode: " << U_ref << endl;
+	      cout << "Cs0: " << cs_star << endl;
+	    }
+	  }
+
       }
 
   }
@@ -264,7 +276,7 @@ template<class X, class Diag, class OffDiag>
   
   const GeomFields& _geomFields;
   Field& _varField;
-  Field& _mFN1;
+  Field& _mFElectricModel;
   Field& _elecPotentialField;
   const T_Scalar _RRConstant;
   const T_Scalar _A_coeff;

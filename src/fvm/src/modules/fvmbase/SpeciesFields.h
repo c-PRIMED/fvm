@@ -22,6 +22,7 @@ struct SpeciesFields
   Field one;                      //used to fill in density
 
   Field elecPotential;            // for coupling to ElectricModel
+  Field massFractionElectricModel;
 };
 
 struct SpeciesModelFields

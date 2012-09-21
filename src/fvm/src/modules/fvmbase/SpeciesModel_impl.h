@@ -226,6 +226,11 @@ public:
 	
 	sFields.massFraction.addArray(cells,mFCell);
 
+	if (_options.ButlerVolmer)
+	  {
+	    sFields.massFractionElectricModel.addArray(cells,dynamic_pointer_cast<ArrayBase>(mFCell->newCopy()));
+	  }
+
 	if (_options.transient)
         {
             sFields.massFractionN1.addArray(cells,
@@ -500,7 +505,7 @@ public:
 							Anode,
 							Cathode,
 							sFields.massFraction,
-							sFields.massFractionN1,
+							sFields.massFractionElectricModel,
 							sFields.elecPotential);
 
 		lbv.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
@@ -702,7 +707,7 @@ public:
       }
     }
   }
-
+  
 private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
