@@ -37,6 +37,7 @@
 #include "CRMatrixTranspose.h"
 #include "FluxJacobianMatrix.h"
 #include "DiagonalMatrix.h"
+#include "GradientModel.h"
 
 #include "MatrixOperation.h"
 #include "NumType.h"
@@ -65,9 +66,12 @@ class KineticModel : public Model
   typedef Vector<T,10> VectorT10; 
   typedef Array<VectorT10> VectorT10Array;
   //typedef SquareMatrix<T,5> SqMatrix5;
+  typedef Gradient<T> DgradType;
+  typedef Array<Gradient<T> > DGradArray;
 
   typedef std::map<int,KineticBC<T>*> KineticBCMap;
   typedef std::map<int,KineticVC<T>*> KineticVCMap;
+  //typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
   /**
    * Calculation of macro-parameters density, temperature, components of velocity, pressure
    * by taking moments of distribution function using quadrature points and weights from quadrature.h
@@ -84,9 +88,11 @@ class KineticModel : public Model
     _dsfPtr1(_meshes,_quadrature,"dsf1_"),
     _dsfPtr2(_meshes,_quadrature,"dsf2_"),
     _dsfEqPtr(_meshes,_quadrature,"dsfEq_"),
-    _dsfEqPtrES(_meshes,_quadrature,"dsfEqES_"),
+    _dsfEqPtrES(_meshes,_quadrature,"dsfEqES_"),  //_dsfGradientPtr(meshes, geomfields, ....,quadrature, 'dsfGrad")
     _initialKmodelNorm(),
     _niters(0)
+    //_distributionGradientModel(_meshes,_macroFields.distribution,
+                              // _macroFields.distributionGradient,_geomField),
     {     
      
       const int numMeshes = _meshes.size();
@@ -159,6 +165,9 @@ class KineticModel : public Model
 	  *collFreqCell = vc["viscosity"];
 	  _macroFields.collisionFrequency.addArray(cells,collFreqCell);
 	  
+          shared_ptr<DGradArray> gradD(new DGradArray(cells.getCountLevel1()));
+          gradD->zero();
+          //_macroFields.distributionGradient.addArray(cells,gradD);
 	  
 	  //coeffs for perturbed BGK distribution function
 	  shared_ptr<VectorT5Array> coeffCell(new VectorT5Array(cells.getCountLevel1()));
@@ -222,9 +231,10 @@ class KineticModel : public Model
 	  _macroFields.EntropyGenRate.addArray(cells,EntropyGenRateCell);
 
 	  shared_ptr<TArray> EntropyGenRateColl(new TArray(cells.getCountLevel1()));
-	  *EntropyGenRateColl = 0.0;
+	  *EntropyGenRateCell = 0.0;
 	  _macroFields.EntropyGenRate_Collisional.addArray(cells,EntropyGenRateColl);
-	  
+          	  
+
 	//Pxx,Pyy,Pzz,Pxy,Pxz,Pyz
 	shared_ptr<VectorT6Array> stressCell(new VectorT6Array(nCells));
         VectorT6 initialstress;
@@ -236,6 +246,16 @@ class KineticModel : public Model
 	initialstress[5] = 0.0;
         *stressCell = initialstress;
         _macroFields.Stress.addArray(cells,stressCell);
+
+	shared_ptr<VectorT3Array> heatFluxCell(new VectorT3Array(nCells));
+        VectorT3 initialHeatFlux;
+        initialHeatFlux[0] = 0.0;
+        initialHeatFlux[1] = 0.0;
+	initialHeatFlux[2] = 0.0;
+        *heatFluxCell = initialHeatFlux;
+        _macroFields.heatFlux.addArray(cells,heatFluxCell);
+
+
 
 	//Knq=M300+M120+M102 for Couette with uy
         shared_ptr<TArray> KnqCell(new TArray(cells.getCountLevel1()));
@@ -353,6 +373,7 @@ class KineticModel : public Model
 	TArray& Entropy = dynamic_cast<TArray&>(_macroFields.Entropy[cells]);  
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);  
 	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
+	VectorT3Array& heatFlux = dynamic_cast<VectorT3Array&>(_macroFields.heatFlux[cells]);
 	
 	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
 	TArray& pressure = dynamic_cast<TArray&>(_macroFields.pressure[cells]);
@@ -377,6 +398,9 @@ class KineticModel : public Model
 	    v[c][2]=0.0;
 	    temperature[c]=1.0;
 	    pressure[c]=temperature[c]*density[c];
+	    heatFlux[c][0]=0.0;
+	    heatFlux[c][1]=0.0;
+	    heatFlux[c][2]=0.0;
 	    
 	    //BGK
 	      coeff[c][0]=density[c]/pow((pi*temperature[c]),1.5);
@@ -474,13 +498,14 @@ class KineticModel : public Model
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	const int nCells = cells.getCountLevel1();  //
-	
+        T gamma = _options.SpHeatRatio;	
 	
 	TArray& density = dynamic_cast<TArray&>(_macroFields.density[cells]);
 	TArray& temperature = dynamic_cast<TArray&>(_macroFields.temperature[cells]);
 	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[cells]);
 	TArray& pressure = dynamic_cast<TArray&>(_macroFields.pressure[cells]);
 	const int N123 = _quadrature.getDirCount(); 
+        VectorT3Array& heatFlux = dynamic_cast<VectorT3Array&>(_macroFields.heatFlux[cells]);   
 	
 	const TArray& cx = dynamic_cast<const TArray&>(*_quadrature.cxPtr);
 	const TArray& cy = dynamic_cast<const TArray&>(*_quadrature.cyPtr);
@@ -499,31 +524,39 @@ class KineticModel : public Model
 	    temperature[c]=0.0;   
 	    stress[c][0]=0.0;stress[c][1]=0.0;stress[c][2]=0.0;
 	    stress[c][3]=0.0;stress[c][4]=0.0;stress[c][5]=0.0;
-
+            heatFlux[c][0]=0.0;
+	    heatFlux[c][1]=0.0;
+	    heatFlux[c][2]=0.0;
 	  }	
+
+
+        //example : your dist functin field is updates somehow
+	//_dsfPtr->updateGradient();
+	//whenever you need the gradient field
+	//for ( int j=0 j < numFields; j++)
+	//     Field& fndGrad = *_dsfPtr.dsfGradient[j];
+        //}	    
 
 
 	for(int j=0;j<N123;j++){
 	  
 	  Field& fnd = *_dsfPtr.dsf[j];
+	  //Field& fndGrad = *_dsfPtr.dsfGradient[j];
+	  
 	  const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
 	  
 	  //fprintf(pFile,"%d %12.6f %E %E %E %E \n",j,dcxyz[j],cx[j],cy[j],f[80],density[80]+dcxyz[j]*f[80]);
 	  
 	  for(int c=0; c<nCells;c++){
 	    density[c] = density[c]+wts[j]*f[c];
-	    v[c][0]= v[c][0]+(cx[j]*f[c])*wts[j];
-	    v[c][1]= v[c][1]+(cy[j]*f[c])*wts[j];
-	    v[c][2]= v[c][2]+(cz[j]*f[c])*wts[j];
+	    v[c][0]= v[c][0]+(cx[j]*f[c])*wts[j];   // v[c][0]=density*xVel
+	    v[c][1]= v[c][1]+(cy[j]*f[c])*wts[j];   // v[c][1]=density*xVel
+	    v[c][2]= v[c][2]+(cz[j]*f[c])*wts[j];   // v[c][2]=density*zvel
 	    temperature[c]= temperature[c]+(pow(cx[j],2.0)+pow(cy[j],2.0)
 					   +pow(cz[j],2.0))*f[c]*wts[j];
-	   
 	  }
-	  
-	}
+	  }
 	
-
-
 	for(int c=0; c<nCells;c++){
 	  v[c][0]=v[c][0]/density[c];
 	  v[c][1]=v[c][1]/density[c];
@@ -533,6 +566,32 @@ class KineticModel : public Model
 					 +pow(v[c][2],2.0))*density[c];
 	  temperature[c]=temperature[c]/(1.5*density[c]);  
 	  pressure[c]=density[c]*temperature[c];
+	}
+        	  
+        for(int c=0; c<nCells;c++){
+        for(int j=0; j<N123;j++){
+          Field& fnd = *_dsfPtr.dsf[j];
+          const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
+          heatFlux[c][0] = heatFlux[c][0]+(pow(cx[j]-(v[c][0]),2.0)+pow(cy[j]-(v[c][1]),2.0)
+                                        +pow(cz[j]-(v[c][2]),2.0))*(cx[j]-v[c][0])*f[c]*wts[j]
+                                        +((5-3*gamma)/(gamma-1))*temperature[c]*(cx[j]-v[c][0])*f[c]*wts[j];
+          heatFlux[c][1] = heatFlux[c][1]+(pow(cx[j]-(v[c][0]),2.0)+pow(cy[j]-(v[c][1]),2.0)
+                                        +pow(cz[j]-(v[c][2]),2.0))*(cy[j]-v[c][1])*f[c]*wts[j]
+                                        +((5-3*gamma)/(gamma-1))*temperature[c]*(cy[j]-v[c][1])*f[c]*wts[j];
+          heatFlux[c][2] = heatFlux[c][2]+(pow(cx[j]-(v[c][0]),2.0)+pow(cy[j]-(v[c][1]),2.0)
+                                        +pow(cz[j]-(v[c][2]),2.0))*(cz[j]-v[c][2])*f[c]*wts[j]
+                                        +((5-3*gamma)/(gamma-1))*temperature[c]*(cz[j]-v[c][2])*f[c]*wts[j];
+        }
+	heatFlux[c][0] = heatFlux[c][0]/density[c];
+	heatFlux[c][1] = heatFlux[c][1]/density[c];
+	heatFlux[c][2] = heatFlux[c][2]/density[c];
+        }
+        
+	
+
+	for(int j=0; j<N123;j++){
+	  Field& fnd = *_dsfPtr.dsf[j];
+	  const TArray& f = dynamic_cast<const TArray&>(fnd[cells]);
 	}
 	
 	//Find Pxx,Pyy,Pzz,Pxy,Pyz,Pzx, etc in field	
@@ -1426,6 +1485,11 @@ map<string,shared_ptr<ArrayBase> >&
 		  {
 		    bc->bcType = "RealWallBC";
 		  }
+	/*	else if((fg.groupType == "insulatedwall"))
+		  {
+		    bc->bcType = "InsulatedWallBC";
+		  }
+	*/
 		else if (fg.groupType == "velocity-inlet")
 		  {
 		    bc->bcType = "VelocityInletBC";
@@ -3166,7 +3230,12 @@ map<string,shared_ptr<ArrayBase> >&
 	      {
 	    	kbc.applyPressureOutletBC(bTemperature,bPressure);
 	      }
-	    
+	    //	    else if(bc.bcType=="InsulatedWallBC")
+	    //  {
+	    //	kbc.applyInsulatedWallBC(bVelocity);
+	    //	}
+ 
+	  
 	  }
 	foreach(const FaceGroupPtr igPtr, mesh.getInterfaceGroups())
 	  {
@@ -3452,6 +3521,8 @@ map<string,shared_ptr<ArrayBase> >&
       }
   }
   
+
+
   void OutputDsfPOINT() //, const char* filename)
   {
     FILE * pFile;
@@ -3503,6 +3574,7 @@ map<string,shared_ptr<ArrayBase> >&
   DistFunctFields<T> _dsfPtr2;
   DistFunctFields<T> _dsfEqPtr;
   DistFunctFields<T> _dsfEqPtrES;
+  //DistFunctFieldsGrad<T> _dsfGradientPtr
 
   KineticBCMap _bcMap;
   KineticVCMap _vcMap;
