@@ -76,7 +76,8 @@ class COMETBoundaryConditions
     const XArray& wts = dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
     XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
     XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]); 
-    XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);   
+    XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);
+    //XArray& heatFlux = dynamic_cast<XArray&>(_macroFields.heatFlux[_cells]);   
     VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
     
    
@@ -188,7 +189,8 @@ class COMETBoundaryConditions
     VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
     XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]);  
     XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);  
-   
+    //XArray& heatFlux = dynamic_cast<XArrays&>(_macroFields.heatFlux[_cells]);     
+
     // X Tout = outletTemperature;
     const X Pout = outletPressure;
     X Pcell= pressure[c0];  

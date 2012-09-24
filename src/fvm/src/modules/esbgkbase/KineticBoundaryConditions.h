@@ -279,7 +279,168 @@ void applyDiffuseWallBC(const VectorX3& bVelocity,const X& bTemperature) const
       applyRealWallBC(i,bVelocity[i],bTemperature[i],accomCoeff[i],vecReflection);
 
   }
+  ///////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
+  /*
+  void applyInsulatedWallBC(int f,const VectorX3&  WallVelocity) const 
+  {
+
+    const double pi=_options.pi;
+    const double epsilon=_options.epsilon_ES;
+    
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1); ///changed
+    
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    
+   
+    const int numDirections = _quadrature.getDirCount();
+    const XArray& cx = dynamic_cast<const XArray&>(*_quadrature.cxPtr);
+    const XArray& cy = dynamic_cast<const XArray&>(*_quadrature.cyPtr);
+    const XArray& cz = dynamic_cast<const XArray&>(*_quadrature.czPtr);
+    const XArray& wj= dynamic_cast<const XArray&>(*_quadrature.dcxyzPtr);
+    
+    VectorX3Array& v = dynamic_cast<VectorX3Array&>(_macroFields.velocity[_cells]);
+    XArray& density  = dynamic_cast<XArray&>(_macroFields.density[_cells]); 
+    //XArray& pressure  = dynamic_cast<XArray&>(_macroFields.pressure[_cells]); 
+    XArray& temperature  = dynamic_cast<XArray&>(_macroFields.temperature[_cells]);   
+    
+    const X uwall=WallVelocity[0];
+    const X vwall=WallVelocity[1];
+    const X wwall=WallVelocity[2];
+    v[c1][0]=uwall;
+    v[c1][1]=vwall;
+    v[c1][2]=wwall;
+
+    X F1 = 0.0;
+    X F2 = 0.0;
+    X mass_out=0.0;
+    X mass_in=0.0;
+    X energy_out=0.0;
+    X energy_in=0.0;
+    X f1_nw=0.0;
+    X f1_Tw=0.0;
+    X f2_nw=0.0;
+    X f2_Tw=0.0;
+    X nwall_i=1.0;
+    X Twall_i=1.0;
  
+
+
+    X Twall_Nmr=0.0; 
+    X Twall_Dmr=0.0; 
+    for (int d_Tw < pow(10,-13) 
+	   
+	   for (int j=0; j<numDirections; j++)
+	     {	
+	       Field& fnd = *_dsfPtr.dsf[j];
+	       XArray& dsf = dynamic_cast< XArray&>(fnd[_cells]);
+	       const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+	       const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
+	       const X wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+	
+
+	       if (c_dot_en - wallV_dot_en > T_Scalar(epsilon)) //outgoing
+		 {
+		   mass_out = mass_out + c_dot_en * dsf[c0]*wj[j];
+		   energy_out = energy_out + c_dot_en *(pow(cx[j]-uwall,2)+pow(cy[j]-vwall,2)+pow(cz[j]-wwall,2)) * dsf[c0]*wk[j];
+		 }
+	       else
+		 {
+		   mass_in = mass_in+ c_dot_en*nwall_i/(pow(pi*Twall_i,1.5))*exp(-(pow(cx[j]-uwall,2)+pow(cy[j]-vwall,2)+pow(cz[j]-wwall,2))/Tw_i)*wj[j];
+
+		   energy_in=energy_in + c_dot_en*(pow(cx[j]-uwall,2)+pow(cy[j]-vwall,2))*nwall_i/(pow(pi*Twall_i,1.5))*exp(-(pow(cx[j]-uwall,2)+pow(cy[j]-vwall,2)+pow(cz[j]-wwall,2))/Tw_i)*wj[j];
+
+		   f1_nw = f1_nw + c_dot_en / pow(pi*Tw_i,1.5) * exp(- (pow(cx[j]-uwall,2)+pow(cy[j]-vwall,2)+pow(cz[j]-wwall,2))/Tw_i)*wj[j];
+
+		   f2_nw = f2_nw + c_dot_en * (pow(cx[j]-uwall,2)+pow(cy[j]-vwall,2)+pow(cz[j]-wwall,2)) / (pow(pi*Tw_i),1.5) * exp(-((pow(cx[j]-uwall,2)+pow(cy[j]-vwall,2)+pow(cz[j]-wwall,2))/Tw_i)*wj[j];
+																    f1_Tw_a = f1_Tw_a -3/2*c_dot_en*(pow(cx[j]-uwall,2)+pow(cy[j]-vwall)+pow(cz[j]-wwall,2))*nwall_i* wj[j]/(pow(pi,1.5)*pow(Twall_i,2.5))*exp(-(pow(cx[j]-uwall,2)+pow(cy[j]-vwall,2)+pow(cz[j]-wwall,2))/Twall_i);
+		   f1_Tw_b =  f1_Tw_b +
+		   f2_Tw_a =
+		   f2_Tw_b =
+		   
+		 }
+
+  
+
+	
+	if (c_dot_en -wallV_dot_en > T_Scalar(epsilon)) 
+	  {
+	    Twall_Nmr = Twall_Nmr+c_dot_en*(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))*dsf[c0]*wj[j]; 
+	    Twall_Dmr = Twall_Dmr+c_dot_en*dsf[c0]*wj[j];
+	  }
+	
+      }
+    const X Twall = Twall_Nmr/(2*Twall_Dmr);
+  
+    temperature[c1]=Twall;
+    //X Nmr(0.0) ;
+    //X Dmr(0.0) ;
+    //X incomFlux(0.0);
+    X nw_coef = 2.0*pow(pi,0.5)/(pow(Twall,0.5));
+    X nw_sum=0.0;
+    for (int j=0; j<numDirections; j++)
+      {
+	Field& fnd = *_dsfPtr.dsf[j];
+	XArray& dsf = dynamic_cast< XArray&>(fnd[_cells]);
+	const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];
+	//const X wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+	//const X fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
+	if (c_dot_en > T_Scalar(epsilon)) 
+	  {
+	    nw_sum=nw_sum+(c_dot_en)*dsf[c0]*wj[j];
+	      //Dmr = Dmr - fwall*wj[j]*(c_dot_en-wallV_dot_en);
+	      //incomFlux=incomFlux-dsf[c0]*wj[j]*(c_dot_en -wallV_dot_en);
+	  }	
+      }
+    const X nwall = nw_coef*nw_sum; // wall number density for initializing Maxwellian
+   
+
+ density[c1]=nwall;
+    //if (c0==80)cout <<"incoming" << incomFlux <<" outgoing" <<Nmr <<endl;
+    for (int j=0; j<numDirections; j++)
+      {
+	Field& fnd = *_dsfPtr.dsf[j];
+	XArray& dsf = dynamic_cast< XArray&>(fnd[_cells]);
+	const VectorT3 en = _faceArea[f]/_faceAreaMag[f];
+	const X c_dot_en = cx[j]*en[0]+cy[j]*en[1]+cz[j]*en[2];	
+	const X wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+
+	if (c_dot_en-wallV_dot_en < T_Scalar(epsilon))
+	  {
+	   
+	    dsf[c1] = (nwall/pow(pi*Twall,1.5))*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
+	    //dsf[c0]=dsf[c1];  // change value of fluid boundary-cell
+	  }
+	else
+	  dsf[c1]=dsf[c0];  
+      }  
+
+  }
+
+   void applyInsulatedWallBC(const FloatValEvaluator<VectorX3>& bVelocity) const 
+//,const FloatValEvaluator<X>& bTemperature,const vector<int>& vecReflection) const
+  {
+    for (int i=0; i<_faces.getCount();i++)
+      applyInsulatedWallBC(i, bVelocity[i]);//,bTemperature[i]);
+  }
+
+  void applyInsulatedWallBC(const VectorX3& bVelocity)const
+//, const X& bTemperature) const
+  {
+    for (int i=0; i<_faces.getCount();i++)
+      applyInsulatedWallBC(i, bVelocity);//,bTemperature[i]);
+  }
+ 
+  
+   
+  */
+
+  ////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
   void applySpecularWallBC(int f,const vector<int>& vecReflection) const
   {
     
