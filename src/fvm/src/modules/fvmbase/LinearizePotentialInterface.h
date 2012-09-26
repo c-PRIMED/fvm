@@ -168,8 +168,18 @@ template<class X, class Diag, class OffDiag>
 	  }
 	if (Cs_star > csMax){ Cs_star = 0.9*csMax; cout << "ERROR: Cs > CsMax" << endl;}
 
-	const T_Scalar SOC = eSpecConcCell[cellCells(0,0)]/csMax;
-	//const T_Scalar SOC = Cs_star/csMax;
+	// calculate average surface concentration inside electrode
+	T_Scalar Sum = 0.0;
+	for (int faceNumber=0; faceNumber<faces.getCount(); faceNumber++)
+	  { 
+	    const T_Scalar value = eSpecConcCell[cellCells(faceNumber,0)];
+	    Sum = Sum + value;
+	  }
+	const T_Scalar Average_cs = Sum/faces.getCount();
+
+	//const T_Scalar SOC = Average_cs/csMax;
+	const T_Scalar SOC = Cs_star/csMax;
+
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
 	  U_ref = -0.16 + 1.32*exp(-3.0*SOC)+10.0*exp(-2000.0*SOC);}
@@ -183,7 +193,7 @@ template<class X, class Diag, class OffDiag>
 
 	//if (c0==0){cout << U_ref << endl;}
 
-	const T_Scalar i0_star = k*Area*pow(Ce_star,alpha_c)*pow((csMax-Cs_star),alpha_a);
+	const T_Scalar i0_star = k*Area*pow(Ce_star,alpha_c)*pow((csMax-Cs_star),alpha_a)*pow(Cs_star,alpha_c);
 	//const T_Scalar i0_star = k*Area*pow(_B_coeff,alpha_a)*pow((csMax-_A_coeff),alpha_a)*pow(_A_coeff,alpha_c);
 
 	const T_Scalar Phis_star = xCell[c1];

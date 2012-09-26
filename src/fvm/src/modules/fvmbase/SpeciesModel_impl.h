@@ -678,6 +678,9 @@ public:
         ls.updateSolution();
 
         _niters++;
+
+	_currentResidual = rNorm;
+ 
         if (!(*rNorm < _options.absoluteTolerance ||
 	    *normRatio < _options.relativeTolerance))
 	    allConverged=false;
@@ -707,7 +710,19 @@ public:
       }
     }
   }
-  
+  bool ResidualLessThanTolerance(const double Tolerance)
+  {
+    if( *(_currentResidual)<Tolerance)
+      {
+	return true;
+      }
+    else
+      {
+	return false;
+      }
+  }
+
+
 private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
@@ -725,6 +740,8 @@ private:
   const int _nSpecies;
 
   SpeciesModelFields _speciesModelFields;
+
+  MFRPtr _currentResidual;
 };
 
 template<class T>
@@ -798,4 +815,11 @@ T
 SpeciesModel<T>::getMassFluxIntegral(const Mesh& mesh, const int faceGroupId, const int m)
 {
   return _impl->getMassFluxIntegral(mesh, faceGroupId, m);
+}
+
+template<class T>
+bool
+SpeciesModel<T>::ResidualLessThanTolerance(const double Tolerance)
+{
+  return _impl->ResidualLessThanTolerance(Tolerance);
 }

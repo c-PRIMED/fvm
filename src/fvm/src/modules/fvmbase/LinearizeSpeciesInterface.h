@@ -113,6 +113,8 @@ template<class X, class Diag, class OffDiag>
     const T_Scalar alpha_c = 0.5;
     const T_Scalar R = 8.314; //  J/mol/K
     const T_Scalar Temp = 300.0; //  K
+    const T_Scalar C_a = alpha_a*F/R/Temp;
+    const T_Scalar C_c = alpha_c*F/R/Temp;
 
     for (int f=0; f<faces.getCount(); f++)
       {
@@ -176,9 +178,19 @@ template<class X, class Diag, class OffDiag>
 	if (ce_star == 0.0){
 	ce_star+=0.001; cout << "ERROR: Ce = 0" << endl;}*/
 
-	const T_Scalar SOC =  mFElecModel[cellCells(0,0)]/csMax;
-	//const T_Scalar SOC =  mFElecModel[c1]/csMax;
-	//const T_Scalar SOC = xCell[cellCells(0,0)]/csMax;
+	// calculate average surface concentration inside electrode
+	T_Scalar Sum = 0.0;
+	for (int faceNumber=0; faceNumber<faces.getCount(); faceNumber++)
+	  { 
+	    const T_Scalar value = mFElecModel[cellCells(faceNumber,0)];
+	    Sum = Sum + value;
+	  }
+	const T_Scalar Average_cs = Sum/faces.getCount();
+
+	//const T_Scalar SOC =  Average_cs/csMax;
+	const T_Scalar SOC =  mFElecModel[c1]/csMax;
+
+
 	//const T_Scalar SOC = cs_star/csMax;
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
@@ -204,15 +216,22 @@ template<class X, class Diag, class OffDiag>
 	  U_ref = 4.25133;}*/
 
 	const T_Scalar eta_star = ePotCell[c1] - ePotCell[c0] - U_ref;
-	//const T_Scalar eta_star = _A_coeff - _B_coeff - U_ref;
-	T_Scalar C_0 = exp(alpha_a*F*eta_star/R/Temp)-exp(-1.0*alpha_c*F*eta_star/R/Temp);
 
-	const T_Scalar i_star = C_0*k*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a);
+	//const T_Scalar eta_star = _A_coeff - _B_coeff - U_ref;
+	T_Scalar C_0 = exp(C_a*eta_star)-exp(-1.0*C_c*eta_star);
+
+	const T_Scalar i_star = C_0*k*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
 
 	// CURRENT SHOULD NOT BE ZERO
 	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
 
-	const T_Scalar dIdCS_star = i_star*(-1.0)*alpha_a/(csMax-cs_star);
+	
+
+	// calculate dC_0/dCS
+	const T_Scalar dC_0dCS = (C_a*exp(C_a*eta_star) + C_c*exp(-1*C_c*eta_star))*(-1.0)*(-0.0135664/pow((0.998432-SOC),1.49247) - 0.823297/pow(cosh(8.60942-14.5546*SOC),2.0) + 0.0595559*exp(-0.04738*pow(SOC,8.0))*pow(SOC,7.0) - 6859.94*exp(-40.0*SOC))*(1.0/csMax);
+
+	const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star)+ dC_0dCS/C_0);
+	//const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star));
 	const T_Scalar dIdCE_star = i_star*alpha_c/ce_star;
 
 	// left(parent) shell cell - 3 neighbors
@@ -253,8 +272,8 @@ template<class X, class Diag, class OffDiag>
 	diag[c1] = 1/_interfaceUnderRelax*diag[c1];
 
 	// some output of prevailing or starred values - useful for testing
-	/*
-	if (c0 == 0){
+	
+	/*if (c0 == 0){
 	  cout << "C_0: " << C_0 << endl;
 	  cout << "C_s: " << cs_star << " C_e: " << ce_star << " i: " << i_star << " dIdCs: " << dIdCS_star << " dIdCe: " << dIdCE_star << endl;
 	  cout <<"Diag: " << diag[c1] << " dRdXc2: " << offdiagC1_C2 << " dRdXc0: " << offdiagC1_C0 << endl;
@@ -264,7 +283,7 @@ template<class X, class Diag, class OffDiag>
 	if (c0 == 0){
 	  if (_Cathode)
 	    {
-	      cout << "UrefAnode: " << U_ref << endl;
+	      //cout << "UrefAnode: " << U_ref << endl;
 	      cout << "Cs0: " << cs_star << endl;
 	    }
 	  }

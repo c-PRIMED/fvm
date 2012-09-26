@@ -38,6 +38,7 @@ public:
   SpeciesModelOptions<T>& getOptions();
 
   T getMassFluxIntegral(const Mesh& mesh, const int faceGroupId, const int m);
+  bool ResidualLessThanTolerance(const double Tolerance);
   
   void printBCs();
 

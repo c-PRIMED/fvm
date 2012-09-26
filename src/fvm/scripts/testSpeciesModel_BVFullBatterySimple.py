@@ -7,6 +7,7 @@ import fvm.models_atyped_double as models
 import fvm.exporters_atyped_double as exporters
 from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
+import time
 
 reader = FluentCase("../test/FullBatterySimple.cas")
 reader.read();
@@ -37,9 +38,9 @@ metricsCalculator.init()
 
 nSpecies = 1
 
-timeStep = 25.0
-numTimeSteps = 182
-numIterPerTimeStep = 20 # nonlinear so multiple iterations per timestep needed
+timeStep = 12.5
+numTimeSteps = 360
+numIterPerTimeStep = 2000 # nonlinear so multiple iterations per timestep needed
 
 AppliedCurrent = 0.4e-3 #in Amps
 F = 96485.0 # Faraday const in C/mol
@@ -113,7 +114,7 @@ vcAnode['initialMassFraction'] = 14870
 #soptions.setVar('A_coeff',0.72)
 #soptions.setVar('B_coeff',0.42)
 soptions.ButlerVolmer = True
-soptions.setVar('ButlerVolmerRRConstant',5.0e-7)
+soptions.setVar('ButlerVolmerRRConstant',5.0e-9)
 soptions.setVar('interfaceUnderRelax',1.0)
 soptions.setVar('ButlerVolmerAnodeMeshID',AnodeMeshID)
 soptions.setVar('ButlerVolmerCathodeMeshID',CathodeMeshID)
@@ -124,7 +125,7 @@ pc.verbosity=0
 solver.preconditioner = pc
 solver.relativeTolerance = 1e-14 #solver tolerance
 solver.absoluteTolerance = 1e-14 #solver tolerance
-solver.nMaxIterations = 100
+solver.nMaxIterations = 5
 solver.maxCoarseLevels=30
 solver.verbosity=0
 soptions.linearSolver = solver
@@ -179,7 +180,7 @@ bcTop1_2.setVar('specifiedPotentialFlux', 0.0)
 
 eoptions = emodel.getOptions()
 eoptions.ButlerVolmer = True
-eoptions.setVar('ButlerVolmerRRConstant',5.0e-7)
+eoptions.setVar('ButlerVolmerRRConstant',5.0e-9)
 eoptions.setVar('ButlerVolmerAnodeMeshID',AnodeMeshID)
 eoptions.setVar('ButlerVolmerCathodeMeshID',CathodeMeshID)
 
@@ -197,8 +198,8 @@ solver.nMaxIterations = 100
 solver.maxCoarseLevels=30
 solver.verbosity=0
 eoptions.electrostaticsLinearSolver = solver
-eoptions.electrostaticsTolerance=1e-40 #model tolerance
-eoptions.chargetransportTolerance=1e-40 #model tolerance
+eoptions.electrostaticsTolerance=1e-39 #model tolerance
+eoptions.chargetransportTolerance=1e-39 #model tolerance
 
 eoptions.chargetransport_enable = False
 eoptions.setVar('initialPotential',0.0)
@@ -209,7 +210,11 @@ eoptions.setVar('initialPotential',0.0)
 
 def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numIterPerTimeStep):
 
+   outputFile = open('./outputFile.txt', 'w++')
+
    for t in range(1,(numTimeSteps+1)):
+     
+     TimestepStart = time.clock()
 
      for i in range(0,numIterPerTimeStep):
 
@@ -224,17 +229,23 @@ def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numI
            sFields = smodel.getSpeciesFields(j)
            sFields.elecPotential = elecFields.potential
            sFields.massFractionElectricModel = sFields.massFraction###
-
+        
+        #if (i > 350):
+           #smodel.advance(2)
         #print "SPECIES MODEL"
-        smodel.advance(10)
+        smodel.advance(2)
 
-        #emodel.init()
+ 
+        exit = smodel.ResidualLessThanTolerance(1.0e-10)
+        if (exit):
+           break
+        
 
      filename = 'TimeStep_Species' + `t` + '.vtk'
      writer = exporters.VTKWriterA(geomFields,meshes_case,filename,
                                          "TestBV",False,0)
      writer.init()
-     writer.writeScalarField(speciesFields.massFraction,"LiConc")
+     writer.writeScalarField((smodel.getSpeciesFields(0)).massFraction,"LiConc")
      writer.finish()
 
      filename2 = 'TimeStep_Electric' + `t` + '.vtk'
@@ -244,10 +255,29 @@ def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numI
      writer2.writeScalarField(elecFields.potential,"ElecPotential")
      writer2.finish()
 
-     print "########################################################"
-     print 'Finished time step %i' % t
-     print "########################################################"
+     #print flux balances
+     print "Fluxes:"
+     mesh = meshes[1] #anode
+     massFlux1 = smodel.getMassFluxIntegral(mesh,11,0)
+     massFlux2 = smodel.getMassFluxIntegral(mesh,17,0)
+     print massFlux1
+     print massFlux2
+     mesh = meshes[0] #cathode
+     massFlux3 = smodel.getMassFluxIntegral(mesh,9,0)
+     massFlux4 = smodel.getMassFluxIntegral(mesh,16,0)
+     print massFlux3
+     print massFlux4
+
+     TimestepEnd = time.clock()
+
+     outputFile.write('Timestep: ' + str(t) + '  ' + str(TimestepEnd - TimestepStart) + ' seconds Flux Balance: ' + str(massFlux2+massFlux4) + '\n')
+
+     print "#############################################################"
+     print 'Finished time step %i in %i iterations and %f seconds' % (t,(i+1),(TimestepEnd - TimestepStart))
+     print "#############################################################"
      smodel.updateTime()
+
+   outputFile.close()
 
 
 # initialize
