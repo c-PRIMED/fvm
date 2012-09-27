@@ -9,7 +9,7 @@ from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 import time
 
-reader = FluentCase("../test/FullBatterySimple.cas")
+reader = FluentCase("/home/btrembacki/memosa/src/fvm/test/FullBatterySimple.cas")
 reader.read();
 meshes_case = reader.getMeshList()
 
@@ -28,8 +28,8 @@ shellMeshCathode = meshes_case[2].createDoubleShell(5, meshes_case[0], 16)
 
 
 meshes = [meshes_case[0], meshes_case[1], meshes_case[2], shellMeshAnode, shellMeshCathode]
-CathodeMeshID = 4
-AnodeMeshID = 3
+CathodeShellMeshID = 4
+AnodeShellMeshID = 3
 
 geomFields =  models.GeomFields('geom')
 metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
@@ -39,18 +39,18 @@ metricsCalculator.init()
 nSpecies = 1
 
 timeStep = 12.5
-numTimeSteps = 360
-numIterPerTimeStep = 2000 # nonlinear so multiple iterations per timestep needed
+numTimeSteps = 3
+numIterPerTimeStep = 100 # nonlinear so multiple iterations per timestep needed
+TimestepTolerance = 4.2e-4
 
 AppliedCurrent = 0.4e-3 #in Amps
-F = 96485.0 # Faraday const in C/mol
 D_cathode = 1.0e-13 #m^2/s
 D_electrolyte = 2.66e-9 #m^2/s
 D_anode = 5.0e-12 #m^2/s
 k_cathode = 4.29e11 #Siemens/m
 k_electrolyte = 2.825e11 #Siemens/m
 k_anode = 1.1166e11 #Siemens/m
-BVReactionRateConstant = 5.0e-7 # m/s
+BVReactionRateConstant = 5.0e-9 # m/s
 FluxArea = 20.0e-6 #m^2
 PotentialFlux = AppliedCurrent/FluxArea # in A/m^2 or C/s/m^2
 
@@ -114,10 +114,10 @@ vcAnode['initialMassFraction'] = 14870
 #soptions.setVar('A_coeff',0.72)
 #soptions.setVar('B_coeff',0.42)
 soptions.ButlerVolmer = True
-soptions.setVar('ButlerVolmerRRConstant',5.0e-9)
+soptions.setVar('ButlerVolmerRRConstant',BVReactionRateConstant)
 soptions.setVar('interfaceUnderRelax',1.0)
-soptions.setVar('ButlerVolmerAnodeMeshID',AnodeMeshID)
-soptions.setVar('ButlerVolmerCathodeMeshID',CathodeMeshID)
+soptions.setVar('ButlerVolmerAnodeMeshID',AnodeShellMeshID)
+soptions.setVar('ButlerVolmerCathodeMeshID',CathodeShellMeshID)
 
 solver = fvmbaseExt.BCGStab()
 pc = fvmbaseExt.JacobiSolver()
@@ -180,9 +180,9 @@ bcTop1_2.setVar('specifiedPotentialFlux', 0.0)
 
 eoptions = emodel.getOptions()
 eoptions.ButlerVolmer = True
-eoptions.setVar('ButlerVolmerRRConstant',5.0e-9)
-eoptions.setVar('ButlerVolmerAnodeMeshID',AnodeMeshID)
-eoptions.setVar('ButlerVolmerCathodeMeshID',CathodeMeshID)
+eoptions.setVar('ButlerVolmerRRConstant',BVReactionRateConstant)
+eoptions.setVar('ButlerVolmerAnodeMeshID',AnodeShellMeshID)
+eoptions.setVar('ButlerVolmerCathodeMeshID',CathodeShellMeshID)
 
 # A = c_S    B = c_E
 #eoptions.setVar('Interface_A_coeff',14780)
@@ -208,9 +208,11 @@ eoptions.setVar('initialPotential',0.0)
 ######## Solve coupled system         ##########
 ################################################
 
-def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numIterPerTimeStep):
+def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numIterPerTimeStep,TimestepTolerance):
 
    outputFile = open('./outputFile.txt', 'w++')
+   outputFile.write('TimeStep ConvergenceTime(s) Iterations(Max=' + str(numIterPerTimeStep) + ') FinalResidual FluxBalance\n')
+   outputFile.close()
 
    for t in range(1,(numTimeSteps+1)):
      
@@ -221,39 +223,19 @@ def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numI
         # set the species concentrations for the species of interest (Lithium)
         elecFields.speciesConcentration = speciesFields.massFraction
 
-        #print "POTENTIAL MODEL"
         emodel.advance(20)
 
-        #set the potential for all species   
+        #set the potential and mass fraction that the potentail model saw, for all species   
         for j in range(0,nSpecies):
            sFields = smodel.getSpeciesFields(j)
            sFields.elecPotential = elecFields.potential
            sFields.massFractionElectricModel = sFields.massFraction###
         
-        #if (i > 350):
-           #smodel.advance(2)
-        #print "SPECIES MODEL"
-        smodel.advance(2)
+        smodel.advance(5)
 
- 
-        exit = smodel.ResidualLessThanTolerance(1.0e-10)
-        if (exit):
+        #exit if residual is NAN or less than Tolerance
+        if (not(smodel.getMassFractionResidual(0) > TimestepTolerance)):
            break
-        
-
-     filename = 'TimeStep_Species' + `t` + '.vtk'
-     writer = exporters.VTKWriterA(geomFields,meshes_case,filename,
-                                         "TestBV",False,0)
-     writer.init()
-     writer.writeScalarField((smodel.getSpeciesFields(0)).massFraction,"LiConc")
-     writer.finish()
-
-     filename2 = 'TimeStep_Electric' + `t` + '.vtk'
-     writer2 = exporters.VTKWriterA(geomFields,meshes_case,filename2,
-                                         "TestBV",False,0)
-     writer2.init()
-     writer2.writeScalarField(elecFields.potential,"ElecPotential")
-     writer2.finish()
 
      #print flux balances
      print "Fluxes:"
@@ -269,15 +251,32 @@ def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numI
      print massFlux4
 
      TimestepEnd = time.clock()
+     outputFile = open('./outputFile.txt', 'a')
+     outputFile.write(str(t) + ' ' + str(TimestepEnd - TimestepStart) + ' ' + str(i+1) + ' ' + str(smodel.getMassFractionResidual(0)) + ' ' + str(massFlux2+massFlux4) + '\n')
+     outputFile.close()
 
-     outputFile.write('Timestep: ' + str(t) + '  ' + str(TimestepEnd - TimestepStart) + ' seconds Flux Balance: ' + str(massFlux2+massFlux4) + '\n')
+     if ((not(smodel.getMassFractionResidual(0) <= TimestepTolerance))&(not(smodel.getMassFractionResidual(0) > TimestepTolerance))):
+        # current residual must be NAN, so end simualation and do not write to .vtk file
+        break
+
+     filename = 'TimeStep_Species' + `t` + '.vtk'
+     writer = exporters.VTKWriterA(geomFields,meshes_case,filename,
+                                         "TestBV",False,0)
+     writer.init()
+     writer.writeScalarField((smodel.getSpeciesFields(0)).massFraction,"LiConc")
+     writer.finish()
+
+     filename2 = 'TimeStep_Electric' + `t` + '.vtk'
+     writer2 = exporters.VTKWriterA(geomFields,meshes_case,filename2,
+                                         "TestBV",False,0)
+     writer2.init()
+     writer2.writeScalarField(elecFields.potential,"ElecPotential")
+     writer2.finish()
 
      print "#############################################################"
      print 'Finished time step %i in %i iterations and %f seconds' % (t,(i+1),(TimestepEnd - TimestepStart))
      print "#############################################################"
      smodel.updateTime()
-
-   outputFile.close()
 
 
 # initialize
@@ -302,7 +301,7 @@ writer2.writeScalarField(elecFields.potential,"ElecPotential")
 writer2.finish()
 
 # solve coupled system
-advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numIterPerTimeStep)
+advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numIterPerTimeStep,TimestepTolerance)
 
 '''
 mesh = meshes[1]

@@ -58,6 +58,8 @@ public:
       _speciesFieldsVector.push_back(sFields);
       MFRPtr *iNorm = new MFRPtr();
       _initialNormVector.push_back(iNorm);
+      MFRPtr *rCurrent = new MFRPtr();
+      _currentResidual.push_back(rCurrent); 
         
       for (int n=0; n<numMeshes; n++)
       {
@@ -653,6 +655,7 @@ public:
       for (int m=0; m<_nSpecies; m++)
       {
         MFRPtr& iNorm = *_initialNormVector[m];
+	MFRPtr& rCurrent = *_currentResidual[m];
 
         LinearSystem ls;
         initLinearization(ls, m);
@@ -679,7 +682,7 @@ public:
 
         _niters++;
 
-	_currentResidual = rNorm;
+	rCurrent = rNorm;
  
         if (!(*rNorm < _options.absoluteTolerance ||
 	    *normRatio < _options.relativeTolerance))
@@ -710,16 +713,16 @@ public:
       }
     }
   }
-  bool ResidualLessThanTolerance(const double Tolerance)
+
+  T getMassFractionResidual(const int speciesId)
   {
-    if( *(_currentResidual)<Tolerance)
-      {
-	return true;
-      }
-    else
-      {
-	return false;
-      }
+    MFRPtr& rCurrent = *_currentResidual[speciesId];
+    SpeciesFields& sFields = *_speciesFieldsVector[speciesId];
+    const Field& massFractionField = sFields.massFraction;
+    ArrayBase& residualArray = (*rCurrent)[massFractionField];
+    T *arrayData = (T*)(residualArray.getData());
+    const T residual = arrayData[0];
+    return residual;
   }
 
 
@@ -741,7 +744,8 @@ private:
 
   SpeciesModelFields _speciesModelFields;
 
-  MFRPtr _currentResidual;
+  //MFRPtr _currentResidual;
+  vector<MFRPtr*> _currentResidual;
 };
 
 template<class T>
@@ -818,8 +822,8 @@ SpeciesModel<T>::getMassFluxIntegral(const Mesh& mesh, const int faceGroupId, co
 }
 
 template<class T>
-bool
-SpeciesModel<T>::ResidualLessThanTolerance(const double Tolerance)
+T
+SpeciesModel<T>::getMassFractionResidual(const int speciesId)
 {
-  return _impl->ResidualLessThanTolerance(Tolerance);
+  return _impl->getMassFractionResidual(speciesId);
 }
