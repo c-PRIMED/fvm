@@ -39,9 +39,9 @@ metricsCalculator.init()
 nSpecies = 1
 
 timeStep = 12.5
-numTimeSteps = 3
-numIterPerTimeStep = 100 # nonlinear so multiple iterations per timestep needed
-TimestepTolerance = 4.2e-4
+numTimeSteps = 360
+numIterPerTimeStep = 5000 # nonlinear so multiple iterations per timestep needed
+TimestepTolerance = 1.0e-8
 
 AppliedCurrent = 0.4e-3 #in Amps
 D_cathode = 1.0e-13 #m^2/s
@@ -211,7 +211,7 @@ eoptions.setVar('initialPotential',0.0)
 def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numIterPerTimeStep,TimestepTolerance):
 
    outputFile = open('./outputFile.txt', 'w++')
-   outputFile.write('TimeStep ConvergenceTime(s) Iterations(Max=' + str(numIterPerTimeStep) + ') FinalResidual FluxBalance\n')
+   outputFile.write('TimeStep(' + str(timeStep) + 'seconds) ConvergenceTime(s) Iterations(Max=' + str(numIterPerTimeStep) + ') FinalResidual FluxBalance\n')
    outputFile.close()
 
    for t in range(1,(numTimeSteps+1)):
@@ -231,7 +231,7 @@ def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numI
            sFields.elecPotential = elecFields.potential
            sFields.massFractionElectricModel = sFields.massFraction###
         
-        smodel.advance(5)
+        smodel.advance(1)
 
         #exit if residual is NAN or less than Tolerance
         if (not(smodel.getMassFractionResidual(0) > TimestepTolerance)):
