@@ -79,7 +79,8 @@ struct COMETIC
     this->FgID0=fID0;
     this->MeshID1=mID1;
     this->FgID1=fID1;
-    this->FineToCoarse=NULL;
+    this->FineToCoarse0=NULL;
+    this->FineToCoarse1=NULL;
   }
 
   const TKClist& getKConnectivity(const int fgid) const
@@ -138,7 +139,8 @@ struct COMETIC
   int FgID0;
   int MeshID1;
   int FgID1;
-  Array<int>* FineToCoarse;  //to be added to the finer model
+  Array<int>* FineToCoarse0;  //to be added to the finer model
+  Array<int>* FineToCoarse1;
   
 };
 
