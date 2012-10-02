@@ -2466,7 +2466,7 @@ class COMETModel : public Model
 	      {
 		//loop through all neighbors to find pairing
 		const int neibCount=cellCells0.getCount(c);
-		pairWith=-1;
+		pairWith=-2;
 		T maxArea=0.;
 		int c2;
 		for(int neib=0;neib<neibCount;neib++)
@@ -2482,7 +2482,7 @@ class COMETModel : public Model
 			
 			int c2Coarse=f2c0[c2];
 			
-			if(c2Coarse==-1)// || CoarseFineCount[c2Coarse]<2)  //not already paired
+			if(c2Coarse==-1) //|| CoarseFineCount[c2Coarse]<3)  //not already paired
 			  {
 			    if(areaMagArray0[fglob]>maxArea)
 			      {
@@ -2496,7 +2496,7 @@ class COMETModel : public Model
 		      }
 		  }
 		
-		if(pairWith!=-1)
+		if(pairWith>=0)
 		  {
 		    int c2Coarse=f2c0[pairWith];
 		    if(c2Coarse==-1 && f2c0[c]==-1)
@@ -2505,9 +2505,9 @@ class COMETModel : public Model
 			f2c0[c]=count0;
 			CoarseFineCount[count0]++;
 			count0++;
-		      }/*
-		    else if(f2c0[c]==-1 && c2Coarse!=-1)
-		      f2c0[c]=c2Coarse;
+		      }
+		    else if(f2c0[c]==-1 && c2Coarse>=0)
+		      f2c0[c]=c2Coarse;/*
 		    else if(f2c0[c]!=-1 && c2Coarse==-1)
 		      f2c0[pairWith]=f2c0[c];
 		       */
@@ -2580,8 +2580,9 @@ class COMETModel : public Model
     //now use mesh0 pairing to pair mesh1
     for(int f=0;f<inFaceCount;f++)
       {
-	const int c01ghost=common01[f];
-	const int c01=cellCells1(c01ghost,0);
+	const int f1=common01[f];
+	const int c01ghost=faceCells1(f1,1);
+	const int c01=faceCells1(f1,0);
 	const int c00=faceCells0(f,0);
 	if(f2c1[c01]<0 && f2c0[c00]>-1) //dont bother if im already paired, mesh0 must be paired
 	  {
@@ -2600,8 +2601,9 @@ class COMETModel : public Model
 		      {
 			const int c10g=cellsIntGhost0(fineCell,c10ghost);
 			const int f10=cellFaces0(c10g,0);
-			const int c21ghost=common01[f10];
-			const int c11=cellCells1(c21ghost,0);
+			const int f11=common01[f10];
+			const int c11ghost=faceCells1(f11,1);
+			const int c11=faceCells1(f11,0);
 			const int neibCount1=cellCells1.getCount(c01);
 			bool isNeib(false);
 			for(int c01neibs=0;c01neibs<neibCount1;c01neibs++)
