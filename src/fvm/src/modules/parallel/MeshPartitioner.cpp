@@ -2,17 +2,6 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-//
-// C++ Implementation: MeshPartitioner
-//
-// Description: 
-//
-//
-// Author: yildirim,,, <yildirim@cfm>, (C) 2008
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
 #include<iostream>
 #include <cassert>
 #include <fstream>

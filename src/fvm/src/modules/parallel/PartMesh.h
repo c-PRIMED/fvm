@@ -2,17 +2,6 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-//
-// C++ Interface: PartMesh
-//
-// Description: 
-//
-//
-// Author: yildirim,,, <yildirim@cfm>, (C) 2008
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
 #ifndef PARTMESH_H
 #define PARTMESH_H
 #include <mpi.h>
@@ -24,10 +13,6 @@
 #include "Vector.h"
 #include<set>
 using namespace std;
-
-/**
-	@author yildirim,,, <yildirim@cfm>
-*/
 
 //Warning globalToLocal seems have a bug..........
 

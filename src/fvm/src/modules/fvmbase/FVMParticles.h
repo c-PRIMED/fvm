@@ -2,17 +2,6 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-//
-// C++ Interface: fvmparticles
-//
-// Description: 
-//
-//
-// Author: yildirim,,, <yildirim@prism>, (C) 2009
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
 #ifndef FVMPARTICLES_H
 #define FVMPARTICLES_H
 
@@ -21,9 +10,6 @@
 #include <vector>
 #include <set>
 
-/**
-	@author yildirim,,, <yildirim@prism>
-*/
 class FVMParticles{
 
     public:

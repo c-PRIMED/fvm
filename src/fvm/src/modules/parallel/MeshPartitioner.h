@@ -2,17 +2,6 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-//
-// C++ Interface: MeshPartitioner
-//
-// Description: 
-//
-//
-// Author: yildirim,,, <yildirim@prism>, (C) 2008
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
 #ifndef MeshPartitioner_H
 #define MeshPartitioner_H
 
@@ -28,12 +17,7 @@
 
 using namespace std;
 
-/**
-	@author yildirim,,, <yildirim@cfm>
-*/
-
 //Warning globalToLocal seems have a bug..........
-
 
 class MeshPartitioner{
 

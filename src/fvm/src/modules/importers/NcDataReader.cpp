@@ -2,17 +2,6 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-//
-// C++ Implementation: NcDataReader
-//
-// Description: 
-//
-//
-// Author: yildirim,,, <yildirim@prism>, (C) 2009
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
 #include <iostream>
 #include <cassert>
 #include <algorithm>

@@ -2,17 +2,6 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-//
-// C++ Interface: MPMCoupling
-//
-// Description: 
-//
-//
-// Author: yildirim,,, <yildirim@prism>, (C) 2009
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
 #ifndef MPMCoupling_H
 #define MPMCoupling_H
 #ifdef FVM_PARALLEL
@@ -25,9 +14,7 @@
 
 #include "MPM_Particles.h"
 #include "Field.h"
-/**
-	@author yildirim,,, <yildirim@prism>
-*/
+
 class MPMCoupling{
 
     public:

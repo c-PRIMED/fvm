@@ -2,17 +2,6 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-//
-// C++ Interface: NcDataREADER
-//
-// Description: 
-//
-//
-// Author: yildirim,,, <yildirim@prism>, (C) 2009
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
 #ifndef NCDATAREADER_H
 #define NCDATAREADER_H
 
@@ -23,10 +12,6 @@
 
 
 using namespace std;
-
-/**
-	@author yildirim,,, <yildirim@prism>
-*/
 
 class NcFile;
 class NcDim;

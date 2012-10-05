@@ -2,17 +2,6 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-//
-// C++ Interface: NcDataWriter
-//
-// Description: 
-//
-//
-// Author: yildirim,,, <yildirim@prism>, (C) 2009
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
 #ifndef NCDATAWRITER_H
 #define NCDATAWRITER_H
 
@@ -20,10 +9,6 @@
 #include <vector>
 #include "Mesh.h"
 using namespace std;
-
-/**
-	@author yildirim,,, <yildirim@prism>
-*/
 
 class NcFile;
 class NcDim;
