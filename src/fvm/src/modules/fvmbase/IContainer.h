@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #ifndef _ICONTAINER_H_
 #define _ICONTAINER_H_
 

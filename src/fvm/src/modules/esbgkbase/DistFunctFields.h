@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #ifndef _DISTFUNCTFIELDS_H_
 #define _DISTFUNCTFIELDS_H_
 

@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #ifndef _FLOATVARDICT_H_
 #define _FLOATVARDICT_H_
 

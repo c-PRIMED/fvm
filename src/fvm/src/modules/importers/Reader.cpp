@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #include "Reader.h"
 #include <errno.h>
 #include <stdlib.h>

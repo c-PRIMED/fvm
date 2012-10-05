@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #ifndef _STRUCTUREFIELDS_H_
 #define _STRUCTUREFIELDS_H_
 

@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #ifndef _CAPTUREDISCRETIZATION_H_
 #define _CAPTUREDISCRETIZATION_H_
 

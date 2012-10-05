@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #ifndef _SCHEMEREADER_H_
 #define _SCHEMEREADER_H_
 

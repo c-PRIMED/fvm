@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #include "MacroFields.h"
 
 MacroFields::MacroFields(const string baseName): //:FlowFields( baseName)

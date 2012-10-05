@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #include "RLogInterface.h"
 
 rlog::RLogChannel* RLogInterface::ctorChannel = RLOG_CHANNEL("cdtor/ctor");

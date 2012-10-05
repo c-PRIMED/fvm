@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #include "CellMark.h"
 typedef Vector<double, 3> VectorT3;
 typedef Array<Vector<double, 3> > VectorT3Array;

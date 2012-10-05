@@ -1,3 +1,7 @@
+// This file os part of FVM
+// Copyright (c) 2012 FVM Authors
+// See LICENSE file for terms.
+
 #ifndef _UMESHMETRICSCALCULATOR_H_
 #define _UMESHMETRICSCALCULATOR_H_
 
