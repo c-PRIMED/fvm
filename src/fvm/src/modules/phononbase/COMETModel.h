@@ -3194,6 +3194,15 @@ class COMETModel : public Model
 	    found=true;
 	  }
       }
+
+#ifdef FVM_PARALLEL
+    found=true;
+    int one=1;
+    double tempR=r;
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempR, one, MPI::DOUBLE, MPI::SUM);
+    r=tempR;
+#endif
+
     if (!found)
       throw CException("getHeatFluxIntegral: invalid faceGroupID");
     return r*DK3;
@@ -3668,7 +3677,16 @@ class COMETModel : public Model
   TkspList& getKspaces() {return _kspaces;}
   Tkspace& getKspace(const int i) {return *_kspaces[i];}
   PhononMacro& getMacro() {return _macro;}
-  T getResidual() {return _residual;}
+  T getResidual() 
+  {
+#ifdef FVM_PARALLEL
+    int one=1;
+    double tempResid=_residual;
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempResid, one, MPI::DOUBLE, MPI::MAX);
+    _residual=tempResid;
+#endif
+    return _residual;
+  }
   IClist& getIClist() {return _IClist;}
   MeshICmap& getMeshICmap() {return _MeshToIC;}
 
