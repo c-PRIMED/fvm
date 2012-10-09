@@ -48,6 +48,9 @@ struct ElectricFields
   
   //Fields for coupling to species model
   Field speciesConcentration;
+  Field lnSpeciesConcentration;
+  Field lnSpeciesConcentrationGradient;
+
 };
 
 #endif

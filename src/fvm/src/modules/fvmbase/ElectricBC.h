@@ -91,8 +91,9 @@ struct ElectricModelOptions : public FloatVarDict<T>
     this->defineVar("Interface_A_coeff",T(1.0));
     this->defineVar("Interface_B_coeff",T(0.0));
     this->defineVar("ButlerVolmerRRConstant",T(5.0e-7));
-    this->defineVar("ButlerVolmerAnodeMeshID", int(-1));
-    this->defineVar("ButlerVolmerCathodeMeshID", int(-1));
+    this->defineVar("ButlerVolmerAnodeShellMeshID", int(-1));
+    this->defineVar("ButlerVolmerCathodeShellMeshID", int(-1));
+    this->defineVar("BatteryElectrolyteMeshID", int(-1));
     this->ButlerVolmer = false;
     this->electrostaticsTolerance=1e-8;
     this->chargetransportTolerance=1e-8;

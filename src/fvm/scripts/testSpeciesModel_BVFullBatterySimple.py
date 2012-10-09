@@ -9,7 +9,7 @@ from FluentCase import FluentCase
 #fvmbaseExt.enableDebug("cdtor")
 import time
 
-reader = FluentCase("/home/btrembacki/memosa/src/fvm/test/FullBatterySimple.cas")
+reader = FluentCase("../test/FullBatterySimple.cas")
 reader.read();
 meshes_case = reader.getMeshList()
 
@@ -30,6 +30,7 @@ shellMeshCathode = meshes_case[2].createDoubleShell(5, meshes_case[0], 16)
 meshes = [meshes_case[0], meshes_case[1], meshes_case[2], shellMeshAnode, shellMeshCathode]
 CathodeShellMeshID = 4
 AnodeShellMeshID = 3
+ElectrolyteMeshID = 2
 
 geomFields =  models.GeomFields('geom')
 metricsCalculator = models.MeshMetricsCalculatorA(geomFields,meshes)
@@ -38,10 +39,12 @@ metricsCalculator.init()
 
 nSpecies = 1
 
-timeStep = 12.5
-numTimeSteps = 360
-numIterPerTimeStep = 5000 # nonlinear so multiple iterations per timestep needed
+timeStep = 2.5
+numTimeSteps = 2500
+numIterPerTimeStep = 10000 # nonlinear so multiple iterations per timestep needed
 TimestepTolerance = 1.0e-8
+MinimumIterationsPerTimeStep = 60
+FluxBalanceTolerance = 1.0e-5
 
 AppliedCurrent = 0.4e-3 #in Amps
 D_cathode = 1.0e-13 #m^2/s
@@ -104,7 +107,7 @@ soptions.setVar('timeStep',timeStep)
 
 vcCathode['initialMassFraction'] = 3900
 vcSeparator['initialMassFraction'] = 4115
-vcAnode['initialMassFraction'] = 14870
+vcAnode['initialMassFraction'] = 18000
 
 #soptions.setVar('initialMassFraction0',3900)
 #soptions.setVar('initialMassFraction1',14870)
@@ -116,8 +119,8 @@ vcAnode['initialMassFraction'] = 14870
 soptions.ButlerVolmer = True
 soptions.setVar('ButlerVolmerRRConstant',BVReactionRateConstant)
 soptions.setVar('interfaceUnderRelax',1.0)
-soptions.setVar('ButlerVolmerAnodeMeshID',AnodeShellMeshID)
-soptions.setVar('ButlerVolmerCathodeMeshID',CathodeShellMeshID)
+soptions.setVar('ButlerVolmerAnodeShellMeshID',AnodeShellMeshID)
+soptions.setVar('ButlerVolmerCathodeShellMeshID',CathodeShellMeshID)
 
 solver = fvmbaseExt.BCGStab()
 pc = fvmbaseExt.JacobiSolver()
@@ -125,7 +128,7 @@ pc.verbosity=0
 solver.preconditioner = pc
 solver.relativeTolerance = 1e-14 #solver tolerance
 solver.absoluteTolerance = 1e-14 #solver tolerance
-solver.nMaxIterations = 5
+solver.nMaxIterations = 3
 solver.maxCoarseLevels=30
 solver.verbosity=0
 soptions.linearSolver = solver
@@ -181,8 +184,9 @@ bcTop1_2.setVar('specifiedPotentialFlux', 0.0)
 eoptions = emodel.getOptions()
 eoptions.ButlerVolmer = True
 eoptions.setVar('ButlerVolmerRRConstant',BVReactionRateConstant)
-eoptions.setVar('ButlerVolmerAnodeMeshID',AnodeShellMeshID)
-eoptions.setVar('ButlerVolmerCathodeMeshID',CathodeShellMeshID)
+eoptions.setVar('ButlerVolmerAnodeShellMeshID',AnodeShellMeshID)
+eoptions.setVar('ButlerVolmerCathodeShellMeshID',CathodeShellMeshID)
+eoptions.setVar('BatteryElectrolyteMeshID',ElectrolyteMeshID)
 
 # A = c_S    B = c_E
 #eoptions.setVar('Interface_A_coeff',14780)
@@ -198,8 +202,8 @@ solver.nMaxIterations = 100
 solver.maxCoarseLevels=30
 solver.verbosity=0
 eoptions.electrostaticsLinearSolver = solver
-eoptions.electrostaticsTolerance=1e-39 #model tolerance
-eoptions.chargetransportTolerance=1e-39 #model tolerance
+eoptions.electrostaticsTolerance=1e-40 #model tolerance
+eoptions.chargetransportTolerance=1e-40 #model tolerance
 
 eoptions.chargetransport_enable = False
 eoptions.setVar('initialPotential',0.0)
@@ -235,7 +239,16 @@ def advanceUnsteady(smodel,emodel,elecFields,geomFields,meshes,numTimeSteps,numI
 
         #exit if residual is NAN or less than Tolerance
         if (not(smodel.getMassFractionResidual(0) > TimestepTolerance)):
+           #exit only if minimum number of iterations have been run 
+           #and flux balance has been reached
+           FluxBalance = smodel.getMassFluxIntegral(meshes[1],17,0) + smodel.getMassFluxIntegral(meshes[0],16,0)
+	   if (((i+2)>MinimumIterationsPerTimeStep)&(abs(FluxBalance)<FluxBalanceTolerance)):
+              break
+
+	#exit immediately if residual is NAN, regardless of iteration count
+        if ((not(smodel.getMassFractionResidual(0) <= TimestepTolerance))&(not(smodel.getMassFractionResidual(0) > TimestepTolerance))):
            break
+
 
      #print flux balances
      print "Fluxes:"

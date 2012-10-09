@@ -205,8 +205,8 @@ public:
 		const XGrad gradF = (xGradCell[c0]*vol0+xGradCell[c1]*vol1)/(vol0+vol1);
 
         	const X dFluxSecondary = gradF*secondaryCoeff;
-		
-		const X dFlux = diffCoeff*(xCell[c1]-xCell[c0]);// + dFluxSecondary;
+	
+		const X dFlux = diffCoeff*(xCell[c1]-xCell[c0]) + dFluxSecondary;
 
 		rCell[c0] += dFlux;
 		rCell[c1] -= dFlux;

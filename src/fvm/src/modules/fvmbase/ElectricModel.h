@@ -67,6 +67,7 @@ public:
   
   vector<T> getTunnelCurrent();
 
+  T getPotentialFluxIntegral(const Mesh& mesh, const int faceGroupId);
  
 private:
   shared_ptr<Impl> _impl;

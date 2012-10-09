@@ -36,8 +36,8 @@ struct SpeciesModelOptions : public FloatVarDict<T>
     this->defineVar("A_coeff",T(1.0));
     this->defineVar("B_coeff",T(0.0));
     this->defineVar("ButlerVolmerRRConstant",T(5.0e-7));
-    this->defineVar("ButlerVolmerAnodeMeshID", int(-1));
-    this->defineVar("ButlerVolmerCathodeMeshID", int(-1));
+    this->defineVar("ButlerVolmerAnodeShellMeshID", int(-1));
+    this->defineVar("ButlerVolmerCathodeShellMeshID", int(-1));
     this->defineVar("timeStep",T(0.1));
     this->defineVar("interfaceUnderRelax",T(1.0));
     this->relativeTolerance=1e-8;

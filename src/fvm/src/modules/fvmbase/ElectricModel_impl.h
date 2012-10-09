@@ -39,6 +39,7 @@
 //#include "LinearizeDielectric.h"
 #include "LinearizeInterfaceJump.h"
 #include "LinearizePotentialInterface.h"
+#include "BatteryElectricDiffusionDiscretization.h"
 
 #ifdef FVM_PARALLEL
 #include <mpi.h>
@@ -196,6 +197,14 @@ public:
 	  shared_ptr<TArray> sCCell(new TArray(nCells));
 	  sCCell->zero();
 	  _electricFields.speciesConcentration.addArray(cells,sCCell);
+
+	  shared_ptr<TArray> lnSCCell(new TArray(nCells));
+	  lnSCCell->zero();
+	  _electricFields.lnSpeciesConcentration.addArray(cells,lnSCCell);
+
+	  shared_ptr<PGradArray> gradLnSC(new PGradArray(nCells));
+	  gradLnSC->zero();
+	  _electricFields.lnSpeciesConcentrationGradient.addArray(cells,gradLnSC);
 
 	}
 
@@ -569,6 +578,44 @@ public:
 	    (_meshes,_geomFields,_electricFields.potential));
       discretizations.push_back(ibm);
     }
+
+    if(_options.ButlerVolmer)
+      {
+	//populate lnSpeciesConc Field
+	for (int n=0; n<_meshes.size(); n++)
+	  {
+	    const Mesh& mesh = *_meshes[n];
+	    const StorageSite& cells = mesh.getCells();
+	    const TArray& speciesConc = dynamic_cast<const TArray&>(_electricFields.speciesConcentration[cells]);
+	    TArray& lnSpeciesConc = dynamic_cast<TArray&>(_electricFields.lnSpeciesConcentration[cells]);
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		T CellConc = speciesConc[c];
+		if (CellConc <= 0.0)
+		  {
+		    cout << "Error: Cell Concentration <= 0   MeshID: " << n << " CellNum: " << c << endl;
+		    CellConc = 0.01;
+		  }
+		lnSpeciesConc[c] = log(CellConc); 
+	      }
+	  }
+
+	//compute gradient for ln term discretization
+	GradientModel<T> lnSpeciesGradientModel(_meshes,_electricFields.lnSpeciesConcentration,
+					  _electricFields.lnSpeciesConcentrationGradient,_geomFields);
+	lnSpeciesGradientModel.compute();
+	
+	//discretize ln term (only affects electrolyte mesh)
+	shared_ptr<Discretization>
+	  bedd(new BatteryElectricDiffusionDiscretization<T,T,T>(_meshes,_geomFields,
+						_electricFields.potential,
+						_electricFields.dielectric_constant,
+						_electricFields.lnSpeciesConcentration,
+						_electricFields.lnSpeciesConcentrationGradient,
+						_options["BatteryElectrolyteMeshID"]));
+	discretizations.push_back(bedd);    
+
+      }
     
     Linearizer linearizer;
 
@@ -597,7 +644,7 @@ public:
     }
     */
 
-    /* linearize couble shell mesh for interface potential jump*/
+    /* linearize double shell mesh for interface potential jump*/
 
     for (int n=0; n<numMeshes; n++)
     {
@@ -613,11 +660,11 @@ public:
 	    {
 	      bool Cathode = false;
 	      bool Anode = false;
-	      if (n == _options["ButlerVolmerCathodeMeshID"])
+	      if (n == _options["ButlerVolmerCathodeShellMeshID"])
 		{
 		  Cathode = true;
 		}
-	      else if (n == _options["ButlerVolmerAnodeMeshID"])
+	      else if (n == _options["ButlerVolmerAnodeShellMeshID"])
 		{
 		  Anode = true;
 		}
@@ -1325,6 +1372,47 @@ public:
     }
   }
 
+  T getPotentialFluxIntegral(const Mesh& mesh, const int faceGroupId)
+  {
+
+    T r(0.);
+    bool found = false;
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+        {
+            const StorageSite& faces = fg.site;
+            const int nFaces = faces.getCount();
+            const TArray& potentialFlux =
+              dynamic_cast<const TArray&>(_electricFields.potential_flux[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += potentialFlux[f];
+            found=true;
+        }
+    }
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+    {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+	  {
+            const StorageSite& faces = fg.site;
+            const int nFaces = faces.getCount();
+            const TArray& potentialFlux =
+              dynamic_cast<const TArray&>(_electricFields.potential_flux[faces]);
+            for(int f=0; f<nFaces; f++)
+              r += potentialFlux[f];
+            found=true;
+	  }
+    }
+
+
+    if (!found)
+      throw CException("getPotentialFluxIntegral: invalid faceGroupID");
+    return r;
+  }
+
   map<string,shared_ptr<ArrayBase> >&
   getPersistenceData()
   {
@@ -1511,6 +1599,13 @@ void
 ElectricModel<T>::computeSolidSurfaceForce(const StorageSite& particles)
 {
   return _impl->computeSolidSurfaceForce(particles,false);
+}
+
+template<class T>
+T
+ElectricModel<T>::getPotentialFluxIntegral(const Mesh& mesh, const int faceGroupId)
+{
+  return _impl->getPotentialFluxIntegral(mesh, faceGroupId);
 }
 
 template<class T>

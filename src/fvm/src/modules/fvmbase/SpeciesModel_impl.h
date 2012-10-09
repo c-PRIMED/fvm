@@ -126,8 +126,9 @@ public:
      
 
 	//mass fraction
+	
         shared_ptr<TArray> mFCell(new TArray(cells.getCount()));
-
+	
 	if (!mesh.isDoubleShell())
 	  {
 	    *mFCell = vc["initialMassFraction"];
@@ -140,9 +141,10 @@ public:
 	    const SpeciesVC<T>& vcP = *(posParent->second);
 	    const SpeciesVC<T>& vcO = *(posOther->second);
 
-	    for (int c=0; c<cells.getSelfCount(); c++)
+	    const int NumberOfCells = cells.getCount();
+	    for (int c=0; c<NumberOfCells; c++)
 	      {
-		if (c < cells.getSelfCount()/2)
+		if ((c < NumberOfCells/4)||(c >= 3*NumberOfCells/4))
 		  {
 		    (*mFCell)[c] = vcP["initialMassFraction"];
 		  }
@@ -152,6 +154,16 @@ public:
 		  }
 	      }
 	  }
+	/*
+	//Initialize to exp for ln term testing in electric model
+	const VectorT3Array& cellCentroid =
+	  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+
+	for (int c=0; c<cells.getCount(); c++)
+	{
+	  VectorT3 CellCent = cellCentroid[c]; 
+	  (*mFCell)[c] = exp(pow(CellCent[0],2));
+	  }*/
 
 
 	/*if (n==0)
@@ -494,11 +506,11 @@ public:
 	      {
 		bool Cathode = false;
 		bool Anode = false;
-		if (n == _options["ButlerVolmerCathodeMeshID"])
+		if (n == _options["ButlerVolmerCathodeShellMeshID"])
 		  {
 		    Cathode = true;
 		  }
-		else if (n == _options["ButlerVolmerAnodeMeshID"])
+		else if (n == _options["ButlerVolmerAnodeShellMeshID"])
 		  {
 		    Anode = true;
 		  }
