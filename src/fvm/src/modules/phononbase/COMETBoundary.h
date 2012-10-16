@@ -61,7 +61,7 @@ class COMETBoundary
   void applyTemperatureWallFine(FloatValEvaluator<T>& bTemp) const
   {
 
-    GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
+    const GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
 
     for (int j=0; j<_faces.getCount();j++)
       {
@@ -77,7 +77,7 @@ class COMETBoundary
       }
   }
 
-  void applyTemperatureWallFine(int f,const T Twall, GradMatrix& gMat) const
+  void applyTemperatureWallFine(int f, const T Twall, const GradMatrix& gMat) const
   {
     
     const int c0 = _faceCells(f,0);
@@ -90,31 +90,75 @@ class COMETBoundary
 
     GradArray Grads(_kspace.gettotmodes());
     Grads.zero();
+    TArray pointMin(_kspace.gettotmodes());
+    pointMin=-1;
+    TArray pointMax(_kspace.gettotmodes());
+    pointMax.zero();
+    TArray pointLim(_kspace.gettotmodes());
+    pointLim=100;
 
     VectorT3 Gcoeff;
 
-    for(int j=0;j<neibcount;j++)
+    for(int j=0;j<neibcount;j++)    //first loop to get grad and max/min vals
       {
 	const int cell1=_cellCells(c0,j);
-	
-	Gcoeff=gMat.getCoeff(c0, cell1);
+	const VectorT3 Gcoeff=gMat.getCoeff(c0, cell1);
 
 	int c0ind=_kspace.getGlobalIndex(c0,0);
 	int c1ind=_kspace.getGlobalIndex(cell1,0);
 	
 	for(int k=0;k<_kspace.gettotmodes();k++)
 	  {
-	    Grads[k].accumulate(Gcoeff,_eArray[c1ind]-_eArray[c0ind]);
+	    const T e1=_eArray[c1ind];
+	    const T e0=_eArray[c0ind];
+	    T& curMax=pointMax[k];
+	    T& curMin=pointMin[k];
+	    Grads[k].accumulate(Gcoeff, e1-e0);
+
+	    if(e1>curMax)
+	      curMax=e1;
+	    
+	    if(curMin==-1)
+	      curMin=e1;
+	    else
+	      {
+		if(e1<curMin)
+		  curMin=e1;
+	      }
+
 	    c0ind++;
 	    c1ind++;
-	  }
+	  }  
+      }
+
+    const StorageSite& allFaces(_mesh.getFaces());
+    const VectorT3Array& allFaceCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[allFaces]);
+    const CRConnectivity& cellFaces(_mesh.getCellFaces());
+
+    for(int j=0;j<neibcount;j++)    //second loop to calculate limiting coeff
+      {
+	const int f1(cellFaces(c0,j));
+	const VectorT3 dr0(allFaceCoords[f1]-_cellCoords[c0]);
+	int c0ind=_kspace.getGlobalIndex(c0,0);
+	vanLeer lf;
+	
+	for(int k=0;k<_kspace.gettotmodes();k++)
+	  {
+	    const T minVal=pointMin[k];
+	    const T maxVal=pointMax[k];
+	    const T de0(Grads[k]*dr0);
+	    T& cl=pointLim[k];
+	    computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
+	    c0ind++;
+	  }  
       }
     
     int numK=_kspace.getlength();
 
-    VectorT3 rVec=_cellCoords[c0]-_cellCoords[c1];
+    VectorT3 rVec=_cellCoords[c1]-_cellCoords[c0];
     VectorT3 fVec=faceCoords[f]-_cellCoords[c0];
-    
+
     for (int k=0;k<numK;k++)
       {
 	Tkvol& kv=_kspace.getkvol(k);
@@ -129,12 +173,12 @@ class COMETBoundary
 	    const T vg_dot_en = vg[0]*en[0]+vg[1]*en[1]+vg[2]*en[2];
 	    const int c0ind=_kspace.getGlobalIndex(c0,index);
 	    const int c1ind=_kspace.getGlobalIndex(c1,index);
-	    GradType& grad=Grads[index];
+	    const GradType& grad=Grads[index];
 	    
 	    if (vg_dot_en > T_Scalar(0.0))
 	      {
-		T r=gMat.computeR(grad,_eArray,rVec,c0ind,c1ind);
-		T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2])*superbee(r);
+		const T SOU=(fVec[0]*grad[0]+fVec[1]*grad[1]+
+			   fVec[2]*grad[2])*pointLim[index];
 		_eArray[c1ind]=_eArray[c0ind]+SOU;
 	      }
 	    else

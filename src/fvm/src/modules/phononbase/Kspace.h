@@ -18,6 +18,7 @@
 #include "pmode.h"
 #include "kvol.h"
 #include "SquareTensor.h"
+#include "ScatteringKernel.h"
 
 template<class T>
 class DensityOfStates;
@@ -55,29 +56,36 @@ class Kspace
  Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi) :
   _length(ntheta*nphi),
     _Kmesh(),
-    _totvol(0.)
+    _totvol(0.),
+    _freqArray(0)
       { //makes gray, isotropic kspace  
 	
-	const double pi=3.141592653;
-	T theta;
-	T phi;
-	T dtheta=pi/ntheta/2.;
-	T dphi=2.*pi/nphi;
-	T dk3;
-	const T Kmax=pi/a;
-	const T Ktot=pi*pow(Kmax,3.)*4./3./pow((2.*pi),3.);
+	const long double pi=3.141592653589793238462643383279502884197169399;
+	long double sumX(0);
+	long double sumY(0);
+	long double sumZ(0);
+	long double theta;
+	long double phi;
+	long double dtheta=pi/T(ntheta)/2.;
+	long double dphi=2.*pi/T(nphi);
+	long double dk3;
+	const long double Kmax=pi/a;
+	const long double Ktot=pi*pow(Kmax,3.)*4./3./pow((2.*pi),3.);
 	Tvec vg;
 	int count=1;
 	for(int t=0;t<ntheta;t++)
 	  {
-	    theta=dtheta*(t+.5);
+	    theta=dtheta*(T(t)+.5);
 	    for(int p=0;p<nphi;p++)
 	      {
-		phi=dphi*(p+.5);
+		phi=dphi*(T(p)+.5);
 		vg[0]=vgmag*sin(theta)*sin(phi);
 		vg[1]=vgmag*sin(theta)*cos(phi);
 		vg[2]=vgmag*cos(theta);
-		dk3=sin(theta)*sin(dtheta/2.)*dtheta/pi*Ktot;
+		dk3=(sin(theta)*sin(dtheta/2.)*(dtheta/pi))*Ktot;
+		sumX+=vgmag*sin(theta)*sin(phi);
+		sumY+=vgmag*sin(theta)*cos(phi);
+		sumZ+=vgmag*cos(theta);
 		Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode(vg,omega,tau));
 		modeptr->setIndex(count);
 		count++;
@@ -86,10 +94,13 @@ class Kspace
 		_totvol+=dk3;
 	      }
 	  }
-	//cout<<"Total volume: "<<_totvol<<endl;
+	cout<<"SumX: "<<sumX<<endl;
+	cout<<"SumY: "<<sumY<<endl;
+	cout<<"SumZ: "<<sumZ<<endl;
       }
 
- Kspace()
+ Kspace():
+  _freqArray(0)
     {}
 
  void setCp(const T cp)
@@ -99,7 +110,6 @@ class Kspace
      {
        Tkvol& kv=getkvol(k);
 	const int modenum=kv.getmodenum();
-	//	T dk3=kv.getdk3();
 	for(int m=0;m<modenum;m++)
 	  {
 	    Tmode& mode=kv.getmode(m);
@@ -108,7 +118,45 @@ class Kspace
      }
  }
 
- Kspace(const char* filename,const int dimension)
+ void setCpNonGray(const T Tl)
+ {
+   for(int k=0;k<_length;k++)
+     {
+       Tkvol& kv=getkvol(k);
+       const int modenum=kv.getmodenum();
+       for(int m=0;m<modenum;m++)
+	 {
+	   Tmode& mode=kv.getmode(m);
+	   const T omega=mode.getomega();
+	   const T hbar=6.582119e-16;  // (eV s)
+	   const T kb=8.617343e-5;  // (eV/K) 
+
+	   mode.getcpRef()=kb*pow((hbar*omega/kb/Tl),2)*
+	     exp(hbar*omega/kb/Tl)/pow((exp(hbar*omega/kb/Tl)-1),2);
+	 }
+     }
+ }
+
+ void makeFreqArray()
+ {
+   _freqArray.resize(gettotmodes());
+   int count=0;
+   for(int k=0;k<_length;k++)
+     {
+       Tkvol& kv=getkvol(k);
+       const int modenum=kv.getmodenum();
+       for(int m=0;m<modenum;m++)
+	 {
+	   Tmode& mode=kv.getmode(m);
+	   const T omega=mode.getomega();
+	   _freqArray[count]=omega;
+	   count++;
+	 }
+     }
+ }
+
+ Kspace(const char* filename,const int dimension):
+ _freqArray(0)
    {
      ifstream fp_in;
      fp_in.open(filename,ifstream::in);
@@ -200,7 +248,8 @@ class Kspace
      calcDK3();
    }
  
- Kspace(const char* filename,const int dimension,const bool normal)
+ Kspace(const char* filename,const int dimension,const bool normal):
+ _freqArray(0)
    {
      ifstream fp_in;
      fp_in.open(filename,ifstream::in);
@@ -942,6 +991,8 @@ class Kspace
   void setInjArray(TArrPtr InjPtr) {_injected=InjPtr;}
   void setResArray(TArrPtr ResPtr) {_residual=ResPtr;}
   void setFASArray(TArrPtr FASPtr) {_FASCorrection=FASPtr;}
+  void setTauArray(TArrPtr TauPtr) {_Tau=TauPtr;}
+  const TArray& getFreqArray() {return _freqArray;}
   TArray& geteArray() {return *_e;}
   TArray& gete0Array() {return *_e0;}
   TArray& getInjArray() {return *_injected;}
@@ -1164,7 +1215,9 @@ class Kspace
   TArrPtr _injected;
   TArrPtr _residual;
   TArrPtr _FASCorrection;
+  TArrPtr _Tau;
   GhostArrayMap _ghostArrays;
+  TArray _freqArray;
   
 };
 

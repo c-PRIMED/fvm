@@ -40,6 +40,7 @@ class Kspace
   T calcDiffuseE(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
   void setDOS(DensityOfStates<T>& DOS);
   void setCp(const T cp);
+  void setCpNonGray(const T Tl);
 
   %extend{
     std::vector<Kspace<T>*>& MakeList()

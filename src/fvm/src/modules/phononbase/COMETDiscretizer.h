@@ -25,6 +25,7 @@
 #include "SquareTensor.h"
 #include "GradientModel.h"
 #include "FluxLimiters.h"
+#include <omp.h>
 
 template<class T>
 class COMETDiscretizer
@@ -101,7 +102,7 @@ class COMETDiscretizer
     TArray Resid(totalmodes+1);
     TArrow AMat(totalmodes+1);
 
-    GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
+    const GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
     
     for(int c=start;((c<cellcount)&&(c>-1));c+=dir)
       {	
@@ -110,6 +111,7 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
+	    //updateGhostFine(c, gradMatrix);
 	  
 	    while(dt>_options.NewtonTol && NewtonIters<50)
 	      {
@@ -133,6 +135,7 @@ class COMETDiscretizer
 
 		Distribute(c,Bvec,Resid);
 		updatee0(c);
+		updateGhostFine(c, gradMatrix);
 		NewtonIters++;
 		dt=fabs(Bvec[totalmodes]);
 	      }
@@ -169,6 +172,7 @@ class COMETDiscretizer
 	    T dt=1;
 	    int NewtonIters=0;
 	    updateGhostFine(c, gradMatrix);
+	    //updateGhostCoarse(c);
 	  
 	    while(dt>_options.NewtonTol && NewtonIters<50)
 	      {
@@ -384,41 +388,86 @@ class COMETDiscretizer
   void COMETConvectionFine(const int cell0, TArrow& Amat, 
 			   TArray& BVec, const GradMatrix& gMat)
   {
-    /* This is the COMET discretization for cells that do not
-       do not have a face which is a reflecting boundary.  When
-       there is a face with a reflecting boundary, we can no longer
-       use an arrowhead matrix as the structure becomes unknown a priori.
-    */
+
     const int neibcount=_cellFaces.getCount(cell0);
     GradArray Grads(_kspace.gettotmodes());
-    Grads.zero();
+    TArray pointMin(_kspace.gettotmodes());
+    pointMin=-1;
+    TArray pointMax(_kspace.gettotmodes());
+    pointMax.zero();
+    TArray neibMin(_kspace.gettotmodes());
+    neibMin=-1;
+    TArray neibMax(_kspace.gettotmodes());
+    neibMax.zero();
+    TArray pointLim(_kspace.gettotmodes());
+    pointLim=100.;
+    TArray neibLim(_kspace.gettotmodes());
+    neibLim=100.;
 
-    VectorT3 Gcoeff;
+    for(int k=0;k<_kspace.gettotmodes();k++)
+      Grads[k].zero();
 
     const VectorT3Array& faceCoords=
       dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_faces]);
 
-    for(int j=0;j<neibcount;j++)
+    for(int j=0;j<neibcount;j++)    //first loop to get grad and max/min vals
       {
 	const int f=_cellFaces(cell0,j);
 	int cell1=_faceCells(f,1);
 	if(cell1==cell0)
 	  cell1=_faceCells(f,0);
-	
-	Gcoeff=gMat.getCoeff(cell0, cell1);
+	const VectorT3 Gcoeff=gMat.getCoeff(cell0, cell1);
 
 	int c0ind=_kspace.getGlobalIndex(cell0,0);
 	int c1ind=_kspace.getGlobalIndex(cell1,0);
 	
 	for(int k=0;k<_kspace.gettotmodes();k++)
 	  {
-	    Grads[k].accumulate(Gcoeff,_eArray[c1ind]-_eArray[c0ind]);
+	    const T e1=_eArray[c1ind];
+	    const T e0=_eArray[c0ind];
+	    T& curMax=pointMax[k];
+	    T& curMin=pointMin[k];
+	    Grads[k].accumulate(Gcoeff, e1-e0);
+
+	    if(e1>curMax)
+	      curMax=e1;
+	    
+	    if(curMin==-1)
+	      curMin=e1;
+	    else
+	      {
+		if(e1<curMin)
+		  curMin=e1;
+	      }
+
 	    c0ind++;
 	    c1ind++;
-	  }
+	  }  
       }
-    
-    for(int j=0;j<neibcount;j++)
+
+    for(int j=0;j<neibcount;j++)    //second loop to calculate limiting coeff
+      {
+	const int f=_cellFaces(cell0,j);
+	int cell1=_faceCells(f,1);
+	if(cell1==cell0)
+	  cell1=_faceCells(f,0);
+
+	const VectorT3 dr0(faceCoords[f]-_cellCoords[cell0]);
+	int c0ind=_kspace.getGlobalIndex(cell0,0);
+	vanLeer lf;
+	
+	for(int k=0;k<_kspace.gettotmodes();k++)
+	  {
+	    const T minVal=pointMin[k];
+	    const T maxVal=pointMax[k];
+	    const T de0(Grads[k]*dr0);
+	    T& cl=pointLim[k];
+	    computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
+	    c0ind++;
+	  }  
+      }
+
+    for(int j=0;j<neibcount;j++)  //loop to construct point matrix
       {
 	const int f=_cellFaces(cell0,j);
 	int cell1=_faceCells(f,1);
@@ -431,30 +480,75 @@ class COMETDiscretizer
 	const int klen=_kspace.getlength();
 
 	GradArray NeibGrads(_kspace.gettotmodes());
-	NeibGrads.zero();
 
+	for(int k=0;k<_kspace.gettotmodes();k++)
+	  NeibGrads[k].zero();
+	
+	neibMax.zero();
+	neibMin=-1.;
 	const int neibcount1=_cellFaces.getCount(cell1);
-	for(int nj=0;nj<neibcount1;nj++)
+	for(int nj=0;nj<neibcount1;nj++)  //loop to make gradients and min/max
 	  {
 	    const int f1=_cellFaces(cell1,nj);
 	    int cell11=_faceCells(f1,1);
 	    if(cell1==cell11)
 	      cell11=_faceCells(f1,0);
 	
-	    Gcoeff=gMat.getCoeff(cell1, cell11);
-	    T dif(0);
+	    const VectorT3 Gcoeff=gMat.getCoeff(cell1, cell11);
 
 	    int c1ind=_kspace.getGlobalIndex(cell1,0);
 	    int c11ind=_kspace.getGlobalIndex(cell11,0);
 	
 	    for(int k=0;k<_kspace.gettotmodes();k++)
 	      {
-		NeibGrads[k].accumulate(Gcoeff,_eArray[c11ind]-_eArray[c1ind]);
+		const T e1=_eArray[c1ind];
+		const T e11=_eArray[c11ind];
+		T& curMax=neibMax[k];
+		T& curMin=neibMin[k];
+		NeibGrads[k].accumulate(Gcoeff,e11-e1);
+
+		if(e11>curMax)
+		  curMax=e11;
+	    
+		if(curMin==-1)
+		  curMin=e11;
+		else
+		  {
+		    if(e11<curMin)
+		      curMin=e11;
+		  }
+
 		c11ind++;
 		c1ind++;
 	      }
 	  }
+	  
+	neibLim=100.;
+	for(int nj=0;nj<neibcount1;nj++)  //second loop to calculate limiting coeff
+	  {
+	    const int f1=_cellFaces(cell1,nj);
+	    int cell11=_faceCells(f1,1);
+	    if(cell1==cell11)
+	      cell11=_faceCells(f1,0);
 	
+	    const VectorT3 dr1(faceCoords[f1]-_cellCoords[cell1]);
+	    int c1ind=_kspace.getGlobalIndex(cell1,0);
+	    vanLeer lf;
+	
+	    for(int k=0;k<_kspace.gettotmodes();k++)
+	      {
+		const T minVal=neibMin[k];
+		const T maxVal=neibMax[k];
+		const T de1(NeibGrads[k]*dr1);
+		T& cl=neibLim[k];
+		computeLimitCoeff(cl, _eArray[c1ind], de1, minVal, maxVal, lf);
+		if(_BCfArray[f]!=0)
+		  NeibGrads[k].zero();
+		c1ind++;
+	      }
+	  }
+
+
 	T flux;
 
 	for(int k=0;k<klen;k++)
@@ -466,35 +560,58 @@ class COMETDiscretizer
 		Tmode& mode=kvol.getmode(m);
 		const int count=mode.getIndex();
 		VectorT3 vg=mode.getv();
+		T tau=mode.gettau();
 		flux=vg[0]*Af[0]+vg[1]*Af[1]+vg[2]*Af[2];
 
 		const int c0ind=_kspace.getGlobalIndex(cell0,count-1);
 		const int c1ind=_kspace.getGlobalIndex(cell1,count-1);
 
-		GradType& grad=Grads[count-1];
-		GradType& neibGrad=NeibGrads[count-1];
+		const GradType& grad=Grads[count-1];
+		const GradType& neibGrad=NeibGrads[count-1];
 		
 		if(flux>T_Scalar(0))
 		  {
-		    VectorT3 rVec=_cellCoords[cell1]-_cellCoords[cell0];
-		    VectorT3 fVec=faceCoords[f]-_cellCoords[cell0];
-		    T r=gMat.computeR(grad,_eArray,rVec,c0ind,c1ind);
-		    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2])*superbee(r);
+		    const VectorT3 rVec=_cellCoords[cell1]-_cellCoords[cell0];
+		    const VectorT3 fVec=faceCoords[f]-_cellCoords[cell0];
+		    
+		    T SOU=(fVec[0]*grad[0]+fVec[1]*grad[1]+
+			   fVec[2]*grad[2])*pointLim[count-1];
 		    Amat.getElement(count,count)-=flux;
-		    BVec[count-1]-=flux*(_eArray[c0ind]+SOU);
+		    BVec[count-1]-=flux*_eArray[c0ind]-flux*SOU;
 		  }
 		else
 		  {
-		    VectorT3 rVec=_cellCoords[cell0]-_cellCoords[cell1];
-		    VectorT3 fVec=faceCoords[f]-_cellCoords[cell1];
-		    T r=gMat.computeR(neibGrad,_eArray,rVec,c1ind,c0ind);
-		    T SOU=(neibGrad[0]*fVec[0]+neibGrad[1]*fVec[1]+neibGrad[2]*fVec[2])*superbee(r);
-		    BVec[count-1]-=flux*(_eArray[c1ind]+SOU);
+		    const VectorT3 rVec=_cellCoords[cell0]-_cellCoords[cell1];
+		    const VectorT3 fVec=faceCoords[f]-_cellCoords[cell1];
+		    
+		    T SOU=(fVec[0]*neibGrad[0]+fVec[1]*neibGrad[1]+
+			   fVec[2]*neibGrad[2])*neibLim[count-1];
+		    BVec[count-1]-=flux*_eArray[c1ind]-flux*SOU;
 		  }
 		
 	      }
-	  }	   	
-      }   
+	  }
+      }
+
+    /*
+    const int klen=_kspace.getlength();
+    for(int k=0;k<klen;k++)
+      {
+	Tkvol& kvol=_kspace.getkvol(k);
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    const int count=mode.getIndex();
+	    VectorT3 vg=mode.getv();
+	    T tau=mode.gettau();
+	    T vmag=pow(vg.mag2(),0.5);
+	    T mfp=vmag*tau;
+	    BVec[count-1]*=mfp;
+	    Amat.getElement(count,count)*=mfp;
+	  }
+      }*/
+    
   }
 
   void COMETConvectionCoarse(const int cell0, TArrow& Amat, TArray& BVec)
@@ -519,6 +636,35 @@ class COMETDiscretizer
 	const int klen=_kspace.getlength();
 	
 	T flux;
+	T fluxX(0);
+	T fluxY(0);
+
+	for(int k=0;k<klen;k++)
+	  {
+
+	    Tkvol& kvol=_kspace.getkvol(k);
+	    const int numModes=kvol.getmodenum();
+	    for(int m=0;m<numModes;m++)
+	      {
+		Tmode& mode=kvol.getmode(m);
+		const int count=mode.getIndex();
+		const VectorT3 vg=mode.getv();
+		const T vmag=pow(vg.mag2(),0.5);
+		const T tau=mode.gettau();
+		const T mfp=1.;//vmag*tau;
+		flux=vg[0]*(Af[0]/mfp)+vg[1]*(Af[1]/mfp)+vg[2]*(Af[2]/mfp);
+		fluxX+=vg[0]*(Af[0]/mfp);
+		fluxY+=vg[1]*(Af[1]/mfp);
+		
+		if(flux>T_Scalar(0))
+		  {
+		    Amat.getElement(count,count)-=flux;
+		    BVec[count-1]-=flux*_eArray[_kspace.getGlobalIndex(cell0,count-1)];
+		  }
+		else
+		  BVec[count-1]-=flux*_eArray[_kspace.getGlobalIndex(cell1,count-1)];
+	      }
+	  }
 
 	for(int k=0;k<klen;k++)
 	  {
@@ -529,19 +675,15 @@ class COMETDiscretizer
 		Tmode& mode=kvol.getmode(m);
 		const int count=mode.getIndex();
 		VectorT3 vg=mode.getv();
-		flux=vg[0]*Af[0]+vg[1]*Af[1]+vg[2]*Af[2];
-		
-		if(flux>T_Scalar(0))
-		  {
-		    Amat.getElement(count,count)-=flux;
-		    BVec[count-1]-=flux*_eArray[_kspace.getGlobalIndex(cell0,count-1)];
-		  }
-		else
-		  BVec[count-1]-=flux*_eArray[_kspace.getGlobalIndex(cell1,count-1)];
-		
+		T vmag=pow(vg.mag2(),0.5);
+		T tau=mode.gettau();
+		T mfp=1.;//vmag*tau;
+		BVec[count-1]*=mfp;
+		Amat.getElement(count,count)*=mfp;
 	      }
-	  }	   	
-      }   
+	  }
+
+      }
   }
 
   void COMETConvection(const int cell, TSquare& Amat, TArray& BVec)
@@ -682,6 +824,7 @@ class COMETDiscretizer
     T coeff;
     int cellIndex=_kspace.getGlobalIndex(cell,0);
     
+#pragma omp parallel for shared(BVec, Amat, _kspace) private(k, m, numModes, count, mode, kvol, tau, de0dT)
     for(int k=0;k<klen;k++)
       {
 	Tkvol& kvol=_kspace.getkvol(k);
@@ -711,6 +854,7 @@ class COMETDiscretizer
     TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
     const T tauTot=_kspace.getde0taudT(Tlold[cell]);//getde0taudTgray();
     T coeff;
+    const T DK3=_kspace.getDK3();
     int cellIndex=_kspace.getGlobalIndex(cell,0);
     
     for(int k=0;k<klen;k++)
@@ -723,7 +867,7 @@ class COMETDiscretizer
 	    Tmode& mode=kvol.getmode(m);
 	    const int count=mode.getIndex();
 	    T tau=mode.gettau();
-	    coeff=dk3/tau/tauTot;
+	    coeff=(dk3/DK3)/tau/tauTot;
 	    Amat->getElement(order,count)+=coeff;
 	    BVec[totalmodes]+=coeff*_eArray[cellIndex];
 	    BVec[totalmodes]-=coeff*_e0Array[cellIndex];
@@ -731,6 +875,7 @@ class COMETDiscretizer
 	  }
       }
     Amat->getElement(order,order)=-1.;
+    BVec[totalmodes]*=DK3;
   }
 
   void COMETShifted(const int cell, TMatrix* Amat, TArray& BVec)
@@ -821,8 +966,9 @@ class COMETDiscretizer
 
 	if(_BCArray[c]==0 || _BCArray[c]==2)  //Arrowhead
 	  {
-	    if(_BCArray[c]==2)
-	      updateGhostFine(c, gradMatrix);
+	      
+	    updateGhostFine(c, gradMatrix);
+	    //updateGhostCoarse(c);
 
 	    AMat.zero();
 
@@ -1142,37 +1288,126 @@ class COMETDiscretizer
     const VectorT3Array& faceCoords=
       dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_faces]);
 
+    TArray pointMin(_kspace.gettotmodes());
+    pointMin=-1;
+    TArray pointMax(_kspace.gettotmodes());
+    pointMax.zero();
+    TArray pointLim(_kspace.gettotmodes());
+    pointLim=100.;
+
     GradArray Grads(_kspace.gettotmodes());
     Grads.zero();
 
     VectorT3 Gcoeff;
 
-    for(int j=0;j<neibcount;j++)
+    for(int j=0;j<neibcount;j++)    //first loop to get grad and max/min vals
       {
 	const int f=_cellFaces(cell,j);
 	int cell1=_faceCells(f,1);
 	if(cell1==cell)
 	  cell1=_faceCells(f,0);
-	
-	Gcoeff=gMat.getCoeff(cell, cell1);
+	const VectorT3 Gcoeff=gMat.getCoeff(cell, cell1);
 
 	int c0ind=_kspace.getGlobalIndex(cell,0);
 	int c1ind=_kspace.getGlobalIndex(cell1,0);
 	
 	for(int k=0;k<_kspace.gettotmodes();k++)
 	  {
-	    Grads[k].accumulate(Gcoeff,_eArray[c1ind]-_eArray[c0ind]);
+	    const T e1=_eArray[c1ind];
+	    const T e0=_eArray[c0ind];
+	    T& curMax=pointMax[k];
+	    T& curMin=pointMin[k];
+	    Grads[k].accumulate(Gcoeff, e1-e0);
+
+	    if(e1>curMax)
+	      curMax=e1;
+	    
+	    if(curMin==-1)
+	      curMin=e1;
+	    else
+	      {
+		if(e1<curMin)
+		  curMin=e1;
+	      }
+
 	    c0ind++;
 	    c1ind++;
-	  }
+	  }  
       }
+
+    for(int j=0;j<neibcount;j++)    //second loop to calculate limiting coeff
+      {
+	const int f=_cellFaces(cell,j);
+	int cell1=_faceCells(f,1);
+	if(cell1==cell)
+	  cell1=_faceCells(f,0);
+
+	const VectorT3 dr0(faceCoords[f]-_cellCoords[cell]);
+	int c0ind=_kspace.getGlobalIndex(cell,0);
+	vanLeer lf;
+	
+	for(int k=0;k<_kspace.gettotmodes();k++)
+	  {
+	    const T minVal=pointMin[k];
+	    const T maxVal=pointMax[k];
+	    const T de0(Grads[k]*dr0);
+	    T& cl=pointLim[k];
+	    computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
+	    c0ind++;
+	  }  
+      }
+    
 
     for(int j=0;j<neibcount;j++)
       {
 
 	const int f=_cellFaces(cell,j);
-	if(_BCfArray[f]==3)
-	  {
+	
+	if(_BCfArray[f]==1)
+	  {//temperature
+	    int Fgid=findFgId(f);
+	    int cell2=_faceCells(f,1);
+	    VectorT3 Af=_faceArea[f];
+		    
+	    if(cell2==cell)
+	      {
+		Af=Af*-1.;
+		cell2=_faceCells(f,0);
+	      }
+
+	    int cellIndex=_kspace.getGlobalIndex(cell,0);
+	    int cell2Index=_kspace.getGlobalIndex(cell2,0);
+
+	    for(int k=0;k<klen;k++)
+	      {
+		Tkvol& kvol=_kspace.getkvol(k);
+		const int numModes=kvol.getmodenum();
+		//T dk3=kvol.getdk3();
+		for(int m=0;m<numModes;m++)
+		  {
+		    Tmode& mode=kvol.getmode(m);
+		    VectorT3 vg=mode.getv();
+		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
+		    const int count=mode.getIndex();
+		    
+		    GradType& grad=Grads[count-1];
+
+		    if(VdotA>0)
+		      {
+			VectorT3 rVec=_cellCoords[cell2]-_cellCoords[cell];
+			VectorT3 fVec=faceCoords[f]-_cellCoords[cell];
+			T SOU=(fVec[0]*grad[0]+fVec[1]*grad[1]+
+			   fVec[2]*grad[2])*pointLim[count-1];
+			_eArray[cell2Index]=_eArray[cellIndex]+SOU;
+		      }
+		    cellIndex++;
+		    cell2Index++;
+		  }
+	      }
+      
+	  }
+	else if(_BCfArray[f]==3)
+	  {//reflecting
 	    int Fgid=findFgId(f);
 	    const T refl=(*(_bcMap[Fgid]))["specifiedReflection"];
 	    int cell2=_faceCells(f,1);
@@ -1206,33 +1441,90 @@ class COMETDiscretizer
 
 		    if(VdotA>0)
 		      {
-			VectorT3 rVec=_cellCoords[cell]-_cellCoords[cell2];
+			VectorT3 rVec=_cellCoords[cell2]-_cellCoords[cell];
 			VectorT3 fVec=faceCoords[f]-_cellCoords[cell];
 			T r=gMat.computeR(grad,_eArray,rVec,cellIndex,cell2Index);
-			T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2])*superbee(r);
+			T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);//*vanLeer(r);
 			_eArray[cell2Index]=(_eArray[cellIndex]+SOU)*refl;
-			Refl_pair& rpairs=mode.getReflpair(Fgid);
-			const int kk=rpairs.first.second;
-			Tkvol& kkvol=_kspace.getkvol(kk);
-			Tmode& refMode=kkvol.getmode(m);
-			const int rIndex=cell2start+refMode.getIndex()-1;
-			_eArray[rIndex]=(_eArray[cellIndex]+SOU)*refl;
-			//SumEVdotA[j]+=dk3*_eArray[cellIndex]/DK3;
-		      }/*
-			 //THERE IS AN ISSUE WITH ONLY DEALING WITH OUTGOING PHONONS!!
-		    else
+		      }
+		    cellIndex++;
+		    cell2Index++;
+		  }
+	      }
+
+	    cellIndex=_kspace.getGlobalIndex(cell,0);
+	    cell2Index=_kspace.getGlobalIndex(cell2,0);
+
+	    //first loop to sum up the diffuse reflection
+	    for(int k=0;k<klen;k++)
+	      {
+		Tkvol& kvol=_kspace.getkvol(k);
+		const int numModes=kvol.getmodenum();
+		//T dk3=kvol.getdk3();
+		for(int m=0;m<numModes;m++)
+		  {
+		    Tmode& mode=kvol.getmode(m);
+		    VectorT3 vg=mode.getv();
+		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
+		    const int count=mode.getIndex();
+		    
+		    if(VdotA<0)
 		      {
 			Refl_pair& rpairs=mode.getReflpair(Fgid);
 			const int kk=rpairs.second.second;
 			Tkvol& kkvol=_kspace.getkvol(kk);
 			Tmode& refMode=kkvol.getmode(m);
-			const int rIndex=cellstart+refMode.getIndex()-1;
+			const int rIndex=cell2start+refMode.getIndex()-1;
 			_eArray[cell2Index]=_eArray[rIndex]*refl;
-			}*/
+			}
 		    cellIndex++;
 		    cell2Index++;
 		  }
 	      }
+
+	  }
+	else if(_BCfArray[f]==1)
+	  {
+	    int cell2=_faceCells(f,1);
+	    VectorT3 Af=_faceArea[f];
+
+	    if(cell2==cell)
+	      {
+		Af=Af*-1.;
+		cell2=_faceCells(f,0);
+	      }
+
+	    const int cellstart=_kspace.getGlobalIndex(cell,0);
+	    const int cell2start=_kspace.getGlobalIndex(cell2,0);
+	    int cellIndex=_kspace.getGlobalIndex(cell,0);
+	    int cell2Index=_kspace.getGlobalIndex(cell2,0);
+
+	    for(int k=0;k<klen;k++)
+	      {
+		Tkvol& kvol=_kspace.getkvol(k);
+		const int numModes=kvol.getmodenum();
+		for(int m=0;m<numModes;m++)
+		  {
+		    Tmode& mode=kvol.getmode(m);
+		    VectorT3 vg=mode.getv();
+		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
+		    const int count=mode.getIndex();
+		    
+		    GradType& grad=Grads[count-1];
+
+		    if(VdotA>0)
+		      {
+			VectorT3 rVec=_cellCoords[cell2]-_cellCoords[cell];
+			VectorT3 fVec=faceCoords[f]-_cellCoords[cell];
+			T r=gMat.computeR(grad,_eArray,rVec,cellIndex,cell2Index);
+			T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);//*vanLeer(r);
+			_eArray[cell2Index]=(_eArray[cellIndex]+SOU);
+		      }
+		    cellIndex++;
+		    cell2Index++;
+		  }
+	      }
+
 	  }
       }
 

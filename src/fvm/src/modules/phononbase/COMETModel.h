@@ -147,6 +147,7 @@ class COMETModel : public Model
 	 VectorT3 lamTemp;
 
 	 // set micro parameters
+	 cout<<"Allocating Arrays..."<<endl;
 	 shared_ptr<TArray> eArray(new TArray(numcells*kcount));
 	 shared_ptr<TArray> e0Array(new TArray(numcells*kcount));
 	 shared_ptr<TArray> ResidArray(new TArray(numcells*kcount));
@@ -182,6 +183,8 @@ class COMETModel : public Model
 	   }
 
 	 _macro.BranchTemperatures[n]=FieldVecPtr;
+
+	 cout<<"Arrays Allocated...Initializing Values..."<<endl;
 	 
 	 for(int c=0;c<numcells;c++)
 	   {
@@ -201,13 +204,13 @@ class COMETModel : public Model
 		     (*e0Array)[cellIndex]=einit;
 		     (*ResidArray)[cellIndex]=0.;
 		     cellIndex++;
-		     Refl_Map& rmap=mode.getreflmap();
+		     
+		     /*
 		     VectorT3 vg=mode.getv();
 		     T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
 		     VectorT3 si=vg/vmag;
 		     VectorT3 so;
-		 
-		     //reflections
+		     
 		     foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 		       {
 			 const FaceGroup& fg = *fgPtr;
@@ -246,7 +249,7 @@ class COMETModel : public Model
 
 			       }
 			   }
-		       }
+		       }*/
 		   }
 	       }
 	   }
@@ -256,6 +259,8 @@ class COMETModel : public Model
 	 *TlResidCell=0.;
 	 _macro.TlResidual.addArray(cells,TlResidCell);
 
+	 cout<<"Values Initialized...Setting Facegroups..."<<endl;
+	 
 	 //setting facegroups
 
 	 foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
@@ -284,6 +289,50 @@ class COMETModel : public Model
 		     const int faceCount=faces.getCount();
 		     const int offSet=faces.getOffset();
 		     const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
+		     const Field& AreaMagField=_geomFields.areaMag;
+		     const TArray& AreaMag=
+		       dynamic_cast<const TArray&>(AreaMagField[faces]);
+		     const Field& AreaDirField=_geomFields.area;
+		     const VectorT3Array& AreaDir=
+		       dynamic_cast<const VectorT3Array&>(AreaDirField[faces]);
+
+		     const VectorT3 n=AreaDir[0]/AreaMag[0];
+
+		     for (int k=0;k<numK;k++)
+		       {
+			 Tkvol& kv=kspace.getkvol(k);
+			 const int numM=kv.getmodenum();
+			 const T dk3=kv.getdk3();
+			 for (int m=0;m<numM;m++)
+			   {
+
+			     Tmode& mode=kv.getmode(m);
+			     VectorT3 vg=mode.getv();
+			     T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
+			     VectorT3 si=vg/vmag;
+			     VectorT3 so;
+			     const T sidotn=si[0]*n[0]+si[1]*n[1]+si[2]*n[2];
+			     Refl_Map& rmap=mode.getreflmap();
+
+			     if (sidotn > T_Scalar(0.0))
+			       {
+				 so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
+				 T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
+				 so/=soMag;
+				 so*=vmag;
+				 Refl_pair refls;
+				 Refl_pair reflsFrom;
+				 kspace.findSpecs(dk3,vmag,m,so,refls);
+				 rmap[fg.id]=refls;
+				 const int k1=refls.first.second;
+				 Tmode& mode2=kspace.getkvol(k1).getmode(m);
+				 Refl_Map& rmap2=mode2.getreflmap();
+				 reflsFrom.first.second=-1;
+				 reflsFrom.second.second=k;
+				 rmap2[fg.id]=reflsFrom;
+			       }
+			   }
+		       }
 		     
 		     if(Imp)
 		       {
@@ -399,8 +448,12 @@ class COMETModel : public Model
 		   }// end if interface 
 	       }
 	   }//end facegroup loop
+
+	 cout<<"Facegroups Set...Mesh "<<n<<" Complete."<<endl;
 	 
        }//end meshes loop
+
+     cout<<"Mesh Loop Complete...Creating Interfaces (if any)..."<<endl;
 
      //Make map from mesh to IC
      IntArray ICcount(numMeshes);
@@ -443,6 +496,8 @@ class COMETModel : public Model
 	 ComInt.updateOtherGhost(*icPtr,mid0,false);
 	 ComInt.updateOtherGhost(*icPtr,mid1,false);
        }
+
+     cout<<"Interfaces Complete..."<<endl;
      
      applyTemperatureBoundaries();
      _residual=updateResid(false);
@@ -2711,8 +2766,6 @@ class COMETModel : public Model
 
     COMETInterface<T> ComInt(_meshes,_kspaces,_MeshKspaceMap,_macro,_geomFields);
 
-    //applyTemperatureBoundaries();
-
     for(int msh=start;((msh<numMeshes)&&(msh>-1));msh+=dir)
       {
 	const Mesh& mesh=*_meshes[msh];
@@ -3186,7 +3239,7 @@ class COMETModel : public Model
 			VectorT3 vg=kv.getmode(m).getv();
 			T dk3=kv.getdk3();
 			const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
-			r += eArray[cellIndex]*vgdotAn*dk3/DK3;
+			r += eArray[cellIndex]*vgdotAn*(dk3/DK3);
 			cellIndex++;
 		      }
 		  }
@@ -3254,6 +3307,7 @@ class COMETModel : public Model
 	    break;
 	  }
       }
+
     if (!found)
       throw CException("getwallArea: invalid faceGroupID");
     return An;
@@ -3682,7 +3736,7 @@ class COMETModel : public Model
 #ifdef FVM_PARALLEL
     int one=1;
     double tempResid=_residual;
-    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempResid, one, MPI::DOUBLE, MPI::MAX);
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempResid, one, MPI::DOUBLE, MPI::SUM);
     _residual=tempResid;
 #endif
     return _residual;
