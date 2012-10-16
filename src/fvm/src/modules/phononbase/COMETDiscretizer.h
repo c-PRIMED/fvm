@@ -454,7 +454,7 @@ class COMETDiscretizer
 
 	const VectorT3 dr0(faceCoords[f]-_cellCoords[cell0]);
 	int c0ind=_kspace.getGlobalIndex(cell0,0);
-	vanLeer lf;
+	//vanLeer lf;
 	
 	for(int k=0;k<_kspace.gettotmodes();k++)
 	  {
@@ -462,7 +462,7 @@ class COMETDiscretizer
 	    const T maxVal=pointMax[k];
 	    const T de0(Grads[k]*dr0);
 	    T& cl=pointLim[k];
-	    computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
+	    //computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
 	    c0ind++;
 	  }  
       }
@@ -533,7 +533,7 @@ class COMETDiscretizer
 	
 	    const VectorT3 dr1(faceCoords[f1]-_cellCoords[cell1]);
 	    int c1ind=_kspace.getGlobalIndex(cell1,0);
-	    vanLeer lf;
+	    //vanLeer lf;
 	
 	    for(int k=0;k<_kspace.gettotmodes();k++)
 	      {
@@ -541,7 +541,7 @@ class COMETDiscretizer
 		const T maxVal=neibMax[k];
 		const T de1(NeibGrads[k]*dr1);
 		T& cl=neibLim[k];
-		computeLimitCoeff(cl, _eArray[c1ind], de1, minVal, maxVal, lf);
+		//computeLimitCoeff(cl, _eArray[c1ind], de1, minVal, maxVal, lf);
 		if(_BCfArray[f]!=0)
 		  NeibGrads[k].zero();
 		c1ind++;
@@ -1344,7 +1344,7 @@ class COMETDiscretizer
 
 	const VectorT3 dr0(faceCoords[f]-_cellCoords[cell]);
 	int c0ind=_kspace.getGlobalIndex(cell,0);
-	vanLeer lf;
+	//vanLeer lf;
 	
 	for(int k=0;k<_kspace.gettotmodes();k++)
 	  {
@@ -1352,7 +1352,7 @@ class COMETDiscretizer
 	    const T maxVal=pointMax[k];
 	    const T de0(Grads[k]*dr0);
 	    T& cl=pointLim[k];
-	    computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
+	    //computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
 	    c0ind++;
 	  }  
       }

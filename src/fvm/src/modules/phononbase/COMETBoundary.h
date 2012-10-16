@@ -141,7 +141,7 @@ class COMETBoundary
 	const int f1(cellFaces(c0,j));
 	const VectorT3 dr0(allFaceCoords[f1]-_cellCoords[c0]);
 	int c0ind=_kspace.getGlobalIndex(c0,0);
-	vanLeer lf;
+	//vanLeer lf;
 	
 	for(int k=0;k<_kspace.gettotmodes();k++)
 	  {
@@ -149,7 +149,7 @@ class COMETBoundary
 	    const T maxVal=pointMax[k];
 	    const T de0(Grads[k]*dr0);
 	    T& cl=pointLim[k];
-	    computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
+	    //computeLimitCoeff(cl, _eArray[c0ind], de0, minVal, maxVal, lf);
 	    c0ind++;
 	  }  
       }
