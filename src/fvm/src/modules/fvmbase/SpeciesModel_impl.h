@@ -662,6 +662,22 @@ public:
     return r;
   }
 
+T getAverageMassFraction(const Mesh& mesh, const int m)
+  {
+    SpeciesFields& sFields = *_speciesFieldsVector[m];
+    const StorageSite& cells = mesh.getCells();
+    const TArray& mFCell = dynamic_cast<const TArray&>(sFields.massFraction[cells]);
+    const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+    T totalVolume = 0.0;
+    T weightedMassFraction = 0.0;
+    for(int c=0; c<cells.getSelfCount(); c++)
+      {
+	totalVolume += cellVolume[c];
+	weightedMassFraction += mFCell[c]*cellVolume[c];
+      }
+    return weightedMassFraction/totalVolume;
+  }
+
 
   void advance(const int niter)
   {
@@ -835,6 +851,13 @@ T
 SpeciesModel<T>::getMassFluxIntegral(const Mesh& mesh, const int faceGroupId, const int m)
 {
   return _impl->getMassFluxIntegral(mesh, faceGroupId, m);
+}
+
+template<class T>
+T
+SpeciesModel<T>::getAverageMassFraction(const Mesh& mesh, const int m)
+{
+  return _impl->getAverageMassFraction(mesh, m);
 }
 
 template<class T>

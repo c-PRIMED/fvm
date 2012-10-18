@@ -42,6 +42,7 @@ public:
   SpeciesModelOptions<T>& getOptions();
 
   T getMassFluxIntegral(const Mesh& mesh, const int faceGroupId, const int m);
+  T getAverageMassFraction(const Mesh& mesh, const int m);
   T getMassFractionResidual(const int speciesId);
   
   void printBCs();

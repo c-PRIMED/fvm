@@ -105,13 +105,13 @@ template<class X, class Diag, class OffDiag>
 
     // set constants for entire shell
     const T_Scalar F = 96485.0; //  C/mol
-    T_Scalar k = _RRConstant*F;   //m/s*C/mol;
+    T_Scalar k = _RRConstant;   // A/m^2 * (m^3/mol)^1.5
     T_Scalar csMax = 26000.0;
     if (_Anode){
-      k = _RRConstant*F/5.0;
+      k = _RRConstant/5.0;
       csMax = 26390.0;}
     if (_Cathode){
-      k = _RRConstant*F;
+      k = _RRConstant;
       csMax = 22860.0;}
     const T_Scalar alpha_a = 0.5;
     const T_Scalar alpha_c = 0.5;
