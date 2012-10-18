@@ -21,7 +21,7 @@ Matplotlib	pkgs/matplotlib-1.1.1.tar.gz
 Scipy		pkgs/scipy-0.11.0rc2.tar.gz
 Pygsl	pkgs/pygsl-0.9.5.tar.gz
 Gsl		pkgs/gsl-1.14.tar.gz
-Cgal	pkgs/CGAL-3.6.tar.gz
+Cgal	pkgs/CGAL-3.7.tar.gz
 Sympy	pkgs/sympy-0.7.1.tar.gz
 Time	pkgs/time-1.7.tar.gz
 Amd		pkgs/AMD.tar.gz
