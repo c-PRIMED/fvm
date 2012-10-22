@@ -97,13 +97,11 @@ template<class X, class Diag, class OffDiag>
 
     // set constants for entire shell
     const T_Scalar F = 96485.0; //  C/mol
-    T_Scalar k = _RRConstant; // A/m^2 * (m^3/mol)^1.5
+    const T_Scalar k = _RRConstant;
     T_Scalar csMax = 26000.0;// mol/m^3
     if (_Anode){
-      k = _RRConstant/5.0;
       csMax = 26390.0;}
     if (_Cathode){
-      k = _RRConstant;
       csMax = 22860.0;}
 
     const T_Scalar alpha_a = 0.5;
@@ -197,8 +195,8 @@ template<class X, class Diag, class OffDiag>
 
 	//if (c0==0){cout << U_ref << endl;}
 
-	const T_Scalar i0_star = k*Area*pow(Ce_star,alpha_c)*pow((csMax-Cs_star),alpha_a)*pow(Cs_star,alpha_c);
-	//const T_Scalar i0_star = k*Area*pow(_B_coeff,alpha_a)*pow((csMax-_A_coeff),alpha_a)*pow(_A_coeff,alpha_c);
+	const T_Scalar i0_star = k*F*Area*pow(Ce_star,alpha_c)*pow((csMax-Cs_star),alpha_a)*pow(Cs_star,alpha_c);
+	//const T_Scalar i0_star = k*F*Area*pow(_B_coeff,alpha_a)*pow((csMax-_A_coeff),alpha_a)*pow(_A_coeff,alpha_c);
 
 	const T_Scalar Phis_star = xCell[c1];
 	const T_Scalar Phie_star = xCell[c0];

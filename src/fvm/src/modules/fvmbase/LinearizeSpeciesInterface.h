@@ -105,13 +105,11 @@ template<class X, class Diag, class OffDiag>
 
     // set constants for entire shell
     const T_Scalar F = 96485.0; //  C/mol
-    T_Scalar k = _RRConstant;   // A/m^2 * (m^3/mol)^1.5
+    const T_Scalar k = _RRConstant;
     T_Scalar csMax = 26000.0;
     if (_Anode){
-      k = _RRConstant/5.0;
       csMax = 26390.0;}
     if (_Cathode){
-      k = _RRConstant;
       csMax = 22860.0;}
     const T_Scalar alpha_a = 0.5;
     const T_Scalar alpha_c = 0.5;
@@ -224,7 +222,7 @@ template<class X, class Diag, class OffDiag>
 	//const T_Scalar eta_star = _A_coeff - _B_coeff - U_ref;
 	T_Scalar C_0 = exp(C_a*eta_star)-exp(-1.0*C_c*eta_star);
 
-	const T_Scalar i_star = C_0*k*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
+	const T_Scalar i_star = C_0*k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
 
 	// CURRENT SHOULD NOT BE ZERO
 	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
