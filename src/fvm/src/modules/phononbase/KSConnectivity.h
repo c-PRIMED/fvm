@@ -18,224 +18,63 @@ class KSConnectivity
   typedef vector<CouplingPair*> SelfToOther;
   typedef vector<CouplingPair*> SelfToSelf;
   
- KSConnectivity(const int selfLength):
-  _SelfToOther(selfLength, NULL),
-    _SelfToSelf(selfLength, NULL),
-    _empty(),
-    _colLen(-1)
-      {
-	IntArray* emptyInt=new IntArray(0);
-	TArray* emptyT=new TArray(0);
-	_empty.first=emptyInt;
-	_empty.second=emptyT;
-      }
+ KSConnectivity(const int selfLength, const int otherLength):
+  _selfSite(selfLength),
+    _otherSite(otherLength),
+    _SelfToOtherCoeffs(0),
+    _SelfToSelfCoeffs(0),
+    _SelfToOtherConn(_selfSite,_otherSite),
+    _SelfToSelfConn(_selfSite,_selfSite),
+    _selfNNZ(0),
+    _otherNNZ(0)
+      {}
 
   void emptyConnections()
   {
-    
-    for(int i=0;i<int(_SelfToOther.size());i++)
-      {
-	if(_SelfToOther[i]!=NULL)
-	  {
-	    IntArray* iptr=(_SelfToOther[i])->first;
-	    delete iptr;
-	    delete (_SelfToOther[i])->second;
-	    delete _SelfToOther[i];
-	  }
-      }
-
-    _SelfToOther.clear();
-
-    for(int i=0;i<int(_SelfToSelf.size());i++)
-      {
-	if(_SelfToSelf[i]!=NULL)
-	  {
-	    IntArray* iptr=(_SelfToSelf[i])->first;
-	    delete iptr;
-	    delete (_SelfToSelf[i])->second;
-	    delete _SelfToSelf[i];
-	  }
-      }
-    
-    _SelfToSelf.clear();
-
-    //delete _empty.first;
-    //delete _empty.second;
-
+    _SelfToOtherCoeffs.zero();
+    _SelfToSelfCoeffs.zero();
   }
 
-  void setColumnLength(const int len) {_colLen=len;}
-
-  void makeOther(const int index, const int length)
+  void initSelfCount() {_SelfToSelfConn.initCount();}
+  void initOtherCount() {_SelfToOtherConn.initCount();}
+  void addCountSelf(const int index, const int count)
   {
-    if(_colLen!=-1)
-      {
-	if(_SelfToOther[index]==NULL)
-	  {
-	    TArray* newOtherCoeffs=new TArray(length);
-	    *newOtherCoeffs=-1.;
-	    IntArray* newOtherIndices=new IntArray(length);
-	    *newOtherIndices=-1;
-	    CouplingPair* newOtherCoupling=new CouplingPair();
-	    newOtherCoupling->first=newOtherIndices;
-	    newOtherCoupling->second=newOtherCoeffs;
-	    _SelfToOther[index]=newOtherCoupling;
-	  }
-	else
-	  {
-	    cout<<"Index "<<index<<endl;
-	    throw CException("Other Connectivity Already Set!");
-	  }
-      }
-    else
-      throw CException("Have not set column length!");
+    _SelfToSelfConn.addCount(index, count);
+    _selfNNZ+=count;
   }
-
-  void makeSelf(const int index, const int length)
+  void addCountOther(const int index, const int count)
   {
-    if(_colLen!=-1)
-      {
-	if(_SelfToSelf[index]==NULL)
-	  {
-	    TArray* newSelfCoeffs=new TArray(length);
-	    *newSelfCoeffs=-1.;
-	    IntArray* newSelfIndices=new IntArray(length);
-	    *newSelfIndices=-1;
-	    CouplingPair* newSelfCoupling=new CouplingPair();
-	    newSelfCoupling->first=newSelfIndices;
-	    newSelfCoupling->second=newSelfCoeffs;
-	    _SelfToSelf[index]=newSelfCoupling;
-	  }
-	else
-	  {
-	    cout<<"Index "<<index<<endl;
-	    throw CException("Self Connectivity Already Set!");
-	  }
-      }
-    else
-      throw CException("Have not set column length!");
+    _SelfToOtherConn.addCount(index, count);
+    _otherNNZ+=count;
   }
-
-  void setOther(const int SelfIndex, const int position, const int OtherIndex, const T coeff)
+  void finishCountSelf() 
   {
-    if(_SelfToOther[SelfIndex]!=NULL)
-      {
-	CouplingPair& Cpair=*_SelfToOther[SelfIndex];
-	IntArray& positArray=(*Cpair.first);
-	TArray& coeffArray=(*Cpair.second);
-	const int length=positArray.getLength();
-	if(position<length)
-	  {
-	    if(positArray[position]==-1)
-	      {
-		positArray[position]=OtherIndex;
-		coeffArray[position]=coeff;
-	      }
-	    else
-	      {
-		cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
-		throw CException("Other Connection has already been set!");
-	      }
-	  }
-	else
-	  {
-	    cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
-	    throw CException("Out of bounds for Other!");
-	  }
-      }
-    else
-      {
-	cout<<"Index "<<SelfIndex<<endl;
-	throw CException("Other Connectivity Not Made Yet!");
-      }
+    _SelfToSelfConn.finishCount();
+    _SelfToSelfCoeffs.resize(_selfNNZ);
+    _SelfToSelfCoeffs.zero();
   }
-
-  void resetOther(const int SelfIndex, const int position, const int OtherIndex, const T coeff)
+  void finishCountOther() 
   {
-    if(_SelfToOther[SelfIndex]!=NULL)
-      {
-	CouplingPair& Cpair=*_SelfToOther[SelfIndex];
-	IntArray& positArray=(*Cpair.first);
-	TArray& coeffArray=(*Cpair.second);
-	const int length=positArray.getLength();
-	if(position<length)
-	  {
-	    positArray[position]=OtherIndex;
-	    coeffArray[position]=coeff;
-	  }
-	else
-	  {
-	    cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
-	    throw CException("Out of bounds for Other!");
-	  }
-      }
-    else
-      {
-	cout<<"Index "<<SelfIndex<<endl;
-	throw CException("Other Connectivity Not Made Yet!");
-      }
+    _SelfToOtherConn.finishCount();
+    _SelfToOtherCoeffs.resize(_otherNNZ);
+    _SelfToOtherCoeffs.zero();
   }
+  void addSelf(const int i, const int j, const T val)
+  {_SelfToSelfCoeffs[_SelfToSelfConn.add(i,j)]=val;}
+  void addOther(const int i, const int j, const T val)
+  {_SelfToOtherCoeffs[_SelfToOtherConn.add(i,j)]=val;}
+  void finishAddSelf() {_SelfToSelfConn.finishAdd();}
+  void finishAddOther() {_SelfToOtherConn.finishAdd();}
+  int getSelfCount(const int i) {return _SelfToSelfConn.getCount(i);}
+  int getOtherCount(const int i) {return _SelfToOtherConn.getCount(i);}
+  const IntArray& getSelfRow() {return _SelfToSelfConn.getRow();}
+  const IntArray& getOtherRow() {return _SelfToOtherConn.getRow();}
+  const IntArray& getSelfCol() {return _SelfToSelfConn.getCol();}
+  const IntArray& getOtherCol() {return _SelfToOtherConn.getCol();}
+  const TArray& getSelfCoeffs() {return _SelfToSelfCoeffs;}
+  const TArray& getOtherCoeffs() {return _SelfToOtherCoeffs;}
 
-  void setSelf(const int SelfIndex, const int position, const int OtherIndex, const T coeff)
-  {
-    if(_SelfToSelf[SelfIndex]!=NULL)
-      {
-	CouplingPair& Cpair=*_SelfToSelf[SelfIndex];
-	IntArray& positArray=(*Cpair.first);
-	TArray& coeffArray=(*Cpair.second);
-	const int length=positArray.getLength();
-	if(position<length)
-	  {
-	    if(positArray[position]==-1)
-	      {
-		positArray[position]=OtherIndex;
-		coeffArray[position]=coeff;
-	      }
-	    else
-	      {
-		cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
-		throw CException("Self Connection has already been set!");
-	      }
-	  }
-	else
-	  {
-	    cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
-	    throw CException("Out of bounds for Self!");
-	  }
-      }
-    else
-      {
-	cout<<"Index "<<SelfIndex<<endl;
-	throw CException("Self Connectivity Not Made Yet!");
-      }
-  }
-
-  void resetSelf(const int SelfIndex, const int position, const int OtherIndex, const T coeff)
-  {
-    if(_SelfToSelf[SelfIndex]!=NULL)
-      {
-	CouplingPair& Cpair=*_SelfToSelf[SelfIndex];
-	IntArray& positArray=(*Cpair.first);
-	TArray& coeffArray=(*Cpair.second);
-	const int length=positArray.getLength();
-	if(position<length)
-	  {
-	    positArray[position]=OtherIndex;
-	    coeffArray[position]=coeff;
-	  }
-	else
-	  {
-	    cout<<"Index "<<SelfIndex<<"Position "<<position<<endl;
-	    throw CException("Out of bounds for Self!");
-	  }
-      }
-    else
-      {
-	cout<<"Index "<<SelfIndex<<endl;
-	throw CException("Self Connectivity Not Made Yet!");
-      }
-  }
-
+  /*
   const IntArray& getOtherIndices(const int index) const
   {
     if(_SelfToOther[index]!=NULL)
@@ -263,19 +102,20 @@ class KSConnectivity
       return *(_SelfToSelf[index]->second);
     return *(_empty.second);
   }
+  */
 
   void multiplySelf(const TArray& x, TArray& b) const
-  {//b=Ax
-    const int Arows=_SelfToSelf.size();
+  {//b=this*x
+    const int Arows=_selfSite.getSelfCount();
     b.zero();
     if(Arows==x.getLength() && Arows==b.getLength())
       {
+	const IntArray& row=_SelfToSelfConn.getRow();
+	const IntArray& col=_SelfToSelfConn.getCol();
 	for(int i=0;i<Arows;i++)
 	  {
-	    const IntArray& cIndex=getSelfIndices(i);
-	    const TArray& cCoeff=getSelfCoeffs(i);
-	    for(int j=0;j<cIndex.getLength();j++)
-	      b[i]+=x[cIndex[j]]*cCoeff[j];
+	    for(int pos=row[i];pos<row[i+1];pos++)
+		b[i]+=x[col[pos]]*_SelfToSelfCoeffs[pos];
 	  }
       }
     else
@@ -283,107 +123,87 @@ class KSConnectivity
   }
 
   void multiplyOther(const TArray& x, TArray& b) const
-  {//b=Ax
-    const int Arows=_SelfToOther.size();
+  {//b=this*x
+    const int Arows=_otherSite.getSelfCount();
     b.zero();
-    if(Arows==b.getLength())
+    if(Arows==x.getLength() && Arows==b.getLength())
       {
 	for(int i=0;i<Arows;i++)
 	  {
-	    const IntArray& cIndex=getOtherIndices(i);
-	    const TArray& cCoeff=getOtherCoeffs(i);
-	    for(int j=0;j<cIndex.getLength();j++)
-	      b[i]+=x[cIndex[j]]*cCoeff[j];
+	    const IntArray& row=_SelfToOtherConn.getRow();
+	    const IntArray& col=_SelfToOtherConn.getCol();
+	    for(int pos=row[i];pos<row[i+1];pos++)
+	      b[i]+=x[col[pos]]*_SelfToOtherCoeffs[pos];
 	  }
       }
     else
       throw CException("Matrix size does not agree with vectors!");
   }
   
-  int getSelfSize() {return _SelfToSelf.size();}
-  int getOtherSize() {return _SelfToOther.size();}
-  bool isSelfNull(const int i) {return _SelfToSelf[i]==NULL;}
-  bool isOtherNull(const int i) {return _SelfToOther[i]==NULL;}
-  int getColSize() {return _colLen;}
+  int getSelfSize() {return _selfSite.getSelfCount();}
+  int getOtherSize() {return _otherSite.getSelfCount();}
 
   void copyFrom(KSConnectivity& from)
   {
-    emptyConnections();
-
     //Copy SelfToSelf connections first
     
+    initSelfCount();
     int Arows=from.getSelfSize();
     for(int i=0;i<Arows;i++)
+      addCountSelf(i,from.getSelfCount(i));
+
+    finishCountSelf();
+
+    for(int i=0;i<Arows;i++)
       {
-	if(from.isSelfNull(i))
+	const IntArray& row=from.getSelfRow();
+	const IntArray& col=from.getSelfCol();
+	const TArray& coeff=from.getSelfCoeffs();
+	for(int pos=row[i];pos<row[i+1];pos++)
 	  {
-	    _SelfToSelf.push_back(NULL);
-	  }
-	else
-	  {
-	    const IntArray& cIndex=from.getSelfIndices(i);
-	    const TArray& cCoeff=from.getSelfCoeffs(i);
-	    const int newSize=cIndex.getLength();
-	    IntArray* newIntsPtr=new IntArray(newSize);
-	    TArray* newCoeffsPtr=new TArray(newSize);
-	    *newIntsPtr=cIndex;
-	    *newCoeffsPtr=cCoeff;
-	    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
-	    _SelfToSelf.push_back(newPairPtr);
+	    const T fromCoeff=coeff[pos];
+	    const int j=col[pos];
+	    addSelf(i,j,fromCoeff);
 	  }
       }
+
+    finishAddSelf();
 
     //Copy SelfToOther connections now
 
-    Arows=from.getOtherSize();
+    initOtherCount();
+    for(int i=0;i<Arows;i++)
+      addCountOther(i,from.getOtherCount(i));
+
+    finishCountOther();
+
     for(int i=0;i<Arows;i++)
       {
-	if(from. isOtherNull(i))
+	const IntArray& row=from.getOtherRow();
+	const IntArray& col=from.getOtherCol();
+	const TArray& coeff=from.getOtherCoeffs();
+	for(int pos=row[i];pos<row[i+1];pos++)
 	  {
-	    _SelfToOther.push_back(NULL);
-	  }
-	else
-	  {
-	    const IntArray& cIndex=from.getOtherIndices(i);
-	    const TArray& cCoeff=from.getOtherCoeffs(i);
-	    const int newSize=cIndex.getLength();
-	    IntArray* newIntsPtr=new IntArray(newSize);
-	    TArray* newCoeffsPtr=new TArray(newSize);
-	    *newIntsPtr=cIndex;
-	    *newCoeffsPtr=cCoeff;
-	    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
-	    _SelfToOther.push_back(newPairPtr);
+	    const T fromCoeff=coeff[pos];
+	    const int j=col[pos];
+	    addOther(i,j,fromCoeff);
 	  }
       }
+
+    finishAddOther();
 
   }
 
   void multiplySelf(const T x)
   {
-    const int Arows=_SelfToSelf.size();
-    for(int i=0;i<Arows;i++)
-      {
-	if(!isSelfNull(i))
-	  {
-	    TArray& cCoeff=getSelfCoeffsPriv(i);
-	    for(int j=0;j<cCoeff.getLength();j++)
-	      cCoeff[j]*=x;
-	  }
-      }
+    for(int i=0;i<_SelfToSelfCoeffs.getLength();i++)
+      _SelfToSelfCoeffs[i]*=x;
   }
 
   void multiplyOther(const T x)
   {
-    const int Arows=_SelfToOther.size();
-    for(int i=0;i<Arows;i++)
-      {
-	if(!isOtherNull(i))
-	  {
-	    TArray& cCoeff=getOtherCoeffsPriv(i);
-	    for(int j=0;j<cCoeff.getLength();j++)
-	      cCoeff[j]*=x;
-	  }
-      }
+    for(int i=0;i<_SelfToOtherCoeffs.getLength();i++)
+      _SelfToOtherCoeffs[i]*=x;
   }
 
   void addToSelf(KSConnectivity& added)
@@ -391,65 +211,47 @@ class KSConnectivity
     const int selfSize=getSelfSize();
     if(selfSize==added.getSelfSize())
       {
-	if(getColSize()==added.getColSize())
+	//start the counting
+	initSelfCount();
+	for(int i=0;i<selfSize;i++)
 	  {
-	    for(int i=0;i<selfSize;i++)
+	    TArray myExpand(1);
+	    expandMySelfSelf(i, myExpand);
+
+	    TArray addExpand(1);
+	    added.expandMySelfSelf(i, addExpand);
+
+	    myExpand+=addExpand;
+
+	    int newSize(0);
+	    for(int j=0;j<selfSize;j++)
 	      {
-		if(isSelfNull(i) && !added.isSelfNull(i))
-		  {
-		    const IntArray& cIndex=added.getSelfIndices(i);
-		    const TArray& cCoeff=added.getSelfCoeffs(i);
-		    const int newSize=cIndex.getLength();
-		    IntArray* newIntsPtr=new IntArray(newSize);
-		    TArray* newCoeffsPtr=new TArray(newSize);
-		    *newIntsPtr=cIndex;
-		    *newCoeffsPtr=cCoeff;
-		    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
-		    _SelfToSelf[i]=newPairPtr;
-		  }
-		else if(!isSelfNull(i) && !added.isSelfNull(i))
-		  {
-		    const IntArray& myIndex=getSelfIndices(i);
-		    const TArray& myCoeff=getSelfCoeffs(i);
-		    TArray myExpand(1);
-		    expandArray(myIndex, myCoeff, myExpand);
+		if(fabs(myExpand[j])>0.)
+		  newSize++;
+	      }
+	    addCountSelf(i,newSize);
+	  }
+	finishCountSelf();
+	    
+	//put in values
+	for(int i=0;i<selfSize;i++)
+	  {
+	    TArray myExpand(1);
+	    expandMySelfSelf(i, myExpand);
 
-		    const IntArray& addIndex=added.getSelfIndices(i);
-		    const TArray& addCoeff=added.getSelfCoeffs(i);
-		    TArray addExpand(1);
-		    expandArray(addIndex, addCoeff, addExpand);
+	    TArray addExpand(1);
+	    added.expandMySelfSelf(i, addExpand);
 
-		    myExpand+=addExpand;
+	    myExpand+=addExpand;
 
-		    int newSize(0);
-		    for(int j=0;j<_colLen;j++)
-		      {
-			if(fabs(myExpand[j])>0.)
-			  newSize++;
-		      }
-		    
-		    IntArray* newIntsPtr=new IntArray(newSize);
-		    TArray* newCoeffsPtr=new TArray(newSize);
-
-		    newSize=0;
-		    for(int j=0;j<_colLen;j++)
-		      {
-			if(fabs(myExpand[j])>0.)
-			  {
-			    (*newIntsPtr)[newSize]=j;
-			    (*newCoeffsPtr)[newSize]=myExpand[j];
-			    newSize++;
-			  }
-		      }
-
-		    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
-		    delete _SelfToSelf[i];
-		    _SelfToSelf[i]=newPairPtr;
-		  }
+	    for(int j=0;j<selfSize;j++)
+	      {
+		if(fabs(myExpand[j])>0.)
+		    addSelf(i,j,myExpand[j]);
 	      }
 	  }
-	else
-	  throw CException("addToSelf: Columns not the same size!");
+	finishAddSelf();
+
       }
     else
       throw CException("addToSelf: Rows not the same size!");
@@ -457,65 +259,51 @@ class KSConnectivity
 
   void addToOther(KSConnectivity& added)
   {
-    const int otherSize=getOtherSize();
-    if(otherSize==added.getOtherSize())
+    const int selfSize=getSelfSize();
+    if(selfSize==added.getSelfSize())
       {
-	if(getColSize()==added.getColSize())
+	if(getOtherSize()==added.getOtherSize())
 	  {
-	    for(int i=0;i<otherSize;i++)
+	    //start the counting
+	    initOtherCount();
+	    for(int i=0;i<selfSize;i++)
 	      {
-		if(isOtherNull(i) && !added.isOtherNull(i))
+		TArray myExpand(1);
+		expandMySelfOther(i, myExpand);
+
+		TArray addExpand(1);
+		added.expandMySelfOther(i, addExpand);
+
+		myExpand+=addExpand;
+
+		int newSize(0);
+		for(int j=0;j<getOtherSize();j++)
 		  {
-		    const IntArray& cIndex=added.getOtherIndices(i);
-		    const TArray& cCoeff=added.getOtherCoeffs(i);
-		    const int newSize=cIndex.getLength();
-		    IntArray* newIntsPtr=new IntArray(newSize);
-		    TArray* newCoeffsPtr=new TArray(newSize);
-		    *newIntsPtr=cIndex;
-		    *newCoeffsPtr=cCoeff;
-		    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
-		    _SelfToOther[i]=newPairPtr;
+		    if(fabs(myExpand[j])>0.)
+		      newSize++;
 		  }
-		else if(!isOtherNull(i) && !added.isOtherNull(i))
+		addCountOther(i,newSize);
+	      }
+	    finishCountOther();
+	    
+	    //put in values
+	    for(int i=0;i<selfSize;i++)
+	      {
+		TArray myExpand(1);
+		expandMySelfOther(i, myExpand);
+
+		TArray addExpand(1);
+		added.expandMySelfOther(i, addExpand);
+
+		myExpand+=addExpand;
+
+		for(int j=0;j<getOtherSize();j++)
 		  {
-		    const IntArray& myIndex=getOtherIndices(i);
-		    const TArray& myCoeff=getOtherCoeffs(i);
-		    TArray myExpand(1);
-		    expandArray(myIndex, myCoeff, myExpand);
-
-		    const IntArray& addIndex=added.getOtherIndices(i);
-		    const TArray& addCoeff=added.getOtherCoeffs(i);
-		    TArray addExpand(1);
-		    expandArray(addIndex, addCoeff, addExpand);
-
-		    myExpand+=addExpand;
-
-		    int newSize(0);
-		    for(int j=0;j<_colLen;j++)
-		      {
-			if(fabs(myExpand[j])>0.)
-			  newSize++;
-		      }
-		    
-		    IntArray* newIntsPtr=new IntArray(newSize);
-		    TArray* newCoeffsPtr=new TArray(newSize);
-
-		    newSize=0;
-		    for(int j=0;j<_colLen;j++)
-		      {
-			if(fabs(myExpand[j])>0.)
-			  {
-			    (*newIntsPtr)[newSize]=j;
-			    (*newCoeffsPtr)[newSize]=myExpand[j];
-			    newSize++;
-			  }
-		      }
-
-		    CouplingPair* newPairPtr=new CouplingPair(newIntsPtr, newCoeffsPtr);
-		    delete _SelfToOther[i];
-		    _SelfToOther[i]=newPairPtr;
+		    if(fabs(myExpand[j])>0.)
+			addOther(i,j,myExpand[j]);
 		  }
 	      }
+	    finishAddOther();
 	  }
 	else
 	  throw CException("addToOther: Columns not the same size!");
@@ -524,19 +312,41 @@ class KSConnectivity
       throw CException("addToOther: Rows not the same size!");
   }
 
-  void expandArray(const IntArray& indices, const TArray& compressed, TArray& expanded)
+  void expandMySelfSelf(const int i, TArray& ExpCoeff)
   {
-    expanded.resize(_colLen);
-    expanded.zero();
-    const int len=indices.getLength();
+    const int mysize=getSelfSize();
+    ExpCoeff.resize(mysize);
+    ExpCoeff.zero();
+    const IntArray& row=_SelfToSelfConn.getRow();
+    const IntArray& col=_SelfToSelfConn.getCol();
+
+    for(int pos=row[i];pos<row[i+1];pos++)
+      {
+	const int j=col[pos];
+	ExpCoeff[j]=_SelfToSelfCoeffs[pos];
+      }
     
-    for(int i=0;i<len;i++)
-      expanded[indices[i]]=compressed[i];
+  }
+
+  void expandMySelfOther(const int i, TArray& ExpCoeff)
+  {
+    const int mysize=getOtherSize();
+    ExpCoeff.resize(mysize);
+    ExpCoeff.zero();
+    const IntArray& row=_SelfToOtherConn.getRow();
+    const IntArray& col=_SelfToOtherConn.getCol();
+
+    for(int pos=row[i];pos<row[i+1];pos++)
+      {
+	const int j=col[pos];
+	ExpCoeff[j]=_SelfToOtherCoeffs[pos];
+      }
     
   }
   
  private:
 
+  /*
   TArray& getSelfCoeffsPriv(const int index)
     {
       if(_SelfToSelf[index]!=NULL)
@@ -550,12 +360,17 @@ class KSConnectivity
 	return *(_SelfToOther[index]->second);
       return *(_empty.second);
     }
+  */
 
   KSConnectivity(const KSConnectivity&);
-  SelfToOther _SelfToOther;
-  SelfToSelf _SelfToSelf;
-  CouplingPair _empty;
-  int _colLen;
+  StorageSite _selfSite;
+  StorageSite _otherSite;
+  TArray _SelfToOtherCoeffs;
+  TArray _SelfToSelfCoeffs;
+  CRConnectivity _SelfToOtherConn;
+  CRConnectivity _SelfToSelfConn;
+  int _selfNNZ;
+  int _otherNNZ;
 
 };
 

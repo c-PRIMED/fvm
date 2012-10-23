@@ -107,10 +107,119 @@ class COMETInterface
 	//findWallTemp(Mid0,cell0,cell0ghost,An,TL0);
 	//findWallTemp(Mid1,cell1,cell1ghost,-An,TL1);
 	
-	TKConn* conn01=new TKConn(k0len+1);  //must include lattice connection (reason for +1)
-	TKConn* conn10=new TKConn(k1len+1);
-	conn01->setColumnLength(k1len+1);
-	conn10->setColumnLength(k0len+1);
+	TKConn* conn01=new TKConn(k0len+1,k1len+1);  //must include lattice connection (reason for +1)
+	TKConn* conn10=new TKConn(k1len+1,k0len+1);
+
+	//Start Counting
+	conn01->initSelfCount();
+	conn01->initOtherCount();
+	conn10->initSelfCount();
+	conn10->initOtherCount();
+	for(int binIndx=0;binIndx<binNos;binIndx++)
+	  {
+	    IntArray& k0kpts=dos0.getKIndices(binIndx);
+	    IntArray& k1kpts=dos1.getKIndices(binIndx);
+	    IntArray& k0mpts=dos0.getMIndices(binIndx);
+	    IntArray& k1mpts=dos1.getMIndices(binIndx);
+	    IntArray pos0self(k0kpts.getLength());
+	    IntArray pos1self(k1kpts.getLength());
+	    IntArray pos0other(k0kpts.getLength());
+	    IntArray pos1other(k1kpts.getLength());
+	    const T t01=transArray01[binIndx];
+	    const T r01=1.-t01;
+	    const T t10=r01;
+	    const T r10=1-t10;
+
+	    int out0(0);
+	    int out1(0);
+	    T in0sum(0.);
+	    T in1sum(0.);
+	    pos0self.zero();
+	    pos1self.zero();
+	    pos0other.zero();
+	    pos1other.zero();
+
+	    for(int kI=0;kI<k0kpts.getLength();kI++)
+	      {
+		Tkvol& kvol0=kspace0.getkvol(k0kpts[kI]);
+		T dk30=kvol0.getdk3();
+		Tmode& mode0=kvol0.getmode(k0mpts[kI]);
+		VectorT3 vg0=mode0.getv();
+		T v0dotN=vg0[0]*n[0]+vg0[1]*n[1]+vg0[2]*n[2];
+		
+		if(v0dotN>=0)
+		  {
+		    out0++;
+		    int count0=mode0.getIndex()-1;
+		    conn01->addCountSelf(count0,1);
+		    //conn01->setSelf(count0,0,count0,1.);
+		  }
+		else
+		  {
+		    in0sum-=v0dotN*dk30*mode0.calce0(TL0);
+		    //incp0sum+=mode0.calcde0dT(TL0)*dk30;
+		  }
+	      }
+
+	    for(int kI=0;kI<k1kpts.getLength();kI++)
+	      {
+		Tkvol& kvol1=kspace1.getkvol(k1kpts[kI]);
+		T dk31=kvol1.getdk3();
+		Tmode& mode1=kvol1.getmode(k1mpts[kI]);
+		VectorT3 vg1=mode1.getv();
+		T v1dotN=vg1[0]*n[0]+vg1[1]*n[1]+vg1[2]*n[2];
+
+		if(v1dotN<=0)
+		  {
+		    out1++;
+		    int count1=mode1.getIndex()-1;
+		    conn10->addCountSelf(count1,1);
+		    //conn10->setSelf(count1,0,count1,1.);
+		  }
+		else
+		  {
+		    in1sum+=v1dotN*dk31*mode1.calce0(TL1);
+		    //incp1sum+=mode1.calcde0dT(TL1)*dk31;
+		  }
+	      }
+
+	    for(int kI=0;kI<k0kpts.getLength();kI++)
+	      {
+		Tkvol& kvol0=kspace0.getkvol(k0kpts[kI]);
+		Tmode& mode0=kvol0.getmode(k0mpts[kI]);
+		int count0=mode0.getIndex()-1;
+		VectorT3 vg0=mode0.getv();
+		T v0dotN=vg0[0]*n[0]+vg0[1]*n[1]+vg0[2]*n[2];
+		
+		if(v0dotN<0)
+		  {
+		    conn01->addCountOther(count0,out1);
+		    conn01->addCountSelf(count0,out0);
+		  }
+	      }
+
+	    for(int kI=0;kI<k1kpts.getLength();kI++)
+	      {
+		Tkvol& kvol1=kspace1.getkvol(k1kpts[kI]);
+		Tmode& mode1=kvol1.getmode(k1mpts[kI]);
+		int count1=mode1.getIndex()-1;
+		VectorT3 vg1=mode1.getv();
+		T v1dotN=vg1[0]*n[0]+vg1[1]*n[1]+vg1[2]*n[2];
+		
+		if(v1dotN>0)
+		  {
+		    conn10->addCountOther(count1,out0);
+		    conn10->addCountSelf(count1,out1);
+		  }
+
+	      }
+
+	  }
+
+	conn01->finishCountSelf();
+	conn01->finishCountOther();
+	conn10->finishCountSelf();
+	conn10->finishCountOther();
 
 	for(int binIndx=0;binIndx<binNos;binIndx++)
 	  {
@@ -148,8 +257,7 @@ class COMETInterface
 		  {
 		    out0++;
 		    int count0=mode0.getIndex()-1;
-		    conn01->makeSelf(count0,1);
-		    conn01->setSelf(count0,0,count0,1.);
+		    conn01->addSelf(count0,count0,1.);     //upwinding
 		  }
 		else
 		  {
@@ -170,45 +278,13 @@ class COMETInterface
 		  {
 		    out1++;
 		    int count1=mode1.getIndex()-1;
-		    conn10->makeSelf(count1,1);
-		    conn10->setSelf(count1,0,count1,1.);
+		    conn10->addSelf(count1,count1,1.);    //upwinding
 		  }
 		else
 		  {
 		    in1sum+=v1dotN*dk31*mode1.calce0(TL1);
 		    //incp1sum+=mode1.calcde0dT(TL1)*dk31;
 		  }
-	      }
-
-	    for(int kI=0;kI<k0kpts.getLength();kI++)
-	      {
-		Tkvol& kvol0=kspace0.getkvol(k0kpts[kI]);
-		Tmode& mode0=kvol0.getmode(k0mpts[kI]);
-		int count0=mode0.getIndex()-1;
-		VectorT3 vg0=mode0.getv();
-		T v0dotN=vg0[0]*n[0]+vg0[1]*n[1]+vg0[2]*n[2];
-		
-		if(v0dotN<0)
-		  {
-		    conn01->makeOther(count0,out1);
-		    conn01->makeSelf(count0,out0);
-		  }
-	      }
-
-	    for(int kI=0;kI<k1kpts.getLength();kI++)
-	      {
-		Tkvol& kvol1=kspace1.getkvol(k1kpts[kI]);
-		Tmode& mode1=kvol1.getmode(k1mpts[kI]);
-		int count1=mode1.getIndex()-1;
-		VectorT3 vg1=mode1.getv();
-		T v1dotN=vg1[0]*n[0]+vg1[1]*n[1]+vg1[2]*n[2];
-		
-		if(v1dotN>0)
-		  {
-		    conn10->makeOther(count1,out0);
-		    conn10->makeSelf(count1,out1);
-		  }
-
 	      }
 
 	    for(int kI=0;kI<k0kpts.getLength();kI++)
@@ -235,8 +311,8 @@ class COMETInterface
 			if(vv0dotN>=0)
 			  {
 			    T coeff=vv0dotN*ddk30/in0sum*r01*de0dT0;
-			    conn01->setSelf(count0,pos0self[kI],ccount0,coeff);
-			    pos0self[kI]++;
+			    conn01->addSelf(count0,ccount0,coeff);
+			    //pos0self[kI]++;
 			  }
 		      }
 
@@ -252,8 +328,8 @@ class COMETInterface
 			if(vv1dotN<=0)
 			  {
 			    T coeff=-vv1dotN*ddk31/in0sum*t10*de0dT0;
-			    conn01->setOther(count0,pos0other[kI],ccount1,coeff);
-			    pos0other[kI]++;
+			    conn01->addOther(count0,ccount1,coeff);
+			    //pos0other[kI]++;
 			  }
 		      }
 		  }
@@ -283,8 +359,8 @@ class COMETInterface
 			if(vv1dotN<=0)
 			  {
 			    T coeff=-vv1dotN*ddk31/in1sum*r10*de0dT1;
-			    conn10->setSelf(count1,pos1self[kI],ccount1,coeff);
-			    pos1self[kI]++;
+			    conn10->addSelf(count1,ccount1,coeff);
+			    //pos1self[kI]++;
 			  }
 		      }
 
@@ -300,13 +376,18 @@ class COMETInterface
 			if(vv0dotN>=0)
 			  {
 			    T coeff=vv0dotN*ddk30/in1sum*t01*de0dT1;
-			    conn10->setOther(count1,pos1other[kI],ccount0,coeff);
-			    pos1other[kI]++;
+			    conn10->addOther(count1,ccount0,coeff);
+			    //pos1other[kI]++;
 			  }
 		      }
 		  }
 	      }
 	  }
+
+	conn01->finishAddSelf();
+	conn01->finishAddOther();
+	conn10->finishAddSelf();
+	conn10->finishAddOther();
 
 	kclist01[f]=conn01;
 	kclist10[f1]=conn10;
@@ -340,23 +421,40 @@ class COMETInterface
 
     for(int f=0;f<faceCount;f++)
       {
-	TKConn* conn01=new TKConn(klen+1);  //must include lattice connection (reason for +1)
-	TKConn* conn10=new TKConn(klen+1);
-	conn01->setColumnLength(klen+1);
-	conn10->setColumnLength(klen+1);
+	TKConn* conn01=new TKConn(klen+1,klen+1);  //must include lattice connection (reason for +1)
+	TKConn* conn10=new TKConn(klen+1,klen+1);
+
+	conn01->initSelfCount();
+	conn01->initOtherCount();
+	conn10->initSelfCount();
+	conn10->initOtherCount();
+	for(int i=0;i<klen;i++)
+	  {
+	    conn01->addCountSelf(i,1);
+	    conn01->addCountOther(i,1);
+
+	    conn10->addCountSelf(i,1);
+	    conn10->addCountOther(i,1);
+	  }
+
+	conn01->finishCountSelf();
+	conn01->finishCountOther();
+	conn10->finishCountSelf();
+	conn10->finishCountOther();
 
 	for(int i=0;i<klen;i++)
 	  {
-	    conn01->makeSelf(i,1);
-	    conn01->setSelf(i,0,i,0.);
-	    conn01->makeOther(i,1);
-	    conn01->setOther(i,0,i,1.);
+	    conn01->addSelf(i,i,0.);
+	    conn01->addOther(i,i,1.);
 
-	    conn10->makeSelf(i,1);
-	    conn10->setSelf(i,0,i,0.);
-	    conn10->makeOther(i,1);
-	    conn10->setOther(i,0,i,1.);
+	    conn10->addSelf(i,i,0.);
+	    conn10->addOther(i,i,1.);
 	  }
+
+	conn01->finishAddSelf();
+	conn01->finishAddOther();
+	conn10->finishAddSelf();
+	conn10->finishAddOther();
 
 	kclist01.push_back(conn01);
 	kclist10.push_back(conn10);
@@ -416,6 +514,8 @@ class COMETInterface
 
 	IntArrayPtr CoarseComm01Ptr(new IntArray(coarseCount));
 	IntArray& CoarseComm01=*CoarseComm01Ptr;
+	IntArrayPtr CoarseComm10Ptr(new IntArray(coarseCount));
+	IntArray& CoarseComm10=*CoarseComm10Ptr;
 
 	Ckclist01.clear();
 	Ckclist01.resize(coarseCount, NULL);
@@ -435,6 +535,7 @@ class COMETInterface
 	    const int cF0=FineToCoarse0[f];
 	    const int cF1=FineToCoarse1[f1];
 	    CoarseComm01[cF0]=cF1;
+	    CoarseComm10[cF1]=cF0;
 	    const VectorT3& sumVec=sumArea[cF0];
 	    const VectorT3& partVec=FArea0[f];
 	    const T num=sumVec[0]*partVec[0]+sumVec[1]*partVec[1]+
@@ -448,10 +549,8 @@ class COMETInterface
 
 	    if(Ckclist01[cF0]==NULL)
 	      {
-		TKConn* Cconn01=new TKConn(k0len+1);  //must include lattice connection (reason for +1)
-		TKConn* Cconn10=new TKConn(k1len+1);
-		Cconn01->setColumnLength(k1len+1);
-		Cconn10->setColumnLength(k0len+1);
+		TKConn* Cconn01=new TKConn(k0len+1,k1len+1);  //must include lattice connection (reason for +1)
+		TKConn* Cconn10=new TKConn(k1len+1,k0len+1);
 		Cconn01->copyFrom(Fconn01);
 		Cconn10->copyFrom(Fconn10);
 		Cconn01->multiplySelf(factor);
@@ -463,10 +562,8 @@ class COMETInterface
 	      }
 	    else
 	      {
-		TKConn Cconn01(k0len+1);
-		TKConn Cconn10(k1len+1);
-		Cconn01.setColumnLength(k1len+1);
-		Cconn10.setColumnLength(k0len+1);
+		TKConn Cconn01(k0len+1,k1len+1);
+		TKConn Cconn10(k1len+1,k0len+1);
 		Cconn01.copyFrom(Fconn01);
 		Cconn10.copyFrom(Fconn10);
 		Cconn01.multiplySelf(factor);
@@ -482,10 +579,11 @@ class COMETInterface
 	  }
 
 	coarseFaces0.getCommonMap()[&coarseFaces1]=CoarseComm01Ptr;
+	coarseFaces1.getCommonMap()[&coarseFaces0]=CoarseComm10Ptr;
 
       }
   }
-
+  /*
   void remakeDMMcoeffs(COMETIC<T>& ic)
   {
     const int Mid0=ic.MeshID0;
@@ -573,7 +671,7 @@ class COMETInterface
 	    //T eout1T1=dos1.sumOutgoing(-normal,binIndx,TL1);
 	    const T t10=r01;//1./(1.+eout1T1/eout0T1);
 	    const T r10=1-t10;
-	    */
+	    
 
 	    T in0sum(0.);
 	    T in1sum(0.);
@@ -707,6 +805,7 @@ class COMETInterface
       }
 
   }
+*/
 
   void updateOtherGhost(const COMETIC<T>& ic, const int Mid0, const bool plusFAS)
   {//always going to be scattering the values of mesh with id0
@@ -732,12 +831,10 @@ class COMETInterface
     Tkspace& kspace1=*_KList[_MeshKspaceMap[Mid1]];    
     const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
     const StorageSite& faces1=mesh1.getFaceGroup(Fid1).site;
-    const ScatterMap& ScatMap01=faces0.getScatterMap();
-    const IntArray& scatter01=(*ScatMap01.find(&faces1)->second);
+    const ScatterMap& CommMap01=faces0.getCommonMap();
+    const IntArray& common01=(*CommMap01.find(&faces1)->second);
     const CRConnectivity& faceCells0=mesh0.getFaceCells(faces0);
-    const CRConnectivity& CellCells1=mesh1.getCellCells();
-    const CRConnectivity& CellFaces1=mesh1.getCellFaces();
-    const int face1Offset=faces1.getOffset();
+    const CRConnectivity& faceCells1=mesh1.getFaceCells(faces1);
     const TKClist& KconnList1=ic.getKConnectivity(Fid1);
     const int numFaces=faces0.getCount();
     const int klen0=kspace0.gettotmodes()+1;
@@ -750,11 +847,11 @@ class COMETInterface
 
     for(int f0=0;f0<numFaces;f0++)
       {
-	int cell0=faceCells0(f0,0);
-	//int cell1ghost=faceCells1(f0,1);
-	int cell1ghost=scatter01[f0];
-	int cell1=CellCells1(cell1ghost,0);
-	int f1=CellFaces1(cell1ghost,0)-face1Offset;
+	const int cell0=faceCells0(f0,0);
+	const int f1=common01[f0];
+	const int cell1ghost=faceCells1(f1,1);
+	const int cell1=faceCells1(f1,0);
+
 	const TKConn& Kconn1=*KconnList1[f1];
 	
 	vals1.zero();
@@ -787,12 +884,10 @@ class COMETInterface
     Tkspace& kspace1=*_KList[_MeshKspaceMap[Mid1]];    
     const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
     const StorageSite& faces1=mesh1.getFaceGroup(Fid1).site;
-    const ScatterMap& ScatMap01=faces0.getScatterMap();
-    const IntArray& scatter01=(*ScatMap01.find(&faces1)->second);
+    const ScatterMap& CommMap01=faces0.getCommonMap();
+    const IntArray& common01=(*CommMap01.find(&faces1)->second);
     const CRConnectivity& faceCells0=mesh0.getFaceCells(faces0);
-    const CRConnectivity& CellCells1=mesh1.getCellCells();
-    const CRConnectivity& CellFaces1=mesh1.getCellFaces();
-    const int face1Offset=faces1.getOffset();
+    const CRConnectivity& faceCells1=mesh1.getFaceCells(faces1);
     const TKClist& KconnList1=ic.getKConnectivity(Fid1);
     const TKClist& KconnList0=ic.getKConnectivity(Fid0);
     const int numFaces=faces0.getCount();
@@ -812,9 +907,10 @@ class COMETInterface
       {
 	int cell0=faceCells0(f0,0);
 	int cell0ghost=faceCells0(f0,1);
-	int cell1ghost=scatter01[f0];
-	int cell1=CellCells1(cell1ghost,0);
-	int f1=CellFaces1(cell1ghost,0)-face1Offset;
+	int f1=common01[f0];
+	int cell1ghost=faceCells1(f1,1);
+	int cell1=faceCells1(f1,0);
+
 	const TKConn& Kconn1=*KconnList1[f1];
 	const TKConn& Kconn0=*KconnList0[f0];
 	
