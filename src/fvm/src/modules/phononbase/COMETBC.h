@@ -48,6 +48,8 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->BinsPerBand=10;
     this->Convection="FirstOrder";
     this->DomainStats="Quiet";
+    this->minNewton=0;
+    this->maxNewton=15;
   }
   
   bool printNormalizedResiduals;
@@ -66,6 +68,8 @@ struct COMETModelOptions : public FloatVarDict<T>
   int BinsPerBand;
   string Convection;
   string DomainStats;
+  int minNewton;
+  int maxNewton;
 
 };
 
