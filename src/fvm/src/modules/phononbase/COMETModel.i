@@ -42,6 +42,7 @@ class COMETModel : public Model
   T calcDomainStats();
   void makeCellColors(const int level);
   void makePlotColors(const int level);
+  T getAverageTemperature();
 
  private:
   
@@ -90,6 +91,8 @@ struct COMETModelOptions : public FloatVarDict<T>
   int BinsPerBand;
   string Convection;
   string DomainStats;
+  int minNewton;
+  int maxNewton;
 };
 
 %template(COMETBCA) COMETBC<ATYPE_STR>;

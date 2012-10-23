@@ -101,6 +101,9 @@ class COMETDiscretizer
     TArray Bvec(totalmodes+1);
     TArray Resid(totalmodes+1);
     TArrow AMat(totalmodes+1);
+    const T newTol=_options.NewtonTol;
+    const int maxNew=_options.maxNewton;
+    const int minNew=_options.minNewton;
 
     const GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
     
@@ -113,7 +116,7 @@ class COMETDiscretizer
 	    int NewtonIters=0;
 	    //updateGhostFine(c, gradMatrix);
 	  
-	    while(dt>_options.NewtonTol && NewtonIters<50)
+	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
 	      {
 		
 		Bvec.zero();
@@ -144,7 +147,7 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
-	    while(dt>_options.NewtonTol && NewtonIters<50)
+	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
 	      {
 		TSquare AMatS(totalmodes+1);
 		Bvec.zero();
@@ -174,7 +177,7 @@ class COMETDiscretizer
 	    updateGhostFine(c, gradMatrix);
 	    //updateGhostCoarse(c);
 	  
-	    while(dt>_options.NewtonTol && NewtonIters<50)
+	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
 	      {
 
 		Bvec.zero();
@@ -208,7 +211,7 @@ class COMETDiscretizer
 	    T dt=1;
 	    int NewtonIters=0;
 	    updateGhostFine(c,gradMatrix);
-	    while(dt>_options.NewtonTol && NewtonIters<50)
+	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
 	      {
 		TSquare AMatS(totalmodes+1);
 		Bvec.zero();
@@ -252,6 +255,9 @@ class COMETDiscretizer
     TArray Bvec(totalmodes+1);
     TArray Resid(totalmodes+1);
     TArrow AMat(totalmodes+1);
+    const T newTol=_options.NewtonTol;
+    const int maxNew=_options.maxNewton;
+    const int minNew=_options.minNewton;
     
     for(int c=start;((c<cellcount)&&(c>-1));c+=dir)
       {	
@@ -261,7 +267,7 @@ class COMETDiscretizer
 	    T dt=1;
 	    int NewtonIters=0;
 	  
-	    while(dt>_options.NewtonTol && NewtonIters<50)
+	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
 	      {
 		
 		Bvec.zero();
@@ -291,7 +297,7 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
-	    while(dt>_options.NewtonTol && NewtonIters<50)
+	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
 	      {
 		TSquare AMatS(totalmodes+1);
 		Bvec.zero();
@@ -320,7 +326,7 @@ class COMETDiscretizer
 	    int NewtonIters=0;
 	    updateGhostCoarse(c);
 	  
-	    while(dt>_options.NewtonTol && NewtonIters<50)
+	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
 	      {
 
 		Bvec.zero();
@@ -354,7 +360,7 @@ class COMETDiscretizer
 	    T dt=1;
 	    int NewtonIters=0;
 	    updateGhostCoarse(c);
-	    while(dt>_options.NewtonTol && NewtonIters<50)
+	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
 	      {
 		TSquare AMatS(totalmodes+1);
 		Bvec.zero();

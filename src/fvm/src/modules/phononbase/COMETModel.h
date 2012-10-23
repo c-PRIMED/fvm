@@ -296,7 +296,7 @@ class COMETModel : public Model
 		     const VectorT3Array& AreaDir=
 		       dynamic_cast<const VectorT3Array&>(AreaDirField[faces]);
 
-		     const VectorT3 n=AreaDir[0]/AreaMag[0];
+		     const VectorT3 norm=AreaDir[0]/AreaMag[0];
 
 		     for (int k=0;k<numK;k++)
 		       {
@@ -307,16 +307,16 @@ class COMETModel : public Model
 			   {
 
 			     Tmode& mode=kv.getmode(m);
-			     VectorT3 vg=mode.getv();
-			     T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
+			     const VectorT3 vg=mode.getv();
+			     const T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
 			     VectorT3 si=vg/vmag;
 			     VectorT3 so;
-			     const T sidotn=si[0]*n[0]+si[1]*n[1]+si[2]*n[2];
+			     const T sidotn=si[0]*norm[0]+si[1]*norm[1]+si[2]*norm[2];
 			     Refl_Map& rmap=mode.getreflmap();
 
 			     if (sidotn > T_Scalar(0.0))
 			       {
-				 so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
+				 so=si-2.*(si[0]*norm[0]+si[1]*norm[1]+si[2]*norm[2])*norm;
 				 T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
 				 so/=soMag;
 				 so*=vmag;
@@ -465,10 +465,13 @@ class COMETModel : public Model
 	 ICcount[icPtr->MeshID1]++;
        }
 
-     for(int i=0;i<numMeshes;i++)
+     if(!_IClist.empty())
        {
-	 IntArrPtr MeshToIC(new IntArray(ICcount[i]));
-	 _MeshToIC.push_back(MeshToIC);
+	 for(int i=0;i<numMeshes;i++)
+	   {
+	     IntArrPtr MeshToIC(new IntArray(ICcount[i]));
+	     _MeshToIC.push_back(MeshToIC);
+	   }
        }
      
      ICcount.zero();
@@ -1157,11 +1160,12 @@ class COMETModel : public Model
     CoarseCounts=0;
 
     //coarsen interfaces first
+    /*
     foreach(COMETIC<T>* icPtr, _IClist)
       {
 	COMETIC<T>& ic=*icPtr;
 	coarsenInterfaceCells(ic, CoarseCounts, inGeomFields, inMeshes);
-      }
+	}*/
 
     //coarsen interiors
     for(int m=0;m<numMeshes;m++)
@@ -2511,6 +2515,9 @@ class COMETModel : public Model
     IntArray& f2c1=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[cells1]);
     int& count0=coarseCounts[Mid0];
     int& count1=coarseCounts[Mid1];
+
+    const VectorT3Array& cpos0=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[cells0]);
+    const VectorT3Array& cpos1=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[cells1]);
     
     //agglomerate mesh0 first
     int pairWith;
@@ -2801,6 +2808,14 @@ class COMETModel : public Model
 	  {
 	    applyTemperatureBoundaries();
 	    CDisc.COMETSolveCoarse(dir,_level); 
+	    CDisc.COMETSolveCoarse(-dir,_level); 
+	    /*
+	    if(_level>2)
+	      {
+		CDisc.COMETSolveCoarse(dir,_level); 
+		CDisc.COMETSolveCoarse(-dir,_level); 
+	      }
+	    */
 	  }
 	else
 	  {
@@ -3719,6 +3734,27 @@ class COMETModel : public Model
 	    return true;
       }
     return false;
+  }
+
+  T getAverageTemperature()
+  {
+    const int numMeshes = _meshes.size();
+    T r(0);
+    T volTot(0);
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh=*_meshes[n];
+	const StorageSite& cells=mesh.getCells();
+	const int numcells=cells.getSelfCount();
+	const TArray& Tl=dynamic_cast<const TArray&>(_macro.temperature[cells]);
+	const TArray& cv=dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+	for(int c=0;c<numcells;c++)
+	  {
+	    r+=Tl[c]*cv[c];
+	    volTot+=cv[c];
+	  }
+      }
+    return r/volTot;
   }
   
   void setBCMap(COMETBCMap* bcMap) {_bcMap=*bcMap;}
