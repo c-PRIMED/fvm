@@ -211,12 +211,14 @@ class KSConnectivity
     const int selfSize=getSelfSize();
     if(selfSize==added.getSelfSize())
       {
+	KSConnectivity<T> myCopy(getSelfSize(),getSelfSize());
+	myCopy.copyFrom(*this);
 	//start the counting
 	initSelfCount();
 	for(int i=0;i<selfSize;i++)
 	  {
 	    TArray myExpand(1);
-	    expandMySelfSelf(i, myExpand);
+	    myCopy.expandMySelfSelf(i, myExpand);
 
 	    TArray addExpand(1);
 	    added.expandMySelfSelf(i, addExpand);
@@ -237,7 +239,7 @@ class KSConnectivity
 	for(int i=0;i<selfSize;i++)
 	  {
 	    TArray myExpand(1);
-	    expandMySelfSelf(i, myExpand);
+	    myCopy.expandMySelfSelf(i, myExpand);
 
 	    TArray addExpand(1);
 	    added.expandMySelfSelf(i, addExpand);
@@ -264,12 +266,14 @@ class KSConnectivity
       {
 	if(getOtherSize()==added.getOtherSize())
 	  {
+	    KSConnectivity<T> myCopy(getSelfSize(),getOtherSize());
+	    myCopy.copyFrom(*this);
 	    //start the counting
 	    initOtherCount();
 	    for(int i=0;i<selfSize;i++)
 	      {
 		TArray myExpand(1);
-		expandMySelfOther(i, myExpand);
+		myCopy.expandMySelfOther(i, myExpand);
 
 		TArray addExpand(1);
 		added.expandMySelfOther(i, addExpand);
@@ -290,7 +294,7 @@ class KSConnectivity
 	    for(int i=0;i<selfSize;i++)
 	      {
 		TArray myExpand(1);
-		expandMySelfOther(i, myExpand);
+		myCopy.expandMySelfOther(i, myExpand);
 
 		TArray addExpand(1);
 		added.expandMySelfOther(i, addExpand);
