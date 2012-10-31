@@ -550,28 +550,35 @@ class COMETInterface
 	    if(Ckclist01[cF0]==NULL)
 	      {
 		TKConn* Cconn01=new TKConn(k0len+1,k1len+1);  //must include lattice connection (reason for +1)
-		TKConn* Cconn10=new TKConn(k1len+1,k0len+1);
 		Cconn01->copyFrom(Fconn01);
-		Cconn10->copyFrom(Fconn10);
 		Cconn01->multiplySelf(factor);
 		Cconn01->multiplyOther(factor);
-		Cconn10->multiplySelf(factor);
-		Cconn10->multiplyOther(factor);
 		Ckclist01[cF0]=Cconn01;
-		Ckclist10[cF1]=Cconn10;
 	      }
 	    else
 	      {
 		TKConn Cconn01(k0len+1,k1len+1);
-		TKConn Cconn10(k1len+1,k0len+1);
 		Cconn01.copyFrom(Fconn01);
-		Cconn10.copyFrom(Fconn10);
 		Cconn01.multiplySelf(factor);
-		Cconn10.multiplySelf(factor);
 		Cconn01.multiplyOther(factor);
-		Cconn10.multiplyOther(factor);
 		(Ckclist01[cF0])->addToSelf(Cconn01);
 		(Ckclist01[cF0])->addToOther(Cconn01);
+	      }
+
+	    if(Ckclist10[cF1]==NULL)
+	      {
+		TKConn* Cconn10=new TKConn(k1len+1,k0len+1);
+		Cconn10->copyFrom(Fconn10);
+		Cconn10->multiplySelf(factor);
+		Cconn10->multiplyOther(factor);
+		Ckclist10[cF1]=Cconn10;
+	      }
+	    else
+	      {
+		TKConn Cconn10(k1len+1,k0len+1);
+		Cconn10.copyFrom(Fconn10);
+		Cconn10.multiplySelf(factor);
+		Cconn10.multiplyOther(factor);
 		(Ckclist10[cF1])->addToSelf(Cconn10);
 		(Ckclist10[cF1])->addToOther(Cconn10);
 	      }
