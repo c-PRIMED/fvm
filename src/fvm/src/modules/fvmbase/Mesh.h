@@ -337,6 +337,7 @@ public:
   const PeriodicFacePairs& getPeriodicFacePairs() const { return _periodicFacePairs;}
   void CRConnectivityPrint(const CRConnectivity& conn, int procID, const string& name);
   void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const;
+  void InterfaceToBoundary();
 
 protected:
    

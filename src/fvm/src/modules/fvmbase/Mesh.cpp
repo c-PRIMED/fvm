@@ -2413,3 +2413,12 @@ Mesh::CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, co
    }
 #endif
 }
+
+void Mesh::InterfaceToBoundary()
+{
+  foreach(FaceGroupPtr fgPtr, _interfaceGroups)
+    {
+      _boundaryGroups.push_back(fgPtr);
+    }
+  _interfaceGroups.clear();
+}

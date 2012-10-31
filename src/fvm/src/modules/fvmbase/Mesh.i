@@ -241,7 +241,8 @@ public:
   const CRConnectivity& getFaceCells2() const;
   void CRConnectivityPrint( const CRConnectivity& conn, int procID, const string& name );
   void CRConnectivityPrintFile(const CRConnectivity& conn, const string& name, const int procID) const;
- 
+  void InterfaceToBoundary();
+
 private:
   Mesh(const int i);
 };
