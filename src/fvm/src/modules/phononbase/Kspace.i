@@ -1,5 +1,6 @@
 %{
 #include "Kspace.h"
+#include "ScatteringKernel.h"
   %}
 
 %include "std_vector.i"
@@ -22,7 +23,7 @@ class Kspace
   typedef typename Tmode::Refl_pair Refl_pair;
   typedef typename Tmode::Refl_Map Refl_Map;
 
-  Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi);
+  Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi, const bool full);
   Kspace(const char* filename,const int dimension);
   Kspace(const char* filename,const int dimension,const bool normal);
   int getlength();
@@ -39,8 +40,10 @@ class Kspace
   T calcBallisticInterface(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
   T calcDiffuseE(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
   void setDOS(DensityOfStates<T>& DOS);
+  void setScattKernel(ScatteringKernel<T>& Sk);
   void setCp(const T cp);
   void setCpNonGray(const T Tl);
+  Array<T>& getFreqArray();
 
   %extend{
     std::vector<Kspace<T>*>& MakeList()
@@ -63,11 +66,34 @@ class Kspace
   T _totvol; 
   TransmissionMap _trasMap;
   DensityOfStates* _DOS;
+  ScatteringKernel* _ScattKernel;
   
+};
+
+template <class T>
+class ScatteringKernel
+{
+  
+ public:
+  ScatteringKernel(Kspace<T>& kspace);
+  void ReadType1(const char* NamePhonon2, const char* NamePhonon3);
+  void ReadType2(const char* NamePhonon2, const char* NamePhonon3);
+  void updateSourceTermTest(const T Tl);
+  void addFreqs();
+
+ private:
+  ScatteringKernel(const ScatteringKernel&);
+  Kspace<T>& _kspace;
+  KSConnectivity<T> _type1Collisions;
+  KSConnectivity<T> _type2Collisions;
+  T _maxPhi;
+  T _maxDkl;
+
 };
 
 
 %template(KspaceA) Kspace< ATYPE_STR >;
+%template(ScattKernel) ScatteringKernel< ATYPE_STR >;
 
 typedef std::vector<Kspace<ATYPE_STR>*> TkspList;
 %template(TkspList) std::vector<Kspace<ATYPE_STR>*>;

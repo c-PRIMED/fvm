@@ -53,7 +53,7 @@ class Kspace
   typedef pair<const StorageSite*, const StorageSite*> EntryIndex;
   typedef map<EntryIndex, shared_ptr<ArrayBase> > GhostArrayMap;
 
- Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi) :
+ Kspace(T a, T tau, T vgmag, T omega, int ntheta, int nphi, const bool full) :
   _length(ntheta*nphi),
     _Kmesh(),
     _totvol(0.),
@@ -73,6 +73,10 @@ class Kspace
 	const long double Ktot=pi*pow(Kmax,3.)*4./3./pow((2.*pi),3.);
 	Tvec vg;
 	int count=1;
+
+	if(full)
+	  dtheta*=2;
+
 	for(int t=0;t<ntheta;t++)
 	  {
 	    theta=dtheta*(T(t)+.5);
@@ -343,6 +347,21 @@ class Kspace
 
      fp_in.close();
      calcDK3();
+
+     _freqArray.resize(gettotmodes());
+
+     for(int k=0;k<_length;k++)
+       {
+	 Tkvol& kv=getkvol(k);
+	 const int modenum=kv.getmodenum();
+	 for(int m=0;m<modenum;m++)
+	   {
+	     Tmode& mode=kv.getmode(m);
+	     const int index=mode.getIndex()-1;
+	     _freqArray[index]=mode.getomega();
+	   }
+       }
+
    }
   
   //void setvol(int n,Tkvol k) {*_Kmesh[n]=k;}
@@ -408,13 +427,31 @@ class Kspace
     int iters=0;
     while((deltaT>1e-6)&&(iters<10))
       {
-	gete0(guess, e0, de0dT,An);
+	gete0v(guess, e0, de0dT,An);
 	deltaT=(e0-e_sum)/de0dT;
 	newguess=guess-deltaT;
 	deltaT=fabs(deltaT/guess);
 	guess=newguess;
 	iters++;
       }	
+  }
+
+  void calcTemp(T& guess, const T e_sum)
+  {
+    T e0;
+    T de0dT;
+    T deltaT=1.;
+    T newguess;
+    int iters=0;
+    while((deltaT>1e-6)&&(iters<10))
+      {
+	gete0(guess, e0, de0dT);
+	deltaT=(e0-e_sum)/de0dT;
+	newguess=guess-deltaT;
+	deltaT=fabs(deltaT/guess);
+	guess=newguess;
+	iters++;
+      }
   }
 
   T calcModeTemp(T guess, const T e_sum, const T m)
@@ -470,9 +507,54 @@ class Kspace
 	    T vdota=vg[0]*An[0]+vg[1]*An[1]+vg[2]*An[2];
 	    if(vdota>0)
 	      {
-		e0+=mode.calce0(Tguess)*dk3;
-		de0dT+=mode.calcde0dT(Tguess)*dk3;
+		e0+=mode.calce0(Tguess)*dk3/_totvol;
+		de0dT+=mode.calcde0dT(Tguess)*dk3/_totvol;
 	      }
+	  }
+      }
+    e0*=_totvol;
+    de0dT*=_totvol;
+  }
+
+  void gete0v(const T Tguess, T& e0, T& de0dT, const Tvec An)
+  {
+    e0=0.;
+    de0dT=0.;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    Tvec vg=mode.getv();
+	    T vdota=vg[0]*An[0]+vg[1]*An[1]+vg[2]*An[2];
+	    if(vdota>0)
+	      {
+		e0+=mode.calce0(Tguess)*dk3/_totvol*vdota;
+		de0dT+=mode.calcde0dT(Tguess)*dk3/_totvol*vdota;
+	      }
+	  }
+      }
+    e0*=_totvol;
+    de0dT*=_totvol;
+  }
+
+  void gete0(const T Tguess, T& e0, T& de0dT)
+  {
+    e0=0.;
+    de0dT=0.;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    e0+=mode.calce0(Tguess)*dk3;
+	    de0dT+=mode.calcde0dT(Tguess)*dk3;
 	  }
       }
   }
@@ -851,7 +933,13 @@ class Kspace
   }
   
   TArray& getTransArray(Tkspace& toKspace)
-    {return *_transMap[&toKspace].second;}
+    {
+      typename TransmissionMap::const_iterator pos=_transMap.find(&toKspace);
+      if(pos!=_transMap.end())
+	return *((pos->second).second);
+      else
+	throw CException("getTransArray: Transmission not set!");
+    }
   
   T calcBallisticInterface(Tkspace& kspace1, const Tvec& An, const T T0, const T T1)
   {
@@ -976,6 +1064,7 @@ class Kspace
   }
 
   void setDOS(DensityOfStates<T>& DOS) {_DOS=&DOS;}
+  void setScattKernel(ScatteringKernel<T>& Sk) {_ScattKernel=&Sk;}
   DensityOfStates<T>* getDOSptr() {return _DOS;}
   void setCoarseKspace(Tkspace* cK) {_coarseKspace=cK;}
   Tkspace* getCoarseKspace() {return _coarseKspace;}
@@ -992,7 +1081,6 @@ class Kspace
   void setResArray(TArrPtr ResPtr) {_residual=ResPtr;}
   void setFASArray(TArrPtr FASPtr) {_FASCorrection=FASPtr;}
   void setTauArray(TArrPtr TauPtr) {_Tau=TauPtr;}
-  const TArray& getFreqArray() {return _freqArray;}
   TArray& geteArray() {return *_e;}
   TArray& gete0Array() {return *_e0;}
   TArray& getInjArray() {return *_injected;}
@@ -1004,6 +1092,15 @@ class Kspace
     int end=start+gettotmodes();
     for(int i=start; i<end; i++)
       o[i-start]=(*_e)[i];
+  }
+
+  void getnCellVals(const int c, TArray& o)
+  {
+    const T hbar(6.582119e-16);
+    int start=getGlobalIndex(c,0);
+    int end=start+gettotmodes();
+    for(int i=start; i<end; i++)
+      o[i-start]=(*_e)[i]/hbar/_freqArray[i-start];
   }
 
   void seteCellVals(const int c, const TArray& o)
@@ -1199,7 +1296,50 @@ class Kspace
       }
     return indx++;
   }
+
+  void getEquilibriumArray(TArray& vals, const T Tl)
+    {
+      for(int k=0;k<_length;k++)
+	{
+	  Tkvol& kv=getkvol(k);
+	  const int modenum=kv.getmodenum();
+	  for(int m=0;m<modenum;m++)
+	    {
+	      Tmode& mode=kv.getmode(m);
+	      const int index=mode.getIndex()-1;
+	      vals[index]=mode.calce0(Tl);
+	    }
+	}
+    }
+
+  TArray& getFreqArray() {return _freqArray;}
   
+  void getSourceTerm(const int c, const T Tl, TArray& s)
+  {
+    const T hbar(6.582119e-16);
+    T defect(0);
+    TArray n(gettotmodes());
+    getnCellVals(c,n);
+    _ScattKernel->updateSource(n,s,Tl);
+    for(int i=0;i<gettotmodes();i++)
+      s[i]*=_freqArray[i]*hbar;
+    
+    int i(0);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	const T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    defect+=s[i]*dk3;
+	    i++;
+	  }
+      }
+
+
+  }
+
  private:
 
   Kspace(const Kspace&);
@@ -1209,6 +1349,7 @@ class Kspace
   T _totvol;    //total Kspace volume
   TransmissionMap _transMap;
   DensityOfStates<T>* _DOS;
+  ScatteringKernel<T>* _ScattKernel;
   Tkspace* _coarseKspace;
   TArrPtr _e;
   TArrPtr _e0;
