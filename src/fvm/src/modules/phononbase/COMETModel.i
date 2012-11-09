@@ -93,6 +93,7 @@ struct COMETModelOptions : public FloatVarDict<T>
   string DomainStats;
   int minNewton;
   int maxNewton;
+  string Scattering;
 };
 
 %template(COMETBCA) COMETBC<ATYPE_STR>;
