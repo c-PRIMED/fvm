@@ -289,6 +289,7 @@ class COMETModel : public Model
 		     const int faceCount=faces.getCount();
 		     const int offSet=faces.getOffset();
 		     const bool Imp=(*(_bcMap[fg.id]))["FullyImplicit"];
+		     const T ref=(*(_bcMap[fg.id]))["specifiedReflection"];
 		     const Field& AreaMagField=_geomFields.areaMag;
 		     const TArray& AreaMag=
 		       dynamic_cast<const TArray&>(AreaMagField[faces]);
@@ -298,38 +299,41 @@ class COMETModel : public Model
 
 		     const VectorT3 norm=AreaDir[0]/AreaMag[0];
 
-		     for (int k=0;k<numK;k++)
+		     if(ref==1.)
 		       {
-			 Tkvol& kv=kspace.getkvol(k);
-			 const int numM=kv.getmodenum();
-			 const T dk3=kv.getdk3();
-			 for (int m=0;m<numM;m++)
+			 for (int k=0;k<numK;k++)
 			   {
-
-			     Tmode& mode=kv.getmode(m);
-			     const VectorT3 vg=mode.getv();
-			     const T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
-			     VectorT3 si=vg/vmag;
-			     VectorT3 so;
-			     const T sidotn=si[0]*norm[0]+si[1]*norm[1]+si[2]*norm[2];
-			     Refl_Map& rmap=mode.getreflmap();
-
-			     if (sidotn > T_Scalar(0.0))
+			     Tkvol& kv=kspace.getkvol(k);
+			     const int numM=kv.getmodenum();
+			     const T dk3=kv.getdk3();
+			     for (int m=0;m<numM;m++)
 			       {
-				 so=si-2.*(si[0]*norm[0]+si[1]*norm[1]+si[2]*norm[2])*norm;
-				 T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
-				 so/=soMag;
-				 so*=vmag;
-				 Refl_pair refls;
-				 Refl_pair reflsFrom;
-				 kspace.findSpecs(dk3,vmag,m,so,refls);
-				 rmap[fg.id]=refls;
-				 const int k1=refls.first.second;
-				 Tmode& mode2=kspace.getkvol(k1).getmode(m);
-				 Refl_Map& rmap2=mode2.getreflmap();
-				 reflsFrom.first.second=-1;
-				 reflsFrom.second.second=k;
-				 rmap2[fg.id]=reflsFrom;
+
+				 Tmode& mode=kv.getmode(m);
+				 const VectorT3 vg=mode.getv();
+				 const T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
+				 VectorT3 si=vg/vmag;
+				 VectorT3 so;
+				 const T sidotn=si[0]*norm[0]+si[1]*norm[1]+si[2]*norm[2];
+				 Refl_Map& rmap=mode.getreflmap();
+
+				 if (sidotn > T_Scalar(0.0))
+				   {
+				     so=si-2.*(si[0]*norm[0]+si[1]*norm[1]+si[2]*norm[2])*norm;
+				     T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
+				     so/=soMag;
+				     so*=vmag;
+				     Refl_pair refls;
+				     Refl_pair reflsFrom;
+				     kspace.findSpecs(dk3,vmag,m,so,refls);
+				     rmap[fg.id]=refls;
+				     const int k1=refls.first.second;
+				     Tmode& mode2=kspace.getkvol(k1).getmode(m);
+				     Refl_Map& rmap2=mode2.getreflmap();
+				     reflsFrom.first.second=-1;
+				     reflsFrom.second.second=k;
+				     rmap2[fg.id]=reflsFrom;
+				   }
 			       }
 			   }
 		       }
@@ -502,7 +506,7 @@ class COMETModel : public Model
 
      cout<<"Interfaces Complete..."<<endl;
      
-     applyTemperatureBoundaries();
+     initializeTemperatureBoundaries();
      _residual=updateResid(false);
 
      if(_options.DomainStats=="Loud")
@@ -698,7 +702,7 @@ class COMETModel : public Model
 	   ComInt.makeDMMcoeffs(*icPtr);
        }
      
-     applyTemperatureBoundaries();
+     initializeTemperatureBoundaries();
      _residual=updateResid(false);
      cout<<"Creating Coarse Levels..."<<endl;
      MakeCoarseModel(this);
@@ -1054,6 +1058,41 @@ class COMETModel : public Model
       }
   }
 
+  void initializeTemperatureBoundaries()
+  {
+    const int numMeshes=_meshes.size();
+
+    for(int n=0;n<numMeshes;n++)
+      {
+	const Mesh& mesh=*_meshes[n];
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr;
+	    if(fg.id>0)
+	      {   
+		const StorageSite& faces = fg.site;
+		const COMETBC<T>& bc = *_bcMap[fg.id];
+		
+		COMETBoundary<T> cbc(faces, mesh,_geomFields,kspace,_options,fg.id);
+		
+		if(bc.bcType=="temperature")
+		  {	      
+		    FloatValEvaluator<T>
+		      bTemperature(bc.getVal("specifiedTemperature"),faces);
+		    
+
+		    cbc.applyTemperatureWallCoarse(bTemperature);
+		    
+		    if(_options.Convection=="SecondOrder")
+		      cbc.applyTemperatureWallFine(bTemperature);
+
+		  }
+	      }
+	  }
+      }
+  }
+
   void MakeCoarseModel(TCOMET* finerModel)
   {
 
@@ -1160,12 +1199,12 @@ class COMETModel : public Model
     CoarseCounts=0;
 
     //coarsen interfaces first
-    /*
+    
     foreach(COMETIC<T>* icPtr, _IClist)
       {
 	COMETIC<T>& ic=*icPtr;
 	coarsenInterfaceCells(ic, CoarseCounts, inGeomFields, inMeshes);
-	}*/
+      }
 
     //coarsen interiors
     for(int m=0;m<numMeshes;m++)
@@ -1321,6 +1360,7 @@ class COMETModel : public Model
 
 	for(int f=0;f<faceCount;f++)
 	  {
+	    const int f01=common01[f];
 	    const int offset=faces0.getOffset();
 	    VectorT3& sumVec=summedArea[FaceFine2Coarse0[f]];
 	    const VectorT3& partVec=FArea0[f+offset];
@@ -1334,6 +1374,7 @@ class COMETModel : public Model
 	      {
 		sumVec-=partVec;
 		FaceFine2Coarse0[f]=coarseFace;
+		FaceFine2Coarse1[f01]=coarseFace;
 		coarseFace++;
 	      }
 	    
@@ -1347,6 +1388,7 @@ class COMETModel : public Model
     for(int n=0;n<numMeshes;n++)
       {
 	const Mesh& mesh=*_meshes[n];
+	
 	if(!_IClist.empty())
 	  {
 	    CoarseCounts[n]=correctSingleNeighbor(n, mesh, inGeomFields, 
@@ -2548,14 +2590,30 @@ class COMETModel : public Model
 			
 			int c2Coarse=f2c0[c2];
 			
-			if(c2Coarse==-1) //|| CoarseFineCount[c2Coarse]<3)  //not already paired
+			if(_level==0)
 			  {
-			    if(areaMagArray0[fglob]>maxArea)
+			    if(c2Coarse==-1 || CoarseFineCount[c2Coarse]<5)  //not already paired
 			      {
-				pairWith=c2;
-				maxArea=areaMagArray0[fglob];
-				if(cellsIntGhost0.getCount(c2)>0)  //pick first interface cell
-				  break;
+				if(areaMagArray0[fglob]>maxArea)
+				  {
+				    pairWith=c2;
+				    maxArea=areaMagArray0[fglob];
+				    if(cellsIntGhost0.getCount(c2)>0)  //pick first interface cell
+				      break;
+				  }
+			      }
+			  }
+			else
+			  {
+			    if(c2Coarse==-1)
+			      {
+				if(areaMagArray0[fglob]>maxArea)
+				  {
+				    pairWith=c2;
+				    maxArea=areaMagArray0[fglob];
+				    if(cellsIntGhost0.getCount(c2)>0)  //pick first interface cell
+				      break;
+				  }
 			      }
 			  }
 
@@ -2705,7 +2763,7 @@ class COMETModel : public Model
 				  {
 				    if(cellCells1(c01,c01neibs)==c11neib)
 				      {
-					middleMan=-1;//c11neib;
+					middleMan=c11neib;
 					break;
 				      }
 				  }
@@ -2804,23 +2862,34 @@ class COMETModel : public Model
 	swapGhostInfo();
 #endif
 
-	if(_level>0 || _options.Convection=="FirstOrder")
+	if(_options.Scattering=="Full")
 	  {
 	    applyTemperatureBoundaries();
-	    CDisc.COMETSolveCoarse(dir,_level); 
-	    CDisc.COMETSolveCoarse(-dir,_level); 
-	    /*
-	    if(_level>2)
+	    if(_level==0)
+	      {
+		CDisc.COMETSolveFull(dir,_level);
+		CDisc.COMETSolveFull(-dir,_level);
+	      }
+	    else
 	      {
 		CDisc.COMETSolveCoarse(dir,_level); 
 		CDisc.COMETSolveCoarse(-dir,_level); 
 	      }
-	    */
 	  }
 	else
 	  {
-	    applyTemperatureBoundaries();
-	    CDisc.COMETSolveFine(dir,_level);
+	    if(_level>0 || _options.Convection=="FirstOrder")
+	      {
+		applyTemperatureBoundaries();
+		CDisc.COMETSolveCoarse(dir,_level); 
+		CDisc.COMETSolveCoarse(-dir,_level); 
+	      }
+	    else
+	      {
+		//applyTemperatureBoundaries();
+		CDisc.COMETSolveFine(dir,_level);
+		CDisc.COMETSolveFine(-dir,_level);
+	      }
 	  }
 	
 	if(!_MeshToIC.empty())
@@ -2872,10 +2941,20 @@ class COMETModel : public Model
 				  FgToKsc);
 	
 	CDisc.setfgFinder();
-	if(_level>0 || _options.Convection=="FirstOrder")
-	  CDisc.findResidCoarse(addFAS);
+	if(_options.Scattering=="Full")
+	  {
+	    if(_level==0)
+	      CDisc.findResidFull();
+	    else
+	      CDisc.findResidCoarse(addFAS);
+	  }
 	else
-	  CDisc.findResidFine();
+	  {
+	    if(_level>0 || _options.Convection=="FirstOrder")
+	      CDisc.findResidCoarse(addFAS);
+	    else
+	      CDisc.findResidFine();
+	  }
 
 	currentResid=CDisc.getAveResid();
 
