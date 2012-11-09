@@ -73,36 +73,7 @@ class KSConnectivity
   const IntArray& getOtherCol() {return _SelfToOtherConn.getCol();}
   const TArray& getSelfCoeffs() {return _SelfToSelfCoeffs;}
   const TArray& getOtherCoeffs() {return _SelfToOtherCoeffs;}
-
-  /*
-  const IntArray& getOtherIndices(const int index) const
-  {
-    if(_SelfToOther[index]!=NULL)
-      return *(_SelfToOther[index]->first);
-    return *(_empty.first);
-  }
-
-  const IntArray& getSelfIndices(const int index) const
-  {
-    if (_SelfToSelf[index]!=NULL)
-      return *(_SelfToSelf[index]->first);
-    return *(_empty.first);
-  }
-
-  const TArray& getOtherCoeffs(const int index) const
-  {
-    if(_SelfToOther[index]!=NULL)
-      return *(_SelfToOther[index]->second);
-    return *(_empty.second);
-  }
-
-  const TArray& getSelfCoeffs(const int index) const
-  {
-    if(_SelfToSelf[index]!=NULL)
-      return *(_SelfToSelf[index]->second);
-    return *(_empty.second);
-  }
-  */
+  TArray& getNonConstOtherCoeffs() {return _SelfToOtherCoeffs;}
 
   void multiplySelf(const TArray& x, TArray& b) const
   {//b=this*x
@@ -349,22 +320,6 @@ class KSConnectivity
   }
   
  private:
-
-  /*
-  TArray& getSelfCoeffsPriv(const int index)
-    {
-      if(_SelfToSelf[index]!=NULL)
-	return *(_SelfToSelf[index]->second);
-      return *(_empty.second);
-    }
-
-  TArray& getOtherCoeffsPriv(const int index)
-    {
-      if(_SelfToOther[index]!=NULL)
-	return *(_SelfToOther[index]->second);
-      return *(_empty.second);
-    }
-  */
 
   KSConnectivity(const KSConnectivity&);
   StorageSite _selfSite;
