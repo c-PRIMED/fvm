@@ -50,6 +50,7 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->DomainStats="Quiet";
     this->minNewton=0;
     this->maxNewton=15;
+    this->Scattering="SMRT";
   }
   
   bool printNormalizedResiduals;
@@ -70,6 +71,7 @@ struct COMETModelOptions : public FloatVarDict<T>
   string DomainStats;
   int minNewton;
   int maxNewton;
+  string Scattering;
 
 };
 
