@@ -3376,6 +3376,7 @@ class COMETModel : public Model
 	    break;
 	  }
       }
+
     if (!found)
       throw CException("getwallArea: invalid faceGroupID");
     return r;
@@ -3401,6 +3402,20 @@ class COMETModel : public Model
 	    break;
 	  }
       }
+
+#ifdef FVM_PARALLEL
+    found=true;
+    int one=1;
+    double tempR=An[0];
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempR, one, MPI::DOUBLE, MPI::SUM);
+    An[0]=tempR;
+    tempR=An[1];
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempR, one, MPI::DOUBLE, MPI::SUM);
+    An[1]=tempR;
+    tempR=An[2];
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempR, one, MPI::DOUBLE, MPI::SUM);
+    An[2]=tempR;
+#endif
 
     if (!found)
       throw CException("getwallArea: invalid faceGroupID");
