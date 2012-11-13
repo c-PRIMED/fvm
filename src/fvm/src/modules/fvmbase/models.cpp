@@ -18,6 +18,10 @@ template class ThermalModel<ATYPE>;
 #include "SpeciesModel_impl.h"
 template class SpeciesModel<ATYPE>;
 
+#include "BatteryModel.h"
+#include "BatteryModel_impl.h"
+template class BatteryModel<ATYPE>;
+
 #ifndef USING_ATYPE_PC
 
 #include "ElectricModel.h"

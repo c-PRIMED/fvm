@@ -97,10 +97,11 @@ template<class X, class Diag, class OffDiag>
 
     // set constants for entire shell
     const T_Scalar F = 96485.0; //  C/mol
-    const T_Scalar k = _RRConstant;
+    T_Scalar k = _RRConstant;
     T_Scalar csMax = 26000.0;// mol/m^3
     if (_Anode){
-      csMax = 26390.0;}
+      csMax = 26390.0;
+      k = _RRConstant/5.0;}
     if (_Cathode){
       csMax = 22860.0;}
 
@@ -241,8 +242,8 @@ template<class X, class Diag, class OffDiag>
 	offdiagC1_C3 = 0.0;
 
 	// some output of prevailing values once per shell - useful for testing
-	/*
-	if (c0 == 0){
+	
+	/*if (c0 == 0){
 	  cout << "i0_star: " << i0_star << endl;
 	  cout << "Phi_s: " << Phis_star << " Phi_e: " << Phie_star << " i: " << i_star << " Flux: " << otherFlux << " dIdPhis: " << dIdPhiS_star << " dIdPhie: " << dIdPhiE_star << endl;
 	  cout <<"Diag: " << diag[c1] << " dRdXc2: " << offdiagC1_C2 << " dRdXc0: " << offdiagC1_C0 << endl;

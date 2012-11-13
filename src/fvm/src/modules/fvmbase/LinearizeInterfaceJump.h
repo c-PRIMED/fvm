@@ -31,10 +31,11 @@ class LinearizeInterfaceJump
   typedef Array<X> XArray;
   typedef Vector<T_Scalar,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
+  typedef SquareTensor<T_Scalar,2> SquareTensorT2;
  
 
  LinearizeInterfaceJump(const T_Scalar A_coeff, 
-			   const T_Scalar B_coeff,
+			   const X B_coeff,
 			   Field& varField):
     _varField(varField), 
     _A_coeff(A_coeff),
@@ -59,7 +60,7 @@ class LinearizeInterfaceJump
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
 
     DiagArray& diag = matrix.getDiag();
-    
+
     // In the following, parent is assumed to be on the left, and 
     // the other mesh is assumed to be on the right when implimenting
     // the (Phi_R = A*Phi_L + B) equation
@@ -137,14 +138,14 @@ class LinearizeInterfaceJump
        OffDiag& offdiagC1_C0 = matrix.getCoeff(c1,  c0);
 
        rCell[c1] = _A_coeff*xCell[c0] + _B_coeff - xCell[c1];
-       offdiagC1_C0 = _A_coeff;
-       diag[c1] = -1;
+       offdiagC1_C0 = _A_coeff*NumTypeTraits<OffDiag>::getUnity();
+       diag[c1] = NumTypeTraits<Diag>::getNegativeUnity();
 
        // set other coeffs to zero for right shell cell
        OffDiag& offdiagC1_C2 = matrix.getCoeff(c1,  c2);
        OffDiag& offdiagC1_C3 = matrix.getCoeff(c1,  c3);
-       offdiagC1_C2 = 0.0;
-       offdiagC1_C3 = 0.0;
+       offdiagC1_C2 = NumTypeTraits<OffDiag>::getZero();
+       offdiagC1_C3 = NumTypeTraits<OffDiag>::getZero();
 
    }
 
@@ -153,7 +154,7 @@ private:
   
   Field& _varField;
   const T_Scalar _A_coeff;
-  const T_Scalar _B_coeff;
+  const X _B_coeff;
   
 };
 

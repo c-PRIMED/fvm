@@ -2,8 +2,8 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-#ifndef _LINEARIZESPECIESINTERFACE_H_
-#define _LINEARIZESPECIESINTERFACE_H_ 
+#ifndef _LINEARIZEPCINTERFACE_BV_H_
+#define _LINEARIZEPCINTERFACE_BV_H_ 
 
 #include "Mesh.h"
 #include "NumType.h"
@@ -21,7 +21,7 @@
 
 
 template<class X, class Diag, class OffDiag>
-  class LinearizeSpeciesInterface
+  class LinearizePCInterface_BV
 {
  public:
   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
@@ -33,23 +33,15 @@ template<class X, class Diag, class OffDiag>
   typedef Array<VectorT3> VectorT3Array;
  
 
- LinearizeSpeciesInterface(const GeomFields& geomFields,
+ LinearizePCInterface_BV(const GeomFields& geomFields,
 			   const T_Scalar RRConstant,
-			   const T_Scalar A_coeff, 
-			   const T_Scalar B_coeff,
 			   const T_Scalar interfaceUnderRelax,
 			   const bool Anode,
 			   const bool Cathode,
-			   Field& varField,
-			   Field& mFElectricModel,
-			   Field& elecPotentialField):
+			   Field& varField):
     _geomFields(geomFields),
     _varField(varField),
-    _mFElectricModel(mFElectricModel),
-    _elecPotentialField(elecPotentialField),
     _RRConstant(RRConstant),
-    _A_coeff(A_coeff),
-    _B_coeff(B_coeff),
     _interfaceUnderRelax(interfaceUnderRelax),
     _Anode(Anode),
     _Cathode(Cathode)
@@ -63,10 +55,6 @@ template<class X, class Diag, class OffDiag>
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getParentFaceGroupSite();
 
-    // previous timestep shell mesh info
-    const XArray& mFElecModel =
-      dynamic_cast<const XArray&>(_mFElectricModel[cells]);
-
     // shell mesh info
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex)); 
@@ -75,11 +63,6 @@ template<class X, class Diag, class OffDiag>
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
     DiagArray& diag = matrix.getDiag();
 
-    // shell mesh electrical potential values
-    const XArray& ePotCell =
-      dynamic_cast<const XArray&>(_elecPotentialField[cells]);
-
-    
     // In the following, parent is assumed to be the electrolyte, and 
     // the other mesh is assumed to be electrode when implimenting
     // the Butler-Volmer equations
@@ -121,7 +104,6 @@ template<class X, class Diag, class OffDiag>
 
     for (int f=0; f<faces.getCount(); f++)
       {
-	//get parent mesh fluxes and coeffs
 	int c0p = parentFaceCells(f,0);
 	int c1p = parentFaceCells(f,1);
 	if (c1p < parentCells.getSelfCount())
@@ -133,11 +115,6 @@ template<class X, class Diag, class OffDiag>
 	    c1p = temp;
 	  }
 
-	const X parentFlux = rParentCell[c1p]; // inward shell flux on the left
-	const OffDiag dRC0dXC3 = parentmatrix.getCoeff(c1p,  c0p);
-	const Diag dRC0dXC0 = parentdiag[c1p];
-
-	//get other mesh fluxes and coeffs
 	int c0o = otherFaceCells(f,0);
 	int c1o = otherFaceCells(f,1);
 	if (c1o < otherCells.getSelfCount())
@@ -149,6 +126,12 @@ template<class X, class Diag, class OffDiag>
 	    c1o = temp;
 	  }
 
+	//get parent mesh fluxes and coeffs
+	const X parentFlux = rParentCell[c1p]; // inward shell flux on the left
+	const OffDiag dRC0dXC3 = parentmatrix.getCoeff(c1p,  c0p);
+	const Diag dRC0dXC0 = parentdiag[c1p];
+
+	//get other mesh fluxes and coeffs
 	const X otherFlux = rOtherCell[c1o]; // inward shell flux on the right
 	const OffDiag dRC0dXC2 = othermatrix.getCoeff(c1o,  c0o);
 	const OffDiag dRC0dXC1 = otherdiag[c1o];
@@ -159,42 +142,20 @@ template<class X, class Diag, class OffDiag>
 	const int c1 = cellCells(f,0);
 	const int c2 = cellCells(f,1);
 	const int c3 = cellCells(f,2);
+	const T_Scalar Area = faceAreaMag[f];
 
-	const T_Scalar Area = faceAreaMag[c0];
-
-	T_Scalar cs_star = xCell[c1];
-	T_Scalar ce_star = xCell[c0];
-
-	//cout << "cs_now: " << xCell[c1] << " Cs_Prev: " << PrevConc[c1] << endl;
-
+	T_Scalar cs_star = (xCell[c1])[1];
+	T_Scalar ce_star = (xCell[c0])[1];
+	const T_Scalar phis_star = (xCell[c1])[0];
+	const T_Scalar phie_star = (xCell[c0])[0];
 
 	// avoid nans
 	if (cs_star < 0.0){ cout << "ERROR: Cs < 0, Cs=" << cs_star << endl; cs_star = 0.0;}
 	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 0.0;}
 	if (cs_star > csMax){ cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl; cs_star = csMax;}
 
-	/*// avoid blowups
-	if (cs_star == 0.0){
-	  cs_star+=1; cout << "ERROR: Cs = 0" << endl;}
-	if (cs_star == csMax){
-	  cs_star-=1; cout << "ERROR: Cs = CsMax" << endl;}
-	if (ce_star == 0.0){
-	ce_star+=0.001; cout << "ERROR: Ce = 0" << endl;}*/
+	const T_Scalar SOC =  cs_star/csMax;
 
-	// calculate average surface concentration inside electrode
-	T_Scalar Sum = 0.0;
-	for (int faceNumber=0; faceNumber<faces.getCount(); faceNumber++)
-	  { 
-	    const T_Scalar value = mFElecModel[cellCells(faceNumber,0)];
-	    Sum = Sum + value;
-	  }
-	const T_Scalar Average_cs = Sum/faces.getCount();
-
-	//const T_Scalar SOC =  Average_cs/csMax;
-	const T_Scalar SOC =  mFElecModel[c1]/csMax;
-
-
-	//const T_Scalar SOC = cs_star/csMax;
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
 	  U_ref = -0.16 + 1.32*exp(-3.0*SOC)+10.0*exp(-2000.0*SOC);
@@ -211,24 +172,14 @@ template<class X, class Diag, class OffDiag>
 	    {U_ref = 5.0; cout << "U_ref > 5.0" << endl;}
 	    }
 
-	//cout << U_ref << endl;
+	const T_Scalar eta_star = phis_star - phie_star - U_ref;
 
-	/*if (_Anode){
-	  U_ref = 0.08;}
-	if (_Cathode){
-	  U_ref = 4.25133;}*/
-
-	const T_Scalar eta_star = ePotCell[c1] - ePotCell[c0] - U_ref;
-
-	//const T_Scalar eta_star = _A_coeff - _B_coeff - U_ref;
-	T_Scalar C_0 = exp(C_a*eta_star)-exp(-1.0*C_c*eta_star);
-
-	const T_Scalar i_star = C_0*k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
+	const T_Scalar C_0 = exp(C_a*eta_star)-exp(-1.0*C_c*eta_star);
+	const T_Scalar i0_star = k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
+	const T_Scalar i_star = C_0*i0_star;
 
 	// CURRENT SHOULD NOT BE ZERO
 	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
-
-	
 
 	// calculate dC_0/dCS
 	T_Scalar dC_0dCS = 0.0;
@@ -243,61 +194,95 @@ template<class X, class Diag, class OffDiag>
 	  }
 
 	const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star)+ dC_0dCS/C_0);
-	//const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star));
 	const T_Scalar dIdCE_star = i_star*alpha_c/ce_star;
 
+	const T_Scalar dIdPhiS_star = i0_star*(C_a*exp(C_a*eta_star)+C_c*exp(-1*C_c*eta_star));
+	const T_Scalar dIdPhiE_star = -1*i0_star*(C_a*exp(C_a*eta_star)+C_c*exp(-1*C_c*eta_star));
+
 	// left(parent) shell cell - 3 neighbors
-	// flux balance
+	// flux balance for both equations
 	OffDiag& offdiagC0_C1 = matrix.getCoeff(c0,  c1);
 	OffDiag& offdiagC0_C2 = matrix.getCoeff(c0,  c2);
 	OffDiag& offdiagC0_C3 = matrix.getCoeff(c0,  c3);
 
-	rCell[c0] = F*otherFlux + F*parentFlux;
-	offdiagC0_C1 = F*dRC0dXC1;
-	offdiagC0_C3 = F*dRC0dXC3;
-	offdiagC0_C2 = F*dRC0dXC2;
-	diag[c0] = F*dRC0dXC0;
+	rCell[c0] = otherFlux + parentFlux;
+	offdiagC0_C1 = dRC0dXC1;
+	offdiagC0_C3 = dRC0dXC3;
+	offdiagC0_C2 = dRC0dXC2;
+	diag[c0] = dRC0dXC0;
+
+	//Fix for species equations
+	(rCell[c0])[1] *= F;
+	(offdiagC0_C1)(1,1) *= F;
+	(offdiagC0_C3)(1,1) *= F;
+	(offdiagC0_C2)(1,1) *= F;
+	(diag[c0])(1,1) *= F;
 
 	// right(other) shell cell - 2 neighbors
 	// jump condition
 	OffDiag& offdiagC1_C0 = matrix.getCoeff(c1,  c0);
 	OffDiag& offdiagC1_C2 = matrix.getCoeff(c1,  c2);
 
-	rCell[c1] = otherFlux*F - (i_star + dIdCS_star*(xCell[c1]-cs_star) + dIdCE_star*(xCell[c0]-ce_star));
-	offdiagC1_C0 = -1*dIdCE_star;
-	offdiagC1_C2 = F*dRC0dXC2;
+	////////////////////////
+	//       SPECIES      //
+	////////////////////////
+
+	(rCell[c1])[1] = F*otherFlux[1] - (i_star + dIdCS_star*((xCell[c1])[1]-cs_star) + dIdCE_star*((xCell[c0])[1]-ce_star));
+	offdiagC1_C0(1,1) = -1*dIdCE_star;
+	offdiagC1_C2(1,1) = F*dRC0dXC2(1,1);
+
 	//make sure diag is < 0
 	if (dIdCS_star > 0.0)
 	  {
-	    diag[c1] = F*dRC0dXC1 - dIdCS_star;
+	    (diag[c1])(1,1) = F*dRC0dXC1(1,1) - dIdCS_star;
 	  }
 	else
 	  { 
-	    diag[c1] = F*dRC0dXC1;
+	    (diag[c1])(1,1) = F*dRC0dXC1(1,1);
+	  }
+
+	////////////////////////
+	//      POTENTIAL     //
+	////////////////////////
+
+
+	(rCell[c1])[0] = otherFlux[0] - (i_star + dIdPhiS_star*((xCell[c1])[0]-phis_star) + dIdPhiE_star*((xCell[c0])[0]-phie_star));
+	offdiagC1_C0(0,0) = -1*dIdPhiE_star;
+	offdiagC1_C2(0,0) = dRC0dXC2(0,0);
+	(diag[c1])(0,0) = dRC0dXC1(0,0) - dIdPhiS_star;
+
+	//make sure diag is < 0
+	if ((diag[c1])(0,0) > 0.0)
+	  {
+	    cout << "Warning: Potential Diag > 0" << endl;
 	  }
 
 	// set other coeffs to zero for right shell cell
 	OffDiag& offdiagC1_C3 = matrix.getCoeff(c1,  c3);
-	offdiagC1_C3 = 0.0;
+	offdiagC1_C3 = NumTypeTraits<OffDiag>::getZero();
+
+
+	// Point-coupled inclusions(off diagonal terms in square tensors)
+	(rCell[c1])[1] = F*otherFlux[1] - (i_star + dIdCS_star*((xCell[c1])[1]-cs_star) + dIdCE_star*((xCell[c0])[1]-ce_star) + dIdPhiS_star*((xCell[c1])[0]-phis_star) + dIdPhiE_star*((xCell[c0])[0]-phie_star));
+	(rCell[c1])[0] = otherFlux[0] - (i_star + dIdCS_star*((xCell[c1])[1]-cs_star) + dIdCE_star*((xCell[c0])[1]-ce_star) + dIdPhiS_star*((xCell[c1])[0]-phis_star) + dIdPhiE_star*((xCell[c0])[0]-phie_star));
+	(diag[c1])(0,1) = -1*dIdCS_star;
+	(diag[c1])(1,0) = -1*dIdPhiS_star;
+	offdiagC1_C0(0,1) = -1*dIdCE_star;
+	offdiagC1_C0(1,0) = -1*dIdPhiE_star;
 
 	// underrelax diagonal to help convergence
-	diag[c1] = 1/_interfaceUnderRelax*diag[c1];
+	diag[c1] = 1.0/_interfaceUnderRelax*diag[c1];
 
-	// some output of prevailing or starred values - useful for testing
-	
-	/*if (c0 == 0){
-	  cout << "C_0: " << C_0 << endl;
-	  cout << "C_s: " << cs_star << " C_e: " << ce_star << " i: " << i_star << " dIdCs: " << dIdCS_star << " dIdCe: " << dIdCE_star << endl;
-	  cout <<"Diag: " << diag[c1] << " dRdXc2: " << offdiagC1_C2 << " dRdXc0: " << offdiagC1_C0 << endl;
-	  cout << " " << endl;
-	  }*/
-
-	if (c0 == 0){
-	  if (_Cathode)
-	    {
-	      //cout << "UrefAnode: " << U_ref << endl;
-	      cout << "Cs0: " << cs_star << endl;
-	    }
+	if (c0 == 0)
+	  {
+	    if (_Cathode)
+	      {
+		//cout << "UrefAnode: " << U_ref << endl;
+		cout << "Cs0: " << cs_star << endl;
+		//cout << "Diag: " << diag[c1] << endl;
+		//cout << "OffDiag: " << offdiagC1_C2 << endl;
+		//cout << "OffDiag: " << offdiagC1_C0 << endl;
+	      }
 	  }
 
       }
@@ -307,11 +292,7 @@ template<class X, class Diag, class OffDiag>
   
   const GeomFields& _geomFields;
   Field& _varField;
-  Field& _mFElectricModel;
-  Field& _elecPotentialField;
   const T_Scalar _RRConstant;
-  const T_Scalar _A_coeff;
-  const T_Scalar _B_coeff;
   const T_Scalar _interfaceUnderRelax;
   const bool _Anode;
   const bool _Cathode;

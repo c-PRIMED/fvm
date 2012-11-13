@@ -87,6 +87,7 @@ soptions.absoluteTolerance=1e-16 #model tolerance
 #smodel.printBCs()
 smodel.init()
 smodel.advance(1)
+smodel.advance(1)
 
 mesh = meshes[1]
 massFlux = smodel.getMassFluxIntegral(mesh,6,0)
