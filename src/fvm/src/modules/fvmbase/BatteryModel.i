@@ -48,6 +48,7 @@ struct BatteryModelOptions : public FloatVarDict<T>
   bool transient;
   bool ButlerVolmer;
   int timeDiscretizationOrder;
+  int advanceVerbosity;
 }; 
 
 

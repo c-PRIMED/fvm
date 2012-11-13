@@ -77,6 +77,7 @@ struct BatteryModelOptions : public FloatVarDict<T>
     this->transient = false;
     this->ButlerVolmer = false;
     this->timeDiscretizationOrder=1;
+    this->advanceVerbosity=1;
   }
   double relativeTolerance;
   double absoluteTolerance;
@@ -94,6 +95,7 @@ struct BatteryModelOptions : public FloatVarDict<T>
   bool transient;
   bool ButlerVolmer;
   int timeDiscretizationOrder;
+  int advanceVerbosity;
 
 #ifndef SWIG
   LinearSolver& getLinearSolver()

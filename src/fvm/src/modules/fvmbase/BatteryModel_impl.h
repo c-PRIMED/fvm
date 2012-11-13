@@ -34,6 +34,7 @@
 #include "BatteryPCDiffusionDiscretization.h"
 #include "BatteryPC_BCS.h"
 #include "BatteryTimeDerivativeDiscretization.h"
+#include "BatteryPCElectricDiffusionDiscretization.h"
 
 template<class T>
 class BatteryModel<T>::Impl
@@ -807,25 +808,33 @@ void linearizePotential(LinearSystem& ls)
 
     if(_options.ButlerVolmer)
       {
+	bool foundElectrolyte = false;
 	//populate lnSpeciesConc Field
 	for (int n=0; n<_meshes.size(); n++)
 	  {
-	    const Mesh& mesh = *_meshes[n];
-	    const StorageSite& cells = mesh.getCells();
-	    BatterySpeciesFields& sFields = *_speciesFieldsVector[0];
-	    const TArray& speciesConc = dynamic_cast<const TArray&>(sFields.massFraction[cells]);
-	    TArray& lnSpeciesConc = dynamic_cast<TArray&>(_batteryModelFields.lnLithiumConcentration[cells]);
-	    for (int c=0; c<cells.getCount(); c++)
+	    if (n==_options["BatteryElectrolyteMeshID"])
 	      {
-		T CellConc = speciesConc[c];
-		if (CellConc <= 0.0)
+		foundElectrolyte = true;
+		const Mesh& mesh = *_meshes[n];
+		const StorageSite& cells = mesh.getCells();
+		BatterySpeciesFields& sFields = *_speciesFieldsVector[0];
+		const TArray& speciesConc = dynamic_cast<const TArray&>(sFields.massFraction[cells]);
+		TArray& lnSpeciesConc = dynamic_cast<TArray&>(_batteryModelFields.lnLithiumConcentration[cells]);
+		for (int c=0; c<cells.getCount(); c++)
 		  {
-		    cout << "Error: Cell Concentration <= 0   MeshID: " << n << " CellNum: " << c << endl;
-		    CellConc = 0.01;
+		    T CellConc = speciesConc[c];
+		    if (CellConc <= 0.0)
+		      {
+			cout << "Error: Cell Concentration <= 0   MeshID: " << n << " CellNum: " << c << endl;
+			CellConc = 0.01;
+		      }
+		    lnSpeciesConc[c] = log(CellConc); 
 		  }
-		lnSpeciesConc[c] = log(CellConc); 
 	      }
 	  }
+
+	if ((!(foundElectrolyte))&&(_options.ButlerVolmer))
+	  cout << "Warning: Electrolyte Mesh ID not set." << endl;
 
 	//compute gradient for ln term discretization
 	GradientModel<T> lnSpeciesGradientModel(_meshes,_batteryModelFields.lnLithiumConcentration,
@@ -970,9 +979,44 @@ void linearizePC(LinearSystem& ls)
     const BatterySpeciesVCMap& svcmap = *_svcMapVector[0];
     const BatterySpeciesBCMap& sbcmap = *_sbcMapVector[0];
 
+    // get combined gradients of potential and species
     GradientModel<VectorT2> psGradientModel(_meshes,_batteryModelFields.potentialAndSpecies,
 					  _batteryModelFields.potentialAndSpeciesGradient,_geomFields);
     psGradientModel.compute();
+
+    //populate lnSpeciesConc fields for inclusion of ln term in potential equation
+    bool foundElectrolyte = false;
+    for (int n=0; n<_meshes.size(); n++)
+      {
+	if (n==_options["BatteryElectrolyteMeshID"])
+	  {
+	    foundElectrolyte = true;
+	    const Mesh& mesh = *_meshes[n];
+	    const StorageSite& cells = mesh.getCells();
+	    const VectorT2Array& speciesAndPotential = dynamic_cast<const VectorT2Array&>(_batteryModelFields.potentialAndSpecies[cells]);
+	    TArray& lnSpeciesConc = dynamic_cast<TArray&>(_batteryModelFields.lnLithiumConcentration[cells]);
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		T CellConc = (speciesAndPotential[c])[1];
+		if (CellConc <= 0.0)
+		  {
+		    cout << "Error: Cell Concentration <= 0   MeshID: " << n << " CellNum: " << c << endl;
+		    CellConc = 0.01;
+		  }
+		lnSpeciesConc[c] = log(CellConc); 
+	      }
+	  }
+      }
+
+    if ((!(foundElectrolyte))&&(_options.ButlerVolmer))
+      cout << "Warning: Electrolyte Mesh ID not set." << endl;
+
+    //compute gradient for ln term discretization
+    GradientModel<T> lnSpeciesGradientModel(_meshes,_batteryModelFields.lnLithiumConcentration,
+					    _batteryModelFields.lnLithiumConcentrationGradient,_geomFields);
+    lnSpeciesGradientModel.compute();
+
+
     
     DiscrList discretizations;
     
@@ -983,6 +1027,16 @@ void linearizePC(LinearSystem& ls)
 	  _batteryModelFields.potentialAndSpeciesDiffusivity,
 	  _batteryModelFields.potentialAndSpeciesGradient));
     discretizations.push_back(dd);
+
+    //discretize ln term (only affects electrolyte mesh of potential model)
+    shared_ptr<Discretization>
+      bedd(new BatteryPCElectricDiffusionDiscretization<VectorT2,SquareTensorT2,SquareTensorT2>(_meshes,_geomFields,
+							     _batteryModelFields.potentialAndSpecies,
+							     _batteryModelFields.potentialAndSpeciesDiffusivity,
+							     _batteryModelFields.lnLithiumConcentration,
+							     _batteryModelFields.lnLithiumConcentrationGradient,
+							     _options["BatteryElectrolyteMeshID"]));
+    discretizations.push_back(bedd); 
     
     if (_options.transient)
     {
@@ -1257,8 +1311,9 @@ T getAverageMassFraction(const Mesh& mesh, const int m)
         if (!iNorm) iNorm = rNorm;        
         MFRPtr normRatio((*rNorm)/(*iNorm));
 
-        cout << "Species Number: " << m << endl;
-        cout << _niters << ": " << *rNorm << endl;
+        //cout << "Species Number: " << m << endl;
+	if (((_niters+1) % _options.advanceVerbosity)==0)
+	  cout << _niters << ": " << *rNorm << endl;
         
         _options.getLinearSolverSpecies().cleanup();
 
@@ -1300,7 +1355,8 @@ void advancePotential(const int niter)
 
         MFRPtr normRatio((*rNorm)/(*_initialPotentialNorm));
 
-        cout << "Potential: " << _niters << ": " << *rNorm << endl;
+	if ((_niters % _options.advanceVerbosity)==0)
+	  cout << "Potential: " << _niters << ": " << *rNorm << endl;
         
         _options.getLinearSolverPotential().cleanup();
 
@@ -1343,8 +1399,9 @@ void advancePotential(const int niter)
        ls.postSolve();
     
        ls.updateSolution();
-
-       cout << "Point-Coupled: " << _niters << ": " << *rNorm << endl;
+       
+       if ((_niters % _options.advanceVerbosity)==0)
+	 cout << "Point-Coupled: " << _niters << ": " << *rNorm << endl;
 
        _niters++;
 
