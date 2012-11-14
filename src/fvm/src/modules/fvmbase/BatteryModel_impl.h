@@ -450,6 +450,42 @@ public:
 	pAndSN1 = pAndS;
       }
   }
+
+void recoverLastTimestep()
+  {
+    const int numMeshes = _meshes.size();
+
+    for (int m=0; m<_nSpecies; m++)
+    {
+        BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
+
+        for (int n=0; n<numMeshes; n++)
+        {
+            const Mesh& mesh = *_meshes[n];
+
+            const StorageSite& cells = mesh.getCells();
+            TArray& mF =
+              dynamic_cast<TArray&>(sFields.massFraction[cells]);
+            TArray& mFN1 =
+              dynamic_cast<TArray&>(sFields.massFractionN1[cells]);
+
+            mF = mFN1;
+        }
+    }
+
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+
+	const StorageSite& cells = mesh.getCells();
+	VectorT2Array& pAndS =
+	  dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialAndSpecies[cells]);
+	VectorT2Array& pAndSN1 =
+	  dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialAndSpeciesN1[cells]);
+
+	pAndS = pAndSN1;
+      }
+  }
   
   void initSpeciesLinearization(LinearSystem& ls, const int& SpeciesNumber)
   {
@@ -1714,6 +1750,14 @@ BatteryModel<T>::updateTime()
 {
   _impl->updateTime();
 }
+
+template<class T>
+void
+BatteryModel<T>::recoverLastTimestep()
+{
+  _impl->recoverLastTimestep();
+}
+
 
 template<class T>
 T

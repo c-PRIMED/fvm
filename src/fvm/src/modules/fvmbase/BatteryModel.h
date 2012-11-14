@@ -58,7 +58,7 @@ public:
   //void printBCs();
 
   void updateTime(); 
-
+  void recoverLastTimestep(); 
   void advanceSpecies(const int niter);
   void advancePotential(const int niter);
   void advanceCoupled(const int niter);
