@@ -44,6 +44,7 @@ class Kspace
   void setCp(const T cp);
   void setCpNonGray(const T Tl);
   Array<T>& getFreqArray();
+  void setRelTimeFunction(const T A, const T B, const T C);
 
   %extend{
     std::vector<Kspace<T>*>& MakeList()
@@ -65,8 +66,8 @@ class Kspace
   Volvec _Kmesh;
   T _totvol; 
   TransmissionMap _trasMap;
-  DensityOfStates* _DOS;
-  ScatteringKernel* _ScattKernel;
+  DensityOfStates<T>* _DOS;
+  ScatteringKernel<T>* _ScattKernel;
   
 };
 
@@ -76,10 +77,11 @@ class ScatteringKernel
   
  public:
   ScatteringKernel(Kspace<T>& kspace);
-  void ReadType1(const char* NamePhonon2, const char* NamePhonon3);
-  void ReadType2(const char* NamePhonon2, const char* NamePhonon3);
+  void ReadType1(const char* NamePhonon2, const char* NamePhonon3, const T tol);
+  void ReadType2(const char* NamePhonon2, const char* NamePhonon3, const T tol);
   void updateSourceTermTest(const T Tl);
   void addFreqs();
+  void IterateToEquilibrium(const T Tl, const int totIts, const T tStep);
 
  private:
   ScatteringKernel(const ScatteringKernel&);

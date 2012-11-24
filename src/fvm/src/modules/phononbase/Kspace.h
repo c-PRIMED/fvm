@@ -19,6 +19,7 @@
 #include "kvol.h"
 #include "SquareTensor.h"
 #include "ScatteringKernel.h"
+#include "RelaxationTimeFunction.h"
 
 template<class T>
 class DensityOfStates;
@@ -76,7 +77,9 @@ class Kspace
 
 	if(full)
 	  dtheta*=2;
-
+	
+	_freqArray.resize(ntheta*nphi);
+	_freqArray=omega;
 	for(int t=0;t<ntheta;t++)
 	  {
 	    theta=dtheta*(T(t)+.5);
@@ -98,9 +101,9 @@ class Kspace
 		_totvol+=dk3;
 	      }
 	  }
-	cout<<"SumX: "<<sumX<<endl;
-	cout<<"SumY: "<<sumY<<endl;
-	cout<<"SumZ: "<<sumZ<<endl;
+	//cout<<"SumX: "<<sumX<<endl;
+	//cout<<"SumY: "<<sumY<<endl;
+	//cout<<"SumZ: "<<sumZ<<endl;
       }
 
  Kspace():
@@ -250,6 +253,7 @@ class Kspace
 
      fp_in.close();
      calcDK3();
+     makeFreqArray();
    }
  
  Kspace(const char* filename,const int dimension,const bool normal):
@@ -436,6 +440,28 @@ class Kspace
       }	
   }
 
+  T calcLatTemp(const int c)
+  {
+    int cInd(getGlobalIndex(c,0));
+    T esum(0);
+    T guess(300);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	T dk3=kv.getdk3();
+	for(int m=0;m<modenum;m++)
+	  {
+	    esum+=(*_e)[cInd]*dk3;
+	    cInd++;
+	  }
+      }
+
+    calcTemp(guess,esum);
+    return guess;
+
+  }
+
   void calcTemp(T& guess, const T e_sum)
   {
     T e0;
@@ -573,9 +599,10 @@ class Kspace
       }
   }
 
-  T getde0taudT(T Tl)
+  T getde0taudT(const int c, T Tl)
   {
     T de0taudT=0.;
+    int index=getGlobalIndex(c,0);
     for(int k=0;k<_length;k++)
       {
 	Tkvol& kv=getkvol(k);
@@ -584,30 +611,12 @@ class Kspace
 	for(int m=0;m<modenum;m++)
 	  {
 	    Tmode& mode=kv.getmode(m);
-	    de0taudT+=mode.calcde0taudT(Tl)*dk3;
+	    de0taudT+=mode.calcde0dT(Tl)*dk3/_totvol/(*_Tau)[index];
+	    index++;
 	  }
       }
     return de0taudT;
   }
-
-  /*
-  T getde0taudTgray()
-  {
-    T de0taudT=0.;
-    for(int k=0;k<_length;k++)
-      {
-	Tkvol& kv=getkvol(k);
-	const int modenum=kv.getmodenum();
-	T dk3=kv.getdk3();
-	for(int m=0;m<modenum;m++)
-	  {
-	    Tmode& mode=kv.getmode(m);
-	    de0taudT+=mode.calcde0taudTgray()*dk3;
-	  }
-      }
-    return de0taudT;
-  }
-  */
 
   T calcSpecificHeat(T Tl)
   {
@@ -1086,6 +1095,8 @@ class Kspace
   TArray& getInjArray() {return *_injected;}
   TArray& getResArray() {return *_residual;}
   TArray& getFASArray() {return *_FASCorrection;}
+  TArray& getTauArray() {return *_Tau;}
+  const T getTau(const int index) {return (*_Tau)[index];}
   void geteCellVals(const int c, TArray& o)
   {
     int start=getGlobalIndex(c,0);
@@ -1319,26 +1330,32 @@ class Kspace
     const T hbar(6.582119e-16);
     T defect(0);
     TArray n(gettotmodes());
-    getnCellVals(c,n);
-    _ScattKernel->updateSource(n,s,Tl);
-    for(int i=0;i<gettotmodes();i++)
-      s[i]*=_freqArray[i]*hbar;
-    
-    int i(0);
-    for(int k=0;k<_length;k++)
-      {
-	Tkvol& kv=getkvol(k);
-	const int modenum=kv.getmodenum();
-	const T dk3=kv.getdk3();
-	for(int m=0;m<modenum;m++)
-	  {
-	    defect+=s[i]*dk3;
-	    i++;
-	  }
-      }
-
+    geteCellVals(c,n);
+    _ScattKernel->updateSource(n,_freqArray,s,Tl);
 
   }
+
+  void setRelTimeFunction(const T A, const T B, const T C)
+  {
+    _relFun._A=A;
+    _relFun._B=B;
+    _relFun._C=C;
+    _relFun._constTau=false;
+  }
+
+  void updateTau(const int c, const T Tl)
+  {
+    const int beg=getGlobalIndex(c,0);
+    const int fin=getGlobalIndex(c+1,0);
+    int index(0);
+    for(int i=beg;i<fin;i++)
+      {
+	_relFun.update(_freqArray[index],Tl,(*_Tau)[i]);
+	index++;
+      }
+
+  }
+
 
  private:
 
@@ -1359,6 +1376,7 @@ class Kspace
   TArrPtr _Tau;
   GhostArrayMap _ghostArrays;
   TArray _freqArray;
+  RelTimeFun<T> _relFun;
   
 };
 
