@@ -991,7 +991,6 @@ class COMETDiscretizer
     T coeff;
     int cellIndex=_kspace.getGlobalIndex(cell,0);
     
-#pragma omp parallel for shared(BVec, Amat, _kspace) private(k, m, numModes, count, mode, kvol, tau, de0dT)
     for(int k=0;k<klen;k++)
       {
 	Tkvol& kvol=_kspace.getkvol(k);
@@ -1000,7 +999,7 @@ class COMETDiscretizer
 	  {
 	    Tmode& mode=kvol.getmode(m);
 	    const int count=mode.getIndex();
-	    T tau=mode.gettau();
+	    const T tau=_kspace.getTau(cellIndex);
 	    T de0dT=mode.calcde0dT(Tlold[cell]);
 	    coeff=_cellVolume[cell]/tau;
 	    Amat->getElement(count,order)+=coeff*de0dT;
@@ -1019,7 +1018,7 @@ class COMETDiscretizer
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
     TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    const T tauTot=_kspace.getde0taudT(Tlold[cell]);//getde0taudTgray();
+    const T tauTot=_kspace.getde0taudT(cell,Tlold[cell]);
     T coeff;
     const T DK3=_kspace.getDK3();
     int cellIndex=_kspace.getGlobalIndex(cell,0);
@@ -1033,16 +1032,16 @@ class COMETDiscretizer
 	  {
 	    Tmode& mode=kvol.getmode(m);
 	    const int count=mode.getIndex();
-	    T tau=mode.gettau();
-	    coeff=(dk3/DK3)/tau/tauTot;
+	    const T tau=_kspace.getTau(cellIndex);
+	    coeff=(dk3/DK3)/tau;
 	    Amat->getElement(order,count)+=coeff;
 	    BVec[totalmodes]+=coeff*_eArray[cellIndex];
 	    BVec[totalmodes]-=coeff*_e0Array[cellIndex];
 	    cellIndex++;
 	  }
       }
-    Amat->getElement(order,order)=-1.;
-    BVec[totalmodes]*=DK3;
+    Amat->getElement(order,order)=-tauTot;
+    //BVec[totalmodes]*=DK3;
   }
 
   void COMETFullScatt(const int cell, TArrow& Amat, TArray& BVec)
@@ -1051,7 +1050,7 @@ class COMETDiscretizer
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
     TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    const T tauTot=_kspace.getde0taudT(Tlold[cell]);
+    const T tauTot=_kspace.getde0taudT(cell,Tlold[cell]);
     T coeff;
     T coeffC;
     const T DK3=_kspace.getDK3();
@@ -1060,7 +1059,7 @@ class COMETDiscretizer
     s.zero();
     TArray& TlArray=dynamic_cast<TArray&>(_macro.temperature[_cells]);
 
-    _kspace.getSourceTerm(cell,TlArray[cell],s);
+    _kspace.getSourceTerm(cell,_kspace.calcLatTemp(cell),s);
     BVec[totalmodes]=0.;
     
     for(int k=0;k<klen;k++)
@@ -1095,7 +1094,7 @@ class COMETDiscretizer
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
     TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    const T tauTot=_kspace.getde0taudT(Tlold[cell]);
+    const T tauTot=_kspace.getde0taudT(cell,Tlold[cell]);
     T coeff;
     
     for(int k=0;k<klen;k++)
@@ -1578,6 +1577,7 @@ class COMETDiscretizer
 	  {
 	    Tmode& mode=kvol.getmode(m);
 	    _e0Array[cellIndex]=mode.calce0(Tl[c]);
+	    _kspace.updateTau(c,Tl[c]);
 	    cellIndex++;
 	  }
       }

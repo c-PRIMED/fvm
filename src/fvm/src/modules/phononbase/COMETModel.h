@@ -151,9 +151,11 @@ class COMETModel : public Model
 	 shared_ptr<TArray> eArray(new TArray(numcells*kcount));
 	 shared_ptr<TArray> e0Array(new TArray(numcells*kcount));
 	 shared_ptr<TArray> ResidArray(new TArray(numcells*kcount));
+	 shared_ptr<TArray> tauArray(new TArray(numcells*kcount));
 	 kspace.seteArray(eArray);
 	 kspace.sete0Array(e0Array);
 	 kspace.setResArray(ResidArray);
+	 kspace.setTauArray(tauArray);
 	 
 	 shared_ptr<TArray> TLcell(new TArray(numcells));
 	 shared_ptr<TArray> deltaTcell(new TArray(numcells));
@@ -197,61 +199,17 @@ class COMETModel : public Model
 
 		 for (int m=0;m<numM;m++)
 		   {
-
 		     Tmode& mode=kv.getmode(m);
+		     T tau=mode.gettau();
 		     const T einit=mode.calce0(Tinit);
 		     (*eArray)[cellIndex]=einit;
 		     (*e0Array)[cellIndex]=einit;
 		     (*ResidArray)[cellIndex]=0.;
+		     (*tauArray)[cellIndex]=tau;
 		     cellIndex++;
-		     
-		     /*
-		     VectorT3 vg=mode.getv();
-		     T vmag=sqrt(pow(vg[0],2)+pow(vg[1],2)+pow(vg[2],2));
-		     VectorT3 si=vg/vmag;
-		     VectorT3 so;
-		     
-		     foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-		       {
-			 const FaceGroup& fg = *fgPtr;
-			 if(fg.id>0)
-			   {
-			     if(_bcMap[fg.id]->bcType == "reflecting")
-			       {
-				 const StorageSite& faces = fg.site;
-				 const Field& AreaMagField=_geomFields.areaMag;
-				 const TArray& AreaMag=
-				   dynamic_cast<const TArray&>(AreaMagField[faces]);
-				 const Field& AreaDirField=_geomFields.area;
-				 const VectorT3Array& AreaDir=
-				   dynamic_cast<const VectorT3Array&>(AreaDirField[faces]);
-			     
-				 const VectorT3 n=AreaDir[0]/AreaMag[0];
-				 const T sidotn=si[0]*n[0]+si[1]*n[1]+si[2]*n[2];
-			     
-				 if (sidotn > T_Scalar(0.0))
-				   {
-				     so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
-				     T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
-				     so/=soMag;
-				     so*=vmag;
-				     Refl_pair refls;
-				     Refl_pair reflsFrom;
-				     kspace.findSpecs(dk3,vmag,m,so,refls);
-				     rmap[fg.id]=refls;
-				     const int k1=refls.first.second;
-				     Tmode& mode2=kspace.getkvol(k1).getmode(m);
-				     Refl_Map& rmap2=mode2.getreflmap();
-				     reflsFrom.first.second=-1;
-				     reflsFrom.second.second=k;
-				     rmap2[fg.id]=reflsFrom;
-				   }
-
-			       }
-			   }
-		       }*/
 		   }
 	       }
+	     kspace.updateTau(c,Tinit);
 	   }
 	 
 	 
@@ -728,11 +686,13 @@ class COMETModel : public Model
 	 shared_ptr<TArray> ResidArray(new TArray(numcells*kcount));
 	 shared_ptr<TArray> InjArray(new TArray(numcells*kcount));
 	 shared_ptr<TArray> FASArray(new TArray(numcells*kcount));
+	 shared_ptr<TArray> tauArray(new TArray(numcells*kcount));
 	 kspace.seteArray(eArray);
 	 kspace.sete0Array(e0Array);
 	 kspace.setResArray(ResidArray);
 	 kspace.setInjArray(InjArray);
 	 kspace.setFASArray(FASArray);
+	 kspace.setTauArray(tauArray);
 	 
 	 shared_ptr<TArray> TLcell(new TArray(numcells));
 	 shared_ptr<TArray> deltaTcell(new TArray(numcells));
@@ -757,16 +717,18 @@ class COMETModel : public Model
 		   {
 		     Tmode& mode=kv.getmode(m);
 		     const T einit=mode.calce0(Tinit);
-		     
+		     T tau=mode.gettau();
 		     (*eArray)[cellIndex]=einit;
 		     (*e0Array)[cellIndex]=einit;
 		     (*ResidArray)[cellIndex]=0.;
 		     (*InjArray)[cellIndex]=0.;
 		     (*FASArray)[cellIndex]=0.;
+		     (*tauArray)[cellIndex]=tau;
 		     cellIndex++;
 
 		   }
 	       }
+	     kspace.updateTau(c,Tinit);
 	   }
 
 	 BCfaceArray& BCfArray=*(_BFaces[n]);
@@ -3159,6 +3121,7 @@ class COMETModel : public Model
 		  {
 		    Tmode& mode=kvol.getmode(m);
 		    e0Array[cellIndex]=mode.calce0(Tlat);
+		    kspace.updateTau(c,Tl[c]);
 		    cellIndex++;
 		  }
 	      }
@@ -3849,6 +3812,26 @@ class COMETModel : public Model
 	  }
       }
     return r/volTot;
+  }
+
+  void makeNonEqTemp()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh=*_meshes[n];
+	const StorageSite& cells=mesh.getCells();
+	const int numcells=cells.getSelfCount();
+	TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[cells]);
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	const TArray& e=kspace.geteArray();
+
+	const int len=kspace.getlength();
+
+	for(int c=0;c<numcells;c++)
+	  Tl[c]=kspace.calcLatTemp(c);	    
+
+      }
   }
   
   void setBCMap(COMETBCMap* bcMap) {_bcMap=*bcMap;}

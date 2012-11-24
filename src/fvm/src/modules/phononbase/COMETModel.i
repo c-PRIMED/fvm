@@ -43,6 +43,7 @@ class COMETModel : public Model
   void makeCellColors(const int level);
   void makePlotColors(const int level);
   T getAverageTemperature();
+  void makeNonEqTemp();
 
  private:
   
