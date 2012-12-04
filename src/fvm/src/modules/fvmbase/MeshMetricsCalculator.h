@@ -81,8 +81,8 @@ private:
   virtual void calculateCellVolumes(const Mesh& mesh);
 
   void computeIBInterpolationMatrices(const Mesh& mesh,
-                                      const StorageSite& particles, 
-				      const int option=0);
+                                      const StorageSite& particles,
+  				      const int option);
   void computeIBInterpolationMatricesCells(const Mesh& mesh);
 
   void computeSolidInterpolationMatrices(const Mesh& mesh,
@@ -90,8 +90,8 @@ private:
   void computeIBandSolidInterpolationMatrices(const Mesh& mesh,
                                       const StorageSite& particles);
   void computeGridInterpolationMatrices(const Mesh& mesh,
-					const StorageSite& grids,
-					const StorageSite& faces  );
+  					const StorageSite& grids,
+  					const StorageSite& faces  );
 
 };
 
