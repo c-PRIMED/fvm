@@ -31,11 +31,9 @@ class DistFunctFields
   typedef Array<T> TArray;
   typedef Vector<T,3> VectorT3;
   typedef Array<VectorT3> VectorT3Array;
-  // Mizuki -- work for Dgrad-- 
-  // std::vector<shared_ptr<Field> > DistFunctFieldsPtr;
+  
+  //std::vector<shared_ptr<Field> > DistFunctFieldsPtr;
   std::vector<Field*> dsf;
-  // std::vector< GradientModel<T>* > dsfGradientModel;
-  //create vector<Field*> distributionGradient;
  
 
  /**
@@ -93,11 +91,7 @@ class DistFunctFields
 	  for(int j=0;j<numFields;j++){
 	    Field& fnd= *dsf[j]; 
 	    
-	    shared_ptr<TArray> fcPtr(new TArray(cells.getCountLevel1()));  
-	    //dsfGradModel[j] = new GradientModel<T>( meshes, dsf.field[j], dsfGradient[j], _geomFields)
-	    //dsfGradModel[j].compute();
-
-
+	    shared_ptr<TArray> fcPtr(new TArray(cells.getCountLevel1()));
 	    
 	    fnd.addArray(cells,fcPtr);
 	    
@@ -154,8 +148,7 @@ class DistFunctFields
 	    //TArray& fc = *fcPtr;
 	    
 	    for(int c=0; c<nCells;c++){
-	      fc[c]=1./pow(pi*1.0,1.5)*exp(-(pow((cx[j]-1.0),2.0)+pow((cy[j]-0.0),2.0)+					       
-	      pow((cz[j]-0.0),2.0))/1.0);
+	      fc[c]=1./pow(pi*1.0,1.5)*exp(-(pow((cx[j]-1.0),2.0)+pow((cy[j]-0.0),2.0)+					       pow((cz[j]-0.0),2.0))/1.0);
 	
 	      } 
 	    //fprintf(pFile,"%12.6f %12.6f %12.6f %12.6f %E \n",cx[j],cy[j],cz[j],dcxyz[j],fc[0]);

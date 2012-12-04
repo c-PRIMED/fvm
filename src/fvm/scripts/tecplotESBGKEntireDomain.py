@@ -84,9 +84,6 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
   for n in range(0,nmesh):
     KnqFields.append(macroFields.Knq[cellSitesLocal[n]].asNumPyArray())
     
-  heatFluxFields = []
-  for n in range(0,nmesh):
-    heatFluxFields.append(macroFields.heatFlux[cellSitesLocal[n]].asNumPyArray())
 
   #opening global Array
   densityFieldGlobal=[]
@@ -96,10 +93,9 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
   temperatureFieldGlobal = []
   collisionFrequencyFieldGlobal = []
   stressFieldGlobal = []
-  entropyFieldGlobal = []
-  entgenFieldGlobal = []
-  KnqFieldGlobal = []
-  heatFluxFieldGlobal = []
+  entropyFieldGlobal=[]
+  entgenFieldGlobal=[]
+  KnqFieldGlobal=[]
   for n in range(0,nmesh):
     selfCount = cellSites[n].getSelfCount()
 
@@ -114,7 +110,6 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
     entropyFieldGlobal.append( zeros((selfCount,1), float) )
     entgenFieldGlobal.append( zeros((selfCount,1), float) )
     KnqFieldGlobal.append( zeros((selfCount,1), float) )
-    heatFluxFieldGlobal.append( zeros((selfCount,3), float) )
     meshLocal = meshesLocal[n]
     localToGlobal = meshLocal.getLocalToGlobalPtr().asNumPyArray()
 
@@ -133,14 +128,12 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
     cfFieldLocal   = collisionFrequencyFields[n]
     sFieldGlobal  = stressFieldGlobal[n]
     sFieldLocal   = stressFields[n]    
-    eFieldGlobal = entropyFieldGlobal[n]
-    eFieldLocal = entropyFields[n]
-    egFieldGlobal = entgenFieldGlobal[n]
-    egFieldLocal = entgenFields[n]
-    kFieldGlobal = KnqFieldGlobal[n]
-    kFieldLocal = KnqFields[n]
-    hfFieldGlobal = heatFluxFieldGlobal[n]
-    hfFieldLocal = heatFluxFields[n] 
+    eFieldGlobal= entropyFieldGlobal[n]
+    eFieldLocal=entropyFields[n]
+    egFieldGlobal= entgenFieldGlobal[n]
+    egFieldLocal=entgenFields[n]
+    kFieldGlobal= KnqFieldGlobal[n]
+    kFieldLocal=KnqFields[n]
     
     #fill local part of cells
     selfCount = cellSitesLocal[n].getSelfCount()
@@ -156,7 +149,6 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
        eFieldGlobal[globalID] = eFieldLocal[i]
        egFieldGlobal[globalID] = egFieldLocal[i] 
        kFieldGlobal[globalID] = kFieldLocal[i]
-       hfFieldGlobal[globalID] = hfFieldLocal[i]
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[dFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[vFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[tFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
@@ -167,22 +159,18 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[eFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[egFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
     MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[kFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
-    MPI.COMM_WORLD.Allreduce(MPI.IN_PLACE,[hfFieldGlobal, MPI.DOUBLE], op=MPI.SUM)
-
   if MPI.COMM_WORLD.Get_rank() == 0:     
   #filename = "quadrature" + ".plt"
     f = open(filename, 'w')
 
     f.write("Title = \" tecplot parallel file\" \n")
-    f.write("variables = \"x\", \"y\", \"z\",\"velX\",\"velY\",\"velZ\",\"heatFlux_x\",\"heatFlux_y\",\"heatFlux_z\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\"Pxx\",\"Pyy\",\"Pzz\",\"Pxy\",\"Pyz\",\"Pzx\",\"Entropy\",\"EntGenRate\",\"Knq \",\n")
-
-
+    f.write("variables = \"x\", \"y\", \"z\", \"velX\", \"velY\", \"velZ\",\"density\",\"pressure\",\"viscosity\",\"temperature\", \"collisionFrequency\",\"Pxx\",\"Pyy\",\"Pzz\",\"Pxy\",\"Pyz\",\"Pzx\",\"Entropy\",\"EntGenRate\",\"Knq \",\n")
     #f.write("variables = \"x\", \"y\", \"z\", \"Density\",\"velX\", \"velY\", \"velZ\",\"Temperature\",\n")
     for n in range(0,nmesh):
       title_name = "nmesh" + str(n)
       ncell  = cellSites[n].getSelfCount()
       nnode  = nodeSites[n].getCount()
-      f.write("Zone T = \"%s\" N = %s E = %s DATAPACKING = BLOCK, VARLOCATION = ([4-23]=CELLCENTERED), ZONETYPE=%s\n" %
+      f.write("Zone T = \"%s\" N = %s E = %s DATAPACKING = BLOCK, VARLOCATION = ([4-20]=CELLCENTERED), ZONETYPE=%s\n" %
              (title_name,  nodeSites[n].getCount(), ncell, tectype[mtype]))     
 
  
@@ -219,17 +207,8 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
           f.write( str(vFieldGlobal[i][vindex]) + "    ")
           if ( i % 5  == 4 ):
             f.write("\n")
-        f.write("\n") 
-        
-      #write heat flux X,Y,Z
-      hfFieldGlobal = heatFluxFieldGlobal[n]
-      for hfindex in range(0,3):
-         for i in range(0,ncell):
-            f.write( str(hfFieldGlobal[i][hfindex]) + "    ")
-            if ( i % 5 == 4 ):
-               f.write("\n")
-         f.write("\n") 
-            
+        f.write("\n")                  
+     
 
       #write density
       dFieldGlobal = densityFieldGlobal[n]
@@ -304,7 +283,7 @@ def esbgkTecplotEntireDomain(nmesh, meshesLocal, meshesGlobal, mtype, macroField
          if ( i % 5  == 4 ):
             f.write("\n")
       f.write("\n")
-
+      
       #connectivity
       for i in range(0,ncell):
          nnodes_per_cell = cellNodes[n].getCount(i)

@@ -27,9 +27,7 @@ MacroFields::MacroFields(const string baseName): //:FlowFields( baseName)
   EntropyGenRate_Collisional(baseName +".EntropyGenRate_Collisional"),
   force(baseName +".Force"),
   Stress(baseName +".Stress"),
-  heatFlux(baseName +".heatFlux"), 
-  //distribution(baseName +".distribution"),
-  //distributionGradientGradient(baseName +".distributionGradient"),
+ 
 
   InterfaceVelocity(baseName +".InterfaceVelocity"), 
   InterfacePressure(baseName +".InterfacePressure"),

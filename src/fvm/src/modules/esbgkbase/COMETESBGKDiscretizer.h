@@ -104,7 +104,6 @@ class COMETESBGKDiscretizer
   _velocityResidual(dynamic_cast<VectorT3Array&>(_macroFields.velocityResidual[_cells])),
   _velocityFASCorrection(0),
   _temperature(dynamic_cast<TArray&>(_macroFields.temperature[_cells])),
-  //_heatFlux(dynamic_cast<TArray&>(_macroFields.heatFlux[_cells])),
   _stress(dynamic_cast<VectorT6Array&>(_macroFields.Stress[_cells])),
   _collisionFrequency(dynamic_cast<TArray&>(_macroFields.collisionFrequency[_cells])),
   _coeffg(dynamic_cast<VectorT10Array&>(_macroFields.coeffg[_cells]))
@@ -1052,7 +1051,6 @@ class COMETESBGKDiscretizer
   VectorT3Array& _velocityResidual;
   VectorT3Array* _velocityFASCorrection;
   TArray& _temperature;
-  //TArray& _heatFlux;
   VectorT6Array& _stress;
   TArray& _collisionFrequency;
   VectorT10Array& _coeffg;

@@ -34,9 +34,6 @@ struct MacroFields //public Flowfields
   Field EntropyGenRate_Collisional;
   Field force;
   Field Stress;
-  Field heatFlux;
-  //Field distribution;
-  //Field distributionGradient;
   
   Field InterfaceVelocity;
   Field InterfacePressure;
