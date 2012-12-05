@@ -97,11 +97,10 @@ template<class X, class Diag, class OffDiag>
 
     // set constants for entire shell
     const T_Scalar F = 96485.0; //  C/mol
-    T_Scalar k = _RRConstant;
+    const T_Scalar k = _RRConstant;
     T_Scalar csMax = 26000.0;// mol/m^3
     if (_Anode){
-      csMax = 26390.0;
-      k = _RRConstant/5.0;}
+      csMax = 26390.0;}
     if (_Cathode){
       csMax = 22860.0;}
 
@@ -171,16 +170,6 @@ template<class X, class Diag, class OffDiag>
 	  }
 	if (Cs_star > csMax){ Cs_star = 0.9*csMax; cout << "ERROR: Cs > CsMax" << endl;}
 
-	// calculate average surface concentration inside electrode
-	T_Scalar Sum = 0.0;
-	for (int faceNumber=0; faceNumber<faces.getCount(); faceNumber++)
-	  { 
-	    const T_Scalar value = eSpecConcCell[cellCells(faceNumber,0)];
-	    Sum = Sum + value;
-	  }
-	const T_Scalar Average_cs = Sum/faces.getCount();
-
-	//const T_Scalar SOC = Average_cs/csMax;
 	const T_Scalar SOC = Cs_star/csMax;
 
 	T_Scalar U_ref = 0.1; // V
@@ -189,15 +178,7 @@ template<class X, class Diag, class OffDiag>
 	if (_Cathode){
 	  U_ref = 4.19829 + 0.0565661*tanh(-14.5546*SOC + 8.60942) - 0.0275479*(1.0/pow((0.998432-SOC),0.492465) - 1.90111) - 0.157123*exp(-0.04738*pow(SOC,8.0)) + 0.810239*exp(-40.0*(SOC-0.133875));}
 
-	/*if (_Anode){
-	  U_ref = 0.08;}
-	if (_Cathode){
-	  U_ref = 4.25133;}*/
-
-	//if (c0==0){cout << U_ref << endl;}
-
 	const T_Scalar i0_star = k*F*Area*pow(Ce_star,alpha_c)*pow((csMax-Cs_star),alpha_a)*pow(Cs_star,alpha_c);
-	//const T_Scalar i0_star = k*F*Area*pow(_B_coeff,alpha_a)*pow((csMax-_A_coeff),alpha_a)*pow(_A_coeff,alpha_c);
 
 	const T_Scalar Phis_star = xCell[c1];
 	const T_Scalar Phie_star = xCell[c0];

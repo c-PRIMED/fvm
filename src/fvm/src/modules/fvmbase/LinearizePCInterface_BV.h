@@ -88,11 +88,10 @@ template<class X, class Diag, class OffDiag>
 
     // set constants for entire shell
     const T_Scalar F = 96485.0; //  C/mol
-    T_Scalar k = _RRConstant;
+    const T_Scalar k = _RRConstant;
     T_Scalar csMax = 26000.0;
     if (_Anode){
-      csMax = 26390.0;
-      k = _RRConstant/5.0;}
+      csMax = 26390.0;}
     if (_Cathode){
       csMax = 22860.0;}
     const T_Scalar alpha_a = 0.5;
@@ -179,7 +178,7 @@ template<class X, class Diag, class OffDiag>
 	const T_Scalar i_star = C_0*i0_star;
 
 	// CURRENT SHOULD NOT BE ZERO
-	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
+	//if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
 
 	// calculate dC_0/dCS
 	T_Scalar dC_0dCS = 0.0;
@@ -211,12 +210,14 @@ template<class X, class Diag, class OffDiag>
 	offdiagC0_C2 = dRC0dXC2;
 	diag[c0] = dRC0dXC0;
 
-	//Fix for species equations
+	//Fix for species equations so that both shell cells 
+	//residuals and coeffs are on same order of magnitude	
 	(rCell[c0])[1] *= F;
 	(offdiagC0_C1)(1,1) *= F;
 	(offdiagC0_C3)(1,1) *= F;
 	(offdiagC0_C2)(1,1) *= F;
 	(diag[c0])(1,1) *= F;
+	
 
 	// right(other) shell cell - 2 neighbors
 	// jump condition
@@ -227,7 +228,7 @@ template<class X, class Diag, class OffDiag>
 	//       SPECIES      //
 	////////////////////////
 
-	(rCell[c1])[1] = F*otherFlux[1] - (i_star + dIdCS_star*((xCell[c1])[1]-cs_star) + dIdCE_star*((xCell[c0])[1]-ce_star));
+	(rCell[c1])[1] = F*otherFlux[1]  - i_star;
 	offdiagC1_C0(1,1) = -1*dIdCE_star;
 	offdiagC1_C2(1,1) = F*dRC0dXC2(1,1);
 
@@ -245,8 +246,7 @@ template<class X, class Diag, class OffDiag>
 	//      POTENTIAL     //
 	////////////////////////
 
-
-	(rCell[c1])[0] = otherFlux[0] - (i_star + dIdPhiS_star*((xCell[c1])[0]-phis_star) + dIdPhiE_star*((xCell[c0])[0]-phie_star));
+	(rCell[c1])[0] = otherFlux[0] - i_star;
 	offdiagC1_C0(0,0) = -1*dIdPhiE_star;
 	offdiagC1_C2(0,0) = dRC0dXC2(0,0);
 	(diag[c1])(0,0) = dRC0dXC1(0,0) - dIdPhiS_star;
@@ -261,10 +261,11 @@ template<class X, class Diag, class OffDiag>
 	OffDiag& offdiagC1_C3 = matrix.getCoeff(c1,  c3);
 	offdiagC1_C3 = NumTypeTraits<OffDiag>::getZero();
 
+	////////////////////////
+	//   POINT-COUPLED    //
+	////////////////////////
 
 	// Point-coupled inclusions(off diagonal terms in square tensors)
-	(rCell[c1])[1] = F*otherFlux[1] - (i_star + dIdCS_star*((xCell[c1])[1]-cs_star) + dIdCE_star*((xCell[c0])[1]-ce_star) + dIdPhiS_star*((xCell[c1])[0]-phis_star) + dIdPhiE_star*((xCell[c0])[0]-phie_star));
-	(rCell[c1])[0] = otherFlux[0] - (i_star + dIdCS_star*((xCell[c1])[1]-cs_star) + dIdCE_star*((xCell[c0])[1]-ce_star) + dIdPhiS_star*((xCell[c1])[0]-phis_star) + dIdPhiE_star*((xCell[c0])[0]-phie_star));
 	(diag[c1])(0,1) = -1*dIdCS_star;
 	(diag[c1])(1,0) = -1*dIdPhiS_star;
 	offdiagC1_C0(0,1) = -1*dIdCE_star;

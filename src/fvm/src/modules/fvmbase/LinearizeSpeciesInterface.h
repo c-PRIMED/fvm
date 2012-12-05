@@ -105,11 +105,10 @@ template<class X, class Diag, class OffDiag>
 
     // set constants for entire shell
     const T_Scalar F = 96485.0; //  C/mol
-    T_Scalar k = _RRConstant;
+    const T_Scalar k = _RRConstant;
     T_Scalar csMax = 26000.0;
     if (_Anode){
-      csMax = 26390.0;
-      k = _RRConstant/5.0;}
+      csMax = 26390.0;}
     if (_Cathode){
       csMax = 22860.0;}
     const T_Scalar alpha_a = 0.5;
@@ -165,36 +164,13 @@ template<class X, class Diag, class OffDiag>
 	T_Scalar cs_star = xCell[c1];
 	T_Scalar ce_star = xCell[c0];
 
-	//cout << "cs_now: " << xCell[c1] << " Cs_Prev: " << PrevConc[c1] << endl;
-
-
 	// avoid nans
 	if (cs_star < 0.0){ cout << "ERROR: Cs < 0, Cs=" << cs_star << endl; cs_star = 0.0;}
 	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 0.0;}
 	if (cs_star > csMax){ cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl; cs_star = csMax;}
 
-	/*// avoid blowups
-	if (cs_star == 0.0){
-	  cs_star+=1; cout << "ERROR: Cs = 0" << endl;}
-	if (cs_star == csMax){
-	  cs_star-=1; cout << "ERROR: Cs = CsMax" << endl;}
-	if (ce_star == 0.0){
-	ce_star+=0.001; cout << "ERROR: Ce = 0" << endl;}*/
-
-	// calculate average surface concentration inside electrode
-	T_Scalar Sum = 0.0;
-	for (int faceNumber=0; faceNumber<faces.getCount(); faceNumber++)
-	  { 
-	    const T_Scalar value = mFElecModel[cellCells(faceNumber,0)];
-	    Sum = Sum + value;
-	  }
-	const T_Scalar Average_cs = Sum/faces.getCount();
-
-	//const T_Scalar SOC =  Average_cs/csMax;
 	const T_Scalar SOC =  mFElecModel[c1]/csMax;
 
-
-	//const T_Scalar SOC = cs_star/csMax;
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
 	  U_ref = -0.16 + 1.32*exp(-3.0*SOC)+10.0*exp(-2000.0*SOC);
@@ -211,13 +187,6 @@ template<class X, class Diag, class OffDiag>
 	    {U_ref = 5.0; cout << "U_ref > 5.0" << endl;}
 	    }
 
-	//cout << U_ref << endl;
-
-	/*if (_Anode){
-	  U_ref = 0.08;}
-	if (_Cathode){
-	  U_ref = 4.25133;}*/
-
 	const T_Scalar eta_star = ePotCell[c1] - ePotCell[c0] - U_ref;
 
 	//const T_Scalar eta_star = _A_coeff - _B_coeff - U_ref;
@@ -227,8 +196,6 @@ template<class X, class Diag, class OffDiag>
 
 	// CURRENT SHOULD NOT BE ZERO
 	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
-
-	
 
 	// calculate dC_0/dCS
 	T_Scalar dC_0dCS = 0.0;
@@ -243,7 +210,7 @@ template<class X, class Diag, class OffDiag>
 	  }
 
 	const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star)+ dC_0dCS/C_0);
-	//const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star));
+	
 	const T_Scalar dIdCE_star = i_star*alpha_c/ce_star;
 
 	// left(parent) shell cell - 3 neighbors
