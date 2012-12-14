@@ -2782,7 +2782,7 @@ class COMETModel : public Model
     for(int sweepNo=0;sweepNo<sweeps;sweepNo++)
       {
 	smooth(1);
-	//smooth(-1);
+	smooth(-1);
       }
     //applyTemperatureBoundaries();
   }
@@ -2836,7 +2836,7 @@ class COMETModel : public Model
 	    if(_level==0)
 	      {
 		CDisc.COMETSolveFull(dir,_level);
-		//CDisc.COMETSolveFull(-dir,_level);
+		CDisc.COMETSolveFull(-dir,_level);
 	      }
 	    else
 	      {
