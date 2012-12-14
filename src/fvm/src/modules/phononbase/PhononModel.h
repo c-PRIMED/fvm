@@ -202,9 +202,19 @@ class PhononModel : public Model
 		    if (sidotn > T_Scalar(0.0))
 		      {
 			so=si-2.*(si[0]*n[0]+si[1]*n[1]+si[2]*n[2])*n;
+			T soMag=sqrt(pow(so[0],2)+pow(so[1],2)+pow(so[2],2));
+			so/=soMag;
+			so*=vmag;
 			Refl_pair refls;
-			_kspace.findSpecs(dk3,vmag,m,so,refls);
+			Refl_pair reflsFrom;
+			_kspace.findSpecs(n,m,k,refls);
 			rmap[fg.id]=refls;
+			const int k1=refls.first.second;
+			Tmode& mode2=_kspace.getkvol(k1).getmode(m);
+			Refl_Map& rmap2=mode2.getreflmap();
+			reflsFrom.first.second=-1;
+			reflsFrom.second.second=k;
+			rmap2[fg.id]=reflsFrom;
 		      }
 		  }
 	      }
@@ -451,27 +461,6 @@ class PhononModel : public Model
        convdisc(new PhononConvectionDiscretization<T,T,T> (_meshes,_geomFields,fnd,vg));
 
      discretizations.push_back(convdisc);
-
-     /*
-	         if (_options.transient)
-       {
-	 // const int direction(0);  
-	 Field& fnd = *_dsfPtr.dsf[direction];            
-	 Field& fnd1 = *_dsfPtr1.dsf[direction];
-	 Field& fnd2 = *_dsfPtr2.dsf[direction];
-	 
-	 
-	 shared_ptr<Discretization>
-	   td(new TimeDerivativeDiscretization_Kmodel<T,T,T>
-	      (_meshes,_geomFields,
-	       fnd,fnd1,fnd2,
-	       _options["timeStep"],
-	       _options["nonDimLength"],
-	       _options.timeDiscretizationOrder));
-	 
-	 discretizations.push_back(td);	 
-	 }*/
-
      
      Linearizer linearizer;
      
@@ -538,9 +527,9 @@ class PhononModel : public Model
 
    }
   
-  void advance(const int niter)
+  bool advance(const int niter)
   {
-
+    bool keepGoing(true);
     for(int n=0; n<niter; n++)  
       {
 	const int klength =_kspace.getlength();
@@ -603,8 +592,9 @@ class PhononModel : public Model
 	_niters++;
 	if ((*rNorm < _options.absTolerance)||(*normRatio < _options.relTolerance )) 
 	  {
-	    cout << endl;
-	    cout << "Final Residual at "<<_niters<<": "<< *rNorm <<endl;
+	    //cout << endl;
+	    //cout << "Final Residual at "<<_niters<<": "<< *rNorm <<endl;
+	    keepGoing=false;
 	    break;}
 	
 	updateTL();	//update macroparameters
@@ -612,7 +602,7 @@ class PhononModel : public Model
 	callBoundaryConditions();
       }
 
-    updateHeatFlux();	  
+    return keepGoing;
   }
   
   void printTemp()
@@ -634,6 +624,7 @@ class PhononModel : public Model
   {
     T r(0.);
     bool found = false;
+    const T DK3=_kspace.getDK3();
     foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
     {
         const FaceGroup& fg = *fgPtr;
@@ -645,6 +636,7 @@ class PhononModel : public Model
 	  const CRConnectivity& faceCells=mesh.getFaceCells(faces);
 	  const Field& areaField=_geomFields.area;
 	  const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	 
 	    
 	  for(int k=0;k<_kspace.getlength();k++)
 	    {
@@ -661,7 +653,7 @@ class PhononModel : public Model
 		      const VectorT3 An=faceArea[f];
 		      const int c1=faceCells(f,1);
 		      const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
-		      r += eval[c1]*vgdotAn*dk3;
+		      r += eval[c1]*vgdotAn*dk3/DK3;
 		    }
 		  found=true;
 		}
@@ -670,7 +662,7 @@ class PhononModel : public Model
     }
     if (!found)
       throw CException("getHeatFluxIntegral: invalid faceGroupID");
-    return r;
+    return r*DK3;
   }
 
   int getIters() {return _niters;}

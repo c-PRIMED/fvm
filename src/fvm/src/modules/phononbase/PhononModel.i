@@ -22,7 +22,7 @@ class PhononModel : public Model
   void COMETupdateTL();
   void updatee0();
   void updateHeatFlux();
-  void advance(const int niter);
+  bool advance(const int niter);
   //void advanceCOMET(const int niter);
   void printTemp();
   T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
