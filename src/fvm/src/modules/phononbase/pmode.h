@@ -81,7 +81,7 @@ class pmode
       //========================//
 
       
-      
+      /*
       T calce0(T Tl)
       {
 	const T hbar=6.582119e-16;  // (eV s)
@@ -123,14 +123,13 @@ class pmode
 	  pow((exp(hbar*_omega/kb/Tl)-1),2);
 	
 	return e0kp; 
-      }
-
-
+	}
+      */
 
       //====================//
       //  Constant Cp Methods     //
       //====================//
-      /*
+      
       T calce0(T Tl) {return (Tl-299.)*_cp;}
       T calce0tau(T Tl) {return (Tl-299.)*_cp/_tau;}
       T calcde0taudT(T Tl) {return _cp/_tau;}
@@ -166,7 +165,7 @@ class pmode
 	e0kp=hbar*_omega/(exp((hbar*_omega-shift)/kb/Tl)-1);
 	
 	return e0kp;
-	}*/
+	}
 
       //========================//
       //  End Constant Cp Methods     //

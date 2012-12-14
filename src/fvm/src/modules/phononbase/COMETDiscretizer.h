@@ -257,6 +257,7 @@ class COMETDiscretizer
     const T newTol=_options.NewtonTol;
     const int maxNew=_options.maxNewton;
     const int minNew=_options.minNewton;
+    TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[_cells]);
     
     for(int c=start;((c<cellcount)&&(c>-1));c+=dir)
       {	
@@ -285,12 +286,15 @@ class COMETDiscretizer
 		
 		Resid=Bvec;
 		AMat.Solve(Bvec);
+		//AMat.SolveDiag(Bvec);
+		//AMat.SolveBotCol(Bvec);
 
 		Distribute(c,Bvec,Resid);
 		updatee0(c);
 		NewtonIters++;
 		dt=fabs(Bvec[totalmodes]);
 	      }
+
 	  }
 	else if(_BCArray[c]==1) //Implicit reflecting boundary only
 	  {
@@ -344,6 +348,8 @@ class COMETDiscretizer
 		
 		Resid=Bvec;
 		AMat.Solve(Bvec);
+		//AMat.SolveDiag(Bvec);
+		//AMat.SolveBotCol(Bvec);
 
 		Distribute(c,Bvec,Resid);
 		dt=fabs(Bvec[totalmodes]);
@@ -414,32 +420,38 @@ class COMETDiscretizer
 	  {
 	    T dt=1;
 	    int NewtonIters=0;
-	  
-	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
+
+	    for(int srcIts=0;srcIts<3;srcIts++)
 	      {
-		
-		Bvec.zero();
-		Resid.zero();
-		AMat.zero();
-		
-		COMETConvectionCoarse(c,AMat,Bvec);
-		COMETCollision(c,&AMat,Bvec);
-		COMETEquilibrium(c,&AMat,Bvec);
 		COMETFullScatt(c,AMat,Bvec);
-
-		if(_options.withNormal)
-		  COMETShifted(c,&AMat,Bvec);
+		while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
+		  {
 		
-		if(level>0)
-		  addFAS(c,Bvec);
+		    Bvec.zero();
+		    Resid.zero();
+		    AMat.zero();
 		
-		Resid=Bvec;
-		AMat.Solve(Bvec);
+		    COMETConvectionCoarse(c,AMat,Bvec);
+		    COMETCollision(c,&AMat,Bvec);
+		    COMETEquilibrium(c,&AMat,Bvec);
+		    //COMETFullScatt(c,AMat,Bvec);
 
-		Distribute(c,Bvec,Resid);
-		updatee0(c);
-		NewtonIters++;
-		dt=fabs(Bvec[totalmodes]);
+		    if(_options.withNormal)
+		      COMETShifted(c,&AMat,Bvec);
+		
+		    if(level>0)
+		      addFAS(c,Bvec);
+		
+		    Resid=Bvec;
+		    AMat.Solve(Bvec);
+		    //AMat.SolveDiag(Bvec);
+		    //AMat.smoothGS(Bvec);
+
+		    Distribute(c,Bvec,Resid);
+		    updatee0(c);
+		    NewtonIters++;
+		    dt=fabs(Bvec[totalmodes]);
+		  }
 	      }
 	  }
 	else if(_BCArray[c]==1) //Implicit reflecting boundary only
@@ -495,6 +507,8 @@ class COMETDiscretizer
 		
 		Resid=Bvec;
 		AMat.Solve(Bvec);
+		//AMat.SolveDiag(Bvec);
+		//AMat.smoothGS(Bvec);
 
 		Distribute(c,Bvec,Resid);
 		dt=fabs(Bvec[totalmodes]);
@@ -825,7 +839,7 @@ class COMETDiscretizer
 		
 		if(flux>T_Scalar(0))
 		  {
-		    Amat.getElement(count,count)-=flux;
+		    Amat.getElement(count,count)+=flux;
 		    BVec[count-1]-=flux*_eArray[_kspace.getGlobalIndex(cell0,count-1)];
 		  }
 		else
@@ -1002,8 +1016,8 @@ class COMETDiscretizer
 	    const T tau=_kspace.getTau(cellIndex);
 	    T de0dT=mode.calcde0dT(Tlold[cell]);
 	    coeff=_cellVolume[cell]/tau;
-	    Amat->getElement(count,order)+=coeff*de0dT;
-	    Amat->getElement(count,count)-=coeff;
+	    Amat->getElement(count,order)-=coeff*de0dT;
+	    Amat->getElement(count,count)+=coeff;
 	    BVec[count-1]-=coeff*_eArray[cellIndex];
 	    BVec[count-1]+=coeff*_e0Array[cellIndex];
 	    cellIndex++;
@@ -1034,14 +1048,13 @@ class COMETDiscretizer
 	    const int count=mode.getIndex();
 	    const T tau=_kspace.getTau(cellIndex);
 	    coeff=(dk3/DK3)/tau;
-	    Amat->getElement(order,count)+=coeff;
+	    Amat->getElement(order,count)-=coeff;
 	    BVec[totalmodes]+=coeff*_eArray[cellIndex];
 	    BVec[totalmodes]-=coeff*_e0Array[cellIndex];
 	    cellIndex++;
 	  }
       }
-    Amat->getElement(order,order)=-tauTot;
-    //BVec[totalmodes]*=DK3;
+    Amat->getElement(order,order)=tauTot;
   }
 
   void COMETFullScatt(const int cell, TArrow& Amat, TArray& BVec)
@@ -1050,17 +1063,14 @@ class COMETDiscretizer
     const int totalmodes=_kspace.gettotmodes();
     const int order=totalmodes+1;
     TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    const T tauTot=_kspace.getde0taudT(cell,Tlold[cell]);
-    T coeff;
-    T coeffC;
     const T DK3=_kspace.getDK3();
-    int cellIndex=_kspace.getGlobalIndex(cell,0);
     TArray s(totalmodes);
-    s.zero();
-    TArray& TlArray=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    TArray ds(totalmodes);
+    int cellIndex=_kspace.getGlobalIndex(cell,0);
 
-    _kspace.getSourceTerm(cell,_kspace.calcLatTemp(cell),s);
-    BVec[totalmodes]=0.;
+    _kspace.getSourceTerm(cell,s,ds);
+    const T relFac(1);
+    const T impl(1e0);
     
     for(int k=0;k<klen;k++)
       {
@@ -1070,19 +1080,17 @@ class COMETDiscretizer
 	for(int m=0;m<numModes;m++)
 	  {
 	    Tmode& mode=kvol.getmode(m);
+	    const T tau=_kspace.getTau(cellIndex);
 	    const int count=mode.getIndex();
-	    T tau=mode.gettau();
-	    coeff=(dk3/DK3)/tau/tauTot;
-	    coeffC=_cellVolume[cell]/tau;
+	    const T coeff=_cellVolume[cell]/tau;
 
-	    //subtracting from residual
-	    BVec[count-1]+=coeffC*_eArray[cellIndex];
-	    BVec[count-1]-=coeffC*_e0Array[cellIndex];
+	    BVec[count-1]+=(s[count-1]
+			    -(_e0Array[cellIndex]-_eArray[cellIndex])/tau)*_cellVolume[cell];
 
-	    //adding full scattering
-	    BVec[totalmodes]-=s[count-1]*(dk3/DK3)/tauTot;
-	    BVec[count-1]+=s[count-1]*_cellVolume[cell];
+	    if(ds[count-1]<0.)
+	      Amat.getElement(count,count)-=ds[count-1]*impl*_cellVolume[cell];
 
+	    BVec[count-1]*=relFac;
 	    cellIndex++;
 	  }
       }
@@ -1136,14 +1144,14 @@ class COMETDiscretizer
 	  {
 	    Tmode& mode=kvol.getmode(m);
 	    const int count=mode.getIndex()-1;
-	    _eArray[cellIndex]-=BVec[count];
+	    _eArray[cellIndex]+=BVec[count];
 	    _resArray[cellIndex]=-Rvec[count];
 	    cellIndex++;
 	  }
       }
     
     TArray& TlArray=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    TlArray[cell]-=BVec[totalmodes];
+    TlArray[cell]+=BVec[totalmodes];
     TArray& deltaTArray=dynamic_cast<TArray&>(_macro.deltaT[_cells]);
     deltaTArray[cell]=BVec[totalmodes];
     TArray& TlResArray=dynamic_cast<TArray&>(_macro.TlResidual[_cells]);

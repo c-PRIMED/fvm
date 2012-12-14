@@ -34,6 +34,7 @@ class Kspace
   T findKnStats(const T length);
   T FindBallisticHeatRate(const Tvec Af,const T T1,const T T2);
   ArrayBase* getVelocities();
+  ArrayBase* getVelocities(const int M);
   ArrayBase* getReflectionArray(const Mesh& mesh, const int FgId);
   ArrayBase* getHollandConductivity(const T Tl);
   void setTransmission(Kspace<T>& toKspace, ArrayBase* freqBins, ArrayBase* transArray);
@@ -45,6 +46,17 @@ class Kspace
   void setCpNonGray(const T Tl);
   Array<T>& getFreqArray();
   void setRelTimeFunction(const T A, const T B, const T C);
+  ArrayBase* getRTAsources(const int c);
+  ArrayBase* getFullsources(const int c);
+  ArrayBase* getSourceDeriv(const int c);
+  ArrayBase* getWaveVectors();
+  ArrayBase* geteCellValsPy(const int c);
+  ArrayBase* gete0CellVars(const int c);
+  ArrayBase* gete0CellValsPy(const T Tl);
+  ArrayBase* getFreqArray(const int m);
+  ArrayBase* getTauArrayPy();
+  ArrayBase* getIsources(const int c, const bool correct);
+  ArrayBase* getIIsources(const int c, const bool correct);
 
   %extend{
     std::vector<Kspace<T>*>& MakeList()
@@ -82,6 +94,7 @@ class ScatteringKernel
   void updateSourceTermTest(const T Tl);
   void addFreqs();
   void IterateToEquilibrium(const T Tl, const int totIts, const T tStep);
+  void correctDetailedBalance();
 
  private:
   ScatteringKernel(const ScatteringKernel&);

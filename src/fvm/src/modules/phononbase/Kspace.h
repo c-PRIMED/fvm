@@ -97,6 +97,7 @@ class Kspace
 		modeptr->setIndex(count);
 		count++;
 		Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeptr,dk3));
+		volptr->setkvec(vg);
 		_Kmesh.push_back(volptr);
 		_totvol+=dk3;
 	      }
@@ -432,7 +433,7 @@ class Kspace
     while((deltaT>1e-6)&&(iters<10))
       {
 	gete0v(guess, e0, de0dT,An);
-	deltaT=(e0-e_sum)/de0dT;
+	deltaT=e0/de0dT-e_sum/de0dT;
 	newguess=guess-deltaT;
 	deltaT=fabs(deltaT/guess);
 	guess=newguess;
@@ -452,11 +453,11 @@ class Kspace
 	T dk3=kv.getdk3();
 	for(int m=0;m<modenum;m++)
 	  {
-	    esum+=(*_e)[cInd]*dk3;
+	    esum+=(*_e)[cInd]*dk3/_totvol;
 	    cInd++;
 	  }
       }
-
+    esum*=_totvol;
     calcTemp(guess,esum);
     return guess;
 
@@ -469,10 +470,10 @@ class Kspace
     T deltaT=1.;
     T newguess;
     int iters=0;
-    while((deltaT>1e-6)&&(iters<10))
+    while((deltaT>1e-20)&&(iters<100))
       {
 	gete0(guess, e0, de0dT);
-	deltaT=(e0-e_sum)/de0dT;
+	deltaT=e0/de0dT-e_sum/de0dT;
 	newguess=guess-deltaT;
 	deltaT=fabs(deltaT/guess);
 	guess=newguess;
@@ -659,8 +660,6 @@ class Kspace
     T tau1=getkvol(0).getmode(0).gettau();
     T npol(getkvol(0).getmodenum());
     minKn=vmag1*tau1;
-    if(minKn==0.)
-      minKn=1.;
 
     for(int k=0;k<_length;k++)
       {
@@ -676,7 +675,7 @@ class Kspace
 	    AveKn+=vmag*tau*dk3/_totvol;
 	    if(vmag*tau>maxKn)
 	      maxKn=vmag*tau;
-	    if(vmag*tau<minKn && vmag*tau>0.)
+	    if(vmag*tau<minKn)
 	      minKn=vmag*tau;
 
 	  }
@@ -694,71 +693,41 @@ class Kspace
     
   }
 
-  void findSpecs(T dk3, T vo, int m, Tvec so, Refl_pair& refls)
+  void findSpecs(const Tvec n, const int m, const int k, Refl_pair& refls)
   {
-    Tmode& mode1=getkvol(0).getmode(m);
-    Tmode& mode2=getkvol(1).getmode(m);
-    int m1=0;
-    int m2=1;
-    Tvec vg1=mode1.getv();
-    Tvec vg2=mode2.getv();
-    Tvec sn1=vg1;///sqrt(pow(vg1[0],2)+pow(vg1[1],2)+pow(vg1[2],2));
-    Tvec sn2=vg2;///sqrt(pow(vg2[0],2)+pow(vg2[1],2)+pow(vg2[2],2));
-    T sn1dotso=fabs(sn1[0]*so[0]+sn1[1]*so[1]+sn1[2]*so[2]-pow(vo,2));
-    T sn2dotso=fabs(sn2[0]*so[0]+sn2[1]*so[1]+sn2[2]*so[2]-pow(vo,2));
-    
-    if (sn2dotso<sn1dotso)
-      {
-	T temp=sn1dotso;
-	sn1dotso=sn2dotso;
-	sn2dotso=temp;
-	m1=1;
-	m2=0;
-      }
 
-    for(int k=2;k<_length;k++)
+    Tkvol& kvol=getkvol(k);
+    Tmode& mode=kvol.getmode(m);
+    Tvec kvec=mode.getv();
+    const T kmag=pow(kvec[0]*kvec[0]+
+		     kvec[1]*kvec[1]+kvec[2]*kvec[2],.5);
+    Tvec nk(kvec);
+    nk/=kmag;
+
+    const T kdotn(kvec[0]*n[0]+kvec[1]*n[1]+kvec[2]*n[2]);
+    
+    Tvec target=kvec-n*(2.*kdotn);
+    T minDif(1e50);
+    int m1;
+
+    for(int k1=0;k1<_length;k1++)
       {
-	Tmode& temp_mode=getkvol(k).getmode(m);
-	Tvec vgt=temp_mode.getv();
-	const Tvec sn=vgt;///sqrt(pow(vgt[0],2)+pow(vgt[1],2)+pow(vgt[2],2));
-	const T sndotso=fabs(sn[0]*so[0]+sn[1]*so[1]+sn[2]*so[2]-pow(vo,2));
+	Tkvol& kvol1=getkvol(k1);
+	Tmode& mode1=kvol1.getmode(m);
+	const Tvec kvec1=mode1.getv();
+	const Tvec dif(target-kvec1);
+	const T difMag=pow(dif[0]*dif[0]+dif[1]*dif[1]+dif[2]*dif[2],.5);
 	
-	if(sndotso<sn1dotso)
+	if(difMag<minDif)
 	  {
-	    sn2dotso=sn1dotso;
-	    sn1dotso=sndotso;
-	    m2=m1;
-	    m1=k;
+	    m1=k1;
+	    minDif=difMag;
 	  }
-	else if (sndotso<sn2dotso)
-	  {
-	    sn2dotso=sndotso;
-	    m2=k;
-	  }
+
       }
     
-    T w1=sn1dotso/(sn1dotso+sn2dotso);
-    T w2=sn2dotso/(sn1dotso+sn2dotso);
-
-    //cout<<"Closest: "<<m1<<","<<sn1dotso<<endl;
-    
-    if(sn1dotso>.99)
-      {
-	w1=1;
-	w2=0;
-      }
-
-    T dk31=getkvol(m1).getdk3();
-    T dk32=getkvol(m2).getdk3();
-
-    vg1=getkvol(m1).getmode(m).getv();
-    vg2=getkvol(m2).getmode(m).getv();
-
-    T v1mag=sqrt(pow(vg1[0],2)+pow(vg1[1],2)+pow(vg1[2],2));
-    T v2mag=sqrt(pow(vg2[0],2)+pow(vg2[1],2)+pow(vg2[2],2));
-
-    refls.first.first=w1*vo*dk3/v1mag/dk31;
-    refls.second.first=w2*vo*dk3/v2mag/dk32;
+    refls.first.first=1.;
+    refls.second.first=1.;
     refls.first.second=m1; //refls.first-- to whom the mode dumps energy
     refls.second.second=-1;  //refls.second-- from whom the mode receices energy 
   }
@@ -817,6 +786,20 @@ class Kspace
 	    const int count=kvol.getmode(m).getIndex()-1;
 	    (*Velocities)[count]=kvol.getmode(m).getv();
 	  }
+      }
+    return Velocities;
+  }
+
+  ArrayBase* getVelocities(const int M)
+  {
+    TvecArray* Velocities=new TvecArray(_length);
+    int count(0);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const int modes=kvol.getmodenum();
+	(*Velocities)[count]=kvol.getmode(M).getv();
+	count++;
       }
     return Velocities;
   }
@@ -1105,6 +1088,14 @@ class Kspace
       o[i-start]=(*_e)[i];
   }
 
+  void gete0CellVals(const int c, TArray& o)
+  {
+    int start=getGlobalIndex(c,0);
+    int end=start+gettotmodes();
+    for(int i=start; i<end; i++)
+      o[i-start]=(*_e0)[i];
+  }
+
   void getnCellVals(const int c, TArray& o)
   {
     const T hbar(6.582119e-16);
@@ -1325,13 +1316,11 @@ class Kspace
 
   TArray& getFreqArray() {return _freqArray;}
   
-  void getSourceTerm(const int c, const T Tl, TArray& s)
+  void getSourceTerm(const int c, TArray& s, TArray& ds)
   {
     const T hbar(6.582119e-16);
     T defect(0);
-    TArray n(gettotmodes());
-    geteCellVals(c,n);
-    _ScattKernel->updateSource(n,_freqArray,s,Tl);
+    _ScattKernel->updateSource2(c,s,ds);
 
   }
 
@@ -1356,6 +1345,175 @@ class Kspace
 
   }
 
+  ArrayBase* getRTAsources(const int c)
+  {
+    TArray* S=new TArray(gettotmodes());
+    int ind=getGlobalIndex(c,0);
+    int cnt(0);
+
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const int modes=kvol.getmodenum();
+	const T dk3=kvol.getdk3();
+	for(int m=0;m<modes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    T tau=mode.gettau();
+	    (*S)[cnt]=((*_e0)[ind]-(*_e)[ind])/tau*(dk3/_totvol);
+	    cnt++;
+	    ind++;
+	  }
+      }
+    return S;
+
+  }
+
+  ArrayBase* getFullsources(const int c)
+  {
+    TArray* S=new TArray(gettotmodes());
+    TArray ds(gettotmodes());
+    _ScattKernel->updateSource2(c,*S,ds);
+    weightArray(*S);
+    return S;
+  }
+  
+  ArrayBase* getIsources(const int c, const bool correct)
+  {
+    TArray* S=new TArray(gettotmodes());
+    TArray ds(gettotmodes());
+    _ScattKernel->getTypeIsource(c,*S,ds,correct);
+    weightArray(*S);
+    return S;
+  }
+
+  ArrayBase* getIIsources(const int c, const bool correct)
+  {
+    TArray* S=new TArray(gettotmodes());
+    TArray ds(gettotmodes());
+    _ScattKernel->getTypeIIsource(c,*S,ds,correct);
+    weightArray(*S);
+    return S;
+  }
+
+  ArrayBase* getSourceDeriv(const int c)
+  {
+    TArray s(gettotmodes());
+    TArray* ds=new TArray(gettotmodes());
+    _ScattKernel->updateSource2(c,s,*ds);
+    weightArray(*ds);
+    return ds;
+  }
+
+  ArrayBase* getWaveVectors()
+  {
+    TvecArray* Kpts=new TvecArray(_length);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	(*Kpts)[k]=kvol.getkvec();
+      }
+    return Kpts;
+  }
+
+  ArrayBase* geteCellValsPy(const int  c)
+  {
+    TArray* e=new TArray(gettotmodes());
+    geteCellVals(c,*e);
+    weightArray(*e);
+    return e;
+  }
+
+  ArrayBase* gete0CellVars(const int  c)
+  {
+    TArray* e=new TArray(gettotmodes());
+    int cnt=getGlobalIndex(c,0);
+    int index=0;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const T dk3=kv.getdk3();
+	const int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  {
+	    (*e)[index]=(*_e0)[cnt]*(dk3/_totvol);
+	    index++;
+	    cnt++;
+	  }
+      }
+    return e;
+  }
+
+  ArrayBase* gete0CellValsPy(const T Tl)
+  {
+    TArray* e=new TArray(gettotmodes());
+    getEquilibriumArray(*e,Tl);
+    weightArray(*e);
+    return e;
+  }
+
+  ArrayBase* getFreqArray(const int M)
+  {
+    TArray* e=new TArray(_length);
+    int index(0);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const T dk3=kv.getdk3();
+	const int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    if(m==M)
+	      {
+		(*e)[index]=mode.getomega();
+		index++;
+	      }
+	  }
+      }
+    return e;
+  }
+
+  ArrayBase* getTauArrayPy()
+  {
+    TArray* e=new TArray(gettotmodes());
+    int index(0);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const T dk3=kv.getdk3();
+	const int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    (*e)[index]=mode.gettau();
+	    index++;
+	  }
+      }
+    return e;
+  }
+
+  void weightArray(TArray& e)
+  {
+    if(e.getLength()==gettotmodes())
+      {
+	int cnt=0;
+	for(int k=0;k<_length;k++)
+	  {
+	    Tkvol& kv=getkvol(k);
+	    const T dk3=kv.getdk3();
+	    const int modenum=kv.getmodenum();
+	    for(int m=0;m<modenum;m++)
+	      {
+		e[cnt]*=dk3/_totvol;
+		cnt++;
+	      }
+	    
+	  }
+      }
+      else
+	throw CException("Array not same length: weightArray");
+  }
 
  private:
 

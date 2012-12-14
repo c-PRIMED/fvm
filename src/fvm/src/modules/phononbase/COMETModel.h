@@ -202,6 +202,12 @@ class COMETModel : public Model
 		     Tmode& mode=kv.getmode(m);
 		     T tau=mode.gettau();
 		     const T einit=mode.calce0(Tinit);
+		     /*
+		     if(m==0 && k==0)
+		       (*eArray)[cellIndex]=1.1*einit;
+		     else
+		     */
+		     
 		     (*eArray)[cellIndex]=einit;
 		     (*e0Array)[cellIndex]=einit;
 		     (*ResidArray)[cellIndex]=0.;
@@ -283,7 +289,7 @@ class COMETModel : public Model
 				     so*=vmag;
 				     Refl_pair refls;
 				     Refl_pair reflsFrom;
-				     kspace.findSpecs(dk3,vmag,m,so,refls);
+				     kspace.findSpecs(norm,m,k,refls);
 				     rmap[fg.id]=refls;
 				     const int k1=refls.first.second;
 				     Tmode& mode2=kspace.getkvol(k1).getmode(m);
@@ -2776,7 +2782,7 @@ class COMETModel : public Model
     for(int sweepNo=0;sweepNo<sweeps;sweepNo++)
       {
 	smooth(1);
-	smooth(-1);
+	//smooth(-1);
       }
     //applyTemperatureBoundaries();
   }
@@ -2830,7 +2836,7 @@ class COMETModel : public Model
 	    if(_level==0)
 	      {
 		CDisc.COMETSolveFull(dir,_level);
-		CDisc.COMETSolveFull(-dir,_level);
+		//CDisc.COMETSolveFull(-dir,_level);
 	      }
 	    else
 	      {

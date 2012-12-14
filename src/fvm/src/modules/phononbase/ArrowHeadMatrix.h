@@ -156,6 +156,29 @@ class ArrowHeadMatrix : public MatrixJML<T>
     bVec[_order-1]=bn;
   }
 
+  void SolveDiag(TArray& bVec)
+  {
+    for(int i=1;i<_order;i++)
+      bVec[i-1]/=(*this)(i,i);
+    
+    bVec[_order-1]=0;
+  }
+
+  void smoothGS(TArray& bVec)
+  {
+    T& dT=bVec[_order-1];
+    T sum(0);
+
+    for(int i=1;i<_order;i++)
+      {
+	bVec[i-1]=(bVec[i-1]-(*this)(i,_order)*dT)/(*this)(i,i);
+	sum+=(*this)(i,i)*bVec[i-1];
+      }
+
+    dT=(bVec[_order-1]-sum)/(*this)(_order,_order);
+
+  }
+
   void DummySolve()
   {
     TArray bVec(_order);
@@ -191,6 +214,17 @@ class ArrowHeadMatrix : public MatrixJML<T>
       }
     
     bVec[_order-1]=bn;
+  }
+
+  void SolveBotCol(TArray& bVec)
+  {
+
+    T sum(0);
+    for(int i=1;i<_order+1;i++)
+      sum+=getElement(_order,i);
+    
+    bVec[_order-1]/=sum;
+    
   }
  
   void zero()

@@ -74,6 +74,8 @@ class KSConnectivity
   const TArray& getSelfCoeffs() {return _SelfToSelfCoeffs;}
   const TArray& getOtherCoeffs() {return _SelfToOtherCoeffs;}
   TArray& getNonConstOtherCoeffs() {return _SelfToOtherCoeffs;}
+  int getSelfNNZ() {return _selfNNZ;}
+  int getOtherNNZ() {return _otherNNZ;}
 
   void multiplySelf(const TArray& x, TArray& b) const
   {//b=this*x
