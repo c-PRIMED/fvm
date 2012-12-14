@@ -19,7 +19,6 @@ class ScatteringKernel
   typedef Array<bool> BArray;
   typedef kvol<T> Tkvol;
   typedef pmode<T> Tmode;
-  typedef Array<long double> LArray; 
   typedef KSConnectivity<T> Tksconn;
 
  public:
@@ -791,8 +790,8 @@ class ScatteringKernel
     S.zero();
     dS.zero();
     const int Rows=S.getLength();
-    LArray Sl(Rows);
-    LArray dSl(Rows);
+    TArray Sl(Rows);
+    TArray dSl(Rows);
     Sl.zero();
     dSl.zero();
     TArray e(Rows);
@@ -959,8 +958,8 @@ class ScatteringKernel
     S.zero();
     dS.zero();
     const int Rows=S.getLength();
-    LArray Sl(Rows);
-    LArray dSl(Rows);
+    TArray Sl(Rows);
+    TArray dSl(Rows);
     Sl.zero();
     dSl.zero();
     TArray e(Rows);
@@ -1196,8 +1195,8 @@ class ScatteringKernel
     S.zero();
     dS.zero();
     const int Rows=S.getLength();
-    LArray Sl(Rows);
-    LArray dSl(Rows);
+    TArray Sl(Rows);
+    TArray dSl(Rows);
     Sl.zero();
     dSl.zero();
     TArray e(Rows);
