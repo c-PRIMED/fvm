@@ -59,7 +59,7 @@ def unsteadyAdvance(pd, numTimeSteps):
         pd.ibManager.solidNeighborsPerIBFace = 4
         pd.ibManager.fluidNeighborsPerSolidFace = 6
         
-        pd.fluidMetricsCalculator.computeIBInterpolationMatrices(sbMeshFaces)
+        pd.fluidMetricsCalculator.computeIBInterpolationMatrices(sbMeshFaces, 1)
         pd.fluidMetricsCalculator.computeSolidInterpolationMatrices(sbMeshFaces)     
         
         #------------solve electrostatics--------#
