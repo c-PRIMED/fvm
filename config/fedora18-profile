@@ -1,0 +1,49 @@
+# config file for nightly runs with test coverage
+# Linux, gcc, openmpi
+
+python:
+	#Build=True
+	# When using valgrind on python programs, configure with
+	# the following options. Note that it will print out messages
+	# that will confuse some tests.
+	#configure= --with-pydebug --without-pymalloc
+
+# ipython - an improved command line for python, Not required.
+ipython:
+	Build=0
+
+# not really used.
+Xdmf:
+	Build=0
+
+fvm:
+	Build=1
+
+	# build using MPI
+	# default is False
+	parallel=True
+
+	# 'release' or 'debug'
+	# release is built with optimization on
+	# default is release
+	version=profile
+
+	# compiler. 'intelc' or 'gcc'
+	# default is gcc
+	#compiler=gcc
+
+MPM:
+	Build=1
+	configname=gnu-linux-sse3
+	#configname=gnu-linux
+	#configname=gnu-linux-coupling
+
+# Integration scripts
+MEMOSA:
+	Build=True
+
+vitables:
+	Build=1
+
+before:
+	module load mpi/openmpi-x86_64
