@@ -1,26 +1,5 @@
-# config file for ubuntu
-
-# Need to have installed:
-# python
-# cmake
-# g++
-# libboost-all-dev
-# swig
-# python-scipy
-# python-matplotlib
-# python-nose
-# python-h5py
-# libhdf5-serial-dev
-# libblas-dev
-
-# PCL (Point Cloud Library)
-# http://pointclouds.org/downloads/linux.html
-# sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
-# sudo apt-get update
-# sudo apt-get install libpcl-all
-
-# FOR MPM
-# gfortran
+# config file for mmh.prism.nanohub.org
+# Linux, gcc, openmpi
 
 python:
 	#Build=True
@@ -54,7 +33,8 @@ fvm:
 	#compiler=gcc
 
 MPM:
-	Build=0
+	Build=1
+	#configname=gnu-linux-sse3
 	configname=gnu-linux
 	#configname=gnu-linux-coupling
 
@@ -65,5 +45,13 @@ MEMOSA:
 sphinx:
 	Build=0
 
+before:
+
+
 pymc:
 	Build=0
+
+
+pyodbc:
+	Build=0
+
