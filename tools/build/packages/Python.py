@@ -6,7 +6,11 @@ class Python(BuildPkg):
         ver = subprocess.Popen('python -V', shell=True, stderr=subprocess.PIPE).stderr.read()
         a, b = re.findall(r'Python ([^.]*).([^.\n]*)', ver)[0]
         if int(a) == 2 and int(b) >= 6:
-            return True
+            try:
+                if os.system("python -c \"import ttk\"") == 0:
+                    return True
+            except:
+                pass
         return False
     def _configure(self):
         return self.sys_log("%s/configure --prefix=%s --enable-shared" % (self.sdir, self.blddir))
