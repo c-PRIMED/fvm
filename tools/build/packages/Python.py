@@ -8,6 +8,7 @@ class Python(BuildPkg):
         if int(a) == 2 and int(b) >= 6:
             try:
                 subprocess.Popen("python -c \"import ttk\" &> /dev/null", shell=True)
+                return True
             except:
                 pass
         return False
