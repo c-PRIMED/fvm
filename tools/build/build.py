@@ -113,19 +113,7 @@ class Build:
             if x != '' and eval(x):
                 if check_timestamp:
                     verbose(1, 'Checking required packages for %s: ' % p.name)
-                if p.name == 'python':
-                    # FIXME: major hack
-                    self.add_build(p, check_timestamp, True)
-                    self.add_build([p for p in self.all_packages if p.name == 'matplotlib'][0], check_timestamp, True)
-                    self.add_build([p for p in self.all_packages if p.name == 'scipy'][0], check_timestamp, True)
-                    self.add_build([p for p in self.all_packages if p.name == 'nose'][0], check_timestamp, True)
-                    self.add_build([p for p in self.all_packages if p.name == 'sympy'][0], check_timestamp, True)
-                    self.add_build([p for p in self.all_packages if p.name == 'numpy'][0], check_timestamp, True)
-                    self.add_build([p for p in self.all_packages if p.name == 'tcl'][0], check_timestamp, True)                    
-                    self.add_build([p for p in self.all_packages if p.name == 'tk'][0], check_timestamp, True)                                        
-                    self.add_build([p for p in self.all_packages if p.name == 'h5py'][0], check_timestamp, True)
-                else:
-                    self.add_build(p, check_timestamp)
+                self.add_build(p, check_timestamp)
                     
     def add_build(self, pkg, check_timestamp, force=False):
         ''' Add a package to the build list if it or its dependencies have changed. '''
@@ -154,6 +142,16 @@ class Build:
                     verbose(1, "\t%s needs rebuilt. Status changed from '%s' to '%s.'"
                             % (pkg.name, self.database[pkg.name + '-status'], pkg.status()))
             self.packages.append(pkg)
+            if pkg.name == 'python':
+                # FIXME: major hack
+                self.add_build([p for p in self.all_packages if p.name == 'matplotlib'][0], check_timestamp, True)
+                self.add_build([p for p in self.all_packages if p.name == 'scipy'][0], check_timestamp, True)
+                self.add_build([p for p in self.all_packages if p.name == 'nose'][0], check_timestamp, True)
+                self.add_build([p for p in self.all_packages if p.name == 'sympy'][0], check_timestamp, True)
+                self.add_build([p for p in self.all_packages if p.name == 'numpy'][0], check_timestamp, True)
+                self.add_build([p for p in self.all_packages if p.name == 'tcl'][0], check_timestamp, True)                    
+                self.add_build([p for p in self.all_packages if p.name == 'tk'][0], check_timestamp, True)
+                self.add_build([p for p in self.all_packages if p.name == 'h5py'][0], check_timestamp, True)
         return 1
 
     def reorder_pkgs(self):

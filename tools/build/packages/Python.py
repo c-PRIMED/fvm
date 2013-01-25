@@ -7,8 +7,7 @@ class Python(BuildPkg):
         a, b = re.findall(r'Python ([^.]*).([^.\n]*)', ver)[0]
         if int(a) == 2 and int(b) >= 6:
             try:
-                if os.system("python -c \"import ttk\"") == 0:
-                    return True
+                subprocess.Popen("python -c \"import ttk\" &> /dev/null", shell=True)
             except:
                 pass
         return False
