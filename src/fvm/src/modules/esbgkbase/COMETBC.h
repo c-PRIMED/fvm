@@ -91,6 +91,7 @@ struct COMETModelOptions : public FloatVarDict<T>
    
 
     this->timeDiscretizationOrder=1;
+    this->conOrder=1;
     this->showResidual=5;
     this->maxLevels=2;
     this->AgglomerationMethod="FaceArea";
@@ -138,6 +139,7 @@ struct COMETModelOptions : public FloatVarDict<T>
   
   int NewtonsMethod_ktrial;
   int timeDiscretizationOrder;
+  int conOrder;
   double absTolerance;
   double relTolerance;
   int showResidual;

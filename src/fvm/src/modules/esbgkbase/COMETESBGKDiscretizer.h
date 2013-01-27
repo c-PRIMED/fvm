@@ -21,6 +21,9 @@
 #include <map>
 #include "MatrixJML.h"
 #include "SquareMatrixESBGK.h"
+#include "GradientModel.h"
+#include "FluxLimiters.h"
+#include "Limiters.h"
 
 #define SQR(x) ((x)*(x))
 
@@ -50,14 +53,18 @@ class COMETESBGKDiscretizer
   typedef Array<VectorT10> VectorT10Array;
   typedef DistFunctFields<T> TDistFF;
   typedef Quadrature<T> TQuad;
+  typedef Gradient<T> GradType;
+  typedef Array<GradType> GradArray;
+  typedef GradientModel<T> GradModelType;
+  typedef typename GradModelType::GradMatrixType GradMatrix;
 
   COMETESBGKDiscretizer(const Mesh& mesh, const GeomFields& geomfields, const StorageSite& solidFaces,
-		       MacroFields& macroFields, TQuad& quadrature, TDistFF& dsfPtr, 
-		       TDistFF& dsfPtr1, TDistFF& dsfPtr2, TDistFF& dsfEqPtrES, TDistFF& dsfPtrRes, TDistFF& dsfPtrFAS,
-		       const T dT, const int order, const bool transient,const T underRelaxation,
-		       const T rho_init, const T T_init, const T MW,
-		       COMETBCMap& bcMap, map<int, vector<int> > faceReflectionArrayMap,
-		       const IntArray& BCArray, const IntArray& BCfArray,const IntArray& ZCArray):
+			MacroFields& macroFields, TQuad& quadrature, TDistFF& dsfPtr, 
+			TDistFF& dsfPtr1, TDistFF& dsfPtr2, TDistFF& dsfEqPtrES, TDistFF& dsfPtrRes, TDistFF& dsfPtrFAS,
+			const T dT, const int order, const bool transient,const T underRelaxation,
+			const T rho_init, const T T_init, const T MW, const int conOrder,
+			COMETBCMap& bcMap, map<int, vector<int> > faceReflectionArrayMap,
+			const IntArray& BCArray, const IntArray& BCfArray,const IntArray& ZCArray):
   _mesh(mesh),
     _geomFields(geomfields),
     _cells(mesh.getCells()),
@@ -85,6 +92,7 @@ class COMETESBGKDiscretizer
     _rho_init(rho_init),
     _T_init(T_init),
     _MW(MW),
+    _conOrder(conOrder),
     _bcMap(bcMap),
     _faceReflectionArrayMap(faceReflectionArrayMap),
     _BCArray(BCArray),
@@ -141,6 +149,85 @@ class COMETESBGKDiscretizer
         (_macroFields.velocityFASCorrection[_cells]);
 
   }
+
+    void COMETSolveFine(const int sweep, const int level)
+    {
+      const int cellcount=_cells.getSelfCount();
+      const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
+      int start;
+      
+      if(sweep==1)
+        start=0;
+      if(sweep==-1)
+        start=cellcount-1;
+
+      TArray Bvec(_numDir+3);
+      TArray Resid(_numDir+3);
+      TArrow AMat(_numDir+3);
+
+      TArray fVal(_numDir);
+
+      GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
+
+      for(int c=start;((c<cellcount)&&(c>-1));c+=sweep)
+	{
+          if (ibType[c] == Mesh::IBTYPE_FLUID){
+            for(int dir=0;dir<_numDir;dir++)
+              fVal[dir]=(*_fArrays[dir])[c];
+            if(_BCArray[c]==0)
+	      {
+                Bvec.zero();
+                Resid.zero();
+                AMat.zero();
+            
+                if(_transient)
+                  COMETUnsteady(c,&AMat,Bvec);
+
+                COMETConvectionFine(c,AMat,Bvec,cellcount,gradMatrix);
+                COMETTest(c,&AMat,Bvec,fVal);
+                //COMETCollision(c,&AMat,Bvec);
+                //COMETMacro(c,&AMat,Bvec);
+
+                if(level>0)
+                  addFAS(c,Bvec);
+
+                Resid=Bvec;
+            
+                AMat.Solve(Bvec);
+                Distribute(c,Bvec,Resid);
+                setBoundaryValFine(c,cellcount,gradMatrix);
+                //ComputeMacroparameters(c);            
+	      }
+            else if(_BCArray[c]==1)
+	      {
+                Bvec.zero();
+                Resid.zero();
+                AMat.zero();
+
+                if(_transient)
+                  COMETUnsteady(c,&AMat,Bvec);
+
+                COMETConvectionFine(c,AMat,Bvec,gradMatrix);
+                COMETTest(c,&AMat,Bvec,fVal);
+                //COMETCollision(c,&AMat,Bvec);
+                //COMETMacro(c,&AMat,Bvec);
+
+                if(level>0)
+                  addFAS(c,Bvec);
+           
+                Resid=Bvec;
+
+                AMat.Solve(Bvec);
+                Distribute(c,Bvec,Resid);
+                setBoundaryValFine(c,cellcount,gradMatrix);
+                //ComputeMacroparameters(c);            
+	      }
+            else
+              throw CException("Unexpected value for boundary cell map.");
+          }
+	}
+    }
+
    void COMETSolve(const int sweep, const int level)
    {
     const int cellcount=_cells.getSelfCount();
@@ -248,6 +335,220 @@ class COMETESBGKDiscretizer
     }
   }
 
+  void COMETConvectionFine(const int cell, TArrow& Amat, TArray& BVec, const int cellcount, const GradMatrix& gMat)
+  {
+    const int neibcount=_cellFaces.getCount(cell);
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
+    const StorageSite& ibFaces = _mesh.getIBFaces();
+    const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[_faces]);
+    GradArray Grads(_numDir);
+    Grads.zero();
+
+    VectorT3 Gcoeff;
+    TArray limitCoeff1(_numDir);
+    TArray min1(_numDir);
+    TArray max1(_numDir);
+    TArray limitCoeff2(_numDir);
+    TArray min2(_numDir);
+    TArray max2(_numDir);
+    for(int dir=0;dir<_numDir;dir++)
+      {
+        limitCoeff1[dir]=T(1.e20);
+        const TArray& f = *_fArrays[dir];
+        min1[dir]=f[cell];
+        max1[dir]=f[cell];
+      }
+
+    const VectorT3Array& faceCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_faces]);
+    const VectorT3Array& cellCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_cells]);
+
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+        int cell2=_faceCells(face,1);
+        if(cell2==cell)
+          cell2=_faceCells(face,0);
+
+        Gcoeff=gMat.getCoeff(cell, cell2);
+
+        for(int dir=0;dir<_numDir;dir++)
+	  {
+            const TArray& f = *_fArrays[dir];
+            Grads[dir].accumulate(Gcoeff,f[cell2]-f[cell]);
+            if(min1[dir]>f[cell2])min1[dir]=f[cell2];
+            if(max1[dir]<f[cell2])max1[dir]=f[cell2];
+	  }
+      }
+        
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+
+        SuperbeeLimiter lf;
+        for(int dir=0;dir<_numDir;dir++)
+	  {
+            const TArray& f = *_fArrays[dir];
+            GradType& grad=Grads[dir];
+
+            VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+            T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+
+            computeLimitCoeff(limitCoeff1[dir], f[cell], SOU, min1[dir], max1[dir], lf);
+	  }
+      }
+    
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+        int cell2=_faceCells(face,1);
+        VectorT3 Af=_faceArea[face];
+        VectorT3 en = _faceArea[face]/_faceAreaMag[face];
+
+        T flux;
+
+        if(cell2==cell)
+	  {
+            Af=Af*(-1.);
+            en=en*(-1.);
+            cell2=_faceCells(face,0);
+	  }
+
+        for(int dir=0;dir<_numDir;dir++)
+          {
+            limitCoeff2[dir]=T(1.e20);
+            const TArray& f = *_fArrays[dir];
+            min2[dir]=f[cell2];
+            max2[dir]=f[cell2];
+          }
+
+        GradArray NeibGrads(_numDir);
+        NeibGrads.zero();
+
+        const int neibcount1=_cellFaces.getCount(cell2);
+        for(int nj=0;nj<neibcount1;nj++)
+	  {
+            const int f1=_cellFaces(cell2,nj);
+            int cell22=_faceCells(f1,1);
+            if(cell2==cell22)
+              cell22=_faceCells(f1,0);
+
+            Gcoeff=gMat.getCoeff(cell2, cell22);
+
+            for(int dir=0;dir<_numDir;dir++)
+	      {
+                const TArray& f = *_fArrays[dir];
+                NeibGrads[dir].accumulate(Gcoeff,f[cell22]-f[cell2]);
+                if(min2[dir]>f[cell22])min2[dir]=f[cell22];
+                if(max2[dir]<f[cell22])max2[dir]=f[cell22];
+	      }
+	  }
+
+
+        for(int nj=0;nj<neibcount1;nj++)
+          {
+            const int f1=_cellFaces(cell2,nj);
+
+            SuperbeeLimiter lf;
+            for(int dir=0;dir<_numDir;dir++)
+              {
+                const TArray& f = *_fArrays[dir];
+                GradType& neibGrad=NeibGrads[dir];
+
+                VectorT3 fVec=faceCoords[f1]-cellCoords[cell2];
+                T SOU=(neibGrad[0]*fVec[0]+neibGrad[1]*fVec[1]+neibGrad[2]*fVec[2]);
+
+                computeLimitCoeff(limitCoeff2[dir], f[cell2], SOU, min2[dir], max2[dir], lf);
+              }
+          }
+
+        int count=1;
+        for(int dir=0;dir<_numDir;dir++)
+	  {
+            const TArray& f = *_fArrays[dir];
+            flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+            const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+            
+            GradType& grad=Grads[count-1];
+            GradType& neibGrad=NeibGrads[count-1];
+
+            if (_BCfArray[face]==7)
+	      {
+                VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[_solidFaces]);
+                const T uwall = v[1][0];
+                const T vwall = v[1][1];
+                const T wwall = v[1][2];
+                const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+                if((c_dot_en-wallV_dot_en)>T_Scalar(0))
+		  {
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		  }
+                else
+		  {
+                    const int ibFace = ibFaceIndex[face];
+                    if (ibFace < 0)
+                      throw CException("invalid ib face index");
+                    Field& fnd = *_dsfPtr.dsf[dir];
+                    const TArray& fIB = dynamic_cast<const TArray&>(fnd[ibFaces]);
+                    BVec[count-1]-=flux*fIB[ibFace];
+		  }
+	      }
+            else if((_BCfArray[face]==0)||(_BCfArray[face]==-1))
+	      {
+                if(c_dot_en>T_Scalar(0))
+		  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+                    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+                    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+                    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    Amat.getElement(count,count)-=flux;
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell];
+                    else
+                      {
+                        BVec[count-1]-=(flux*f[cell]+flux*SOU*limitCoeff1[dir]);
+                      }
+		  }
+                else 
+		  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell2];
+                    VectorT3 rVec=cellCoords[cell]-cellCoords[cell2];
+                    T r=gMat.computeR(neibGrad,f,rVec,cell2,cell);
+                    T SOU=(neibGrad[0]*fVec[0]+neibGrad[1]*fVec[1]+neibGrad[2]*fVec[2]);
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell2];
+                    else
+                      {
+                        BVec[count-1]-=(flux*f[cell2]+flux*SOU*limitCoeff2[dir]);
+                      }
+		  }
+	      }
+            else if(_BCfArray[face]==5)
+              {
+                if(c_dot_en>T_Scalar(0))
+                  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+                    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+                    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+                    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    Amat.getElement(count,count)-=flux;
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell];
+                    else
+                      {
+                        BVec[count-1]-=(flux*f[cell]+flux*SOU*limitCoeff1[dir]);
+                      }
+                  }
+                else
+                  BVec[count-1]-=flux*f[cell2];
+              }
+            count++;
+	  }
+      }
+  }
+
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec, const int cellcount)
   {
     const int neibcount=_cellFaces.getCount(cell);
@@ -313,6 +614,478 @@ class COMETESBGKDiscretizer
             count++;
 	}
     }
+  }
+
+  void COMETConvectionFine(const int cell, TArrow& Amat, TArray& BVec, const GradMatrix& gMat)
+  {
+
+    const int neibcount=_cellFaces.getCount(cell);
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
+    const StorageSite& ibFaces = _mesh.getIBFaces();
+    const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[_faces]);
+    const T one(1.0);
+    GradArray Grads(_numDir);
+    Grads.zero();
+
+    VectorT3 Gcoeff;
+    TArray limitCoeff1(_numDir);
+    TArray min1(_numDir);
+    TArray max1(_numDir);
+    TArray limitCoeff2(_numDir);
+    TArray min2(_numDir);
+    TArray max2(_numDir);
+    for(int dir=0;dir<_numDir;dir++)
+      {
+        limitCoeff1[dir]=T(1.e20);
+        const TArray& f = *_fArrays[dir];
+        min1[dir]=f[cell];
+        max1[dir]=f[cell];
+      }
+
+    const VectorT3Array& faceCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_faces]);
+    const VectorT3Array& cellCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_cells]);
+
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+        int cell2=_faceCells(face,1);
+        if(cell2==cell)
+          cell2=_faceCells(face,0);
+
+        Gcoeff=gMat.getCoeff(cell, cell2);
+
+        for(int dir=0;dir<_numDir;dir++)
+          {
+            const TArray& f = *_fArrays[dir];
+            Grads[dir].accumulate(Gcoeff,f[cell2]-f[cell]);
+            if(min1[dir]>f[cell2])min1[dir]=f[cell2];
+            if(max1[dir]<f[cell2])max1[dir]=f[cell2];
+          }
+      }
+        
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+
+        SuperbeeLimiter lf;
+        for(int dir=0;dir<_numDir;dir++)
+          {
+            const TArray& f = *_fArrays[dir];
+            GradType& grad=Grads[dir];
+
+            VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+            T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+
+            computeLimitCoeff(limitCoeff1[dir], f[cell], SOU, min1[dir], max1[dir], lf);
+          }
+      }
+
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+        int cell2=_faceCells(face,1);
+        VectorT3 Af=_faceArea[face];
+        VectorT3 en = _faceArea[face]/_faceAreaMag[face];
+
+        T flux;
+
+        if(cell2==cell)
+	  {
+            Af=Af*(-1.);
+            en=en*(-1.);
+            cell2=_faceCells(face,0);
+	  }
+
+        for(int dir=0;dir<_numDir;dir++)
+          {
+            limitCoeff2[dir]=T(1.e20);
+            const TArray& f = *_fArrays[dir];
+            min2[dir]=f[cell2];
+            max2[dir]=f[cell2];
+          }
+
+        GradArray NeibGrads(_numDir);
+        NeibGrads.zero();
+
+        const int neibcount1=_cellFaces.getCount(cell2);
+        for(int nj=0;nj<neibcount1;nj++)
+          {
+            const int f1=_cellFaces(cell2,nj);
+            int cell22=_faceCells(f1,1);
+            if(cell2==cell22)
+              cell22=_faceCells(f1,0);
+
+            Gcoeff=gMat.getCoeff(cell2, cell22);
+
+            for(int dir=0;dir<_numDir;dir++)
+              {
+                const TArray& f = *_fArrays[dir];
+                NeibGrads[dir].accumulate(Gcoeff,f[cell22]-f[cell2]);
+                if(min2[dir]>f[cell22])min2[dir]=f[cell22];
+                if(max2[dir]<f[cell22])max2[dir]=f[cell22];
+              }
+          }
+
+
+        for(int nj=0;nj<neibcount1;nj++)
+          {
+            const int f1=_cellFaces(cell2,nj);
+
+            SuperbeeLimiter lf;
+            for(int dir=0;dir<_numDir;dir++)
+              {
+                const TArray& f = *_fArrays[dir];
+                GradType& neibGrad=NeibGrads[dir];
+
+                VectorT3 fVec=faceCoords[f1]-cellCoords[cell2];
+                T SOU=(neibGrad[0]*fVec[0]+neibGrad[1]*fVec[1]+neibGrad[2]*fVec[2]);
+
+                computeLimitCoeff(limitCoeff2[dir], f[cell2], SOU, min2[dir], max2[dir], lf);
+              }
+          }
+
+
+       
+        if(_BCfArray[face]==2) //If the face in question is a reflecting wall
+	  {
+            int Fgid=findFgId(face);
+            T uwall = (*(_bcMap[Fgid]))["specifiedXVelocity"];
+            T vwall = (*(_bcMap[Fgid]))["specifiedYVelocity"];
+            T wwall = (*(_bcMap[Fgid]))["specifiedZVelocity"];
+            T Twall = (*(_bcMap[Fgid]))["specifiedTemperature"];
+            const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+            map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(Fgid);
+            const vector<int>& vecReflection=(*pos).second;
+            T alpha=(*(_bcMap[Fgid]))["accommodationCoefficient"];
+            T m1alpha = one-alpha;
+            const T pi(acos(-1.0));
+            
+            //first sweep - have to calculate wall number density
+            T Nmr(0.0);
+            T Dmr(0.0);
+            int count=1;
+            for(int dir1=0;dir1<_numDir;dir1++)
+	      {
+                const TArray& f = *_fArrays[dir1];
+                const T fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(_cx[dir1]-uwall,2.0)+pow(_cy[dir1]-vwall,2.0)+pow(_cz[dir1]-wwall,2.0))/Twall);
+                flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+                const T c_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
+                GradType& grad=Grads[count-1];
+                if((c_dot_en-wallV_dot_en)>T_Scalar(0))
+		  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+                    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+                    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+                    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    Amat.getElement(count,count)-=flux;
+                    if(_conOrder==1)
+                      {
+                        BVec[count-1]-=flux*f[cell];
+                        Nmr = Nmr + f[cell]*_wts[dir1]*(c_dot_en -wallV_dot_en);
+                      }
+                    else
+                      {
+                        BVec[count-1]-=flux*(f[cell]+limitCoeff1[dir1]*SOU);
+                        Nmr = Nmr + (f[cell]+limitCoeff1[dir1]*SOU)*_wts[dir1]*(c_dot_en -wallV_dot_en);
+                      }
+		  }
+                else
+		  {   //have to move through all other directions
+                    Dmr = Dmr - fwall*_wts[dir1]*(c_dot_en-wallV_dot_en);
+		  }
+                count++;
+	      }
+            
+            const T nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
+
+            //Second sweep
+            const T zero(0.0);
+            count=1;
+            for(int dir1=0;dir1<_numDir;dir1++)
+	      {
+                const TArray& f = *_fArrays[dir1];
+                flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+                const T c1_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
+                if((c1_dot_en-wallV_dot_en)<T_Scalar(0))
+		  {
+                    const T coeff1 = 1.0/pow(pi*Twall,1.5)*exp(-(pow(_cx[dir1]-uwall,2.0)+pow(_cy[dir1]-vwall,2.0)+pow(_cz[dir1]-wwall,2.0))/Twall);
+                    if(m1alpha!=zero)
+		      {
+                        const int direction_incident = vecReflection[dir1];
+                        const TArray& dsfi = *_fArrays[direction_incident];
+                        GradType& grad=Grads[direction_incident];
+                        VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+                        T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                        //Amat.getElement(count,direction_incident+1)-=flux*m1alpha;
+                        if(_conOrder==1)
+                          BVec[count-1]-=flux*m1alpha*dsfi[cell];
+                        else
+                          BVec[count-1]-=flux*m1alpha*(dsfi[cell]+limitCoeff1[direction_incident]*SOU);
+		      }
+                    BVec[count-1]-=flux*alpha*(nwall*coeff1);
+		  }
+                count++;
+	      } 
+	  }
+        /*
+        else if(_BCfArray[face]==3) //If the face in question is a inlet velocity face
+        { 
+            int Fgid=findFgId(face); 
+            map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(Fgid);
+            const vector<int>& vecReflection=(*pos).second;
+            const T pi(acos(-1.0));
+            
+            //first sweep - have to calculate Dmr
+            const T uin = (*(_bcMap[Fgid]))["specifiedXVelocity"];
+            const T vin = (*(_bcMap[Fgid]))["specifiedYVelocity"];
+            const T win = (*(_bcMap[Fgid]))["specifiedZVelocity"];
+            const T Tin = (*(_bcMap[Fgid]))["specifiedTemperature"];
+            const T mdot = (*(_bcMap[Fgid]))["specifiedMassFlowRate"];
+            T Nmr(0.0);
+            T Dmr(0.0);
+            const T R=8314.0/_MW;
+            const T u_init=pow(2.0*R*_T_init,0.5);
+            int count=1;
+            for(int dir1=0;dir1<_numDir;dir1++)
+            {
+                Field& fnd = *_dsfPtr.dsf[dir1];
+                const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
+                const T fwall = 1.0/pow(pi*Tin,1.5)*exp(-(pow(_cx[dir1]-uin,2.0)+pow(_cy[dir1]-vin,2.0)+pow(_cz[dir1]-win,2.0))/Tin);
+                flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+                const T c_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
+                if(c_dot_en>T_Scalar(0))
+                {
+                    Amat(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+                }
+                else
+                {   //have to move through all other directions
+                    Dmr = Dmr + fwall*_wts[dir1]*c_dot_en;
+                }
+                count++;
+            }
+            
+            Nmr=mdot/(_rho_init*u_init);
+            const T nin = Nmr/Dmr; // wall number density for initializing Maxwellian
+            
+            //Second sweep
+            count=1;
+            for(int dir1=0;dir1<_numDir;dir1++)
+            {
+                Field& fnd = *_dsfPtr.dsf[dir1];
+                const TArray& f = dynamic_cast<const TArray&>(fnd[_cells]);
+                flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+                const T c_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
+                if(c_dot_en<T_Scalar(0))
+                {
+                    const int direction_incident = vecReflection[dir1];
+                    Field& fndi = *_dsfPtr.dsf[direction_incident];
+                    const TArray& dsfi = dynamic_cast<const TArray&>(fndi[_cells]);
+                    Amat(count,direction_incident+1)-=flux;
+                    BVec[count-1]-=flux*(nin/pow(pi*Tin,1.5)*exp(-(pow(_cx[dir1]-uin,2.0)+pow(_cy[dir1]-vin,2.0)+pow(_cz[dir1]-win,2.0))/Tin)+dsfi[cell]);
+                }
+                count++;
+            }
+        }
+        */
+        else if(_BCfArray[face]==4)  //if the face in question is zero derivative
+	  {
+            int count=1;
+            for(int dir=0;dir<_numDir;dir++)
+	      {
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+                GradType& grad=Grads[count-1];
+
+                if(c_dot_en>T_Scalar(0))
+		  {
+		    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+		    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+		    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+		    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    Amat.getElement(count,count)-=flux;
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell];
+                    else
+                      {
+                        BVec[count-1]-=flux*(f[cell]+limitCoeff1[dir]*SOU);
+                      }
+		  }
+                else
+		  {
+		    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+		    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+		    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+		    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    Amat.getElement(count,count)-=flux;
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell];
+                    else
+                      {
+                        BVec[count-1]-=flux*(f[cell]+limitCoeff1[dir]*SOU);
+                      }
+		  }
+                count++;
+	      }
+	  }
+        else if(_BCfArray[face]==5)  //if the face in question is specified pressure
+	  {
+            int count=1;
+            for(int dir=0;dir<_numDir;dir++)
+	      {
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+                GradType& grad=Grads[count-1];
+
+                if(c_dot_en>T_Scalar(0))
+		  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+                    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+                    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+                    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    Amat.getElement(count,count)-=flux;
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell];
+                    else
+                      {
+                        BVec[count-1]-=flux*(f[cell]+limitCoeff1[dir]*SOU);
+                      }
+		  }
+                else
+                  BVec[count-1]-=flux*f[cell2];
+                count++;
+	      }
+	  }
+        else if(_BCfArray[face]==6) //If the face in question is a symmetry wall
+	  {
+            int Fgid=findFgId(face);
+            map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(Fgid);
+            const vector<int>& vecReflection=(*pos).second;
+
+            int count=1;
+            for(int dir1=0;dir1<_numDir;dir1++)
+	      {
+                const TArray& f = *_fArrays[dir1];
+                flux=_cx[dir1]*Af[0]+_cy[dir1]*Af[1]+_cz[dir1]*Af[2];
+                const T c_dot_en = _cx[dir1]*en[0]+_cy[dir1]*en[1]+_cz[dir1]*en[2];
+                GradType& grad=Grads[count-1];
+                if(c_dot_en>T_Scalar(0))
+		  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+                    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+                    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+                    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    Amat.getElement(count,count)-=flux;
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell];
+                    else
+                      BVec[count-1]-=flux*(f[cell]+limitCoeff1[dir1]*SOU);
+		  }
+                else
+		  {
+                    const int direction_incident = vecReflection[dir1];
+                    const TArray& dsfi = *_fArrays[direction_incident];
+                    BVec[count-1]-=flux*dsfi[cell];
+		  }
+                count++;
+	      }
+	  }
+        else if(_BCfArray[face]==7)  //if the face in question is an ibFace
+	  {
+            int count=1;
+            for(int dir=0;dir<_numDir;dir++)
+	      {
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+
+                VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[_solidFaces]);
+                const T uwall = v[1][0];
+                const T vwall = v[1][1];
+                const T wwall = v[1][2];
+                const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
+                if((c_dot_en-wallV_dot_en)>T_Scalar(0))
+		  {
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		  }
+                else
+		  {
+                    const int ibFace = ibFaceIndex[face];
+                    if (ibFace < 0)
+                      throw CException("invalid ib face index");
+                    Field& fnd = *_dsfPtr.dsf[dir];
+                    const TArray& fIB = dynamic_cast<const TArray&>(fnd[ibFaces]);
+                    BVec[count-1]-=flux*fIB[ibFace];
+		  }
+                count++;
+	      }
+	  }
+        else if(_BCfArray[face]==0)  //if the face in question is not reflecting
+	  {
+            int count=1;
+            for(int dir=0;dir<_numDir;dir++)
+	      {
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+
+                GradType& grad=Grads[count-1];
+                GradType& neibGrad=NeibGrads[count-1];
+                if(c_dot_en>T_Scalar(0))
+		  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+                    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+                    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+                    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    Amat.getElement(count,count)-=flux;
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell];
+                    else
+                      {
+                        BVec[count-1]-=flux*(f[cell]+limitCoeff1[dir]*SOU);
+                      }
+		  }
+                else
+		  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell2];
+                    VectorT3 rVec=cellCoords[cell]-cellCoords[cell2];
+                    T r=gMat.computeR(neibGrad,f,rVec,cell2,cell);
+                    T SOU=(neibGrad[0]*fVec[0]+neibGrad[1]*fVec[1]+neibGrad[2]*fVec[2]);
+                    if(_conOrder==1)
+                      BVec[count-1]-=flux*f[cell2];
+                    else
+                      {
+                        BVec[count-1]-=flux*(f[cell2]+limitCoeff2[dir]*SOU);
+                      }
+		  }
+                count++;
+	      }
+	  }
+        else if(_BCfArray[face]==-1)  //if the face in question is interface
+	  {
+            int count=1;
+            for(int dir=0;dir<_numDir;dir++)
+	      {
+                const TArray& f = *_fArrays[dir];
+                flux=_cx[dir]*Af[0]+_cy[dir]*Af[1]+_cz[dir]*Af[2];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+
+                if(c_dot_en>T_Scalar(0))
+		  {
+                    Amat.getElement(count,count)-=flux;
+                    BVec[count-1]-=flux*f[cell];
+		  }
+                else
+                  BVec[count-1]-=flux*f[cell2];
+                count++;
+	      }
+	  }
+      }
   }
 
   void COMETConvection(const int cell, TArrow& Amat, TArray& BVec)
@@ -797,6 +1570,140 @@ class COMETESBGKDiscretizer
     } 
   }  
 
+  void findResidFine(const bool plusFAS)
+  {
+    const int cellcount=_cells.getSelfCount();
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
+
+    TArray ResidSum(_numDir+3);
+    TArray Bsum(_numDir+3);
+    TArray temp(_numDir+3+1);
+    T traceSum=0.;
+    T ResidScalar=0.;
+    ResidSum.zero();
+    Bsum.zero();
+    temp.zero();
+
+    TArray Bvec(_numDir+3);
+    TArray Resid(_numDir+3);
+    TArrow AMat(_numDir+3);
+
+    TArray fVal(_numDir);
+
+    GradMatrix& gradMatrix=GradModelType::getGradientMatrix(_mesh,_geomFields);
+
+    for(int c=0;c<cellcount;c++)
+      {
+        if (ibType[c] == Mesh::IBTYPE_FLUID){
+          for(int dir=0;dir<_numDir;dir++)
+            fVal[dir]=(*_fArrays[dir])[c];
+          if(_BCArray[c]==0)
+            {
+              Bvec.zero();
+              Resid.zero();
+              AMat.zero();
+            
+              if(_transient)
+                COMETUnsteady(c,&AMat,Bvec);
+            
+              COMETConvectionFine(c,AMat,Bvec,cellcount,gradMatrix);
+              COMETTest(c,&AMat,Bvec,fVal);
+              //COMETCollision(c,&AMat,Bvec);
+              //COMETMacro(c,&AMat,Bvec);
+         
+              if(plusFAS)
+                addFAS(c,Bvec);
+   
+              traceSum+=AMat.getTraceAbs();
+              Resid=Bvec;
+              //Bvec.zero();
+              Distribute(c,Resid);
+
+              makeValueArray(c,Bvec);
+
+              AMat.multiply(Resid,Bvec);
+              Resid=Bvec; 
+
+              //ArrayAbs(Bvec);
+              //ArrayAbs(Resid);
+              ArrayAbs(Bvec,Resid);
+              Bsum+=Bvec;
+              ResidSum+=Resid;
+            }
+          else if(_BCArray[c]==1) //reflecting boundary
+            {
+              Bvec.zero();
+              Resid.zero();
+              AMat.zero();
+
+              if(_transient)
+                COMETUnsteady(c,&AMat,Bvec);
+
+              COMETConvectionFine(c,AMat,Bvec,gradMatrix);
+              //COMETConvection(c,AMat,Bvec);
+              COMETTest(c,&AMat,Bvec,fVal);
+              //COMETCollision(c,&AMat,Bvec);
+              //COMETMacro(c,&AMat,Bvec);
+
+              if(plusFAS)
+                addFAS(c,Bvec);
+
+              traceSum+=AMat.getTraceAbs();
+              Resid=Bvec;
+              //Bvec.zero();
+              Distribute(c,Resid);
+
+              makeValueArray(c,Bvec);
+
+              AMat.multiply(Resid,Bvec);
+              Resid=Bvec; 
+
+              //ArrayAbs(Bvec);
+              //ArrayAbs(Resid);
+              ArrayAbs(Bvec,Resid);
+              Bsum+=Bvec;
+              ResidSum+=Resid;
+            }
+          else
+            throw CException("Unexpected value for boundary cell map.");
+        }
+      }
+    for(int o=0;o<_numDir+3;o++)
+      {
+        temp[o]=ResidSum[o];
+      }
+    temp[_numDir+3]=traceSum;
+
+    //MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, ResidSum.getData(), _numDir+3, MPI::DOUBLE, MPI::SUM);
+    //MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, &traceSum, 1, MPI::DOUBLE, MPI::SUM);
+#ifdef FVM_PARALLEL
+    MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE, temp.getData(), _numDir+4, MPI::DOUBLE, MPI::SUM);
+#endif
+    /*
+    for(int o=0;o<_numDir+3;o++)
+    {
+        ResidScalar+=ResidSum[o];
+    }
+
+    ResidScalar/=traceSum;
+    */
+
+    for(int o=0;o<_numDir+3;o++)
+      {
+        ResidScalar+=temp[o];
+      }
+
+    ResidScalar/=temp[_numDir+3];
+
+    if(_aveResid==-1)
+      {_aveResid=ResidScalar;}
+    else
+      {
+        _residChange=fabs(_aveResid-ResidScalar)/_aveResid;
+        _aveResid=ResidScalar;
+      }
+  }
+
   void findResid(const bool plusFAS)
   {
     const int cellcount=_cells.getSelfCount();
@@ -1003,6 +1910,101 @@ class COMETESBGKDiscretizer
     o[_numDir+1]=v[c][1];
     o[_numDir+2]=v[c][2];
   }
+
+  void setBoundaryValFine(const int cell, const int cellcount, const GradMatrix& gMat)
+  {
+    const int neibcount=_cellFaces.getCount(cell);
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[_cells]);
+    const StorageSite& ibFaces = _mesh.getIBFaces();
+    const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[_faces]);
+    GradArray Grads(_numDir);
+    Grads.zero();
+
+    VectorT3 Gcoeff;
+    TArray limitCoeff1(_numDir);
+    TArray min1(_numDir);
+    TArray max1(_numDir);
+    for(int dir=0;dir<_numDir;dir++)
+      {
+        limitCoeff1[dir]=T(1.e20);
+        const TArray& f = *_fArrays[dir];
+        min1[dir]=f[cell];
+        max1[dir]=f[cell];
+      }
+
+    const VectorT3Array& faceCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_faces]);
+    const VectorT3Array& cellCoords=
+      dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[_cells]);
+
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+        int cell2=_faceCells(face,1);
+        if(cell2==cell)
+          cell2=_faceCells(face,0);
+
+        Gcoeff=gMat.getCoeff(cell, cell2);
+
+        for(int dir=0;dir<_numDir;dir++)
+          {
+            const TArray& f = *_fArrays[dir];
+            Grads[dir].accumulate(Gcoeff,f[cell2]-f[cell]);
+            if(min1[dir]>f[cell2])min1[dir]=f[cell2];
+            if(max1[dir]<f[cell2])max1[dir]=f[cell2];
+          }
+      }
+        
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+
+        SuperbeeLimiter lf;
+        for(int dir=0;dir<_numDir;dir++)
+          {
+            const TArray& f = *_fArrays[dir];
+            GradType& grad=Grads[dir];
+
+            VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+            T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+
+            computeLimitCoeff(limitCoeff1[dir], f[cell], SOU, min1[dir], max1[dir], lf);
+          }
+      }
+    
+    for(int j=0;j<neibcount;j++)
+      {
+        const int face=_cellFaces(cell,j);
+        int cell2=_faceCells(face,1);
+        VectorT3 Af=_faceArea[face];
+        VectorT3 en = _faceArea[face]/_faceAreaMag[face];
+
+        if(cell2==cell)
+          {
+            Af=Af*(-1.);
+            en=en*(-1.);
+            cell2=_faceCells(face,0);
+          }
+ 
+        if ((_BCfArray[face]==5)||(_BCfArray[face]==4)||(_BCfArray[face]==2))
+          {
+            for(int dir=0;dir<_numDir;dir++)
+              {
+                TArray& f = *_fArrays[dir];
+                const T c_dot_en = _cx[dir]*en[0]+_cy[dir]*en[1]+_cz[dir]*en[2];
+                GradType& grad=Grads[dir];
+                if(c_dot_en>T_Scalar(0))
+                  {
+                    VectorT3 fVec=faceCoords[face]-cellCoords[cell];
+                    VectorT3 rVec=cellCoords[cell2]-cellCoords[cell];
+                    T r=gMat.computeR(grad,f,rVec,cell,cell2);
+                    T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2]);
+                    f[cell2]=(f[cell]+limitCoeff1[dir]*SOU);
+                  }
+              }
+          }
+      }
+  }
   
  private:
   const Mesh& _mesh;
@@ -1032,6 +2034,7 @@ class COMETESBGKDiscretizer
   const T _rho_init;
   const T _T_init;
   const T _MW;
+  const int _conOrder;
   COMETBCMap& _bcMap;
   map<int, vector<int> > _faceReflectionArrayMap; 
   const IntArray& _BCArray;

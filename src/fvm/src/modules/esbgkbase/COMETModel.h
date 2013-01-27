@@ -2437,6 +2437,11 @@ map<string,shared_ptr<ArrayBase> >&
             //const int nFaces = faces.getCount();
             const COMETBC<T>& bc = *_bcMap[fg.id];
             COMETBoundaryConditions<T,T,T> cbc(faces, mesh,_geomFields,_quadrature,_macroFields,_dsfPtr);
+            FloatValEvaluator<VectorT3> bVelocity(bc.getVal("specifiedXVelocity"),
+                                                  bc.getVal("specifiedYVelocity"),
+                                                  bc.getVal("specifiedZVelocity"),
+                                                  faces);
+            FloatValEvaluator<T> accomCoeff(bc.getVal("accommodationCoefficient"),faces);
             FloatValEvaluator<T> bTemperature(bc.getVal("specifiedTemperature"),faces);
             FloatValEvaluator<T> bPressure(bc.getVal("specifiedPressure"),faces);
             if(bc.bcType=="PressureInletBC")
@@ -2447,6 +2452,26 @@ map<string,shared_ptr<ArrayBase> >&
 	      {
                 cbc.applyPressureOutletBC(bTemperature,bPressure);
 	      }
+            else if (bc.bcType == "RealWallBC")
+              {
+                //kbc.applyRealWallBC(bVelocity,bTemperature,accomCoeff);
+                map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(fg.id);
+                const vector<int>& vecReflection=(*pos).second;
+                cbc.applyRealWallBC(bVelocity,bTemperature,accomCoeff,vecReflection);
+              }
+            /*
+              else if(bc.bcType=="SymmetryBC")
+              {
+                //kbc.applySpecularWallBC(); //old boundary works only for cartesian-type quadrature
+                map<int, vector<int> >::iterator pos = _faceReflectionArrayMap.find(fg.id);
+                const vector<int>& vecReflection=(*pos).second;
+                cbc.applySpecularWallBC(vecReflection);
+              }
+	    */ 
+            else if(bc.bcType=="ZeroGradBC")
+              {
+                cbc.applyZeroGradientBC();
+              }
 	  }
         foreach(const FaceGroupPtr igPtr, mesh.getInterfaceGroups())
 	  {
@@ -4913,7 +4938,7 @@ map<string,shared_ptr<ArrayBase> >&
                                        _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
                                        _options["timeStep"],_options.timeDiscretizationOrder,
                                        _options.transient,_options.underRelaxation,_options["rho_init"], 
-                                       _options["T_init"],_options["molecularWeight"],
+                                       _options["T_init"],_options["molecularWeight"],_options.conOrder,
                                        _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
 
         CDisc.setfgFinder();
@@ -4958,45 +4983,55 @@ map<string,shared_ptr<ArrayBase> >&
     const int numDir=_quadrature.getDirCount();
     const int numMeshes=_meshes.size();
     for(int msh=0;msh<numMeshes;msh++)
-    {
+      {
         const Mesh& mesh=*_meshes[msh];
         const BCcellArray& BCArray=*(_BCells[msh]);
         const BCfaceArray& BCfArray=*(_BFaces[msh]);
-	const BCcellArray& ZCArray=*(_ZCells[msh]);
-	shared_ptr<StorageSite> solidFaces(new StorageSite(-1));
-	COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,*solidFaces,_macroFields,_quadrature,
-				       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
-				       _options["timeStep"],_options.timeDiscretizationOrder,
-				       _options.transient,_options.underRelaxation,_options["rho_init"], 
-				       _options["T_init"],_options["molecularWeight"],
-				       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
+        const BCcellArray& ZCArray=*(_ZCells[msh]);
+        shared_ptr<StorageSite> solidFaces(new StorageSite(-1));
+        COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,*solidFaces,_macroFields,_quadrature,
+                                       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
+                                       _options["timeStep"],_options.timeDiscretizationOrder,
+                                       _options.transient,_options.underRelaxation,_options["rho_init"], 
+                                       _options["T_init"],_options["molecularWeight"],_options.conOrder,
+                                       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
 
         CDisc.setfgFinder();
-	
-	MakeParallel();
 
-	CDisc.COMETSolve(1,_level); //forward
-	//callCOMETBoundaryConditions();
-	ComputeCOMETMacroparameters();
-	ComputeCollisionfrequency();
-	//update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
-	if (_options.fgamma==0){initializeMaxwellianEq();}
-	else{ EquilibriumDistributionBGK();}
-	if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
+        if(_level==0)callCOMETBoundaryConditions();
+        MakeParallel();
+
+        if(_level==0)
+          CDisc.COMETSolveFine(1,_level); //forward
+        else
+          CDisc.COMETSolve(1,_level); //forward
+        //callCOMETBoundaryConditions();
+        ComputeCOMETMacroparameters();
+        ComputeCollisionfrequency();
+        //update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
+        if (_options.fgamma==0){initializeMaxwellianEq();}
+        else{ EquilibriumDistributionBGK();}
+        if (_options.fgamma==2){EquilibriumDistributionESBGK();} 
       
-	MakeParallel();
+        if(_level==0)callCOMETBoundaryConditions();
+        MakeParallel();
           
-	CDisc.COMETSolve(-1,_level); //reverse
-	if((num==1)||(num==0&&_level==0))
-	{
-	    //callCOMETBoundaryConditions();
-	    ComputeCOMETMacroparameters();
-	    ComputeCollisionfrequency();
-	    //update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
-	    if (_options.fgamma==0){initializeMaxwellianEq();}
-	    else{ EquilibriumDistributionBGK();}
-	    if (_options.fgamma==2){EquilibriumDistributionESBGK();}
-	}
+
+        if(_level==0)
+          CDisc.COMETSolveFine(-1,_level); //reverse
+        else
+          CDisc.COMETSolve(-1,_level); //forward
+        if((num==1)||(num==0&&_level==0))
+	  {
+            //callCOMETBoundaryConditions();
+            ComputeCOMETMacroparameters();
+            ComputeCollisionfrequency();
+            //update equilibrium distribution function 0-maxwellian, 1-BGK,2-ESBGK
+            if (_options.fgamma==0){initializeMaxwellianEq();}
+            else{ EquilibriumDistributionBGK();}
+            if (_options.fgamma==2){EquilibriumDistributionESBGK();}
+	  }
+
       }
   }
 
@@ -5006,25 +5041,29 @@ map<string,shared_ptr<ArrayBase> >&
     T lowResid=-1.;
     T currentResid;
     for(int msh=0;msh<numMeshes;msh++)
-    {
+      {
         const Mesh& mesh=*_meshes[msh];
         const BCcellArray& BCArray=*(_BCells[msh]);
         const BCfaceArray& BCfArray=*(_BFaces[msh]);
         const BCcellArray& ZCArray=*(_ZCells[msh]);
-	shared_ptr<StorageSite> solidFaces(new StorageSite(-1));
+        shared_ptr<StorageSite> solidFaces(new StorageSite(-1));
         COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,*solidFaces,_macroFields,_quadrature,
                                        _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
                                        _options["timeStep"],_options.timeDiscretizationOrder,
                                        _options.transient,_options.underRelaxation,_options["rho_init"], 
-                                       _options["T_init"],_options["molecularWeight"],
+                                       _options["T_init"],_options["molecularWeight"], _options.conOrder,
                                        _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
 
         CDisc.setfgFinder();
         const int numDir=_quadrature.getDirCount();
 
+        if(_level==0)callCOMETBoundaryConditions();
         MakeParallel();
 
-        CDisc.findResid(addFAS);
+        if(_level==0)
+          CDisc.findResidFine(addFAS);
+        else
+          CDisc.findResid(addFAS);
         currentResid=CDisc.getAveResid();
 
         if(lowResid<0)
@@ -5032,7 +5071,7 @@ map<string,shared_ptr<ArrayBase> >&
         else
           if(currentResid<lowResid)
             lowResid=currentResid;
-    }
+      }
     return lowResid;
   }
 
@@ -5047,12 +5086,12 @@ map<string,shared_ptr<ArrayBase> >&
         const BCcellArray& BCArray=*(_BCells[msh]);
         const BCfaceArray& BCfArray=*(_BFaces[msh]);
 	const BCcellArray& ZCArray=*(_ZCells[msh]);
-	COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,solidFaces,_macroFields,_quadrature,
-				       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
-				       _options["timeStep"],_options.timeDiscretizationOrder,
-				       _options.transient,_options.underRelaxation,_options["rho_init"], 
-				       _options["T_init"],_options["molecularWeight"],
-				       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
+        COMETESBGKDiscretizer<T> CDisc(mesh,_geomFields,solidFaces,_macroFields,_quadrature,
+                                       _dsfPtr,_dsfPtr1,_dsfPtr2,_dsfEqPtrES,_dsfPtrRes,_dsfPtrFAS,
+                                       _options["timeStep"],_options.timeDiscretizationOrder,
+                                       _options.transient,_options.underRelaxation,_options["rho_init"],
+                                       _options["T_init"],_options["molecularWeight"],_options.conOrder,
+                                       _bcMap,_faceReflectionArrayMap,BCArray,BCfArray,ZCArray);
 
         CDisc.setfgFinder();
 	const int numDir=_quadrature.getDirCount();
