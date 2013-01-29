@@ -29,7 +29,7 @@ Ufconfig		pkgs/UFconfig.tar.gz
 Umfpack			pkgs/UMFPACK.tar.gz
 Sphinx	pkgs/Sphinx-1.1.3.tar.gz
 Freetype	pkgs/freetype-2.4.6.tar.bz2
-Pymc	pkgs/pymc-2.1.tar.bz2
+Pymc	pkgs/pymc-2.2.tar.gz
 Pcl		pkgs/PCL-1.4.0-Source.tar.bz2
 Flann	pkgs/flann-1.7.1-src.bz2
 Eigen	pkgs/eigen-eigen-13a11181fc5a.tar.bz2
