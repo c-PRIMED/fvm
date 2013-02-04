@@ -53,10 +53,12 @@ class Kspace
   ArrayBase* geteCellValsPy(const int c);
   ArrayBase* gete0CellVars(const int c);
   ArrayBase* gete0CellValsPy(const T Tl);
-  ArrayBase* getFreqArray(const int m);
+  ArrayBase* getFreqArrayPy();
   ArrayBase* getTauArrayPy();
   ArrayBase* getIsources(const int c, const bool correct);
   ArrayBase* getIIsources(const int c, const bool correct);
+  ArrayBase* getEmptyArray(const int length);
+  void weightArray(ArrayBase* ep);
 
   %extend{
     std::vector<Kspace<T>*>& MakeList()
@@ -93,8 +95,9 @@ class ScatteringKernel
   void ReadType2(const char* NamePhonon2, const char* NamePhonon3, const T tol);
   void updateSourceTermTest(const T Tl);
   void addFreqs();
-  void IterateToEquilibrium(const T Tl, const int totIts, const T tStep);
+  ArrayBase* IterateToEquilibrium(const T Tl, const int totIts, const T tStep);
   void correctDetailedBalance();
+  ArrayBase* calculatePsi(const int totIts);
 
  private:
   ScatteringKernel(const ScatteringKernel&);

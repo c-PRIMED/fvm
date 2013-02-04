@@ -74,9 +74,13 @@ class Kspace
 	const long double Ktot=pi*pow(Kmax,3.)*4./3./pow((2.*pi),3.);
 	Tvec vg;
 	int count=1;
+	T W=2.;
 
 	if(full)
-	  dtheta*=2;
+	  {
+	    W=1.;
+	    dtheta*=2;
+	  }
 	
 	_freqArray.resize(ntheta*nphi);
 	_freqArray=omega;
@@ -86,13 +90,14 @@ class Kspace
 	    for(int p=0;p<nphi;p++)
 	      {
 		phi=dphi*(T(p)+.5);
-		vg[0]=vgmag*sin(theta)*sin(phi);
-		vg[1]=vgmag*sin(theta)*cos(phi);
-		vg[2]=vgmag*cos(theta);
-		dk3=(sin(theta)*sin(dtheta/2.)*(dtheta/pi))*Ktot;
-		sumX+=vgmag*sin(theta)*sin(phi);
-		sumY+=vgmag*sin(theta)*cos(phi);
-		sumZ+=vgmag*cos(theta);
+		const T xyFac=dtheta-cos(2*theta)*sin(dtheta);
+		dk3=(sin(theta)*sin(dtheta/2.)*(dphi/pi/2.))*Ktot*W;
+		vg[0]=vgmag*xyFac*sin(phi)*sin(dphi/2.)/dk3*pow(Kmax,3.)/3./pow((2.*pi),3.)*W;
+		vg[1]=vgmag*xyFac*cos(phi)*sin(dphi/2.)/dk3*pow(Kmax,3.)/3./pow((2.*pi),3.)*W;
+		vg[2]=vgmag*dphi/2.*sin(2*theta)*sin(dphi)/dk3*pow(Kmax,3.)/3./pow((2.*pi),3.)*W;
+		//vg[0]=vgmag*sin(theta)*sin(phi);
+		//vg[1]=vgmag*sin(theta)*cos(phi);
+		//vg[2]=vgmag*cos(theta);
 		Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode(vg,omega,tau));
 		modeptr->setIndex(count);
 		count++;
@@ -102,9 +107,6 @@ class Kspace
 		_totvol+=dk3;
 	      }
 	  }
-	//cout<<"SumX: "<<sumX<<endl;
-	//cout<<"SumY: "<<sumY<<endl;
-	//cout<<"SumZ: "<<sumZ<<endl;
       }
 
  Kspace():
@@ -602,6 +604,8 @@ class Kspace
 
   T getde0taudT(const int c, T Tl)
   {
+    const T hbar=6.582119e-16;  // (eV s)
+
     T de0taudT=0.;
     int index=getGlobalIndex(c,0);
     for(int k=0;k<_length;k++)
@@ -612,7 +616,8 @@ class Kspace
 	for(int m=0;m<modenum;m++)
 	  {
 	    Tmode& mode=kv.getmode(m);
-	    de0taudT+=mode.calcde0dT(Tl)*dk3/_totvol/(*_Tau)[index];
+	    T energy=hbar*mode.getomega();
+	    de0taudT+=mode.calcde0dT(Tl)*dk3/_totvol/(*_Tau)[index]*energy;
 	    index++;
 	  }
       }
@@ -788,6 +793,24 @@ class Kspace
 	  }
       }
     return Velocities;
+  }
+
+  void getVelocities(TvecArray& v)
+  {
+    const int allModes=gettotmodes();
+    v.resize(allModes);
+    v.zero();
+ 
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const int modes=kvol.getmodenum();
+	for(int m=0;m<modes;m++)
+	  {
+	    const int count=kvol.getmode(m).getIndex()-1;
+	    v[count]=kvol.getmode(m).getv();
+	  }
+      }
   }
 
   ArrayBase* getVelocities(const int M)
@@ -1324,6 +1347,13 @@ class Kspace
 
   }
 
+  void ScatterPhonons(const int c, const int totIts, TArray& C,
+		      TArray& B, const TArray& V, TArray& newE, const T cv)
+  {
+    _ScattKernel->scatterPhonons(c, totIts, C, B, V, newE, cv);
+    seteCellVals(c,newE);
+  }
+
   void setRelTimeFunction(const T A, const T B, const T C)
   {
     _relFun._A=A;
@@ -1452,25 +1482,10 @@ class Kspace
     return e;
   }
 
-  ArrayBase* getFreqArray(const int M)
+  ArrayBase* getFreqArrayPy()
   {
-    TArray* e=new TArray(_length);
-    int index(0);
-    for(int k=0;k<_length;k++)
-      {
-	Tkvol& kv=getkvol(k);
-	const T dk3=kv.getdk3();
-	const int modenum=kv.getmodenum();
-	for(int m=0;m<modenum;m++)
-	  {
-	    Tmode& mode=kv.getmode(m);
-	    if(m==M)
-	      {
-		(*e)[index]=mode.getomega();
-		index++;
-	      }
-	  }
-      }
+    TArray* e=new TArray(gettotmodes());
+    (*e)=_freqArray;
     return e;
   }
 
@@ -1514,6 +1529,26 @@ class Kspace
       else
 	throw CException("Array not same length: weightArray");
   }
+
+  void weightArray(ArrayBase* ep)
+  {
+    TArray& e=dynamic_cast<TArray&>(*ep);
+    int cnt=0;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const T dk3=kv.getdk3();
+	const int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  {
+	    e[cnt]*=dk3/_totvol;
+	    cnt++;
+	  }
+      }
+  }
+
+  ArrayBase* getEmptyArray(const int length)
+  {return new TArray(length);}
 
  private:
 
