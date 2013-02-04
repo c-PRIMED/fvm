@@ -17,6 +17,8 @@ class ScatteringKernel
   typedef Array<T> TArray;
   typedef Array<int> IntArray;
   typedef Array<bool> BArray;
+  typedef Vector<T,3> VectorT3;
+  typedef Array<VectorT3> VectorT3Array;
   typedef kvol<T> Tkvol;
   typedef pmode<T> Tmode;
   typedef KSConnectivity<T> Tksconn;
@@ -117,12 +119,32 @@ class ScatteringKernel
 
 	    int zCnt(0);
 
+	    
 	    if((m1==0)||(m1==3))
 	      zCnt++;
 	    if((m2==0)||(m2==3))
 	      zCnt++;
 	    if((m3==0)||(m3==3))
 	      zCnt++;
+	    
+
+	    //if((m1==0)||(m2==0)||(m3==0))
+	    //  zCnt=1;
+
+	    //if(w[row2]<.25e14)
+	    // zCnt=1;
+
+	    if(phi<0)
+	      {
+		cout<<row2<<" "<<index2<<endl;
+		throw CException("I: negative value for phi!.");
+	      }
+
+	    if(dkl<0)
+	      {
+		cout<<row2<<" "<<index2<<endl;
+		throw CException("I: negative value for dkl!.");
+	      }
 
 	    //zCnt=0;
 	    if(err<tol && zCnt!=1 && zCnt!=3 && dkl>0.)
@@ -174,13 +196,19 @@ class ScatteringKernel
 	    const int m3=index3%6;
 
 	    int zCnt(0);
-
+	    
 	    if((m1==0)||(m1==3))
 	      zCnt++;
 	    if((m2==0)||(m2==3))
 	      zCnt++;
 	    if((m3==0)||(m3==3))
 	      zCnt++;
+
+	    //if((m1==0)||(m2==0)||(m3==0))
+	    // zCnt=1;
+
+	    //if(w[row2]<.25e14)
+	    // zCnt=1;
 
 	    //zCnt=0;
 	    if(err<tol && zCnt!=1 && zCnt!=3 && dkl>0.)
@@ -279,13 +307,31 @@ class ScatteringKernel
 	    const int m3=index3%6;
 
 	    int zCnt(0);
-
+	    
 	    if((m1==0)||(m1==3))
 	      zCnt++;
 	    if((m2==0)||(m2==3))
 	      zCnt++;
 	    if((m3==0)||(m3==3))
 	      zCnt++;
+
+	    if(phi<0)
+	      {
+		cout<<row2<<" "<<index2<<endl;
+		throw CException("II: negative value for phi!.");
+	      }
+
+	    if(dkl<0)
+	      {
+		cout<<row2<<" "<<index2<<endl;
+		throw CException("II: negative value for dkl!.");
+	      }
+
+	    //if((m1==0)||(m2==0)||(m3==0))
+	    // zCnt=1;
+
+	    //if(w[row2]<.25e14)
+	    // zCnt=1;
 	    
 	    //zCnt=0;
 	    if(zCnt!=1 && zCnt!=3 && dkl>0. && err<tol)
@@ -336,13 +382,19 @@ class ScatteringKernel
 	    const int m3=index3%6;
 
 	    int zCnt(0);
-
+	    
 	    if((m1==0)||(m1==3))
 	      zCnt++;
 	    if((m2==0)||(m2==3))
 	      zCnt++;
 	    if((m3==0)||(m3==3))
-	      zCnt++;
+	    zCnt++;
+
+	    //if((m1==0)||(m2==0)||(m3==0))
+	    // zCnt=1;
+
+	    //if(w[row2]<.25e14)
+	    // zCnt=1;
 
 	    //zCnt=0;
 	    if(zCnt!=1 && zCnt!=3 && dkl>0. && err<tol)
@@ -970,8 +1022,8 @@ class ScatteringKernel
     const T Tlat(300.0);//Tl(_kspace.calcLatTemp(c));
     const T Tl(_kspace.calcLatTemp(c));
     TArray e0(Rows);
-    _kspace.gete0CellVals(c,e0);
-    //_kspace.getEquilibriumArray(e0,Tl);
+    //_kspace.gete0CellVals(c,e0);
+    _kspace.getEquilibriumArray(e0,Tl);
     const T DK3=_kspace.getDK3();
 
     const IntArray& t1p2row=_type1Collisions.getSelfRow();
@@ -1009,13 +1061,13 @@ class ScatteringKernel
 	    const T n1=e[i]/w[i]/hbar;
 	    const T n2=e[j2]/w[j2]/hbar;
 	    const T n3=e[j3]/w[j3]/hbar;
-	    const T n10=e0[i]/w[i]/hbar;
-	    const T n20=e0[j2]/w[j2]/hbar;
-	    const T n30=e0[j3]/w[j3]/hbar;
+	    const T n10=1./(exp(hbar*w[i]/kb/300)-1.);
+	    const T n20=1./(exp(hbar*w[j2]/kb/300)-1.);
+	    const T n30=1./(exp(hbar*w[j3]/kb/300)-1.);
 	    const T n012=1./(exp(hbar*w3/kb/Tl)-1.);
-	    const T dn1=n1-n10;
-	    const T dn2=n2-n20;
-	    const T dn3=n3-n30;
+	    const T dn1=e[i];
+	    const T dn2=e[j2];
+	    const T dn3=e[j3];
 	    T e032(0);
 	    T frac(0);
 	    //const T frac=w[j3]*(1-w[j2]/w[j3])/w[i];
@@ -1031,14 +1083,14 @@ class ScatteringKernel
 	    const T ds3=1+dn1+dn2+n10+n20;
 	    
 	      
-	    Sl[i]+=dkl*phi*nsum*w[i];//*dk33/dk31;
-	    //Sl[j2]+=dkl*phi*nsum*w[j2]*dk33/dk32;
-	    //Sl[j3]-=dkl*phi*nsum*w[j3]*dk31/dk33;
+	    Sl[i]+=dkl*phi*nsum;//*dk33/dk31;
+	    //Sl[j2]+=dkl*phi*nsum*dk31/dk32;
+	    //Sl[j3]-=dkl*phi*nsum*dk31/dk33;
 	    //Sl[j3]-=(dkl*phi*nsum*w[i]+dkl*phi*nsum*w[j2]);
 
-	    dSl[i]+=dkl*phi*ds1*w[i];
-	    dSl[j2]+=dkl*phi*ds2*w[j2]*dk31/dk32;
-	    dSl[j3]-=dkl*phi*ds3*w[j3]*dk31/dk33;
+	    dSl[i]+=dkl*phi*ds1;
+	    //dSl[j2]+=dkl*phi*ds2*w[j2]*dk31/dk32;
+	    //dSl[j3]-=dkl*phi*ds3*w[j3]*dk31/dk33;
 
 	  }
       }
@@ -1067,14 +1119,14 @@ class ScatteringKernel
 	    const T n1=e[i]/w[i]/hbar;
 	    const T n2=e[j2]/w[j2]/hbar;
 	    const T n3=e[j3]/w[j3]/hbar;
-	    const T n10=e0[i]/w[i]/hbar;
-	    const T n20=e0[j2]/w[j2]/hbar;
-	    const T n30=e0[j3]/w[j3]/hbar;
+	    const T n10=1./(exp(hbar*w[i]/kb/300)-1.);
+	    const T n20=1./(exp(hbar*w[j2]/kb/300)-1.);
+	    const T n30=1./(exp(hbar*w[j3]/kb/300)-1.);
 	    const T n012=1./(exp(hbar*w3/kb/Tl)-1.);
 	    const T e012=hbar*w3/(exp(hbar*w3/kb/Tl)-1.);
-	    const T dn1=n1-n10;
-	    const T dn2=n2-n20;
-	    const T dn3=n3-n30;
+	    const T dn1=e[i];
+	    const T dn2=e[j2];
+	    const T dn3=e[j3];
 	    //const T frac=w[j3]*(1-w[j2]/w[j3])/w[i];
 
 	    const T nsum=(-dn1-dn1*dn2-dn1*dn3
@@ -1092,21 +1144,20 @@ class ScatteringKernel
 	    const T nsum3=(-dn3*n10+dn3*n20);
 	    
 
-	    Sl[i]+=0.5*dkl*phi*nsum*w[i];
+	    Sl[i]+=0.5*dkl*phi*nsum;
 	    //Sl[i]+=0.5*dkl*phi*nsum*w[j2]+0.5*dkl*phi*nsum*w[j3];
-	    //dSl[i]+=0.5*dkl*phi*ds1*w[i];
-	    dSl[i]+=0.5*dkl*phi*ds1*w[j2]+0.5*dkl*phi*ds1*w[j3];
+	    dSl[i]+=0.5*dkl*phi*ds1;
+	    
+	    //Sl[j2]-=0.5*dkl*phi*nsum*dk31/dk32;
+	    //dSl[j2]-=0.5*dkl*phi*ds2*w[j2]*dk31/dk32;
 
-	    //Sl[j2]-=0.5*dkl*phi*nsum*w[j2]*dk31/dk32;
-	    dSl[j2]-=0.5*dkl*phi*ds2*w[j2]*dk31/dk32;
-
-	    //Sl[j3]-=0.5*dkl*phi*nsum*w[j3]*dk31/dk33;
-	    dSl[j3]-=0.5*dkl*phi*ds3*w[j3]*dk31/dk33;
+	    //Sl[j3]-=0.5*dkl*phi*nsum*dk31/dk33;
+	    //dSl[j3]-=0.5*dkl*phi*ds3*w[j3]*dk31/dk33;
 
 	  }
       }
 
-    const T preFac=Acell/16./3.141592653*hbarJoule*_maxPhi*hbar*_maxDkl;
+    const T preFac=Acell/16./3.141592653*hbarJoule*_maxPhi*_maxDkl;
     const int klen=_kspace.getlength();
     for(int i=0;i<Rows;i++)
       {
@@ -1136,7 +1187,7 @@ class ScatteringKernel
 	    const T tau=mode.gettau();
 	    cOt+=mode.calce0(Tl)*(dk3/DK3);
 	    //const T e0=mode.calce0(Tl);
-	    //eq+=(e0-e[ind])/tau*(dk3/DK3);
+	    eq+=(e0[ind]-e[ind])/tau*(dk3/DK3);
 	    ind++;
 	    cnt++;
 	  }
@@ -1164,9 +1215,9 @@ class ScatteringKernel
 		Tmode& mode=kv.getmode(m);
 		const T tau=mode.gettau();
 		const T cp=mode.calcde0dT(Tl);
-		const T e0(mode.calce0(Tl));
-		//S[cnt]+=f*(e0-e[ind])/tau;
-		Sl[cnt]=d*(Sl[cnt]/d-e0/cOt);
+		//const T e0(mode.calce0(Tl));
+		//S[cnt]-=f*(e0[ind]-e[ind])/tau;
+		//Sl[cnt]=d*(Sl[cnt]/d-e0/cOt);
 		defect+=((Sl[cnt]/maxS)*(dk3/DK3));
 		ind++;
 		cnt++;
@@ -1174,6 +1225,7 @@ class ScatteringKernel
 	  }
 	//defect*=DK3*maxS;
 	//cout<<"Defect2: "<<defect<<endl;
+	//cout<<"f: "<<f<<endl;
       }
 
     for(int i=0;i<Rows;i++)
@@ -1379,7 +1431,7 @@ class ScatteringKernel
 
   }
 
-  void IterateToEquilibrium(const T Tl, const int totIts, const T tStep)
+  ArrayBase* IterateToEquilibrium(const T Tl, const int totIts, const T tStep)
   {
 
     const T hbarJoule=1.054560652926899e-34;
@@ -1396,9 +1448,10 @@ class ScatteringKernel
     S.zero();
     TArray e0(_kspace.gettotmodes());
     e0.zero();
-    TArray e(_kspace.gettotmodes());
+    TArray* ep=new TArray(_kspace.gettotmodes());
+    TArray& e=*ep;
     e.zero();
-    _kspace.getEquilibriumArray(e,Tl);
+    //_kspace.getEquilibriumArray(e,Tl);
     //_kspace.geteCellVals(0,e);
     TArray& w(_kspace.getFreqArray());
     TArray t(_kspace.gettotmodes());
@@ -1424,7 +1477,12 @@ class ScatteringKernel
     const TArray& t1phi=_type1Collisions.getOtherCoeffs();
     const TArray& t2dkl=_type2Collisions.getSelfCoeffs();
     const TArray& t2phi=_type2Collisions.getOtherCoeffs();
-    const T preFac=1./16.*hbarJoule*_maxDkl*_maxPhi/3.14159265358979323846264;
+    const T preFac=Acell/16.*hbarJoule*_maxPhi*_maxDkl/3.14159265358979323846264;
+
+    for(int i=0;i<Rows;i++)
+      e[i]=hbar*w[i]/(exp(hbar*w[i]/kb/Tl)-1);
+
+    e[100]=hbar*w[100]/(exp(hbar*w[100]/kb/(Tl+1.))-1);
 
     for(int it=0;it<totIts;it++)
       {
@@ -1439,7 +1497,7 @@ class ScatteringKernel
 		const int j2=t1p2col[pos];
 		const int j3=t1p3col[pos];
 		const T dkl=t1dkl[pos];
-		const T phi=t1phi[pos]*Acell;
+		const T phi=t1phi[pos];
 		const T w3=w[i]+w[j2];
 		const T n1=e[i]/hbar/w[i];
 		const T n2=e[j2]/hbar/w[j2];
@@ -1447,14 +1505,58 @@ class ScatteringKernel
 		const T n10=1./(exp(hbar*w[i]/kb/300.)-1);
 		const T n20=1./(exp(hbar*w[j2]/kb/300.)-1);
 		const T n30=1./(exp(hbar*w[j3]/kb/300.)-1);
+		const T dn1=n1-n10;
+		const T dn2=n2-n20;
+		const T dn3=n3-n30;
 
-		S[i]+=dkl*phi*((n1+1)*(n2+1)*n3-n1*n2*(n3+1));
+		const T nsum=(-dn1*dn2+dn3+dn1*dn3
+			      +dn2*dn3-dn2*n10+dn3*n10-dn1*n20
+			      +dn3*n20+dn1*n30+dn2*n30);
+
+		S[i]+=dkl*phi*nsum;
 		t[i]+=dkl*phi*(n20-n30);
-		gam1[i]+=dkl*phi*n10*n20*(n30+1);
+		gam1[i]+=dkl*phi*nsum;
 	      }
+
+	    for(int pos=t2p2row[i];pos<t2p2row[i+1];pos++)
+	      {
+		const int j2=t2p2col[pos];
+		const int k2=floor(j2/6);
+		const T dk32=_kspace.getkvol(k2).getdk3();
+		const int j3=t2p3col[pos];
+		const int k3=floor(j3/6);
+		const T dk33=_kspace.getkvol(k3).getdk3();
+		const T dkl=t2dkl[pos];
+		const T phi=t2phi[pos];
+		const T w3=w[i]-w[j2];
+		const T n1=e[i]/w[i]/hbar;
+		const T n2=e[j2]/w[j2]/hbar;
+		const T n3=e[j3]/w[j3]/hbar;
+		const T n10=1./(exp(hbar*w[i]/kb/300.)-1);
+		const T n20=1./(exp(hbar*w[j2]/kb/300.)-1);
+		const T n30=1./(exp(hbar*w[j3]/kb/300.)-1);
+		const T dn1=n1-n10;
+		const T dn2=n2-n20;
+		const T dn3=n3-n30;
+
+		const T nsum=(-dn1-dn1*dn2-dn1*dn3
+			      +dn2*dn3-dn2*n10-dn3*n10
+			      -dn1*n20+dn3*n20-dn1*n30
+			      +dn2*n30);
+
+		S[i]+=0.5*dkl*phi*nsum;
+		//S[j2]-=0.5*dkl*phi*nsum*dk31/dk32;
+		//S[j3]-=0.5*dkl*phi*nsum*dk31/dk33;
+		t[i]+=0.5*dkl*phi*(n20+n30+1);
+		gam2[i]+=0.5*dkl*phi*nsum;
+	      }
+	    //S[i]*=(preFac*w[i]*hbar);
+	    //e[i]+=S[i]*tStep;
+
 	  }
 
 	//type 2 collisions
+	/*
 	for(int i=0;i<Rows;i++)
 	  {
 	    const int k1=floor(i/6);
@@ -1468,33 +1570,33 @@ class ScatteringKernel
 		const int k3=floor(j3/6);
 		const T dk33=_kspace.getkvol(k3).getdk3();
 		const T dkl=t2dkl[pos];
-		const T phi=t2phi[pos]*Acell;
+		const T phi=t2phi[pos];
 		const T w3=w[i]-w[j2];
 		const T n1=e[i]/w[i]/hbar;
 		const T n2=e[j2]/w[j2]/hbar;
 		const T n3=e[j3]/w[j3]/hbar;
-
-		/*
-		const T n10=e0[i]/w[i]/hbar;
-		const T n20=e0[j2]/w[j2]/hbar;
-		const T n30=e0[j3]/w[j3]/hbar;
-		*/
-
 		const T n10=1./(exp(hbar*w[i]/kb/300.)-1);
 		const T n20=1./(exp(hbar*w[j2]/kb/300.)-1);
 		const T n30=1./(exp(hbar*w[j3]/kb/300.)-1);
-
-		const T e012=hbar*w3/(exp(hbar*w3/kb/Tl)-1.);
 		const T dn1=n1-n10;
 		const T dn2=n2-n20;
-		const T dn3=(n3-n30);
-		
+		const T dn3=n3-n30;
 
-		S[i]+=0.5*dkl*phi*(n3*n2*(n1+1)-n1*(n2+1)*(n3+1));
+		const T nsum=(-dn1-dn1*dn2-dn1*dn3
+			      +dn2*dn3-dn2*n10-dn3*n10
+			      -dn1*n20+dn3*n20-dn1*n30
+			      +dn2*n30);
+
+		S[i]+=0.5*dkl*phi*nsum;
+		//S[j2]-=0.5*dkl*phi*nsum*dk31/dk32;
+		//S[j3]-=0.5*dkl*phi*nsum*dk31/dk33;
 		t[i]+=0.5*dkl*phi*(n20+n30+1);
 		gam2[i]+=0.5*dkl*phi*n10*(n20+1)*(n30+1);
 	      }
+	    //S[i]*=(preFac*w[i]*hbar);
+	    //e[i]+=S[i]*tStep;
 	  }
+	*/
 
 	const int klen=_kspace.getlength();
 	for(int i=0;i<Rows;i++)
@@ -1506,6 +1608,7 @@ class ScatteringKernel
 	    gam[i]=n10*(n10+1)/preFac/(gam1[i]+gam2[i]);
 	    if(fabs(S[i])>fabs(maxS))
 	      maxS=fabs(S[i]);
+	    
 	  }
 
 	const T DK3=_kspace.getDK3();
@@ -1541,8 +1644,9 @@ class ScatteringKernel
 	      }
 	  }
 
-	cout<<"Max difference: "<<maxRatio<<" at: "<<maxInd<<endl;
-	cout<<"Min difference: "<<minRatio<<" at: "<<minInd<<endl;
+	//cout<<"Max difference: "<<maxRatio<<" at: "<<maxInd<<endl;
+	//cout<<"Min difference: "<<minRatio<<" at: "<<minInd<<endl;
+	
 	
 	T eq(0);
 	if(it>-1)
@@ -1556,17 +1660,16 @@ class ScatteringKernel
 		for(int m=0;m<modenum;m++)
 		  {
 		    Tmode& mode=kv.getmode(m);
-		    const T tau=mode.gettau();
-		    const T cp=mode.calcde0dT(Tl);
-		    cOt+=cp/tau*dk3/DK3;
-		    eq+=(mode.calce0(temp)-e[cnt])*(dk3/tau/DK3);
+		    const T ez=mode.calce0(Tl);
+		    cOt+=ez*dk3/DK3;
+		    //eq+=(mode.calce0(temp)-e[cnt])*(dk3/tau/DK3);
 		    cnt++;
 		  }
 	      }
 
 	    defect=defect*maxS*DK3;
 	    cOt*=DK3;
-	    cout<<"Defect1: "<<defect<<endl;
+	    //cout<<"Defect1: "<<defect<<endl;
 	    cnt=0;
 	    T d(defect);
 	    defect=0.;
@@ -1578,19 +1681,17 @@ class ScatteringKernel
 		for(int m=0;m<modenum;m++)
 		  {
 		    Tmode& mode=kv.getmode(m);
-		    const T tau=mode.gettau();
-		    const T cp=mode.calcde0dT(Tl);
-		    S[cnt]=d*(S[cnt]/d-cp/tau/cOt);
+		    const T ez=mode.calce0(Tl);
+		    //S[cnt]=d*(S[cnt]/d-ez/cOt);
 		    defect+=(S[cnt]/maxS)*(dk3/DK3);
 		    cnt++;
 		  }
 	      }
-	    defect*=DK3*maxS;
-	    cout<<"Defect2: "<<defect<<endl;
 	  }
+	
 
 	for(int i=0;i<Rows;i++)
-	  e[i]+=S[i]*tStep;
+	  e[i]+=S[i]*gam[i];
 
 	cnt=0;
 	T esum(0);
@@ -1610,6 +1711,10 @@ class ScatteringKernel
 	_kspace.calcTemp(temp,esum);
 	cout<<"New Temp: "<<temp<<endl;
       }
+
+    _kspace.weightArray(e);
+
+    return ep;
   }
 
   void correctDetailedBalance()
@@ -1675,6 +1780,349 @@ class ScatteringKernel
 
     cout<<"Duplicated -- "<<duplicated<<endl;
     cout<<"Removed -- "<<removed<<endl;
+
+  }
+
+  ArrayBase* calculatePsi(const int totIts)
+  {
+
+    const int Rows=_kspace.gettotmodes();
+    VectorT3Array*  PsiP=new VectorT3Array(Rows);
+    VectorT3Array& Psi=*PsiP;
+    Psi.zero();
+    VectorT3Array v(Rows);
+    VectorT3Array sum(Rows);
+    sum.zero();
+    VectorT3Array Psi0(Rows);
+    Psi0.zero();
+    TArray Gam(Rows);
+    Gam.zero();
+    TArray n0(Rows);
+    n0.zero();
+    const T hbarJoule=1.054571726e-34;
+    const T hbar=6.582119e-16;
+    const T Acell=5.378395621705545e-20;
+    const T kb=8.617343e-5;  // (eV/K)
+    const TArray& w(_kspace.getFreqArray());
+    _kspace.getVelocities(v);
+    const T Tl(300.0);
+    const T DK3=_kspace.getDK3();
+
+    const IntArray& t1p2row=_type1Collisions.getSelfRow();
+    const IntArray& t1p3row=_type1Collisions.getOtherRow();
+    const IntArray& t1p2col=_type1Collisions.getSelfCol();
+    const IntArray& t1p3col=_type1Collisions.getOtherCol();
+    const IntArray& t2p2row=_type2Collisions.getSelfRow();
+    const IntArray& t2p3row=_type2Collisions.getOtherRow();
+    const IntArray& t2p2col=_type2Collisions.getSelfCol();
+    const IntArray& t2p3col=_type2Collisions.getOtherCol();
+
+    const TArray& t1dkl=_type1Collisions.getSelfCoeffs();
+    const TArray& t1phi=_type1Collisions.getOtherCoeffs();
+    const TArray& t2dkl=_type2Collisions.getSelfCoeffs();
+    const TArray& t2phi=_type2Collisions.getOtherCoeffs();
+
+    for(int i=0;i<Rows;i++)
+      n0[i]=1./(exp(hbar*w[i]/kb/Tl)-1);
+
+    //first calculate Gamma for each mode
+    
+    //type 1 collisions
+    
+    for(int i=0;i<Rows;i++)
+      {
+	const int k1=floor(i/6);
+	const T dk31=_kspace.getkvol(k1).getdk3();
+	for(int pos=t1p2row[i];pos<t1p2row[i+1];pos++)
+	  {
+	    const int j2=t1p2col[pos];
+	    const int k2=floor(j2/6);
+	    const T dk32=_kspace.getkvol(k2).getdk3();
+	    const int j3=t1p3col[pos];
+	    const int k3=floor(j3/6);
+	    const T dk33=_kspace.getkvol(k3).getdk3();
+	    const T dkl=t1dkl[pos];
+	    const T phi=t1phi[pos];
+
+	    Gam[i]+=n0[i]*n0[j2]*(n0[j3]+1)*dkl*phi;
+
+	  }
+      }
+    
+    T maxS(0);
+
+    //type 2 collisions
+    
+    for(int i=0;i<Rows;i++)
+      {
+	const int k1=floor(i/6);
+	const T dk31=_kspace.getkvol(k1).getdk3();
+	for(int pos=t2p2row[i];pos<t2p2row[i+1];pos++)
+	  {
+	    const int j2=t2p2col[pos];
+	    const int k2=floor(j2/6);
+	    const T dk32=_kspace.getkvol(k2).getdk3();
+	    const int j3=t2p3col[pos];
+	    const int k3=floor(j3/6);
+	    const T dk33=_kspace.getkvol(k3).getdk3();
+	    const T dkl=t2dkl[pos];
+	    const T phi=t2phi[pos];
+
+	    Gam[i]+=0.5*n0[i]*(n0[j2]+1)*(n0[j3]+1)*phi*dkl;
+
+	  }
+      }
+
+    const T preFac=Acell/16./3.141592653*hbarJoule*_maxPhi*_maxDkl;
+    for(int i=0;i<Rows;i++)
+      Gam[i]*=preFac;
+
+    //Initialize psi at SMRT
+
+    for(int i=0;i<Rows;i++)
+      {
+	Psi0[i]=hbarJoule*w[i]*n0[i]*(n0[i]+1)/Gam[i]/Tl*v[i];
+	Psi[i]=hbarJoule*w[i]*n0[i]*(n0[i]+1)/Gam[i]/Tl*v[i];
+	if(i==10)
+	  {
+	    Psi0[i]=hbarJoule*w[i]*n0[i]*(n0[i]+1)/Gam[i]/Tl*v[i]*1.1;
+	    Psi[i]=hbarJoule*w[i]*n0[i]*(n0[i]+1)/Gam[i]/Tl*v[i]*1.1;
+	  }
+      }
+
+    //Iterate to get Full Scattering answer
+
+    
+    for(int its=0;its<totIts;its++)
+      {
+	sum.zero();
+	for(int i=0;i<Rows;i++)
+	  {
+	    const int k1=floor(i/6);
+	    const T dk31=_kspace.getkvol(k1).getdk3();
+	    for(int pos=t1p2row[i];pos<t1p2row[i+1];pos++)
+	      {
+		const int j2=t1p2col[pos];
+		const int k2=floor(j2/6);
+		const T dk32=_kspace.getkvol(k2).getdk3();
+		const int j3=t1p3col[pos];
+		const int k3=floor(j3/6);
+		const T dk33=_kspace.getkvol(k3).getdk3();
+		const T dkl=t1dkl[pos];
+		const T phi=t1phi[pos];
+
+		sum[i]+=n0[i]*n0[j2]*(n0[j3]+1)*(Psi[j3]-Psi[j2])*phi*dkl*preFac/Gam[i];
+	      }
+	  }
+    
+	T maxS(0);
+
+	//type 2 collisions
+    
+	for(int i=0;i<Rows;i++)
+	  {
+	    const int k1=floor(i/6);
+	    const T dk31=_kspace.getkvol(k1).getdk3();
+	    for(int pos=t2p2row[i];pos<t2p2row[i+1];pos++)
+	      {
+		const int j2=t2p2col[pos];
+		const int k2=floor(j2/6);
+		const T dk32=_kspace.getkvol(k2).getdk3();
+		const int j3=t2p3col[pos];
+		const int k3=floor(j3/6);
+		const T dk33=_kspace.getkvol(k3).getdk3();
+		const T dkl=t2dkl[pos];
+		const T phi=t2phi[pos];
+	    
+		sum[i]+=0.5*n0[i]*(n0[j2]+1)*(n0[j3]+1)*(Psi[j3]+Psi[j2])*phi*dkl*preFac/Gam[i];
+
+	      }
+	    Psi[i]=sum[i]+Psi0[i];
+	  }
+      }
+
+    return PsiP;
+
+  }
+
+  void scatterPhonons(const int c, const int totIts, 
+		      TArray& C, TArray& B, 
+		      const TArray& V, TArray& newE, const T cv)
+  {
+
+    const int Rows=_kspace.gettotmodes();
+    TArray P(Rows);
+    P.zero();
+    TArray P0(Rows);
+    P0.zero();
+    TArray n0(Rows);
+    n0.zero();
+    TArray n(Rows);
+    n.zero();
+    TArray Q(Rows);
+    Q.zero();
+    T Tl(_kspace.calcLatTemp(c));
+    //_kspace.getEquilibriumArray(n,Tl);
+    _kspace.gete0CellVals(c,n0);
+    _kspace.geteCellVals(c,n);
+    const T hbarJoule=1.054571726e-34;
+    const T hbar=6.582119e-16;
+    const T Acell=5.378395621705545e-20;
+    const T kb=8.617343e-5;  // (eV/K)
+    const T kbJoule=1.3806488e-23;  // (J/K)
+    const TArray& w(_kspace.getFreqArray());
+    const T DK3=_kspace.getDK3();
+
+    const IntArray& t1p2row=_type1Collisions.getSelfRow();
+    const IntArray& t1p3row=_type1Collisions.getOtherRow();
+    const IntArray& t1p2col=_type1Collisions.getSelfCol();
+    const IntArray& t1p3col=_type1Collisions.getOtherCol();
+    const IntArray& t2p2row=_type2Collisions.getSelfRow();
+    const IntArray& t2p3row=_type2Collisions.getOtherRow();
+    const IntArray& t2p2col=_type2Collisions.getSelfCol();
+    const IntArray& t2p3col=_type2Collisions.getOtherCol();
+
+    const TArray& t1dkl=_type1Collisions.getSelfCoeffs();
+    const TArray& t1phi=_type1Collisions.getOtherCoeffs();
+    const TArray& t2dkl=_type2Collisions.getSelfCoeffs();
+    const TArray& t2phi=_type2Collisions.getOtherCoeffs();
+
+    /*
+    for(int i=0;i<Rows;i++)
+      {
+	n0[i]/=(hbar*w[i]);  //Since units are in eV when it comes in
+	C[i]/=(hbar*w[i]);
+	B[i]/=(hbar*w[i]);
+	n[i]/=(hbar*w[i]);
+      }*/
+
+    //first calculate Q for each mode
+    
+    //type 1 collisions
+
+    cout<<"Temperature: "<<Tl<<endl;
+    
+    for(int i=0;i<Rows;i++)
+      {
+	//const int k1=floor(i/6);
+	//const T dk31=_kspace.getkvol(k1).getdk3();
+
+	//type I collisions
+	for(int pos=t1p2row[i];pos<t1p2row[i+1];pos++)
+	  {
+	    const int j2=t1p2col[pos];
+	    //const int k2=floor(j2/6);
+	    //const T dk32=_kspace.getkvol(k2).getdk3();
+	    const int j3=t1p3col[pos];
+	    //const int k3=floor(j3/6);
+	    //const T dk33=_kspace.getkvol(k3).getdk3();
+	    const T dkl=t1dkl[pos];
+	    const T phi=t1phi[pos];
+
+	    Q[i]+=n0[i]*n0[j2]*(n0[j3]+1)*dkl*phi;
+	  }
+
+	//type II collisions
+	for(int pos=t2p2row[i];pos<t2p2row[i+1];pos++)
+	  {
+	    const int j2=t2p2col[pos];
+	    //const int k2=floor(j2/6);
+	    //const T dk32=_kspace.getkvol(k2).getdk3();
+	    const int j3=t2p3col[pos];
+	    //const int k3=floor(j3/6);
+	    //const T dk33=_kspace.getkvol(k3).getdk3();
+	    const T dkl=t2dkl[pos];
+	    const T phi=t2phi[pos];
+
+	    Q[i]+=0.5*n0[i]*(n0[j2]+1)*(n0[j3]+1)*phi*dkl;
+	  }
+      }
+    
+
+    const T preFac=Acell/16./3.141592653*hbarJoule*_maxPhi*_maxDkl;
+    for(int i=0;i<Rows;i++)
+      Q[i]*=preFac;
+
+
+    //Initialize P with constant terms
+
+    for(int i=0;i<Rows;i++)
+      {
+	if(Q[i]>0)
+	  P0[i]=C[i]/Q[i]*kbJoule*Tl;
+	else
+	  P0[i]=0.;
+	
+	P[i]=P0[i];
+      }
+
+    //Iterate to get Full Scattering answer
+    
+    for(int its=0;its<totIts;its++)
+      {
+
+	for(int i=0;i<Rows;i++)
+	  {
+	    T sum(0);
+	    for(int pos=t1p2row[i];pos<t1p2row[i+1];pos++)
+	      {
+		const int j2=t1p2col[pos];
+		const int j3=t1p3col[pos];
+		const T dkl=t1dkl[pos];
+		const T phi=t1phi[pos];
+
+		if(Q[i]>0)
+		  sum+=n0[i]*n0[j2]*(n0[j3]+1)*(P[j3]-P[j2])*phi*dkl*preFac/Q[i];
+	      }
+
+	    for(int pos=t2p2row[i];pos<t2p2row[i+1];pos++)
+	      {
+		const int j2=t2p2col[pos];
+		const int j3=t2p3col[pos];
+		const T dkl=t2dkl[pos];
+		const T phi=t2phi[pos];
+	    
+		if(Q[i]>0)
+		  sum+=0.5*n0[i]*(n0[j2]+1)*(n0[j3]+1)*(P[j3]+P[j2])*phi*dkl*preFac/Q[i];
+
+	      }
+
+	    P[i]=0.75*P[i]+0.25*(sum+P0[i]);
+
+	  }
+
+	T maxChange(0);
+	T minChange(10);
+	for(int i=0;i<Rows;i++)
+	  {
+	    T factor(1+P[i]*(1+n0[i])/kbJoule/Tl);
+	
+	    if(factor>maxChange)
+	      maxChange=factor;
+	    if(factor<minChange)
+	      minChange=factor;
+	  }
+
+	cout<<"Max Change: "<<maxChange<<"  Min Change: "<<minChange<<endl;
+
+      }
+
+    T maxChange(0);
+    T minChange(10);
+    for(int i=0;i<Rows;i++)
+      {
+	T factor(1+P[i]*(1+n0[i])/kbJoule/Tl);
+	T rel(0.1);
+	
+	newE[i]=n0[i]*(rel*(factor-1)+1);
+	
+	if(factor>maxChange)
+	  maxChange=factor;
+	if(factor<minChange)
+	  minChange=factor;
+      }
+
+    cout<<"Max Change: "<<maxChange<<"  Min Change: "<<minChange<<endl;
 
   }
 
