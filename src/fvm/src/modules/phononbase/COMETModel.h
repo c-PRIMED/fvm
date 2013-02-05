@@ -3379,17 +3379,7 @@ class COMETModel : public Model
 	    found=true;
 	  }
       }
-
-#ifdef FVM_PARALLEL
-    found=true;
-    int one=1;
-    double tempR=r;
-    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempR, one, MPI::DOUBLE, MPI::SUM);
-    r=tempR;
-#endif
-
-    if (!found)
-      throw CException("getHeatFluxIntegral: invalid faceGroupID");
+    
     return qptr;
   }
 
