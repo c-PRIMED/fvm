@@ -1,6 +1,7 @@
 # config file for MacOSX
 # Builds MEMOSA only
 # Requires 64-bit EPD distribution
+# http://www.enthought.com/products/epd.php
 
 MEMOSA:
 	Build=True
