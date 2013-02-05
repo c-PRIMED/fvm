@@ -14,6 +14,7 @@ PhononMacro::PhononMacro(const std::string baseName) :
   heatFlux(baseName + ".heatFlux"),
   lam(baseName + ".lam"),
   BranchTemperatures(),
+  BranchFlux(),
   CellColors(),
   zero(baseName + "zero"),
   one(baseName + "one")
@@ -24,6 +25,21 @@ Field& PhononMacro::getModeTemp(int mesh, int mode)
   FieldVectorMap::iterator it;
   it=BranchTemperatures.find(mesh);
   if(it!=BranchTemperatures.end())
+    {
+      FieldVector& FieldVec=*(it->second);
+      if(mode<FieldVec.size())
+	return *FieldVec[mode];
+      else
+	throw CException("Don't have Field for that mode!");
+    }
+  throw CException("Don't have FieldVector for that mesh!");
+}
+
+Field& PhononMacro::getModeFlux(int mesh, int mode)
+{
+  FieldVectorMap::iterator it;
+  it=BranchFlux.find(mesh);
+  if(it!=BranchFlux.end())
     {
       FieldVector& FieldVec=*(it->second);
       if(mode<FieldVec.size())

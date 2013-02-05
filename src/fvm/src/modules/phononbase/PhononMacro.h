@@ -27,6 +27,7 @@ struct PhononMacro
   Field heatFlux;
   Field lam;
   FieldVectorMap BranchTemperatures;
+  FieldVectorMap BranchFlux;
   FieldVector CellColors;
   FieldVector plottingCellColors;
 
@@ -34,6 +35,7 @@ struct PhononMacro
   Field one;                      //used to fill in density
 
   Field& getModeTemp(int mesh, int mode);
+  Field& getModeFlux(int mesh, int mode);
   Field& getColorField(int level);
   Field& getPlotColorField(int level);
 };
