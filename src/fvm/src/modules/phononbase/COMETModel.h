@@ -160,13 +160,16 @@ class COMETModel : public Model
 	 shared_ptr<TArray> TLcell(new TArray(numcells));
 	 shared_ptr<TArray> deltaTcell(new TArray(numcells));
 	 shared_ptr<VectorT3Array> lamArray(new VectorT3Array(numcells));
+	 shared_ptr<VectorT3Array> q(new VectorT3Array(numcells));
 	 lamTemp.zero();
+	 q->zero();
 	 *lamArray=lamTemp;
 	 *deltaTcell=0.;
 	 *TLcell=Tinit;
 	 _macro.temperature.addArray(cells,TLcell);
 	 _macro.deltaT.addArray(cells,deltaTcell);
 	 _macro.lam.addArray(cells,lamArray);
+	 _macro.heatFlux.addArray(cells,q);
 
 	 shared_ptr<IntArray> f2c(new IntArray(numcells));
 	 *f2c=-1;
@@ -205,9 +208,8 @@ class COMETModel : public Model
 		     /*
 		     if(m==0 && k==0)
 		       (*eArray)[cellIndex]=1.1*einit;
-		     else
-		     */
-		     
+		       else*/
+
 		     (*eArray)[cellIndex]=einit;
 		     (*e0Array)[cellIndex]=einit;
 		     (*ResidArray)[cellIndex]=0.;
@@ -2782,7 +2784,7 @@ class COMETModel : public Model
     for(int sweepNo=0;sweepNo<sweeps;sweepNo++)
       {
 	smooth(1);
-	smooth(-1);
+	//smooth(-1);
       }
     //applyTemperatureBoundaries();
   }
@@ -2836,7 +2838,7 @@ class COMETModel : public Model
 	    if(_level==0)
 	      {
 		CDisc.COMETSolveFull(dir,_level);
-		CDisc.COMETSolveFull(-dir,_level);
+		//CDisc.COMETSolveFull(-dir,_level);
 	      }
 	    else
 	      {
@@ -3276,6 +3278,9 @@ class COMETModel : public Model
     Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
     TArray& eArray=kspace.geteArray();
     const T DK3=kspace.getDK3();
+
+    const T hbar=6.582119e-16;  // (eV s)
+
     foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
         const FaceGroup& fg = *fgPtr;
@@ -3301,8 +3306,9 @@ class COMETModel : public Model
 		      {
 			VectorT3 vg=kv.getmode(m).getv();
 			T dk3=kv.getdk3();
+			T energy=hbar*kv.getmode(m).getomega();
 			const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
-			r += eArray[cellIndex]*vgdotAn*(dk3/DK3);
+			r += eArray[cellIndex]*vgdotAn*(dk3/DK3);//*energy;
 			cellIndex++;
 		      }
 		  }
@@ -3322,6 +3328,69 @@ class COMETModel : public Model
     if (!found)
       throw CException("getHeatFluxIntegral: invalid faceGroupID");
     return r*DK3;
+  }
+
+  ArrayBase* modewiseHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
+  {
+    bool found = false;
+    const int n=mesh.getID();
+    Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+    TArray& eArray=kspace.geteArray();
+    const T DK3=kspace.getDK3();
+    TArray* qptr(new TArray(kspace.gettotmodes()));
+    TArray& q(*qptr);
+    q.zero();
+
+    const T hbar=6.582119e-16;  // (eV s)
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+	  {
+	    const StorageSite& faces = fg.site;
+	    const int nFaces = faces.getCount();
+	    //const StorageSite& cells = mesh.getCells();
+	    const CRConnectivity& faceCells=mesh.getFaceCells(faces);
+	    const Field& areaField=_geomFields.area;
+	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	    
+	    for(int f=0; f<nFaces; f++)
+	      {
+		const VectorT3 An=faceArea[f];
+		const int c1=faceCells(f,1);
+		int cellIndex=kspace.getGlobalIndex(c1,0);
+		for(int k=0;k<kspace.getlength();k++)
+		  {
+		    Tkvol& kv=kspace.getkvol(k);
+		    int modenum=kv.getmodenum();
+		    for(int m=0;m<modenum;m++)
+		      {
+			VectorT3 vg=kv.getmode(m).getv();
+			const int index=kv.getmode(m).getIndex()-1;
+			T dk3=kv.getdk3();
+			T energy=hbar*kv.getmode(m).getomega();
+			const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
+			q[index]+= eArray[cellIndex]*vgdotAn*dk3;//*energy;
+			cellIndex++;
+		      }
+		  }
+	      }
+	    found=true;
+	  }
+      }
+
+#ifdef FVM_PARALLEL
+    found=true;
+    int one=1;
+    double tempR=r;
+    MPI::COMM_WORLD.Allreduce(MPI::IN_PLACE, &tempR, one, MPI::DOUBLE, MPI::SUM);
+    r=tempR;
+#endif
+
+    if (!found)
+      throw CException("getHeatFluxIntegral: invalid faceGroupID");
+    return qptr;
   }
 
   T getWallArea(const Mesh& mesh, const int faceGroupId)
@@ -3532,6 +3601,50 @@ class COMETModel : public Model
 
 	     for(int c=0;c<numcells;c++)
 	       modeTemp[c]=kspace.calcModeTemp(TL[c],eSum[c],m);
+	   }
+
+       }
+  }
+
+  void calcModeFlux()
+  {
+    const int numMeshes=_meshes.size();
+    const T eVtoJoule=1.60217646e-19;
+    for (int n=0;n<numMeshes;n++)
+       {
+	 Mesh& mesh=*_meshes[n];
+	 if(_MeshKspaceMap[n]==-1)
+	   throw CException("Have not set the Kspace for this Mesh!!");
+	 Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	 const int numK=kspace.getlength();
+	 const StorageSite& cells=mesh.getCells();
+	 const int numcells=cells.getCount();
+	 const int modeCount=kspace.getkvol(0).getmodenum();
+	 VectorT3Array& Q=dynamic_cast<VectorT3Array&>(_macro.heatFlux[cells]);
+
+	 FieldVector* FieldVecPtr=new FieldVector();
+	 for(int m=0;m<modeCount;m++)
+	   {
+	     shared_ptr<Field> modeField(new Field("mode"));
+	     VT3Ptr qptr(new VectorT3Array(numcells));
+	     VectorT3Array& q(*qptr);
+	     q.zero();
+	     modeField->addArray(cells,qptr);
+	     FieldVecPtr->push_back(modeField);
+	     _macro.BranchFlux[n]=FieldVecPtr;
+
+	     for(int c=0;c<numcells;c++)
+	       {
+		 for(int k=0;k<numK;k++)
+		   {
+		     Tmode& mode=kspace.getkvol(k).getmode(m);
+		     T dk3=kspace.getkvol(k).getdk3();
+		     const int index=mode.getIndex()-1;
+		     q[c]+=mode.getv()*dk3*kspace.gete(c,index)*eVtoJoule;
+		     Q[c]+=mode.getv()*dk3*kspace.gete(c,index)*eVtoJoule;
+		   }
+
+	       }
 	   }
 
        }
