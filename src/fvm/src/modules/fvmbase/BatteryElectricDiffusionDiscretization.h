@@ -70,17 +70,16 @@ template<class X, class Diag, class OffDiag>
    
 	  const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
 
-	  CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,
-									cVarIndex));    
+	  //CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));    
  
 	  const VectorT3Array& cellCentroid =
 	    dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
 	  const TArray& cellVolume =
 	    dynamic_cast<const TArray&>(_geomFields.volume[cells]);
  
-	  DiagArray& diag = matrix.getDiag();
+	  //DiagArray& diag = matrix.getDiag();
 
-	  const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]); // may not need here
+	  //const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]); // may not need here
 	  XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
       
 	  // lnspeciesConcentration variables
@@ -108,7 +107,7 @@ template<class X, class Diag, class OffDiag>
 		dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
 	      const VectorT3Array& faceCentroid =
 		dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
-	      CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
+	      //CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
 	      for(int f=0; f<nFaces; f++)
 		{
 		  const int c0 = faceCells(f,0);

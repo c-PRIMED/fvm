@@ -33,12 +33,20 @@ struct BatteryModelFields
   Field lnLithiumConcentration;
   Field lnLithiumConcentrationGradient;
   Field speciesGradient;  //  used temporarily for each species linearization
-  Field potentialAndSpecies;
-  Field potentialAndSpeciesN1;
-  Field potentialAndSpeciesN2;
-  Field potentialAndSpeciesFlux;
-  Field potentialAndSpeciesGradient;
-  Field potentialAndSpeciesDiffusivity;
+  Field temperature;
+  Field temperatureN1;
+  Field temperatureN2;
+  Field rhoCp;
+  Field heatFlux;
+  Field temperatureGradient;
+  Field thermalConductivity;
+  Field heatSource;
+  Field potentialSpeciesTemp;
+  Field potentialSpeciesTempN1;
+  Field potentialSpeciesTempN2;
+  Field potentialSpeciesTempFlux;
+  Field potentialSpeciesTempGradient;
+  Field potentialSpeciesTempDiffusivity;
 };
 
 #endif

@@ -58,6 +58,12 @@ public:
   // XGrad = Gradient<VectorT2>
   // GradArray = Array<Gradient<VectorT2>>
 
+  ///// ASSUMING ONLY ONE SPECIES AND TEMP INCLUDED, BELOW IS TRUE //////
+  // X = VectorT3
+  // XArray = VectorT3Array;
+  // XGrad = Gradient<VectorT3>
+  // GradArray = Array<Gradient<VectorT3>>
+
   typedef Gradient<T_Scalar> TGrad;
   
   BatteryPCDiffusionDiscretization(const MeshList& meshes,
@@ -108,8 +114,7 @@ public:
 	  dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);    
 	const TArray& faceAreaMag =
 	  dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
-	const VectorT3Array& faceCentroid =
-	  dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
+	//const VectorT3Array& faceCentroid = dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
 	CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
 	
 	int XLength = 0; 
@@ -161,7 +166,7 @@ public:
 
 	    //do things element-wise manually
 	    // Each 'v' below is on equation
-	    // first equation is potential, followed by species equation(s)
+	    // first equation is potential, followed by species equation, then thermal
 	    for(int v=0; v<XLength; v++)
 	      {
 		const T_Scalar diffCoeff = (faceDiffusivity[v])*diffMetric;

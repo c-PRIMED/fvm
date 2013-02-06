@@ -2,8 +2,8 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-#ifndef _LINEARIZEPCINTERFACE_BV_H_
-#define _LINEARIZEPCINTERFACE_BV_H_ 
+#ifndef _BATTERYLINEARIZESPECIESINTERFACE_H_
+#define _BATTERYLINEARIZESPECIESINTERFACE_H_ 
 
 #include "Mesh.h"
 #include "NumType.h"
@@ -21,7 +21,7 @@
 
 
 template<class X, class Diag, class OffDiag>
-  class LinearizePCInterface_BV
+  class BatteryLinearizeSpeciesInterface
 {
  public:
   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
@@ -33,20 +33,24 @@ template<class X, class Diag, class OffDiag>
   typedef Array<VectorT3> VectorT3Array;
  
 
- LinearizePCInterface_BV(const GeomFields& geomFields,
+ BatteryLinearizeSpeciesInterface(const GeomFields& geomFields,
 			   const T_Scalar RRConstant,
 			   const T_Scalar interfaceUnderRelax,
 			   const bool Anode,
 			   const bool Cathode,
-			   const bool bInterfaceHeatSource,
-			   Field& varField):
+			   Field& varField,
+			   Field& mFElectricModel,
+			   Field& elecPotentialField,
+			   Field& temperatureField):
     _geomFields(geomFields),
     _varField(varField),
+    _mFElectricModel(mFElectricModel),
+    _elecPotentialField(elecPotentialField),
+    _temperatureField(temperatureField),
     _RRConstant(RRConstant),
     _interfaceUnderRelax(interfaceUnderRelax),
     _Anode(Anode),
-    _Cathode(Cathode),
-    _bInterfaceHeatSource(bInterfaceHeatSource)
+    _Cathode(Cathode)
     {}
 
 
@@ -57,6 +61,10 @@ template<class X, class Diag, class OffDiag>
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getParentFaceGroupSite();
 
+    // previous timestep shell mesh info
+    const XArray& mFElecModel =
+      dynamic_cast<const XArray&>(_mFElectricModel[cells]);
+
     // shell mesh info
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex)); 
@@ -65,6 +73,16 @@ template<class X, class Diag, class OffDiag>
     XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
     DiagArray& diag = matrix.getDiag();
 
+    // shell mesh electrical potential values
+    const XArray& ePotCell =
+      dynamic_cast<const XArray&>(_elecPotentialField[cells]);
+
+    // shell mesh temperature values
+    const XArray& eTempCell =
+      dynamic_cast<const XArray&>(_temperatureField[cells]);
+
+
+    
     // In the following, parent is assumed to be the electrolyte, and 
     // the other mesh is assumed to be electrode when implimenting
     // the Butler-Volmer equations
@@ -99,10 +117,10 @@ template<class X, class Diag, class OffDiag>
     const T_Scalar alpha_a = 0.5;
     const T_Scalar alpha_c = 0.5;
     const T_Scalar R = 8.314; //  J/mol/K
-    const T_Scalar Peltier = 0.0;
 
     for (int f=0; f<faces.getCount(); f++)
       {
+	//get parent mesh fluxes and coeffs
 	int c0p = parentFaceCells(f,0);
 	int c1p = parentFaceCells(f,1);
 	if (c1p < parentCells.getSelfCount())
@@ -114,6 +132,11 @@ template<class X, class Diag, class OffDiag>
 	    c1p = temp;
 	  }
 
+	const X parentFlux = rParentCell[c1p]; // inward shell flux on the left
+	const OffDiag dRC0dXC3 = parentmatrix.getCoeff(c1p,  c0p);
+	const Diag dRC0dXC0 = parentdiag[c1p];
+
+	//get other mesh fluxes and coeffs
 	int c0o = otherFaceCells(f,0);
 	int c1o = otherFaceCells(f,1);
 	if (c1o < otherCells.getSelfCount())
@@ -125,12 +148,6 @@ template<class X, class Diag, class OffDiag>
 	    c1o = temp;
 	  }
 
-	//get parent mesh fluxes and coeffs
-	const X parentFlux = rParentCell[c1p]; // inward shell flux on the left
-	const OffDiag dRC0dXC3 = parentmatrix.getCoeff(c1p,  c0p);
-	const Diag dRC0dXC0 = parentdiag[c1p];
-
-	//get other mesh fluxes and coeffs
 	const X otherFlux = rOtherCell[c1o]; // inward shell flux on the right
 	const OffDiag dRC0dXC2 = othermatrix.getCoeff(c1o,  c0o);
 	const OffDiag dRC0dXC1 = otherdiag[c1o];
@@ -141,19 +158,21 @@ template<class X, class Diag, class OffDiag>
 	const int c1 = cellCells(f,0);
 	const int c2 = cellCells(f,1);
 	const int c3 = cellCells(f,2);
-	const T_Scalar Area = faceAreaMag[f];
 
-	T_Scalar cs_star = (xCell[c1])[1];
-	T_Scalar ce_star = (xCell[c0])[1];
-	const T_Scalar phis_star = (xCell[c1])[0];
-	const T_Scalar phie_star = (xCell[c0])[0];
+	const T_Scalar Temp = eTempCell[c0]; //  K, c0 and c1 should be same Temp at convergence
+	const T_Scalar C_a = alpha_a*F/R/Temp;
+	const T_Scalar C_c = alpha_c*F/R/Temp;
+	const T_Scalar Area = faceAreaMag[c0];
+
+	T_Scalar cs_star = xCell[c1];
+	T_Scalar ce_star = xCell[c0];
 
 	// avoid nans
 	if (cs_star < 0.0){ cout << "ERROR: Cs < 0, Cs=" << cs_star << endl; cs_star = 0.0;}
 	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 0.0;}
 	if (cs_star > csMax){ cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl; cs_star = csMax;}
 
-	const T_Scalar SOC =  cs_star/csMax;
+	const T_Scalar SOC =  mFElecModel[c1]/csMax;
 
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
@@ -171,28 +190,15 @@ template<class X, class Diag, class OffDiag>
 	    {U_ref = 5.0; cout << "U_ref > 5.0" << endl;}
 	    }
 
-	const T_Scalar eta_star = phis_star - phie_star - U_ref;
+	const T_Scalar eta_star = ePotCell[c1] - ePotCell[c0] - U_ref;
 
-	// decide which temperature to use.  c0 and c1 will have same temps at convergence, 
-	// but use the one that will add to diagonal dominance based on dI_dT
-	
-	int TempCell = c0;
-	const T_Scalar dR0_dT_HeatSourceSign = -1.0*(eta_star)*(eta_star+Peltier); 
-	if (dR0_dT_HeatSourceSign < 0.0)
-	  TempCell = c0;
-	else
-	  TempCell = c1;
+	//const T_Scalar eta_star = _A_coeff - _B_coeff - U_ref;
+	T_Scalar C_0 = exp(C_a*eta_star)-exp(-1.0*C_c*eta_star);
 
-	const T_Scalar Temp = (xCell[TempCell])[2]; //  K , c0 and c1 temps are equal at convergence
-	const T_Scalar C_a = alpha_a*F/R/Temp;
-	const T_Scalar C_c = alpha_c*F/R/Temp;
-
-	const T_Scalar C_0 = exp(C_a*eta_star)-exp(-1.0*C_c*eta_star);
-	const T_Scalar i0_star = k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
-	const T_Scalar i_star = C_0*i0_star;
+	const T_Scalar i_star = C_0*k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
 
 	// CURRENT SHOULD NOT BE ZERO
-	//if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
+	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
 
 	// calculate dC_0/dCS
 	T_Scalar dC_0dCS = 0.0;
@@ -207,131 +213,61 @@ template<class X, class Diag, class OffDiag>
 	  }
 
 	const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star)+ dC_0dCS/C_0);
+	
 	const T_Scalar dIdCE_star = i_star*alpha_c/ce_star;
 
-	const T_Scalar dIdPhiS_star = i0_star*(C_a*exp(C_a*eta_star)+C_c*exp(-1*C_c*eta_star));
-	const T_Scalar dIdPhiE_star = -1*i0_star*(C_a*exp(C_a*eta_star)+C_c*exp(-1*C_c*eta_star));
-
-	const T_Scalar dI_dT = -1*i0_star*F*eta_star/R/Temp/Temp*(alpha_a*exp(C_a*eta_star)+alpha_c*exp(C_c*eta_star));
-
 	// left(parent) shell cell - 3 neighbors
-	// flux balance for both equations
+	// flux balance
 	OffDiag& offdiagC0_C1 = matrix.getCoeff(c0,  c1);
 	OffDiag& offdiagC0_C2 = matrix.getCoeff(c0,  c2);
 	OffDiag& offdiagC0_C3 = matrix.getCoeff(c0,  c3);
 
-	rCell[c0] = otherFlux + parentFlux;
-	offdiagC0_C1 = dRC0dXC1;
-	offdiagC0_C3 = dRC0dXC3;
-	offdiagC0_C2 = dRC0dXC2;
-	diag[c0] = dRC0dXC0;
-
-	//Fix for species equations so that both shell cells 
-	//residuals and coeffs are on same order of magnitude	
-	(rCell[c0])[1] *= F;
-	(offdiagC0_C1)(1,1) *= F;
-	(offdiagC0_C3)(1,1) *= F;
-	(offdiagC0_C2)(1,1) *= F;
-	(diag[c0])(1,1) *= F;
-
-	//include interface heating if thermal model turned on
-	if (_bInterfaceHeatSource)
-	  {
-	    (rCell[c0])[2] += (eta_star + Peltier)*i_star;
-
-	    // heat source jacobian additions
-	    if (TempCell == c0)
-	      {
-		(diag[c0])(2,2) += (eta_star + Peltier)*dI_dT;
-	      }
-	    else
-	      {
-		(offdiagC0_C1)(2,2) += (eta_star + Peltier)*dI_dT;
-	      }
-
-	  }
-	
+	rCell[c0] = F*otherFlux + F*parentFlux;
+	offdiagC0_C1 = F*dRC0dXC1;
+	offdiagC0_C3 = F*dRC0dXC3;
+	offdiagC0_C2 = F*dRC0dXC2;
+	diag[c0] = F*dRC0dXC0;
 
 	// right(other) shell cell - 2 neighbors
 	// jump condition
 	OffDiag& offdiagC1_C0 = matrix.getCoeff(c1,  c0);
 	OffDiag& offdiagC1_C2 = matrix.getCoeff(c1,  c2);
 
-	////////////////////////
-	//       SPECIES      //
-	////////////////////////
-
-	(rCell[c1])[1] = F*otherFlux[1]  - i_star;
-	offdiagC1_C0(1,1) = -1*dIdCE_star;
-	offdiagC1_C2(1,1) = F*dRC0dXC2(1,1);
-
+	rCell[c1] = otherFlux*F - (i_star + dIdCS_star*(xCell[c1]-cs_star) + dIdCE_star*(xCell[c0]-ce_star));
+	offdiagC1_C0 = -1*dIdCE_star;
+	offdiagC1_C2 = F*dRC0dXC2;
 	//make sure diag is < 0
 	if (dIdCS_star > 0.0)
 	  {
-	    (diag[c1])(1,1) = F*dRC0dXC1(1,1) - dIdCS_star;
+	    diag[c1] = F*dRC0dXC1 - dIdCS_star;
 	  }
 	else
 	  { 
-	    (diag[c1])(1,1) = F*dRC0dXC1(1,1);
+	    diag[c1] = F*dRC0dXC1;
 	  }
-
-	////////////////////////
-	//      POTENTIAL     //
-	////////////////////////
-
-	(rCell[c1])[0] = otherFlux[0] - i_star;
-	offdiagC1_C0(0,0) = -1*dIdPhiE_star;
-	offdiagC1_C2(0,0) = dRC0dXC2(0,0);
-	(diag[c1])(0,0) = dRC0dXC1(0,0) - dIdPhiS_star;
-
-	//make sure diag is < 0
-	if ((diag[c1])(0,0) > 0.0)
-	  {
-	    cout << "Warning: Potential Diag > 0" << endl;
-	  }
-
-	////////////////////////
-	//      THERMAL       //
-	////////////////////////
-
-	(rCell[c1])[2] = (xCell[c0])[2] - (xCell[c1])[2];
-	offdiagC1_C0(2,2) = 1.0;
-	offdiagC1_C2(2,2) = 0.0;
-	(diag[c1])(2,2) = -1.0;
-
 
 	// set other coeffs to zero for right shell cell
 	OffDiag& offdiagC1_C3 = matrix.getCoeff(c1,  c3);
-	offdiagC1_C3 = NumTypeTraits<OffDiag>::getZero();
-
-
-	////////////////////////
-	//   POINT-COUPLED    //
-	////////////////////////
-
-	// Point-coupled inclusions(off diagonal terms in square tensors)
-	(diag[c1])(0,1) = -1*dIdCS_star;
-	(diag[c1])(1,0) = -1*dIdPhiS_star;
-	offdiagC1_C0(0,1) = -1*dIdCE_star;
-	offdiagC1_C0(1,0) = -1*dIdPhiE_star;
+	offdiagC1_C3 = 0.0;
 
 	// underrelax diagonal to help convergence
-	diag[c1] = 1.0/_interfaceUnderRelax*diag[c1];
+	diag[c1] = 1/_interfaceUnderRelax*diag[c1];
 
-	if (c0 == 0)
-	  {
+	// some output of prevailing or starred values - useful for testing
+	
+	/*if (c0 == 0){
+	  cout << "C_0: " << C_0 << endl;
+	  cout << "C_s: " << cs_star << " C_e: " << ce_star << " i: " << i_star << " dIdCs: " << dIdCS_star << " dIdCe: " << dIdCE_star << endl;
+	  cout <<"Diag: " << diag[c1] << " dRdXc2: " << offdiagC1_C2 << " dRdXc0: " << offdiagC1_C0 << endl;
+	  cout << " " << endl;
+	  }*/
 
-	    //cout << "OtherHeatFlux: " << otherFlux[2] << endl;
-	    //cout << "ParentHeatFlux: " << parentFlux[2] << endl;
-	    //cout << "SourceHeatFlux: " << (eta_star + Peltier)*i_star << endl;
-	    if (_Cathode)
-	      {
-		//cout << "UrefAnode: " << U_ref << endl;
-		cout << "Cs0: " << cs_star << endl;
-		//cout << "Diag: " << diag[c1] << endl;
-		//cout << "OffDiag: " << offdiagC1_C2 << endl;
-		//cout << "OffDiag: " << offdiagC1_C0 << endl;
-	      }
+	if (c0 == 0){
+	  if (_Cathode)
+	    {
+	      //cout << "UrefAnode: " << U_ref << endl;
+	      cout << "Cs0: " << cs_star << endl;
+	    }
 	  }
 
       }
@@ -341,11 +277,13 @@ template<class X, class Diag, class OffDiag>
   
   const GeomFields& _geomFields;
   Field& _varField;
+  Field& _mFElectricModel;
+  Field& _elecPotentialField;
+  Field& _temperatureField;
   const T_Scalar _RRConstant;
   const T_Scalar _interfaceUnderRelax;
   const bool _Anode;
   const bool _Cathode;
-  const bool _bInterfaceHeatSource;
   
 };
 

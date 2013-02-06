@@ -33,12 +33,14 @@ public:
                                Field& varField,
                                Field& varN1Field,
                                Field& varN2Field,
+			       Field& rhoCpField,
                                const T_Scalar dT) :
       Discretization(meshes),
       _geomFields(geomFields),
       _varField(varField),
       _varN1Field(varN1Field),
       _varN2Field(varN2Field),
+      _rhoCpField(rhoCpField),
       _dT(dT)
       {}
   
@@ -50,6 +52,8 @@ public:
 
     const TArray& cellVolume =
       dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+
+    const TArray& rhoCp = dynamic_cast<const TArray&>(_rhoCpField[cells]);
     
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
     CCMatrix& matrix =
@@ -145,12 +149,16 @@ public:
 	}
         else
 	{
-	  // only apply unsteady terms for species equation, not potential
+	  // only apply unsteady terms for species equation and temp, not potential
             for(int c=0; c<nCells; c++)
             {
-                const T_Scalar rhoVbydT = 1.0*cellVolume[c]/_dT;
-                (rCell[c])[1] -= rhoVbydT*((x[c])[1]- (xN1[c])[1]);
-		(diag[c])(1,1) -= rhoVbydT;
+                const T_Scalar rhoVbydT_species = 1.0*cellVolume[c]/_dT;
+                (rCell[c])[1] -= rhoVbydT_species*((x[c])[1]- (xN1[c])[1]);
+		(diag[c])(1,1) -= rhoVbydT_species;
+
+		const T_Scalar rhoVbydT_temp = rhoCp[c]*cellVolume[c]/_dT;
+                (rCell[c])[2] -= rhoVbydT_temp*((x[c])[2]- (xN1[c])[2]);
+		(diag[c])(2,2) -= rhoVbydT_temp;
 	
 	    }
 	   
@@ -166,6 +174,7 @@ private:
   const Field& _varField;
   const Field& _varN1Field;
   const Field& _varN2Field;
+  const Field& _rhoCpField;
   const T_Scalar _dT;
 };
 

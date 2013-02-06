@@ -24,6 +24,8 @@ public:
   typedef std::map<int,BatterySpeciesVC<T>*> BatterySpeciesVCMap;
   typedef std::map<int,BatteryPotentialBC<T>*> BatteryPotentialBCMap;
   typedef std::map<int,BatteryPotentialVC<T>*> BatteryPotentialVCMap;
+  typedef std::map<int,BatteryThermalBC<T>*> BatteryThermalBCMap;
+  typedef std::map<int,BatteryThermalVC<T>*> BatteryThermalVCMap;
 
   class Impl;
   
@@ -40,9 +42,10 @@ public:
   BatteryModelFields& getBatteryModelFields();
   BatterySpeciesBCMap& getSpeciesBCMap(const int speciesId);
   BatteryPotentialBCMap& getPotentialBCMap();
+  BatteryThermalBCMap& getThermalBCMap();
   BatterySpeciesVCMap& getSpeciesVCMap(const int speciesId);
   BatteryPotentialVCMap& getPotentialVCMap();
-
+  BatteryThermalVCMap& getThermalVCMap();
   
   //SpeciesBC<T>& getBC(const int id, const int speciesId);
 
@@ -50,9 +53,11 @@ public:
 
   T getMassFluxIntegral(const Mesh& mesh, const int faceGroupId, const int m);
   T getPotentialFluxIntegral(const Mesh& mesh, const int faceGroupId);
+  T getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
   T getAverageMassFraction(const Mesh& mesh, const int m);
   T getMassFractionResidual(const int speciesId);
   T getPotentialResidual();
+  T getThermalResidual();
   T getPCResidual(const int v);
   
   //void printBCs();
@@ -61,6 +66,7 @@ public:
   void recoverLastTimestep(); 
   void advanceSpecies(const int niter);
   void advancePotential(const int niter);
+  void advanceThermal(const int niter);
   void advanceCoupled(const int niter);
 
   void copySeparateToCoupled();

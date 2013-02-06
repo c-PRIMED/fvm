@@ -84,11 +84,11 @@ public:
     
     // the current value of flux and its Jacobians
     const T_Scalar fluxB = -(_r[c1])[v];
-    const T_Scalar dFluxdXC0 = -(_assembler.getCoeff10(f))(v,v);
+    //const T_Scalar dFluxdXC0 = -(_assembler.getCoeff10(f))(v,v);
     const OffDiag dFluxdXC0_orig = -_assembler.getCoeff10(f);
     const T_Scalar dFluxdXC1 = -(_dRdXDiag[c1])(v,v);
-    const T_Scalar dRC0dXC1 = (_assembler.getCoeff01(f))(v,v);
     OffDiag dRC0dXC1_orig = _assembler.getCoeff01(f);
+    const T_Scalar dRC0dXC1 = dRC0dXC1_orig(v,v);
     
     // since we know the boundary value, compute the boundary
     // x correction and it's contribution to the residual for c0; we

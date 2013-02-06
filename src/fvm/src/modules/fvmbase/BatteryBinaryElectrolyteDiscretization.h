@@ -1,5 +1,5 @@
-#ifndef _BATTERYPCELECTRICDIFFUSIONDISCRETIZATION_H_
-#define _BATTERYPCELECTRICDIFFUSIONDISCRETIZATION_H_
+#ifndef _BATTERYBINARYELECTROLYTEDISCRETIZATION_H_
+#define _BATTERYBINARYELECTROLYTEDISCRETIZATION_H_
 
 #include "CRMatrix.h"
 #include "Field.h"
@@ -19,11 +19,12 @@
   if (x0+x1 != NumTypeTraits<T>::getZero())
   return 2.0*x0*x1/sum;
   else
-  return sum;  }
+  return sum;
+  }
 */
   
 template<class X, class Diag, class OffDiag>
-  class BatteryPCElectricDiffusionDiscretization : public Discretization
+  class BatteryBinaryElectrolyteDiscretization : public Discretization
   {
   public:
 
@@ -40,15 +41,16 @@ template<class X, class Diag, class OffDiag>
     typedef Array<T_Scalar> TArray;
     typedef Vector<T_Scalar,3> VectorT3;
     typedef Array<VectorT3> VectorT3Array;
-    typedef Gradient<T_Scalar> TGrad;
-    typedef Array<TGrad> TGradArray;
+
+    typedef Array<XGrad> GradArray;
   
-  BatteryPCElectricDiffusionDiscretization(const MeshList& meshes,
+  BatteryBinaryElectrolyteDiscretization(const MeshList& meshes,
 					 const GeomFields& geomFields,
 					 Field& varField,
 					 const Field& diffusivityField,
 					 const Field& concField,
 					 const Field& concGradientField,
+					 const Field& tempField,
 					 const int ElectrolyteMeshID) :
     Discretization(meshes),
       _geomFields(geomFields),
@@ -56,6 +58,7 @@ template<class X, class Diag, class OffDiag>
       _diffusivityField(diffusivityField),
       _concField(concField),
       _concGradientField(concGradientField),
+      _tempField(tempField),
       _ElectrolyteMeshID(ElectrolyteMeshID)
       {}
 
@@ -78,19 +81,22 @@ template<class X, class Diag, class OffDiag>
  
 	  //DiagArray& diag = matrix.getDiag();
 
-	  const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]); // need for temp
+	  //const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]); // may not need here
 	  XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
       
 	  // lnspeciesConcentration variables
 	  const TArray& lnSpecConcCell = dynamic_cast<const TArray&>(_concField[cells]);
 
-	  const TGradArray& lnSpecConcGradCell =
-	    dynamic_cast<const TGradArray&>(_concGradientField[cells]);
+	  const GradArray& lnSpecConcGradCell =
+	    dynamic_cast<const GradArray&>(_concGradientField[cells]);
 
-	  const XArray& diffCell =
-	    dynamic_cast<const XArray&>(_diffusivityField[cells]);
+	  const TArray& diffCell =
+	    dynamic_cast<const TArray&>(_diffusivityField[cells]);
 
-	  //const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+	  const TArray& tempCell =
+	    dynamic_cast<const TArray&>(_tempField[cells]);
+
+	  const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
 
 
 	  foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
@@ -104,7 +110,8 @@ template<class X, class Diag, class OffDiag>
 		dynamic_cast<const VectorT3Array&>(_geomFields.area[faces]);    
 	      const TArray& faceAreaMag =
 		dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
-	      //const VectorT3Array& faceCentroid =dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
+	      const VectorT3Array& faceCentroid =
+		dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[faces]);
 	      //CCAssembler& assembler = matrix.getPairWiseAssembler(faceCells);
 	      for(int f=0; f<nFaces; f++)
 		{
@@ -117,7 +124,6 @@ template<class X, class Diag, class OffDiag>
 		  VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
 
 		  // for ib faces ignore the solid cell and use the face centroid for diff metric
-		  /*
 		  if (((ibType[c0] == Mesh::IBTYPE_FLUID)
 		       && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
 		      ((ibType[c1] == Mesh::IBTYPE_FLUID)
@@ -133,42 +139,44 @@ template<class X, class Diag, class OffDiag>
 			  vol0 = 0.;
 			  ds = cellCentroid[c1]-faceCentroid[f];
 			}
-			}*/
+		    }
         
 		  T_Scalar faceDiffusivity(1.0);
 		  if (vol0 == 0.)
-		    faceDiffusivity = (diffCell[c1])[0];
+		    faceDiffusivity = diffCell[c1];
 		  else if (vol1 == 0.)
-		    faceDiffusivity = (diffCell[c0])[0];
+		    faceDiffusivity = diffCell[c0];
 		  else
-		    faceDiffusivity = harmonicAverage((diffCell[c0])[0],(diffCell[c1])[0]);
+		    faceDiffusivity = harmonicAverage(diffCell[c0],diffCell[c1]);
 
-		  T_Scalar faceTemp(1.0);
+		  T_Scalar faceTemp(300.0);
 		  if (vol0 == 0.)
-		    faceTemp = (xCell[c1])[2];
+		    faceTemp = tempCell[c1];
 		  else if (vol1 == 0.)
-		    faceTemp = (xCell[c0])[2];
+		    faceTemp = tempCell[c0];
 		  else
-		    faceTemp = harmonicAverage((xCell[c0])[2],(xCell[c1])[2]);
+		    faceTemp = harmonicAverage(tempCell[c0],tempCell[c1]);
+		  
 
 		  //convert diffusivity for ln term in battery equation
 		  const T_Scalar transportNumber = 0.4;
 		  const T_Scalar R = 8.314;
-		  const T_Scalar F = 96485.0; 
+		  const T_Scalar F = 96485.0;
+		  	  
 		  faceDiffusivity = faceDiffusivity*(-2.0)*R*faceTemp/F*(1.0-transportNumber);
 	     
 		  const T_Scalar diffMetric = faceAreaMag[f]*faceAreaMag[f]/dot(faceArea[f],ds);
 		  const T_Scalar diffCoeff = faceDiffusivity*diffMetric;
 		  const VectorT3 secondaryCoeff = faceDiffusivity*(faceArea[f]-ds*diffMetric);
         
-		  const TGrad gradF = (lnSpecConcGradCell[c0]*vol0+lnSpecConcGradCell[c1]*vol1)/(vol0+vol1);
+		  const XGrad gradF = (lnSpecConcGradCell[c0]*vol0+lnSpecConcGradCell[c1]*vol1)/(vol0+vol1);
 
-		  const T_Scalar dFluxSecondary = gradF*secondaryCoeff;
+		  const X dFluxSecondary = gradF*secondaryCoeff;
 	
-		  const T_Scalar dFlux = diffCoeff*(lnSpecConcCell[c1]-lnSpecConcCell[c0]) + dFluxSecondary;
+		  const X dFlux = diffCoeff*(lnSpecConcCell[c1]-lnSpecConcCell[c0]) + dFluxSecondary;
 
-		  (rCell[c0])[0] += dFlux;
-		  (rCell[c1])[0] -= dFlux;
+		  rCell[c0] += dFlux;
+		  rCell[c1] -= dFlux;
 
 		  //assembler.getCoeff01(f) +=diffCoeff;
 		  //assembler.getCoeff10(f) +=diffCoeff;
@@ -196,6 +204,7 @@ template<class X, class Diag, class OffDiag>
     const Field& _diffusivityField; 
     const Field& _concField;
     const Field& _concGradientField;
+    const Field& _tempField;
     const int _ElectrolyteMeshID;
   };
 

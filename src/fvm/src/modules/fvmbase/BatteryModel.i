@@ -30,6 +30,18 @@ struct BatteryPotentialVC : public FloatVarDict<T>
 }; 
 
 template <class T>
+struct BatteryThermalBC : public FloatVarDict<T>
+{
+  string bcType;
+}; 
+
+template <class T>
+struct BatteryThermalVC : public FloatVarDict<T>
+{
+  string vcType;
+}; 
+
+template <class T>
 struct BatteryModelOptions : public FloatVarDict<T>
 {
   double relativeTolerance;
@@ -38,15 +50,19 @@ struct BatteryModelOptions : public FloatVarDict<T>
   double absoluteSpeciesTolerance;
   double relativePotentialTolerance;
   double absolutePotentialTolerance;
+  double relativeThermalTolerance;
+  double absoluteThermalTolerance;
   double relativePCTolerance;
   double absolutePCTolerance;
   LinearSolver *linearSolver;
   LinearSolver *linearSolverSpecies;
   LinearSolver *linearSolverPotential;
+  LinearSolver *linearSolverThermal;
   LinearSolver *linearSolverPC;
   bool useCentralDifference;
   bool transient;
   bool ButlerVolmer;
+  bool thermalModelPC;
   int timeDiscretizationOrder;
   int advanceVerbosity;
 }; 
@@ -65,6 +81,13 @@ struct BatteryModelOptions : public FloatVarDict<T>
 %template(BatteryPotentialBCsMap) std::map<int,BatteryPotentialBC< ATYPE_STR >* >;
 %template(BatteryPotentialVCList) std::vector<BatteryPotentialVC< ATYPE_STR >* >;
 %template(BatteryPotentialVCsMap) std::map<int,BatteryPotentialVC< ATYPE_STR >* >;
+
+%template(BatteryThermalBCA) BatteryThermalBC< ATYPE_STR >;
+%template(BatteryThermalVCA) BatteryThermalVC< ATYPE_STR >;
+%template(BatteryThermalBCList) std::vector<BatteryThermalBC< ATYPE_STR >* >;
+%template(BatteryThermalBCsMap) std::map<int,BatteryThermalBC< ATYPE_STR >* >;
+%template(BatteryThermalVCList) std::vector<BatteryThermalVC< ATYPE_STR >* >;
+%template(BatteryThermalVCsMap) std::map<int,BatteryThermalVC< ATYPE_STR >* >;
 
 %template(BatteryModelOptionsA) BatteryModelOptions< ATYPE_STR >;
 

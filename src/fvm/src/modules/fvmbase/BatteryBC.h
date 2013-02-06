@@ -51,6 +51,30 @@ struct BatteryPotentialVC : public FloatVarDict<T>
 };
 
 template<class T>
+struct BatteryThermalBC : public FloatVarDict<T>
+{
+  BatteryThermalBC()
+  {
+      this->defineVar("specifiedTemperature",T(300.0));
+      this->defineVar("specifiedHeatFlux",T(0.0));
+  }
+  string bcType;
+};
+
+template<class T>
+struct  BatteryThermalVC : public FloatVarDict<T>
+{
+   BatteryThermalVC()
+  {
+      this->defineVar("thermalConductivity",T(1.0));
+      this->defineVar("density", T(1.0));
+      this->defineVar("specificHeat", T(1.0));
+      this->defineVar("initialTemperature",T(300.0));   	
+  }
+  string vcType;
+};
+
+template<class T>
 struct BatteryModelOptions : public FloatVarDict<T>
 {
   BatteryModelOptions()
@@ -67,15 +91,19 @@ struct BatteryModelOptions : public FloatVarDict<T>
     this->absoluteSpeciesTolerance=1e-16;
     this->relativePotentialTolerance=1e-8;
     this->absolutePotentialTolerance=1e-16;
+    this->relativeThermalTolerance=1e-8;
+    this->absoluteThermalTolerance=1e-16;
     this->relativePCTolerance=1e-8;
     this->absolutePCTolerance=1e-16;
     this->linearSolver = 0;
     this->linearSolverSpecies = 0;
     this->linearSolverPotential = 0;
+    this->linearSolverThermal = 0;
     this->linearSolverPC = 0;
     this->useCentralDifference=false;
-    this->transient = false;
+    this->transient = true;
     this->ButlerVolmer = false;
+    this->thermalModelPC = true;
     this->timeDiscretizationOrder=1;
     this->advanceVerbosity=1;
   }
@@ -85,15 +113,19 @@ struct BatteryModelOptions : public FloatVarDict<T>
   double absoluteSpeciesTolerance;
   double relativePotentialTolerance;
   double absolutePotentialTolerance;
+  double relativeThermalTolerance;
+  double absoluteThermalTolerance;
   double relativePCTolerance;
   double absolutePCTolerance;
   bool useCentralDifference;
   LinearSolver *linearSolver;
   LinearSolver *linearSolverSpecies;
   LinearSolver *linearSolverPotential;
+  LinearSolver *linearSolverThermal;
   LinearSolver *linearSolverPC;
   bool transient;
   bool ButlerVolmer;
+  bool thermalModelPC;
   int timeDiscretizationOrder;
   int advanceVerbosity;
 
@@ -134,6 +166,19 @@ LinearSolver& getLinearSolverPotential()
         this->linearSolverPotential = ls;
     }
     return *this->linearSolverPotential ;
+  }
+
+LinearSolver& getLinearSolverThermal()
+  {
+    if (this->linearSolverThermal == 0)
+    {
+        LinearSolver* ls(new  AMG());
+        ls->relativeTolerance = 1e-1;
+        ls->nMaxIterations = 20;
+        ls->verbosity=0;
+        this->linearSolverThermal = ls;
+    }
+    return *this->linearSolverThermal ;
   }
 
 LinearSolver& getLinearSolverPC()
