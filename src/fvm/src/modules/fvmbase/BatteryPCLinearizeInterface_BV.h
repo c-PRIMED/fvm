@@ -2,8 +2,8 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
-#ifndef _LINEARIZEPCINTERFACE_BV_H_
-#define _LINEARIZEPCINTERFACE_BV_H_ 
+#ifndef _BATTERYPCLINEARIZEINTERFACE_BV_H_
+#define _BATTERYPCLINEARIZEINTERFACE_BV_H_
 
 #include "Mesh.h"
 #include "NumType.h"
@@ -21,7 +21,7 @@
 
 
 template<class X, class Diag, class OffDiag>
-  class LinearizePCInterface_BV
+  class BatteryPCLinearizeInterface_BV
 {
  public:
   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
@@ -33,7 +33,7 @@ template<class X, class Diag, class OffDiag>
   typedef Array<VectorT3> VectorT3Array;
  
 
- LinearizePCInterface_BV(const GeomFields& geomFields,
+ BatteryPCLinearizeInterface_BV(const GeomFields& geomFields,
 			   const T_Scalar RRConstant,
 			   const T_Scalar interfaceUnderRelax,
 			   const bool Anode,

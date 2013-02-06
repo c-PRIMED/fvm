@@ -1,5 +1,5 @@
-#ifndef _BATTERYPCELECTRICDIFFUSIONDISCRETIZATION_H_
-#define _BATTERYPCELECTRICDIFFUSIONDISCRETIZATION_H_
+#ifndef _BATTERYPCBINARYELECTROLYTEDISCRETIZATION_H_
+#define _BATTERYPCBINARYELECTROLYTEDISCRETIZATION_H_
 
 #include "CRMatrix.h"
 #include "Field.h"
@@ -23,7 +23,7 @@
 */
   
 template<class X, class Diag, class OffDiag>
-  class BatteryPCElectricDiffusionDiscretization : public Discretization
+  class BatteryPCBinaryElectrolyteDiscretization : public Discretization
   {
   public:
 
@@ -43,7 +43,7 @@ template<class X, class Diag, class OffDiag>
     typedef Gradient<T_Scalar> TGrad;
     typedef Array<TGrad> TGradArray;
   
-  BatteryPCElectricDiffusionDiscretization(const MeshList& meshes,
+  BatteryPCBinaryElectrolyteDiscretization(const MeshList& meshes,
 					 const GeomFields& geomFields,
 					 Field& varField,
 					 const Field& diffusivityField,

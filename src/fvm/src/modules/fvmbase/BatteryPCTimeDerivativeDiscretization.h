@@ -3,8 +3,8 @@
 // See LICENSE file for terms.
 
 
-#ifndef _BATTERYTIMEDERIVATIVEDISCRETIZATION_H_
-#define _BATTERYTIMEDERIVATIVEDISCRETIZATION_H_
+#ifndef _BATTERYPCTIMEDERIVATIVEDISCRETIZATION_H_
+#define _BATTERYPCTIMEDERIVATIVEDISCRETIZATION_H_
 
 #include "CRMatrix.h"
 #include "Field.h"
@@ -15,7 +15,7 @@
 #include "StorageSite.h"
 
 template<class X, class Diag, class OffDiag>
-class BatteryTimeDerivativeDiscretization : public Discretization
+class BatteryPCTimeDerivativeDiscretization : public Discretization
 {
 public:
   typedef typename NumTypeTraits<X>::T_Scalar T_Scalar;
@@ -28,7 +28,7 @@ public:
   typedef Array<T_Scalar> TArray;
   typedef Array<int> IntArray;
 
-  BatteryTimeDerivativeDiscretization(const MeshList& meshes,
+  BatteryPCTimeDerivativeDiscretization(const MeshList& meshes,
                                const GeomFields& geomFields,
                                Field& varField,
                                Field& varN1Field,

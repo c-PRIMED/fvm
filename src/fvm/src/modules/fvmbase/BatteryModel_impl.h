@@ -30,12 +30,12 @@
 #include "BatteryLinearizeSpeciesInterface.h"
 #include "BatteryLinearizePotentialInterface.h"
 #include "BatteryLinearizeThermalInterface.h"
-#include "LinearizePCInterface_BV.h"
+#include "BatteryPCLinearizeInterface_BV.h"
 #include "BatteryBinaryElectrolyteDiscretization.h"
 #include "BatteryPCDiffusionDiscretization.h"
 #include "BatteryPC_BCS.h"
-#include "BatteryTimeDerivativeDiscretization.h"
-#include "BatteryPCElectricDiffusionDiscretization.h"
+#include "BatteryPCTimeDerivativeDiscretization.h"
+#include "BatteryPCBinaryElectrolyteDiscretization.h"
 #include "BatteryPCHeatSourceDiscretization.h"
 
 template<class T>
@@ -1499,7 +1499,7 @@ void linearizePC(LinearSystem& ls)
 
     //discretize ln term (only affects electrolyte mesh of potential model)
     shared_ptr<Discretization>
-      bedd(new BatteryPCElectricDiffusionDiscretization<VectorT3,SquareTensorT3,SquareTensorT3>(_meshes,_geomFields,
+      bedd(new BatteryPCBinaryElectrolyteDiscretization<VectorT3,SquareTensorT3,SquareTensorT3>(_meshes,_geomFields,
 							     _batteryModelFields.potentialSpeciesTemp,
 							     _batteryModelFields.potentialSpeciesTempDiffusivity,
 							     _batteryModelFields.lnLithiumConcentration,
@@ -1510,7 +1510,7 @@ void linearizePC(LinearSystem& ls)
     if (_options.transient)
     {
         shared_ptr<Discretization>
-          td(new BatteryTimeDerivativeDiscretization<VectorT3,SquareTensorT3,SquareTensorT3>
+          td(new BatteryPCTimeDerivativeDiscretization<VectorT3,SquareTensorT3,SquareTensorT3>
              (_meshes,_geomFields,
               _batteryModelFields.potentialSpeciesTemp,
               _batteryModelFields.potentialSpeciesTempN1,
@@ -1562,7 +1562,7 @@ void linearizePC(LinearSystem& ls)
 		    Anode = true;
 		  }
 		
-		LinearizePCInterface_BV<VectorT3, SquareTensorT3, SquareTensorT3> lbv (_geomFields,
+		BatteryPCLinearizeInterface_BV<VectorT3, SquareTensorT3, SquareTensorT3> lbv (_geomFields,
 							_options["ButlerVolmerRRConstant"],
 							_options["interfaceSpeciesUnderRelax"],
 							Anode,
