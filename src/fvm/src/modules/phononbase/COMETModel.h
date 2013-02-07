@@ -3577,18 +3577,16 @@ class COMETModel : public Model
 	     eSum.zero();
 	     Field& modeField=*FieldVec[m];
 	     TArray& modeTemp=dynamic_cast<TArray&>(modeField[cells]);
-
-	     for(int k=0;k<numK;k++)
+	     for(int c=0;c<numcells;c++)
 	       {
-		 T dk3=kspace.getkvol(k).getdk3();
-		 Tmode& mode=kspace.getkvol(k).getmode(m);
-		 Field& eField=mode.getfield();
-		 TArray& eArray=dynamic_cast<TArray&>(eField[cells]);
-		 
-		 for(int c=0;c<numcells;c++)
-		   eSum[c]+=eArray[c]*dk3;
+		 for(int k=0;k<numK;k++)
+		   {
+		     T dk3=kspace.getkvol(k).getdk3();
+		     Tmode& mode=kspace.getkvol(k).getmode(m);
+		     const int index=mode.getIndex()-1;
+		     eSum[c]+=kspace.gete(c,index)*dk3;
+		   }
 	       }
-
 	     for(int c=0;c<numcells;c++)
 	       modeTemp[c]=kspace.calcModeTemp(TL[c],eSum[c],m);
 	   }

@@ -46,6 +46,7 @@ class COMETModel : public Model
   T getAverageTemperature();
   void makeNonEqTemp();
   void calcModeFlux();
+  void calcModeTemps();
 
  private:
   
