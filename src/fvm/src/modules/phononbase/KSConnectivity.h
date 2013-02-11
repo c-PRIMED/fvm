@@ -77,7 +77,7 @@ class KSConnectivity
   int getSelfNNZ() {return _selfNNZ;}
   int getOtherNNZ() {return _otherNNZ;}
 
-  void multiplySelf(const TArray& x, TArray& b) const
+  void multiplySelf(const TArray& x, TArray& b, const T scale) const
   {//b=this*x
     const int Arows=_selfSite.getSelfCount();
     b.zero();
@@ -88,14 +88,15 @@ class KSConnectivity
 	for(int i=0;i<Arows;i++)
 	  {
 	    for(int pos=row[i];pos<row[i+1];pos++)
-		b[i]+=x[col[pos]]*_SelfToSelfCoeffs[pos];
+	      b[i]+=(x[col[pos]]*_SelfToSelfCoeffs[pos])/scale;
+	    b[i]*=scale;
 	  }
       }
     else
       throw CException("Matrix size does not agree with vectors!");
   }
 
-  void multiplyOther(const TArray& x, TArray& b) const
+  void multiplyOther(const TArray& x, TArray& b, const T scale) const
   {//b=this*x
     const int Arows=_otherSite.getSelfCount();
     b.zero();
@@ -106,7 +107,8 @@ class KSConnectivity
 	    const IntArray& row=_SelfToOtherConn.getRow();
 	    const IntArray& col=_SelfToOtherConn.getCol();
 	    for(int pos=row[i];pos<row[i+1];pos++)
-	      b[i]+=x[col[pos]]*_SelfToOtherCoeffs[pos];
+	      b[i]+=(x[col[pos]]*_SelfToOtherCoeffs[pos])/scale;
+	    b[i]*=scale;
 	  }
       }
     else

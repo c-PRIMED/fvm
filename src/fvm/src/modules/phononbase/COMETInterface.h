@@ -79,6 +79,7 @@ class COMETInterface
     TArray& freqMids=dos0.getFreqMidsT();
     const T binNos=freqMids.getLength();
     const TArray& transArray01=kspace0.getTransArray(kspace1);
+    const TArray& transArray10=kspace1.getTransArray(kspace0);
 
     ic.clearConnections();
 
@@ -102,10 +103,10 @@ class COMETInterface
 	if((n[0]*from0toGhst[0]+n[1]*from0toGhst[1]+n[2]*from0toGhst[2])<0.)
 	  n*=-1.;
 
-	TL1=300.;
-	TL0=300.;
-	//findWallTemp(Mid0,cell0,cell0ghost,An,TL0);
-	//findWallTemp(Mid1,cell1,cell1ghost,-An,TL1);
+	//TL1=300.;
+	//TL0=300.;
+	findWallTemp(Mid0,cell0,cell0ghost,An,TL0);
+	findWallTemp(Mid1,cell1,cell1ghost,-An,TL1);
 	
 	TKConn* conn01=new TKConn(k0len+1,k1len+1);  //must include lattice connection (reason for +1)
 	TKConn* conn10=new TKConn(k1len+1,k0len+1);
@@ -127,7 +128,7 @@ class COMETInterface
 	    IntArray pos1other(k1kpts.getLength());
 	    const T t01=transArray01[binIndx];
 	    const T r01=1.-t01;
-	    const T t10=r01;
+	    const T t10=transArray10[binIndx];
 	    const T r10=1-t10;
 
 	    int out0(0);
@@ -233,7 +234,7 @@ class COMETInterface
 	    IntArray pos1other(k1kpts.getLength());
 	    const T t01=transArray01[binIndx];
 	    const T r01=1.-t01;
-	    const T t10=r01;
+	    const T t10=transArray10[binIndx];
 	    const T r10=1-t10;
 
 	    int out0(0);
@@ -590,6 +591,7 @@ class COMETInterface
 
       }
   }
+  
   /*
   void remakeDMMcoeffs(COMETIC<T>& ic)
   {
@@ -622,6 +624,7 @@ class COMETInterface
     TArray& freqMids=dos0.getFreqMidsT();
     const T binNos=freqMids.getLength();
     const TArray& transArray01=kspace0.getTransArray(kspace1);
+    const TArray& transArray10=kspace1.getTransArray(kspace0);
 
     for(int f=0;f<faceCount;f++)
       {
@@ -659,7 +662,7 @@ class COMETInterface
 	    
 	    const T t01=transArray01[binIndx];
 	    const T r01=1.-t01;
-	    const T t10=r01;
+	    const T t10=transArray10[binIndx];
 	    const T r10=1-t10;
 	    
 
@@ -668,7 +671,7 @@ class COMETInterface
 	    normal[0]=0.;
 	    normal[0]=0.;
 	    
-	    /*
+	    
 	    T eout0T0=dos0.sumOutgoing(normal,binIndx,(TL0+TL1)/2.);
 	    T eout1T0=dos1.sumOutgoing(-normal,binIndx,(TL0+TL1)/2.);
 	    const T t01=1./(1.+eout0T0/eout1T0);
@@ -676,8 +679,8 @@ class COMETInterface
 
 	    //T eout0T1=dos0.sumOutgoing(normal,binIndx,TL1);
 	    //T eout1T1=dos1.sumOutgoing(-normal,binIndx,TL1);
-	    const T t10=r01;//1./(1.+eout1T1/eout0T1);
-	    const T r10=1-t10;
+	    //const T t10=r01;//1./(1.+eout1T1/eout0T1);
+	    //const T r10=1-t10;
 	    
 
 	    T in0sum(0.);
@@ -811,8 +814,8 @@ class COMETInterface
 
       }
 
-  }
-*/
+      }*/
+
 
   void updateOtherGhost(const COMETIC<T>& ic, const int Mid0, const bool plusFAS)
   {//always going to be scattering the values of mesh with id0
@@ -835,7 +838,9 @@ class COMETInterface
     const Mesh& mesh0=*_meshes[Mid0];
     const Mesh& mesh1=*_meshes[Mid1];
     Tkspace& kspace0=*_KList[_MeshKspaceMap[Mid0]];
-    Tkspace& kspace1=*_KList[_MeshKspaceMap[Mid1]];    
+    Tkspace& kspace1=*_KList[_MeshKspaceMap[Mid1]];
+    const T DK30=kspace0.getDK3();
+    const T DK31=kspace1.getDK3();
     const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
     const StorageSite& faces1=mesh1.getFaceGroup(Fid1).site;
     const ScatterMap& CommMap01=faces0.getCommonMap();
@@ -867,12 +872,13 @@ class COMETInterface
 	makeValueArray(Mid0,cell0,vals0);
 	makeValueArray(Mid1,cell1,vals1);
 	
-	Kconn1.multiplyOther(vals0,transmitted);
-	Kconn1.multiplySelf(vals1,reflected);
+	Kconn1.multiplyOther(vals0,transmitted,DK30);
+	Kconn1.multiplySelf(vals1,reflected,DK31);
 	transmitted+=reflected;
 	if(plusFAS)
 	  kspace1.addFASint(cell1ghost,transmitted);
-	Distribute(Mid1,cell1ghost,transmitted);	
+	Distribute(Mid1,cell1ghost,transmitted);
+	
       }
   }
 
@@ -889,6 +895,8 @@ class COMETInterface
     const Mesh& mesh1=*_meshes[Mid1];
     Tkspace& kspace0=*_KList[_MeshKspaceMap[Mid0]];
     Tkspace& kspace1=*_KList[_MeshKspaceMap[Mid1]];    
+    const T DK30=kspace0.getDK3();
+    const T DK31=kspace1.getDK3();
     const StorageSite& faces0=mesh0.getFaceGroup(Fid0).site;
     const StorageSite& faces1=mesh1.getFaceGroup(Fid1).site;
     const ScatterMap& CommMap01=faces0.getCommonMap();
@@ -929,16 +937,16 @@ class COMETInterface
 	makeValueArray(Mid0,cell0ghost,currentSol0);
 	makeValueArray(Mid1,cell1ghost,currentSol1);
 	
-	Kconn1.multiplyOther(vals0,transmitted01);
-	Kconn1.multiplySelf(vals1,reflected10);
+	Kconn1.multiplyOther(vals0,transmitted01,DK30);
+	Kconn1.multiplySelf(vals1,reflected10,DK31);
 	transmitted01+=reflected10;
 	transmitted01-=currentSol1; //now transmitted01 is the residual
 	if(plusFAS)
 	  kspace1.addFASint(cell1ghost,transmitted01);
 	DistributeResid(Mid1,cell1ghost,transmitted01);
 
-	Kconn0.multiplyOther(vals1,transmitted10);
-	Kconn0.multiplySelf(vals0,reflected01);
+	Kconn0.multiplyOther(vals1,transmitted10,DK31);
+	Kconn0.multiplySelf(vals0,reflected01,DK30);
 	transmitted10+=reflected01;
 	transmitted10-=currentSol0; //now transmitted10 is the residual
 	if(plusFAS)
