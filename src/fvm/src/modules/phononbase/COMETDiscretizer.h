@@ -286,11 +286,11 @@ class COMETDiscretizer
 		
 		Resid=Bvec;
 		AMat.Solve(Bvec);
-		//AMat.SolveDiag(Bvec);
-		//AMat.SolveBotCol(Bvec);
 
 		Distribute(c,Bvec,Resid);
 		updatee0(c);
+		if(!_FaceToKSC.empty())
+		  correctInterface(c,Bvec);
 		NewtonIters++;
 		dt=fabs(Bvec[totalmodes]);
 	      }
@@ -348,8 +348,6 @@ class COMETDiscretizer
 		
 		Resid=Bvec;
 		AMat.Solve(Bvec);
-		//AMat.SolveDiag(Bvec);
-		//AMat.SolveBotCol(Bvec);
 
 		Distribute(c,Bvec,Resid);
 		dt=fabs(Bvec[totalmodes]);
@@ -834,8 +832,6 @@ class COMETDiscretizer
 	const int klen=_kspace.getlength();
 	
 	T flux;
-	T fluxX(0);
-	T fluxY(0);
 
 	for(int k=0;k<klen;k++)
 	  {
@@ -1044,7 +1040,7 @@ class COMETDiscretizer
 	    const int count=mode.getIndex();
 	    const T tau=_kspace.getTau(cellIndex);
 	    const T energy=mode.getomega()*hbar;
-	    coeff=(dk3/DK3)/tau*energy;
+	    coeff=(dk3/DK3)/tau;
 	    Amat->getElement(order,count)-=coeff;
 	    BVec[totalmodes]+=coeff*_eArray[cellIndex];
 	    BVec[totalmodes]-=coeff*_e0Array[cellIndex];
@@ -2026,6 +2022,7 @@ class COMETDiscretizer
   void correctInterface(const int cell0, TArray& Bvec)
   {
     const int klen=_kspace.gettotmodes();
+    const T DK3=_kspace.getDK3();
     TArray Correction(klen+1);
 
     const int neibcount=_cellFaces.getCount(cell0);
@@ -2042,7 +2039,7 @@ class COMETDiscretizer
 	    if(cell1==cell0)
 	      cell1=_faceCells(f,0);
 	    const TKConnectivity& TKC=*(_FaceToKSC.find(Fgid)->second)[f-offset];
-	    TKC.multiplySelf(Bvec,Correction);
+	    TKC.multiplySelf(Bvec,Correction,DK3);
 	    Bvec.zero();
 	    Distribute(cell1,Correction, Bvec);
 	  }
