@@ -107,6 +107,7 @@ class Kspace
 		_totvol+=dk3;
 	      }
 	  }
+	makeFreqArray();
       }
 
  Kspace():
@@ -617,7 +618,7 @@ class Kspace
 	  {
 	    Tmode& mode=kv.getmode(m);
 	    T energy=hbar*mode.getomega();
-	    de0taudT+=mode.calcde0dT(Tl)*dk3/_totvol/(*_Tau)[index]*energy;
+	    de0taudT+=mode.calcde0dT(Tl)*dk3/_totvol/(*_Tau)[index];
 	    index++;
 	  }
       }
