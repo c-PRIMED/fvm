@@ -2784,7 +2784,7 @@ class COMETModel : public Model
     for(int sweepNo=0;sweepNo<sweeps;sweepNo++)
       {
 	smooth(1);
-	//smooth(-1);
+	smooth(-1);
       }
     //applyTemperatureBoundaries();
   }
@@ -2888,7 +2888,7 @@ class COMETModel : public Model
       {
 	COMETIC<T>* icPtr=_IClist[ic];
 	//if(icPtr->InterfaceModel=="DMM" && _level==0)
-	//ComInt.remakeDMMcoeffs(*icPtr);
+	// ComInt.makeDMMcoeffs(*icPtr);
 	ComInt.updateResid(*icPtr,addFAS);
       }
 
@@ -3330,6 +3330,66 @@ class COMETModel : public Model
     return r*DK3;
   }
 
+  ArrayBase* binwiseHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
+  {
+    bool found = false;
+    const int n=mesh.getID();
+    Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+    DensityOfStates<T>& dos=*kspace.getDOSptr();
+    TArray& freqMids=dos.getFreqMidsT();
+    const T binNos=freqMids.getLength();
+    TArray& eArray=kspace.geteArray();
+    TArray* qptr(new TArray(binNos));
+    TArray& q(*qptr);
+    q.zero();
+
+    const T hbar=6.582119e-16;  // (eV s)
+
+    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+      {
+        const FaceGroup& fg = *fgPtr;
+        if (fg.id == faceGroupId)
+	  {
+	    const StorageSite& faces = fg.site;
+	    const int nFaces = faces.getCount();
+	    //const StorageSite& cells = mesh.getCells();
+	    const CRConnectivity& faceCells=mesh.getFaceCells(faces);
+	    const Field& areaField=_geomFields.area;
+	    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	    
+	    for(int f=0; f<nFaces; f++)
+	      {
+		const VectorT3 An=faceArea[f];
+		const int c1=faceCells(f,1);
+
+		for(int binIndx=0;binIndx<binNos;binIndx++)
+		  {
+		    IntArray& kpts=dos.getKIndices(binIndx);
+		    IntArray& mpts=dos.getMIndices(binIndx);
+
+		    for(int k=0;k<kpts.getLength();k++)
+		      {
+			Tkvol& kv=kspace.getkvol(kpts[k]);
+			T dk3=kv.getdk3();
+			Tmode& mode=kv.getmode(mpts[k]);
+			VectorT3 vg=mode.getv();
+			T vgdotAn=vg[0]*An[0]+vg[1]*An[1]+vg[2]*An[2];
+			const int index=mode.getIndex()-1;
+			int cellIndex=kspace.getGlobalIndex(c1,index);
+			q[binIndx]+= eArray[cellIndex]*vgdotAn*dk3;//*energy;
+			cellIndex++;
+		      }
+		  }
+	      }
+	    found=true;
+	  }
+      }
+
+    if (!found)
+      throw CException("getHeatFluxIntegral: invalid faceGroupID");
+    return qptr;
+  }
+
   ArrayBase* modewiseHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
   {
     bool found = false;
@@ -3609,6 +3669,7 @@ class COMETModel : public Model
 	 const int numcells=cells.getCount();
 	 const int modeCount=kspace.getkvol(0).getmodenum();
 	 VectorT3Array& Q=dynamic_cast<VectorT3Array&>(_macro.heatFlux[cells]);
+	 Q.zero();
 
 	 FieldVector* FieldVecPtr=new FieldVector();
 	 for(int m=0;m<modeCount;m++)
