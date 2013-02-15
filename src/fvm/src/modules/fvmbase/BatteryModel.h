@@ -55,6 +55,8 @@ public:
   T getPotentialFluxIntegral(const Mesh& mesh, const int faceGroupId);
   T getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
   T getAverageMassFraction(const Mesh& mesh, const int m);
+  T getFaceGroupArea(const Mesh& mesh, const int fgID);
+  T getMeshVolume(const Mesh& mesh);
   T getMassFractionResidual(const int speciesId);
   T getPotentialResidual();
   T getThermalResidual();

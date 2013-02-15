@@ -2223,6 +2223,40 @@ void copyPCDiffusivity()
       }
   }
 
+T getFaceGroupArea(const Mesh& mesh, const int fgID)
+ {
+   foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+     {
+       const FaceGroup& fg = *fgPtr;
+       if (fg.id == fgID)
+	 {
+	   const StorageSite& faces = fg.site;
+	   const int nFaces = faces.getCount();
+	   const TArray& faceAreaMag = dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
+	   T totalArea = 0.0;
+
+	   for(int f=0; f<nFaces; f++)
+	     {
+	       totalArea += faceAreaMag[f];
+	     }
+	   return totalArea;
+	 }
+     }
+   throw CException("getFaceGroupArea: No face group with given id");
+ }
+
+T getMeshVolume(const Mesh& mesh)
+  {
+    const StorageSite& cells = mesh.getCells();  
+    const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
+    T totalVolume = 0.0;
+    for(int c=0; c<cells.getSelfCount(); c++)
+      {
+	totalVolume += cellVolume[c];
+      }
+    return totalVolume;
+  }
+
 private:
   const MeshList _meshes;
   const GeomFields& _geomFields;
@@ -2424,3 +2458,18 @@ BatteryModel<T>::copySeparateToCoupled()
 {
   _impl->copySeparateToCoupled();
 }
+
+template<class T>
+T
+BatteryModel<T>::getFaceGroupArea(const Mesh& mesh, const int fgID)
+{
+  return _impl->getFaceGroupArea(mesh, fgID);
+}
+
+template<class T>
+T
+BatteryModel<T>::getMeshVolume(const Mesh& mesh)
+{
+  return _impl->getMeshVolume(mesh);
+}
+
