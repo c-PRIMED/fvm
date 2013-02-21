@@ -43,7 +43,7 @@ MEMOSA:
 	Build=True
 
 vitables:
-	Build=1
+	Build=0
 
 before:
 	module load mpi/openmpi-x86_64

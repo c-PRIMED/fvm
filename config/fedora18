@@ -1,5 +1,6 @@
-# config file for mmh.prism.nanohub.org
-# Linux, gcc, openmpi
+# config file for Fedora 18
+# Same as most Linux distros except for the MPM
+# configname and the 'module load' in the before section
 
 python:
 	#Build=True
@@ -10,7 +11,7 @@ python:
 
 # ipython - an improved command line for python, Not required.
 ipython:
-	Build=1
+	Build=0
 
 # not really used.
 Xdmf:
@@ -43,7 +44,7 @@ MEMOSA:
 	Build=1
 
 sphinx:
-	Build=1
+	Build=0
 
 before:
 	module load mpi/openmpi-x86_64
