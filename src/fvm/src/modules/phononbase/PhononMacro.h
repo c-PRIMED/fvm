@@ -28,6 +28,9 @@ struct PhononMacro
   Field lam;
   FieldVectorMap BranchTemperatures;
   FieldVectorMap BranchFlux;
+  FieldVectorMap BandTemperatures;
+  FieldVectorMap BandRelEnergy;
+  FieldVectorMap BandFlux;
   FieldVector CellColors;
   FieldVector plottingCellColors;
 
@@ -36,6 +39,9 @@ struct PhononMacro
 
   Field& getModeTemp(int mesh, int mode);
   Field& getModeFlux(int mesh, int mode);
+  Field& getBandTemp(int mesh, int band);
+  Field& getBandRelEnergy(int mesh, int band);
+  Field& getBandFlux(int mesh, int band);
   Field& getColorField(int level);
   Field& getPlotColorField(int level);
 };

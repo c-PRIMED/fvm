@@ -1011,6 +1011,37 @@ class Kspace
     return heatRate1;
   }
 
+  T calcBandTemp(const T guess, const T eSum, const IntArray& kpts, const IntArray& mpts)
+  {
+    T newguess(guess);
+    T deltaT=1.;
+    int iters=0;
+    if(kpts.getLength()>0)
+      {
+	while((deltaT>1e-6)&&(iters<10))
+	  {
+	    T e0sum(0);
+	    T de0sum(0);
+	    for(int i=0;i<kpts.getLength();i++)
+	      {
+		const int k=kpts[i];
+		const int m=mpts[i];
+		T dk3=getkvol(k).getdk3();
+		Tmode& mode=getkvol(k).getmode(m);
+		e0sum+=mode.calce0(newguess)*dk3;
+		de0sum+=mode.calcde0dT(newguess)*dk3;
+	      }
+	    deltaT=(e0sum-eSum)/de0sum;
+	    newguess-=deltaT;
+	    deltaT=fabs(deltaT)/newguess;
+	    iters++;
+	  }
+	return newguess;
+      }
+    else
+      return 0;
+  }
+
   T calcDiffuseE(Tkspace& kspace1, const Tvec& An, const T T0, const T T1)
   {
     T heatRate0(0.);

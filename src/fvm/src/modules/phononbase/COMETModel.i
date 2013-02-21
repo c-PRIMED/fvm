@@ -27,6 +27,7 @@ class COMETModel : public Model
   void updateTL();
   void advance(int);
   T HeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
+  T HeatFluxIntegralFace(const Mesh& mesh, const int f);
   ArrayBase* modewiseHeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
   T getWallArea(const Mesh& mesh, const int faceGroupId);
   VectorT3 getWallAreaVector(const Mesh& mesh, const int faceGroupId);
@@ -47,6 +48,10 @@ class COMETModel : public Model
   void makeNonEqTemp();
   void calcModeFlux();
   void calcModeTemps();
+  void calcBandTemps();
+  void calcBandRelEnergy();
+  void calcBandFlux();
+  ArrayBase* binwiseHeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
 
  private:
   

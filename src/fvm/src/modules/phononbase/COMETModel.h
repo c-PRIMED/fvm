@@ -1020,7 +1020,7 @@ class COMETModel : public Model
 		    if(_level>0 || _options.Convection=="FirstOrder")
 		      cbc.applyTemperatureWallCoarse(bTemperature);
 		    else
-		      cbc.applyTemperatureWallFine(bTemperature);
+		      cbc.applyTemperatureWallCoarse(bTemperature);
 
 		  }
 	      }
@@ -3330,6 +3330,55 @@ class COMETModel : public Model
     return r*DK3;
   }
 
+  T HeatFluxIntegralFace(const Mesh& mesh, const int f)
+  {
+    T r(0.);
+    bool found = false;
+    const int n=mesh.getID();
+    Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+    TArray& eArray=kspace.geteArray();
+    const T DK3=kspace.getDK3();
+
+    const T hbar=6.582119e-16;  // (eV s)
+    //const FaceGroupPtr fgPtr=mesh.getInteriorFaceGroup();
+
+    const FaceGroup& fg = mesh.getInteriorFaceGroup();
+
+    const StorageSite& faces = fg.site;
+    const int nFaces = faces.getCount();
+    //const StorageSite& cells = mesh.getCells();
+    const CRConnectivity& faceCells=mesh.getFaceCells(faces);
+    const Field& areaField=_geomFields.area;
+    const VectorT3Array& faceArea=dynamic_cast<const VectorT3Array&>(areaField[faces]);
+	    
+    
+    const VectorT3 An=faceArea[f];
+    const int c1=faceCells(f,1);
+    const int c0=faceCells(f,0);
+    int cellIndex=kspace.getGlobalIndex(c1,0);
+    int cellIndex0=kspace.getGlobalIndex(c0,0);
+    for(int k=0;k<kspace.getlength();k++)
+      {
+	Tkvol& kv=kspace.getkvol(k);
+	int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  {
+	    VectorT3 vg=kv.getmode(m).getv();
+	    T dk3=kv.getdk3();
+	    T energy=hbar*kv.getmode(m).getomega();
+	    const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
+	    if(vgdotAn>0)
+	      r += eArray[cellIndex0]*vgdotAn*(dk3/DK3);//*energy;
+	    else
+	      r += eArray[cellIndex]*vgdotAn*(dk3/DK3);
+	    cellIndex++;
+	    cellIndex0++;
+	  }
+      }
+      
+    return r*DK3;
+  }
+
   ArrayBase* binwiseHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
   {
     bool found = false;
@@ -3654,49 +3703,215 @@ class COMETModel : public Model
        }
   }
 
+  void calcBandTemps()
+  {
+    const int numMeshes=_meshes.size();
+    for (int n=0;n<numMeshes;n++)
+      {
+	Mesh& mesh=*_meshes[n];
+	if(_MeshKspaceMap[n]==-1)
+	  throw CException("Have not set the Kspace for this Mesh!!");
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	DensityOfStates<T>& dos=*kspace.getDOSptr();
+	const StorageSite& cells=mesh.getCells();
+	const TArray& TL=dynamic_cast<const TArray&>(_macro.temperature[cells]);
+	const int numcells=cells.getCount();
+	TArray eSum(numcells);
+	const int bandCount=dos.getFreqMidsT().getLength();
+
+	FieldVector* FieldVecPtr=new FieldVector();
+	_macro.BandTemperatures[n]=FieldVecPtr;
+	for(int b=0;b<bandCount;b++)
+	  {
+	    eSum.zero();
+	    shared_ptr<Field> bandField(new Field("bandTemp"));
+	    TArrptr Tptr(new TArray(numcells));
+	    bandField->addArray(cells,Tptr);
+	    FieldVecPtr->push_back(bandField);
+	    TArray& bandTemp=*Tptr;
+	    bandTemp.zero();
+	    IntArray& kpts=dos.getKIndices(b);
+	    IntArray& mpts=dos.getMIndices(b);
+	    for(int c=0;c<numcells;c++)
+	      {
+		for(int i=0;i<kpts.getLength();i++)
+		  {
+		    const int k=kpts[i];
+		    const int m=mpts[i];
+		    T dk3=kspace.getkvol(k).getdk3();
+		    Tmode& mode=kspace.getkvol(k).getmode(m);
+		    const int index=mode.getIndex()-1;
+		    eSum[c]+=kspace.gete(c,index)*dk3;
+		  }
+	      }
+	    for(int c=0;c<numcells;c++)
+	      bandTemp[c]=kspace.calcBandTemp(TL[c],eSum[c],kpts,mpts);
+	  }
+
+      }
+  }
+
+  void calcBandRelEnergy()
+  {
+    const int numMeshes=_meshes.size();
+    for (int n=0;n<numMeshes;n++)
+      {
+	Mesh& mesh=*_meshes[n];
+	if(_MeshKspaceMap[n]==-1)
+	  throw CException("Have not set the Kspace for this Mesh!!");
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	const T DK3=kspace.getDK3();
+	DensityOfStates<T>& dos=*kspace.getDOSptr();
+	const StorageSite& cells=mesh.getCells();
+	const int numcells=cells.getCount();
+	TArray eSum(numcells);
+	eSum.zero();
+	const int bandCount=dos.getFreqMidsT().getLength();
+	const int numK=kspace.getlength();
+	FieldVector* FieldVecPtr=new FieldVector();
+	_macro.BandRelEnergy[n]=FieldVecPtr;
+
+	for(int c=0;c<numcells;c++)
+	  {
+	    int index(0);
+	    for(int k=0;k<numK;k++)
+	      {
+		Tkvol& kv=kspace.getkvol(k);
+		T dk3=kv.getdk3();
+		const int numM=kv.getmodenum();
+		for(int m=0;m<numM;m++)
+		  {
+		    eSum[c]+=kspace.gete(c,index)*(dk3/DK3);
+		    index++;
+		  }
+	      }
+	  }
+
+	for(int b=0;b<bandCount;b++)
+	  {
+	    shared_ptr<Field> bandField(new Field("bandRelEnergy"));
+	    TArrptr Tptr(new TArray(numcells));
+	    bandField->addArray(cells,Tptr);
+	    FieldVecPtr->push_back(bandField);
+	    TArray& bandEn=*Tptr;
+	    bandEn.zero();
+	    IntArray& kpts=dos.getKIndices(b);
+	    IntArray& mpts=dos.getMIndices(b);
+	    for(int c=0;c<numcells;c++)
+	      {
+		T cellSum(0);
+		for(int i=0;i<kpts.getLength();i++)
+		  {
+		    const int k=kpts[i];
+		    const int m=mpts[i];
+		    T dk3=kspace.getkvol(k).getdk3();
+		    Tmode& mode=kspace.getkvol(k).getmode(m);
+		    const int index=mode.getIndex()-1;
+		    cellSum+=kspace.gete(c,index)*(dk3/DK3);
+		  }
+		bandEn[c]=cellSum/eSum[c];
+	      }
+	  }
+
+      }
+  }
+
   void calcModeFlux()
   {
     const int numMeshes=_meshes.size();
     const T eVtoJoule=1.60217646e-19;
     for (int n=0;n<numMeshes;n++)
-       {
-	 Mesh& mesh=*_meshes[n];
-	 if(_MeshKspaceMap[n]==-1)
-	   throw CException("Have not set the Kspace for this Mesh!!");
-	 Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
-	 const int numK=kspace.getlength();
-	 const StorageSite& cells=mesh.getCells();
-	 const int numcells=cells.getCount();
-	 const int modeCount=kspace.getkvol(0).getmodenum();
-	 VectorT3Array& Q=dynamic_cast<VectorT3Array&>(_macro.heatFlux[cells]);
-	 Q.zero();
+      {
+	Mesh& mesh=*_meshes[n];
+	if(_MeshKspaceMap[n]==-1)
+	  throw CException("Have not set the Kspace for this Mesh!!");
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	const int numK=kspace.getlength();
+	const StorageSite& cells=mesh.getCells();
+	const int numcells=cells.getCount();
+	const int modeCount=kspace.getkvol(0).getmodenum();
+	const T DK3=kspace.getDK3();
+	VectorT3Array& Q=dynamic_cast<VectorT3Array&>(_macro.heatFlux[cells]);
+	Q.zero();
 
-	 FieldVector* FieldVecPtr=new FieldVector();
-	 for(int m=0;m<modeCount;m++)
-	   {
-	     shared_ptr<Field> modeField(new Field("mode"));
-	     VT3Ptr qptr(new VectorT3Array(numcells));
-	     VectorT3Array& q(*qptr);
-	     q.zero();
-	     modeField->addArray(cells,qptr);
-	     FieldVecPtr->push_back(modeField);
-	     _macro.BranchFlux[n]=FieldVecPtr;
+	FieldVector* FieldVecPtr=new FieldVector();
+	_macro.BranchFlux[n]=FieldVecPtr;
+	for(int m=0;m<modeCount;m++)
+	  {
+	    shared_ptr<Field> modeField(new Field("mode"));
+	    VT3Ptr qptr(new VectorT3Array(numcells));
+	    VectorT3Array& q(*qptr);
+	    q.zero();
+	    modeField->addArray(cells,qptr);
+	    FieldVecPtr->push_back(modeField);
 
-	     for(int c=0;c<numcells;c++)
-	       {
-		 for(int k=0;k<numK;k++)
-		   {
-		     Tmode& mode=kspace.getkvol(k).getmode(m);
-		     T dk3=kspace.getkvol(k).getdk3();
-		     const int index=mode.getIndex()-1;
-		     q[c]+=mode.getv()*dk3*kspace.gete(c,index)*eVtoJoule;
-		     Q[c]+=mode.getv()*dk3*kspace.gete(c,index)*eVtoJoule;
-		   }
+	    for(int c=0;c<numcells;c++)
+	      {
+		for(int k=0;k<numK;k++)
+		  {
+		    Tmode& mode=kspace.getkvol(k).getmode(m);
+		    T dk3=kspace.getkvol(k).getdk3();
+		    const int index=mode.getIndex()-1;
+		    q[c]+=mode.getv()*(dk3/DK3)*kspace.gete(c,index)*eVtoJoule;
+		    Q[c]+=mode.getv()*(dk3/DK3)*kspace.gete(c,index)*eVtoJoule;
+		  }
 
-	       }
-	   }
+	      }
+	    for(int i=0;i<q.getLength();i++)
+	      q[i]*=DK3;
+	  }
+	for(int i=0;i<Q.getLength();i++)
+	  Q[i]*=DK3;
+      }
+  }
 
-       }
+  void calcBandFlux()
+  {
+    const int numMeshes=_meshes.size();
+    const T eVtoJoule=1.60217646e-19;
+    for (int n=0;n<numMeshes;n++)
+      {
+	Mesh& mesh=*_meshes[n];
+	if(_MeshKspaceMap[n]==-1)
+	  throw CException("Have not set the Kspace for this Mesh!!");
+	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
+	const int numK=kspace.getlength();
+	const StorageSite& cells=mesh.getCells();
+	const int numcells=cells.getCount();
+	const int modeCount=kspace.getkvol(0).getmodenum();
+	const T DK3=kspace.getDK3();
+	DensityOfStates<T>& dos=*kspace.getDOSptr();
+	const int bandCount=dos.getFreqMidsT().getLength();
+
+	FieldVector* FieldVecPtr=new FieldVector();
+	_macro.BandFlux[n]=FieldVecPtr;
+	for(int b=0;b<bandCount;b++)
+	  {
+	    shared_ptr<Field> bandField(new Field("BandFlux"));
+	    VT3Ptr qptr(new VectorT3Array(numcells));
+	    VectorT3Array& q(*qptr);
+	    q.zero();
+	    bandField->addArray(cells,qptr);
+	    FieldVecPtr->push_back(bandField);
+	    IntArray& kpts=dos.getKIndices(b);
+	    IntArray& mpts=dos.getMIndices(b);
+	    for(int c=0;c<numcells;c++)
+	      {
+		for(int i=0;i<kpts.getLength();i++)
+		  {
+		    const int k=kpts[i];
+		    const int m=mpts[i];
+		    Tmode& mode=kspace.getkvol(k).getmode(m);
+		    T dk3=kspace.getkvol(k).getdk3();
+		    const int index=mode.getIndex()-1;
+		    q[c]+=mode.getv()*(dk3/DK3)*kspace.gete(c,index)*eVtoJoule;
+		  }
+
+	      }
+	    for(int i=0;i<q.getLength();i++)
+	      q[i]*=DK3;
+	  }
+      }
   }
 
   T calcDomainStats()
