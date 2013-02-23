@@ -202,14 +202,14 @@ template<class X, class Diag, class OffDiag>
 
 	// calculate dC_0/dCS
 	T_Scalar dC_0dCS = 0.0;
-	
+	const T_Scalar dC0dEta = (C_a*exp(C_a*eta_star) + C_c*exp(-1*C_c*eta_star));
 	if (_Anode)
 	  {
-	    dC_0dCS = (C_a*exp(C_a*eta_star) + C_c*exp(-1*C_c*eta_star))*(-1.0)*(-20000.0*exp(-2000.0*SOC) - 3.96*exp(-3.0*SOC))*(1.0/csMax);
+	    dC_0dCS = dC0dEta*(-1.0)*(-20000.0*exp(-2000.0*SOC) - 3.96*exp(-3.0*SOC))*(1.0/csMax);
 	  }
 	if (_Cathode)
 	  {	 
-	    dC_0dCS = (C_a*exp(C_a*eta_star) + C_c*exp(-1*C_c*eta_star))*(-1.0)*(-0.0135664/pow((0.998432-SOC),1.49247) - 0.823297/pow(cosh(8.60942-14.5546*SOC),2.0) + 0.0595559*exp(-0.04738*pow(SOC,8.0))*pow(SOC,7.0) - 6859.94*exp(-40.0*SOC))*(1.0/csMax);
+	    dC_0dCS = dC0dEta*(-1.0)*(-0.0135664/pow((0.998432-SOC),1.49247) - 0.823297/pow(cosh(8.60942-14.5546*SOC),2.0) + 0.0595559*exp(-0.04738*pow(SOC,8.0))*pow(SOC,7.0) - 6859.94*exp(-40.0*SOC))*(1.0/csMax);
 	  }
 
 	const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star)+ dC_0dCS/C_0);

@@ -173,17 +173,7 @@ template<class X, class Diag, class OffDiag>
 
 	const T_Scalar eta_star = phis_star - phie_star - U_ref;
 
-	// decide which temperature to use.  c0 and c1 will have same temps at convergence, 
-	// but use the one that will add to diagonal dominance based on dI_dT
-	
-	int TempCell = c0;
-	const T_Scalar dR0_dT_HeatSourceSign = -1.0*(eta_star)*(eta_star+Peltier); 
-	if (dR0_dT_HeatSourceSign < 0.0)
-	  TempCell = c0;
-	else
-	  TempCell = c1;
-
-	const T_Scalar Temp = (xCell[TempCell])[2]; //  K , c0 and c1 temps are equal at convergence
+	const T_Scalar Temp = (xCell[c0])[2]; //  K , c0 and c1 temps are equal at convergence
 	const T_Scalar C_a = alpha_a*F/R/Temp;
 	const T_Scalar C_c = alpha_c*F/R/Temp;
 
@@ -192,18 +182,18 @@ template<class X, class Diag, class OffDiag>
 	const T_Scalar i_star = C_0*i0_star;
 
 	// CURRENT SHOULD NOT BE ZERO
-	//if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
+	//if (i_star < 1.0e-15){cout << "WARNING: current = 0" << endl;}
 
 	// calculate dC_0/dCS
 	T_Scalar dC_0dCS = 0.0;
-	
+       	const T_Scalar dC0dEta = (C_a*exp(C_a*eta_star) + C_c*exp(-1*C_c*eta_star));
 	if (_Anode)
 	  {
-	    dC_0dCS = (C_a*exp(C_a*eta_star) + C_c*exp(-1*C_c*eta_star))*(-1.0)*(-20000.0*exp(-2000.0*SOC) - 3.96*exp(-3.0*SOC))*(1.0/csMax);
+	    dC_0dCS = dC0dEta*(-1.0)*(-20000.0*exp(-2000.0*SOC) - 3.96*exp(-3.0*SOC))*(1.0/csMax);
 	  }
 	if (_Cathode)
 	  {	 
-	    dC_0dCS = (C_a*exp(C_a*eta_star) + C_c*exp(-1*C_c*eta_star))*(-1.0)*(-0.0135664/pow((0.998432-SOC),1.49247) - 0.823297/pow(cosh(8.60942-14.5546*SOC),2.0) + 0.0595559*exp(-0.04738*pow(SOC,8.0))*pow(SOC,7.0) - 6859.94*exp(-40.0*SOC))*(1.0/csMax);
+	    dC_0dCS = dC0dEta*(-1.0)*(-0.0135664/pow((0.998432-SOC),1.49247) - 0.823297/pow(cosh(8.60942-14.5546*SOC),2.0) + 0.0595559*exp(-0.04738*pow(SOC,8.0))*pow(SOC,7.0) - 6859.94*exp(-40.0*SOC))*(1.0/csMax);
 	  }
 
 	const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star)+ dC_0dCS/C_0);
@@ -212,10 +202,12 @@ template<class X, class Diag, class OffDiag>
 	const T_Scalar dIdPhiS_star = i0_star*(C_a*exp(C_a*eta_star)+C_c*exp(-1*C_c*eta_star));
 	const T_Scalar dIdPhiE_star = -1*i0_star*(C_a*exp(C_a*eta_star)+C_c*exp(-1*C_c*eta_star));
 
-	const T_Scalar dI_dT = -1*i0_star*F*eta_star/R/Temp/Temp*(alpha_a*exp(C_a*eta_star)+alpha_c*exp(C_c*eta_star));
+	const T_Scalar dIdTe_star = -0.5*i0_star*F*eta_star/R/Temp/Temp*(alpha_a*exp(C_a*eta_star)+alpha_c*exp(-1*C_c*eta_star));
+       	const T_Scalar dIdTs_star = -0.5*i0_star*F*eta_star/R/Temp/Temp*(alpha_a*exp(C_a*eta_star)+alpha_c*exp(-1*C_c*eta_star));
+
 
 	// left(parent) shell cell - 3 neighbors
-	// flux balance for both equations
+	// flux balance for all equations
 	OffDiag& offdiagC0_C1 = matrix.getCoeff(c0,  c1);
 	OffDiag& offdiagC0_C2 = matrix.getCoeff(c0,  c2);
 	OffDiag& offdiagC0_C3 = matrix.getCoeff(c0,  c3);
@@ -228,6 +220,7 @@ template<class X, class Diag, class OffDiag>
 
 	//Fix for species equations so that both shell cells 
 	//residuals and coeffs are on same order of magnitude	
+	
 	(rCell[c0])[1] *= F;
 	(offdiagC0_C1)(1,1) *= F;
 	(offdiagC0_C3)(1,1) *= F;
@@ -237,20 +230,21 @@ template<class X, class Diag, class OffDiag>
 	//include interface heating if thermal model turned on
 	if (_bInterfaceHeatSource)
 	  {
-	    (rCell[c0])[2] += (eta_star + Peltier)*i_star;
-
-	    // heat source jacobian additions
-	    if (TempCell == c0)
-	      {
-		(diag[c0])(2,2) += (eta_star + Peltier)*dI_dT;
-	      }
-	    else
-	      {
-		(offdiagC0_C1)(2,2) += (eta_star + Peltier)*dI_dT;
-	      }
-
+	    (rCell[c0])[2] += (eta_star + Peltier)*i_star; // in Watts
+	    (diag[c0])(2,2) += (eta_star + Peltier)*dIdTe_star;
+	    (offdiagC0_C1)(2,2) += (eta_star + Peltier)*dIdTs_star;	    
 	  }
 	
+	// Point-coupled inclusions(off diagonal terms in square tensors)
+	// Cell c0
+	if (_bInterfaceHeatSource)
+	  { 
+	    (diag[c0])(2,0) = (eta_star + Peltier)*dIdPhiE_star - i_star; 
+	    (diag[c0])(2,1) = (eta_star + Peltier)*dIdCE_star; 
+	    (offdiagC0_C1)(2,0) = i_star + (eta_star + Peltier)*dIdPhiS_star;
+	    (offdiagC0_C1)(2,1) = i_star*dC_0dCS/dC0dEta + (eta_star + Peltier)*dIdCS_star;
+	  }
+
 
 	// right(other) shell cell - 2 neighbors
 	// jump condition
@@ -294,26 +288,30 @@ template<class X, class Diag, class OffDiag>
 	//      THERMAL       //
 	////////////////////////
 
-	(rCell[c1])[2] = (xCell[c0])[2] - (xCell[c1])[2];
-	offdiagC1_C0(2,2) = 1.0;
+	const T_Scalar Factor = 1.0e-12;
+	(rCell[c1])[2] = Factor*((xCell[c0])[2] - (xCell[c1])[2]);
+	offdiagC1_C0(2,2) = Factor;
 	offdiagC1_C2(2,2) = 0.0;
-	(diag[c1])(2,2) = -1.0;
-
-
-	// set other coeffs to zero for right shell cell
-	OffDiag& offdiagC1_C3 = matrix.getCoeff(c1,  c3);
-	offdiagC1_C3 = NumTypeTraits<OffDiag>::getZero();
-
-
-	////////////////////////
-	//   POINT-COUPLED    //
-	////////////////////////
+	(diag[c1])(2,2) = -1.0*Factor;
 
 	// Point-coupled inclusions(off diagonal terms in square tensors)
+	// Cell c1
 	(diag[c1])(0,1) = -1*dIdCS_star;
 	(diag[c1])(1,0) = -1*dIdPhiS_star;
 	offdiagC1_C0(0,1) = -1*dIdCE_star;
 	offdiagC1_C0(1,0) = -1*dIdPhiE_star;
+	
+	if (_bInterfaceHeatSource)
+	  {	   
+	    (diag[c1])(0,2) = -1*dIdTs_star;	    
+	    (diag[c1])(1,2) = -1*dIdTs_star;
+	    offdiagC1_C0(0,2) = -1*dIdTe_star;
+	    offdiagC1_C0(1,2) = -1*dIdTe_star;
+	  }
+	
+	// set other coeffs to zero for right shell cell
+	OffDiag& offdiagC1_C3 = matrix.getCoeff(c1,  c3);
+	offdiagC1_C3 = NumTypeTraits<OffDiag>::getZero();
 
 	// underrelax diagonal to help convergence
 	diag[c1] = 1.0/_interfaceUnderRelax*diag[c1];
@@ -330,7 +328,69 @@ template<class X, class Diag, class OffDiag>
 		cout << "Cs0: " << cs_star << endl;
 		//cout << "Diag: " << diag[c1] << endl;
 		//cout << "OffDiag: " << offdiagC1_C2 << endl;
-		//cout << "OffDiag: " << offdiagC1_C0 << endl;
+
+		/*
+		cout << " " << endl;
+		cout << "OffDiag_C1C0: " << offdiagC1_C0(0,0) << " " << offdiagC1_C0(0,1) << " " << offdiagC1_C0(0,2) << endl;
+		cout << "OffDiag_C1C0: " << offdiagC1_C0(1,0) << " " << offdiagC1_C0(1,1) << " " << offdiagC1_C0(1,2) << endl;
+		cout << "OffDiag_C1C0: " << offdiagC1_C0(2,0) << " " << offdiagC1_C0(2,1) << " " << offdiagC1_C0(2,2) << endl;
+		cout << " " << endl;
+		cout << "OffDiag_C0C1: " << offdiagC0_C1(0,0) << " " << offdiagC0_C1(0,1) << " " << offdiagC0_C1(0,2) << endl;
+		cout << "OffDiag_C0C1: " << offdiagC0_C1(1,0) << " " << offdiagC0_C1(1,1) << " " << offdiagC0_C1(1,2) << endl;
+		cout << "OffDiag_C0C1: " << offdiagC0_C1(2,0) << " " << offdiagC0_C1(2,1) << " " << offdiagC0_C1(2,2) << endl;
+		cout << " " << endl;
+		cout << "Diag_C0: " << (diag[c0])(0,0) << " " << (diag[c0])(0,1) << " " << (diag[c0])(0,2) << endl;
+		cout << "Diag_C0: " << (diag[c0])(1,0) << " " << (diag[c0])(1,1) << " " << (diag[c0])(1,2) << endl;
+		cout << "Diag_C0: " << (diag[c0])(2,0) << " " << (diag[c0])(2,1) << " " << (diag[c0])(2,2) << endl;
+		cout << " " << endl;
+		cout << "Diag_C1: " << (diag[c1])(0,0) << " " << (diag[c1])(0,1) << " " << (diag[c1])(0,2) << endl;
+		cout << "Diag_C1: " << (diag[c1])(1,0) << " " << (diag[c1])(1,1) << " " << (diag[c1])(1,2) << endl;
+		cout << "Diag_C1: " << (diag[c1])(2,0) << " " << (diag[c1])(2,1) << " " << (diag[c1])(2,2) << endl;
+		cout << " " << endl;
+		cout << "Residual_C0: " << (rCell[c0])[0] << endl;
+		cout << "Residual_C0: " << (rCell[c0])[1] << endl;
+		cout << "Residual_C0: " << (rCell[c0])[2] << endl;
+		cout << " " << endl;
+		cout << "Residual_C1: " << (rCell[c1])[0] << endl;
+		cout << "Residual_C1: " << (rCell[c1])[1] << endl;
+		cout << "Residual_C1: " << (rCell[c1])[2] << endl;
+		cout << " " << endl;
+		*/
+	      }
+	    if (_Anode)
+	      {
+		//cout << "UrefAnode: " << U_ref << endl;
+		//cout << "Cs0: " << cs_star << endl;
+		//cout << "Diag: " << diag[c1] << endl;
+		//cout << "OffDiag: " << offdiagC1_C2 << endl;
+
+		/*
+		cout << " " << endl;
+		cout << "OffDiag_C1C0: " << offdiagC1_C0(0,0) << " " << offdiagC1_C0(0,1) << " " << offdiagC1_C0(0,2) << endl;
+		cout << "OffDiag_C1C0: " << offdiagC1_C0(1,0) << " " << offdiagC1_C0(1,1) << " " << offdiagC1_C0(1,2) << endl;
+		cout << "OffDiag_C1C0: " << offdiagC1_C0(2,0) << " " << offdiagC1_C0(2,1) << " " << offdiagC1_C0(2,2) << endl;
+		cout << " " << endl;
+		cout << "OffDiag_C0C1: " << offdiagC0_C1(0,0) << " " << offdiagC0_C1(0,1) << " " << offdiagC0_C1(0,2) << endl;
+		cout << "OffDiag_C0C1: " << offdiagC0_C1(1,0) << " " << offdiagC0_C1(1,1) << " " << offdiagC0_C1(1,2) << endl;
+		cout << "OffDiag_C0C1: " << offdiagC0_C1(2,0) << " " << offdiagC0_C1(2,1) << " " << offdiagC0_C1(2,2) << endl;
+		cout << " " << endl;
+		cout << "Diag_C0: " << (diag[c0])(0,0) << " " << (diag[c0])(0,1) << " " << (diag[c0])(0,2) << endl;
+		cout << "Diag_C0: " << (diag[c0])(1,0) << " " << (diag[c0])(1,1) << " " << (diag[c0])(1,2) << endl;
+		cout << "Diag_C0: " << (diag[c0])(2,0) << " " << (diag[c0])(2,1) << " " << (diag[c0])(2,2) << endl;
+		cout << " " << endl;
+		cout << "Diag_C1: " << (diag[c1])(0,0) << " " << (diag[c1])(0,1) << " " << (diag[c1])(0,2) << endl;
+		cout << "Diag_C1: " << (diag[c1])(1,0) << " " << (diag[c1])(1,1) << " " << (diag[c1])(1,2) << endl;
+		cout << "Diag_C1: " << (diag[c1])(2,0) << " " << (diag[c1])(2,1) << " " << (diag[c1])(2,2) << endl;
+		cout << " " << endl;
+		cout << "Residual_C0: " << (rCell[c0])[0] << endl;
+		cout << "Residual_C0: " << (rCell[c0])[1] << endl;
+		cout << "Residual_C0: " << (rCell[c0])[2] << endl;
+		cout << " " << endl;
+		cout << "Residual_C1: " << (rCell[c1])[0] << endl;
+		cout << "Residual_C1: " << (rCell[c1])[1] << endl;
+		cout << "Residual_C1: " << (rCell[c1])[2] << endl;
+		cout << " " << endl;*/
+		
 	      }
 	  }
 

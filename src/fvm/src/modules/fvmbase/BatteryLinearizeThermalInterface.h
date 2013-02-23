@@ -180,23 +180,27 @@ template<class X, class Diag, class OffDiag>
 	const T_Scalar Phie_star = ePotentialCell[c0];
 	const T_Scalar eta_star = Phis_star-Phie_star-U_ref;
 
-	// decide which temperature to use.  c0 and c1 will have same temps at convergence, 
-	// but use the one that will add to diagonal dominance based on dI_dT
-	
-	int TempCell = c0;
-	const T_Scalar dR0_dT_HeatSourceSign = -1.0*(eta_star)*(eta_star+Peltier); 
-	if (dR0_dT_HeatSourceSign < 0.0)
-	  TempCell = c0;
-	else
-	  TempCell = c1;
-
-	const T_Scalar Temp = xCell[TempCell]; //  K , c0 and c1 temps are equal at convergence
+	const T_Scalar Temp = xCell[c0]; //  K , c0 and c1 temps are equal at convergence
 	const T_Scalar C_a = alpha_a*F/R/Temp;
 	const T_Scalar C_c = alpha_c*F/R/Temp;
 
 	const T_Scalar i0_star = k*F*Area*pow(Ce_star,alpha_c)*pow((csMax-Cs_star),alpha_a)*pow(Cs_star,alpha_c);
 	const T_Scalar i_star = i0_star*(exp(C_a*eta_star)-exp(-1*C_c*eta_star));
-	const T_Scalar dI_dT = -1*i0_star*F*eta_star/R/Temp/Temp*(alpha_a*exp(C_a*eta_star)+alpha_c*exp(C_c*eta_star));
+
+
+	// decide which temperature to use.  c0 and c1 will have same temps at convergence, 
+	// but use the one that will add to diagonal dominance based on dI_dT	
+	const T_Scalar dR0_dT_HeatSourceSign = -1.0*(eta_star)*(eta_star+Peltier); 
+	T_Scalar dI_dTe = 0.0;
+	T_Scalar dI_dTs = 0.0;
+	if (dR0_dT_HeatSourceSign < 0.0)
+	  {
+	    dI_dTe = -1.0*i0_star*F*eta_star/R/Temp/Temp*(alpha_a*exp(C_a*eta_star)+alpha_c*exp(-1.0*C_c*eta_star));
+	  }
+	else
+	  {
+	    dI_dTs = -1.0*i0_star*F*eta_star/R/Temp/Temp*(alpha_a*exp(C_a*eta_star)+alpha_c*exp(-1.0*C_c*eta_star));
+	  }
 
 	// left(parent) shell cell - 3 neighbors
 	// flux balance
@@ -213,14 +217,8 @@ template<class X, class Diag, class OffDiag>
 	offdiagC0_C1 = dRC0dXC1;
 	
 	// heat source jacobian additions
-	if (TempCell == c0)
-	  {
-	    diag[c0] += (eta_star + Peltier)*dI_dT;
-	  }
-	else
-	  {
-	    offdiagC0_C1 += (eta_star + Peltier)*dI_dT;
-	  }
+	diag[c0] += (eta_star + Peltier)*dI_dTe;
+	offdiagC0_C1 += (eta_star + Peltier)*dI_dTs;
 
 	// right(other) shell cell - 1 neighbor
 	// temperature continuity

@@ -86,7 +86,8 @@ public:
             _pbcMap[fg.id] = pbc;
             if (fg.groupType == "wall") 
 	      {
-                pbc->bcType = "SpecifiedPotential";
+                //pbc->bcType = "SpecifiedPotential";
+		pbc->bcType = "Symmetry";
 	      }
 	    else if (fg.groupType == "symmetry") 
 	      {
@@ -115,7 +116,8 @@ public:
             if ((fg.groupType == "wall") ||
                 (fg.groupType == "symmetry"))
             {
-                tbc->bcType = "SpecifiedHeatFlux";
+	      //tbc->bcType = "SpecifiedHeatFlux";
+	      tbc->bcType = "Symmetry";
             }
             else if ((fg.groupType == "velocity-inlet") ||
                      (fg.groupType == "pressure-outlet"))
@@ -159,7 +161,8 @@ public:
             if ((fg.groupType == "wall") ||
                 (fg.groupType == "symmetry"))
             {
-                sbc->bcType = "SpecifiedMassFlux";
+	      //sbc->bcType = "SpecifiedMassFlux";
+	      sbc->bcType = "Symmetry";
             }
             else
               throw CException("SpeciesModel: unknown face group type "
@@ -1520,7 +1523,7 @@ void linearizePC(LinearSystem& ls)
         
         discretizations.push_back(td);
 	}
-
+    
     if (_options.thermalModelPC)
     {
         shared_ptr<Discretization>
@@ -1531,7 +1534,7 @@ void linearizePC(LinearSystem& ls)
         
         discretizations.push_back(sd);
 	}
-
+    
     Linearizer linearizer;
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
@@ -2234,15 +2237,43 @@ T getFaceGroupArea(const Mesh& mesh, const int fgID)
 	   const int nFaces = faces.getCount();
 	   const TArray& faceAreaMag = dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
 	   T totalArea = 0.0;
-
 	   for(int f=0; f<nFaces; f++)
 	     {
 	       totalArea += faceAreaMag[f];
+	       if (f%1000==0)
+		 cout << "Percent Done: " << (f*100.0/nFaces) << "%" << endl;
 	     }
 	   return totalArea;
 	 }
      }
    throw CException("getFaceGroupArea: No face group with given id");
+ }
+
+T getFaceGroupVoltage(const Mesh& mesh, const int fgID)
+ {
+   foreach(const FaceGroupPtr fgPtr, mesh.getAllFaceGroups())
+     {
+       const FaceGroup& fg = *fgPtr;
+       if (fg.id == fgID)
+	 {
+	   const StorageSite& faces = fg.site;
+	   const int nFaces = faces.getCount();
+	   const TArray& faceAreaMag = dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
+	   const StorageSite& cells = mesh.getCells();
+	   const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+	   const TArray& cellPotential = dynamic_cast<const TArray&>(_batteryModelFields.potential[cells]);
+	   T totalArea = 0.0;
+	   T voltageSum = 0.0;
+	   for(int f=0; f<nFaces; f++)
+	     {
+	       const T faceVoltage = harmonicAverage(cellPotential[faceCells(f,0)],cellPotential[faceCells(f,1)]);
+	       totalArea += faceAreaMag[f];
+	       voltageSum += faceVoltage*faceAreaMag[f];
+	     }
+	   return (voltageSum/totalArea);
+	 }
+     }
+   throw CException("getFaceGroupVoltage: No face group with given id");
  }
 
 T getMeshVolume(const Mesh& mesh)
@@ -2464,6 +2495,13 @@ T
 BatteryModel<T>::getFaceGroupArea(const Mesh& mesh, const int fgID)
 {
   return _impl->getFaceGroupArea(mesh, fgID);
+}
+
+template<class T>
+T
+BatteryModel<T>::getFaceGroupVoltage(const Mesh& mesh, const int fgID)
+{
+  return _impl->getFaceGroupVoltage(mesh, fgID);
 }
 
 template<class T>

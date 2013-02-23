@@ -11,7 +11,7 @@ struct BatterySpeciesBC : public FloatVarDict<T>
   BatterySpeciesBC()
   {
       this->defineVar("specifiedMassFraction",T(0.0));
-      this->defineVar("specifiedMassFlux",T(0.0));
+      this->defineVar("specifiedMassFlux",T(1.0));
       
   }
   string bcType;
