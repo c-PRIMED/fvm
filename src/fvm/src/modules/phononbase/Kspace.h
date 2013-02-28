@@ -1582,6 +1582,18 @@ class Kspace
   ArrayBase* getEmptyArray(const int length)
   {return new TArray(length);}
 
+  void setTref(const T Tref)
+  {
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  kv.getmode(m).setTref(Tref);
+
+      }
+  }
+
  private:
 
   Kspace(const Kspace&);

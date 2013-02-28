@@ -59,6 +59,7 @@ class Kspace
   ArrayBase* getIIsources(const int c, const bool correct);
   ArrayBase* getEmptyArray(const int length);
   void weightArray(ArrayBase* ep);
+  void setTref(const T Tref);
 
   %extend{
     std::vector<Kspace<T>*>& MakeList()
