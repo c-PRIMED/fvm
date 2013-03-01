@@ -111,266 +111,269 @@ class Kspace
       }
 
  Kspace():
-  _freqArray(0)
-    {}
+  _freqArray(0),
+    _coarseKspace(NULL)
+      {}
 
- void setCp(const T cp)
- {//input the total specific heat in eV/m^3/K
+  void setCp(const T cp)
+  {//input the total specific heat in eV/m^3/K
    
-   for(int k=0;k<_length;k++)
-     {
-       Tkvol& kv=getkvol(k);
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
 	const int modenum=kv.getmodenum();
 	for(int m=0;m<modenum;m++)
 	  {
 	    Tmode& mode=kv.getmode(m);
 	    mode.getcpRef()=cp/_totvol;
 	  }
-     }
- }
+      }
+  }
 
- void setCpNonGray(const T Tl)
- {
-   for(int k=0;k<_length;k++)
-     {
-       Tkvol& kv=getkvol(k);
-       const int modenum=kv.getmodenum();
-       for(int m=0;m<modenum;m++)
-	 {
-	   Tmode& mode=kv.getmode(m);
-	   const T omega=mode.getomega();
-	   const T hbar=6.582119e-16;  // (eV s)
-	   const T kb=8.617343e-5;  // (eV/K) 
+  void setCpNonGray(const T Tl)
+  {
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    const T omega=mode.getomega();
+	    const T hbar=6.582119e-16;  // (eV s)
+	    const T kb=8.617343e-5;  // (eV/K) 
 
-	   mode.getcpRef()=kb*pow((hbar*omega/kb/Tl),2)*
-	     exp(hbar*omega/kb/Tl)/pow((exp(hbar*omega/kb/Tl)-1),2);
-	 }
-     }
- }
+	    mode.getcpRef()=kb*pow((hbar*omega/kb/Tl),2)*
+	      exp(hbar*omega/kb/Tl)/pow((exp(hbar*omega/kb/Tl)-1),2);
+	  }
+      }
+  }
 
- void makeFreqArray()
- {
-   _freqArray.resize(gettotmodes());
-   int count=0;
-   for(int k=0;k<_length;k++)
-     {
-       Tkvol& kv=getkvol(k);
-       const int modenum=kv.getmodenum();
-       for(int m=0;m<modenum;m++)
-	 {
-	   Tmode& mode=kv.getmode(m);
-	   const T omega=mode.getomega();
-	   _freqArray[count]=omega;
-	   count++;
-	 }
-     }
- }
+  void makeFreqArray()
+  {
+    _freqArray.resize(gettotmodes());
+    int count=0;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    const T omega=mode.getomega();
+	    _freqArray[count]=omega;
+	    count++;
+	  }
+      }
+  }
 
  Kspace(const char* filename,const int dimension):
- _freqArray(0)
-   {
-     ifstream fp_in;
-     fp_in.open(filename,ifstream::in);
+  _freqArray(0),
+    _coarseKspace(NULL)
+      {
+	ifstream fp_in;
+	fp_in.open(filename,ifstream::in);
 
-     int modeNum;
-     int kPoints;
-     int directions;
+	int modeNum;
+	int kPoints;
+	int directions;
      
-     cout<<endl<<"Reading BZ file"<<endl;
-     fp_in>>modeNum;
-     cout<<"Number of Polarizations: "<<modeNum<<endl;
-     fp_in>>kPoints;
-     cout<<"Number of Wave Vector Magnitude Discretizations: "<<kPoints<<endl;
-     fp_in>>directions;
-     cout<<"Number of Angular Discretizations: "<<directions<<endl;
-     cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
+	cout<<endl<<"Reading BZ file"<<endl;
+	fp_in>>modeNum;
+	cout<<"Number of Polarizations: "<<modeNum<<endl;
+	fp_in>>kPoints;
+	cout<<"Number of Wave Vector Magnitude Discretizations: "<<kPoints<<endl;
+	fp_in>>directions;
+	cout<<"Number of Angular Discretizations: "<<directions<<endl;
+	cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
 
-     _length=kPoints*directions;
-     int count=1;
+	_length=kPoints*directions;
+	int count=1;
 
-     for(int k=0;k<_length;k++)
-       {
-	 Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeNum));
-	 Modes& modes=volptr->getModes();
+	for(int k=0;k<_length;k++)
+	  {
+	    Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeNum));
+	    Modes& modes=volptr->getModes();
 
-	 for(int m=0;m<modeNum;m++)
-	   {
-	     T Tdummy(0.);
-	     T omega(0.);
-	     T tau(0.);
-	     Tvec vg;
-	     Tvec K; 
-	     T weight(0.);
-	     Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode());
-	     fp_in>>Tdummy;
-	     fp_in>>weight;
-	     fp_in>>omega;
-	     fp_in>>Tdummy;
-	     K[0]=Tdummy;
+	    for(int m=0;m<modeNum;m++)
+	      {
+		T Tdummy(0.);
+		T omega(0.);
+		T tau(0.);
+		Tvec vg;
+		Tvec K; 
+		T weight(0.);
+		Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode());
+		fp_in>>Tdummy;
+		fp_in>>weight;
+		fp_in>>omega;
+		fp_in>>Tdummy;
+		K[0]=Tdummy;
 
-	     if(dimension==2)
-	       {
-		 fp_in>>Tdummy;
-		 K[1]=Tdummy;
-		 K[2]=0.;
-	       }
+		if(dimension==2)
+		  {
+		    fp_in>>Tdummy;
+		    K[1]=Tdummy;
+		    K[2]=0.;
+		  }
 	     
-	     if(dimension==3)
-	       {
-		 fp_in>>Tdummy;
-		 K[1]=Tdummy;
-		 fp_in>>Tdummy;
-		 K[2]=Tdummy;
-	       }
+		if(dimension==3)
+		  {
+		    fp_in>>Tdummy;
+		    K[1]=Tdummy;
+		    fp_in>>Tdummy;
+		    K[2]=Tdummy;
+		  }
 
-	     fp_in>>Tdummy;
-	     vg[0]=Tdummy;
+		fp_in>>Tdummy;
+		vg[0]=Tdummy;
 
-	     if(dimension==2)
-	       {
-		 fp_in>>Tdummy;
-		 vg[1]=Tdummy;
-		 vg[2]=0.;
-	       }
+		if(dimension==2)
+		  {
+		    fp_in>>Tdummy;
+		    vg[1]=Tdummy;
+		    vg[2]=0.;
+		  }
 	     
-	     if(dimension==3)
-	       {
-		 fp_in>>Tdummy;
-		 vg[1]=Tdummy;
-		 fp_in>>Tdummy;
-		 vg[2]=Tdummy;
-	       }
+		if(dimension==3)
+		  {
+		    fp_in>>Tdummy;
+		    vg[1]=Tdummy;
+		    fp_in>>Tdummy;
+		    vg[2]=Tdummy;
+		  }
 
-	     fp_in>>tau;
+		fp_in>>tau;
 
-	     modeptr->getVRef()=vg;
-	     modeptr->getTauRef()=tau;
-	     modeptr->getOmegaRef()=omega;
-	     modeptr->setIndex(count);
-	     count++;
-	     modes.push_back(modeptr);
-	     volptr->setkvec(K);
-	     volptr->setdk3(weight);
-	   }
-	 _Kmesh.push_back(volptr);
-       }
+		modeptr->getVRef()=vg;
+		modeptr->getTauRef()=tau;
+		modeptr->getOmegaRef()=omega;
+		modeptr->setIndex(count);
+		count++;
+		modes.push_back(modeptr);
+		volptr->setkvec(K);
+		volptr->setdk3(weight);
+	      }
+	    _Kmesh.push_back(volptr);
+	  }
 
-     fp_in.close();
-     calcDK3();
-     makeFreqArray();
-   }
+	fp_in.close();
+	calcDK3();
+	makeFreqArray();
+      }
  
  Kspace(const char* filename,const int dimension,const bool normal):
- _freqArray(0)
-   {
-     ifstream fp_in;
-     fp_in.open(filename,ifstream::in);
+  _freqArray(0),
+    _coarseKspace(NULL)
+      {
+	ifstream fp_in;
+	fp_in.open(filename,ifstream::in);
 
-     int modeNum;
-     int kPoints;
-     int directions;
+	int modeNum;
+	int kPoints;
+	int directions;
      
-     cout<<endl<<"Using Shifted Normal Scattering"<<endl;
-     cout<<"Reading BZ file"<<endl;
-     fp_in>>modeNum;
-     cout<<"Number of Polarizations: "<<modeNum<<endl;
-     fp_in>>kPoints;
-     cout<<"Number of Wave Vector Magnitude Discretizations: "<<kPoints<<endl;
-     fp_in>>directions;
-     cout<<"Number of Angular Discretizations: "<<directions<<endl;
-     cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
+	cout<<endl<<"Using Shifted Normal Scattering"<<endl;
+	cout<<"Reading BZ file"<<endl;
+	fp_in>>modeNum;
+	cout<<"Number of Polarizations: "<<modeNum<<endl;
+	fp_in>>kPoints;
+	cout<<"Number of Wave Vector Magnitude Discretizations: "<<kPoints<<endl;
+	fp_in>>directions;
+	cout<<"Number of Angular Discretizations: "<<directions<<endl;
+	cout<<"Total Number of K-Space Points: "<<modeNum*kPoints*directions<<endl;
 
-     _length=kPoints*directions;
-     int count=1;
+	_length=kPoints*directions;
+	int count=1;
 
-     for(int k=0;k<_length;k++)
-       {
-	 Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeNum));
-	 Modes& modes=volptr->getModes();
+	for(int k=0;k<_length;k++)
+	  {
+	    Kvolptr volptr=shared_ptr<Tkvol>(new Tkvol(modeNum));
+	    Modes& modes=volptr->getModes();
 
-	 for(int m=0;m<modeNum;m++)
-	   {
-	     T Tdummy(0.);
-	     T omega(0.);
-	     T tau(0.);
-	     T tauN(0.);
-	     Tvec vg;
-	     Tvec K; 
-	     T weight(0.);
-	     Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode());
-	     fp_in>>Tdummy;
-	     fp_in>>weight;
-	     fp_in>>omega;
-	     fp_in>>Tdummy;
-	     K[0]=Tdummy;
+	    for(int m=0;m<modeNum;m++)
+	      {
+		T Tdummy(0.);
+		T omega(0.);
+		T tau(0.);
+		T tauN(0.);
+		Tvec vg;
+		Tvec K; 
+		T weight(0.);
+		Tmodeptr modeptr=shared_ptr<Tmode>(new Tmode());
+		fp_in>>Tdummy;
+		fp_in>>weight;
+		fp_in>>omega;
+		fp_in>>Tdummy;
+		K[0]=Tdummy;
 
-	     if(dimension==2)
-	       {
-		 fp_in>>Tdummy;
-		 K[1]=Tdummy;
-		 K[2]=0.;
-	       }
+		if(dimension==2)
+		  {
+		    fp_in>>Tdummy;
+		    K[1]=Tdummy;
+		    K[2]=0.;
+		  }
 	     
-	     if(dimension==3)
-	       {
-		 fp_in>>Tdummy;
-		 K[1]=Tdummy;
-		 fp_in>>Tdummy;
-		 K[2]=Tdummy;
-	       }
+		if(dimension==3)
+		  {
+		    fp_in>>Tdummy;
+		    K[1]=Tdummy;
+		    fp_in>>Tdummy;
+		    K[2]=Tdummy;
+		  }
 
-	     fp_in>>Tdummy;
-	     vg[0]=Tdummy;
+		fp_in>>Tdummy;
+		vg[0]=Tdummy;
 
-	     if(dimension==2)
-	       {
-		 fp_in>>Tdummy;
-		 vg[1]=Tdummy;
-		 vg[2]=0.;
-	       }
+		if(dimension==2)
+		  {
+		    fp_in>>Tdummy;
+		    vg[1]=Tdummy;
+		    vg[2]=0.;
+		  }
 	     
-	     if(dimension==3)
-	       {
-		 fp_in>>Tdummy;
-		 vg[1]=Tdummy;
-		 fp_in>>Tdummy;
-		 vg[2]=Tdummy;
-	       }
+		if(dimension==3)
+		  {
+		    fp_in>>Tdummy;
+		    vg[1]=Tdummy;
+		    fp_in>>Tdummy;
+		    vg[2]=Tdummy;
+		  }
 
-	     fp_in>>tau;
-	     fp_in>>tauN;
+		fp_in>>tau;
+		fp_in>>tauN;
 
-	     modeptr->getVRef()=vg;
-	     modeptr->getTauRef()=tau;
-	     modeptr->getTauNRef()=tauN;
-	     modeptr->getOmegaRef()=omega;
-	     modeptr->setIndex(count);
-	     count++;
-	     modes.push_back(modeptr);
-	     volptr->setkvec(K);
-	     volptr->setdk3(weight);
-	   }
-	 _Kmesh.push_back(volptr);
-       }
+		modeptr->getVRef()=vg;
+		modeptr->getTauRef()=tau;
+		modeptr->getTauNRef()=tauN;
+		modeptr->getOmegaRef()=omega;
+		modeptr->setIndex(count);
+		count++;
+		modes.push_back(modeptr);
+		volptr->setkvec(K);
+		volptr->setdk3(weight);
+	      }
+	    _Kmesh.push_back(volptr);
+	  }
 
-     fp_in.close();
-     calcDK3();
+	fp_in.close();
+	calcDK3();
 
-     _freqArray.resize(gettotmodes());
+	_freqArray.resize(gettotmodes());
 
-     for(int k=0;k<_length;k++)
-       {
-	 Tkvol& kv=getkvol(k);
-	 const int modenum=kv.getmodenum();
-	 for(int m=0;m<modenum;m++)
-	   {
-	     Tmode& mode=kv.getmode(m);
-	     const int index=mode.getIndex()-1;
-	     _freqArray[index]=mode.getomega();
-	   }
-       }
+	for(int k=0;k<_length;k++)
+	  {
+	    Tkvol& kv=getkvol(k);
+	    const int modenum=kv.getmodenum();
+	    for(int m=0;m<modenum;m++)
+	      {
+		Tmode& mode=kv.getmode(m);
+		const int index=mode.getIndex()-1;
+		_freqArray[index]=mode.getomega();
+	      }
+	  }
 
-   }
+      }
   
   //void setvol(int n,Tkvol k) {*_Kmesh[n]=k;}
   Tkvol& getkvol(int n) const {return *_Kmesh[n];}
@@ -829,39 +832,39 @@ class Kspace
   }
 
   ArrayBase* getReflectionArray(const Mesh& mesh, const int FgId)
-    {
-      const int allModes=gettotmodes();
-      IntArray* reflInd=new IntArray(allModes);
+  {
+    const int allModes=gettotmodes();
+    IntArray* reflInd=new IntArray(allModes);
 
-      for(int k=0;k<_length;k++)
-	{
-	  Tkvol& kvol=getkvol(k);
-	  const int modes=kvol.getmodenum();
-	  for(int m=0;m<modes;m++)
-	    {
-	      Tmode& mode=kvol.getmode(m);
-	      const int count=mode.getIndex()-1;
-	      Refl_pair& refls=mode.getReflpair(FgId);
-	      if(refls.second.second!=-1)  //v dot A < 0
-		{
-		  const int kk=refls.second.second;
-		  Tmode& FromMode=getkvol(kk).getmode(m);
-		  const int indx=FromMode.getIndex();
-		  (*reflInd)[count]=indx;
-		}
-	      else if(refls.first.second!=-1)//v dot A > 0
-		{
-		  const int kk=refls.first.second;
-		  Tmode& ToMode=getkvol(kk).getmode(m);
-		  const int indx=ToMode.getIndex();
-		  (*reflInd)[count]=indx;
-		}
-	      else
-		throw CException("Not a reflecting wall!");
-	    }
-	}
-      return reflInd;
-    }
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const int modes=kvol.getmodenum();
+	for(int m=0;m<modes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    const int count=mode.getIndex()-1;
+	    Refl_pair& refls=mode.getReflpair(FgId);
+	    if(refls.second.second!=-1)  //v dot A < 0
+	      {
+		const int kk=refls.second.second;
+		Tmode& FromMode=getkvol(kk).getmode(m);
+		const int indx=FromMode.getIndex();
+		(*reflInd)[count]=indx;
+	      }
+	    else if(refls.first.second!=-1)//v dot A > 0
+	      {
+		const int kk=refls.first.second;
+		Tmode& ToMode=getkvol(kk).getmode(m);
+		const int indx=ToMode.getIndex();
+		(*reflInd)[count]=indx;
+	      }
+	    else
+	      throw CException("Not a reflecting wall!");
+	  }
+      }
+    return reflInd;
+  }
 
   ArrayBase* getHollandConductivity(const T Tl)
   {//returns the thermal conductivity tensor in row major order
@@ -1105,8 +1108,11 @@ class Kspace
     for(TransIt it=_transMap.begin();it!=_transMap.end();it++)
       {
 	Tkspace* fineToKspace=it->first;
-	Tkspace* coarseToKspace=fineToKspace->getCoarseKspace();
-	coarseTrans[coarseToKspace]=(it->second);
+	if(fineToKspace!=NULL)
+	  {
+	    Tkspace* coarseToKspace=fineToKspace->getCoarseKspace();
+	    coarseTrans[coarseToKspace]=(it->second);
+	  }
       }
   }
 
@@ -1316,7 +1322,7 @@ class Kspace
 	  {
 	    ostringstream err;
 	    err << "Kspace::syncScatter: ghost array not found for"
-	      << &oSite << endl;
+		<< &oSite << endl;
 	    throw CException(err.str());
 	  }
 
@@ -1355,19 +1361,19 @@ class Kspace
   }
 
   void getEquilibriumArray(TArray& vals, const T Tl)
-    {
-      for(int k=0;k<_length;k++)
-	{
-	  Tkvol& kv=getkvol(k);
-	  const int modenum=kv.getmodenum();
-	  for(int m=0;m<modenum;m++)
-	    {
-	      Tmode& mode=kv.getmode(m);
-	      const int index=mode.getIndex()-1;
-	      vals[index]=mode.calce0(Tl);
-	    }
-	}
-    }
+  {
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	for(int m=0;m<modenum;m++)
+	  {
+	    Tmode& mode=kv.getmode(m);
+	    const int index=mode.getIndex()-1;
+	    vals[index]=mode.calce0(Tl);
+	  }
+      }
+  }
 
   TArray& getFreqArray() {return _freqArray;}
   
@@ -1558,8 +1564,8 @@ class Kspace
 	    
 	  }
       }
-      else
-	throw CException("Array not same length: weightArray");
+    else
+      throw CException("Array not same length: weightArray");
   }
 
   void weightArray(ArrayBase* ep)
@@ -1590,7 +1596,6 @@ class Kspace
 	const int modenum=kv.getmodenum();
 	for(int m=0;m<modenum;m++)
 	  kv.getmode(m).setTref(Tref);
-
       }
   }
 
