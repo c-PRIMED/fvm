@@ -1449,45 +1449,44 @@ void linearizePC(LinearSystem& ls)
 					    _batteryModelFields.lnLithiumConcentrationGradient,_geomFields);
     lnSpeciesGradientModel.compute();
 
-    // fill source field with dot product of gradients from species and potential
-    for (int n=0; n<numMeshes; n++)
+    if (_options.thermalModelPC)
       {
-	const Mesh& mesh = *_meshes[n];
-        const StorageSite& cells = mesh.getCells();
-
-	typename BatterySpeciesVCMap::const_iterator pos = svcmap.find(n);
-        if (pos==svcmap.end())
-	{   
-           throw CException("BatteryModel: Error in Species VC Map");
-	}
-	const BatterySpeciesVC<T>& svc = *(pos->second);
-	const T massDiffusivity = svc["massDiffusivity"]; 
-
-	//const TGradArray& potentialGradCell = dynamic_cast<const TGradArray&>(_batteryModelFields.potential_gradient[cells]);
-	//const TGradArray& speciesGradCell = dynamic_cast<const TGradArray&>(_batteryModelFields.speciesGradient[cells]);
-	const VectorT3GradArray& pstGradCell = dynamic_cast<const VectorT3GradArray&>(_batteryModelFields.potentialSpeciesTempGradient[cells]);
-	TArray& heatSource = dynamic_cast<TArray&>(_batteryModelFields.heatSource[cells]);
-	for (int c=0; c<cells.getCount(); c++)
+	// fill source field with dot product of gradients from species and potential
+	for (int n=0; n<numMeshes; n++)
 	  {
-	    const VectorT3Grad combinedCellGradient = pstGradCell[c];
-	    //const TGradType pGrad =  potentialGradCell[c];
-	    //const TGradType sGrad =  speciesGradCell[c];
-	    TGradType pGrad(NumTypeTraits<TGradType>::getZero());
-	    TGradType sGrad(NumTypeTraits<TGradType>::getZero());
-	    pGrad[0] = combinedCellGradient[0][0];
-	    pGrad[1] = combinedCellGradient[1][0];
-	    sGrad[0] = combinedCellGradient[0][1];
-	    sGrad[1] = combinedCellGradient[1][1];
-	    T CellSource = pGrad[0]*sGrad[0] + pGrad[1]*sGrad[1];
-	    if ((*_meshes[0]).getDimension() == 3)
-	      {
-	      pGrad[2] = combinedCellGradient[2][0];
-	      sGrad[2] = combinedCellGradient[2][1];
-	      CellSource += pGrad[2]*sGrad[2];
+	    const Mesh& mesh = *_meshes[n];
+	    const StorageSite& cells = mesh.getCells();
+
+	    typename BatterySpeciesVCMap::const_iterator pos = svcmap.find(n);
+	    if (pos==svcmap.end())
+	      {   
+		throw CException("BatteryModel: Error in Species VC Map");
 	      }
-	    heatSource[c] = CellSource*massDiffusivity*96485.0; 
-	  }
-      } 
+	    const BatterySpeciesVC<T>& svc = *(pos->second);
+	    const T massDiffusivity = svc["massDiffusivity"]; 
+
+	    const VectorT3GradArray& pstGradCell = dynamic_cast<const VectorT3GradArray&>(_batteryModelFields.potentialSpeciesTempGradient[cells]);
+	    TArray& heatSource = dynamic_cast<TArray&>(_batteryModelFields.heatSource[cells]);
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		const VectorT3Grad combinedCellGradient = pstGradCell[c];
+		TGradType pGrad(NumTypeTraits<TGradType>::getZero());
+		TGradType sGrad(NumTypeTraits<TGradType>::getZero());
+		pGrad[0] = combinedCellGradient[0][0];
+		pGrad[1] = combinedCellGradient[1][0];
+		sGrad[0] = combinedCellGradient[0][1];
+		sGrad[1] = combinedCellGradient[1][1];
+		T CellSource = pGrad[0]*sGrad[0] + pGrad[1]*sGrad[1];
+		if ((*_meshes[0]).getDimension() == 3)
+		  {
+		    pGrad[2] = combinedCellGradient[2][0];
+		    sGrad[2] = combinedCellGradient[2][1];
+		    CellSource += pGrad[2]*sGrad[2];
+		  }
+		heatSource[c] = CellSource*massDiffusivity*96485.0; 
+	      }
+	  } 
+      }
 
     
     DiscrList discretizations;

@@ -288,12 +288,14 @@ template<class X, class Diag, class OffDiag>
 	//      THERMAL       //
 	////////////////////////
 
-	const T_Scalar Factor = 1.0e-12;
-	(rCell[c1])[2] = Factor*((xCell[c0])[2] - (xCell[c1])[2]);
-	offdiagC1_C0(2,2) = Factor;
-	offdiagC1_C2(2,2) = 0.0;
-	(diag[c1])(2,2) = -1.0*Factor;
-
+	T_Scalar Factor = 1.0e-6;
+	if (_bInterfaceHeatSource)
+	  {
+	    (rCell[c1])[2] = Factor*((xCell[c0])[2] - (xCell[c1])[2]);
+	    offdiagC1_C0(2,2) = Factor;
+	    offdiagC1_C2(2,2) = 0.0;
+	    (diag[c1])(2,2) = -1.0*Factor;
+	  }
 	// Point-coupled inclusions(off diagonal terms in square tensors)
 	// Cell c1
 	(diag[c1])(0,1) = -1*dIdCS_star;
