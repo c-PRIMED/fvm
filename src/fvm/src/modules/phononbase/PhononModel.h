@@ -175,7 +175,7 @@ class PhononModel : public Model
 	  {
 	    Tkvol& kv=_kspace.getkvol(k);
 	    const int numM=kv.getmodenum();
-	    const T dk3=kv.getdk3();
+	    //const T dk3=kv.getdk3();
 	    
 	    for (int m=0;m<numM;m++) //mode loop beg
 	      {	

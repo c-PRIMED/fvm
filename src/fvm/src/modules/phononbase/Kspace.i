@@ -37,6 +37,7 @@ class Kspace
   ArrayBase* getVelocities(const int M);
   ArrayBase* getReflectionArray(const Mesh& mesh, const int FgId);
   ArrayBase* getHollandConductivity(const T Tl);
+  ArrayBase* getModewiseHollandConductivity(const T Tl);
   void setTransmission(Kspace<T>& toKspace, ArrayBase* freqBins, ArrayBase* transArray);
   T calcBallisticInterface(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
   T calcDiffuseE(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);

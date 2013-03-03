@@ -198,7 +198,7 @@ class COMETModel : public Model
 	       {
 		 Tkvol& kv=kspace.getkvol(k);
 		 const int numM=kv.getmodenum();
-		 const T dk3=kv.getdk3();
+		 //const T dk3=kv.getdk3();
 
 		 for (int m=0;m<numM;m++)
 		   {
@@ -233,7 +233,7 @@ class COMETModel : public Model
 	   {
 	     FaceGroup& fg = *fgPtr;
 	     const StorageSite& faces = fg.site;
-	     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+	     //const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
 
 	     const int faceCount=faces.getCount();
 	     const int offSet=faces.getOffset();
@@ -271,7 +271,7 @@ class COMETModel : public Model
 			   {
 			     Tkvol& kv=kspace.getkvol(k);
 			     const int numM=kv.getmodenum();
-			     const T dk3=kv.getdk3();
+			     //const T dk3=kv.getdk3();
 			     for (int m=0;m<numM;m++)
 			       {
 
@@ -746,7 +746,7 @@ class COMETModel : public Model
 	   {
 	     FaceGroup& fg = *fgPtr;
 	     const StorageSite& faces = fg.site;
-	     const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
+	     //const CRConnectivity& BfaceCells=mesh.getFaceCells(faces);
 
 	     const int faceCount=faces.getCount();
 	     const int offSet=faces.getOffset();
@@ -1203,21 +1203,21 @@ class COMETModel : public Model
 	const IntArray& common01=*(ComMap.find(&faces1)->second);
 	const StorageSite& cells0=mesh0.getCells();
 	const StorageSite& cells1=mesh1.getCells();
-	const int f1Offset=faces1.getOffset();
+	//const int f1Offset=faces1.getOffset();
 	const StorageSite& allFaces0=mesh0.getFaces();
 	const CRConnectivity& faceCells0=mesh0.getFaceCells(faces0);
-	const CRConnectivity& cellCells0=mesh0.getCellCells();
-	const CRConnectivity& cellCells1=mesh1.getCellCells();
+	//const CRConnectivity& cellCells0=mesh0.getCellCells();
+	//const CRConnectivity& cellCells1=mesh1.getCellCells();
 	const CRPtr cellFaces0Ptr=faceCells0.getTranspose();
 	const CRConnectivity& cellFaces0=*cellFaces0Ptr;
 	const CRConnectivity& faceCells1=mesh1.getFaceCells(faces1);
 	const CRPtr cellFaces1Ptr=faceCells1.getTranspose();
-	const CRConnectivity& cellFaces1=*cellFaces1Ptr;
+	//const CRConnectivity& cellFaces1=*cellFaces1Ptr;
 	const int faceCount=faces0.getCount();
 	IntArray& FineToCoarse0=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[cells0]);
 	IntArray& FineToCoarse1=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[cells1]);
 	const int cCount0=CoarseCounts[Mid0];
-	const int cCount1=CoarseCounts[Mid1];
+	//const int cCount1=CoarseCounts[Mid1];
 
 	const CRPtr cellsIntGhost0Ptr=cellFaces0.multiply(faceCells0,true);
 	const CRConnectivity& cellsIntGhost0=*cellsIntGhost0Ptr;
@@ -1311,10 +1311,14 @@ class COMETModel : public Model
 		    FaceFine2Coarse1[f01]=coarseFace;
 		    coarseFace++;
 		  }
-
 	      }
-	    //FaceFine2Coarse[f]=coarseFace;
+
+	    //FOR NO AGGLOMERATION OF INTERFACE FACES
+	    //FaceFine2Coarse0[f]=coarseFace;
+	    //FaceFine2Coarse1[f]=coarseFace;
 	    //coarseFace++;
+
+
 	  }
 
 
@@ -1425,8 +1429,8 @@ class COMETModel : public Model
 
 	const StorageSite& inCells=mesh.getCells();
 	const StorageSite& site=mesh.getCells();
-	const int inCellCount=inCells.getSelfCount();
-	const int inCellTotal=inCells.getCount();
+	//const int inCellCount=inCells.getSelfCount();
+	//const int inCellTotal=inCells.getCount();
       
 	Field& FineToCoarseField=inGeomFields.fineToCoarse;
 	IntArray& coarseIndex=dynamic_cast<IntArray&>(FineToCoarseField[inCells]);
@@ -1434,9 +1438,9 @@ class COMETModel : public Model
 	for(int c=0;c<inCells.getCountLevel1();c++)
 	  tempIndex[c]=coarseIndex[c];
 
-	int coarseGhostSize=0;
-	int tempGhostSize=0;
-	int coarseSize= CoarseGhost[n];
+	//int coarseGhostSize=0;
+	//int tempGhostSize=0;
+	//int coarseSize= CoarseGhost[n];
 
 	const StorageSite::GatherMap&  gatherMap  = site.getGatherMap();
 
@@ -1656,7 +1660,7 @@ class COMETModel : public Model
       {
 	const Mesh& mesh=*inMeshes[n];
 	Mesh* newMeshPtr=outMeshes[n];
-	int coarseCount=CoarseCounts[n];
+	//int coarseCount=CoarseCounts[n];
 	const StorageSite& inCells=mesh.getCells();
 	IntArray& FineToCoarse=dynamic_cast<IntArray&>(inGeomFields.fineToCoarse[inCells]);
 	StorageSite& outCells=newMeshPtr->getCells();
@@ -1795,8 +1799,8 @@ class COMETModel : public Model
 		  {
 		    if(!counted[c1] && c1<outCells.getSelfCount())
 		      {
-			int increment=CoarseCellCoarseFace->add(c,counter);
-			increment=CoarseCellCoarseFace->add(c1,counter);
+			CoarseCellCoarseFace->add(c,counter);
+			CoarseCellCoarseFace->add(c1,counter);
 			counter++;
 		      }
 		  }
@@ -1827,7 +1831,7 @@ class COMETModel : public Model
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	  {
 	    const FaceGroup& fg=*fgPtr;
-	    const int faceCount=fg.site.getCount();
+	    //const int faceCount=fg.site.getCount();
 	    const CRConnectivity& inBfaceCells=mesh.getFaceCells(fg.site);
 
 	    if(fg.id>0)
@@ -1852,8 +1856,8 @@ class COMETModel : public Model
 			    const int globFace=i+fg.site.getOffset();
 			    const int cc1=(*FineFacesCoarseCells)(globFace,0);
 			    const int cc2=(*FineFacesCoarseCells)(globFace,1);
-			    int increment=CoarseCellCoarseFace->add(cc1,counter);
-			    increment=CoarseCellCoarseFace->add(cc2,counter);
+			    CoarseCellCoarseFace->add(cc1,counter);
+			    CoarseCellCoarseFace->add(cc2,counter);
 			    counter++;
 			    countedFaces[coarseFace]=true;
 			  }
@@ -1868,8 +1872,8 @@ class COMETModel : public Model
 			const int c1=inBfaceCells(i,1);   //fine ghost cell
 			const int cc1=FineToCoarse[c1];   //coarse ghost cell
 			const int cc2=(*CellCellCoarse)(cc1,0);  //coarse interior cell
-			int increment=CoarseCellCoarseFace->add(cc1,counter);
-			increment=CoarseCellCoarseFace->add(cc2,counter);
+			CoarseCellCoarseFace->add(cc1,counter);
+			CoarseCellCoarseFace->add(cc2,counter);
 			counter++;
 		      }
 		  }
@@ -2106,8 +2110,8 @@ class COMETModel : public Model
 		    faceCount+=CellCellCoarse->getCount(c1);
 		  }
 
-		const StorageSite& newBoundarySite=
-		  newMeshPtr->createInterfaceGroup(faceCount,inOffset,to_where);
+		
+		newMeshPtr->createInterfaceGroup(faceCount,inOffset,to_where);
 		inOffset+=faceCount;
 	      }
 	  }
@@ -2464,7 +2468,7 @@ class COMETModel : public Model
 
     for(int c=0;c<preOutCells.getSelfCount();c++)
       {
-	if(CellCellCoarse->getCount(c)==1)
+	if(CellCellCoarse->getCount(c)<2)
 	  {
 	    /*
 	    const int bigCoarse=(*CellCellCoarse)(c,0);
@@ -2528,8 +2532,8 @@ class COMETModel : public Model
     int& count0=coarseCounts[Mid0];
     int& count1=coarseCounts[Mid1];
 
-    const VectorT3Array& cpos0=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[cells0]);
-    const VectorT3Array& cpos1=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[cells1]);
+    //const VectorT3Array& cpos0=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[cells0]);
+    //const VectorT3Array& cpos1=dynamic_cast<const VectorT3Array&>(inGeomFields.coordinate[cells1]);
     
     //agglomerate mesh0 first
     int pairWith;
@@ -2540,7 +2544,7 @@ class COMETModel : public Model
 	  {
 	    const int c=faceCells0(f,0);
 	    const int cCoarse=CoarseFineCount[c];
-	    if(f2c0[c]<0 || cCoarse<2) //dont bother if im already paired
+	    if(f2c0[c]<0 || cCoarse<4) //dont bother if im already paired
 	      {
 		//loop through all neighbors to find pairing
 		const int neibCount=cellCells0.getCount(c);
@@ -2675,10 +2679,10 @@ class COMETModel : public Model
     for(int f=0;f<inFaceCount;f++)
       {
 	const int f1=common01[f];
-	const int c01ghost=faceCells1(f1,1);
+	//const int c01ghost=faceCells1(f1,1);
 	const int c01=faceCells1(f1,0);
 	const int c00=faceCells0(f,0);
-	if(f2c1[c01]<0 && f2c0[c00]>-1) //dont bother if im already paired, mesh0 must be paired
+	if(f2c0[c00]>-1) //dont bother if im already paired, mesh0 must be paired
 	  {
 	    //const int neibCount0=cellCells0.getCount(c00);
 	    const int coarseC00=f2c0[c00];
@@ -2696,7 +2700,7 @@ class COMETModel : public Model
 			const int c10g=cellsIntGhost0(fineCell,c10ghost);
 			const int f10=cellFaces0(c10g,0);
 			const int f11=common01[f10];
-			const int c11ghost=faceCells1(f11,1);
+			//const int c11ghost=faceCells1(f11,1);
 			const int c11=faceCells1(f11,0);
 			const int neibCount1=cellCells1.getCount(c01);
 			bool isNeib(false);
@@ -2722,7 +2726,7 @@ class COMETModel : public Model
 				count1++;
 			      }
 			  }
-			else if(_level==-1)   //check for indirect neighbors
+			else if(_level<3)   //check for indirect neighbors
 			  {
 			    const int c11neibCnt=cellCells1.getCount(c11);
 			    int middleMan=-1;
@@ -3306,7 +3310,7 @@ class COMETModel : public Model
 		      {
 			VectorT3 vg=kv.getmode(m).getv();
 			T dk3=kv.getdk3();
-			T energy=hbar*kv.getmode(m).getomega();
+			//T energy=hbar*kv.getmode(m).getomega();
 			const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
 			r += eArray[cellIndex]*vgdotAn*(dk3/DK3);//*energy;
 			cellIndex++;
@@ -3333,7 +3337,7 @@ class COMETModel : public Model
   T HeatFluxIntegralFace(const Mesh& mesh, const int f)
   {
     T r(0.);
-    bool found = false;
+    //bool found = false;
     const int n=mesh.getID();
     Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
     TArray& eArray=kspace.geteArray();
@@ -3345,7 +3349,7 @@ class COMETModel : public Model
     const FaceGroup& fg = mesh.getInteriorFaceGroup();
 
     const StorageSite& faces = fg.site;
-    const int nFaces = faces.getCount();
+    //const int nFaces = faces.getCount();
     //const StorageSite& cells = mesh.getCells();
     const CRConnectivity& faceCells=mesh.getFaceCells(faces);
     const Field& areaField=_geomFields.area;
@@ -3365,7 +3369,7 @@ class COMETModel : public Model
 	  {
 	    VectorT3 vg=kv.getmode(m).getv();
 	    T dk3=kv.getdk3();
-	    T energy=hbar*kv.getmode(m).getomega();
+	    //T energy=hbar*kv.getmode(m).getomega();
 	    const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
 	    if(vgdotAn>0)
 	      r += eArray[cellIndex0]*vgdotAn*(dk3/DK3);//*energy;
@@ -3392,7 +3396,7 @@ class COMETModel : public Model
     TArray& q(*qptr);
     q.zero();
 
-    const T hbar=6.582119e-16;  // (eV s)
+    //const T hbar=6.582119e-16;  // (eV s)
 
     foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
       {
@@ -3441,11 +3445,11 @@ class COMETModel : public Model
 
   ArrayBase* modewiseHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
   {
-    bool found = false;
+    //bool found = false;
     const int n=mesh.getID();
     Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
     TArray& eArray=kspace.geteArray();
-    const T DK3=kspace.getDK3();
+    //const T DK3=kspace.getDK3();
     TArray* qptr(new TArray(kspace.gettotmodes()));
     TArray& q(*qptr);
     q.zero();
@@ -3478,14 +3482,14 @@ class COMETModel : public Model
 			VectorT3 vg=kv.getmode(m).getv();
 			const int index=kv.getmode(m).getIndex()-1;
 			T dk3=kv.getdk3();
-			T energy=hbar*kv.getmode(m).getomega();
+			//T energy=hbar*kv.getmode(m).getomega();
 			const T vgdotAn=An[0]*vg[0]+An[1]*vg[1]+An[2]*vg[2];
 			q[index]+= eArray[cellIndex]*vgdotAn*dk3;//*energy;
 			cellIndex++;
 		      }
 		  }
 	      }
-	    found=true;
+
 	  }
       }
     
@@ -3875,10 +3879,10 @@ class COMETModel : public Model
 	if(_MeshKspaceMap[n]==-1)
 	  throw CException("Have not set the Kspace for this Mesh!!");
 	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
-	const int numK=kspace.getlength();
+	//const int numK=kspace.getlength();
 	const StorageSite& cells=mesh.getCells();
 	const int numcells=cells.getCount();
-	const int modeCount=kspace.getkvol(0).getmodenum();
+	//const int modeCount=kspace.getkvol(0).getmodenum();
 	const T DK3=kspace.getDK3();
 	DensityOfStates<T>& dos=*kspace.getDOSptr();
 	const int bandCount=dos.getFreqMidsT().getLength();
@@ -4207,9 +4211,9 @@ class COMETModel : public Model
 	const int numcells=cells.getSelfCount();
 	TArray& Tl=dynamic_cast<TArray&>(_macro.temperature[cells]);
 	Tkspace& kspace=*_kspaces[_MeshKspaceMap[n]];
-	const TArray& e=kspace.geteArray();
+	//const TArray& e=kspace.geteArray();
 
-	const int len=kspace.getlength();
+	//const int len=kspace.getlength();
 
 	for(int c=0;c<numcells;c++)
 	  Tl[c]=kspace.calcLatTemp(c);	    

@@ -145,22 +145,22 @@ class pmode
       
   T calce0(T Tl) 
   {
-    const T hbar=6.582119e-16;  // (eV s)
+    //const T hbar=6.582119e-16;  // (eV s)
     return (Tl-_Tref)*_cp;
   }
   T calce0tau(T Tl) 
   {
-    const T hbar=6.582119e-16;  // (eV s)
+    //const T hbar=6.582119e-16;  // (eV s)
     return (Tl-_Tref)*_cp/_tau;
   }
   T calcde0taudT(T Tl) 
   {
-    const T hbar=6.582119e-16;  // (eV s)
+    //const T hbar=6.582119e-16;  // (eV s)
     return _cp/_tau;
   }
   T calcde0dT(T Tl) 
   {
-    const T hbar=6.582119e-16;  // (eV s)
+    //const T hbar=6.582119e-16;  // (eV s)
     return _cp;
   }
 

@@ -265,6 +265,7 @@ class COMETDiscretizer
 	if(_BCArray[c]==0)  //no reflections at all--interior cell or temperature boundary
 	  {
 	    T dt=1;
+	    T rscaled=10;
 	    int NewtonIters=0;
 	  
 	    while((dt>newTol && NewtonIters<maxNew) || NewtonIters<minNew)
@@ -286,13 +287,14 @@ class COMETDiscretizer
 		
 		Resid=Bvec;
 		AMat.Solve(Bvec);
-
+		rscaled=scaledResid(Bvec,c);
+		
 		Distribute(c,Bvec,Resid);
 		updatee0(c);
 		if(!_FaceToKSC.empty())
 		  correctInterface(c,Bvec);
 		NewtonIters++;
-		dt=fabs(Bvec[totalmodes]);
+		dt=0.5*fabs(Bvec[totalmodes]/Tl[c])+rscaled*0.5;
 	      }
 
 	  }
@@ -326,6 +328,7 @@ class COMETDiscretizer
 	else if(_BCArray[c]==2)  //Explicit boundary only
 	  {
 	    T dt=1;
+	    T rscaled=10;
 	    int NewtonIters=0;
 	    updateGhostCoarse(c);
 	  
@@ -348,9 +351,10 @@ class COMETDiscretizer
 		
 		Resid=Bvec;
 		AMat.Solve(Bvec);
+		rscaled=scaledResid(Bvec,c);
 
 		Distribute(c,Bvec,Resid);
-		dt=fabs(Bvec[totalmodes]);
+		dt=0.5*fabs(Bvec[totalmodes]/Tl[c])+0.5*rscaled;
 		updatee0(c);
 		updateGhostCoarse(c);
 		if(!_FaceToKSC.empty())
@@ -748,7 +752,7 @@ class COMETDiscretizer
 		    Tmode& mode=kvol.getmode(m);
 		    const int count=mode.getIndex();
 		    VectorT3 vg=mode.getv();
-		    T tau=mode.gettau();
+		    //T tau=mode.gettau();
 		    flux=vg[0]*Af[0]+vg[1]*Af[1]+vg[2]*Af[2];
 
 		    const int c0ind=_kspace.getGlobalIndex(cell0,count-1);
@@ -756,13 +760,13 @@ class COMETDiscretizer
 
 		    const GradType& grad=Grads[count-1];
 		    const GradType& neibGrad=NeibGrads[count-1];
-		    vanLeer vl;
+		    //vanLeer vl;
 		
 		    if(flux>T_Scalar(0))
 		      {
 			const VectorT3 rVec=_cellCoords[cell1]-_cellCoords[cell0];
 			const VectorT3 fVec=faceCoords[f]-_cellCoords[cell0];
-			const T r=gMat.computeR(grad,_eArray,rVec,c0ind,c1ind);
+			//const T r=gMat.computeR(grad,_eArray,rVec,c0ind,c1ind);
 		    
 			T SOU=(fVec[0]*grad[0]+fVec[1]*grad[1]+
 			       fVec[2]*grad[2])*pointLim[count-1];
@@ -773,7 +777,7 @@ class COMETDiscretizer
 		      {
 			const VectorT3 rVec=_cellCoords[cell0]-_cellCoords[cell1];
 			const VectorT3 fVec=faceCoords[f]-_cellCoords[cell1];
-			const T r=gMat.computeR(grad,_eArray,rVec,c1ind,c0ind);
+			//const T r=gMat.computeR(grad,_eArray,rVec,c1ind,c0ind);
 		    
 			T SOU=(fVec[0]*neibGrad[0]+fVec[1]*neibGrad[1]+
 			       fVec[2]*neibGrad[2])*neibLim[count-1];
@@ -1010,7 +1014,7 @@ class COMETDiscretizer
 	    Amat->getElement(count,order)-=coeff*de0dT;
 	    Amat->getElement(count,count)+=coeff;
 	    BVec[count-1]-=coeff*_eArray[cellIndex];
-	     BVec[count-1]+=coeff*_e0Array[cellIndex];
+	    BVec[count-1]+=coeff*_e0Array[cellIndex];
 	    cellIndex++;
 	  }
       }
@@ -1039,7 +1043,7 @@ class COMETDiscretizer
 	    Tmode& mode=kvol.getmode(m);
 	    const int count=mode.getIndex();
 	    const T tau=_kspace.getTau(cellIndex);
-	    const T energy=mode.getomega()*hbar;
+	    //const T energy=mode.getomega()*hbar;
 	    coeff=(dk3/DK3)/tau;
 	    Amat->getElement(order,count)-=coeff;
 	    BVec[totalmodes]+=coeff*_eArray[cellIndex];
@@ -1054,27 +1058,27 @@ class COMETDiscretizer
   {
     const int klen=_kspace.getlength();
     const int totalmodes=_kspace.gettotmodes();
-    const int order=totalmodes+1;
-    TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
-    const T DK3=_kspace.getDK3();
+    //const int order=totalmodes+1;
+    //TArray& Tlold=dynamic_cast<TArray&>(_macro.temperature[_cells]);
+    //const T DK3=_kspace.getDK3();
     int cellIndex=_kspace.getGlobalIndex(cell,0);
     TArray ds(totalmodes);
     //_kspace.getSourceTerm(cell,s,ds);
 
     const T relFac(1);
-    const T impl(1e0);
+    //const T impl(1e0);
     
     for(int k=0;k<klen;k++)
       {
 	Tkvol& kvol=_kspace.getkvol(k);
-	const T dk3=kvol.getdk3();
+	//const T dk3=kvol.getdk3();
 	const int numModes=kvol.getmodenum();
 	for(int m=0;m<numModes;m++)
 	  {
 	    Tmode& mode=kvol.getmode(m);
 	    const T tau=_kspace.getTau(cellIndex);
 	    const int count=mode.getIndex();
-	    const T coeff=_cellVolume[cell]/tau;
+	    //const T coeff=_cellVolume[cell]/tau;
 
 	    BVec[count-1]+=(s[count-1])*_cellVolume[cell];
 	    //-(_e0Array[cellIndex]-_eArray[cellIndex])/tau)*_cellVolume[cell];
@@ -1732,7 +1736,7 @@ class COMETDiscretizer
 	
 	if(_BCfArray[f]==1)
 	  {//temperature
-	    int Fgid=findFgId(f);
+	    //int Fgid=findFgId(f);
 	    int cell2=_faceCells(f,1);
 	    VectorT3 Af=_faceArea[f];
 		    
@@ -1744,7 +1748,7 @@ class COMETDiscretizer
 
 	    int cellIndex=_kspace.getGlobalIndex(cell,0);
 	    int cell2Index=_kspace.getGlobalIndex(cell2,0);
-	    vanLeer vl;
+	    //vanLeer vl;
 
 	    for(int k=0;k<klen;k++)
 	      {
@@ -1764,7 +1768,7 @@ class COMETDiscretizer
 		      {
 			const VectorT3 fVec=faceCoords[f]-_cellCoords[cell];
 			const VectorT3 rVec=_cellCoords[cell2]-_cellCoords[cell];
-			const T r=gMat.computeR(grad,_eArray,rVec,cellIndex,cell2Index);
+			//const T r=gMat.computeR(grad,_eArray,rVec,cellIndex,cell2Index);
 			
 			T SOU=(fVec[0]*grad[0]+fVec[1]*grad[1]+
 			       fVec[2]*grad[2])*pointLim[count-1];
@@ -1789,7 +1793,7 @@ class COMETDiscretizer
 		cell2=_faceCells(f,0);
 	      }
 
-	    const int cellstart=_kspace.getGlobalIndex(cell,0);
+	    //const int cellstart=_kspace.getGlobalIndex(cell,0);
 	    const int cell2start=_kspace.getGlobalIndex(cell2,0);
 	    int cellIndex=_kspace.getGlobalIndex(cell,0);
 	    int cell2Index=_kspace.getGlobalIndex(cell2,0);
@@ -1814,7 +1818,7 @@ class COMETDiscretizer
 		      {
 			VectorT3 rVec=_cellCoords[cell2]-_cellCoords[cell];
 			VectorT3 fVec=faceCoords[f]-_cellCoords[cell];
-			T r=gMat.computeR(grad,_eArray,rVec,cellIndex,cell2Index);
+			//T r=gMat.computeR(grad,_eArray,rVec,cellIndex,cell2Index);
 			T SOU=(grad[0]*fVec[0]+grad[1]*fVec[1]+grad[2]*fVec[2])*pointLim[count-1];
 			_eArray[cell2Index]=(_eArray[cellIndex]+SOU)*refl;
 		      }
@@ -1837,7 +1841,7 @@ class COMETDiscretizer
 		    Tmode& mode=kvol.getmode(m);
 		    VectorT3 vg=mode.getv();
 		    const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
-		    const int count=mode.getIndex();
+		    //const int count=mode.getIndex();
 		    
 		    if(VdotA<0)
 		      {
@@ -2006,7 +2010,7 @@ class COMETDiscretizer
 			const int cell2Index=_kspace.getGlobalIndex(cell2,Index);
 		      
 			const T oneMinusRefl=1.-refl;
-			const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
+			//const T VdotA=Af[0]*vg[0]+Af[1]*vg[1]+Af[2]*vg[2];
 		    
 			_eArray[cell2Index]+=mode.calce0(Tl[cell2])*oneMinusRefl;
 		      
@@ -2116,6 +2120,19 @@ class COMETDiscretizer
     for(int i=0;i<3;i++)
       for(int j=0;j<3;j++)
 	out(i,j)=v1[i]*v2[j];
+  }
+
+  T scaledResid(const TArray& de, const int c)
+  {
+    T scaled(0);
+    int cellIndex(_kspace.getGlobalIndex(c,0));
+    for(int i=0;i<de.getLength()-1;i++)
+      {
+	scaled+=fabs(de[i])/_eArray[cellIndex];
+	cellIndex++;
+      }
+
+    return scaled/de.getLength();
   }
   
  private:

@@ -62,9 +62,9 @@ class Kspace
       { //makes gray, isotropic kspace  
 	
 	const long double pi=3.141592653589793238462643383279502884197169399;
-	long double sumX(0);
-	long double sumY(0);
-	long double sumZ(0);
+	//long double sumX(0);
+	//long double sumY(0);
+	//long double sumZ(0);
 	long double theta;
 	long double phi;
 	long double dtheta=pi/T(ntheta)/2.;
@@ -620,7 +620,7 @@ class Kspace
 	for(int m=0;m<modenum;m++)
 	  {
 	    Tmode& mode=kv.getmode(m);
-	    T energy=hbar*mode.getomega();
+	    //T energy=hbar*mode.getomega();
 	    de0taudT+=mode.calcde0dT(Tl)*dk3/_totvol/(*_Tau)[index];
 	    index++;
 	  }
@@ -824,7 +824,7 @@ class Kspace
     for(int k=0;k<_length;k++)
       {
 	Tkvol& kvol=getkvol(k);
-	const int modes=kvol.getmodenum();
+	//const int modes=kvol.getmodenum();
 	(*Velocities)[count]=kvol.getmode(M).getv();
 	count++;
       }
@@ -901,6 +901,29 @@ class Kspace
 	  }
       }
 
+    return Kptr;
+  }
+
+  ArrayBase* getModewiseHollandConductivity(const T Tl)
+  {
+    TArray* Kptr=new TArray(gettotmodes());
+    TArray& K=*Kptr;
+    
+    int count=0;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const T dk3=kvol.getdk3();
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Tvec vg=mode.getv();
+	    T tau=mode.gettau();
+	    T de0dT=mode.calcde0dT(Tl);
+	    K[count]=vg[0]*vg[0]*tau*de0dT*dk3;
+	  }
+      }
     return Kptr;
   }
 
@@ -1379,8 +1402,8 @@ class Kspace
   
   void getSourceTerm(const int c, TArray& s, TArray& ds)
   {
-    const T hbar(6.582119e-16);
-    T defect(0);
+    
+
     _ScattKernel->updateSource2(c,s,ds);
 
   }
@@ -1534,7 +1557,7 @@ class Kspace
     for(int k=0;k<_length;k++)
       {
 	Tkvol& kv=getkvol(k);
-	const T dk3=kv.getdk3();
+	//const T dk3=kv.getdk3();
 	const int modenum=kv.getmodenum();
 	for(int m=0;m<modenum;m++)
 	  {
