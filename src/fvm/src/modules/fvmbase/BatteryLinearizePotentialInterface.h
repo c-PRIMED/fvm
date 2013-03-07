@@ -109,6 +109,7 @@ template<class X, class Diag, class OffDiag>
     const T_Scalar alpha_a = 0.5;
     const T_Scalar alpha_c = 0.5;
     const T_Scalar R = 8.314; //  J/mol/K
+    const T_Scalar dU_dT = -0.0011; // V/K
 
     for (int f=0; f<faces.getCount(); f++)
       {
@@ -183,7 +184,8 @@ template<class X, class Diag, class OffDiag>
 
 	const T_Scalar Phis_star = xCell[c1];
 	const T_Scalar Phie_star = xCell[c0];
-	T_Scalar eta_star = Phis_star-Phie_star-U_ref;
+	const T_Scalar U = U_ref - (Temp - 298.0)*dU_dT;
+	T_Scalar eta_star = Phis_star-Phie_star-U;
 
 	//cout << eta_star << endl;
 

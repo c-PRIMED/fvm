@@ -1450,7 +1450,7 @@ void linearizePC(LinearSystem& ls)
     lnSpeciesGradientModel.compute();
 
     if (_options.thermalModelPC)
-      {
+    {
 	// fill source field with dot product of gradients from species and potential
 	for (int n=0; n<numMeshes; n++)
 	  {
@@ -1485,7 +1485,7 @@ void linearizePC(LinearSystem& ls)
 		  }
 		heatSource[c] = CellSource*massDiffusivity*96485.0; 
 	      }
-	  } 
+	  }	   
       }
 
     
@@ -1686,6 +1686,22 @@ void linearizePC(LinearSystem& ls)
 
             gbc.applyInterfaceBC();
 	}
+
+	//set all temperature residuals to zero if no thermal model PC (comes in to play if trying to still do advanceThermal separatly)
+	if (!_options.thermalModelPC)
+	  {
+	    for (int n=0; n<numMeshes; n++)
+	      {
+		const Mesh& mesh = *_meshes[n];
+		const StorageSite& cells = mesh.getCells();
+		const MultiField::ArrayIndex cVarIndex(&_batteryModelFields.potentialSpeciesTemp,&cells);
+		VectorT3Array& rCell = dynamic_cast<VectorT3Array&>((ls.getB())[cVarIndex]);
+		for (int c=0; c<cells.getCount(); c++)
+		  {
+		    (rCell[c])[2] = 0.0;
+		  }
+	      }
+	  }
     }
   }
   
@@ -1830,6 +1846,80 @@ T getAverageMassFraction(const Mesh& mesh, const int m)
     return weightedMassFraction/totalVolume;
   }
 
+ LinearSystem& matrixMerge(LinearSystem& ls, const int m)
+ {
+   /*
+   typedef CRMatrix<double,double,double>  CombinedMatrix;
+   const MultiFieldMatrix& mfMatrix = ls.getMatrix();
+   const MultiField& bField = ls.getB();
+   const MultiField& deltaField = ls.getDelta();
+   if (bField.getLength() == 1)
+      return ls;
+
+    const int numMeshes = _meshes.size();
+    int totalBoundaryCells = 0;
+    int totalInteriorCells = 0;
+    for (int n1=0; n1<numMeshes; n1++)
+    {
+        Mesh& mesh = *_meshes[n1];
+	StorageSite& cells = mesh.getCells();
+        //const CRConnectivity& cellCells = mesh.getCellCells();
+	
+	
+	int n1InterfaceCells = 0;
+	for (int n2=0; n2<numMeshes; n2++)
+	  {
+	    StorageSite& otherCells = (*_meshes[n2]).getCells();
+	    StorageSite::ScatterMap& n1ScatterMap = cells.getScatterMap();
+
+	    typename StorageSite::ScatterMap::const_iterator pos = n1ScatterMap.find(&otherCells);
+            if (pos==n1ScatterMap.end())
+	      {   
+		//no interfaces with mesh n2
+	      }
+	    else
+	      {
+		shared_ptr< Array<int> > n1n2ScatterOrigPtr = n1ScatterMap[&otherCells];
+		n1InterfaceCells += n1n2ScatterOrigPtr->getLength();
+	      }
+
+	  //shared_ptr<CRConnectivity> flatConnPtr = origConn.getMultiTranspose(blockSize);
+
+	    //CombinedMatrix combinedMatrix(*combinedConnPtr);
+
+	    // origMatrix.setFlatMatrix(flatMatrix);
+	    //ls.getMatrix().addMatrix(tIndex,tIndex,m);
+	  }
+	const int n1InteriorCells = cells.getSelfCount();
+	const int n1BoundaryCells = cells.getCount() - n1InterfaceCells - n1InteriorCells;
+	totalBoundaryCells += n1BoundaryCells;
+	totalInteriorCells += n1InteriorCells;
+	}
+
+    cout << totalBoundaryCells << endl;
+    cout << totalInteriorCells << endl;
+
+    const MultiField::ArrayIndex rowIndex = bField.getArrayIndex(0);
+    const Matrix& origMatrix = mfMatrix.getMatrix(rowIndex,rowIndex);
+    const CRConnectivity& origConn = origMatrix.getConnectivity();
+    const ArrayBase& origB = bField[rowIndex];
+
+    LinearSystem lsCombined;
+   
+    shared_ptr<CRConnectivity> trPtr(new CRConnectivity(origConn.getColSite(),origConn.getRowSite()));
+    CRConnectivity& tr = *trPtr;
+
+    tr.getrowDim *= varSize;
+    tr._colDim *= varSize;
+  
+    tr.initCount();
+
+    const Array<int>& myRow = *_row;
+    const Array<int>& myCol = *_col;*/
+   
+
+   return ls; 
+ }
 
   void advanceSpecies(const int niter)
   { 
@@ -1842,13 +1932,14 @@ T getAverageMassFraction(const Mesh& mesh, const int m)
 	MFRPtr& rCurrent = *_currentSpeciesResidual[m];
 
         LinearSystem ls;
+
         initSpeciesLinearization(ls, m);
         
         ls.initAssembly();
 
         linearizeSpecies(ls, m);
 
-        ls.initSolve();
+	ls.initSolve();
 
         MFRPtr rNorm(_options.getLinearSolverSpecies().solve(ls));
 
@@ -2105,19 +2196,35 @@ void advanceThermal(const int niter)
 	// copy to N1 and N2 if transient
 	if (_options.transient)
 	  {
-	    const VectorT3Array& coupledValues = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    const TArray& mFSeparateN1 = dynamic_cast<const TArray&>(sFields.massFractionN1[cells]);
+	    const TArray& tSeparateN1 = dynamic_cast<const TArray&>(_batteryModelFields.temperatureN1[cells]);
 	    VectorT3Array& coupledValuesN1 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
+
 	    for (int c=0; c<cells.getCount(); c++)
 	      {
-		coupledValuesN1[c] = coupledValues[c];	
+		const T massFractionN1 = mFSeparateN1[c];
+		const T temperatureN1 = tSeparateN1[c];
+		VectorT3& coupledCellVectorN1 = coupledValuesN1[c];
+
+		//populate coupled field with separate field data
+		coupledCellVectorN1[1] = massFractionN1;
+		coupledCellVectorN1[2] = temperatureN1;
 	      }
-	      
+
 	    if (_options.timeDiscretizationOrder > 1)
 	      {
 		VectorT3Array& coupledValuesN2 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		const TArray& mFSeparateN2 = dynamic_cast<const TArray&>(sFields.massFractionN2[cells]);
+		const TArray& tSeparateN2 = dynamic_cast<const TArray&>(_batteryModelFields.temperatureN2[cells]);
 		for (int c=0; c<cells.getCount(); c++)
 		  {
-		    coupledValuesN2[c] = coupledValues[c];	
+		    const T massFractionN2 = mFSeparateN2[c];
+		    const T temperatureN2 = tSeparateN2[c];
+		    VectorT3& coupledCellVectorN2 = coupledValuesN2[c];
+
+		    //populate coupled field with separate field data
+		    coupledCellVectorN2[1] = massFractionN2;
+		    coupledCellVectorN2[2] = temperatureN2;
 		  }
 	      }
 	  }
@@ -2192,6 +2299,42 @@ void advanceThermal(const int niter)
 		mFFluxSeparate[f] = massFractionFlux;
 		tFluxSeparate[f] = heatFlux;
 	      }	    
+	  }
+
+	// copy to N1 and N2 if transient
+	if (_options.transient)
+	  {
+	    TArray& mFSeparateN1 = dynamic_cast<TArray&>(sFields.massFractionN1[cells]);
+	    TArray& tSeparateN1 = dynamic_cast<TArray&>(_batteryModelFields.temperatureN1[cells]);
+	    const VectorT3Array& coupledValuesN1 = dynamic_cast< const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
+
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		T massFractionN1 = mFSeparateN1[c];
+		T temperatureN1 = tSeparateN1[c];
+		const VectorT3& coupledCellVectorN1 = coupledValuesN1[c];
+
+		//populate coupled field with separate field data
+		massFractionN1 = coupledCellVectorN1[1];
+		temperatureN1 = coupledCellVectorN1[2];
+	      }
+
+	    if (_options.timeDiscretizationOrder > 1)
+	      {
+		const VectorT3Array& coupledValuesN2 = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		TArray& mFSeparateN2 = dynamic_cast<TArray&>(sFields.massFractionN2[cells]);
+		TArray& tSeparateN2 = dynamic_cast<TArray&>(_batteryModelFields.temperatureN2[cells]);
+		for (int c=0; c<cells.getCount(); c++)
+		  {
+		    T massFractionN2 = mFSeparateN2[c];
+		    T temperatureN2 = tSeparateN2[c];
+		    const VectorT3& coupledCellVectorN2 = coupledValuesN2[c];
+
+		    //populate coupled field with separate field data
+		    massFractionN2 = coupledCellVectorN2[1];
+		    temperatureN2 = coupledCellVectorN2[2];
+		  }
+	      }
 	  }
       }
   }

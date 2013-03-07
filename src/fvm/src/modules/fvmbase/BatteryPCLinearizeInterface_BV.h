@@ -99,6 +99,7 @@ template<class X, class Diag, class OffDiag>
     const T_Scalar alpha_a = 0.5;
     const T_Scalar alpha_c = 0.5;
     const T_Scalar R = 8.314; //  J/mol/K
+    const T_Scalar dU_dT = -0.0011; // V/K
     const T_Scalar Peltier = 0.0;
 
     for (int f=0; f<faces.getCount(); f++)
@@ -171,11 +172,16 @@ template<class X, class Diag, class OffDiag>
 	    {U_ref = 5.0; cout << "U_ref > 5.0" << endl;}
 	    }
 
-	const T_Scalar eta_star = phis_star - phie_star - U_ref;
+	// add small temperature dependence of U
 
+
+	
 	const T_Scalar Temp = (xCell[c0])[2]; //  K , c0 and c1 temps are equal at convergence
 	const T_Scalar C_a = alpha_a*F/R/Temp;
 	const T_Scalar C_c = alpha_c*F/R/Temp;
+
+	const T_Scalar U = U_ref - (Temp - 298.0)*dU_dT;
+	const T_Scalar eta_star = phis_star - phie_star - U;
 
 	const T_Scalar C_0 = exp(C_a*eta_star)-exp(-1.0*C_c*eta_star);
 	const T_Scalar i0_star = k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
@@ -291,11 +297,13 @@ template<class X, class Diag, class OffDiag>
 	T_Scalar Factor = 1.0e-6;
 	if (_bInterfaceHeatSource)
 	  {
-	    (rCell[c1])[2] = Factor*((xCell[c0])[2] - (xCell[c1])[2]);
-	    offdiagC1_C0(2,2) = Factor;
-	    offdiagC1_C2(2,2) = 0.0;
-	    (diag[c1])(2,2) = -1.0*Factor;
+	    Factor = 1.0e-12;
 	  }
+	(rCell[c1])[2] = Factor*((xCell[c0])[2] - (xCell[c1])[2]);
+	offdiagC1_C0(2,2) = Factor;
+	offdiagC1_C2(2,2) = 0.0;
+	(diag[c1])(2,2) = -1.0*Factor;
+	  
 	// Point-coupled inclusions(off diagonal terms in square tensors)
 	// Cell c1
 	(diag[c1])(0,1) = -1*dIdCS_star;
