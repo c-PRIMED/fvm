@@ -20,7 +20,7 @@ fvm.set_atype('double')
 print " "
 
 fileBase="./"
-filename="50x50"
+filename="1to1_25"
 extension=".msh"
 Kn=10
 KnName='Kn_'
@@ -28,7 +28,7 @@ scale=3.1649049e-07
 
 BZfile="Sin"
 BZdisc="whocares"
-levels=6
+levels=2
 T1=300.
 T2=301.
 Tinit=(T1+T2)/2.
@@ -66,7 +66,8 @@ Cp=1623801.53768/eVtoJoule
 #  the matlab script "MakeSiKspace.m".  The second argument should always be 3, and the last argument should always be 1.
 
 
-K_space=pa.KspaceA(A,tau,vg,omega,ntheta,nphi)                                    #constructor 1
+K_space=pa.KspaceA(A,tau,vg,omega,ntheta,nphi,False)                                    #constructor 1
+K_space.setCp(Cp)
 #K_space=pa.KspaceA(fileBase+BZfile+BZdisc+".txt",dimension,1)     # constructor 2
 
 
@@ -177,7 +178,7 @@ residFile=open('Residual.dat','w')
 resid=cmodel.getResidual()
 residFile.write(str(iteration)+' '+str(resid)+' '+str(end-begin)+'\n')
 
-total=0
+total=2
 step=1
 balTol=.01
 relTol=1.e-13
