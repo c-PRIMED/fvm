@@ -149,6 +149,17 @@ class Kspace
       }
   }
 
+  void makeDegenerate(const int m)
+  {
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kv=getkvol(k);
+	const int modenum=kv.getmodenum();
+	Tmode& mode=kv.getmode(m);
+	mode.getcpRef()*=2.;
+      }
+  }
+
   void makeFreqArray()
   {
     _freqArray.resize(gettotmodes());
@@ -922,8 +933,34 @@ class Kspace
 	    T tau=mode.gettau();
 	    T de0dT=mode.calcde0dT(Tl);
 	    K[count]=vg[0]*vg[0]*tau*de0dT*dk3;
+	    count++;
 	  }
       }
+
+    return Kptr;
+  }
+
+  ArrayBase* getModewiseBallisticConductance(const T Tl)
+  {
+    TArray* Kptr=new TArray(gettotmodes());
+    TArray& K=*Kptr;
+    
+    int count=0;
+    for(int k=0;k<_length;k++)
+      {
+	Tkvol& kvol=getkvol(k);
+	const T dk3=kvol.getdk3();
+	const int numModes=kvol.getmodenum();
+	for(int m=0;m<numModes;m++)
+	  {
+	    Tmode& mode=kvol.getmode(m);
+	    Tvec vg=mode.getv();
+	    T de0dT=mode.calcde0dT(Tl);
+	    K[count]=vg[0]*de0dT*dk3;
+	    count++;
+	  }
+      }
+
     return Kptr;
   }
 

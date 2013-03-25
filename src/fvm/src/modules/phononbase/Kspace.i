@@ -38,6 +38,7 @@ class Kspace
   ArrayBase* getReflectionArray(const Mesh& mesh, const int FgId);
   ArrayBase* getHollandConductivity(const T Tl);
   ArrayBase* getModewiseHollandConductivity(const T Tl);
+  ArrayBase* getModewiseBallisticConductance(const T Tl);
   void setTransmission(Kspace<T>& toKspace, ArrayBase* freqBins, ArrayBase* transArray);
   T calcBallisticInterface(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
   T calcDiffuseE(Kspace<T>& kspace1, const Tvec& An, const T T0, const T T1);
@@ -45,6 +46,7 @@ class Kspace
   void setScattKernel(ScatteringKernel<T>& Sk);
   void setCp(const T cp);
   void setCpNonGray(const T Tl);
+  void makeDegenerate(const int m);
   Array<T>& getFreqArray();
   void setRelTimeFunction(const T A, const T B, const T C);
   ArrayBase* getRTAsources(const int c);
