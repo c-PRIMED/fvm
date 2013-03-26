@@ -84,7 +84,7 @@ class pmode
   //========================//
 
       
-  /*
+  
     T calce0(T Tl)
     {
     const T hbar=6.582119e-16;  // (eV s)
@@ -95,7 +95,7 @@ class pmode
     //e0kp=1./(exp(hbar*_omega/kb/Tl)-1);
     //T eref=1./(exp(hbar*_omega/kb/300)-1);
 
-    return e0kp/(hbar*_omega);
+    return e0kp;
     }
     T calce0tau(T Tl)
     {
@@ -107,7 +107,7 @@ class pmode
     //e0kp=1./(exp(hbar*_omega/kb/Tl)-1)/_tau;
     //T eref=1./(exp(hbar*_omega/kb/300)-1)/_tau;
 	
-    return e0kp/(hbar*_omega);
+    return e0kp;
     }
     T calcde0taudT(T Tl)
     {
@@ -121,7 +121,7 @@ class pmode
     //e0kp=pow(Tl,-2)/_tau*hbar*_omega/kb*exp(hbar*_omega/kb/Tl)/
     // pow((exp(hbar*_omega/kb/Tl)-1),2);
 	
-    return e0kp/(hbar*_omega);
+    return e0kp;
     }
     T calcde0dT(T Tl)
     {
@@ -135,14 +135,14 @@ class pmode
     //e0kp=pow(Tl,-2)*hbar*_omega/kb*exp(hbar*_omega/kb/Tl)/
     // pow((exp(hbar*_omega/kb/Tl)-1),2);
 	
-    return e0kp/(hbar*_omega);
-    }*/
+    return e0kp;
+    }
       
 
   //====================//
   //  Constant Cp Methods     //
   //====================//
-      
+    /*
   T calce0(T Tl) 
   {
     //const T hbar=6.582119e-16;  // (eV s)
@@ -162,7 +162,7 @@ class pmode
   {
     //const T hbar=6.582119e-16;  // (eV s)
     return _cp;
-  }
+    }
 
       
   T calcTensorPrefactor(T Tl)
@@ -194,7 +194,7 @@ class pmode
     e0kp=hbar*_omega/(exp((hbar*_omega-shift)/kb/Tl)-1);
 	
     return e0kp;
-  }
+    }*/
       
   //========================//
   //  End Constant Cp Methods     //
