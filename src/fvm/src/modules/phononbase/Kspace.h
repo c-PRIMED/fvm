@@ -517,6 +517,32 @@ class Kspace
     return guess;
   }
 
+  T calcPhononTemp(const int c, const int index, T guess)
+  {
+    const int modenum=getkvol(0).getmodenum();
+    const int m=index%modenum;
+    const int k=floor(index/modenum);
+    Tkvol& kv=getkvol(k);
+    Tmode& mode=kv.getmode(m);
+    const T e=gete(c,index);
+    T deltaT=1.;
+    int iters=0;
+    T inguess=guess;
+
+    while((deltaT>1e-6)&&(iters<10))
+      {
+	T e0=mode.calce0(inguess);
+	T de0dT=mode.calcde0dT(inguess);
+	deltaT=(e0-e)/de0dT;
+	inguess=guess-deltaT;
+	deltaT=fabs(deltaT/guess);
+	guess=inguess;
+	iters++;
+      }
+    return guess;
+
+  }
+
   void gete0_tau(T& Tguess, T& e0tau, T& de0taudT)
   {
     e0tau=0.;
@@ -1190,12 +1216,14 @@ class Kspace
   int getGlobalIndex(const int cell, const int count) {return cell*gettotmodes()+count;}
   void seteArray(TArrPtr ePtr) {_e=ePtr;}
   void sete0Array(TArrPtr e0Ptr) {_e0=e0Ptr;}
+  void setSourceArray(TArrPtr SPtr) {_Source=SPtr;}
   void setInjArray(TArrPtr InjPtr) {_injected=InjPtr;}
   void setResArray(TArrPtr ResPtr) {_residual=ResPtr;}
   void setFASArray(TArrPtr FASPtr) {_FASCorrection=FASPtr;}
   void setTauArray(TArrPtr TauPtr) {_Tau=TauPtr;}
   TArray& geteArray() {return *_e;}
   TArray& gete0Array() {return *_e0;}
+  TArray& getSourceArray() {return *_Source;}
   TArray& getInjArray() {return *_injected;}
   TArray& getResArray() {return *_residual;}
   TArray& getFASArray() {return *_FASCorrection;}
@@ -1659,6 +1687,24 @@ class Kspace
       }
   }
 
+  ArrayBase* getSourceArrayPy()
+  {return _Source.get();}
+
+  void addSource(const int c, TArray& BVec)
+  {
+    if(!(_Source==NULL))
+      {
+	const int beg=getGlobalIndex(c,0);
+	const int fin=getGlobalIndex(c+1,0);
+	int index(0);
+	for(int i=beg;i<fin;i++)
+	  {
+	    BVec[index]+=(*_Source)[i];
+	    index++;
+	  }
+      }
+  }
+
  private:
 
   Kspace(const Kspace&);
@@ -1672,6 +1718,7 @@ class Kspace
   Tkspace* _coarseKspace;
   TArrPtr _e;
   TArrPtr _e0;
+  TArrPtr _Source;
   TArrPtr _injected;
   TArrPtr _residual;
   TArrPtr _FASCorrection;

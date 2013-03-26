@@ -147,7 +147,7 @@ class COMETModel : public Model
 	 VectorT3 lamTemp;
 
 	 // set micro parameters
-	 cout<<"Allocating Arrays..."<<endl;
+	 //cout<<"Allocating Arrays..."<<endl;
 	 shared_ptr<TArray> eArray(new TArray(numcells*kcount));
 	 shared_ptr<TArray> e0Array(new TArray(numcells*kcount));
 	 shared_ptr<TArray> ResidArray(new TArray(numcells*kcount));
@@ -156,6 +156,13 @@ class COMETModel : public Model
 	 kspace.sete0Array(e0Array);
 	 kspace.setResArray(ResidArray);
 	 kspace.setTauArray(tauArray);
+
+	 if(_options.Source)
+	   {
+	     shared_ptr<TArray> SrcArray(new TArray(numcells*kcount));
+	     SrcArray->zero();
+	     kspace.setSourceArray(SrcArray);
+	   }
 	 
 	 shared_ptr<TArray> TLcell(new TArray(numcells));
 	 shared_ptr<TArray> deltaTcell(new TArray(numcells));
@@ -189,7 +196,7 @@ class COMETModel : public Model
 
 	 _macro.BranchTemperatures[n]=FieldVecPtr;
 
-	 cout<<"Arrays Allocated...Initializing Values..."<<endl;
+	 //cout<<"Arrays Allocated...Initializing Values..."<<endl;
 	 
 	 for(int c=0;c<numcells;c++)
 	   {
@@ -225,7 +232,7 @@ class COMETModel : public Model
 	 *TlResidCell=0.;
 	 _macro.TlResidual.addArray(cells,TlResidCell);
 
-	 cout<<"Values Initialized...Setting Facegroups..."<<endl;
+	 //cout<<"Values Initialized...Setting Facegroups..."<<endl;
 	 
 	 //setting facegroups
 
@@ -419,11 +426,11 @@ class COMETModel : public Model
 	       }
 	   }//end facegroup loop
 
-	 cout<<"Facegroups Set...Mesh "<<n<<" Complete."<<endl;
+	 //cout<<"Facegroups Set...Mesh "<<n<<" Complete."<<endl;
 	 
        }//end meshes loop
 
-     cout<<"Mesh Loop Complete...Creating Interfaces (if any)..."<<endl;
+     //cout<<"Mesh Loop Complete...Creating Interfaces (if any)..."<<endl;
 
      //Make map from mesh to IC
      IntArray ICcount(numMeshes);
@@ -470,7 +477,7 @@ class COMETModel : public Model
 	 ComInt.updateOtherGhost(*icPtr,mid1,false);
        }
 
-     cout<<"Interfaces Complete..."<<endl;
+     //cout<<"Interfaces Complete..."<<endl;
      
      initializeTemperatureBoundaries();
      _residual=updateResid(false);
@@ -670,9 +677,9 @@ class COMETModel : public Model
      
      initializeTemperatureBoundaries();
      _residual=updateResid(false);
-     cout<<"Creating Coarse Levels..."<<endl;
+     //cout<<"Creating Coarse Levels..."<<endl;
      MakeCoarseModel(this);
-     cout<<"Coarse Levels Completed."<<endl;
+     //cout<<"Coarse Levels Completed."<<endl;
   }
 
   void initCoarse()
@@ -701,6 +708,13 @@ class COMETModel : public Model
 	 kspace.setInjArray(InjArray);
 	 kspace.setFASArray(FASArray);
 	 kspace.setTauArray(tauArray);
+
+	 if(_options.Source)
+	   {
+	     shared_ptr<TArray> SrcArray(new TArray(numcells*kcount));
+	     SrcArray->zero();
+	     kspace.setSourceArray(SrcArray);
+	   }
 	 
 	 shared_ptr<TArray> TLcell(new TArray(numcells));
 	 shared_ptr<TArray> deltaTcell(new TArray(numcells));
@@ -2566,7 +2580,7 @@ class COMETModel : public Model
 			
 			if(_level==0)
 			  {
-			    if(c2Coarse==-1 || CoarseFineCount[c2Coarse]<5)  //not already paired
+			    if(c2Coarse==-1)// || CoarseFineCount[c2Coarse]<5)  //not already paired
 			      {
 				if(areaMagArray0[fglob]>maxArea)
 				  {
@@ -2726,7 +2740,7 @@ class COMETModel : public Model
 				count1++;
 			      }
 			  }
-			else if(_level<3)   //check for indirect neighbors
+			else if(_level<-1)   //check for indirect neighbors
 			  {
 			    const int c11neibCnt=cellCells1.getCount(c11);
 			    int middleMan=-1;

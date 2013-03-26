@@ -28,7 +28,8 @@ class Kspace
   Kspace(const char* filename,const int dimension,const bool normal);
   int getlength();
   int gettotmodes();
-  T getDK3() ;
+  T getDK3();
+  T calcPhononTemp(const int c, const int index, T guess);
   T calcSpecificHeat(T Tl);
   T calcSpecificHeat(T Tl,const int m);
   T findKnStats(const T length);
@@ -63,6 +64,7 @@ class Kspace
   ArrayBase* getEmptyArray(const int length);
   void weightArray(ArrayBase* ep);
   void setTref(const T Tref);
+  ArrayBase* getSourceArrayPy();
 
   %extend{
     std::vector<Kspace<T>*>& MakeList()
@@ -86,6 +88,7 @@ class Kspace
   TransmissionMap _trasMap;
   DensityOfStates<T>* _DOS;
   ScatteringKernel<T>* _ScattKernel;
+  TArrPtr _Source;
   
 };
 

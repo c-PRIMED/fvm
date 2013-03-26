@@ -51,6 +51,7 @@ struct COMETModelOptions : public FloatVarDict<T>
     this->minNewton=0;
     this->maxNewton=15;
     this->Scattering="SMRT";
+    this->Source=false;
   }
   
   bool printNormalizedResiduals;
@@ -72,6 +73,7 @@ struct COMETModelOptions : public FloatVarDict<T>
   int minNewton;
   int maxNewton;
   string Scattering;
+  bool Source;
 
 };
 
@@ -130,9 +132,9 @@ struct COMETIC
       {
 	for(int i=0;i<int(Connect0to1.size());i++)
 	  {
-	    Connect0to1[i]->emptyConnections();
+	    //Connect0to1[i]->emptyConnections();
 	    delete Connect0to1[i];
-	    Connect1to0[i]->emptyConnections();
+	    //Connect1to0[i]->emptyConnections();
 	    delete Connect1to0[i];
 	  }
 	
