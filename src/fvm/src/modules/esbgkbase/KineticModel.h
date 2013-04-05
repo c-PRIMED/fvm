@@ -228,6 +228,7 @@ class KineticModel : public Model
 	  shared_ptr<TArray> EntropyGenRateColl(new TArray(cells.getCountLevel1()));
 	  *EntropyGenRateColl = 0.0;
 	  _macroFields.EntropyGenRate_Collisional.addArray(cells,EntropyGenRateColl);
+
 	  
 	//Pxx,Pyy,Pzz,Pxy,Pxz,Pyz
 	shared_ptr<VectorT6Array> stressCell(new VectorT6Array(nCells));
@@ -2026,9 +2027,9 @@ map<string,shared_ptr<ArrayBase> >&
 	      Field& fnd = *_dsfPtr.dsf[j];
 	      TArray& dsf = dynamic_cast< TArray&>(fnd[solidFaces]);
 
-#ifdef FVM_PARALLEL
-	      MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE,dsf.getData(),solidFaces.getCount() , MPI::DOUBLE, MPI::SUM);
-#endif
+//#ifdef FVM_PARALLEL
+//	      MPI::COMM_WORLD.Allreduce( MPI::IN_PLACE,dsf.getData(),solidFaces.getCount() , MPI::DOUBLE, MPI::SUM);
+//#endif
 	      const Mesh& mesh = *_meshes[n];
 	      if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
 		const StorageSite& ibFaces = mesh.getIBFaces();
@@ -2407,7 +2408,6 @@ map<string,shared_ptr<ArrayBase> >&
       }
     }
     if (method==2){
-
    // Step0: Compute Interpolation Matrices from (only) Cells to IBFaces
       const int numMeshes = _meshes.size();
       for (int n=0; n<numMeshes; n++)
@@ -2440,6 +2440,7 @@ map<string,shared_ptr<ArrayBase> >&
 
 	      shared_ptr<TArray> ibVf(new TArray(ibFaces.getCount()));
 	      ibVf->zero();
+
 	      if (_options.fgamma==2){
 		shared_ptr<TArray> ibVfEq(new TArray(ibFaces.getCount()));
 		ibVfEq->zero();
@@ -2560,6 +2561,7 @@ map<string,shared_ptr<ArrayBase> >&
 
 	  }
 	}
+
       if (_options.fgamma==1){
       //Step 2 Find fgamma using macroparameters
       const int numMeshes = _meshes.size();
@@ -2987,8 +2989,22 @@ map<string,shared_ptr<ArrayBase> >&
     return ndens_tot;
  }
 
- void ConservationofMFSolid(const StorageSite& solidFaces) const
+ void ConservationofMFSolid(const StorageSite& solidFaces, const int output =0, bool perUnitArea=0) const
  {
+   FILE * pFile;
+	    
+   shared_ptr<VectorT6Array> Stress(new VectorT6Array(solidFaces.getCount()));
+   Stress->zero();
+   _macroFields.Stress.addArray(solidFaces,Stress);
+
+   shared_ptr<VectorT3Array> Force(new VectorT3Array(solidFaces.getCount()));
+   Force->zero();
+   _macroFields.force.addArray(solidFaces,Force);
+	        
+   shared_ptr<TArray> TemperatureIB(new TArray(solidFaces.getCount()));
+   TemperatureIB->zero();
+   _macroFields.temperatureIB.addArray(solidFaces,TemperatureIB);
+
     const double pi=_options.pi;
     const double epsilon=_options.epsilon_ES;
     const int nSolidFaces = solidFaces.getCount();
@@ -3008,6 +3024,13 @@ map<string,shared_ptr<ArrayBase> >&
 	VectorT3Array& v = dynamic_cast<VectorT3Array&>(_macroFields.velocity[solidFaces]);
 	TArray& density  = dynamic_cast<TArray&>(_macroFields.density[solidFaces]);
 	TArray& temperature  = dynamic_cast<TArray&>(_macroFields.temperature[solidFaces]);
+	TArray& tempIB  = dynamic_cast<TArray&>(_macroFields.temperatureIB[solidFaces]);
+	VectorT3Array& force  = dynamic_cast<VectorT3Array&>(_macroFields.force[solidFaces]);
+	VectorT6Array& stress  = dynamic_cast<VectorT6Array&>(_macroFields.Stress[solidFaces]);
+	const T Lx=_options["nonDimLx"];
+	const T Ly=_options["nonDimLy"];
+	const T Lz=_options["nonDimLz"];
+    
 	const T uwall = v[i][0];
 	const T vwall = v[i][1];
 	const T wwall = v[i][2];
@@ -3016,6 +3039,9 @@ map<string,shared_ptr<ArrayBase> >&
 	T Nmr(0.0) ;
 	T Dmr(0.0) ;
 	T incomFlux(0.0);
+	T TempWall(0.0);
+	T mWall(0.0);
+
 	for (int j=0; j<numDirections; j++)
 	  {		
 	    Field& fnd = *_dsfPtr.dsf[j];
@@ -3025,7 +3051,7 @@ map<string,shared_ptr<ArrayBase> >&
 	    const T wallV_dot_en = uwall*en[0]+vwall*en[1]+wwall*en[2];
 	    const T fwall = 1.0/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
 	    
-	    if (c_dot_en-wallV_dot_en > 0) //incoming
+	    if (c_dot_en-wallV_dot_en > 0) //outgoing
 	      {
 		Dmr = Dmr - fwall*wts[j]*(c_dot_en-wallV_dot_en);
 		incomFlux=incomFlux-dsf[i]*wts[j]*(c_dot_en-wallV_dot_en);
@@ -3033,12 +3059,20 @@ map<string,shared_ptr<ArrayBase> >&
 	    else
 	      {
 		Nmr = Nmr + dsf[i]*wts[j]*(c_dot_en-wallV_dot_en);
+          	if(output==1){
+               TempWall = TempWall + dsf[i]*(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))*wts[j]*0.5;
+                density[i] = density[i] + dsf[i]*wts[j]*0.5;
+		stress[i][0] +=pow((cx[j]-uwall),2.0)*dsf[i]*wts[j]*0.5;
+		stress[i][1] +=pow((cy[j]-vwall),2.0)*dsf[i]*wts[j]*0.5;
+	        stress[i][2] +=pow((cz[j]-wwall),2.0)*dsf[i]*wts[j]*0.5;
+		stress[i][3] +=(cx[j]-uwall)*(cy[j]-vwall)*dsf[i]*wts[j]*0.5;
+		stress[i][4] +=(cy[j]-vwall)*(cz[j]-wwall)*dsf[i]*wts[j]*0.5;
+		stress[i][5] +=(cx[j]-uwall)*(cz[j]-wwall)*dsf[i]*wts[j]*0.5;
+                }
 	      }
 	  }
-	const T nwall = Nmr/Dmr; // wall number density for initializing Maxwellian
-		    
-	density[i]=nwall;
-		    
+	const T nwall = Nmr/Dmr; // incoming wall number density for initializing Maxwellian
+		    	    
 	for (int j=0; j<numDirections; j++)
 	  {
 	    Field& fnd = *_dsfPtr.dsf[j];
@@ -3049,15 +3083,148 @@ map<string,shared_ptr<ArrayBase> >&
 	    if (c_dot_en-wallV_dot_en > 0)
 	      {
 		dsf[i] = nwall/pow(pi*Twall,1.5)*exp(-(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))/Twall);
+ 	        if(output==1){
+                TempWall = TempWall + dsf[i]*(pow(cx[j]-uwall,2.0)+pow(cy[j]-vwall,2.0)+pow(cz[j]-wwall,2.0))*wts[j]*0.5;
+                density[i] = density[i] + dsf[i]*wts[j]*0.5;
+		stress[i][0] +=pow((cx[j]-uwall),2.0)*dsf[i]*wts[j]*0.5;
+		stress[i][1] +=pow((cy[j]-vwall),2.0)*dsf[i]*wts[j]*0.5;
+	        stress[i][2] +=pow((cz[j]-wwall),2.0)*dsf[i]*wts[j]*0.5;
+		stress[i][3] +=(cx[j]-uwall)*(cy[j]-vwall)*dsf[i]*wts[j]*0.5;
+		stress[i][4] +=(cy[j]-vwall)*(cz[j]-wwall)*dsf[i]*wts[j]*0.5;
+		stress[i][5] +=(cx[j]-uwall)*(cz[j]-wwall)*dsf[i]*wts[j]*0.5;
+               }
 	      }	    
 	    else
 	      dsf[i]=dsf[i];
 	  }
+	  if(output==1){
+	  const VectorT3& Af = solidFaceArea[i];
+	  force[i][0] = Af[0]*Ly*Lz*stress[i][0] + Af[1]*Lz*Lx*stress[i][3] + Af[2]*Lx*Ly*stress[i][5];
+	  force[i][1] = Af[0]*Ly*Lz*stress[i][3] + Af[1]*Lz*Lx*stress[i][1] + Af[2]*Lx*Ly*stress[i][4];
+	  force[i][2] = Af[0]*Ly*Lz*stress[i][5] + Af[1]*Lz*Lx*stress[i][4] + Af[2]*Ly*Ly*stress[i][2];
+	 
+	  pFile = fopen("WallTemperature.dat","a");	  
+	   fprintf(pFile,"%E %E %E %E\n",solidFaceCentroid[i][0],solidFaceCentroid[i][1],solidFaceCentroid[i][2],TempWall);
+          fclose(pFile);
+	}
       }
  }
-		
+
+void MacroparameterIBCell(const StorageSite& solidFaces) const
+ {
+//    typedef CRMatrixTranspose<T,T,T> IMatrix;
+//    typedef CRMatrixTranspose<T,VectorT3,VectorT3> IMatrixV3;
+    const int numMeshes = _meshes.size();
+//    for (int n=0; n<numMeshes; n++)
+//      {
+//	const Mesh& mesh = *_meshes[n];
+//	if (!mesh.isShell() && mesh.getIBFaces().getCount() > 0){
+
+//	  const StorageSite& cells = mesh.getCells();
+//	  const StorageSite& ibFaces = mesh.getIBFaces();
+        
+//	  GeomFields::SSPair key1(&ibFaces,&cells);
+//	  const IMatrix& mIC =
+//	    dynamic_cast<const IMatrix&>
+//	    (*_geomFields._interpolationMatrices[key1]);
+	      
+//	  IMatrix mICV(mIC);
+//	  IMatrixV3 mICV3(mIC);  
+
+//	  GeomFields::SSPair key2(&ibFaces,&solidFaces);
+//	  const IMatrix& mIP =
+//	    dynamic_cast<const IMatrix&>
+//	    (*_geomFields._interpolationMatrices[key2]);
+
+//	  IMatrix mIPV(mIP);
+//	  IMatrixV3 mIPV3(mIP);    
+
+//	  shared_ptr<TArray> ibVtemp(new TArray(ibFaces.getCount()));
+	  
+//	  const TArray& cTemp  = 
+//	    dynamic_cast<TArray&>(_macroFields.temperature[cells]);
+//	  const TArray& sTemp  = 
+//	    dynamic_cast<TArray&>(_macroFields.temperatureIB[solidFaces]);
+	  
+//	  ibVtemp->zero();
+
+	  //temperature interpolation (cells+solidfaces)         
+//	  mICV.multiplyAndAdd(*ibVtemp,cTemp);
+//	  mIPV.multiplyAndAdd(*ibVtemp,sTemp);
+//	  _macroFields.temperature.addArray(ibFaces,ibVtemp);
+//	}
+//      }
+    for (int n=0;n<numMeshes;n++)
+     {
+    const Mesh& mesh = *_meshes[n];
+    const CRConnectivity& faceCells = mesh.getAllFaceCells();
+    const StorageSite& ibFaces = mesh.getIBFaces();
+    const StorageSite& cells = mesh.getCells();
+    const int nCells = cells.getCountLevel1();
+    const StorageSite& faces = mesh.getFaces();
+//    const TArray& TempIB  = 
+//       dynamic_cast<TArray&>(_macroFields.temperature[ibFaces]);
+    TArray& TempB  = 
+       dynamic_cast<TArray&>(_macroFields.pressure[cells]);
+    const IntArray& ibType = dynamic_cast<const IntArray&>(_geomFields.ibType[cells]);
+    const IntArray& ibFaceIndex = dynamic_cast<const IntArray&>(_geomFields.ibFaceIndex[faces]);
  
+    TArray xB(nCells);
+    TArray wB(nCells);
+
+    xB.zero();
+    wB.zero();
+      
+    const int nFaces = faces.getCount();
+    for(int f=0; f<nFaces; f++)
+    {
+        const int c0 = faceCells(f,0);
+        const int c1 = faceCells(f,1);
+
+        if (((ibType[c0] == Mesh::IBTYPE_FLUID) && (ibType[c1] == Mesh::IBTYPE_BOUNDARY)) ||
+            ((ibType[c1] == Mesh::IBTYPE_FLUID) && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)))
+        {
+            // this is an iBFace, determine which cell is interior and which boundary
+
+            const int ibFace = ibFaceIndex[f];
+            if (ibFace < 0)
+              throw CException("invalid ib face index");
+//            const T xFace = TempIB[ibFace];
+
+            if (ibType[c0] == Mesh::IBTYPE_FLUID)
+            {
+		  xB[c1] = xB[c0];
+		  wB[c1]++;
+	    }
+	
+            else
+	      {
+		  xB[c0] = xB[c1];
+		  wB[c0]++;
+	      }
+	}
+        else if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
+            (ibType[c1] == Mesh::IBTYPE_FLUID))
+        {
+            // leave as  is
+        }
+        else
+        {
+            // leave as  is
+        }
+    }
+
+    // set the phi for boundary cells as average of the ib face values
+    for(int c=0; c<nCells; c++)
+    {
+        if (wB[c] > 0)
+	cout << "wb value" << wB[c];
+          TempB[c] =  xB[c] / T_Scalar(wB[c]);
+	  
+    }
  
+      }
+ }
 
  void updateTime()
   {
@@ -3190,7 +3357,7 @@ map<string,shared_ptr<ArrayBase> >&
       }//end of loop through meshes
   }
   
-   void advance(const int niter)
+    bool advance(const int niter,const int updated=0)
   {
     for(int n=0; n<niter; n++)  
       {
@@ -3245,9 +3412,9 @@ map<string,shared_ptr<ArrayBase> >&
 
 	
 	
-	if (!_initialKmodelNorm) _initialKmodelNorm = rNorm;
+	if (!_initialKmodelNorm||updated==1) _initialKmodelNorm = rNorm;
 	//if (!_initialKmodelvNorm) _initialKmodelvNorm = vNorm;
-	if (_niters < 5)
+	if (_niters < 5||updated==2)
         {
              _initialKmodelNorm->setMax(*rNorm);
 	     // _initialKmodelvNorm->setMax(*vNorm);
@@ -3286,17 +3453,18 @@ map<string,shared_ptr<ArrayBase> >&
 
 	if ((*rNorm < _options.absoluteTolerance)||(*normRatio < _options.relativeTolerance )){
 	  //&& ((*vNorm < _options.absoluteTolerance)||(*vnormRatio < _options.relativeTolerance )))
-	  break;}
+	  return true;
+	}
 	
-
+	return false;
 	
 	
       }
     
 
   }
-
  
+
 
   
   void OutputDsfBLOCK(const char* filename)

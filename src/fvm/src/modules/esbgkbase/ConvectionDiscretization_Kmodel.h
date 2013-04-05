@@ -139,7 +139,7 @@ public:
                                 && (ibType[c0] == Mesh::IBTYPE_BOUNDARY)));
             
 
-              X varFlux =0.5*faceCFlux*(xCell[c0] + xCell[c0]);
+              X varFlux =0.5*faceCFlux*(xCell[c0] + xCell[c1]);
 
               rCell[c0] -= varFlux;
               rCell[c1] += varFlux;

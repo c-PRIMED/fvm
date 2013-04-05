@@ -135,7 +135,7 @@ public:
 		  dRdX.setDirichlet(c1);
 		  xB[c1] += xface;
 		  wB[c1]++;
-	      }
+		}
 	    }
 	
             else
@@ -150,7 +150,7 @@ public:
 		  dRdX.setDirichlet(c0);
 		  xB[c0] += xface;
 		  wB[c0]++;
-		}	
+		}
 	      }
         }
         else if ((ibType[c0] == Mesh::IBTYPE_FLUID) &&
@@ -175,7 +175,7 @@ public:
     for(int c=0; c<nCells; c++)
     {
         if (wB[c] > 0)
-          varcell[c] = xB[c] / T_Scalar(wB[c]);
+          varcell[c] =  xB[c] / T_Scalar(wB[c]);
 	  
     }
   }
