@@ -1,6 +1,5 @@
-# config file for Fedora 18
-# Same as most Linux distros except for the MPM
-# configname and the 'module load' in the before section
+# config file for mmh.prism.nanohub.org
+# Linux, gcc, openmpi
 
 python:
 	#Build=True
@@ -44,10 +43,10 @@ MEMOSA:
 	Build=1
 
 sphinx:
-	Build=0
+	Build=1
 
 before:
-	module load mpi/openmpi-x86_64
+	module load openmpi-x86_64
 
 pyodbc:
 	Build=0

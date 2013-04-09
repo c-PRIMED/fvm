@@ -48,10 +48,6 @@ sphinx:
 before:
 
 
-pymc:
-	Build=0
-
-
 pyodbc:
 	Build=0
 
