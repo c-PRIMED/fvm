@@ -278,6 +278,7 @@ class COMETDiscretizer
 		COMETConvectionCoarse(c,AMat,Bvec);
 		COMETCollision(c,&AMat,Bvec);
 		COMETEquilibrium(c,&AMat,Bvec);
+		COMETSource(c,Bvec);
 
 		if(_options.withNormal)
 		  COMETShifted(c,&AMat,Bvec);
@@ -342,6 +343,7 @@ class COMETDiscretizer
 		COMETConvectionCoarse(c,AMat,Bvec);
 		COMETCollision(c,&AMat,Bvec);
 		COMETEquilibrium(c,&AMat,Bvec);
+		COMETSource(c,Bvec);
 		
 		if(_options.withNormal)
 		  COMETShifted(c,&AMat,Bvec);
@@ -1054,6 +1056,9 @@ class COMETDiscretizer
     Amat->getElement(order,order)=tauTot;
   }
 
+  void COMETSource(const int cell, TArray& BVec)
+  {_kspace.addSource(cell, BVec);}
+
   void COMETFullScatt(const int cell, TArray& s, TArray& BVec)
   {
     const int klen=_kspace.getlength();
@@ -1338,6 +1343,7 @@ class COMETDiscretizer
 	    COMETConvectionCoarse(c,AMat,Bvec);	
 	    COMETCollision(c,&AMat,Bvec);
 	    COMETEquilibrium(c,&AMat,Bvec);
+	    COMETSource(c,Bvec);
 	    
 	    if(plusFAS)
 	      addFAS(c,Bvec);
