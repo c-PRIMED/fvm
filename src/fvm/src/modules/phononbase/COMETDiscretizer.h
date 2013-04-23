@@ -1057,7 +1057,7 @@ class COMETDiscretizer
   }
 
   void COMETSource(const int cell, TArray& BVec)
-  {_kspace.addSource(cell, BVec);}
+  {_kspace.addSource(cell, BVec,_cellVolume[cell]);}
 
   void COMETFullScatt(const int cell, TArray& s, TArray& BVec)
   {

@@ -1690,7 +1690,7 @@ class Kspace
   ArrayBase* getSourceArrayPy()
   {return _Source.get();}
 
-  void addSource(const int c, TArray& BVec)
+  void addSource(const int c, TArray& BVec, const T cv)
   {
     if(!(_Source==NULL))
       {
@@ -1699,7 +1699,7 @@ class Kspace
 	int index(0);
 	for(int i=beg;i<fin;i++)
 	  {
-	    BVec[index]+=(*_Source)[i];
+	    BVec[index]+=(*_Source)[i]*cv;
 	    index++;
 	  }
       }
