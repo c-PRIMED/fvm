@@ -31,6 +31,7 @@ public:
   
   
   BatteryModel(const GeomFields& geomFields,
+	       const MeshList& realMeshes, 
                const MeshList& meshes, 
                const int nSpecies);
   
@@ -54,11 +55,11 @@ public:
   T getMassFluxIntegral(const Mesh& mesh, const int faceGroupId, const int m);
   T getPotentialFluxIntegral(const Mesh& mesh, const int faceGroupId);
   T getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId);
-  T getAverageMassFraction(const Mesh& mesh, const int m);
+  T getAverageConcentration(const Mesh& mesh, const int m);
   T getFaceGroupArea(const Mesh& mesh, const int fgID);
   T getFaceGroupVoltage(const Mesh& mesh, const int fgID);
   T getMeshVolume(const Mesh& mesh);
-  T getMassFractionResidual(const int speciesId);
+  T getSpeciesResidual(const int speciesId);
   T getPotentialResidual();
   T getThermalResidual();
   T getPCResidual(const int v);

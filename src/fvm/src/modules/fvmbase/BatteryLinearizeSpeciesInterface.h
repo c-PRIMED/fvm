@@ -39,12 +39,12 @@ template<class X, class Diag, class OffDiag>
 			   const bool Anode,
 			   const bool Cathode,
 			   Field& varField,
-			   Field& mFElectricModel,
+			   Field& speciesConcElectricModel,
 			   Field& elecPotentialField,
 			   Field& temperatureField):
     _geomFields(geomFields),
     _varField(varField),
-    _mFElectricModel(mFElectricModel),
+    _speciesConcElectricModel(speciesConcElectricModel),
     _elecPotentialField(elecPotentialField),
     _temperatureField(temperatureField),
     _RRConstant(RRConstant),
@@ -62,8 +62,8 @@ template<class X, class Diag, class OffDiag>
     const StorageSite& faces = mesh.getParentFaceGroupSite();
 
     // previous timestep shell mesh info
-    const XArray& mFElecModel =
-      dynamic_cast<const XArray&>(_mFElectricModel[cells]);
+    const XArray& speciesConcElecModel =
+      dynamic_cast<const XArray&>(_speciesConcElectricModel[cells]);
 
     // shell mesh info
     const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
@@ -173,7 +173,7 @@ template<class X, class Diag, class OffDiag>
 	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 0.0;}
 	if (cs_star > csMax){ cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl; cs_star = csMax;}
 
-	const T_Scalar SOC =  mFElecModel[c1]/csMax;
+	const T_Scalar SOC =  speciesConcElecModel[c1]/csMax;
 
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
@@ -279,7 +279,7 @@ template<class X, class Diag, class OffDiag>
   
   const GeomFields& _geomFields;
   Field& _varField;
-  Field& _mFElectricModel;
+  Field& _speciesConcElectricModel;
   Field& _elecPotentialField;
   Field& _temperatureField;
   const T_Scalar _RRConstant;

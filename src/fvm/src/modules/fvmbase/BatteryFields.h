@@ -13,12 +13,12 @@ struct BatterySpeciesFields
 {
   BatterySpeciesFields(const string baseName);
 
-  Field massFraction;
+  Field concentration;
   Field massFlux;
   Field diffusivity;
   Field convectionFlux;
-  Field massFractionN1;
-  Field massFractionN2;
+  Field concentrationN1;
+  Field concentrationN2;
   Field one;                      //used to fill in density
 };
 
@@ -26,7 +26,8 @@ struct BatteryModelFields
 {
   BatteryModelFields(const string baseName);
 
-  Field potential;           
+  Field potential; 
+  Field potentialN1;
   Field potential_flux;  
   Field potential_gradient;
   Field conductivity;

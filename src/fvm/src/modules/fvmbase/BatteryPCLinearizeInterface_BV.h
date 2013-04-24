@@ -20,7 +20,7 @@
 
 
 
-template<class X, class Diag, class OffDiag>
+template<class X, class Diag, class OffDiag, class otherMeshDiag>
   class BatteryPCLinearizeInterface_BV
 {
  public:
@@ -29,9 +29,12 @@ template<class X, class Diag, class OffDiag>
   typedef typename CCMatrix::DiagArray DiagArray;
   typedef Array<T_Scalar> TArray;
   typedef Array<X> XArray;
-  typedef Vector<T_Scalar,3> VectorT3;
-  typedef Array<VectorT3> VectorT3Array;
- 
+  //typedef Vector<T_Scalar,3> VectorT3;
+  //typedef Array<VectorT3> VectorT3Array;
+  
+  //typedef DiagonalTensor<T_Scalar,2> DiagTensorT3;
+  typedef CRMatrix<otherMeshDiag,otherMeshDiag,X> CCMatrix_DiagTensors;
+  typedef typename CCMatrix_DiagTensors::DiagArray DiagArray_DiagTensors;
 
  BatteryPCLinearizeInterface_BV(const GeomFields& geomFields,
 			   const T_Scalar RRConstant,
@@ -74,8 +77,8 @@ template<class X, class Diag, class OffDiag>
     const StorageSite& parentCells = parentMesh.getCells();
     const MultiField::ArrayIndex cVarIndexParent(&_varField,&parentCells);
     XArray& rParentCell = dynamic_cast<XArray&>(rField[cVarIndexParent]);
-    CCMatrix& parentmatrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndexParent,cVarIndexParent)); 
-    DiagArray& parentdiag = parentmatrix.getDiag();
+    CCMatrix_DiagTensors& parentmatrix = dynamic_cast<CCMatrix_DiagTensors&>(mfmatrix.getMatrix(cVarIndexParent,cVarIndexParent)); 
+    DiagArray_DiagTensors& parentdiag = parentmatrix.getDiag();
     const TArray& faceAreaMag =
       dynamic_cast<const TArray&>(_geomFields.areaMag[faces]);
 
@@ -85,8 +88,8 @@ template<class X, class Diag, class OffDiag>
     const StorageSite& otherCells = otherMesh.getCells();
     const MultiField::ArrayIndex cVarIndexOther(&_varField,&otherCells);
     XArray& rOtherCell = dynamic_cast<XArray&>(rField[cVarIndexOther]);
-    CCMatrix& othermatrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndexOther,cVarIndexOther)); 
-    DiagArray& otherdiag = othermatrix.getDiag();
+    CCMatrix_DiagTensors& othermatrix = dynamic_cast<CCMatrix_DiagTensors&>(mfmatrix.getMatrix(cVarIndexOther,cVarIndexOther)); 
+    DiagArray_DiagTensors& otherdiag = othermatrix.getDiag();
 
     // set constants for entire shell
     const T_Scalar F = 96485.0; //  C/mol
@@ -126,18 +129,43 @@ template<class X, class Diag, class OffDiag>
 	    c1o = temp;
 	  }
 
-	//get parent mesh fluxes and coeffs
+	// parent and other are full of diagonal tensors, while shell is full of square tensors
+	// need to convert incoming information from parent and other
+	// to a square tensor format
+	OffDiag dRC0dXC3 = NumTypeTraits<OffDiag>::getUnity();
+	Diag dRC0dXC0 = NumTypeTraits<Diag>::getUnity();
+	OffDiag dRC0dXC2 = NumTypeTraits<OffDiag>::getUnity();
+	Diag dRC0dXC1 = NumTypeTraits<Diag>::getUnity();
+
+	// get parent and other flux
 	const X parentFlux = rParentCell[c1p]; // inward shell flux on the left
-	const OffDiag dRC0dXC3 = parentmatrix.getCoeff(c1p,  c0p);
-	const Diag dRC0dXC0 = parentdiag[c1p];
-
-	//get other mesh fluxes and coeffs
 	const X otherFlux = rOtherCell[c1o]; // inward shell flux on the right
-	const OffDiag dRC0dXC2 = othermatrix.getCoeff(c1o,  c0o);
-	const OffDiag dRC0dXC1 = otherdiag[c1o];
+	
+	//get parent coeffs
+	const otherMeshDiag dRC0dXC3_DiagTens = parentmatrix.getCoeff(c1p,  c0p);
+	const otherMeshDiag dRC0dXC0_DiagTens = parentdiag[c1p];
 
+	//get other coeffs
+	const otherMeshDiag dRC0dXC2_DiagTens = othermatrix.getCoeff(c1o,  c0o);
+	const otherMeshDiag dRC0dXC1_DiagTens = otherdiag[c1o];
 
-	//now put flux information from meshes into shell cells
+	dRC0dXC3(0,0) = dRC0dXC3_DiagTens[0];
+	dRC0dXC3(1,1) = dRC0dXC3_DiagTens[1];
+	dRC0dXC2(0,0) = dRC0dXC2_DiagTens[0];
+	dRC0dXC2(1,1) = dRC0dXC2_DiagTens[1];
+	dRC0dXC1(0,0) = dRC0dXC1_DiagTens[0];
+	dRC0dXC1(1,1) = dRC0dXC1_DiagTens[1];
+	dRC0dXC0(0,0) = dRC0dXC0_DiagTens[0];
+	dRC0dXC0(1,1) = dRC0dXC0_DiagTens[1];
+
+	if (_bInterfaceHeatSource)
+	  {
+	    dRC0dXC3(2,2) = dRC0dXC3_DiagTens[2];
+	    dRC0dXC2(2,2) = dRC0dXC2_DiagTens[2];
+	    dRC0dXC1(2,2) = dRC0dXC1_DiagTens[2];
+	    dRC0dXC0(2,2) = dRC0dXC0_DiagTens[2];
+	  }
+
 	const int c0 = f;
 	const int c1 = cellCells(f,0);
 	const int c2 = cellCells(f,1);
@@ -172,11 +200,14 @@ template<class X, class Diag, class OffDiag>
 	    {U_ref = 5.0; cout << "U_ref > 5.0" << endl;}
 	    }
 
-	// add small temperature dependence of U
+	// add small temperature dependence of U?
 
 
-	
-	const T_Scalar Temp = (xCell[c0])[2]; //  K , c0 and c1 temps are equal at convergence
+	T_Scalar Temp = 300.0;
+	if (_bInterfaceHeatSource)
+	  {
+	    Temp = (xCell[c0])[2]; //  K , c0 and c1 temps are equal at convergence
+	  }
 	const T_Scalar C_a = alpha_a*F/R/Temp;
 	const T_Scalar C_c = alpha_c*F/R/Temp;
 
@@ -212,6 +243,8 @@ template<class X, class Diag, class OffDiag>
        	const T_Scalar dIdTs_star = -0.5*i0_star*F*eta_star/R/Temp/Temp*(alpha_a*exp(C_a*eta_star)+alpha_c*exp(-1*C_c*eta_star));
 
 
+	//now put flux information from meshes into shell cells
+
 	// left(parent) shell cell - 3 neighbors
 	// flux balance for all equations
 	OffDiag& offdiagC0_C1 = matrix.getCoeff(c0,  c1);
@@ -234,17 +267,15 @@ template<class X, class Diag, class OffDiag>
 	(diag[c0])(1,1) *= F;
 
 	//include interface heating if thermal model turned on
+	//if (_bInterfaceHeatSource)
 	if (_bInterfaceHeatSource)
 	  {
 	    (rCell[c0])[2] += (eta_star + Peltier)*i_star; // in Watts
 	    (diag[c0])(2,2) += (eta_star + Peltier)*dIdTe_star;
 	    (offdiagC0_C1)(2,2) += (eta_star + Peltier)*dIdTs_star;	    
-	  }
-	
-	// Point-coupled inclusions(off diagonal terms in square tensors)
-	// Cell c0
-	if (_bInterfaceHeatSource)
-	  { 
+	  	
+	    // Point-coupled inclusions(off diagonal terms in square tensors)
+	    // Cell c0	
 	    (diag[c0])(2,0) = (eta_star + Peltier)*dIdPhiE_star - i_star; 
 	    (diag[c0])(2,1) = (eta_star + Peltier)*dIdCE_star; 
 	    (offdiagC0_C1)(2,0) = i_star + (eta_star + Peltier)*dIdPhiS_star;
@@ -294,16 +325,16 @@ template<class X, class Diag, class OffDiag>
 	//      THERMAL       //
 	////////////////////////
 
-	T_Scalar Factor = 1.0e-6;
 	if (_bInterfaceHeatSource)
 	  {
-	    Factor = 1.0e-12;
+	    T_Scalar Factor = 1.0e-12; 
+	    (rCell[c1])[2] = Factor*((xCell[c0])[2] - (xCell[c1])[2]);
+	    offdiagC1_C0(2,2) = Factor;
+	    offdiagC1_C2(2,2) = 0.0;
+	    (diag[c1])(2,2) = -1.0*Factor;
 	  }
-	(rCell[c1])[2] = Factor*((xCell[c0])[2] - (xCell[c1])[2]);
-	offdiagC1_C0(2,2) = Factor;
-	offdiagC1_C2(2,2) = 0.0;
-	(diag[c1])(2,2) = -1.0*Factor;
-	  
+
+
 	// Point-coupled inclusions(off diagonal terms in square tensors)
 	// Cell c1
 	(diag[c1])(0,1) = -1*dIdCS_star;

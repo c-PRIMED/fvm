@@ -43,24 +43,31 @@ class BatteryModel<T>::Impl
 {
 public:
   typedef Array<T> TArray;
-  typedef Vector<T,3> VectorT3;
-  typedef Array<VectorT3> VectorT3Array;
   typedef Gradient<T> TGradType;
   typedef Array<Gradient<T> > TGradArray;
   typedef CRMatrix<T,T,T> T_Matrix;
 
-  //typedef Vector<T,2> VectorT2;
-  //typedef Array<VectorT2> VectorT2Array;
-  //typedef SquareTensor<T,2> SquareTensorT2;
-  //typedef Array<Gradient<VectorT2> > VectorT2GradArray;
-
+  // PC Thermal included
+  typedef Vector<T,3> VectorT3;
+  typedef Array<VectorT3> VectorT3Array;
   typedef SquareTensor<T,3> SquareTensorT3;
+  typedef Array<Gradient<VectorT3> > VectorT3GradArray;
   typedef Gradient<VectorT3> VectorT3Grad;
-  typedef Array<VectorT3Grad> VectorT3GradArray;
+  typedef DiagonalTensor<T,3> DiagTensorT3;
+
+  // PC No Thermal included
+  typedef Vector<T,2> VectorT2;
+  typedef Array<VectorT2> VectorT2Array;
+  typedef SquareTensor<T,2> SquareTensorT2;
+  typedef Array<Gradient<VectorT2> > VectorT2GradArray;
+  typedef Gradient<VectorT2> VectorT2Grad;
+  typedef DiagonalTensor<T,2> DiagTensorT2;
 
   Impl(const GeomFields& geomFields,
+       const MeshList& realMeshes,
        const MeshList& meshes,
        const int nSpecies) :
+    _realMeshes(realMeshes),
     _meshes(meshes),
     _geomFields(geomFields),
     _niters(0),
@@ -191,9 +198,9 @@ public:
 	shared_ptr<TArray> pCell(new TArray(nCells));
 
 	if (!mesh.isDoubleShell())
-	{
+	  {
 	    *pCell = pvc["initialPotential"];
-	    }
+	  }
 	else
 	  {
 	    // double shell mesh cells take on values of parents
@@ -218,13 +225,21 @@ public:
 
 	_batteryModelFields.potential.addArray(cells,pCell);
 
+	if (_options.transient)
+	  {
+	    // not actually discretized as an unsteady term
+	    // only used to recover values from beginning of given time step
+	    // in case a new technique needs to be tried after a solution failure
+	    _batteryModelFields.potentialN1.addArray(cells, dynamic_pointer_cast<ArrayBase>(pCell->newCopy()));
+	  }
+
 	//initial temperature setup
 	shared_ptr<TArray> tCell(new TArray(nCells));
 
 	if (!mesh.isDoubleShell())
-	{
+	  {
 	    *tCell = tvc["initialTemperature"];
-	    }
+	  }
 	else
 	  {
 	    // double shell mesh cells take on values of parents
@@ -250,11 +265,11 @@ public:
 	_batteryModelFields.temperature.addArray(cells,tCell);
 
 	if (_options.transient)
-        {
+	  {
 	    _batteryModelFields.temperatureN1.addArray(cells, dynamic_pointer_cast<ArrayBase>(tCell->newCopy()));
             if (_options.timeDiscretizationOrder > 1)
 	      _batteryModelFields.temperatureN2.addArray(cells, dynamic_pointer_cast<ArrayBase>(tCell->newCopy()));
-	}
+	  }
 
 	//electric/ionic conductivity setup
 	shared_ptr<TArray> condCell(new TArray(nCells));
@@ -344,60 +359,113 @@ public:
 	_batteryModelFields.lnLithiumConcentrationGradient.addArray(cells,gradLnLC);
 
 	//set up combined fields for point-coupled solve
-	shared_ptr<VectorT3Array> pstCell(new VectorT3Array(nCells));
-	pstCell->zero();
-	_batteryModelFields.potentialSpeciesTemp.addArray(cells,pstCell);
+	if (_options.thermalModelPC)
+	  {
+	    shared_ptr<VectorT3Array> pstCell(new VectorT3Array(nCells));
+	    pstCell->zero();
+	    _batteryModelFields.potentialSpeciesTemp.addArray(cells,pstCell);
 
-	if (_options.transient)
-        {
-            _batteryModelFields.potentialSpeciesTempN1.addArray(cells,
-                                            dynamic_pointer_cast<ArrayBase>(pstCell->newCopy()));
-            if (_options.timeDiscretizationOrder > 1)
+	    if (_options.transient)
 	      {
-		throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
-              /*_batteryModelFields.potentialAndSpeciesN2.addArray(cells,
-		dynamic_pointer_cast<ArrayBase>(psCell->newCopy()));*/
+		_batteryModelFields.potentialSpeciesTempN1.addArray(cells,
+								    dynamic_pointer_cast<ArrayBase>(pstCell->newCopy()));
+		if (_options.timeDiscretizationOrder > 1)
+		  {
+		    throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
+		    /*_batteryModelFields.potentialAndSpeciesN2.addArray(cells,
+		      dynamic_pointer_cast<ArrayBase>(psCell->newCopy()));*/
+		  }
+
 	      }
 
-	}
+	    //combined diffusivity field
+	    shared_ptr<VectorT3Array> pstDiffCell(new VectorT3Array(nCells));
+	    pstDiffCell->zero();
+	    _batteryModelFields.potentialSpeciesTempDiffusivity.addArray(cells,pstDiffCell);	
 
-	//combined diffusivity field
-	shared_ptr<VectorT3Array> pstDiffCell(new VectorT3Array(nCells));
-	pstDiffCell->zero();
-	_batteryModelFields.potentialSpeciesTempDiffusivity.addArray(cells,pstDiffCell);	
+	    //combined gradient setup
+	    shared_ptr<VectorT3GradArray> gradpst(new VectorT3GradArray(nCells));
+	    gradpst->zero();	
+	    _batteryModelFields.potentialSpeciesTempGradient.addArray(cells,gradpst);
 
-	//combined gradient setup
-	shared_ptr<VectorT3GradArray> gradpst(new VectorT3GradArray(nCells));
-	gradpst->zero();	
-	_batteryModelFields.potentialSpeciesTempGradient.addArray(cells,gradpst);
-
-	//initial combined flux flied; Note: flux only stored on boundary faces
-	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-	  {
-	    const FaceGroup& fg = *fgPtr;
-	    const StorageSite& faces = fg.site;
+	    //initial combined flux flied; Note: flux only stored on boundary faces
+	    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
 	      
-	    shared_ptr<VectorT3Array> pstFlux(new VectorT3Array(faces.getCount()));
-	    pstFlux->zero();
-	    _batteryModelFields.potentialSpeciesTempFlux.addArray(faces,pstFlux);
+		shared_ptr<VectorT3Array> pstFlux(new VectorT3Array(faces.getCount()));
+		pstFlux->zero();
+		_batteryModelFields.potentialSpeciesTempFlux.addArray(faces,pstFlux);
 	      
+	      }
+	    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
+	      
+		shared_ptr<VectorT3Array> pstFlux(new VectorT3Array(faces.getCount()));
+		pstFlux->zero();
+		_batteryModelFields.potentialSpeciesTempFlux.addArray(faces,pstFlux);
+	      }
 	  }
-	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	else
 	  {
-	    const FaceGroup& fg = *fgPtr;
-	    const StorageSite& faces = fg.site;
+	    shared_ptr<VectorT2Array> pstCell(new VectorT2Array(nCells));
+	    pstCell->zero();
+	    _batteryModelFields.potentialSpeciesTemp.addArray(cells,pstCell);
+
+	    if (_options.transient)
+	      {
+		_batteryModelFields.potentialSpeciesTempN1.addArray(cells,
+								    dynamic_pointer_cast<ArrayBase>(pstCell->newCopy()));
+		if (_options.timeDiscretizationOrder > 1)
+		  {
+		    throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
+		    /*_batteryModelFields.potentialAndSpeciesN2.addArray(cells,
+		      dynamic_pointer_cast<ArrayBase>(psCell->newCopy()));*/
+		  }
+
+	      }
+
+	    //combined diffusivity field
+	    shared_ptr<VectorT2Array> pstDiffCell(new VectorT2Array(nCells));
+	    pstDiffCell->zero();
+	    _batteryModelFields.potentialSpeciesTempDiffusivity.addArray(cells,pstDiffCell);	
+
+	    //combined gradient setup
+	    shared_ptr<VectorT2GradArray> gradpst(new VectorT2GradArray(nCells));
+	    gradpst->zero();	
+	    _batteryModelFields.potentialSpeciesTempGradient.addArray(cells,gradpst);
+
+	    //initial combined flux flied; Note: flux only stored on boundary faces
+	    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
 	      
-	    shared_ptr<VectorT3Array> pstFlux(new VectorT3Array(faces.getCount()));
-	    pstFlux->zero();
-	    _batteryModelFields.potentialSpeciesTempFlux.addArray(faces,pstFlux);
+		shared_ptr<VectorT2Array> pstFlux(new VectorT2Array(faces.getCount()));
+		pstFlux->zero();
+		_batteryModelFields.potentialSpeciesTempFlux.addArray(faces,pstFlux);
+	      
+	      }
+	    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
+	      
+		shared_ptr<VectorT2Array> pstFlux(new VectorT2Array(faces.getCount()));
+		pstFlux->zero();
+		_batteryModelFields.potentialSpeciesTempFlux.addArray(faces,pstFlux);
+	      }
 	  }
       }
 
     for (int m=0; m<_nSpecies; m++)
-    {
-      const BatterySpeciesVCMap& svcmap = *_svcMapVector[m];
-      BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
-      //MFRPtr& iNorm = *_initialNormVector[m];
+      {
+	const BatterySpeciesVCMap& svcmap = *_svcMapVector[m];
+	BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
+	//MFRPtr& iNorm = *_initialNormVector[m];
 
       for (int n=0; n<numMeshes; n++)
       {
@@ -415,13 +483,13 @@ public:
 	const BatterySpeciesVC<T>& svc = *(pos->second);
      
 
-	//mass fraction
+	//concentration 
 	
-        shared_ptr<TArray> mFCell(new TArray(cells.getCount()));
+        shared_ptr<TArray> concCell(new TArray(cells.getCount()));
 	
 	if (!mesh.isDoubleShell())
 	  {
-	    *mFCell = svc["initialMassFraction"];
+	    *concCell = svc["initialConcentration"];
 	  }
 	else
 	  {
@@ -436,26 +504,26 @@ public:
 	      {
 		if ((c < NumberOfCells/4)||(c >= 3*NumberOfCells/4))
 		  {
-		    (*mFCell)[c] = svcP["initialMassFraction"];
+		    (*concCell)[c] = svcP["initialConcentration"];
 		  }
 		else
 		  {
-		    (*mFCell)[c] = svcO["initialMassFraction"];
+		    (*concCell)[c] = svcO["initialConcentration"];
 		  }
 	      }
 	  }
 	
-	sFields.massFraction.addArray(cells,mFCell);
+	sFields.concentration.addArray(cells,concCell);
 
 	if (_options.transient)
-        {
-            sFields.massFractionN1.addArray(cells,
-                                            dynamic_pointer_cast<ArrayBase>(mFCell->newCopy()));
+	  {
+            sFields.concentrationN1.addArray(cells,
+                                            dynamic_pointer_cast<ArrayBase>(concCell->newCopy()));
             if (_options.timeDiscretizationOrder > 1)
-              sFields.massFractionN2.addArray(cells,
-                                              dynamic_pointer_cast<ArrayBase>(mFCell->newCopy()));
+              sFields.concentrationN2.addArray(cells,
+                                              dynamic_pointer_cast<ArrayBase>(concCell->newCopy()));
 
-	}
+	  }
 
 	//diffusivity
         shared_ptr<TArray> diffusivityCell(new TArray(cells.getCount()));
@@ -485,7 +553,7 @@ public:
           
         }
         foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
-        {
+	  {
             const FaceGroup& fg = *fgPtr;
             const StorageSite& faces = fg.site;
           
@@ -494,12 +562,12 @@ public:
             fluxFace->zero();
             sFields.massFlux.addArray(faces,fluxFace);
           
-        }
+	  }
 
  
       }	
     
-    sFields.diffusivity.syncLocal();
+      sFields.diffusivity.syncLocal();
     }
     _niters  =0;
     _initialPotentialNorm = MFRPtr();
@@ -539,14 +607,14 @@ public:
 
             const StorageSite& cells = mesh.getCells();
             TArray& mF =
-              dynamic_cast<TArray&>(sFields.massFraction[cells]);
+              dynamic_cast<TArray&>(sFields.concentration[cells]);
             TArray& mFN1 =
-              dynamic_cast<TArray&>(sFields.massFractionN1[cells]);
+              dynamic_cast<TArray&>(sFields.concentrationN1[cells]);
 
             if (_options.timeDiscretizationOrder > 1)
             {
                 TArray& mFN2 =
-                  dynamic_cast<TArray&>(sFields.massFractionN2[cells]);
+                  dynamic_cast<TArray&>(sFields.concentrationN2[cells]);
                 mFN2 = mFN1;
             }
             mFN1 = mF;
@@ -558,19 +626,36 @@ public:
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 
-	VectorT3Array& pST =
-	  dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
-	VectorT3Array& pSTN1 =
-	  dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
-
-	if (_options.timeDiscretizationOrder > 1)
+	if (_options.thermalModelPC)
 	  {
-	    throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
-	    //VectorT3Array& pSTN2 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
-	      //pSTN2 = pSTN1;
-	  }
-	pSTN1 = pST;
+	    VectorT3Array& pST =
+	      dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    VectorT3Array& pSTN1 =
+	      dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
 
+	    if (_options.timeDiscretizationOrder > 1)
+	      {
+		throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
+		//VectorT3Array& pSTN2 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		//pSTN2 = pSTN1;
+	      }
+	    pSTN1 = pST;
+	  }
+	else
+	  {
+	    VectorT2Array& pST =
+	      dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    VectorT2Array& pSTN1 =
+	      dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
+
+	    if (_options.timeDiscretizationOrder > 1)
+	      {
+		throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
+		//VectorT2Array& pSTN2 = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		//pSTN2 = pSTN1;
+	      }
+	    pSTN1 = pST;
+	  }
 
 	TArray& temp =
               dynamic_cast<TArray&>(_batteryModelFields.temperature[cells]);
@@ -584,6 +669,14 @@ public:
 	    tempN2 = tempN1;
 	  }
 	tempN1 = temp;
+
+	// only used for recoverLastTimeStep, no unsteady term in potential equation
+	TArray& potential =
+              dynamic_cast<TArray&>(_batteryModelFields.potential[cells]);
+        TArray& potentialN1 =
+              dynamic_cast<TArray&>(_batteryModelFields.potentialN1[cells]);
+	potentialN1 = potential;
+
       }
   }
 
@@ -601,9 +694,9 @@ void recoverLastTimestep()
 
             const StorageSite& cells = mesh.getCells();
             TArray& mF =
-              dynamic_cast<TArray&>(sFields.massFraction[cells]);
+              dynamic_cast<TArray&>(sFields.concentration[cells]);
             TArray& mFN1 =
-              dynamic_cast<TArray&>(sFields.massFractionN1[cells]);
+              dynamic_cast<TArray&>(sFields.concentrationN1[cells]);
 
             mF = mFN1;
         }
@@ -614,17 +707,34 @@ void recoverLastTimestep()
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 
-	VectorT3Array& pST =
-	  dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
-	VectorT3Array& pSTN1 =
-	  dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
-	pST = pSTN1;
+	if (_options.thermalModelPC)
+	  {
+	    VectorT3Array& pST =
+	      dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    VectorT3Array& pSTN1 =
+	      dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
+	    pST = pSTN1;
+	  }
+	else
+	  {
+	    VectorT2Array& pST =
+	      dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    VectorT2Array& pSTN1 =
+	      dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
+	    pST = pSTN1;
+	  }
 
 	TArray& temp =
               dynamic_cast<TArray&>(_batteryModelFields.temperature[cells]);
         TArray& tempN1 =
               dynamic_cast<TArray&>(_batteryModelFields.temperatureN1[cells]);
 	temp = tempN1;
+
+	TArray& potential =
+              dynamic_cast<TArray&>(_batteryModelFields.potential[cells]);
+        TArray& potentialN1 =
+              dynamic_cast<TArray&>(_batteryModelFields.potentialN1[cells]);
+	potential = potentialN1;
       }
   }
   
@@ -638,9 +748,9 @@ void recoverLastTimestep()
         const Mesh& mesh = *_meshes[n];
 
         const StorageSite& cells = mesh.getCells();
-        MultiField::ArrayIndex tIndex(&sFields.massFraction,&cells);
+        MultiField::ArrayIndex tIndex(&sFields.concentration,&cells);
 
-        ls.getX().addArray(tIndex,sFields.massFraction.getArrayPtr(cells));
+        ls.getX().addArray(tIndex,sFields.concentration.getArrayPtr(cells));
 
         const CRConnectivity& cellCells = mesh.getCellCells();
 
@@ -692,50 +802,187 @@ void recoverLastTimestep()
     {
         const Mesh& mesh = *_meshes[n];
 
-        const StorageSite& cells = mesh.getCells();
-        MultiField::ArrayIndex tIndex(&_batteryModelFields.potentialSpeciesTemp,&cells);
+	if (mesh.isDoubleShell())
+	  {
 
-        ls.getX().addArray(tIndex,_batteryModelFields.potentialSpeciesTemp.getArrayPtr(cells));
+	    const StorageSite& cells = mesh.getCells();
+	    MultiField::ArrayIndex tIndex(&_batteryModelFields.potentialSpeciesTemp,&cells);
 
-        const CRConnectivity& cellCells = mesh.getCellCells();
+	    ls.getX().addArray(tIndex,_batteryModelFields.potentialSpeciesTemp.getArrayPtr(cells));
 
-        shared_ptr<Matrix> m(new CRMatrix<SquareTensorT3,SquareTensorT3,VectorT3>(cellCells));
+	    const CRConnectivity& cellCells = mesh.getCellCells();
 
-        ls.getMatrix().addMatrix(tIndex,tIndex,m);
+	    if (_options.thermalModelPC)
+	      {
+		shared_ptr<Matrix> m(new CRMatrix<SquareTensorT3,SquareTensorT3,VectorT3>(cellCells));
 
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-        {
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
+		ls.getMatrix().addMatrix(tIndex,tIndex,m);
 
-            MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
-            ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
+		foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
 
-            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+		    MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
+		    ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
 
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<SquareTensorT3,VectorT3>(faceCells));
-            ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+		    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-            shared_ptr<Matrix> mff(new DiagonalMatrix<SquareTensorT3,VectorT3>(faces.getCount()));
-            ls.getMatrix().addMatrix(fIndex,fIndex,mff);
-        }
+		    shared_ptr<Matrix> mft(new FluxJacobianMatrix<SquareTensorT3,VectorT3>(faceCells));
+		    ls.getMatrix().addMatrix(fIndex,tIndex,mft);
 
-        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
-        {
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
+		    shared_ptr<Matrix> mff(new DiagonalMatrix<SquareTensorT3,VectorT3>(faces.getCount()));
+		    ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+		  }
 
-            MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
-            ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
+		foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
 
-            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+		    MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
+		    ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
 
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<SquareTensorT3,VectorT3>(faceCells));
-            ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+		    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-            shared_ptr<Matrix> mff(new DiagonalMatrix<SquareTensorT3,VectorT3>(faces.getCount()));
-            ls.getMatrix().addMatrix(fIndex,fIndex,mff);
-        }
+		    shared_ptr<Matrix> mft(new FluxJacobianMatrix<SquareTensorT3,VectorT3>(faceCells));
+		    ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		    shared_ptr<Matrix> mff(new DiagonalMatrix<SquareTensorT3,VectorT3>(faces.getCount()));
+		    ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+		  }
+	      }
+	    else
+	      {
+		shared_ptr<Matrix> m(new CRMatrix<SquareTensorT2,SquareTensorT2,VectorT2>(cellCells));
+
+		ls.getMatrix().addMatrix(tIndex,tIndex,m);
+
+		foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
+
+		    MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
+		    ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
+
+		    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+		    shared_ptr<Matrix> mft(new FluxJacobianMatrix<SquareTensorT2,VectorT2>(faceCells));
+		    ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		    shared_ptr<Matrix> mff(new DiagonalMatrix<SquareTensorT2,VectorT2>(faces.getCount()));
+		    ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+		  }
+
+		foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
+
+		    MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
+		    ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
+
+		    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+		    shared_ptr<Matrix> mft(new FluxJacobianMatrix<SquareTensorT2,VectorT2>(faceCells));
+		    ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		    shared_ptr<Matrix> mff(new DiagonalMatrix<SquareTensorT2,VectorT2>(faces.getCount()));
+		    ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+		  }
+	      }
+	  }
+	else
+	  {
+	    const StorageSite& cells = mesh.getCells();
+	    MultiField::ArrayIndex tIndex(&_batteryModelFields.potentialSpeciesTemp,&cells);
+
+	    ls.getX().addArray(tIndex,_batteryModelFields.potentialSpeciesTemp.getArrayPtr(cells));
+
+	    const CRConnectivity& cellCells = mesh.getCellCells();
+
+	    if (_options.thermalModelPC)
+	      {
+		shared_ptr<Matrix> m(new CRMatrix<DiagTensorT3,DiagTensorT3,VectorT3>(cellCells));
+
+		ls.getMatrix().addMatrix(tIndex,tIndex,m);
+
+		foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
+
+		    MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
+		    ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
+
+		    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+		    shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT3,VectorT3>(faceCells));
+		    ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		    shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
+		    ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+		  }
+
+		foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
+
+		    MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
+		    ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
+
+		    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+		    shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT3,VectorT3>(faceCells));
+		    ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		    shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT3,VectorT3>(faces.getCount()));
+		    ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+		  }
+	      }
+	    else
+	      {
+		shared_ptr<Matrix> m(new CRMatrix<DiagTensorT2,DiagTensorT2,VectorT2>(cellCells));
+
+		ls.getMatrix().addMatrix(tIndex,tIndex,m);
+
+		foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
+
+		    MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
+		    ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
+
+		    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+		    shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT2,VectorT2>(faceCells));
+		    ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		    shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT2,VectorT2>(faces.getCount()));
+		    ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+		  }
+
+		foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+		  {
+		    const FaceGroup& fg = *fgPtr;
+		    const StorageSite& faces = fg.site;
+
+		    MultiField::ArrayIndex fIndex(&_batteryModelFields.potentialSpeciesTempFlux,&faces);
+		    ls.getX().addArray(fIndex,_batteryModelFields.potentialSpeciesTempFlux.getArrayPtr(faces));
+
+		    const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+		    shared_ptr<Matrix> mft(new FluxJacobianMatrix<DiagTensorT2,VectorT2>(faceCells));
+		    ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		    shared_ptr<Matrix> mff(new DiagonalMatrix<DiagTensorT2,VectorT2>(faces.getCount()));
+		    ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+		  }
+	      }
+	  }
      
     } 
   } 
@@ -855,7 +1102,7 @@ void initThermalLinearization(LinearSystem& ls)
     const BatterySpeciesBCMap& sbcmap = *_sbcMapVector[m];
     BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
 
-    GradientModel<T> speciesGradientModel(_meshes,sFields.massFraction,
+    GradientModel<T> speciesGradientModel(_meshes,sFields.concentration,
 					  _batteryModelFields.speciesGradient,_geomFields);
     speciesGradientModel.compute();
     
@@ -864,7 +1111,7 @@ void initThermalLinearization(LinearSystem& ls)
     shared_ptr<Discretization>
       dd(new DiffusionDiscretization<T,T,T>
 	 (_meshes,_geomFields,
-	  sFields.massFraction,
+	  sFields.concentration,
 	  sFields.diffusivity,
 	  _batteryModelFields.speciesGradient));
     discretizations.push_back(dd);
@@ -874,9 +1121,9 @@ void initThermalLinearization(LinearSystem& ls)
         shared_ptr<Discretization>
           td(new TimeDerivativeDiscretization<T,T,T>
              (_meshes,_geomFields,
-              sFields.massFraction,
-              sFields.massFractionN1,
-              sFields.massFractionN2,
+              sFields.concentration,
+              sFields.concentrationN1,
+              sFields.concentrationN2,
               sFields.one,
               _options["timeStep"]));
         
@@ -920,8 +1167,8 @@ void initThermalLinearization(LinearSystem& ls)
 							_options["interfaceSpeciesUnderRelax"],
 							Anode,
 							Cathode,
-							sFields.massFraction,
-							sFields.massFraction,
+							sFields.concentration,
+							sFields.concentration,
 							_batteryModelFields.potential,
 							_batteryModelFields.temperature);
 
@@ -932,7 +1179,7 @@ void initThermalLinearization(LinearSystem& ls)
 	      {
 		LinearizeInterfaceJump<T, T, T> lsm (T(1.0),
 						     T(0.0),
-						     sFields.massFraction);
+						     sFields.concentration);
 
 		lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	      }
@@ -960,14 +1207,14 @@ void initThermalLinearization(LinearSystem& ls)
 
             GenericBCS<T,T,T> gbc(faces,mesh,
                                   _geomFields,
-                                  sFields.massFraction,
+                                  sFields.concentration,
                                   sFields.massFlux,
                                   ls.getMatrix(), ls.getX(), ls.getB());
 
-            if (bc.bcType == "SpecifiedMassFraction")
+            if (bc.bcType == "SpecifiedConcentration")
             {
                 FloatValEvaluator<T>
-                  bT(bc.getVal("specifiedMassFraction"),faces);
+                  bT(bc.getVal("specifiedConcentration"),faces);
                 if (sFields.convectionFlux.hasArray(faces))
                 {
                     const TArray& convectingFlux =
@@ -1010,7 +1257,7 @@ void initThermalLinearization(LinearSystem& ls)
             const StorageSite& faces = fg.site;
             GenericBCS<T,T,T> gbc(faces,mesh,
                                   _geomFields,
-                                  sFields.massFraction,
+                                  sFields.concentration,
                                   sFields.massFlux,
                                   ls.getMatrix(), ls.getX(), ls.getB());
 
@@ -1048,7 +1295,7 @@ void linearizePotential(LinearSystem& ls)
 		const Mesh& mesh = *_meshes[n];
 		const StorageSite& cells = mesh.getCells();
 		BatterySpeciesFields& sFields = *_speciesFieldsVector[0];
-		const TArray& speciesConc = dynamic_cast<const TArray&>(sFields.massFraction[cells]);
+		const TArray& speciesConc = dynamic_cast<const TArray&>(sFields.concentration[cells]);
 		TArray& lnSpeciesConc = dynamic_cast<TArray&>(_batteryModelFields.lnLithiumConcentration[cells]);
 		for (int c=0; c<cells.getCount(); c++)
 		  {
@@ -1122,7 +1369,7 @@ void linearizePotential(LinearSystem& ls)
 	      BatterySpeciesFields& sFields = *_speciesFieldsVector[0];
 	      BatteryLinearizePotentialInterface<T, T, T> lbv (_geomFields,
 							_batteryModelFields.potential,
-							sFields.massFraction,
+							sFields.concentration,
 							_batteryModelFields.temperature,
 							_options["ButlerVolmerRRConstant"],
 							Anode,
@@ -1218,7 +1465,7 @@ void linearizeThermal(LinearSystem& ls)
     potentialGradientModel.compute();
 
     BatterySpeciesFields& sFields = *_speciesFieldsVector[0];
-    GradientModel<T> speciesGradientModel(_meshes,sFields.massFraction,
+    GradientModel<T> speciesGradientModel(_meshes,sFields.concentration,
 					  _batteryModelFields.speciesGradient,_geomFields);
     speciesGradientModel.compute();
     
@@ -1322,7 +1569,7 @@ void linearizeThermal(LinearSystem& ls)
 	      BatterySpeciesFields& sFields = *_speciesFieldsVector[0];
 	      BatteryLinearizeThermalInterface<T, T, T> lbv (_geomFields,
 							_batteryModelFields.temperature,
-							sFields.massFraction,
+							sFields.concentration,
 							_batteryModelFields.potential,
 							_options["ButlerVolmerRRConstant"],
 							Anode,
@@ -1404,8 +1651,9 @@ void linearizeThermal(LinearSystem& ls)
   }
 
 
-void linearizePC(LinearSystem& ls)
+void linearizePC_Thermal(LinearSystem& ls)
   {
+
     // only lithium (species 0) for now
     const BatterySpeciesVCMap& svcmap = *_svcMapVector[0];
     const BatterySpeciesBCMap& sbcmap = *_sbcMapVector[0];
@@ -1449,51 +1697,48 @@ void linearizePC(LinearSystem& ls)
 					    _batteryModelFields.lnLithiumConcentrationGradient,_geomFields);
     lnSpeciesGradientModel.compute();
 
-    if (_options.thermalModelPC)
-    {
-	// fill source field with dot product of gradients from species and potential
-	for (int n=0; n<numMeshes; n++)
+    // fill source field with dot product of gradients from species and potential
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	const StorageSite& cells = mesh.getCells();
+
+	typename BatterySpeciesVCMap::const_iterator pos = svcmap.find(n);
+	if (pos==svcmap.end())
+	  {   
+	    throw CException("BatteryModel: Error in Species VC Map");
+	  }
+	const BatterySpeciesVC<T>& svc = *(pos->second);
+	const T massDiffusivity = svc["massDiffusivity"]; 
+
+	const VectorT3GradArray& pstGradCell = dynamic_cast<const VectorT3GradArray&>(_batteryModelFields.potentialSpeciesTempGradient[cells]);
+	TArray& heatSource = dynamic_cast<TArray&>(_batteryModelFields.heatSource[cells]);
+	for (int c=0; c<cells.getCount(); c++)
 	  {
-	    const Mesh& mesh = *_meshes[n];
-	    const StorageSite& cells = mesh.getCells();
-
-	    typename BatterySpeciesVCMap::const_iterator pos = svcmap.find(n);
-	    if (pos==svcmap.end())
-	      {   
-		throw CException("BatteryModel: Error in Species VC Map");
-	      }
-	    const BatterySpeciesVC<T>& svc = *(pos->second);
-	    const T massDiffusivity = svc["massDiffusivity"]; 
-
-	    const VectorT3GradArray& pstGradCell = dynamic_cast<const VectorT3GradArray&>(_batteryModelFields.potentialSpeciesTempGradient[cells]);
-	    TArray& heatSource = dynamic_cast<TArray&>(_batteryModelFields.heatSource[cells]);
-	    for (int c=0; c<cells.getCount(); c++)
+	    const VectorT3Grad combinedCellGradient = pstGradCell[c];
+	    TGradType pGrad(NumTypeTraits<TGradType>::getZero());
+	    TGradType sGrad(NumTypeTraits<TGradType>::getZero());
+	    pGrad[0] = combinedCellGradient[0][0];
+	    pGrad[1] = combinedCellGradient[1][0];
+	    sGrad[0] = combinedCellGradient[0][1];
+	    sGrad[1] = combinedCellGradient[1][1];
+	    T CellSource = pGrad[0]*sGrad[0] + pGrad[1]*sGrad[1];
+	    if ((*_meshes[0]).getDimension() == 3)
 	      {
-		const VectorT3Grad combinedCellGradient = pstGradCell[c];
-		TGradType pGrad(NumTypeTraits<TGradType>::getZero());
-		TGradType sGrad(NumTypeTraits<TGradType>::getZero());
-		pGrad[0] = combinedCellGradient[0][0];
-		pGrad[1] = combinedCellGradient[1][0];
-		sGrad[0] = combinedCellGradient[0][1];
-		sGrad[1] = combinedCellGradient[1][1];
-		T CellSource = pGrad[0]*sGrad[0] + pGrad[1]*sGrad[1];
-		if ((*_meshes[0]).getDimension() == 3)
-		  {
-		    pGrad[2] = combinedCellGradient[2][0];
-		    sGrad[2] = combinedCellGradient[2][1];
-		    CellSource += pGrad[2]*sGrad[2];
-		  }
-		heatSource[c] = CellSource*massDiffusivity*96485.0; 
+		pGrad[2] = combinedCellGradient[2][0];
+		sGrad[2] = combinedCellGradient[2][1];
+		CellSource += pGrad[2]*sGrad[2];
 	      }
-	  }	   
-      }
-
-    
+	    heatSource[c] = CellSource*massDiffusivity*96485.0; 
+	  }
+      }	   
+      
+  
     DiscrList discretizations;
     
     shared_ptr<Discretization>
-      dd(new BatteryPCDiffusionDiscretization<VectorT3,SquareTensorT3,SquareTensorT3>
-	 (_meshes,_geomFields,
+      dd(new BatteryPCDiffusionDiscretization<VectorT3,DiagTensorT3,DiagTensorT3>
+	 (_realMeshes,_geomFields,
 	  _batteryModelFields.potentialSpeciesTemp,
 	  _batteryModelFields.potentialSpeciesTempDiffusivity,
 	  _batteryModelFields.potentialSpeciesTempGradient));
@@ -1501,42 +1746,44 @@ void linearizePC(LinearSystem& ls)
 
     //discretize ln term (only affects electrolyte mesh of potential model)
     shared_ptr<Discretization>
-      bedd(new BatteryPCBinaryElectrolyteDiscretization<VectorT3,SquareTensorT3,SquareTensorT3>(_meshes,_geomFields,
+      bedd(new BatteryPCBinaryElectrolyteDiscretization<VectorT3,DiagTensorT3,DiagTensorT3>(_realMeshes,_geomFields,
 							     _batteryModelFields.potentialSpeciesTemp,
 							     _batteryModelFields.potentialSpeciesTempDiffusivity,
 							     _batteryModelFields.lnLithiumConcentration,
 							     _batteryModelFields.lnLithiumConcentrationGradient,
+							     _options.thermalModelPC,
 							     _options["BatteryElectrolyteMeshID"]));
     discretizations.push_back(bedd); 
     
     if (_options.transient)
-    {
+      {
         shared_ptr<Discretization>
-          td(new BatteryPCTimeDerivativeDiscretization<VectorT3,SquareTensorT3,SquareTensorT3>
-             (_meshes,_geomFields,
+          td(new BatteryPCTimeDerivativeDiscretization<VectorT3,DiagTensorT3,DiagTensorT3>
+             (_realMeshes,_geomFields,
               _batteryModelFields.potentialSpeciesTemp,
               _batteryModelFields.potentialSpeciesTempN1,
               _batteryModelFields.potentialSpeciesTempN2,
 	      _batteryModelFields.rhoCp,
+	      _options.thermalModelPC,
               _options["timeStep"]));
         
         discretizations.push_back(td);
-	}
+      }
     
-    if (_options.thermalModelPC)
-    {
+    if (1)
+      {
         shared_ptr<Discretization>
           sd(new BatteryPCHeatSourceDiscretization<VectorT3>
-             (_meshes,_geomFields,
+             (_realMeshes,_geomFields,
               _batteryModelFields.potentialSpeciesTemp,
 	      _batteryModelFields.heatSource));
         
         discretizations.push_back(sd);
-	}
+      }
     
     Linearizer linearizer;
 
-    linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
+    linearizer.linearize(discretizations,_realMeshes,ls.getMatrix(),
                          ls.getX(), ls.getB());
 
     // linearize shell mesh
@@ -1564,9 +1811,9 @@ void linearizePC(LinearSystem& ls)
 		    Anode = true;
 		  }
 		
-		BatteryPCLinearizeInterface_BV<VectorT3, SquareTensorT3, SquareTensorT3> lbv (_geomFields,
+		BatteryPCLinearizeInterface_BV<VectorT3, SquareTensorT3, SquareTensorT3, DiagTensorT3> lbv (_geomFields,
 							_options["ButlerVolmerRRConstant"],
-							_options["interfaceSpeciesUnderRelax"],
+							_options["interfaceSpeciesUnderRelax"],		     	      
 							Anode,
 							Cathode,
 							_options.thermalModelPC,			       
@@ -1609,16 +1856,285 @@ void linearizePC(LinearSystem& ls)
 
 	    const BatteryThermalBC<T>& tbc = *_tbcMap[fg.id];
 
-            BatteryPC_BCS<VectorT3,SquareTensorT3,SquareTensorT3> bbc(faces,mesh,
+            BatteryPC_BCS<VectorT3,DiagTensorT3,DiagTensorT3> bbc(faces,mesh,
                                   _geomFields,
                                   _batteryModelFields.potentialSpeciesTemp,
                                   _batteryModelFields.potentialSpeciesTempFlux,
                                   ls.getMatrix(), ls.getX(), ls.getB());
 
-            if (sbc.bcType == "SpecifiedMassFraction")
+            if (sbc.bcType == "SpecifiedConcentration")
             {
                 FloatValEvaluator<T>
-                  sbT(sbc.getVal("specifiedMassFraction"),faces);
+                  sbT(sbc.getVal("specifiedConcentration"),faces);
+    
+		bbc.applySingleEquationDirichletBC(sbT,1);
+            }
+            else if (sbc.bcType == "SpecifiedMassFlux")
+            {
+	      const T specifiedFlux(sbc["specifiedMassFlux"]);
+	      bbc.applySingleEquationNeumannBC(specifiedFlux,1);
+            }
+            else if ((sbc.bcType == "Symmetry"))
+            {
+	      T zeroFlux(NumTypeTraits<T>::getZero());
+	      bbc.applySingleEquationNeumannBC(zeroFlux,1);
+            }
+            else
+             throw CException(sbc.bcType + " not implemented for Species in BatteryModel");
+
+	    if (pbc.bcType == "SpecifiedPotential")
+            {
+                FloatValEvaluator<T> pbT(pbc.getVal("specifiedPotential"),faces);
+    
+		bbc.applySingleEquationDirichletBC(pbT,0);
+            }
+            else if (pbc.bcType == "SpecifiedPotentialFlux")
+            {
+	      const T specifiedFlux(pbc["specifiedPotentialFlux"]);
+	      bbc.applySingleEquationNeumannBC(specifiedFlux,0);
+            }
+            else if ((pbc.bcType == "Symmetry"))
+            {
+	      T zeroFlux(NumTypeTraits<T>::getZero());
+	      bbc.applySingleEquationNeumannBC(zeroFlux,0);
+            }
+            else
+             throw CException(pbc.bcType + " not implemented for potential in BatteryModel");
+	    
+	    if (tbc.bcType == "SpecifiedTemperature")
+	      {
+		FloatValEvaluator<T> tbT(tbc.getVal("specifiedTemperature"),faces);
+    
+		bbc.applySingleEquationDirichletBC(tbT,2);
+	      }
+	    else if (tbc.bcType == "SpecifiedHeatFlux")
+	      {
+		const T specifiedFlux(tbc["specifiedHeatFlux"]);
+		bbc.applySingleEquationNeumannBC(specifiedFlux,2);
+	      }
+	    else if ((tbc.bcType == "Symmetry"))
+	      {
+		T zeroFlux(NumTypeTraits<T>::getZero());
+		bbc.applySingleEquationNeumannBC(zeroFlux,2);
+	      }
+	    else
+	      throw CException(tbc.bcType + " not implemented for temperature in BatteryModel");
+	      
+        }
+	
+	if (mesh.isDoubleShell())
+	  {
+	    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
+		GenericBCS<VectorT3,SquareTensorT3,SquareTensorT3> gbc(faces,mesh,
+								       _geomFields,
+								       _batteryModelFields.potentialSpeciesTemp,
+								       _batteryModelFields.potentialSpeciesTempFlux,
+								       ls.getMatrix(), ls.getX(), ls.getB());
+
+		gbc.applyInterfaceBC();
+	      }
+	  }
+	else
+	  {
+	    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
+		GenericBCS<VectorT3,DiagTensorT3,DiagTensorT3> gbc(faces,mesh,
+								       _geomFields,
+								       _batteryModelFields.potentialSpeciesTemp,
+								       _batteryModelFields.potentialSpeciesTempFlux,
+								       ls.getMatrix(), ls.getX(), ls.getB());
+
+		gbc.applyInterfaceBC();
+	      }
+	  }
+	//set all temperature residuals to zero if no thermal model PC (comes in to play if trying to still do advanceThermal separatly)
+/*
+	if (!_options.thermalModelPC)
+	  {
+	    for (int n=0; n<numMeshes; n++)
+	      {
+		const Mesh& mesh = *_meshes[n];
+		const StorageSite& cells = mesh.getCells();
+		const MultiField::ArrayIndex cVarIndex(&_batteryModelFields.potentialSpeciesTemp,&cells);
+		VectorT3Array& rCell = dynamic_cast<VectorT3Array&>((ls.getB())[cVarIndex]);
+		for (int c=0; c<cells.getCount(); c++)
+		  {
+		    (rCell[c])[2] = 0.0;
+		  }
+	      }
+	  }*/
+    }
+  }
+
+void linearizePC(LinearSystem& ls)
+  {
+    // only lithium (species 0) for now
+    const BatterySpeciesBCMap& sbcmap = *_sbcMapVector[0];
+
+    // get combined gradients of potential and species
+    GradientModel<VectorT2> pstGradientModel(_meshes,_batteryModelFields.potentialSpeciesTemp,
+					  _batteryModelFields.potentialSpeciesTempGradient,_geomFields);
+    pstGradientModel.compute();
+
+    //populate lnSpeciesConc fields for inclusion of ln term in potential equation
+    bool foundElectrolyte = false;
+
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	if (n==_options["BatteryElectrolyteMeshID"])
+	  {
+	    foundElectrolyte = true;
+	    const Mesh& mesh = *_meshes[n];
+	    const StorageSite& cells = mesh.getCells();
+	    const VectorT2Array& speciesPotentialTemp = dynamic_cast<const VectorT2Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    TArray& lnSpeciesConc = dynamic_cast<TArray&>(_batteryModelFields.lnLithiumConcentration[cells]);
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		T CellConc = (speciesPotentialTemp[c])[1];
+		if (CellConc <= 0.0)
+		  {
+		    cout << "Error: Cell Concentration <= 0   MeshID: " << n << " CellNum: " << c << endl;
+		    CellConc = 0.01;
+		  }
+		lnSpeciesConc[c] = log(CellConc); 
+	      }
+	  }
+      }
+
+    if ((!(foundElectrolyte))&&(_options.ButlerVolmer))
+      cout << "Warning: Electrolyte Mesh ID not set." << endl;
+
+    //compute gradient for ln term discretization
+    GradientModel<T> lnSpeciesGradientModel(_meshes,_batteryModelFields.lnLithiumConcentration,
+					    _batteryModelFields.lnLithiumConcentrationGradient,_geomFields);
+    lnSpeciesGradientModel.compute();
+
+    
+    DiscrList discretizations;
+    
+    shared_ptr<Discretization>
+      dd(new BatteryPCDiffusionDiscretization<VectorT2,DiagTensorT2,DiagTensorT2>
+	 (_realMeshes,_geomFields,
+	  _batteryModelFields.potentialSpeciesTemp,
+	  _batteryModelFields.potentialSpeciesTempDiffusivity,
+	  _batteryModelFields.potentialSpeciesTempGradient));
+    discretizations.push_back(dd);
+
+    //discretize ln term (only affects electrolyte mesh of potential model)
+    shared_ptr<Discretization>
+      bedd(new BatteryPCBinaryElectrolyteDiscretization<VectorT2,DiagTensorT2,DiagTensorT2>(_realMeshes,_geomFields,
+							     _batteryModelFields.potentialSpeciesTemp,
+							     _batteryModelFields.potentialSpeciesTempDiffusivity,
+							     _batteryModelFields.lnLithiumConcentration,
+							     _batteryModelFields.lnLithiumConcentrationGradient,
+							     _options.thermalModelPC,
+							     _options["BatteryElectrolyteMeshID"]));
+    discretizations.push_back(bedd); 
+    
+    if (_options.transient)
+    {
+        shared_ptr<Discretization>
+          td(new BatteryPCTimeDerivativeDiscretization<VectorT2,DiagTensorT2,DiagTensorT2>
+             (_realMeshes,_geomFields,
+              _batteryModelFields.potentialSpeciesTemp,
+              _batteryModelFields.potentialSpeciesTempN1,
+              _batteryModelFields.potentialSpeciesTempN2,
+	      _batteryModelFields.rhoCp,
+	      _options.thermalModelPC,
+              _options["timeStep"]));
+        
+        discretizations.push_back(td);
+	}
+    
+    Linearizer linearizer;
+
+    linearizer.linearize(discretizations,_realMeshes,ls.getMatrix(),
+                         ls.getX(), ls.getB());
+
+    // linearize shell mesh
+    
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	if (mesh.isDoubleShell())
+	  {
+	    const int parentMeshID = mesh.getParentMeshID();
+	    const int otherMeshID = mesh.getOtherMeshID();
+	    const Mesh& parentMesh = *_meshes[parentMeshID];
+	    const Mesh& otherMesh = *_meshes[otherMeshID];
+	  
+	    if (_options.ButlerVolmer)
+	      { 
+		bool Cathode = false;
+		bool Anode = false;
+		if (n == _options["ButlerVolmerCathodeShellMeshID"])
+		  {
+		    Cathode = true;
+		  }
+		else if (n == _options["ButlerVolmerAnodeShellMeshID"])
+		  {
+		    Anode = true;
+		  }
+		
+		BatteryPCLinearizeInterface_BV<VectorT2, SquareTensorT2, SquareTensorT2, DiagTensorT2> lbv (_geomFields,
+							_options["ButlerVolmerRRConstant"],
+							_options["interfaceSpeciesUnderRelax"],		     	      
+							Anode,
+							Cathode,
+							_options.thermalModelPC,			       
+							_batteryModelFields.potentialSpeciesTemp);
+
+							lbv.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+
+	      }
+	    else
+	      {
+		LinearizeInterfaceJump<VectorT2, SquareTensorT2, SquareTensorT2> lsm (T(1.0),
+										      NumTypeTraits<VectorT2>::getZero(),
+						     _batteryModelFields.potentialSpeciesTemp);
+
+		lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	      }
+	  }
+      }
+
+    ///////// boundary and interface condition
+    
+    for (int n=0; n<numMeshes; n++)
+    {
+        const Mesh& mesh = *_meshes[n];
+
+        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+        {
+            const FaceGroup& fg = *fgPtr;
+            const StorageSite& faces = fg.site;
+
+            typename BatterySpeciesBCMap::const_iterator pos = sbcmap.find(fg.id);
+            if (pos==sbcmap.end())
+	    {   
+               throw CException("BatteryModel: Error in Species BC Map");
+	    }
+
+	    const BatterySpeciesBC<T>& sbc = *(pos->second);
+
+	    const BatteryPotentialBC<T>& pbc = *_pbcMap[fg.id];
+
+            BatteryPC_BCS<VectorT2,DiagTensorT2,DiagTensorT2> bbc(faces,mesh,
+                                  _geomFields,
+                                  _batteryModelFields.potentialSpeciesTemp,
+                                  _batteryModelFields.potentialSpeciesTempFlux,
+                                  ls.getMatrix(), ls.getX(), ls.getB());
+
+            if (sbc.bcType == "SpecifiedConcentration")
+            {
+                FloatValEvaluator<T>
+                  sbT(sbc.getVal("specifiedConcentration"),faces);
     
 		bbc.applySingleEquationDirichletBC(sbT,1);
             }
@@ -1654,52 +2170,36 @@ void linearizePC(LinearSystem& ls)
             else
              throw CException(pbc.bcType + " not implemented for potential in BatteryModel");
 
-	    if (tbc.bcType == "SpecifiedTemperature")
-            {
-                FloatValEvaluator<T> tbT(tbc.getVal("specifiedTemperature"),faces);
-    
-		bbc.applySingleEquationDirichletBC(tbT,2);
-            }
-            else if (tbc.bcType == "SpecifiedHeatFlux")
-            {
-	      const T specifiedFlux(tbc["specifiedHeatFlux"]);
-	      bbc.applySingleEquationNeumannBC(specifiedFlux,2);
-            }
-            else if ((tbc.bcType == "Symmetry"))
-            {
-	      T zeroFlux(NumTypeTraits<T>::getZero());
-	      bbc.applySingleEquationNeumannBC(zeroFlux,2);
-            }
-            else
-             throw CException(tbc.bcType + " not implemented for temperature in BatteryModel");
         }
-
-        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
-        {
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
-            GenericBCS<VectorT3,SquareTensorT3,SquareTensorT3> gbc(faces,mesh,
-                                  _geomFields,
-				  _batteryModelFields.potentialSpeciesTemp,
-                                  _batteryModelFields.potentialSpeciesTempFlux,
-                                  ls.getMatrix(), ls.getX(), ls.getB());
-
-            gbc.applyInterfaceBC();
-	}
-
-	//set all temperature residuals to zero if no thermal model PC (comes in to play if trying to still do advanceThermal separatly)
-	if (!_options.thermalModelPC)
+	
+	if (mesh.isDoubleShell())
 	  {
-	    for (int n=0; n<numMeshes; n++)
+	    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
 	      {
-		const Mesh& mesh = *_meshes[n];
-		const StorageSite& cells = mesh.getCells();
-		const MultiField::ArrayIndex cVarIndex(&_batteryModelFields.potentialSpeciesTemp,&cells);
-		VectorT3Array& rCell = dynamic_cast<VectorT3Array&>((ls.getB())[cVarIndex]);
-		for (int c=0; c<cells.getCount(); c++)
-		  {
-		    (rCell[c])[2] = 0.0;
-		  }
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
+		GenericBCS<VectorT2,SquareTensorT2,SquareTensorT2> gbc(faces,mesh,
+								       _geomFields,
+								       _batteryModelFields.potentialSpeciesTemp,
+								       _batteryModelFields.potentialSpeciesTempFlux,
+								       ls.getMatrix(), ls.getX(), ls.getB());
+
+		gbc.applyInterfaceBC();
+	      }
+	  }
+	else
+	  {
+	    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
+		GenericBCS<VectorT2,DiagTensorT2,DiagTensorT2> gbc(faces,mesh,
+								       _geomFields,
+								       _batteryModelFields.potentialSpeciesTemp,
+								       _batteryModelFields.potentialSpeciesTempFlux,
+								       ls.getMatrix(), ls.getX(), ls.getB());
+
+		gbc.applyInterfaceBC();
 	      }
 	  }
     }
@@ -1830,20 +2330,20 @@ T getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
     return r;
   }
 
-T getAverageMassFraction(const Mesh& mesh, const int m)
+T getAverageConcentration(const Mesh& mesh, const int m)
   {
     BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
     const StorageSite& cells = mesh.getCells();
-    const TArray& mFCell = dynamic_cast<const TArray&>(sFields.massFraction[cells]);
+    const TArray& concCell = dynamic_cast<const TArray&>(sFields.concentration[cells]);
     const TArray& cellVolume = dynamic_cast<const TArray&>(_geomFields.volume[cells]);
     T totalVolume = 0.0;
-    T weightedMassFraction = 0.0;
+    T weightedConcentration = 0.0;
     for(int c=0; c<cells.getSelfCount(); c++)
       {
 	totalVolume += cellVolume[c];
-	weightedMassFraction += mFCell[c]*cellVolume[c];
+	weightedConcentration += concCell[c]*cellVolume[c];
       }
-    return weightedMassFraction/totalVolume;
+    return weightedConcentration/totalVolume;
   }
 
  LinearSystem& matrixMerge(LinearSystem& ls, const int m)
@@ -2055,7 +2555,10 @@ void advanceThermal(const int niter)
         
        ls.initAssembly();
 
-       linearizePC(ls);
+       if (_options.thermalModelPC)
+	 linearizePC_Thermal(ls);
+       else
+	 linearizePC(ls);
 
        ls.initSolve();
 
@@ -2084,12 +2587,12 @@ void advanceThermal(const int niter)
      }
  }
 
-  T getMassFractionResidual(const int speciesId)
+  T getSpeciesResidual(const int speciesId)
   {
     MFRPtr& rCurrent = *_currentSpeciesResidual[speciesId];
     BatterySpeciesFields& sFields = *_speciesFieldsVector[speciesId];
-    const Field& massFractionField = sFields.massFraction;
-    ArrayBase& residualArray = (*rCurrent)[massFractionField];
+    const Field& concentrationField = sFields.concentration;
+    ArrayBase& residualArray = (*rCurrent)[concentrationField];
     T *arrayData = (T*)(residualArray.getData());
     const T residual = arrayData[0];
     return residual;
@@ -2118,8 +2621,21 @@ void advanceThermal(const int niter)
     const Field& potentialSpeciesTempField = _batteryModelFields.potentialSpeciesTemp;
     ArrayBase& residualArray = (*_currentPCResidual)[potentialSpeciesTempField];
     T *arrayData = (T*)(residualArray.getData());
-    const T residual = arrayData[v];
-    return residual;
+    if (v<2)
+      {
+	const T residual = arrayData[v];
+	return residual;
+      }
+    else if ((v==2)&&(_options.thermalModelPC))
+      {
+	const T residual = arrayData[v];
+	return residual;
+      }
+    else
+      {
+	const T residual = 0.0;
+	return residual;
+      }
   }
 
   void copySeparateToCoupled()
@@ -2127,26 +2643,43 @@ void advanceThermal(const int niter)
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
-	//copy massFraction and potential and thermal
+	//copy concentration and potential and thermal
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	BatterySpeciesFields& sFields = *_speciesFieldsVector[0]; //first species is lithium
-	const TArray& mFSeparate = dynamic_cast<const TArray&>(sFields.massFraction[cells]);
+	const TArray& mFSeparate = dynamic_cast<const TArray&>(sFields.concentration[cells]);
 	const TArray& pSeparate = dynamic_cast<const TArray&>(_batteryModelFields.potential[cells]);
 	const TArray& tSeparate = dynamic_cast<const TArray&>(_batteryModelFields.temperature[cells]);
-	VectorT3Array& coupledValues = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
 
-	for (int c=0; c<cells.getCount(); c++)
+	if (_options.thermalModelPC)
 	  {
-	    T massFraction = mFSeparate[c];
-	    T potential = pSeparate[c];
-	    T temperature = tSeparate[c];
-	    VectorT3& coupledCellVector = coupledValues[c];
+	    VectorT3Array& coupledValues = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		T concentration = mFSeparate[c];
+		T potential = pSeparate[c];
+		T temperature = tSeparate[c];
+		VectorT3& coupledCellVector = coupledValues[c];
 
-	    //populate coupled field with separate field data
-	    coupledCellVector[0] = potential;
-	    coupledCellVector[1] = massFraction;
-	    coupledCellVector[2] = temperature;
+		//populate coupled field with separate field data
+		coupledCellVector[0] = potential;
+		coupledCellVector[1] = concentration;
+		coupledCellVector[2] = temperature;
+	      }
+	  }
+	else
+	  {
+	    VectorT2Array& coupledValues = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		T concentration = mFSeparate[c];
+		T potential = pSeparate[c];
+		VectorT2& coupledCellVector = coupledValues[c];
+
+		//populate coupled field with separate field data
+		coupledCellVector[0] = potential;
+		coupledCellVector[1] = concentration;
+	      }
 	  }
 
 	//copy fluxes
@@ -2156,20 +2689,37 @@ void advanceThermal(const int niter)
 	    const StorageSite& faces = fg.site;
 	    const TArray& mFFluxSeparate = dynamic_cast<const TArray&>(sFields.massFlux[faces]);
 	    const TArray& pFluxSeparate = dynamic_cast<const TArray&>(_batteryModelFields.potential_flux[faces]);  
-	    const TArray& tFluxSeparate = dynamic_cast<const TArray&>(_batteryModelFields.heatFlux[faces]);  
-	    VectorT3Array& coupledFluxValues = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
-	    for (int f=0; f<faces.getCount(); f++)
+	    const TArray& tFluxSeparate = dynamic_cast<const TArray&>(_batteryModelFields.heatFlux[faces]);
+	    if (_options.thermalModelPC)
 	      {
-		T massFractionFlux = mFFluxSeparate[f];
-		T potentialFlux = pFluxSeparate[f];
-		T heatFlux = tFluxSeparate[f];
-		VectorT3& coupledCellFluxVector = coupledFluxValues[f];
+		VectorT3Array& coupledFluxValues = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
+		for (int f=0; f<faces.getCount(); f++)
+		  {
+		    T concentrationFlux = mFFluxSeparate[f];
+		    T potentialFlux = pFluxSeparate[f];
+		    T heatFlux = tFluxSeparate[f];
+		    VectorT3& coupledCellFluxVector = coupledFluxValues[f];
 
-		//populate coupled field with separate field data
-		coupledCellFluxVector[0] = potentialFlux;
-		coupledCellFluxVector[1] = massFractionFlux;
-		coupledCellFluxVector[2] = heatFlux;
-	      }	      
+		    //populate coupled field with separate field data
+		    coupledCellFluxVector[0] = potentialFlux;
+		    coupledCellFluxVector[1] = concentrationFlux;
+		    coupledCellFluxVector[2] = heatFlux;		      
+		  }	
+	      }      
+	    else
+	      {
+		VectorT2Array& coupledFluxValues = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
+		for (int f=0; f<faces.getCount(); f++)
+		  {
+		    T concentrationFlux = mFFluxSeparate[f];
+		    T potentialFlux = pFluxSeparate[f];
+		    VectorT2& coupledCellFluxVector = coupledFluxValues[f];
+
+		    //populate coupled field with separate field data
+		    coupledCellFluxVector[0] = potentialFlux;
+		    coupledCellFluxVector[1] = concentrationFlux;
+		  }	
+	      }      
 	  }
 	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
 	  {
@@ -2178,53 +2728,105 @@ void advanceThermal(const int niter)
 	    const TArray& mFFluxSeparate = dynamic_cast<const TArray&>(sFields.massFlux[faces]);
 	    const TArray& pFluxSeparate = dynamic_cast<const TArray&>(_batteryModelFields.potential_flux[faces]);  
 	    const TArray& tFluxSeparate = dynamic_cast<const TArray&>(_batteryModelFields.heatFlux[faces]);  
-	    VectorT3Array& coupledFluxValues = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
-	    for (int f=0; f<faces.getCount(); f++)
+	    if (_options.thermalModelPC)
 	      {
-		T massFractionFlux = mFFluxSeparate[f];
-		T potentialFlux = pFluxSeparate[f];
-		T heatFlux = tFluxSeparate[f];
-		VectorT3& coupledCellFluxVector = coupledFluxValues[f];
+		VectorT3Array& coupledFluxValues = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
+		for (int f=0; f<faces.getCount(); f++)
+		  {
+		    T concentrationFlux = mFFluxSeparate[f];
+		    T potentialFlux = pFluxSeparate[f];
+		    T heatFlux = tFluxSeparate[f];
+		    VectorT3& coupledCellFluxVector = coupledFluxValues[f];
 
-		//populate coupled field with separate field data
-		coupledCellFluxVector[0] = potentialFlux;
-		coupledCellFluxVector[1] = massFractionFlux;
-		coupledCellFluxVector[2] = heatFlux;
-	      }	      
+		    //populate coupled field with separate field data
+		    coupledCellFluxVector[0] = potentialFlux;
+		    coupledCellFluxVector[1] = concentrationFlux;
+		    coupledCellFluxVector[2] = heatFlux;	     
+		  }	
+	      }      
+	    else
+	      {
+		VectorT2Array& coupledFluxValues = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
+		for (int f=0; f<faces.getCount(); f++)
+		  {
+		    T concentrationFlux = mFFluxSeparate[f];
+		    T potentialFlux = pFluxSeparate[f];
+		    VectorT2& coupledCellFluxVector = coupledFluxValues[f];
+
+		    //populate coupled field with separate field data
+		    coupledCellFluxVector[0] = potentialFlux;
+		    coupledCellFluxVector[1] = concentrationFlux;
+		  }	
+	      }    
 	  }
 
 	// copy to N1 and N2 if transient
 	if (_options.transient)
 	  {
-	    const TArray& mFSeparateN1 = dynamic_cast<const TArray&>(sFields.massFractionN1[cells]);
+	    const TArray& potSeparateN1 = dynamic_cast<const TArray&>(_batteryModelFields.potentialN1[cells]);
+	    const TArray& mFSeparateN1 = dynamic_cast<const TArray&>(sFields.concentrationN1[cells]);
 	    const TArray& tSeparateN1 = dynamic_cast<const TArray&>(_batteryModelFields.temperatureN1[cells]);
-	    VectorT3Array& coupledValuesN1 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
-
-	    for (int c=0; c<cells.getCount(); c++)
+	    if (_options.thermalModelPC)
 	      {
-		const T massFractionN1 = mFSeparateN1[c];
-		const T temperatureN1 = tSeparateN1[c];
-		VectorT3& coupledCellVectorN1 = coupledValuesN1[c];
+		VectorT3Array& coupledValuesN1 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
 
-		//populate coupled field with separate field data
-		coupledCellVectorN1[1] = massFractionN1;
-		coupledCellVectorN1[2] = temperatureN1;
-	      }
-
-	    if (_options.timeDiscretizationOrder > 1)
-	      {
-		VectorT3Array& coupledValuesN2 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
-		const TArray& mFSeparateN2 = dynamic_cast<const TArray&>(sFields.massFractionN2[cells]);
-		const TArray& tSeparateN2 = dynamic_cast<const TArray&>(_batteryModelFields.temperatureN2[cells]);
 		for (int c=0; c<cells.getCount(); c++)
 		  {
-		    const T massFractionN2 = mFSeparateN2[c];
-		    const T temperatureN2 = tSeparateN2[c];
-		    VectorT3& coupledCellVectorN2 = coupledValuesN2[c];
+		    const T potentialN1 = potSeparateN1[c];
+		    const T concentrationN1 = mFSeparateN1[c];
+		    const T temperatureN1 = tSeparateN1[c];
+		    VectorT3& coupledCellVectorN1 = coupledValuesN1[c];
 
 		    //populate coupled field with separate field data
-		    coupledCellVectorN2[1] = massFractionN2;
-		    coupledCellVectorN2[2] = temperatureN2;
+		    coupledCellVectorN1[1] = concentrationN1;
+		    coupledCellVectorN1[0] = potentialN1;
+		    coupledCellVectorN1[2] = temperatureN1;
+		  }
+
+		if (_options.timeDiscretizationOrder > 1)
+		  {
+		    VectorT3Array& coupledValuesN2 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		    const TArray& mFSeparateN2 = dynamic_cast<const TArray&>(sFields.concentrationN2[cells]);
+		    const TArray& tSeparateN2 = dynamic_cast<const TArray&>(_batteryModelFields.temperatureN2[cells]);
+		    for (int c=0; c<cells.getCount(); c++)
+		      {
+			const T concentrationN2 = mFSeparateN2[c];
+			const T temperatureN2 = tSeparateN2[c];
+			VectorT3& coupledCellVectorN2 = coupledValuesN2[c];
+
+			//populate coupled field with separate field data
+			coupledCellVectorN2[1] = concentrationN2;
+			coupledCellVectorN2[2] = temperatureN2;	 
+		      }
+		  }
+	      }
+	    else
+	      {
+		VectorT2Array& coupledValuesN1 = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
+
+		for (int c=0; c<cells.getCount(); c++)
+		  {
+		    const T potentialN1 = potSeparateN1[c];
+		    const T concentrationN1 = mFSeparateN1[c];
+		    VectorT2& coupledCellVectorN1 = coupledValuesN1[c];
+
+		    //populate coupled field with separate field data
+		    coupledCellVectorN1[1] = concentrationN1;
+		    coupledCellVectorN1[0] = potentialN1;
+		  }
+
+		if (_options.timeDiscretizationOrder > 1)
+		  {
+		    VectorT2Array& coupledValuesN2 = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		    const TArray& mFSeparateN2 = dynamic_cast<const TArray&>(sFields.concentrationN2[cells]);
+		    for (int c=0; c<cells.getCount(); c++)
+		      {
+			const T concentrationN2 = mFSeparateN2[c];
+			VectorT2& coupledCellVectorN2 = coupledValuesN2[c];
+
+			//populate coupled field with separate field data
+			coupledCellVectorN2[1] = concentrationN2;
+		      }
 		  }
 	      }
 	  }
@@ -2240,23 +2842,40 @@ void advanceThermal(const int niter)
 	const StorageSite& cells = mesh.getCells();
 	BatterySpeciesFields& sFields = *_speciesFieldsVector[0]; //first species is lithium
 
-	// copy mass Fraction and potential
-	TArray& mFSeparate = dynamic_cast<TArray&>(sFields.massFraction[cells]);
+	// copy conc and potential
+	TArray& mFSeparate = dynamic_cast<TArray&>(sFields.concentration[cells]);
 	TArray& pSeparate = dynamic_cast<TArray&>(_batteryModelFields.potential[cells]);
 	TArray& tSeparate = dynamic_cast<TArray&>(_batteryModelFields.temperature[cells]);
-	const VectorT3Array& coupledValues = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
-	for (int c=0; c<cells.getCount(); c++)
+	if (_options.thermalModelPC)
 	  {
-	    VectorT3 coupledCellVector = coupledValues[c];
-	    T potential = coupledCellVector[0];
-	    T massFraction = coupledCellVector[1];
-	    T temperature = coupledCellVector[2];
-	    //populate separate fields with coupled field data
-	    pSeparate[c] = potential;
-	    mFSeparate[c] = massFraction;
-	    tSeparate[c] = temperature;
-	  }
+	    const VectorT3Array& coupledValues = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		VectorT3 coupledCellVector = coupledValues[c];
+		T potential = coupledCellVector[0];
+		T concentration = coupledCellVector[1];
+		T temperature = coupledCellVector[2];
 
+		//populate separate fields with coupled field data
+		pSeparate[c] = potential;
+		mFSeparate[c] = concentration;
+		tSeparate[c] = temperature;
+	      }
+	  }
+	else
+	  {
+	    const VectorT2Array& coupledValues = dynamic_cast<const VectorT2Array&>(_batteryModelFields.potentialSpeciesTemp[cells]);
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		VectorT2 coupledCellVector = coupledValues[c];
+		T potential = coupledCellVector[0];
+		T concentration = coupledCellVector[1];
+		
+		//populate separate fields with coupled field data
+		pSeparate[c] = potential;
+		mFSeparate[c] = concentration;
+	      }
+	  }
 	// copy fluxes
 	foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
 	  {
@@ -2265,19 +2884,36 @@ void advanceThermal(const int niter)
 	    TArray& mFFluxSeparate = dynamic_cast<TArray&>(sFields.massFlux[faces]);
 	    TArray& pFluxSeparate = dynamic_cast<TArray&>(_batteryModelFields.potential_flux[faces]); 
 	    TArray& tFluxSeparate = dynamic_cast<TArray&>(_batteryModelFields.heatFlux[faces]);
-	    const VectorT3Array& coupledFluxValues = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
-	    for (int f=0; f<faces.getCount(); f++)
+	    if (_options.thermalModelPC)
 	      {
-		VectorT3 coupledCellFluxVector = coupledFluxValues[f];
-		T potentialFlux = coupledCellFluxVector[0];
-		T massFractionFlux = coupledCellFluxVector[1];
-		T heatFlux = coupledCellFluxVector[2];
+		const VectorT3Array& coupledFluxValues = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
+		for (int f=0; f<faces.getCount(); f++)
+		  {
+		    VectorT3 coupledCellFluxVector = coupledFluxValues[f];
+		    T potentialFlux = coupledCellFluxVector[0];
+		    T concentrationFlux = coupledCellFluxVector[1];
+		    T heatFlux = coupledCellFluxVector[2];	     
 
-		//populate separate fields with coupled field data
-		pFluxSeparate[f] = potentialFlux;
-		mFFluxSeparate[f] = massFractionFlux;
-		tFluxSeparate[f] = heatFlux;
-	      }	      
+		    //populate separate fields with coupled field data
+		    pFluxSeparate[f] = potentialFlux;
+		    mFFluxSeparate[f] = concentrationFlux;
+		    tFluxSeparate[f] = heatFlux;
+		  }	 
+	      }     
+	    else
+	      {
+		const VectorT2Array& coupledFluxValues = dynamic_cast<const VectorT2Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
+		for (int f=0; f<faces.getCount(); f++)
+		  {
+		    VectorT2 coupledCellFluxVector = coupledFluxValues[f];
+		    T potentialFlux = coupledCellFluxVector[0];
+		    T concentrationFlux = coupledCellFluxVector[1];
+
+		    //populate separate fields with coupled field data
+		    pFluxSeparate[f] = potentialFlux;
+		    mFFluxSeparate[f] = concentrationFlux;
+		  }	 
+	      } 
 	  }
 	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
 	  {
@@ -2286,53 +2922,99 @@ void advanceThermal(const int niter)
 	    TArray& mFFluxSeparate = dynamic_cast<TArray&>(sFields.massFlux[faces]);
 	    TArray& pFluxSeparate = dynamic_cast<TArray&>(_batteryModelFields.potential_flux[faces]); 
 	    TArray& tFluxSeparate = dynamic_cast<TArray&>(_batteryModelFields.heatFlux[faces]);
-	    const VectorT3Array& coupledFluxValues = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
-	    for (int f=0; f<faces.getCount(); f++)
+	    if (_options.thermalModelPC)
 	      {
-		VectorT3 coupledCellFluxVector = coupledFluxValues[f];
-		T potentialFlux = coupledCellFluxVector[0];
-		T massFractionFlux = coupledCellFluxVector[1];
-		T heatFlux = coupledCellFluxVector[2];
-
-		//populate separate fields with coupled field data
-		pFluxSeparate[f] = potentialFlux;
-		mFFluxSeparate[f] = massFractionFlux;
-		tFluxSeparate[f] = heatFlux;
-	      }	    
+		const VectorT3Array& coupledFluxValues = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
+		for (int f=0; f<faces.getCount(); f++)
+		  {
+		    VectorT3 coupledCellFluxVector = coupledFluxValues[f];
+		    T potentialFlux = coupledCellFluxVector[0];
+		    T concentrationFlux = coupledCellFluxVector[1];
+		    T heatFlux = coupledCellFluxVector[2];
+		     
+		    //populate separate fields with coupled field data
+		    pFluxSeparate[f] = potentialFlux;
+		    mFFluxSeparate[f] = concentrationFlux;
+		    tFluxSeparate[f] = heatFlux;
+		      
+		  }	
+	      }    
+	    else
+	      {
+		const VectorT2Array& coupledFluxValues = dynamic_cast<const VectorT2Array&>(_batteryModelFields.potentialSpeciesTempFlux[faces]);
+		for (int f=0; f<faces.getCount(); f++)
+		  {
+		    VectorT2 coupledCellFluxVector = coupledFluxValues[f];
+		    T potentialFlux = coupledCellFluxVector[0];
+		    T concentrationFlux = coupledCellFluxVector[1];
+		    
+		    //populate separate fields with coupled field data
+		    pFluxSeparate[f] = potentialFlux;
+		    mFFluxSeparate[f] = concentrationFlux;
+		  }	
+	      }    
 	  }
 
 	// copy to N1 and N2 if transient
 	if (_options.transient)
 	  {
-	    TArray& mFSeparateN1 = dynamic_cast<TArray&>(sFields.massFractionN1[cells]);
+	    TArray& potSeparateN1 = dynamic_cast<TArray&>(_batteryModelFields.potentialN1[cells]);
+	    TArray& mFSeparateN1 = dynamic_cast<TArray&>(sFields.concentrationN1[cells]);
 	    TArray& tSeparateN1 = dynamic_cast<TArray&>(_batteryModelFields.temperatureN1[cells]);
-	    const VectorT3Array& coupledValuesN1 = dynamic_cast< const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
 
-	    for (int c=0; c<cells.getCount(); c++)
+	    if (_options.thermalModelPC)
 	      {
-		T massFractionN1 = mFSeparateN1[c];
-		T temperatureN1 = tSeparateN1[c];
-		const VectorT3& coupledCellVectorN1 = coupledValuesN1[c];
+		const VectorT3Array& coupledValuesN1 = dynamic_cast< const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
 
-		//populate coupled field with separate field data
-		massFractionN1 = coupledCellVectorN1[1];
-		temperatureN1 = coupledCellVectorN1[2];
-	      }
-
-	    if (_options.timeDiscretizationOrder > 1)
-	      {
-		const VectorT3Array& coupledValuesN2 = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
-		TArray& mFSeparateN2 = dynamic_cast<TArray&>(sFields.massFractionN2[cells]);
-		TArray& tSeparateN2 = dynamic_cast<TArray&>(_batteryModelFields.temperatureN2[cells]);
 		for (int c=0; c<cells.getCount(); c++)
 		  {
-		    T massFractionN2 = mFSeparateN2[c];
-		    T temperatureN2 = tSeparateN2[c];
-		    const VectorT3& coupledCellVectorN2 = coupledValuesN2[c];
+		    const VectorT3& coupledCellVectorN1 = coupledValuesN1[c];
 
-		    //populate coupled field with separate field data
-		    massFractionN2 = coupledCellVectorN2[1];
-		    temperatureN2 = coupledCellVectorN2[2];
+		    //populate separate field with coupled field data
+		    mFSeparateN1[c] = coupledCellVectorN1[1];
+		    potSeparateN1[c] = coupledCellVectorN1[0];
+		    tSeparateN1[c] = coupledCellVectorN1[2]; 
+		  }
+
+		if (_options.timeDiscretizationOrder > 1)
+		  {
+		    const VectorT3Array& coupledValuesN2 = dynamic_cast<const VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		    TArray& mFSeparateN2 = dynamic_cast<TArray&>(sFields.concentrationN2[cells]);
+		    TArray& tSeparateN2 = dynamic_cast<TArray&>(_batteryModelFields.temperatureN2[cells]);
+		    for (int c=0; c<cells.getCount(); c++)
+		      {
+			const VectorT3& coupledCellVectorN2 = coupledValuesN2[c];
+
+			//populate separate field with coupled field data
+			mFSeparateN2[c] = coupledCellVectorN2[1];
+			tSeparateN2[c] = coupledCellVectorN2[2];	  
+		      }
+		  }
+	      }
+	    else
+	      {
+		const VectorT2Array& coupledValuesN1 = dynamic_cast< const VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
+
+		for (int c=0; c<cells.getCount(); c++)
+		  {
+		    const VectorT2& coupledCellVectorN1 = coupledValuesN1[c];
+
+		    //populate separate field with coupled field data
+		    mFSeparateN1[c] = coupledCellVectorN1[1];
+		    potSeparateN1[c] = coupledCellVectorN1[0];
+		  }
+
+		if (_options.timeDiscretizationOrder > 1)
+		  {
+		    const VectorT2Array& coupledValuesN2 = dynamic_cast<const VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		    TArray& mFSeparateN2 = dynamic_cast<TArray&>(sFields.concentrationN2[cells]);
+		    for (int c=0; c<cells.getCount(); c++)
+		      {
+			const VectorT2& coupledCellVectorN2 = coupledValuesN2[c];
+
+			//populate separate field with coupled field data
+			mFSeparateN2[c] = coupledCellVectorN2[1];
+		      }
 		  }
 	      }
 	  }
@@ -2344,26 +3026,45 @@ void copyPCDiffusivity()
     const int numMeshes = _meshes.size();
     for (int n=0; n<numMeshes; n++)
       {
-	//copy massFraction diff and potential cond and heat thermal cond
+	//copy concentration diff and potential cond and heat thermal cond
 	const Mesh& mesh = *_meshes[n];
 	const StorageSite& cells = mesh.getCells();
 	BatterySpeciesFields& sFields = *_speciesFieldsVector[0]; //first species is lithium
 	const TArray& mFDiffSeparate = dynamic_cast<const TArray&>(sFields.diffusivity[cells]);
 	const TArray& pDiffSeparate = dynamic_cast<const TArray&>(_batteryModelFields.conductivity[cells]);
 	const TArray& tDiffSeparate = dynamic_cast<const TArray&>(_batteryModelFields.thermalConductivity[cells]);
-	VectorT3Array& coupledDiffValues = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempDiffusivity[cells]);
 
-	for (int c=0; c<cells.getCount(); c++)
+	if (_options.thermalModelPC)
 	  {
-	    T massDiff = mFDiffSeparate[c];
-	    T potentialDiff = pDiffSeparate[c];
-	    T thermalDiff = tDiffSeparate[c];
-	    VectorT3& coupledCellDiffVector = coupledDiffValues[c];
+	    VectorT3Array& coupledDiffValues = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempDiffusivity[cells]);
 
-	    //populate coupled field with separate field data
-	    coupledCellDiffVector[0] = potentialDiff;
-	    coupledCellDiffVector[1] = massDiff;
-	    coupledCellDiffVector[2] = thermalDiff;
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		T massDiff = mFDiffSeparate[c];
+		T potentialDiff = pDiffSeparate[c];
+		T thermalDiff = tDiffSeparate[c];
+		VectorT3& coupledCellDiffVector = coupledDiffValues[c];
+
+		//populate coupled field with separate field data
+		coupledCellDiffVector[0] = potentialDiff;
+		coupledCellDiffVector[1] = massDiff;
+		coupledCellDiffVector[2] = thermalDiff;
+	      }
+	  }
+	else
+	  {
+	    VectorT2Array& coupledDiffValues = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempDiffusivity[cells]);
+
+	    for (int c=0; c<cells.getCount(); c++)
+	      {
+		T massDiff = mFDiffSeparate[c];
+		T potentialDiff = pDiffSeparate[c];
+		VectorT2& coupledCellDiffVector = coupledDiffValues[c];
+
+		//populate coupled field with separate field data
+		coupledCellDiffVector[0] = potentialDiff;
+		coupledCellDiffVector[1] = massDiff;
+	      }
 	  }
       }
   }
@@ -2408,7 +3109,8 @@ T getFaceGroupVoltage(const Mesh& mesh, const int fgID)
 	   T voltageSum = 0.0;
 	   for(int f=0; f<nFaces; f++)
 	     {
-	       const T faceVoltage = harmonicAverage(cellPotential[faceCells(f,0)],cellPotential[faceCells(f,1)]);
+	       //const T faceVoltage = harmonicAverage(cellPotential[faceCells(f,0)],cellPotential[faceCells(f,1)]);
+	       const T faceVoltage = cellPotential[faceCells(f,1)];
 	       totalArea += faceAreaMag[f];
 	       voltageSum += faceVoltage*faceAreaMag[f];
 	     }
@@ -2431,6 +3133,7 @@ T getMeshVolume(const Mesh& mesh)
   }
 
 private:
+  const MeshList _realMeshes;
   const MeshList _meshes;
   const GeomFields& _geomFields;
   
@@ -2462,14 +3165,14 @@ private:
 
 template<class T>
 BatteryModel<T>::BatteryModel(const GeomFields& geomFields,
+			      const MeshList& realMeshes,
                               const MeshList& meshes,
                               const int nSpecies) :
   Model(meshes),
-    _impl(new Impl(geomFields,meshes,nSpecies))
+    _impl(new Impl(geomFields,realMeshes,meshes,nSpecies))
 {
   logCtor();
 }
-
 
 template<class T>
 BatteryModel<T>::~BatteryModel()
@@ -2585,16 +3288,16 @@ BatteryModel<T>::getHeatFluxIntegral(const Mesh& mesh, const int faceGroupId)
 
 template<class T>
 T
-BatteryModel<T>::getAverageMassFraction(const Mesh& mesh, const int m)
+BatteryModel<T>::getAverageConcentration(const Mesh& mesh, const int m)
 {
-  return _impl->getAverageMassFraction(mesh, m);
+  return _impl->getAverageConcentration(mesh, m);
 }
 
 template<class T>
 T
-BatteryModel<T>::getMassFractionResidual(const int speciesId)
+BatteryModel<T>::getSpeciesResidual(const int speciesId)
 {
-  return _impl->getMassFractionResidual(speciesId);
+  return _impl->getSpeciesResidual(speciesId);
 }
 
 template<class T>

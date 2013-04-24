@@ -188,11 +188,11 @@ public:
 		(rCell[c0])[v] += dFlux;
 		(rCell[c1])[v] -= dFlux;
         
-		(assembler.getCoeff01(f))(v,v) +=diffCoeff;
-		(assembler.getCoeff10(f))(v,v) +=diffCoeff;
+		(assembler.getCoeff01(f))[v] +=diffCoeff;
+		(assembler.getCoeff10(f))[v] +=diffCoeff;
 
-		(diag[c0])(v,v) -= diffCoeff;
-		(diag[c1])(v,v) -= diffCoeff;
+		(diag[c0])[v] -= diffCoeff;
+		(diag[c1])[v] -= diffCoeff;
 	      }
 	      
 	  }

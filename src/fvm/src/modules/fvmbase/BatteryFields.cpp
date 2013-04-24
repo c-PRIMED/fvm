@@ -2,20 +2,22 @@
 // Copyright (c) 2012 FVM Authors
 // See LICENSE file for terms.
 
+
 #include "BatteryFields.h"
 
 BatterySpeciesFields::BatterySpeciesFields(const string baseName) :
-  massFraction(baseName + ".massFraction"),
+  concentration(baseName + ".concentration"),
   massFlux(baseName + ".massFlux"),
   diffusivity(baseName + ".diffusivity"),
   convectionFlux(baseName + ".convectionFlux"),
-  massFractionN1(baseName + ".massFractionN1"),
-  massFractionN2(baseName + ".massFractionN2"),
+  concentrationN1(baseName + ".concentrationN1"),
+  concentrationN2(baseName + ".concentrationN2"),
   one(baseName + "one")
 {}
 
 BatteryModelFields::BatteryModelFields(const string baseName) :
   potential(baseName + "potential"),
+  potentialN1(baseName + "potentialN1"),
   potential_flux(baseName + ".potential_flux"),
   potential_gradient(baseName + ".potential_gradient"),
   conductivity(baseName + ".conductivity"),

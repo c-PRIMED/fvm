@@ -49,6 +49,7 @@ template<class X, class Diag, class OffDiag>
 					 const Field& diffusivityField,
 					 const Field& concField,
 					 const Field& concGradientField,
+					 const bool thermalModel,
 					 const int ElectrolyteMeshID) :
     Discretization(meshes),
       _geomFields(geomFields),
@@ -56,6 +57,7 @@ template<class X, class Diag, class OffDiag>
       _diffusivityField(diffusivityField),
       _concField(concField),
       _concGradientField(concGradientField),
+      _thermalModel(thermalModel),
       _ElectrolyteMeshID(ElectrolyteMeshID)
       {}
 
@@ -143,13 +145,17 @@ template<class X, class Diag, class OffDiag>
 		  else
 		    faceDiffusivity = harmonicAverage((diffCell[c0])[0],(diffCell[c1])[0]);
 
-		  T_Scalar faceTemp(1.0);
-		  if (vol0 == 0.)
-		    faceTemp = (xCell[c1])[2];
-		  else if (vol1 == 0.)
-		    faceTemp = (xCell[c0])[2];
-		  else
-		    faceTemp = harmonicAverage((xCell[c0])[2],(xCell[c1])[2]);
+		  T_Scalar faceTemp(300.0);
+		  if (_thermalModel)
+		    {
+		      if (vol0 == 0.)
+			faceTemp = (xCell[c1])[2];
+		      else if (vol1 == 0.)
+			faceTemp = (xCell[c0])[2];
+		      else
+			faceTemp = harmonicAverage((xCell[c0])[2],(xCell[c1])[2]);
+		    }
+
 
 		  //convert diffusivity for ln term in battery equation
 		  const T_Scalar transportNumber = 0.4;
@@ -196,6 +202,7 @@ template<class X, class Diag, class OffDiag>
     const Field& _diffusivityField; 
     const Field& _concField;
     const Field& _concGradientField;
+    const bool _thermalModel;
     const int _ElectrolyteMeshID;
   };
 

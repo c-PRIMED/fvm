@@ -34,6 +34,7 @@ public:
                                Field& varN1Field,
                                Field& varN2Field,
 			       Field& rhoCpField,
+			       const bool thermalModel,
                                const T_Scalar dT) :
       Discretization(meshes),
       _geomFields(geomFields),
@@ -41,6 +42,7 @@ public:
       _varN1Field(varN1Field),
       _varN2Field(varN2Field),
       _rhoCpField(rhoCpField),
+      _thermalModel(thermalModel),
       _dT(dT)
       {}
   
@@ -152,14 +154,16 @@ public:
 	  // only apply unsteady terms for species equation and temp, not potential
             for(int c=0; c<nCells; c++)
             {
-                const T_Scalar rhoVbydT_species = 1.0*cellVolume[c]/_dT;
+                const T_Scalar rhoVbydT_species = cellVolume[c]/_dT;
                 (rCell[c])[1] -= rhoVbydT_species*((x[c])[1]- (xN1[c])[1]);
-		(diag[c])(1,1) -= rhoVbydT_species;
+		(diag[c])[1] -= rhoVbydT_species;
 
-		const T_Scalar rhoVbydT_temp = rhoCp[c]*cellVolume[c]/_dT;
-                (rCell[c])[2] -= rhoVbydT_temp*((x[c])[2]- (xN1[c])[2]);
-		(diag[c])(2,2) -= rhoVbydT_temp;
-	
+		if (_thermalModel)
+		  {
+		    const T_Scalar rhoVbydT_temp = rhoCp[c]*cellVolume[c]/_dT;
+		    (rCell[c])[2] -= rhoVbydT_temp*((x[c])[2]- (xN1[c])[2]);
+		    (diag[c])[2] -= rhoVbydT_temp;
+		  }
 	    }
 	   
 	}
@@ -175,6 +179,7 @@ private:
   const Field& _varN1Field;
   const Field& _varN2Field;
   const Field& _rhoCpField;
+  const bool _thermalModel;
   const T_Scalar _dT;
 };
 

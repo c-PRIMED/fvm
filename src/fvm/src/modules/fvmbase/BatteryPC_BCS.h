@@ -86,9 +86,9 @@ public:
     const T_Scalar fluxB = -(_r[c1])[v];
     //const T_Scalar dFluxdXC0 = -(_assembler.getCoeff10(f))(v,v);
     const OffDiag dFluxdXC0_orig = -_assembler.getCoeff10(f);
-    const T_Scalar dFluxdXC1 = -(_dRdXDiag[c1])(v,v);
+    const T_Scalar dFluxdXC1 = -(_dRdXDiag[c1])[v];
     OffDiag dRC0dXC1_orig = _assembler.getCoeff01(f);
-    const T_Scalar dRC0dXC1 = dRC0dXC1_orig(v,v);
+    const T_Scalar dRC0dXC1 = dRC0dXC1_orig[v];
     
     // since we know the boundary value, compute the boundary
     // x correction and it's contribution to the residual for c0; we
@@ -99,23 +99,23 @@ public:
     const T_Scalar dRC0 = dRC0dXC1*dXC1;
     (_r[c0])[v] += dRC0;  
     
-    (_assembler.getCoeff01(f))(v,v) = NumTypeTraits<T_Scalar>::getZero();
+    (_assembler.getCoeff01(f))[v] = NumTypeTraits<T_Scalar>::getZero();
 
     // set the boundary value and make its correction equation an
     // identity
     (_x[c1])[v] = bValue;
-    (_assembler.getCoeff10(f))(v,v) = NumTypeTraits<T_Scalar>::getZero();
+    (_assembler.getCoeff10(f))[v] = NumTypeTraits<T_Scalar>::getZero();
     (_r[c1])[v] = NumTypeTraits<T_Scalar>::getZero();
-    (_dRdXDiag[c1])(v,v) = NumTypeTraits<T_Scalar>::getNegativeUnity();
+    (_dRdXDiag[c1])[v] = NumTypeTraits<T_Scalar>::getNegativeUnity();
 
     //setup the equation for the boundary flux correction
     _dFluxdX.setCoeffL(f,dFluxdXC0_orig);
-    dRC0dXC1_orig(v,v) = NumTypeTraits<T_Scalar>::getZero();
+    dRC0dXC1_orig[v] = NumTypeTraits<T_Scalar>::getZero();
     _dFluxdX.setCoeffR(f,dRC0dXC1_orig);
     (_flux[f])[v] = fluxB;
     (_rFlux[f])[v] = dFlux;
     Diag _dFluxdFlux_orig = _dFluxdFlux[f];
-    _dFluxdFlux_orig(v,v) = NumTypeTraits<T_Scalar>::getNegativeUnity();
+    _dFluxdFlux_orig[v] = NumTypeTraits<T_Scalar>::getNegativeUnity();
     _dFluxdFlux[f] = _dFluxdFlux_orig;
   }
 
@@ -154,7 +154,7 @@ public:
     (_flux[f])[v] = specifiedFlux*_faceAreaMag[f];
 
     Diag _dFluxdFlux_orig = _dFluxdFlux[f];
-    _dFluxdFlux_orig(v,v) = NumTypeTraits<T_Scalar>::getNegativeUnity();
+    _dFluxdFlux_orig[v] = NumTypeTraits<T_Scalar>::getNegativeUnity();
     _dFluxdFlux[f] = _dFluxdFlux_orig;
   }
   
