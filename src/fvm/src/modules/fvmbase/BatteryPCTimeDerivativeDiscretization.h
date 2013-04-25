@@ -71,44 +71,52 @@ public:
     const int nCells = cells.getSelfCount();
    
     if (_varN2Field.hasArray(cells))
-    {
-      // Dont worry about second order for now
-      /*
+      {
+
         // second order
         const XArray& xN2 = dynamic_cast<const XArray&>(_varN2Field[cells]);
 
         T_Scalar onePointFive(1.5);
         T_Scalar two(2.0);
         T_Scalar pointFive(0.5);
+
         if (_geomFields.volumeN1.hasArray(cells))
-	{
-	    const TArray& cellVolumeN1 = 
+	  {
+	    //Moving Mesh
+	    /*const TArray& cellVolumeN1 = 
 	      dynamic_cast<const TArray&>(_geomFields.volumeN1[cells]);
 	    const TArray& cellVolumeN2 = 
               dynamic_cast<const TArray&>(_geomFields.volumeN2[cells]);
             for(int c=0; c<nCells; c++)
-	    {
+	      {
                 const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
                 const T_Scalar rhobydT = density[c]/_dT;
 		const T_Scalar term1 = onePointFive*cellVolume[c];
                 const T_Scalar term2 = two*cellVolumeN1[c];
                 const T_Scalar term3 = pointFive*cellVolumeN2[c];
                 rCell[c] -= rhobydT*(term1*x[c]- term2*xN1[c]
-                                      + term3*xN2[c]);
+				     + term3*xN2[c]);
                 diag[c] -= rhoVbydT*onePointFive;
-	    }
-	}
+		}*/
+	  }
 	else
-	{
-            for(int c=0; c<nCells; c++)
-            {
-                const T_Scalar rhoVbydT = density[c]*cellVolume[c]/_dT;
-                rCell[c] -= rhoVbydT*(onePointFive*x[c]- two*xN1[c]
-                                      + pointFive*xN2[c]);
-                diag[c] -= rhoVbydT*onePointFive;
-	    }
-	    }*/
-    }
+	  {
+
+	    for(int c=0; c<nCells; c++)
+	      {
+		const T_Scalar rhoVbydT_species = cellVolume[c]/_dT;
+		(rCell[c])[1] -= rhoVbydT_species*(onePointFive*(x[c])[1] - two*(xN1[c])[1] + pointFive*(xN2[c])[1]);
+		(diag[c])[1] -= rhoVbydT_species*onePointFive;
+
+		if (_thermalModel)
+		  {
+		    const T_Scalar rhoVbydT_temp = rhoCp[c]*cellVolume[c]/_dT;
+		    (rCell[c])[2] -= rhoVbydT_temp*(onePointFive*(x[c])[2] - two*(xN1[c])[2] + pointFive*(xN2[c])[2]);
+		    (diag[c])[2] -= rhoVbydT_temp*onePointFive;
+		  }
+	      }          
+	  }
+      }
     else
     {
         if (_geomFields.volumeN1.hasArray(cells))
@@ -150,10 +158,11 @@ public:
 		}*/
 	}
         else
-	{
-	  // only apply unsteady terms for species equation and temp, not potential
+	  {
+	    // only apply unsteady terms for species equation and temp, not potential
+	    // first order
             for(int c=0; c<nCells; c++)
-            {
+	      {
                 const T_Scalar rhoVbydT_species = cellVolume[c]/_dT;
                 (rCell[c])[1] -= rhoVbydT_species*((x[c])[1]- (xN1[c])[1]);
 		(diag[c])[1] -= rhoVbydT_species;
@@ -164,9 +173,9 @@ public:
 		    (rCell[c])[2] -= rhoVbydT_temp*((x[c])[2]- (xN1[c])[2]);
 		    (diag[c])[2] -= rhoVbydT_temp;
 		  }
-	    }
+	      }
 	   
-	}
+	  }
     }
   
   }

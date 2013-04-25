@@ -104,7 +104,7 @@ struct BatteryModelOptions : public FloatVarDict<T>
     this->transient = true;
     this->ButlerVolmer = false;
     this->thermalModelPC = true;
-    this->timeDiscretizationOrder=1;
+    this->timeDiscretizationOrder=2;
     this->advanceVerbosity=1;
   }
   double relativeTolerance;

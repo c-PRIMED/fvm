@@ -371,9 +371,9 @@ public:
 								    dynamic_pointer_cast<ArrayBase>(pstCell->newCopy()));
 		if (_options.timeDiscretizationOrder > 1)
 		  {
-		    throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
-		    /*_batteryModelFields.potentialAndSpeciesN2.addArray(cells,
-		      dynamic_pointer_cast<ArrayBase>(psCell->newCopy()));*/
+		    //throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
+		    _batteryModelFields.potentialSpeciesTempN2.addArray(cells,
+		      dynamic_pointer_cast<ArrayBase>(pstCell->newCopy()));
 		  }
 
 	      }
@@ -421,9 +421,9 @@ public:
 								    dynamic_pointer_cast<ArrayBase>(pstCell->newCopy()));
 		if (_options.timeDiscretizationOrder > 1)
 		  {
-		    throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
-		    /*_batteryModelFields.potentialAndSpeciesN2.addArray(cells,
-		      dynamic_pointer_cast<ArrayBase>(psCell->newCopy()));*/
+		    //throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
+		    _batteryModelFields.potentialSpeciesTempN2.addArray(cells,
+		      dynamic_pointer_cast<ArrayBase>(pstCell->newCopy()));
 		  }
 
 	      }
@@ -635,9 +635,9 @@ public:
 
 	    if (_options.timeDiscretizationOrder > 1)
 	      {
-		throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
-		//VectorT3Array& pSTN2 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
-		//pSTN2 = pSTN1;
+		//throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
+		VectorT3Array& pSTN2 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		pSTN2 = pSTN1;
 	      }
 	    pSTN1 = pST;
 	  }
@@ -650,9 +650,9 @@ public:
 
 	    if (_options.timeDiscretizationOrder > 1)
 	      {
-		throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
-		//VectorT2Array& pSTN2 = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
-		//pSTN2 = pSTN1;
+		//throw CException("BatteryModel: Time Discretization Order > 1 not implimented.");
+		VectorT2Array& pSTN2 = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		pSTN2 = pSTN1;
 	      }
 	    pSTN1 = pST;
 	  }
@@ -699,6 +699,13 @@ void recoverLastTimestep()
               dynamic_cast<TArray&>(sFields.concentrationN1[cells]);
 
             mF = mFN1;
+
+	    if (_options.timeDiscretizationOrder > 1)
+	      {
+		TArray& mFN2 =
+                  dynamic_cast<TArray&>(sFields.concentrationN2[cells]);
+                mFN1 = mFN2;
+	      }
         }
     }
 
@@ -714,6 +721,11 @@ void recoverLastTimestep()
 	    VectorT3Array& pSTN1 =
 	      dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
 	    pST = pSTN1;
+	    if (_options.timeDiscretizationOrder > 1)
+	      {
+		VectorT3Array& pSTN2 = dynamic_cast<VectorT3Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		pSTN1 = pSTN2;
+	      }
 	  }
 	else
 	  {
@@ -722,6 +734,11 @@ void recoverLastTimestep()
 	    VectorT2Array& pSTN1 =
 	      dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN1[cells]);
 	    pST = pSTN1;
+	    if (_options.timeDiscretizationOrder > 1)
+	      {
+		VectorT2Array& pSTN2 = dynamic_cast<VectorT2Array&>(_batteryModelFields.potentialSpeciesTempN2[cells]);
+		pSTN1 = pSTN2;
+	      }
 	  }
 
 	TArray& temp =
@@ -729,6 +746,12 @@ void recoverLastTimestep()
         TArray& tempN1 =
               dynamic_cast<TArray&>(_batteryModelFields.temperatureN1[cells]);
 	temp = tempN1;
+	if (_options.timeDiscretizationOrder > 1)
+	  {
+	    TArray& tempN2 =
+	      dynamic_cast<TArray&>(_batteryModelFields.temperatureN2[cells]);
+	    tempN1 = tempN2;
+	  }
 
 	TArray& potential =
               dynamic_cast<TArray&>(_batteryModelFields.potential[cells]);
