@@ -9,5 +9,5 @@ class Puq(BuildPkg):
         if not os.path.isdir(idir):
             self.sys_log("/bin/mkdir -p %s" % idir)
         self.sys_log("install -m 444 puqutil/*.h %s" % idir)
-        self.sys_log("python setup.py clean") 
+        self.sys_log("python setup.py clean --prefix=%s" % self.blddir)
         return self.sys_log("python setup.py install --prefix=%s" % self.blddir)
