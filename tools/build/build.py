@@ -149,9 +149,10 @@ class Build:
                 self.add_build([p for p in self.all_packages if p.name == 'nose'][0], check_timestamp, True)
                 self.add_build([p for p in self.all_packages if p.name == 'sympy'][0], check_timestamp, True)
                 self.add_build([p for p in self.all_packages if p.name == 'numpy'][0], check_timestamp, True)
-                self.add_build([p for p in self.all_packages if p.name == 'tcl'][0], check_timestamp, True)                    
+                self.add_build([p for p in self.all_packages if p.name == 'tcl'][0], check_timestamp, True)
                 self.add_build([p for p in self.all_packages if p.name == 'tk'][0], check_timestamp, True)
                 self.add_build([p for p in self.all_packages if p.name == 'h5py'][0], check_timestamp, True)
+                self.add_build([p for p in self.all_packages if p.name == 'setuptools'][0], check_timestamp, True)
         return 1
 
     def reorder_pkgs(self):
