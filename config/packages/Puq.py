@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Puq(BuildPkg):
-    requires = ['setuptools', 'h5py', 'scipy', 'matplotlib', 'nose', 'jsonpickle', 'sympy', 'time', 'swig', 'poster', 'pymc']
+    requires = ['setuptools', 'h5py', 'scipy', 'matplotlib', 'nose', 'jsonpickle', 'sympy', 'time', 'swig', 'poster', 'pymc', 'openpyxl']
 
     def _install(self):
         os.chdir(self.sdir)        

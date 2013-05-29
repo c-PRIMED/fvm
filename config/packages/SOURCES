@@ -42,3 +42,4 @@ Poster	pkgs/poster-0.8.1.tar.gz
 Tcl	pkgs/tcl8.5.13.tar.gz
 Tk	pkgs/tk8.5.13.tar.gz
 Setuptools	pkgs/setuptools-0.6c11.tar.gz
+Openpyxl	pkgs/openpyxl.tar.gz
