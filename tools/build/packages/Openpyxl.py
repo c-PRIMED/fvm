@@ -1,7 +1,7 @@
 from build_packages import *
 
 class Openpyxl(BuildPkg):
-    requires = ['python']
+    requires = ['python', 'setuptools']
     def _installed(self):
         return python_package('openpyxl', [1,6])
     def _install(self):
