@@ -1,10 +1,10 @@
 from build_packages import *
 
 class Puq(BuildPkg):
-    requires = ['setuptools', 'h5py', 'scipy', 'matplotlib', 'nose', 'jsonpickle', 'sympy', 'time', 'swig', 'poster', 'pymc', 'openpyxl']
+    requires = ['setuptools', 'h5py', 'scipy', 'matplotlib', 'nose', 'jsonpickle', 'sympy', 'time',  'poster', 'pymc', 'openpyxl']
 
     def _install(self):
-        os.chdir(self.sdir)        
+        os.chdir(self.sdir)
         idir = os.path.join(self.blddir, "include")
         if not os.path.isdir(idir):
             self.sys_log("/bin/mkdir -p %s" % idir)
