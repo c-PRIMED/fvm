@@ -1,6 +1,6 @@
 Python   pkgs/Python-2.7.3.tar.bz2
 Numpy    pkgs/numpy-1.6.2.tar.gz
-Ipython  pkgs/ipython-0.13.2.tar.gz
+Ipython  pkgs/ipython-1.0.0.tar.gz
 Mpi4py   pkgs/mpi4py-1.3.tar.bz2
 Nose     pkgs/nose-0.11.0.tar.gz
 Scons    pkgs/scons-local-1.2.0.tar.gz
