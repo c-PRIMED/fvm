@@ -159,7 +159,7 @@ template<class X, class Diag, class OffDiag>
 	const int c1 = cellCells(f,0);
 	const int c2 = cellCells(f,1);
 	const int c3 = cellCells(f,2);
-
+	
 	const T_Scalar Temp = eTempCell[c0]; //  K, c0 and c1 should be same Temp at convergence
 	const T_Scalar C_a = alpha_a*F/R/Temp;
 	const T_Scalar C_c = alpha_c*F/R/Temp;
@@ -200,7 +200,7 @@ template<class X, class Diag, class OffDiag>
 	const T_Scalar i_star = C_0*k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
 
 	// CURRENT SHOULD NOT BE ZERO
-	if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
+	//if (i_star == 0.0){cout << "WARNING: current = 0" << endl;}
 
 	// calculate dC_0/dCS
 	T_Scalar dC_0dCS = 0.0;
@@ -217,7 +217,7 @@ template<class X, class Diag, class OffDiag>
 	const T_Scalar dIdCS_star = i_star*(alpha_c/cs_star - alpha_a/(csMax-cs_star)+ dC_0dCS/C_0);
 	
 	const T_Scalar dIdCE_star = i_star*alpha_c/ce_star;
-
+	
 	// left(parent) shell cell - 3 neighbors
 	// flux balance
 	OffDiag& offdiagC0_C1 = matrix.getCoeff(c0,  c1);
@@ -268,7 +268,7 @@ template<class X, class Diag, class OffDiag>
 	  if (_Cathode)
 	    {
 	      //cout << "UrefAnode: " << U_ref << endl;
-	      cout << "Cs0: " << cs_star << endl;
+	      //cout << "Cs0: " << cs_star << endl;
 	    }
 	  }
 

@@ -171,6 +171,7 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
 	const int c2 = cellCells(f,1);
 	const int c3 = cellCells(f,2);
 	const T_Scalar Area = faceAreaMag[f];
+	bool turnOffBV = false;
 
 	T_Scalar cs_star = (xCell[c1])[1];
 	T_Scalar ce_star = (xCell[c0])[1];
@@ -180,9 +181,13 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
 	// avoid nans
 	if (cs_star < 0.0){ cout << "ERROR: Cs < 0, Cs=" << cs_star << endl; cs_star = 0.0;}
 	if (ce_star < 0.0){ cout << "ERROR: Ce < 0, Ce=" << ce_star << endl; ce_star = 0.0;}
-	if (cs_star > csMax){ cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl; cs_star = csMax;}
+	//if (cs_star > csMax){ cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl; cs_star = csMax;}
+	if (cs_star > csMax){ cout << "ERROR: Cs > CsMax, Cs=" << cs_star << endl; turnOffBV = true;}
 
-	const T_Scalar SOC =  cs_star/csMax;
+
+	T_Scalar SOC =  cs_star/csMax;
+	if (turnOffBV)
+	  SOC = 1.0;
 
 	T_Scalar U_ref = 0.1; // V
 	if (_Anode){
@@ -215,9 +220,13 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
 	const T_Scalar eta_star = phis_star - phie_star - U;
 
 	const T_Scalar C_0 = exp(C_a*eta_star)-exp(-1.0*C_c*eta_star);
-	const T_Scalar i0_star = k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
-	const T_Scalar i_star = C_0*i0_star;
 
+	T_Scalar i0_star = k*F*Area*pow(ce_star,alpha_c)*pow((csMax-cs_star),alpha_a)*pow(cs_star,alpha_c);
+	if (turnOffBV)
+	    i0_star = 0.0;
+
+	const T_Scalar i_star = C_0*i0_star;
+	
 	// CURRENT SHOULD NOT BE ZERO
 	//if (i_star < 1.0e-15){cout << "WARNING: current = 0" << endl;}
 
@@ -356,6 +365,12 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
 
 	// underrelax diagonal to help convergence
 	diag[c1] = 1.0/_interfaceUnderRelax*diag[c1];
+
+	if (turnOffBV)
+	  {
+	    cout << "r[c1]: " << (rCell[c1])[0] << (rCell[c1])[1] << endl;
+	    cout << "r[c0]: " << (rCell[c0])[0] << (rCell[c1])[1] << endl;
+	  }
 
 	if (c0 == 0)
 	  {
