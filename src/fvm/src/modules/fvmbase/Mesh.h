@@ -314,7 +314,7 @@ public:
   Mesh* extrude(int nz, double zmax, bool boundaryOnly=false);
 
   Mesh* createShell(const int fgId, Mesh& otherMesh, const int otherFgId);
-  Mesh* createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId);
+  Mesh* createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId, const bool connectedShell);
 
   int getCellZoneID() const { return _cellZoneID;}
   void setCellZoneID(const int id) {_cellZoneID = id;}
@@ -322,6 +322,7 @@ public:
   
   bool isShell() const {return _isShell;}
   bool isDoubleShell() const {return _isDoubleShell;}
+  bool isConnectedShell() const {return _isConnectedShell;}
   int getParentMeshID() const {return _parentMeshID;}
   int getOtherMeshID() const {return _otherMeshID;}
 
@@ -406,6 +407,8 @@ protected:
 
   bool _isShell;
   bool _isDoubleShell;
+  bool _isConnectedShell;
+
   // used if this is a shell mesh, points to the face group site that
   // can be used to obtain the area of the faces that makes up the
   // cells

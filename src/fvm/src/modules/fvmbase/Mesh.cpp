@@ -39,6 +39,7 @@ Mesh::Mesh(const int dimension):
   _isAssembleMesh(false),
   _isShell(false),
   _isDoubleShell(false),
+  _isConnectedShell(false),
   _parentFaceGroupSite(0),
   _otherFaceGroupSite(0),
   _parentMeshID(0),
@@ -70,6 +71,7 @@ Mesh::Mesh( const int dimension,
   _isAssembleMesh(false),
   _isShell(false),
   _isDoubleShell(false),
+  _isConnectedShell(false),
   _parentFaceGroupSite(0),
   _otherFaceGroupSite(0),
   _parentMeshID(0),
@@ -155,6 +157,7 @@ Mesh::Mesh( const int dimension,
   _isAssembleMesh(false),
   _isShell(false),
   _isDoubleShell(false),
+  _isConnectedShell(false),
   _parentFaceGroupSite(0),
   _otherFaceGroupSite(0),
   _parentMeshID(0),
@@ -1766,7 +1769,7 @@ Mesh::createShell(const int fgId, Mesh& otherMesh, const int otherFgId)
 }
 
 Mesh*
-Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
+Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId, const bool connectedShell)
 {
   typedef Array<int> IntArray;
   
@@ -1793,6 +1796,9 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   shellMesh->_otherMeshID = otherMesh.getID();
   shellMesh->_otherFaceGroupSite = &fgSiteOther;
   
+  if (connectedShell)
+    shellMesh->_isConnectedShell = true;
+
   StorageSite& sMeshCells = shellMesh->getCells();
 
   // twice as many cells as there are faces, plus twice the number of ghost cells
@@ -1836,7 +1842,8 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   // arrays into two sets, one for the cells that are connected
   // through the faces in the current face group and one for the rest.
 
-  
+  if (connectedShell)
+    {
   StorageSite::ScatterMap& lScatterMap = cells.getScatterMap();
   StorageSite::ScatterMap& rScatterMap = otherCells.getScatterMap();
 
@@ -1941,7 +1948,7 @@ Mesh::createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId)
   if (L2RGatherNewVector.size() > 0)
     rGatherMap[&cells] = arrayFromVector(L2RGatherNewVector);
   rGatherMap[&sMeshCells] = arrayFromVector(S2RGatherVector);
-
+    }
   // create the cell cell connectivity for the shell mesh
   shared_ptr<CRConnectivity> sCellCells(new CRConnectivity(sMeshCells,sMeshCells));
   sCellCells->initCount();

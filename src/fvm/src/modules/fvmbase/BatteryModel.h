@@ -30,7 +30,7 @@ public:
   class Impl;
   
   
-  BatteryModel(const GeomFields& geomFields,
+  BatteryModel(GeomFields& geomFields,
 	       const MeshList& realMeshes, 
                const MeshList& meshes, 
                const int nSpecies);

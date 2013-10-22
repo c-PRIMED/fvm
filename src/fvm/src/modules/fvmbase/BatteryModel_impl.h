@@ -37,6 +37,8 @@
 #include "BatteryPCTimeDerivativeDiscretization.h"
 #include "BatteryPCBinaryElectrolyteDiscretization.h"
 #include "BatteryPCHeatSourceDiscretization.h"
+#include "BatteryFixInterfaceGhost.h"
+#include "LinearizeInterfaceJumpUnconnected.h"
 
 template<class T>
 class BatteryModel<T>::Impl
@@ -63,7 +65,7 @@ public:
   typedef Gradient<VectorT2> VectorT2Grad;
   typedef DiagonalTensor<T,2> DiagTensorT2;
 
-  Impl(const GeomFields& geomFields,
+  Impl(GeomFields& geomFields,
        const MeshList& realMeshes,
        const MeshList& meshes,
        const int nSpecies) :
@@ -183,7 +185,6 @@ public:
   {
     const int numMeshes = _meshes.size();
 
-
     // initialize fields for battery model
     for (int n=0; n<numMeshes; n++)
       {
@@ -194,6 +195,17 @@ public:
 
 	const int nCells = cells.getCount();
 	
+	// print cell centroids for test case
+	//const VectorT3Array& cellCentroid = dynamic_cast<const VectorT3Array&>(_geomFields.coordinate[cells]);
+	VectorT3Array& cellCentroid = dynamic_cast<VectorT3Array&>(_geomFields.coordinate[cells]);
+
+	cout << "Mesh: " << n << endl;
+	for (int c=0; c<nCells; c++)
+	  {
+	    if (((cellCentroid[c])[2] < -3.33)&&((cellCentroid[c])[2] > -3.34))
+	      cout << c << ": " << (cellCentroid[c])[0] << " " << (cellCentroid[c])[1] << endl;
+	  }
+
 	//initial potential setup
 	shared_ptr<TArray> pCell(new TArray(nCells));
 
@@ -771,7 +783,9 @@ void recoverLastTimestep()
     for (int n=0; n<numMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
-
+	
+	if ((!(mesh.isDoubleShell()))||((mesh.isDoubleShell())&&(mesh.isConnectedShell())))
+	  {
         const StorageSite& cells = mesh.getCells();
         MultiField::ArrayIndex tIndex(&sFields.concentration,&cells);
 
@@ -815,7 +829,7 @@ void recoverLastTimestep()
             shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
             ls.getMatrix().addMatrix(fIndex,fIndex,mff);
         }
-     
+	  }
     } 
   } 
 
@@ -1127,13 +1141,23 @@ void initThermalLinearization(LinearSystem& ls)
     const BatterySpeciesBCMap& sbcmap = *_sbcMapVector[m];
     BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
 
+    //fix interface if it is an unconnected shell mesh 
+    // (tested inside so that multiple interfaces can be handled)
+    BatteryFixInterfaceGhost<T, T, T> fig (_meshes,
+					   _geomFields,
+					   sFields.concentration,
+					   sFields.diffusivity);
+
+    fig.fixInterfaces();
+
+
     GradientModel<T> speciesGradientModel(_meshes,sFields.concentration,
 					  _batteryModelFields.speciesGradient,_geomFields);
     speciesGradientModel.compute();
     
     DiscrList discretizations;
-    
-    shared_ptr<Discretization>
+
+    /*shared_ptr<Discretization>
       dd(new DiffusionDiscretization<T,T,T>
 	 (_meshes,_geomFields,
 	  sFields.concentration,
@@ -1155,9 +1179,39 @@ void initThermalLinearization(LinearSystem& ls)
         discretizations.push_back(td);
     }
 
+      
     Linearizer linearizer;
 
     linearizer.linearize(discretizations,_meshes,ls.getMatrix(),
+                         ls.getX(), ls.getB());
+    */
+
+    shared_ptr<Discretization>
+      dd(new DiffusionDiscretization<T,T,T>
+	 (_realMeshes,_geomFields,
+	  sFields.concentration,
+	  sFields.diffusivity,
+	  _batteryModelFields.speciesGradient));
+    discretizations.push_back(dd);
+    
+    if (_options.transient)
+      {
+        shared_ptr<Discretization>
+          td(new TimeDerivativeDiscretization<T,T,T>
+             (_realMeshes,_geomFields,
+              sFields.concentration,
+              sFields.concentrationN1,
+              sFields.concentrationN2,
+              sFields.one,
+              _options["timeStep"]));
+        
+        discretizations.push_back(td);
+      }
+
+      
+    Linearizer linearizer;
+
+    linearizer.linearize(discretizations,_realMeshes,ls.getMatrix(),
                          ls.getX(), ls.getB());
 
     const int numMeshes = _meshes.size();
@@ -1167,7 +1221,7 @@ void initThermalLinearization(LinearSystem& ls)
     for (int n=0; n<numMeshes; n++)
       {
 	const Mesh& mesh = *_meshes[n];
-	if (mesh.isDoubleShell())
+	if ((mesh.isDoubleShell())&&(mesh.isConnectedShell()))
 	  {
 	    const int parentMeshID = mesh.getParentMeshID();
 	    const int otherMeshID = mesh.getOtherMeshID();
@@ -1209,11 +1263,23 @@ void initThermalLinearization(LinearSystem& ls)
 		lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	      }
 	  }
+	if ((mesh.isDoubleShell())&&(!(mesh.isConnectedShell())))
+	  {
+	    const int parentMeshID = mesh.getParentMeshID();
+	    const int otherMeshID = mesh.getOtherMeshID();
+	    const Mesh& parentMesh = *_meshes[parentMeshID];
+	    const Mesh& otherMesh = *_meshes[otherMeshID];
+	    LinearizeInterfaceJumpUnconnected<T, T, T> lsm (T(1.0),
+						     T(0.0),
+						     sFields.concentration);
+
+	    lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	  }
       }
 
     ///////// boundary and interface condition
-
-    for (int n=0; n<numMeshes; n++)
+    const int numRealMeshes = _realMeshes.size();
+    for (int n=0; n<numRealMeshes; n++)
     {
         const Mesh& mesh = *_meshes[n];
 
@@ -3160,7 +3226,7 @@ T getMeshVolume(const Mesh& mesh)
 private:
   const MeshList _realMeshes;
   const MeshList _meshes;
-  const GeomFields& _geomFields;
+  GeomFields& _geomFields;
   
   vector<BatterySpeciesFields*> _speciesFieldsVector;
 
@@ -3189,7 +3255,7 @@ private:
 };
 
 template<class T>
-BatteryModel<T>::BatteryModel(const GeomFields& geomFields,
+BatteryModel<T>::BatteryModel(GeomFields& geomFields,
 			      const MeshList& realMeshes,
                               const MeshList& meshes,
                               const int nSpecies) :

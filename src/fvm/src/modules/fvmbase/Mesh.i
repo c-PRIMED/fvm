@@ -165,8 +165,9 @@ public:
 
   Mesh* createShell(const int fgId, Mesh& otherMesh, const int otherFgId);
   bool isShell() const;
-  Mesh* createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId);
+  Mesh* createDoubleShell(const int fgId, Mesh& otherMesh, const int otherFgId, const bool connectedShell);
   bool isDoubleShell() const;
+  bool isConnectedShell() const;
   const StorageSite& getParentFaceGroupSite() const;
   const StorageSite& getOtherFaceGroupSite() const;
   int getParentMeshID() const;
