@@ -17,6 +17,7 @@ using namespace std;
 %include "GeomFields.h"
 %include "FlowFields.h"
 %include "ThermalFields.h"
+%include "VacancyFields.h"
 %include "SpeciesFields.h"
 %include "BatteryFields.h"
 
@@ -26,6 +27,7 @@ using namespace std;
 
 %include "MeshMetricsCalculator.i"
 %include "ThermalModel.i"
+%include "VacancyModel.i"
 
 %include "SpeciesModel.i"
 %include "BatteryModel.i"

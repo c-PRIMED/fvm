@@ -14,6 +14,10 @@ template class MeshMetricsCalculator<ATYPE>;
 #include "ThermalModel_impl.h"
 template class ThermalModel<ATYPE>;
 
+#include "VacancyModel.h"
+#include "VacancyModel_impl.h"
+template class VacancyModel<ATYPE>;
+
 #include "SpeciesModel.h"
 #include "SpeciesModel_impl.h"
 template class SpeciesModel<ATYPE>;
