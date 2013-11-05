@@ -238,6 +238,33 @@ public:
 
   }
 
+  virtual void transpose()
+  {
+    const int nRows = _conn.getRowSite().getCount();
+    for(int i=0; i<nRows; i++)
+    {
+        for (int nb = _row[i]; nb<_row[i+1]; nb++)
+        {
+            const int j = _col[nb];
+            bool found = false;
+            
+            for (int nb2 = _row[j]; nb2<_row[j+1]; nb2++)
+            {
+                if (_col[nb2] == i)
+                {
+                    const OffDiag coeffIJ = _offDiag[nb];
+                    _offDiag[nb] = _offDiag[nb2];
+                    _offDiag[nb2] = coeffIJ;
+                    
+                    found = true;
+                }
+            }
+            if (!found)
+              throw CException("invalid connectivity for transpose");
+        }
+    }
+  }
+  
   /**
    * compute x^T * this * x; return as a new Array of length 1
    *

@@ -114,6 +114,8 @@ public:
 
   void createCoarseMatrices(MultiField& coarseIndex);
 
+  void transpose();
+  
   void
   injectResidual(const MultiField& coarseIndex,
                  const MultiField& fineResidualField,

@@ -216,6 +216,58 @@ MultiFieldMatrix::Jacobi(IContainer& xB, const IContainer& bB, IContainer& tempB
   x.sync();
 }
 
+void 
+MultiFieldMatrix::transpose()
+{
+  // keep the transposed offdiagonals in this map since we can't modify _matrices while looping over it
+  MatrixMap transposedMap;
+  
+  foreach(const MatrixMap::value_type& pos, _matrices)
+  {
+      EntryIndex k = pos.first;
+
+      if (k.first == k.second)
+      {
+          pos.second->transpose();
+      }
+      else
+      {
+          EntryIndex kt(k.second,k.first);
+          if ( (transposedMap.count(k) + transposedMap.count(kt)) == 0)
+          {
+              shared_ptr<Matrix> mIJ = pos.second;
+              mIJ->transpose();
+
+              if (_matrices.find(kt) != _matrices.end())
+              {
+                  shared_ptr<Matrix> mJI = _matrices[kt];
+                  mJI->transpose();
+
+                  transposedMap[k] = mJI;
+                  transposedMap[kt] = mIJ;
+              }
+              else
+              {
+                  transposedMap[kt] = mIJ;
+                  // store a null matrix so in the loop below we can
+                  // erase the entry at this location in _matrices
+                  transposedMap[k] = shared_ptr<Matrix>();
+              }
+          }
+      }
+  }
+
+  // set the matrices from transposedMap in the transposed locations in _matrices
+  foreach(const MatrixMap::value_type& pos, transposedMap)
+  {
+      EntryIndex k = pos.first;
+
+      if (pos.second)
+        _matrices[k] = pos.second;
+      else
+        _matrices.erase(k);
+  }
+}
 
 // iluSolve only works on the diagonal matrices since we intend for it
 // to be used in a BlockJacobi preconditioner.
