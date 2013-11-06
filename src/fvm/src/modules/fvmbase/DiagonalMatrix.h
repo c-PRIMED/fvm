@@ -85,6 +85,8 @@ public:
     }
   }
 
+  virtual void transpose() {}
+  
   Diag& operator[](int n) {return _diag[n];}
   const Diag& operator[](int n) const {return _diag[n];}
 
