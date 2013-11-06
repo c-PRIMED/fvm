@@ -46,6 +46,8 @@ public:
         y[nr] = _coeffL[nr]*x[c0] + _coeffR[nr]*x[c1];
     }
   }
+
+  virtual void transpose() {}
   
   virtual void multiplyAndAdd(IContainer& yB, const IContainer& xB) const
   {
