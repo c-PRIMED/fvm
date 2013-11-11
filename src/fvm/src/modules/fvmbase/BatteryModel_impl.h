@@ -1263,6 +1263,15 @@ void initThermalLinearization(LinearSystem& ls)
 		lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	      }
 	  }
+
+	if (n==0) 
+	  {
+	  cout << "BEFORE" << endl;
+	  printMatrixElementsOnFace(mesh, 8, ls, sFields.concentration);
+	  }
+	else if (n==1)
+	  printMatrixElementsOnFace(mesh, 11, ls, sFields.concentration);
+
 	if ((mesh.isDoubleShell())&&(!(mesh.isConnectedShell())))
 	  {
 	    const int parentMeshID = mesh.getParentMeshID();
@@ -1276,6 +1285,10 @@ void initThermalLinearization(LinearSystem& ls)
 	    lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	  }
       }
+    cout << "AFTER" << endl;
+    printMatrixElementsOnFace(*_meshes[0], 8, ls, sFields.concentration);
+    printMatrixElementsOnFace(*_meshes[1], 11, ls, sFields.concentration);
+    
 
     ///////// boundary and interface condition
     const int numRealMeshes = _realMeshes.size();
@@ -1341,19 +1354,21 @@ void initThermalLinearization(LinearSystem& ls)
             else
               throw CException(bc.bcType + " not implemented for Species in BatteryModel");
         }
+	
 
-        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
-        {
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
-            GenericBCS<T,T,T> gbc(faces,mesh,
-                                  _geomFields,
-                                  sFields.concentration,
-                                  sFields.massFlux,
-                                  ls.getMatrix(), ls.getX(), ls.getB());
+	foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	  {
+	    const FaceGroup& fg = *fgPtr;
+	    const StorageSite& faces = fg.site;
+	    GenericBCS<T,T,T> gbc(faces,mesh,
+				  _geomFields,
+				  sFields.concentration,
+				  sFields.massFlux,
+				  ls.getMatrix(), ls.getX(), ls.getB());
 
-            gbc.applyInterfaceBC();
-        }
+	    gbc.applyInterfaceBC();
+	  }
+	  
     }
   }
   
@@ -2436,6 +2451,60 @@ T getAverageConcentration(const Mesh& mesh, const int m)
       }
     return weightedConcentration/totalVolume;
   }
+
+
+ void printMatrixElementsOnFace(const Mesh& mesh, const int fgId, LinearSystem& ls, Field& varField)
+ {
+   
+   const FaceGroup& fg = mesh.getFaceGroup(fgId);
+   const StorageSite& faces = fg.site;
+   const StorageSite& cells = mesh.getCells();
+   const int nFaces = faces.getCount();
+   const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+   MultiFieldMatrix& mfmatrix = ls.getMatrix();
+   MultiField& rField = ls.getB();
+   MultiField& xField = ls.getX();
+
+   const MultiField::ArrayIndex cVarIndex(&varField,&cells);
+   CRMatrix<T,T,T>& matrix = dynamic_cast<CRMatrix<T,T,T>&>(mfmatrix.getMatrix(cVarIndex,cVarIndex));
+   TArray& rCell = dynamic_cast<TArray&>(rField[cVarIndex]);
+   TArray& xCell = dynamic_cast<TArray&>(xField[cVarIndex]);
+   typename CRMatrix<T,T,T>::DiagArray& diag = matrix.getDiag();
+
+   for(int f=0; f<nFaces; f++)
+     {
+       const int c0 = faceCells(f,0);
+       const int c1 = faceCells(f,1);
+       T& offdiagC0_C1 = matrix.getCoeff(c0,  c1);
+       T& offdiagC1_C0 = matrix.getCoeff(c1,  c0);
+       const T rC0= rCell[c0];
+       const T rC1= rCell[c1];
+       const T diagC0= diag[c0];
+       const T diagC1= diag[c1];
+       const T xC0 = xCell[c0];
+       const T xC1 = xCell[c1];
+
+       if (f==0)
+	 {
+	   cout << "--------------" << endl;
+	   cout << mesh.getID() << ":" << f << endl;
+	   cout << offdiagC0_C1 << endl;
+	   cout << offdiagC1_C0 << endl;
+	   cout << rC0 << endl;
+	   cout << rC1 << endl;
+	   cout << diagC0 << endl;
+	   cout << diagC1 << endl;
+	   cout << xC0 << endl;
+	   cout << xC1 << endl;
+	   
+	   cout << "--------------" << endl;
+
+	 }
+       
+     }
+   return;
+ }
 
  LinearSystem& matrixMerge(LinearSystem& ls, const int m)
  {

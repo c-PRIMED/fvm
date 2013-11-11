@@ -59,7 +59,7 @@ template<class X, class Diag, class OffDiag>
     //    interface ghost cells instead of them holding the value from the interior 
     //    cell of the adjacent mesh.
 
-    cout << "WE ARE HERE" << endl;
+    cout << "BATTERY FIX INTEFACE GHOST" << endl;
 
     const int numMeshes = _meshes.size();
 
@@ -154,20 +154,24 @@ template<class X, class Diag, class OffDiag>
 	  }
       }
 
-    for (int n=0; n<numMeshes; n++)
+    //output for two material 54 cell case to check centroid changes
+    if (0)
       {
-        const Mesh& mesh = *_meshes[n];	
-	const StorageSite& cells = mesh.getCells();
-
-	const int nCells = cells.getCount();	
-
-	VectorT3Array& cellCentroid = dynamic_cast<VectorT3Array&>(_geomFields.coordinate[cells]);
-
-	cout << "Mesh: " << n << endl;
-	for (int c=0; c<nCells; c++)
+	for (int n=0; n<numMeshes; n++)
 	  {
-	    if (((cellCentroid[c])[2] < -3.33)&&((cellCentroid[c])[2] > -3.34))
-	      cout << c << ": " << (cellCentroid[c])[0] << " " << (cellCentroid[c])[1] << endl;
+	    const Mesh& mesh = *_meshes[n];	
+	    const StorageSite& cells = mesh.getCells();
+
+	    const int nCells = cells.getCount();	
+
+	    VectorT3Array& cellCentroid = dynamic_cast<VectorT3Array&>(_geomFields.coordinate[cells]);
+
+	    cout << "Mesh: " << n << endl;
+	    for (int c=0; c<nCells; c++)
+	      {
+		if (((cellCentroid[c])[2] < -3.33)&&((cellCentroid[c])[2] > -3.34))
+		  cout << c << ": " << (cellCentroid[c])[0] << " " << (cellCentroid[c])[1] << endl;
+	      }
 	  }
       }
 
