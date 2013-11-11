@@ -135,8 +135,8 @@ class LinearizeInterfaceJumpUnconnected
        varCell[c2] = varCellOther[c0o];
        
        // calculate residuals and jacobian values for R_1 equation
-       const X r0 = 0.0; //rightFlux + leftFlux;
-       const X r1 = 0.0; //_A_coeff*varCell[c0] + _B_coeff - varCell[c1];
+       const X r0 = rightFlux + leftFlux;
+       const X r1 = _A_coeff*varCell[c0] + _B_coeff - varCell[c1];
        const OffDiag dRC1dXC2 = NumTypeTraits<OffDiag>::getZero();
        const Diag dRC1dXC1 = NumTypeTraits<Diag>::getNegativeUnity();
        const OffDiag dRC1dXC3 = NumTypeTraits<OffDiag>::getZero();
@@ -167,7 +167,7 @@ class LinearizeInterfaceJumpUnconnected
        const OffDiag originalParentOffDiag = offDiagParentC0_C1;
        offDiagParentC0_C1 = originalParentOffDiag*(B*H-G*C)/(A*G-B*F);
        diagParentC0 += originalParentOffDiag*(B*J-D*G)/(A*G-B*F);
-       parentR0 += originalParentOffDiag*(G*r1 - B*r0 + B*K - E*G)/(A*G-B*F);
+       parentR0 -= originalParentOffDiag*(G*r1 - B*r0 + B*K - E*G)/(A*G-B*F);
        if (f==0)
 	 {
 	   cout << A << " " << B << " " << C << " " << D << " " << E << " " << F << " " << G << " " << H << " " << J << " " << K << " " <<  originalParentOffDiag << r0 << r1 << endl;
@@ -183,7 +183,7 @@ class LinearizeInterfaceJumpUnconnected
        const OffDiag originalOtherOffDiag = offDiagOtherC0_C1;
        offDiagOtherC0_C1 = originalOtherOffDiag*(D*F-A*J)/(A*G-B*F);
        diagOtherC0 += originalOtherOffDiag*(C*F-A*H)/(A*G-B*F);
-       otherR0 += originalOtherOffDiag*(A*r0 - F*r1 + E*F - A*K)/(A*G-B*F);
+       otherR0 -= originalOtherOffDiag*(A*r0 - F*r1 + E*F - A*K)/(A*G-B*F);
 
 
        // Not going to work
@@ -197,26 +197,26 @@ class LinearizeInterfaceJumpUnconnected
        //editing ghost cells (not sure if I need to, seems not to matter as expected)
        // but makes looking for differences easier, so keep for now.
        //parent
-       /*
+       
        OffDiag& offDiagParentC1_C0 = parentmatrix.getCoeff(c1p,  c0p);
        Diag& diagParentC1 = parentdiag[c1p];
        X& parentR1 = rParentCell[c1p];
 
-       const Diag originalParentDiagC1 = offDiagParentC0_C1;
+       const Diag originalParentDiagC1 = diagParentC1;//offDiagParentC0_C1;
        offDiagParentC1_C0 += diagParentC1*(B*J-D*G)/(A*G-B*F);
        diagParentC1 *= (B*H-G*C)/(A*G-B*F);
-       parentR1 += originalParentDiagC1*(G*r1 - B*r0 + B*K - E*G)/(A*G-B*F);
+       parentR1 -= originalParentDiagC1*(G*r1 - B*r0 + B*K - E*G)/(A*G-B*F);
 
        //other
        OffDiag& offDiagOtherC1_C0 = othermatrix.getCoeff(c1o,  c0o);
        Diag& diagOtherC1 = otherdiag[c1o];
        X& otherR1 = rOtherCell[c1o];
 
-       const Diag originalOtherDiagC1 = offDiagOtherC0_C1;
+       const Diag originalOtherDiagC1 = diagOtherC1; //offDiagOtherC0_C1;
        offDiagOtherC1_C0 += diagOtherC1*(C*F-A*H)/(A*G-B*F);
        diagOtherC1 *= (D*F-A*J)/(A*G-B*F);
-       otherR1 += originalOtherDiagC1*(G*r1 - B*r0 + B*K - E*G)/(A*G-B*F);
-       */
+       otherR1 -= originalOtherDiagC1*(A*r0 - F*r1 + E*F - A*K)/(A*G-B*F);
+       
 
    }
 

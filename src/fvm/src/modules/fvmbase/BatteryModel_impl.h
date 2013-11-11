@@ -1141,6 +1141,8 @@ void initThermalLinearization(LinearSystem& ls)
     const BatterySpeciesBCMap& sbcmap = *_sbcMapVector[m];
     BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
 
+    sFields.concentration.syncLocal();
+
     //fix interface if it is an unconnected shell mesh 
     // (tested inside so that multiple interfaces can be handled)
     BatteryFixInterfaceGhost<T, T, T> fig (_meshes,
@@ -1283,6 +1285,10 @@ void initThermalLinearization(LinearSystem& ls)
 						     sFields.concentration);
 
 	    lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+
+	    //sync for debugging
+	    //sync doesn't effect result, but matches what the matrix/residual now contains
+	    sFields.concentration.syncLocal();
 	  }
       }
     cout << "AFTER" << endl;
