@@ -2607,6 +2607,12 @@ T getAverageConcentration(const Mesh& mesh, const int m)
 
 	ls.initSolve();
 
+	cout << "BEFORE LS" << endl;
+	BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
+	printMatrixElementsOnFace(*_meshes[0], 8, ls, sFields.concentration);
+	printMatrixElementsOnFace(*_meshes[1], 11, ls, sFields.concentration);
+
+
         MFRPtr rNorm(_options.getLinearSolverSpecies().solve(ls));
 
         if (!iNorm) iNorm = rNorm;        
@@ -2620,6 +2626,11 @@ T getAverageConcentration(const Mesh& mesh, const int m)
 
         ls.postSolve();
         ls.updateSolution();
+	
+	cout << "AFTER LS" << endl;
+	printMatrixElementsOnFace(*_meshes[0], 8, ls, sFields.concentration);
+	printMatrixElementsOnFace(*_meshes[1], 11, ls, sFields.concentration);
+
 
         _niters++;
 
