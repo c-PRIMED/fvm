@@ -147,6 +147,11 @@ class LinearizeInterfaceJump
        offdiagC1_C2 = NumTypeTraits<OffDiag>::getZero();
        offdiagC1_C3 = NumTypeTraits<OffDiag>::getZero();
 
+       if (c0==0)
+	 {
+	   cout << xCell[c0] << " " << xCell[c1] << " " << xCell[c2] << " " << xCell[c3] << endl;
+	 }
+
    }
 
   }

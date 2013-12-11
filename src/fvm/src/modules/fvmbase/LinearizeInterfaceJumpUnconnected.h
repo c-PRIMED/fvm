@@ -45,25 +45,21 @@ class LinearizeInterfaceJumpUnconnected
 
     void discretize(const Mesh& mesh, const Mesh& parentMesh, 
 		    const Mesh& otherMesh, MultiFieldMatrix& mfmatrix, 
-		    MultiField& xField, MultiField& rField)
+		    MultiField& xField, MultiField& rField, LinearSystem& lsShell)
   {
     cout << "LINERIZEINTERFACEJUMPUNCONNECTED" << endl;
 
     const StorageSite& cells = mesh.getCells();
     const StorageSite& faces = mesh.getParentFaceGroupSite();
-    //const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
-
-    //CCMatrix& matrix = dynamic_cast<CCMatrix&>(mfmatrix.getMatrix(cVarIndex,cVarIndex)); 
-
-    //const XArray& xCell = dynamic_cast<const XArray&>(xField[cVarIndex]);
-
     const CRConnectivity& cellCells = mesh.getCellCells();
-    
-    //XArray& rCell = dynamic_cast<XArray&>(rField[cVarIndex]);
-
-    //DiagArray& diag = matrix.getDiag();
-
     XArray& varCell = dynamic_cast<XArray&>(_varField[cells]);
+
+    //lsShell info
+    const MultiField::ArrayIndex cVarIndex(&_varField,&cells);
+    CCMatrix& matrix = dynamic_cast<CCMatrix&>((lsShell.getMatrix()).getMatrix(cVarIndex,cVarIndex)); 
+    const XArray& xCell = dynamic_cast<const XArray&>((lsShell.getX())[cVarIndex]);
+    XArray& rCell = dynamic_cast<XArray&>((lsShell.getB())[cVarIndex]);
+    DiagArray& diag = matrix.getDiag();
 
     // In the following, parent is assumed to be on the left, and 
     // the other mesh is assumed to be on the right when implimenting
@@ -210,7 +206,37 @@ class LinearizeInterfaceJumpUnconnected
        offDiagOtherC1_C0 += diagOtherC1*(C*F-A*H)/(A*G-B*F);
        diagOtherC1 *= (D*F-A*J)/(A*G-B*F);
        otherR1 += originalOtherDiagC1*(A*r0 - F*r1)/(A*G-B*F);
+
+
+
+
+       //now put flux information from meshes into shell cells
+       // left shell cell
+       OffDiag& offdiagC0_C1 = matrix.getCoeff(c0,  c1);
+       OffDiag& offdiagC0_C2 = matrix.getCoeff(c0,  c2);
+       OffDiag& offdiagC0_C3 = matrix.getCoeff(c0,  c3);
+
+       rCell[c0] = -r0;
+       offdiagC0_C1 = dRC0dXC1;
+       offdiagC0_C3 = dRC0dXC3;
+       offdiagC0_C2 = dRC0dXC2;
+       diag[c0] = dRC0dXC0;
+
+       // right shell cell
+       OffDiag& offdiagC1_C0 = matrix.getCoeff(c1,  c0);
+       OffDiag& offdiagC1_C2 = matrix.getCoeff(c1,  c2);
+       OffDiag& offdiagC1_C3 = matrix.getCoeff(c1,  c3);
+
+       rCell[c1] = -r1;
+       offdiagC1_C0 = dRC1dXC0;
+       offdiagC1_C2 = dRC1dXC2;
+       offdiagC1_C3 = dRC1dXC3;
+       diag[c1] = dRC1dXC1;
        
+       if (c0==0)
+	 {
+	   cout << xCell[c0] << " " << xCell[c1] << " " << xCell[c2] << " " << xCell[c3] << endl;
+	 }
 
    }
 

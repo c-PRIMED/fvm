@@ -775,7 +775,7 @@ void recoverLastTimestep()
       }
   }
   
-  void initSpeciesLinearization(LinearSystem& ls, const int& SpeciesNumber)
+  void initSpeciesLinearization(LinearSystem& ls, LinearSystem& lsShell, const int& SpeciesNumber)
   {
     BatterySpeciesFields& sFields = *_speciesFieldsVector[SpeciesNumber];
     const int numMeshes = _meshes.size();
@@ -786,49 +786,96 @@ void recoverLastTimestep()
 	
 	if ((!(mesh.isDoubleShell()))||((mesh.isDoubleShell())&&(mesh.isConnectedShell())))
 	  {
-        const StorageSite& cells = mesh.getCells();
-        MultiField::ArrayIndex tIndex(&sFields.concentration,&cells);
+	    const StorageSite& cells = mesh.getCells();
+	    MultiField::ArrayIndex tIndex(&sFields.concentration,&cells);
 
-        ls.getX().addArray(tIndex,sFields.concentration.getArrayPtr(cells));
+	    ls.getX().addArray(tIndex,sFields.concentration.getArrayPtr(cells));
 
-        const CRConnectivity& cellCells = mesh.getCellCells();
+	    const CRConnectivity& cellCells = mesh.getCellCells();
 
-        shared_ptr<Matrix> m(new CRMatrix<T,T,T>(cellCells));
+	    shared_ptr<Matrix> m(new CRMatrix<T,T,T>(cellCells));
 
-        ls.getMatrix().addMatrix(tIndex,tIndex,m);
-        foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
-        {
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
+	    ls.getMatrix().addMatrix(tIndex,tIndex,m);
+	    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
 
-            MultiField::ArrayIndex fIndex(&sFields.massFlux,&faces);
-            ls.getX().addArray(fIndex,sFields.massFlux.getArrayPtr(faces));
+		MultiField::ArrayIndex fIndex(&sFields.massFlux,&faces);
+		ls.getX().addArray(fIndex,sFields.massFlux.getArrayPtr(faces));
 
-            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+		const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,T>(faceCells));
-            ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+		shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,T>(faceCells));
+		ls.getMatrix().addMatrix(fIndex,tIndex,mft);
 
-            shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
-            ls.getMatrix().addMatrix(fIndex,fIndex,mff);
-        }
+		shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
+		ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+	      }
 
-        foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
-        {
-            const FaceGroup& fg = *fgPtr;
-            const StorageSite& faces = fg.site;
+	    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
 
-            MultiField::ArrayIndex fIndex(&sFields.massFlux,&faces);
-            ls.getX().addArray(fIndex,sFields.massFlux.getArrayPtr(faces));
+		MultiField::ArrayIndex fIndex(&sFields.massFlux,&faces);
+		ls.getX().addArray(fIndex,sFields.massFlux.getArrayPtr(faces));
 
-            const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+		const CRConnectivity& faceCells = mesh.getFaceCells(faces);
 
-            shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,T>(faceCells));
-            ls.getMatrix().addMatrix(fIndex,tIndex,mft);
+		shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,T>(faceCells));
+		ls.getMatrix().addMatrix(fIndex,tIndex,mft);
 
-            shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
-            ls.getMatrix().addMatrix(fIndex,fIndex,mff);
-        }
+		shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
+		ls.getMatrix().addMatrix(fIndex,fIndex,mff);
+	      }
+	  }
+	else
+	  {
+	    // must be unconnected shell, add to shell LS
+	     const StorageSite& cells = mesh.getCells();
+	    MultiField::ArrayIndex tIndex(&sFields.concentration,&cells);
+
+	    lsShell.getX().addArray(tIndex,sFields.concentration.getArrayPtr(cells));
+
+	    const CRConnectivity& cellCells = mesh.getCellCells();
+
+	    shared_ptr<Matrix> m(new CRMatrix<T,T,T>(cellCells));
+
+	    lsShell.getMatrix().addMatrix(tIndex,tIndex,m);
+	    foreach(const FaceGroupPtr fgPtr, mesh.getBoundaryFaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
+
+		MultiField::ArrayIndex fIndex(&sFields.massFlux,&faces);
+		lsShell.getX().addArray(fIndex,sFields.massFlux.getArrayPtr(faces));
+
+		const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+		shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,T>(faceCells));
+		lsShell.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
+		lsShell.getMatrix().addMatrix(fIndex,fIndex,mff);
+	      }
+
+	    foreach(const FaceGroupPtr fgPtr, mesh.getInterfaceGroups())
+	      {
+		const FaceGroup& fg = *fgPtr;
+		const StorageSite& faces = fg.site;
+
+		MultiField::ArrayIndex fIndex(&sFields.massFlux,&faces);
+		lsShell.getX().addArray(fIndex,sFields.massFlux.getArrayPtr(faces));
+
+		const CRConnectivity& faceCells = mesh.getFaceCells(faces);
+
+		shared_ptr<Matrix> mft(new FluxJacobianMatrix<T,T>(faceCells));
+		lsShell.getMatrix().addMatrix(fIndex,tIndex,mft);
+
+		shared_ptr<Matrix> mff(new DiagonalMatrix<T,T>(faces.getCount()));
+		lsShell.getMatrix().addMatrix(fIndex,fIndex,mff);
+	      }
 	  }
     } 
   } 
@@ -1136,7 +1183,7 @@ void initThermalLinearization(LinearSystem& ls)
     }
   }
 
-  void linearizeSpecies(LinearSystem& ls, const int& m)
+  void linearizeSpecies(LinearSystem& ls, LinearSystem& lsShell, const int& m)
   {
     const BatterySpeciesBCMap& sbcmap = *_sbcMapVector[m];
     BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
@@ -1265,7 +1312,7 @@ void initThermalLinearization(LinearSystem& ls)
 		lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
 	      }
 	  }
-
+	/*
 	if (n==0) 
 	  {
 	  cout << "BEFORE" << endl;
@@ -1273,7 +1320,7 @@ void initThermalLinearization(LinearSystem& ls)
 	  }
 	else if (n==1)
 	  printMatrixElementsOnFace(mesh, 11, ls, sFields.concentration);
-
+	*/
 	if ((mesh.isDoubleShell())&&(!(mesh.isConnectedShell())))
 	  {
 	    const int parentMeshID = mesh.getParentMeshID();
@@ -1284,17 +1331,18 @@ void initThermalLinearization(LinearSystem& ls)
 						     T(0.0),
 						     sFields.concentration);
 
-	    lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() );
+	    lsm.discretize(mesh, parentMesh, otherMesh, ls.getMatrix(), ls.getX(), ls.getB() , lsShell);
 
 	    //sync for debugging
 	    //sync doesn't effect result, but matches what the matrix/residual now contains
 	    sFields.concentration.syncLocal();
 	  }
       }
+    /*
     cout << "AFTER" << endl;
     printMatrixElementsOnFace(*_meshes[0], 8, ls, sFields.concentration);
     printMatrixElementsOnFace(*_meshes[1], 11, ls, sFields.concentration);
-    
+    */
 
     ///////// boundary and interface condition
     const int numRealMeshes = _realMeshes.size();
@@ -2597,20 +2645,24 @@ T getAverageConcentration(const Mesh& mesh, const int m)
         MFRPtr& iNorm = *_initialSpeciesNormVector[m];
 	MFRPtr& rCurrent = *_currentSpeciesResidual[m];
 
-        LinearSystem ls;
+        LinearSystem ls,lsShell;
+        //LinearSystem ls;
 
-        initSpeciesLinearization(ls, m);
+	initSpeciesLinearization(ls, lsShell, m);
+        //initSpeciesLinearization(ls, ls, m);
         
         ls.initAssembly();
+        lsShell.initAssembly();
 
-        linearizeSpecies(ls, m);
+	linearizeSpecies(ls, lsShell, m);
+        //linearizeSpecies(ls, ls, m);
 
 	ls.initSolve();
 
-	cout << "BEFORE LS" << endl;
-	BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
-	printMatrixElementsOnFace(*_meshes[0], 8, ls, sFields.concentration);
-	printMatrixElementsOnFace(*_meshes[1], 11, ls, sFields.concentration);
+	//cout << "BEFORE LS" << endl;
+	///BatterySpeciesFields& sFields = *_speciesFieldsVector[m];
+	//printMatrixElementsOnFace(*_meshes[0], 8, ls, sFields.concentration);
+	//printMatrixElementsOnFace(*_meshes[1], 11, ls, sFields.concentration);
 
 
         MFRPtr rNorm(_options.getLinearSolverSpecies().solve(ls));
@@ -2627,9 +2679,19 @@ T getAverageConcentration(const Mesh& mesh, const int m)
         ls.postSolve();
         ls.updateSolution();
 	
-	cout << "AFTER LS" << endl;
-	printMatrixElementsOnFace(*_meshes[0], 8, ls, sFields.concentration);
-	printMatrixElementsOnFace(*_meshes[1], 11, ls, sFields.concentration);
+	//cout << "AFTER LS" << endl;
+	//printMatrixElementsOnFace(*_meshes[0], 8, ls, sFields.concentration);
+	//printMatrixElementsOnFace(*_meshes[1], 11, ls, sFields.concentration);
+	
+
+	//updateShellGhosts();  not useful right now
+	lsShell.initSolve();
+	MFRPtr rNorm2(_options.getLinearSolverSpecies().solve(lsShell));
+        _options.getLinearSolverSpecies().cleanup();
+	lsShell.postSolve();
+	lsShell.updateSolution();
+	cout << _niters << ": " << *rNorm2 << endl;
+	
 
 
         _niters++;
@@ -2812,6 +2874,78 @@ void advanceThermal(const int niter)
       {
 	const T residual = 0.0;
 	return residual;
+      }
+  }
+  
+  void updateShellGhosts()
+  {
+    const int numMeshes = _meshes.size();
+    for (int n=0; n<numMeshes; n++)
+      {
+	const Mesh& mesh = *_meshes[n];
+	if ((mesh.isDoubleShell())&&(!(mesh.isConnectedShell())))
+	  {
+	    BatterySpeciesFields& sFields = *_speciesFieldsVector[0]; //first species is lithium
+
+	    const StorageSite& cells = mesh.getCells();
+	    const StorageSite& faces = mesh.getParentFaceGroupSite();
+	    const CRConnectivity& cellCells = mesh.getCellCells();
+	    TArray& speciesCell = dynamic_cast<TArray&>(sFields.concentration[cells]);
+
+	    const int parentMeshID = mesh.getParentMeshID();
+	    const int otherMeshID = mesh.getOtherMeshID();
+	    const Mesh& parentMesh = *_meshes[parentMeshID];
+	    const Mesh& otherMesh = *_meshes[otherMeshID];
+
+	    const CRConnectivity& parentFaceCells = parentMesh.getFaceCells(faces);
+	    const StorageSite& parentCells = parentMesh.getCells();
+	    const StorageSite& otherFaces = mesh.getOtherFaceGroupSite();
+	    const CRConnectivity& otherFaceCells = otherMesh.getFaceCells(otherFaces);
+	    const StorageSite& otherCells = otherMesh.getCells();
+	    const TArray& speciesCellParent = dynamic_cast< const TArray&>(sFields.concentration[parentCells]);
+	    const TArray& speciesCellOther = dynamic_cast< const TArray&>(sFields.concentration[otherCells]);
+
+
+	    for (int f=0; f<faces.getCount(); f++)
+	      {
+		int c0p = parentFaceCells(f,0);
+		int c1p = parentFaceCells(f,1);
+		if (c1p < parentCells.getSelfCount())
+		  { 		   
+		    int temp = c0p;
+		    c0p = c1p;
+		    c1p = temp;
+		  }
+
+		int c0o = otherFaceCells(f,0);
+		int c1o = otherFaceCells(f,1);
+		if (c1o < otherCells.getSelfCount())
+		  { 
+		    int temp = c0o;
+		    c0o = c1o;
+		    c1o = temp;
+		  }
+
+		const int c0 = f;
+		const int c1 = cellCells(f,0);
+		const int c2 = cellCells(f,1);
+		const int c3 = cellCells(f,2);
+
+		if (c0==0)
+		  {
+		    cout << speciesCell[c0] << " " << speciesCell[c1] << " " << speciesCell[c2] << " " << speciesCell[c3] << endl;
+		  }
+
+		// copy sln varialbe values from interior cells of meshes to ghost cells of shell mesh
+		speciesCell[c3] = speciesCellParent[c0p];
+		speciesCell[c2] = speciesCellOther[c0o];
+
+		if (c0==0)
+		  {
+		    cout << speciesCell[c0] << " " << speciesCell[c1] << " " << speciesCell[c2] << " " << speciesCell[c3] << endl;
+		  }
+	      }
+	  }
       }
   }
 
