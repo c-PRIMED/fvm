@@ -1428,15 +1428,15 @@ public:
 
           if(_options.creep)
           {
-              tractionX[n][0]-=two*(eta[n]*pS[0][0] + 
+              tractionX[n][0]-=(two*eta[n]*pS[0][0] + 
                                 (pS[0][0] + pS[1][1])*eta1[n]);
-              tractionX[n][1]-=two*(eta[n]*pS[0][1]);
-              tractionX[n][2]-=two*(eta[n]*pS[0][2]);
+              tractionX[n][1]-=(two*eta[n]*pS[0][1]);
+              tractionX[n][2]-=(two*eta[n]*pS[0][2]);
 
-              tractionY[n][0]-=two*(eta[n]*pS[1][0]);
-              tractionY[n][1]-=two*(eta[n]*pS[1][1] +
+              tractionY[n][0]-=(two*eta[n]*pS[1][0]);
+              tractionY[n][1]-=(two*eta[n]*pS[1][1] +
                                 (pS[0][0] + pS[1][1])*eta1[n]);
-              tractionY[n][2]-=two*(eta[n]*pS[1][2]);
+              tractionY[n][2]-=(two*eta[n]*pS[1][2]);
 	  }
 
           if (mesh.getDimension() == 2)
