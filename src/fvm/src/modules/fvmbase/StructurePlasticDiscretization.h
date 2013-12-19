@@ -130,6 +130,7 @@ public:
             //VMPlasticStrain = zero;
             T Sy = _Sy0*(one + _B*pow(VMPlasticStrain,_n));
             T mult = _A*(pow((VMStress[n]/Sy),_m))/VMStress[n];
+            if (isnan(mult)) mult = 0.0;
             for(int i=0;i<3;i++)
               for(int j=0;j<3;j++)
                 (plasticStrain[n])[i][j] += mult*((devStress[n])[i][j])*_timeStep;

@@ -1345,7 +1345,7 @@ public:
   {
       const StorageSite& cells = mesh.getCells();
 
-      const int nCells = cells.getSelfCount();
+      const int nCells = cells.getCount();
 
       shared_ptr<VectorT3Array> tractionXPtr(new VectorT3Array(nCells));
       tractionXPtr->zero();
@@ -1385,7 +1385,6 @@ public:
 	  const VGradType& wg = wGrad[n];
 	  VGradType wgPlusTranspose = wGrad[n];
 	  const VGradType& pS =  plasticStrainCell[n];
-	  	  	    
 	  for(int i=0;i<3;i++)
 	    for(int j=0;j<3;j++)
 	      wgPlusTranspose[i][j] += wg[j][i];
@@ -1429,15 +1428,15 @@ public:
 
           if(_options.creep)
           {
-              tractionX[n][0]-=(two*eta[n]*pS[0][0] + 
+              tractionX[n][0]-=two*(eta[n]*pS[0][0] + 
                                 (pS[0][0] + pS[1][1])*eta1[n]);
-              tractionX[n][1]-=(two*eta[n]*pS[0][1]);
-              tractionX[n][2]-=(two*eta[n]*pS[0][2]);
+              tractionX[n][1]-=two*(eta[n]*pS[0][1]);
+              tractionX[n][2]-=two*(eta[n]*pS[0][2]);
 
-              tractionY[n][0]-=(two*eta[n]*pS[1][0]);
-              tractionY[n][1]-=(two*eta[n]*pS[1][1] +
+              tractionY[n][0]-=two*(eta[n]*pS[1][0]);
+              tractionY[n][1]-=two*(eta[n]*pS[1][1] +
                                 (pS[0][0] + pS[1][1])*eta1[n]);
-              tractionY[n][2]-=(two*eta[n]*pS[1][2]);
+              tractionY[n][2]-=two*(eta[n]*pS[1][2]);
 	  }
 
           if (mesh.getDimension() == 2)
