@@ -8,10 +8,16 @@ VacancyFields::VacancyFields(const string baseName) :
   concentration(baseName + ".concentration"),
   concentrationN1(baseName + ".concentrationN1"),
   concentrationN2(baseName + ".concentrationN2"),
+  plasticStrain(baseName + "plasticStrain"),
+  vacaFlux(baseName + ".vacaFlux"),
   concentrationGradient(baseName + ".concentrationGradient"),
+  concentrationGradientVector(baseName + ".concentrationGradientVector"),
   diffusioncoefficient(baseName + ".diffusioncoefficient"),
-  vacaFlux(baseName +".vacaFlux"),
-  one(baseName + "one")
-  {}
+  source(baseName + ".source"),
+  convectionFlux(baseName + ".convectionFlux"),
+  zero(baseName + "zero"),
+  one(baseName + "one"),
+  specificVaca(baseName + ".specificVaca")
+{}
 
 

@@ -31,7 +31,9 @@ public:
   virtual ~VacancyModel();
 
   virtual void init();
-  
+
+  virtual void computePlasticStrainRate();
+    
   VacancyBCMap& getBCMap();
   VacancyVCMap& getVCMap();
   
@@ -39,8 +41,14 @@ public:
 
   VacancyModelOptions<T>& getOptions();
   
-  void printBCs();
+  void computeIBFaceConcentration(const StorageSite& particles);
 
+  T getVacaFluxIntegral(const Mesh& mesh, const int faceGroupId);
+  
+  void printBCs();
+#if !(defined(USING_ATYPE_TANGENT) || defined(USING_ATYPE_PC))
+  void dumpMatrix(const string fileBase);
+#endif
   void advance(const int niter);
 
   void updateTime();

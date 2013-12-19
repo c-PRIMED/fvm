@@ -25,6 +25,7 @@ struct VacancyModelOptions : public FloatVarDict<T>
   double relativeTolerance;
   double absoluteTolerance;
   LinearSolver *linearSolver;
+  bool useCentralDifference;
   bool transient;
 }; 
 

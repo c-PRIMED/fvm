@@ -1450,7 +1450,7 @@ public:
   {
     const StorageSite& cells = mesh.getCells();
 
-    const int nCells = cells.getSelfCount();
+    const int nCells = cells.getCount();
 
     shared_ptr<VectorT3Array> strainXPtr(new VectorT3Array(nCells));
     strainXPtr->zero();
