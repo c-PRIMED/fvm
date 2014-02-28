@@ -18,6 +18,7 @@ using namespace std;
 %include "FlowFields.h"
 %include "ThermalFields.h"
 %include "VacancyFields.h"
+%include "FractureFields.h"
 %include "SpeciesFields.h"
 %include "BatteryFields.h"
 
@@ -28,7 +29,7 @@ using namespace std;
 %include "MeshMetricsCalculator.i"
 %include "ThermalModel.i"
 %include "VacancyModel.i"
-
+%include "FractureModel.i"
 %include "SpeciesModel.i"
 %include "BatteryModel.i"
 

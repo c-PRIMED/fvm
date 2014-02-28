@@ -18,6 +18,10 @@ template class ThermalModel<ATYPE>;
 #include "VacancyModel_impl.h"
 template class VacancyModel<ATYPE>;
 
+#include "FractureModel.h"
+#include "FractureModel_impl.h"
+template class FractureModel<ATYPE>;
+
 #include "SpeciesModel.h"
 #include "SpeciesModel_impl.h"
 template class SpeciesModel<ATYPE>;
