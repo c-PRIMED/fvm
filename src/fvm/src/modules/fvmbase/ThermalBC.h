@@ -14,6 +14,7 @@ struct ThermalBC : public FloatVarDict<T>
       this->defineVar("specifiedHeatFlux",T(0.0));
       this->defineVar("convectiveCoefficient", T(0.0));
       this->defineVar("farFieldTemperature", T(300.0));
+      this->defineVar("surfaceEmissivity",T(1.0));
   }
   string bcType;
 };

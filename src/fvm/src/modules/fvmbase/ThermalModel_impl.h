@@ -361,6 +361,23 @@ public:
 		for(int f=0; f<nFaces; f++)
 		    gbc.applyConvectionBC(f, hCoeff[f], Xinf[f]);
 	    }
+	    else if (bc.bcType == "Radiative")
+	    {
+	        FloatValEvaluator<T> emissivity(bc.getVal("surfaceEmissivity"), faces);
+	        FloatValEvaluator<T> Xinf(bc.getVal("farFieldTemperature"), faces);
+		const int nFaces = faces.getCount();
+		for(int f=0; f<nFaces; f++)
+		    gbc.applyRadiationBC(f, emissivity[f], Xinf[f]);
+	    }
+	    else if (bc.bcType == "Mixed")
+	    {
+	        FloatValEvaluator<T> hCoeff(bc.getVal("convectiveCoefficient"), faces);
+	        FloatValEvaluator<T> emissivity(bc.getVal("surfaceEmissivity"), faces);
+	        FloatValEvaluator<T> Xinf(bc.getVal("farFieldTemperature"), faces);
+	        const int nFaces = faces.getCount();
+	        for(int f=0; f<nFaces; f++)
+		    gbc.applyMixedBC(f, hCoeff[f], emissivity[f], Xinf[f]);
+	    }
             else
               throw CException(bc.bcType + " not implemented for ThermalModel");
         }

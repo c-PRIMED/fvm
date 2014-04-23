@@ -250,6 +250,78 @@ public:
       applyConvectionBC(i,hCoeff,Xinf);
   }
   
+  void applyRadiationBC(const int f,
+                         const X& emissivity, const X& Xinf) const
+  {
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1);
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    //The value of the Stefan-Boltzman constant
+    double s_b_const = 5.670373E-8;
+
+    // the current value of flux and its Jacobians
+    const X fluxInterior = -_r[c1];
+
+    // flux based on current boundary value
+    const X fluxBoundary = -emissivity*s_b_const*\
+      (_x[c1]*_x[c1]*_x[c1]*_x[c1]-Xinf*Xinf*Xinf*Xinf)*_faceAreaMag[f];
+
+    const X dFlux = fluxBoundary-fluxInterior;
+
+    _r[c1] = dFlux;
+
+    // add this to complete the Jacobian wrt boundary value
+    _dRdXDiag[c1] -= \
+      4*emissivity*s_b_const*_x[c1]*_x[c1]*_x[c1]*_faceAreaMag[f];
+
+    // mark this row as a "boundary" row so that we will update it
+    // after the overall system is solved
+    _dRdX.setBoundary(c1);
+
+    _flux[f] = fluxBoundary;
+    _rFlux[f] = 0;
+    _dFluxdX.setCoeffL(f,NumTypeTraits<X>::getZero());
+    _dFluxdX.setCoeffR(f,-4*emissivity*s_b_const*_x[c1]*_x[c1]*_x[c1]*_faceAreaMag[f]);
+    _dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+  }
+
+  void applyMixedBC(const int f, const X& hCoeff,
+                         const X& emissivity, const X& Xinf) const
+  {
+    const int c0 = _faceCells(f,0);
+    const int c1 = _faceCells(f,1);
+
+    if (_ibType[c0] != Mesh::IBTYPE_FLUID)
+      return;
+    //The value of the Stefan-Boltzman constant
+    double s_b_const = 5.670373E-8;
+
+    // the current value of flux and its Jacobians
+    const X fluxInterior = -_r[c1];
+
+    // flux based on current boundary value
+    const X fluxBoundary = (-emissivity*s_b_const*(_x[c1]*_x[c1]*_x[c1]*_x[c1]-Xinf*Xinf*Xinf*Xinf)-hCoeff*(_x[c1]-Xinf))*_faceAreaMag[f];
+
+    const X dFlux = fluxBoundary-fluxInterior;
+
+    _r[c1] = dFlux;
+
+    // add this to complete the Jacobian wrt boundary value
+    _dRdXDiag[c1] -= (4*emissivity*s_b_const*_x[c1]*_x[c1]*_x[c1]+hCoeff)*_faceAreaMag[f];
+
+    // mark this row as a "boundary" row so that we will update it
+    // after the overall system is solved
+    _dRdX.setBoundary(c1);
+
+    _flux[f] = fluxBoundary;
+    _rFlux[f] = 0;
+    _dFluxdX.setCoeffL(f,NumTypeTraits<X>::getZero());
+    _dFluxdX.setCoeffR(f,-4*emissivity*s_b_const*_x[c1]*_x[c1]*_x[c1]*_faceAreaMag[f]);
+    _dFluxdFlux[f] = NumTypeTraits<Diag>::getNegativeUnity();
+  }
+
   void applyInterfaceBC(const int f) const
   {
     // the boundary cell could be either c0 or c1 at an interface
