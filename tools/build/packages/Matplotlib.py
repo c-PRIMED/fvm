@@ -5,7 +5,7 @@ class Matplotlib(BuildPkg):
 
     def _installed(self):
         # need 1.0.1
-        if python_package('matplotlib', [1,2,0]):
+        if python_package('matplotlib', [1,3,1]):
             return True
         return False
 
