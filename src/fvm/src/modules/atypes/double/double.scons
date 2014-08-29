@@ -2,4 +2,4 @@ Import('env')
 
 env.createSharedLibrary('double',
                         ['initDouble.cpp'],
-                        ['rlog', 'fvmbase'])
+                        ['rlog', 'fvmbase','boost'])

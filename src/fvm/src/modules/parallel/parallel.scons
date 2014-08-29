@@ -5,13 +5,13 @@ src = [
     'MeshPartitioner.cpp',
      ]
 
-deps = ['rlog', 'fvmbase',  'openmpi']
+deps = ['rlog', 'fvmbase',  'openmpi','boost']
 env.createSharedLibrary('fvmparallel',src, deps)
 
 deps += ['fvmparallel']
 
 env.createSwigModule('fvmparallel',sources=['Partitioner.i'],deplibs=deps)
                      
-deps += ['importers', 'exporters', 'blas']
+deps += ['importers', 'exporters', 'blas', 'gfortran']
 
 env.createExe('pFVM',['pFVM.cpp'], deps)

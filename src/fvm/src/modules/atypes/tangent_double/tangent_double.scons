@@ -2,4 +2,4 @@ Import('env')
 
 env.createSharedLibrary('tangent_double',
                         ['initTangentDouble.cpp'],
-                        ['rlog', 'fvmbase'])
+                        ['rlog', 'fvmbase','boost'])

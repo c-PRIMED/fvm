@@ -45,15 +45,15 @@ srcBase = ['CException.cpp',
 	   'DirectSolver.cpp',
            ]
 
-env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal', 'umfpack'])
+env.createSharedLibrary('fvmbase',srcBase,['rlog', 'cgal', 'umfpack', 'boost'])
 
 
-env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase', 'cgal'])
+env.createATypedSharedLibrary('models_atyped',['models.cpp'],['rlog','fvmbase', 'cgal','boost'])
 
 
 env.createSwigModule('fvmbaseExt',sources=['baseExt.i'],
-                     deplibs=['fvmbase','rlog', 'cgal','umfpack', 'blas'])
+                     deplibs=['fvmbase','rlog', 'cgal','umfpack', 'blas', 'gfortran','boost'])
 
 env.createATypedSwigModule('models_atyped',sources=['models.i'],
-                     deplibs=['models_atyped','fvmbase','rlog', 'cgal', 'blas'])
+                     deplibs=['models_atyped','fvmbase','rlog', 'cgal', 'blas', 'gfortran','boost'])
 
