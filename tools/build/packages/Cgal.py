@@ -2,7 +2,7 @@ from build_packages import *
 import config
 
 class Cgal(BuildPkg):
-    requires = ['mpfr', 'gmp']
+    requires = ['mpfr', 'gmp', 'boost']
     def find_cgal_inc(self, installed=False, in_build=False):
         f = ''
         if installed or not in_build:

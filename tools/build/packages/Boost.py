@@ -41,5 +41,5 @@ class Boost(BuildPkg):
     def _configure(self):
         return self.sys_log("./bootstrap.sh --prefix=%s" % (self.blddir))
     def _build(self):
-        ret = self.sys_log("./b2 install")
+        ret = self.sys_log("chmod +x b2; ./b2 install")
         return ret
