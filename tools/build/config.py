@@ -21,7 +21,7 @@ _config = {
         'compiler': 'gcc',
         },
     'MEMOSA': {
-        'Build' : 'True',
+        'Build' : 'False',
         },
 }
 
@@ -36,7 +36,7 @@ def config(x,y):
                 except IndexError:
                     pass
             # Keep compatibility with old format, for now.
-            if  _config[x].has_key(y):            
+            if  _config[x].has_key(y):
                 new_env.append(_config[x][y])
         return new_env
     try:
@@ -55,7 +55,7 @@ def set_section(sec):
         print 50 * '-'
         print "WARNING: 'ALL' section is deprecated. Please see"
         print "https://memshub.org/infrastructure/memosa/wiki/Configuration"
-        print 50 * '-'        
+        print 50 * '-'
     return True
 
 def set_value(val):
@@ -66,27 +66,27 @@ def set_value(val):
         return False
 
     if section == 'before':
-        try: 
+        try:
             _config['ALL']['before'].append(val)
-        except KeyError: 
+        except KeyError:
             _config['ALL'] = {'before':[val]}
         return True
-    
+
     eq = val.find('=')
     if eq < 0:
         return False
     lval = val[:eq]
     rval = val[eq+1:]
     if lval == 'modules':
-        print 50 * '-'        
+        print 50 * '-'
         print "ERROR: 'modules' config variables has been removed. Modules"
         print "should all be loaded in the 'before' section. Please see"
         print "https://memshub.org/infrastructure/memosa/wiki/Configuration"
-        print 50 * '-'          
+        print 50 * '-'
         return False
-    try: 
+    try:
         _config[section][lval] = rval
-    except KeyError: 
+    except KeyError:
         _config[section] = {lval:rval}
     return True
 
@@ -118,4 +118,4 @@ def read(srcpath, cname):
         print "Cannot parse line %s in %s: %s" % (lnum, filename, line)
         return False
     return  True
-        
+
