@@ -1,6 +1,5 @@
-************
 Introduction
-************
+============
 
 :Version: 1.0
 :Authors: see src/fvm/AUTHORS
