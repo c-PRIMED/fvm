@@ -1,0 +1,6 @@
+<map id="SpikeSolver" name="SpikeSolver">
+<area shape="rect" id="node2" href="$classLinearSolver.html" title="LinearSolver" alt="" coords="5,200,99,227"/>
+<area shape="rect" id="node3" href="$classSpikeStorage.html" title="SpikeStorage" alt="" coords="123,200,223,227"/>
+<area shape="rect" id="node4" href="$classCRConnectivity.html" title="CRConnectivity" alt="" coords="116,109,231,136"/>
+<area shape="rect" id="node5" href="$classStorageSite.html" title="StorageSite" alt="" coords="128,5,219,32"/>
+</map>

@@ -1,0 +1,20 @@
+<map id="COMETBC.h" name="COMETBC.h">
+<area shape="rect" id="node2" href="$misc_8h.html" title="misc.h" alt="" coords="460,827,521,853"/>
+<area shape="rect" id="node14" href="$FloatVarDict_8h.html" title="FloatVarDict.h" alt="" coords="245,752,352,779"/>
+<area shape="rect" id="node15" href="$AMG_8h.html" title="AMG.h" alt="" coords="322,80,384,107"/>
+<area shape="rect" id="node7" href="$RLogInterface_8h.html" title="RLogInterface.h" alt="" coords="672,901,787,928"/>
+<area shape="rect" id="node9" href="$CException_8h.html" title="CException.h" alt="" coords="775,976,876,1003"/>
+<area shape="rect" id="node17" href="$LinearSystem_8h.html" title="LinearSystem.h" alt="" coords="631,229,744,256"/>
+<area shape="rect" id="node30" href="$MultiFieldReduction_8h.html" title="MultiFieldReduction.h" alt="" coords="709,379,856,405"/>
+<area shape="rect" id="node33" href="$LinearSolver_8h.html" title="LinearSolver.h" alt="" coords="195,155,300,181"/>
+<area shape="rect" id="node34" href="$LinearSystemMerger_8h.html" title="LinearSystemMerger.h" alt="" coords="406,155,559,181"/>
+<area shape="rect" id="node18" href="$MultiFieldMatrix_8h.html" title="MultiFieldMatrix.h" alt="" coords="433,304,559,331"/>
+<area shape="rect" id="node19" href="$Matrix_8h.html" title="Matrix.h" alt="" coords="405,528,475,555"/>
+<area shape="rect" id="node20" href="$MultiField_8h.html" title="MultiField.h" alt="" coords="649,453,737,480"/>
+<area shape="rect" id="node21" href="$IContainer_8h.html" title="IContainer.h" alt="" coords="787,752,880,779"/>
+<area shape="rect" id="node22" href="$ArrayBase_8h.html" title="ArrayBase.h" alt="" coords="985,677,1079,704"/>
+<area shape="rect" id="node27" href="$StorageSite_8h.html" title="StorageSite.h" alt="" coords="643,528,744,555"/>
+<area shape="rect" id="node23" href="$NumType_8h.html" title="NumType.h" alt="" coords="963,752,1053,779"/>
+<area shape="rect" id="node28" href="$Array_8h.html" title="Array.h" alt="" coords="923,603,987,629"/>
+<area shape="rect" id="node31" href="$Field_8h.html" title="Field.h" alt="" coords="808,453,869,480"/>
+</map>

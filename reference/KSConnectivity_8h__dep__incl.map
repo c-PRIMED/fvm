@@ -1,0 +1,12 @@
+<map id="KSConnectivity.h" name="KSConnectivity.h">
+<area shape="rect" id="node2" href="$phononbase_2COMETBC_8h.html" title="COMETBC.h" alt="" coords="45,155,144,181"/>
+<area shape="rect" id="node7" href="$ScatteringKernel_8h.html" title="ScatteringKernel.h" alt="" coords="256,80,384,107"/>
+<area shape="rect" id="node3" href="$COMETDiscretizer_8h.html" title="COMETDiscretizer.h" alt="" coords="23,229,167,256"/>
+<area shape="rect" id="node4" href="$phononbase_2COMETModel_8h.html" title="COMETModel.h" alt="" coords="146,304,262,331"/>
+<area shape="rect" id="node6" href="$PhononModel_8h.html" title="PhononModel.h" alt="" coords="395,304,506,331"/>
+<area shape="rect" id="node5" href="$phonon_8cpp.html" title="phonon.cpp" alt="" coords="500,379,588,405"/>
+<area shape="rect" id="node8" href="$Kspace_8h.html" title="Kspace.h" alt="" coords="323,155,399,181"/>
+<area shape="rect" id="node9" href="$COMETBoundary_8h.html" title="COMETBoundary.h" alt="" coords="242,229,376,256"/>
+<area shape="rect" id="node10" href="$PhononBoundary_8h.html" title="PhononBoundary.h" alt="" coords="453,229,584,256"/>
+<area shape="rect" id="node11" href="$PhononInterface_8h.html" title="PhononInterface.h" alt="" coords="610,229,738,256"/>
+</map>

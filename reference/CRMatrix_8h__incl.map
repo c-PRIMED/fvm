@@ -1,0 +1,18 @@
+<map id="CRMatrix.h" name="CRMatrix.h">
+<area shape="rect" id="node2" href="$Matrix_8h.html" title="Matrix.h" alt="" coords="403,155,472,181"/>
+<area shape="rect" id="node15" href="$CRConnectivity_8h.html" title="CRConnectivity.h" alt="" coords="547,155,673,181"/>
+<area shape="rect" id="node16" href="$Array_8h.html" title="Array.h" alt="" coords="712,304,776,331"/>
+<area shape="rect" id="node23" href="$Vector_8h.html" title="Vector.h" alt="" coords="930,379,1000,405"/>
+<area shape="rect" id="node24" href="$StorageSite_8h.html" title="StorageSite.h" alt="" coords="283,229,384,256"/>
+<area shape="rect" id="node26" href="$LinearSystemMerger_8h.html" title="LinearSystemMerger.h" alt="" coords="953,80,1105,107"/>
+<area shape="rect" id="node27" href="$SpikeStorage_8h.html" title="SpikeStorage.h" alt="" coords="267,155,377,181"/>
+<area shape="rect" id="node28" href="$SpikeMatrix_8h.html" title="SpikeMatrix.h" alt="" coords="530,80,632,107"/>
+<area shape="rect" id="node32" href="$DiagonalTensor_8h.html" title="DiagonalTensor.h" alt="" coords="907,304,1031,331"/>
+<area shape="rect" id="node3" href="$misc_8h.html" title="misc.h" alt="" coords="361,528,423,555"/>
+<area shape="rect" id="node8" href="$RLogInterface_8h.html" title="RLogInterface.h" alt="" coords="480,603,595,629"/>
+<area shape="rect" id="node10" href="$CException_8h.html" title="CException.h" alt="" coords="676,677,777,704"/>
+<area shape="rect" id="node17" href="$NumType_8h.html" title="NumType.h" alt="" coords="847,453,937,480"/>
+<area shape="rect" id="node21" href="$ArrayBase_8h.html" title="ArrayBase.h" alt="" coords="709,379,803,405"/>
+<area shape="rect" id="node22" href="$IContainer_8h.html" title="IContainer.h" alt="" coords="625,453,719,480"/>
+<area shape="rect" id="node29" href="$Array2D_8h.html" title="Array2D.h" alt="" coords="606,304,687,331"/>
+</map>

@@ -1,0 +1,23 @@
+<map id="StructureBC.h" name="StructureBC.h">
+<area shape="rect" id="node2" href="$misc_8h.html" title="misc.h" alt="" coords="785,827,847,853"/>
+<area shape="rect" id="node14" href="$FloatVarDict_8h.html" title="FloatVarDict.h" alt="" coords="77,528,184,555"/>
+<area shape="rect" id="node15" href="$TractionVal_8h.html" title="TractionVal.h" alt="" coords="248,304,347,331"/>
+<area shape="rect" id="node28" href="$AMG_8h.html" title="AMG.h" alt="" coords="998,80,1060,107"/>
+<area shape="rect" id="node7" href="$RLogInterface_8h.html" title="RLogInterface.h" alt="" coords="564,901,679,928"/>
+<area shape="rect" id="node9" href="$CException_8h.html" title="CException.h" alt="" coords="677,976,779,1003"/>
+<area shape="rect" id="node16" href="$GeomFields_8h.html" title="GeomFields.h" alt="" coords="478,379,580,405"/>
+<area shape="rect" id="node19" href="$StorageSite_8h.html" title="StorageSite.h" alt="" coords="532,528,633,555"/>
+<area shape="rect" id="node21" href="$NumType_8h.html" title="NumType.h" alt="" coords="252,752,343,779"/>
+<area shape="rect" id="node27" href="$Vector_8h.html" title="Vector.h" alt="" coords="5,677,75,704"/>
+<area shape="rect" id="node17" href="$Field_8h.html" title="Field.h" alt="" coords="673,453,735,480"/>
+<area shape="rect" id="node18" href="$IContainer_8h.html" title="IContainer.h" alt="" coords="893,752,987,779"/>
+<area shape="rect" id="node25" href="$ArrayBase_8h.html" title="ArrayBase.h" alt="" coords="699,677,793,704"/>
+<area shape="rect" id="node20" href="$Array_8h.html" title="Array.h" alt="" coords="461,603,525,629"/>
+<area shape="rect" id="node30" href="$LinearSystem_8h.html" title="LinearSystem.h" alt="" coords="915,229,1028,256"/>
+<area shape="rect" id="node34" href="$MultiFieldReduction_8h.html" title="MultiFieldReduction.h" alt="" coords="670,379,817,405"/>
+<area shape="rect" id="node36" href="$LinearSolver_8h.html" title="LinearSolver.h" alt="" coords="742,155,847,181"/>
+<area shape="rect" id="node37" href="$LinearSystemMerger_8h.html" title="LinearSystemMerger.h" alt="" coords="953,155,1105,181"/>
+<area shape="rect" id="node31" href="$MultiFieldMatrix_8h.html" title="MultiFieldMatrix.h" alt="" coords="909,304,1035,331"/>
+<area shape="rect" id="node32" href="$Matrix_8h.html" title="Matrix.h" alt="" coords="1047,453,1116,480"/>
+<area shape="rect" id="node33" href="$MultiField_8h.html" title="MultiField.h" alt="" coords="910,453,999,480"/>
+</map>

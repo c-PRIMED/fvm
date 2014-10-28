@@ -1,0 +1,39 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classDiscretization.html" title="Discretization" alt="" coords="6,1187,109,1213"/>
+<area shape="rect" id="node2" href="$classBatteryBinaryElectrolyteDiscretization.html" title="BatteryBinaryElectrolyte\lDiscretization\&lt; X, Diag,\l OffDiag \&gt;" alt="" coords="209,5,372,61"/>
+<area shape="rect" id="node3" href="$classBatteryElectricDiffusionDiscretization.html" title="BatteryElectricDiffusion\lDiscretization\&lt; X, Diag,\l OffDiag \&gt;" alt="" coords="209,85,372,141"/>
+<area shape="rect" id="node4" href="$classBatteryPCBinaryElectrolyteDiscretization.html" title="BatteryPCBinaryElectrolyte\lDiscretization\&lt; X, Diag,\l OffDiag \&gt;" alt="" coords="199,165,382,221"/>
+<area shape="rect" id="node5" href="$classBatteryPCDiffusionDiscretization.html" title="BatteryPCDiffusionDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="183,245,398,286"/>
+<area shape="rect" id="node6" href="$classBatteryPCHeatSourceDiscretization.html" title="BatteryPCHeatSourceDiscretization\&lt; X \&gt;" alt="" coords="158,311,423,337"/>
+<area shape="rect" id="node7" href="$classBatteryPCTimeDerivativeDiscretization.html" title="BatteryPCTimeDerivativeDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="165,362,416,403"/>
+<area shape="rect" id="node8" href="$classCaptureDiscretization.html" title="CaptureDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="217,427,365,469"/>
+<area shape="rect" id="node9" href="$classCollisionTermDiscretization.html" title="CollisionTermDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="199,493,382,534"/>
+<area shape="rect" id="node10" href="$classConvectionDiscretization.html" title="ConvectionDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="207,558,375,599"/>
+<area shape="rect" id="node11" href="$classConvectionDiscretization__Kmodel.html" title="ConvectionDiscretization\l_Kmodel\&lt; X, Diag, OffDiag \&gt;" alt="" coords="193,623,388,665"/>
+<area shape="rect" id="node12" href="$classDiffusionDiscretization.html" title="DiffusionDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="213,689,368,730"/>
+<area shape="rect" id="node13" href="$classDriftDiscretization.html" title="DriftDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="219,754,362,795"/>
+<area shape="rect" id="node14" href="$classElecDiffusionDiscretization.html" title="ElecDiffusionDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="201,819,381,861"/>
+<area shape="rect" id="node15" href="$classEmissionDiscretization.html" title="EmissionDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="213,885,369,926"/>
+<area shape="rect" id="node16" href="$classGenericIBDiscretization.html" title="GenericIBDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="211,950,371,991"/>
+<area shape="rect" id="node17" href="$classGenericKineticIBDiscretization.html" title="GenericKineticIBDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="191,1015,391,1057"/>
+<area shape="rect" id="node18" href="$classIbmDiscretization.html" title="IbmDiscretization\&lt;\l X, Diag, OffDiag \&gt;" alt="" coords="223,1081,358,1122"/>
+<area shape="rect" id="node19" href="$classInjectionDiscretization.html" title="InjectionDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="215,1146,366,1187"/>
+<area shape="rect" id="node20" href="$classMomentumPressureGradientDiscretization.html" title="MomentumPressureGradient\lDiscretization\&lt; X \&gt;" alt="" coords="197,1211,385,1253"/>
+<area shape="rect" id="node21" href="$classPhononCollisionDiscretization.html" title="PhononCollisionDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="193,1277,389,1318"/>
+<area shape="rect" id="node22" href="$classPhononConvectionDiscretization.html" title="PhononConvectionDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="185,1342,397,1383"/>
+<area shape="rect" id="node23" href="$classPlateSourceDiscretization.html" title="PlateSourceDiscretization\l\&lt; T, Diag, OffDiag \&gt;" alt="" coords="204,1407,377,1449"/>
+<area shape="rect" id="node24" href="$classSourceDiscretization.html" title="SourceDiscretization\&lt; X \&gt;" alt="" coords="203,1473,379,1500"/>
+<area shape="rect" id="node25" href="$classSourceDiscretizationdissi.html" title="SourceDiscretizationdissi\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="205,1525,376,1566"/>
+<area shape="rect" id="node26" href="$classSourceDiscretizationene.html" title="SourceDiscretizationene\&lt; X \&gt;" alt="" coords="192,1591,389,1617"/>
+<area shape="rect" id="node27" href="$classSourceDiscretizationforFracture.html" title="SourceDiscretizationforFracture\l\&lt; T, Diag, OffDiag \&gt;" alt="" coords="187,1642,394,1683"/>
+<area shape="rect" id="node28" href="$classStructurePlasticDiscretization.html" title="StructurePlasticDiscretization\l\&lt; T, Diag, OffDiag \&gt;" alt="" coords="193,1707,388,1749"/>
+<area shape="rect" id="node29" href="$classStructureSourceDiscretization.html" title="StructureSourceDiscretization\l\&lt; T, Diag, OffDiag \&gt;" alt="" coords="193,1773,389,1814"/>
+<area shape="rect" id="node30" href="$classTimeDerivativeDiscretization.html" title="TimeDerivativeDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="195,1838,386,1879"/>
+<area shape="rect" id="node31" href="$classTimeDerivativeDiscretization__Kmodel.html" title="TimeDerivativeDiscretization\l_Kmodel\&lt; X, Diag, OffDiag \&gt;" alt="" coords="193,1903,388,1945"/>
+<area shape="rect" id="node32" href="$classTimeDerivativePlateDiscretization.html" title="TimeDerivativePlateDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="181,1969,401,2010"/>
+<area shape="rect" id="node33" href="$classTimeDerivativeStructureDiscretization.html" title="TimeDerivativeStructureDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="169,2034,412,2075"/>
+<area shape="rect" id="node34" href="$classTrapBandTunnelingDiscretization.html" title="TrapBandTunnelingDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="183,2099,398,2141"/>
+<area shape="rect" id="node35" href="$classTunnelingDiscretization.html" title="TunnelingDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="211,2165,370,2206"/>
+<area shape="rect" id="node36" href="$classUnderrelaxer.html" title="Underrelaxer\&lt; X, Diag,\l OffDiag \&gt;" alt="" coords="213,2230,369,2271"/>
+<area shape="rect" id="node37" href="$classWallDiscretization.html" title="WallDiscretization\l\&lt; X, Diag, OffDiag \&gt;" alt="" coords="219,2295,362,2337"/>
+</map>

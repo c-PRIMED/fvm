@@ -1,0 +1,27 @@
+<map id="CRMatrixRect.h" name="CRMatrixRect.h">
+<area shape="rect" id="node2" href="$CollisionTermDiscretization_8h.html" title="CollisionTermDiscretization.h" alt="" coords="49,80,241,107"/>
+<area shape="rect" id="node6" href="$SourceDiscretization_8h.html" title="SourceDiscretization.h" alt="" coords="936,80,1089,107"/>
+<area shape="rect" id="node15" href="$BatteryPCHeatSourceDiscretization_8h.html" title="BatteryPCHeatSourceDiscretization.h" alt="" coords="1115,80,1357,107"/>
+<area shape="rect" id="node16" href="$SourceDiscretizationforFracture_8h.html" title="SourceDiscretizationforFracture.h" alt="" coords="1382,80,1599,107"/>
+<area shape="rect" id="node18" href="$SourceDiscretizationene_8h.html" title="SourceDiscretizationene.h" alt="" coords="1623,80,1797,107"/>
+<area shape="rect" id="node20" href="$SourceDiscretizationdissi_8h.html" title="SourceDiscretizationdissi.h" alt="" coords="1823,80,2004,107"/>
+<area shape="rect" id="node21" href="$StructureSourceDiscretization_8h.html" title="StructureSourceDiscretization.h" alt="" coords="266,80,472,107"/>
+<area shape="rect" id="node22" href="$StructurePlasticDiscretization_8h.html" title="StructurePlasticDiscretization.h" alt="" coords="497,80,703,107"/>
+<area shape="rect" id="node23" href="$PlateSourceDiscretization_8h.html" title="PlateSourceDiscretization.h" alt="" coords="728,80,912,107"/>
+<area shape="rect" id="node24" href="$PhononCollisionDiscretization_8h.html" title="PhononCollisionDiscretization.h" alt="" coords="2029,80,2235,107"/>
+<area shape="rect" id="node3" href="$KineticModel_8h.html" title="KineticModel.h" alt="" coords="91,155,199,181"/>
+<area shape="rect" id="node4" href="$KineticModels_8cpp.html" title="KineticModels.cpp" alt="" coords="5,229,133,256"/>
+<area shape="rect" id="node5" href="$testquadrature_8cpp.html" title="testquadrature.cpp" alt="" coords="157,229,287,256"/>
+<area shape="rect" id="node7" href="$BatteryModel__impl_8h.html" title="BatteryModel_impl.h" alt="" coords="1363,155,1503,181"/>
+<area shape="rect" id="node9" href="$ElectricModel__impl_8h.html" title="ElectricModel_impl.h" alt="" coords="678,155,820,181"/>
+<area shape="rect" id="node10" href="$ThermalModel__impl_8h.html" title="ThermalModel_impl.h" alt="" coords="845,155,992,181"/>
+<area shape="rect" id="node11" href="$VacancyModel__impl_8h.html" title="VacancyModel_impl.h" alt="" coords="1017,155,1167,181"/>
+<area shape="rect" id="node12" href="$SpeciesModel__impl_8h.html" title="SpeciesModel_impl.h" alt="" coords="1192,155,1339,181"/>
+<area shape="rect" id="node13" href="$StructureModel__impl_8h.html" title="StructureModel_impl.h" alt="" coords="348,155,500,181"/>
+<area shape="rect" id="node14" href="$PlateModel__impl_8h.html" title="PlateModel_impl.h" alt="" coords="525,155,653,181"/>
+<area shape="rect" id="node8" href="$models_8cpp.html" title="models.cpp" alt="" coords="961,229,1049,256"/>
+<area shape="rect" id="node17" href="$FractureModel__impl_8h.html" title="FractureModel_impl.h" alt="" coords="1528,155,1675,181"/>
+<area shape="rect" id="node19" href="$KeModel__impl_8h.html" title="KeModel_impl.h" alt="" coords="1755,155,1869,181"/>
+<area shape="rect" id="node25" href="$PhononModel_8h.html" title="PhononModel.h" alt="" coords="2076,155,2187,181"/>
+<area shape="rect" id="node26" href="$phonon_8cpp.html" title="phonon.cpp" alt="" coords="2087,229,2176,256"/>
+</map>

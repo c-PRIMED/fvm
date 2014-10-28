@@ -1,0 +1,34 @@
+<map id="COMETDiscretizer.h" name="COMETDiscretizer.h">
+<area shape="rect" id="node2" href="$Mesh_8h.html" title="Mesh.h" alt="" coords="563,229,628,256"/>
+<area shape="rect" id="node3" href="$Array_8h.html" title="Array.h" alt="" coords="1056,453,1120,480"/>
+<area shape="rect" id="node4" href="$NumType_8h.html" title="NumType.h" alt="" coords="1500,603,1591,629"/>
+<area shape="rect" id="node22" href="$StorageSite_8h.html" title="StorageSite.h" alt="" coords="540,379,641,405"/>
+<area shape="rect" id="node24" href="$Vector_8h.html" title="Vector.h" alt="" coords="1653,304,1723,331"/>
+<area shape="rect" id="node28" href="$Kspace_8h.html" title="Kspace.h" alt="" coords="2105,80,2181,107"/>
+<area shape="rect" id="node30" href="$pmode_8h.html" title="pmode.h" alt="" coords="1852,229,1924,256"/>
+<area shape="rect" id="node31" href="$kvol_8h.html" title="kvol.h" alt="" coords="1557,155,1613,181"/>
+<area shape="rect" id="node32" href="$SquareTensor_8h.html" title="SquareTensor.h" alt="" coords="1689,155,1804,181"/>
+<area shape="rect" id="node33" href="$CRConnectivity_8h.html" title="CRConnectivity.h" alt="" coords="1151,229,1277,256"/>
+<area shape="rect" id="node37" href="$phononbase_2ArrowHeadMatrix_8h.html" title="ArrowHeadMatrix.h" alt="" coords="1305,304,1439,331"/>
+<area shape="rect" id="node38" href="$phononbase_2MatrixJML_8h.html" title="MatrixJML.h" alt="" coords="1078,379,1172,405"/>
+<area shape="rect" id="node39" href="$GeomFields_8h.html" title="GeomFields.h" alt="" coords="1001,155,1103,181"/>
+<area shape="rect" id="node40" href="$phononbase_2COMETBC_8h.html" title="COMETBC.h" alt="" coords="43,304,143,331"/>
+<area shape="rect" id="node42" href="$SquareMatrix_8h.html" title="SquareMatrix.h" alt="" coords="1463,304,1573,331"/>
+<area shape="rect" id="node43" href="$PhononMacro_8h.html" title="PhononMacro.h" alt="" coords="1014,229,1127,256"/>
+<area shape="rect" id="node44" href="$GradientModel_8h.html" title="GradientModel.h" alt="" coords="855,80,971,107"/>
+<area shape="rect" id="node48" href="$FluxLimiters_8h.html" title="FluxLimiters.h" alt="" coords="2652,453,2756,480"/>
+<area shape="rect" id="node25" href="$Field_8h.html" title="Field.h" alt="" coords="957,304,1019,331"/>
+<area shape="rect" id="node26" href="$FieldLabel_8h.html" title="FieldLabel.h" alt="" coords="371,304,463,331"/>
+<area shape="rect" id="node9" href="$ArrayBase_8h.html" title="ArrayBase.h" alt="" coords="965,528,1059,555"/>
+<area shape="rect" id="node10" href="$IContainer_8h.html" title="IContainer.h" alt="" coords="691,603,784,629"/>
+<area shape="rect" id="node11" href="$misc_8h.html" title="misc.h" alt="" coords="507,677,568,704"/>
+<area shape="rect" id="node16" href="$RLogInterface_8h.html" title="RLogInterface.h" alt="" coords="619,752,733,779"/>
+<area shape="rect" id="node18" href="$CException_8h.html" title="CException.h" alt="" coords="1439,827,1540,853"/>
+<area shape="rect" id="node34" href="$ScatteringKernel_8h.html" title="ScatteringKernel.h" alt="" coords="2207,304,2336,331"/>
+<area shape="rect" id="node36" href="$RelaxationTimeFunction_8h.html" title="RelaxationTimeFunction.h" alt="" coords="2410,528,2584,555"/>
+<area shape="rect" id="node35" href="$KSConnectivity_8h.html" title="KSConnectivity.h" alt="" coords="1197,379,1320,405"/>
+<area shape="rect" id="node41" href="$FloatVarDict_8h.html" title="FloatVarDict.h" alt="" coords="96,603,203,629"/>
+<area shape="rect" id="node45" href="$Model_8h.html" title="Model.h" alt="" coords="398,155,465,181"/>
+<area shape="rect" id="node46" href="$Gradient_8h.html" title="Gradient.h" alt="" coords="856,229,937,256"/>
+<area shape="rect" id="node47" href="$GradientMatrix_8h.html" title="GradientMatrix.h" alt="" coords="806,155,924,181"/>
+</map>

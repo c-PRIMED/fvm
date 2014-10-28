@@ -1,0 +1,36 @@
+<map id="COMETESBGKDiscretizer.h" name="COMETESBGKDiscretizer.h">
+<area shape="rect" id="node2" href="$Mesh_8h.html" title="Mesh.h" alt="" coords="1899,229,1964,256"/>
+<area shape="rect" id="node3" href="$Array_8h.html" title="Array.h" alt="" coords="1309,453,1373,480"/>
+<area shape="rect" id="node4" href="$NumType_8h.html" title="NumType.h" alt="" coords="943,603,1033,629"/>
+<area shape="rect" id="node18" href="$StorageSite_8h.html" title="StorageSite.h" alt="" coords="2100,379,2201,405"/>
+<area shape="rect" id="node20" href="$Vector_8h.html" title="Vector.h" alt="" coords="1177,379,1247,405"/>
+<area shape="rect" id="node25" href="$Quadrature_8h.html" title="Quadrature.h" alt="" coords="1530,304,1627,331"/>
+<area shape="rect" id="node29" href="$DistFunctFields_8h.html" title="DistFunctFields.h" alt="" coords="2211,80,2336,107"/>
+<area shape="rect" id="node35" href="$CometMatrix_8h.html" title="CometMatrix.h" alt="" coords="486,304,593,331"/>
+<area shape="rect" id="node36" href="$esbgkbase_2MatrixJML_8h.html" title="MatrixJML.h" alt="" coords="433,453,527,480"/>
+<area shape="rect" id="node37" href="$SquareMatrixESBGK_8h.html" title="SquareMatrixESBGK.h" alt="" coords="286,379,441,405"/>
+<area shape="rect" id="node39" href="$esbgkbase_2ArrowHeadMatrix_8h.html" title="ArrowHeadMatrix.h" alt="" coords="887,80,1021,107"/>
+<area shape="rect" id="node42" href="$CRConnectivity_8h.html" title="CRConnectivity.h" alt="" coords="1379,304,1505,331"/>
+<area shape="rect" id="node43" href="$GeomFields_8h.html" title="GeomFields.h" alt="" coords="1843,155,1945,181"/>
+<area shape="rect" id="node44" href="$esbgkbase_2COMETBC_8h.html" title="COMETBC.h" alt="" coords="2558,528,2657,555"/>
+<area shape="rect" id="node45" href="$GradientModel_8h.html" title="GradientModel.h" alt="" coords="1405,80,1521,107"/>
+<area shape="rect" id="node49" href="$FluxLimiters_8h.html" title="FluxLimiters.h" alt="" coords="5,379,109,405"/>
+<area shape="rect" id="node50" href="$Limiters_8h.html" title="Limiters.h" alt="" coords="95,80,173,107"/>
+<area shape="rect" id="node22" href="$Field_8h.html" title="Field.h" alt="" coords="2340,304,2401,331"/>
+<area shape="rect" id="node23" href="$FieldLabel_8h.html" title="FieldLabel.h" alt="" coords="2021,304,2112,331"/>
+<area shape="rect" id="node9" href="$ArrayBase_8h.html" title="ArrayBase.h" alt="" coords="1486,528,1580,555"/>
+<area shape="rect" id="node10" href="$IContainer_8h.html" title="IContainer.h" alt="" coords="2101,603,2195,629"/>
+<area shape="rect" id="node11" href="$misc_8h.html" title="misc.h" alt="" coords="2371,677,2432,704"/>
+<area shape="rect" id="node16" href="$RLogInterface_8h.html" title="RLogInterface.h" alt="" coords="2091,752,2205,779"/>
+<area shape="rect" id="node26" href="$Array2D_8h.html" title="Array2D.h" alt="" coords="1657,453,1737,480"/>
+<area shape="rect" id="node30" href="$MacroFields_8h.html" title="MacroFields.h" alt="" coords="2267,155,2371,181"/>
+<area shape="rect" id="node31" href="$FlowFields_8h.html" title="FlowFields.h" alt="" coords="2325,229,2421,256"/>
+<area shape="rect" id="node32" href="$FlowBC_8h.html" title="FlowBC.h" alt="" coords="2447,528,2525,555"/>
+<area shape="rect" id="node33" href="$FloatVarDict_8h.html" title="FloatVarDict.h" alt="" coords="2509,603,2616,629"/>
+<area shape="rect" id="node34" href="$AMG_8h.html" title="AMG.h" alt="" coords="2371,603,2433,629"/>
+<area shape="rect" id="node40" href="$VectorTranspose_8h.html" title="VectorTranspose.h" alt="" coords="941,155,1072,181"/>
+<area shape="rect" id="node41" href="$SquareTensor_8h.html" title="SquareTensor.h" alt="" coords="936,229,1051,256"/>
+<area shape="rect" id="node46" href="$Model_8h.html" title="Model.h" alt="" coords="1649,155,1716,181"/>
+<area shape="rect" id="node47" href="$Gradient_8h.html" title="Gradient.h" alt="" coords="1379,229,1460,256"/>
+<area shape="rect" id="node48" href="$GradientMatrix_8h.html" title="GradientMatrix.h" alt="" coords="1454,155,1572,181"/>
+</map>

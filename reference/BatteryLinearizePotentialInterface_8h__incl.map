@@ -1,0 +1,27 @@
+<map id="BatteryLinearizePotentialInterface.h" name="BatteryLinearizePotentialInterface.h">
+<area shape="rect" id="node2" href="$Mesh_8h.html" title="Mesh.h" alt="" coords="435,171,500,197"/>
+<area shape="rect" id="node3" href="$Array_8h.html" title="Array.h" alt="" coords="1024,395,1088,421"/>
+<area shape="rect" id="node4" href="$NumType_8h.html" title="NumType.h" alt="" coords="1520,544,1611,571"/>
+<area shape="rect" id="node22" href="$StorageSite_8h.html" title="StorageSite.h" alt="" coords="431,320,532,347"/>
+<area shape="rect" id="node24" href="$Vector_8h.html" title="Vector.h" alt="" coords="1581,320,1651,347"/>
+<area shape="rect" id="node25" href="$Field_8h.html" title="Field.h" alt="" coords="176,245,237,272"/>
+<area shape="rect" id="node28" href="$CRConnectivity_8h.html" title="CRConnectivity.h" alt="" coords="1043,245,1169,272"/>
+<area shape="rect" id="node29" href="$MultiFieldMatrix_8h.html" title="MultiFieldMatrix.h" alt="" coords="476,96,601,123"/>
+<area shape="rect" id="node33" href="$CRMatrix_8h.html" title="CRMatrix.h" alt="" coords="1291,96,1380,123"/>
+<area shape="rect" id="node40" href="$FluxJacobianMatrix_8h.html" title="FluxJacobianMatrix.h" alt="" coords="728,171,875,197"/>
+<area shape="rect" id="node41" href="$DiagonalMatrix_8h.html" title="DiagonalMatrix.h" alt="" coords="949,171,1069,197"/>
+<area shape="rect" id="node26" href="$FieldLabel_8h.html" title="FieldLabel.h" alt="" coords="363,245,455,272"/>
+<area shape="rect" id="node9" href="$ArrayBase_8h.html" title="ArrayBase.h" alt="" coords="539,469,633,496"/>
+<area shape="rect" id="node10" href="$IContainer_8h.html" title="IContainer.h" alt="" coords="280,544,373,571"/>
+<area shape="rect" id="node11" href="$misc_8h.html" title="misc.h" alt="" coords="380,619,441,645"/>
+<area shape="rect" id="node16" href="$RLogInterface_8h.html" title="RLogInterface.h" alt="" coords="200,693,315,720"/>
+<area shape="rect" id="node18" href="$CException_8h.html" title="CException.h" alt="" coords="1211,768,1312,795"/>
+<area shape="rect" id="node30" href="$Matrix_8h.html" title="Matrix.h" alt="" coords="899,245,968,272"/>
+<area shape="rect" id="node31" href="$MultiField_8h.html" title="MultiField.h" alt="" coords="62,245,151,272"/>
+<area shape="rect" id="node32" href="$MultiFieldReduction_8h.html" title="MultiFieldReduction.h" alt="" coords="263,171,411,197"/>
+<area shape="rect" id="node34" href="$LinearSystemMerger_8h.html" title="LinearSystemMerger.h" alt="" coords="1145,171,1297,197"/>
+<area shape="rect" id="node35" href="$SpikeStorage_8h.html" title="SpikeStorage.h" alt="" coords="1417,245,1527,272"/>
+<area shape="rect" id="node36" href="$SpikeMatrix_8h.html" title="SpikeMatrix.h" alt="" coords="1374,171,1476,197"/>
+<area shape="rect" id="node39" href="$DiagonalTensor_8h.html" title="DiagonalTensor.h" alt="" coords="1705,245,1828,272"/>
+<area shape="rect" id="node37" href="$Array2D_8h.html" title="Array2D.h" alt="" coords="1249,395,1329,421"/>
+</map>

@@ -1,0 +1,26 @@
+var classkvol =
+[
+    [ "Modes", "classkvol.html#aa581b042ded3d1d5840bd129a30f7e04", null ],
+    [ "T_Scalar", "classkvol.html#afb3f730617e6fbed6bc881838eb4c62f", null ],
+    [ "Tkvol", "classkvol.html#aedfa28896926487c6e7b0068870bc2ed", null ],
+    [ "Tmode", "classkvol.html#ac10ae1e7a5710d217b6a7fb8b84f9a8a", null ],
+    [ "Tmodeptr", "classkvol.html#a085c8eceba2fa4febccdda38fa37f44d", null ],
+    [ "Tvec", "classkvol.html#a0759ba33838208c6abab14c89b22cc72", null ],
+    [ "kvol", "classkvol.html#a9fbbe32e909f7584082eebe1c6a00ebe", null ],
+    [ "kvol", "classkvol.html#ad733cc889058fcae2aea8ad29172a1fb", null ],
+    [ "kvol", "classkvol.html#ad0decfe871224e898e3f215b55a9c990", null ],
+    [ "kvol", "classkvol.html#a936c8264161417ae5a5473b502ec51d5", null ],
+    [ "copyKvol", "classkvol.html#af9303d8a3b7e0772320f5d31ab670bc0", null ],
+    [ "getdk3", "classkvol.html#a83d11711613b5b3eee3a1991ec513519", null ],
+    [ "getkvec", "classkvol.html#a32d0d8e8f52393c43720490c3eb38041", null ],
+    [ "getmode", "classkvol.html#a69b5ad1bf889576d32f5cb571b99cd2a", null ],
+    [ "getmodenum", "classkvol.html#adfe1c91effb689193f27391eb7037fc8", null ],
+    [ "getModes", "classkvol.html#a8b0b103da3ebe3863eeff4610e0586a2", null ],
+    [ "operator=", "classkvol.html#aef224d89882ad6a3c6c7b1d5fa3c16ce", null ],
+    [ "setdk3", "classkvol.html#ae5b385e057f623ebd194de9d4847f08d", null ],
+    [ "setkvec", "classkvol.html#af08fb51b647c1ed0b540fa9379ee78bb", null ],
+    [ "_dk3", "classkvol.html#acf87addfd5b2146bd0ad8165a2f10b29", null ],
+    [ "_Kvector", "classkvol.html#ad089ae106b08e7b66e87adb9391c748d", null ],
+    [ "_modenum", "classkvol.html#a39e4c19b42f24a2a01261ebbcc22681f", null ],
+    [ "_modes", "classkvol.html#ad00eab110535a4b95c5b8ca4405d654d", null ]
+];

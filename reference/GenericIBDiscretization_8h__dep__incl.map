@@ -1,0 +1,12 @@
+<map id="GenericIBDiscretization.h" name="GenericIBDiscretization.h">
+<area shape="rect" id="node2" href="$BatteryModel__impl_8h.html" title="BatteryModel_impl.h" alt="" coords="5,80,145,107"/>
+<area shape="rect" id="node4" href="$ElectricModel__impl_8h.html" title="ElectricModel_impl.h" alt="" coords="170,80,312,107"/>
+<area shape="rect" id="node5" href="$FlowModel__impl_8h.html" title="FlowModel_impl.h" alt="" coords="337,80,463,107"/>
+<area shape="rect" id="node6" href="$KeModel__impl_8h.html" title="KeModel_impl.h" alt="" coords="488,80,603,107"/>
+<area shape="rect" id="node7" href="$ThermalModel__impl_8h.html" title="ThermalModel_impl.h" alt="" coords="627,80,773,107"/>
+<area shape="rect" id="node8" href="$VacancyModel__impl_8h.html" title="VacancyModel_impl.h" alt="" coords="798,80,948,107"/>
+<area shape="rect" id="node9" href="$SpeciesModel__impl_8h.html" title="SpeciesModel_impl.h" alt="" coords="973,80,1120,107"/>
+<area shape="rect" id="node10" href="$StructureModel__impl_8h.html" title="StructureModel_impl.h" alt="" coords="1144,80,1296,107"/>
+<area shape="rect" id="node11" href="$PlateModel__impl_8h.html" title="PlateModel_impl.h" alt="" coords="1321,80,1449,107"/>
+<area shape="rect" id="node3" href="$models_8cpp.html" title="models.cpp" alt="" coords="742,155,831,181"/>
+</map>

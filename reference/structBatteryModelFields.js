@@ -1,0 +1,26 @@
+var structBatteryModelFields =
+[
+    [ "BatteryModelFields", "structBatteryModelFields.html#a52ade66671aaf90b59350a40bd61822f", null ],
+    [ "conductivity", "structBatteryModelFields.html#a9fa7d05db6370ae49e77766172ed22cc", null ],
+    [ "heatFlux", "structBatteryModelFields.html#a2b1121121b584ad45c5045d5dc7a51c3", null ],
+    [ "heatSource", "structBatteryModelFields.html#a930bb6344b0cbc64a73b65c6fa96a9b2", null ],
+    [ "lnLithiumConcentration", "structBatteryModelFields.html#ac0276a9a2f102c39d4996417ee28d540", null ],
+    [ "lnLithiumConcentrationGradient", "structBatteryModelFields.html#a700cab66c4f5db56eb25d3a7262aa9b1", null ],
+    [ "potential", "structBatteryModelFields.html#adb99dd3c599b2211c8c90bfa5e36d7ec", null ],
+    [ "potential_flux", "structBatteryModelFields.html#ae18d64ce1b575e05972732e206549e43", null ],
+    [ "potential_gradient", "structBatteryModelFields.html#a21619d8997a221c3bb6ce8b0ce73e3ea", null ],
+    [ "potentialN1", "structBatteryModelFields.html#a8c084e8c1f5af60100e7901939208511", null ],
+    [ "potentialSpeciesTemp", "structBatteryModelFields.html#a97c06e10feb446aeabd89444c35b99a1", null ],
+    [ "potentialSpeciesTempDiffusivity", "structBatteryModelFields.html#a437dda82ae62e703d6b6f572fa96b78c", null ],
+    [ "potentialSpeciesTempFlux", "structBatteryModelFields.html#a67f88c8e865926b266f307debae651f0", null ],
+    [ "potentialSpeciesTempGradient", "structBatteryModelFields.html#ad528596c1e81329b278081ddb6f869c0", null ],
+    [ "potentialSpeciesTempN1", "structBatteryModelFields.html#a6859faabcee2bf9040d1ed2c7a6b11dc", null ],
+    [ "potentialSpeciesTempN2", "structBatteryModelFields.html#a44d822bf8916012cd496ed657f92716f", null ],
+    [ "rhoCp", "structBatteryModelFields.html#ab38fa06918db255fec56dfd2945f56ba", null ],
+    [ "speciesGradient", "structBatteryModelFields.html#a2d96a70ec28917ad7c5e30239166d73a", null ],
+    [ "temperature", "structBatteryModelFields.html#a970cb282cefae8bbfe992c4648d7e301", null ],
+    [ "temperatureGradient", "structBatteryModelFields.html#a04d5b7fac5a61eeb7d7f4303766453a3", null ],
+    [ "temperatureN1", "structBatteryModelFields.html#ad51cdd0e4adb7255e9de62f5e73a6efc", null ],
+    [ "temperatureN2", "structBatteryModelFields.html#aef5224d815e2d406956d483c1e8ef1a8", null ],
+    [ "thermalConductivity", "structBatteryModelFields.html#a3a59609b4df19f603a6edd4808c7604c", null ]
+];

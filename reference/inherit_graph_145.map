@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classReader.html" title="Reader" alt="" coords="5,31,69,57"/>
+<area shape="rect" id="node2" href="$classMMReader.html" title="MMReader" alt="" coords="130,5,217,32"/>
+<area shape="rect" id="node3" href="$classSchemeReader.html" title="SchemeReader" alt="" coords="117,56,229,83"/>
+<area shape="rect" id="node4" href="$classFluentReader.html" title="FluentReader" alt="" coords="278,56,378,83"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="PhononConvectionDiscretization&lt; X, Diag, OffDiag &gt;" name="PhononConvectionDiscretization&lt; X, Diag, OffDiag &gt;">
+<area shape="rect" id="node2" href="$classDiscretization.html" title="Discretization" alt="" coords="5,333,107,360"/>
+<area shape="rect" id="node3" href="$classField.html" title="Field" alt="" coords="153,96,204,123"/>
+<area shape="rect" id="node8" href="$structGeomFields.html" title="GeomFields" alt="" coords="238,333,329,360"/>
+<area shape="rect" id="node4" href="$classIContainer.html" title="IContainer" alt="" coords="137,5,219,32"/>
+<area shape="rect" id="node5" href="$classVector.html" title="Vector\&lt; T_Scalar, 3 \&gt;" alt="" coords="354,333,504,360"/>
+<area shape="rect" id="node6" href="$classVector.html" title="Vector\&lt; T, N \&gt;" alt="" coords="374,96,484,123"/>
+</map>

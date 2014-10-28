@@ -1,0 +1,25 @@
+var structElectricModelOptions =
+[
+    [ "ElectricModelOptions", "structElectricModelOptions.html#a9bd32ef65bf8ecfad17e407db48602bd", null ],
+    [ "getChargeTransportLinearSolver", "structElectricModelOptions.html#acc62dbf8414791d5114d256f7154ed08", null ],
+    [ "getElectroStaticsLinearSolver", "structElectricModelOptions.html#a2b080689839f001b6fe3ba61cdfcf0ab", null ],
+    [ "ButlerVolmer", "structElectricModelOptions.html#a726763d74f80b2b4c086cf2e8c244db8", null ],
+    [ "capture_enable", "structElectricModelOptions.html#a81d06041236b788f1ffea299ede46e75", null ],
+    [ "chargetransport_enable", "structElectricModelOptions.html#af2c3fe22ae03e33cfdf24566f59d1293", null ],
+    [ "chargetransportLinearSolver", "structElectricModelOptions.html#a22a756c06a2e51fa5bae420ca48d9e10", null ],
+    [ "chargetransportTolerance", "structElectricModelOptions.html#a82d653c390285c252393e206c8ab3a60", null ],
+    [ "diffusion_enable", "structElectricModelOptions.html#a7681e5047020e95ad5ec07f418dd94ef", null ],
+    [ "drift_enable", "structElectricModelOptions.html#a1ce992b7ba37a584a5aca444b0f920a3", null ],
+    [ "electrostatics_enable", "structElectricModelOptions.html#aab8b780de8178626e5efdc30c997143c", null ],
+    [ "electrostaticsLinearSolver", "structElectricModelOptions.html#ab606822bc0302e14000dd816752026f5", null ],
+    [ "electrostaticsTolerance", "structElectricModelOptions.html#a65a858ca0817470ad32c19f4f522ecd4", null ],
+    [ "emission_enable", "structElectricModelOptions.html#a0c3bb77adb524f02ec57d5b6a9de75fa", null ],
+    [ "ibm_enable", "structElectricModelOptions.html#a720566ca238594a4d3568d9dc4c2ff1a", null ],
+    [ "injection_enable", "structElectricModelOptions.html#a4e1687706a75f8fce8bf2a6a382daba5", null ],
+    [ "printNormalizedResiduals", "structElectricModelOptions.html#a59948b66e832cf11251054e18fb6e838", null ],
+    [ "timeDiscretizationOrder", "structElectricModelOptions.html#ace9e924a3c16eaa43acc5dae4a9ec2df", null ],
+    [ "transient_enable", "structElectricModelOptions.html#ac3c89562971a4ba5d09fbac46a26186b", null ],
+    [ "trapbandtunneling_enable", "structElectricModelOptions.html#a5c4dda0f8fd6d1d37d56994584727f96", null ],
+    [ "tunneling_enable", "structElectricModelOptions.html#a1b42efc990ac5f674f757405278872a9", null ],
+    [ "tunnelingtransportTolerance", "structElectricModelOptions.html#a5c0908477c45dfe4d94022a8346158be", null ]
+];

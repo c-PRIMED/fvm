@@ -1,0 +1,47 @@
+var classAMG =
+[
+    [ "CycleType", "classAMG.html#afb70a600f18a90fc56c5d5d2c6c9f770", [
+      [ "V_CYCLE", "classAMG.html#afb70a600f18a90fc56c5d5d2c6c9f770a3ddbb1936accdeac5cc91ccf95af4e70", null ],
+      [ "W_CYCLE", "classAMG.html#afb70a600f18a90fc56c5d5d2c6c9f770a0427a9c34de234ca4077a6350103c033", null ],
+      [ "F_CYCLE", "classAMG.html#afb70a600f18a90fc56c5d5d2c6c9f770a054f06f527b162e2d89e4fe8479db434", null ]
+    ] ],
+    [ "SmootherType", "classAMG.html#adbd959ec8b065c5308a1f3015e2ba921", [
+      [ "GAUSS_SEIDEL", "classAMG.html#adbd959ec8b065c5308a1f3015e2ba921aaabc2359b919b268f7094e908ca0dea1", null ],
+      [ "JACOBI", "classAMG.html#adbd959ec8b065c5308a1f3015e2ba921a4cea4ab5154206256e57e18e1263b9d3", null ]
+    ] ],
+    [ "AMG", "classAMG.html#abcbe0de3d25b992d6c984e2a01a294ac", null ],
+    [ "~AMG", "classAMG.html#ad32b670b731aa349b95bf764b537bf05", null ],
+    [ "AMG", "classAMG.html#a8f8bc516460985c0564e60e4d269bd3c", null ],
+    [ "cleanup", "classAMG.html#a4c6889819c229f286c1492ffd79db91f", null ],
+    [ "createCoarseLevels", "classAMG.html#a6d1c31e82f01d129e33d78afcc212f55", null ],
+    [ "cycle", "classAMG.html#a35b05f899bd8dbbdf92cc06f914ba8f8", null ],
+    [ "DEFINE_TYPENAME", "classAMG.html#a08422db7c5b6f4cd5a00473277cf8309", null ],
+    [ "doSweeps", "classAMG.html#ade1988926c67905f57a5a29728bbc5eb", null ],
+    [ "flipComm", "classAMG.html#a9f6e09b3a0021ce8b5b0f7bb6fea83ba", null ],
+    [ "getTotalIterations", "classAMG.html#af415593375f5dfc47e6fb012d69bceae", null ],
+    [ "redirectPrintToFile", "classAMG.html#afa8d21afeba973294c2753ae332aa31f", null ],
+    [ "redirectPrintToScreen", "classAMG.html#a024822c91c13162d33785a371b8f51c0", null ],
+    [ "setMergeLevelSize", "classAMG.html#a3de1b3784a0d14f6952540eaf7afc572", null ],
+    [ "smooth", "classAMG.html#a8fe9eb06a4949c3c38a07e307d01c283", null ],
+    [ "solve", "classAMG.html#a91abb708c35192e30cd63e5e41f1e3cc", null ],
+    [ "_coarseLinearSystems", "classAMG.html#a7680a51662aa1ea136918c1a7c97b85a", null ],
+    [ "_finestLinearSystem", "classAMG.html#a80d00e1c48c3d6054f0e8eae8ab86f58", null ],
+    [ "_isCOMMWORLD", "classAMG.html#af62b3c77b8292f75246118e23aeaba26", null ],
+    [ "_isMerge", "classAMG.html#ad26fbb9652dcef9b7de8aa2b58d73430", null ],
+    [ "_mergeLevel", "classAMG.html#a57aa98fd9fc690f1c76399de513387f5", null ],
+    [ "_mergeLevelSize", "classAMG.html#a2c4ce0ecfdfb1ff123c4aa24f0ff55e0", null ],
+    [ "_mergeLS", "classAMG.html#aa323e440dde1a042888799920958baaa", null ],
+    [ "_totalIterations", "classAMG.html#a2d5d4b137ba37965bafeee969327ff34", null ],
+    [ "amg_indx", "classAMG.html#ab6e72469c25b4144a6d4dafef83746ba", null ],
+    [ "coarseGroupSize", "classAMG.html#a2bef99a3f3083b229d5eacea844c9810", null ],
+    [ "cycleType", "classAMG.html#a33de5ca9640c77196ef198dbcb581451", null ],
+    [ "m_backup", "classAMG.html#abd96542c706e7e96679a3c8c8e5552f1", null ],
+    [ "m_filestr", "classAMG.html#a11f7b5206a070bfa6bc8be07f13707be", null ],
+    [ "m_psbuf", "classAMG.html#aef4ec244235708fa6f11e2377d4fb480", null ],
+    [ "maxCoarseLevels", "classAMG.html#a5faf3718122324ee24a867ec44b532cf", null ],
+    [ "nPostSweeps", "classAMG.html#a4f401cd57aede68d2cf549956af350aa", null ],
+    [ "nPreSweeps", "classAMG.html#a78de06385922360b6919bcc040ea8f53", null ],
+    [ "scaleCorrections", "classAMG.html#a82ffee880e7a727948a8e49467d8bf5c", null ],
+    [ "smootherType", "classAMG.html#a7a1a0f2cffd26a9b39a3a64cf9def0bb", null ],
+    [ "weightRatioThreshold", "classAMG.html#a65eba82dae2800959dba2859fcf25a3b", null ]
+];
