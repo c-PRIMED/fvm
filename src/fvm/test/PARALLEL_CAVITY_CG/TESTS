@@ -1,4 +1,0 @@
-CAV32_PROCS1_FLUIDSOLVER_CG   ./ptest.py  --np 1   --script ./testFlowParallel.py --in  ../cav32.cas --type=quad --golden proc1   --outdir TESTDIR
-CAV32_PROCS2_FLUIDSOLVER_CG   ./ptest.py  --np 4   --script ./testFlowParallel.py --in  ../cav32.cas --type=quad --golden proc4   --outdir TESTDIR
-CAV32_PROCS16_FLUIDSOLVER_CG  ./ptest.py  --np 16  --script ./testFlowParallel.py --in  ../cav32.cas --type=quad --golden proc16  --outdir TESTDIR
-CAV32_PROCS64_FLUIDSOLVER_CG  ./ptest.py  --np 64  --script ./testFlowParallel.py --in  ../cav32.cas --type=quad --golden proc64  --outdir TESTDIR

@@ -1,5 +1,0 @@
-SPECIES_MODEL           ./ptest.py  --np 1   --script ./testSpeciesModel.py --in  ../TwoMaterialTest.cas  --golden test1   --outdir TESTDIR
-MULTISPECIES_MODEL      ./ptest.py  --np 1   --script ./testSpeciesModel_MultSpecies.py --in  ../SpeciesTest.cas  --golden test2   --outdir TESTDIR
-SPECIES_MODEL_SHELL     ./ptest.py  --np 1   --script ./testSpeciesModel_Shell.py --in  ../TwoMaterialTest.cas  --golden test3   --outdir TESTDIR
-SPECIES_MODEL_UNSTEADY  ./ptest.py  --np 1   --script ./testSpeciesModel_Unsteady.py --in  ../SpeciesTest.cas  --golden test4   --outdir TESTDIR
-

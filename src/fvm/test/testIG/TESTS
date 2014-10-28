@@ -1,2 +1,0 @@
-TESTIG_SLIP    ./ptest.py  --np 1   --script ./testIG_Slip.py   --in  ../testIG_Slip.cas    --golden TESTIG_SLIP     --outdir TESTDIR
-TESTIG_SLIP    ./ptest.py  --np 1   --script ./testIG_Noslip.py --in  ../testIG_Noslip.cas  --golden TESTIG_NOSLIP   --outdir TESTDIR

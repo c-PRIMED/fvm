@@ -1,5 +1,0 @@
-Import('env')
-
-env.createSharedLibrary('double',
-                        ['initDouble.cpp'],
-                        ['rlog', 'fvmbase','boost'])

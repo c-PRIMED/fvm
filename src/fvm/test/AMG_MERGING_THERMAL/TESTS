@@ -1,3 +1,0 @@
-CAV32_PROCS1_AMG_MERGE   ./ptest.py  --np 1   --script ./testThermalParallel.py --in  ../cav32.cas --type=quad --golden proc1   --outdir TESTDIR
-CAV32_PROCS2_AMG_MERGE   ./ptest.py  --np 4   --script ./testThermalParallel.py --in  ../cav32.cas --type=quad --golden proc4   --outdir TESTDIR
-CAV32_PROCS16_AMG_MERGE  ./ptest.py  --np 16  --script ./testThermalParallel.py --in  ../cav32.cas --type=quad --golden proc16  --outdir TESTDIR

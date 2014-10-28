@@ -1,3 +1,0 @@
- cells.getSelfCount() = 1024 cells.selfCount() = 1152
- faces.getSelfCount() = 2112 faces.selfCount() = 2112
- nodes.getSelfCount() = 1089 nodes.selfCount() = 1089

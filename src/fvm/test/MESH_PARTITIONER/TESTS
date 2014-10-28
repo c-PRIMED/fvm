@@ -1,3 +1,0 @@
-MESHPARTITIONER_PROC1   ./ptest.py  --np 1   --script ./testFlowParallel.py --in  ../cav32.cas --type=quad --golden PROC1   --outdir TESTDIR
-MESHPARTITIONER_PROC4   ./ptest.py  --np 4   --script ./testFlowParallel.py --in  ../cav32.cas --type=quad --golden PROC4   --outdir TESTDIR
-MESHPARTITIONER_PROC16  ./ptest.py  --np 16  --script ./testFlowParallel.py --in  ../cav32.cas --type=quad --golden PROC16  --outdir TESTDIR

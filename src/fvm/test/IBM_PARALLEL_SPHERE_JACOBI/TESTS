@@ -1,3 +1,0 @@
-IBMSPHERE_PROCS1_FLUIDSOLVER_JACOBI    ./ptest.py  --np 1   --script ./parallel_sphere.py --in  ../fluid_1000K.cas  --in2 ../sphere.msh --type=hexa --golden proc1   --outdir TESTDIR
-IBMSPHERE_PROCS4_FLUIDSOLVER_JACOBI    ./ptest.py  --np 4   --script ./parallel_sphere.py --in  ../fluid_1000K.cas  --in2 ../sphere.msh --type=hexa --golden proc1   --outdir TESTDIR
-IBMSPHERE_PROCS16_FLUIDSOLVER_JACOBI   ./ptest.py  --np 16  --script ./parallel_sphere.py --in  ../fluid_1000K.cas  --in2 ../sphere.msh --type=hexa --golden proc1   --outdir TESTDIR

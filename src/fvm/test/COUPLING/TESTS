@@ -1,3 +1,0 @@
-#STRUCT_ELEC_3D_UNSTEADY_COUPLING  ./ptest.py  --np 1  --script ./Struct_Elec_3D_unsteady_uq.py  --in2 ../Gen2_IBM_beam_12_1200.cas --in1 ../Gen2_IBM_backgroundmesh_C2D2_wo_sub.cas --golden 3D_COUPLING  --outdir TESTDIR
-SHELL     ./ptest.py  --np 1  --script ./ibm.py --in1 ../fluid_electrode_dielectric.cas  --in2 ../Gen5_beam_2D.cas --golden SHELL  --outdir TESTDIR
-FROGLEG   ./ptest.py  --np 1  --script ./frogleg_plate.py  --in2 ../frogleg_2D_5018.cas --in1 ../fluid.cas --golden FROGLEG  --outdir TESTDIR
