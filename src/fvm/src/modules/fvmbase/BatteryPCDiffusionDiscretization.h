@@ -129,7 +129,7 @@ public:
 	    T_Scalar vol1 = cellVolume[c1];
         
 	    VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
-    
+	    T_Scalar dsMag = mag(ds);
 
 	    // for ib faces ignore the solid cell and use the face centroid for diff metric
 	    /*
@@ -181,8 +181,11 @@ public:
 		if (mesh.getDimension() == 3)
 		  gradF[2] = gradF_X[2][v];	
 
-		const T_Scalar dFluxSecondary = gradF*secondaryCoeff;
-	
+		T_Scalar dFluxSecondary = gradF*secondaryCoeff;
+		
+		if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
+		  dFluxSecondary = NumTypeTraits<T_Scalar>::getZero();
+
 		const T_Scalar dFlux = diffCoeff*((xCell[c1])[v]-(xCell[c0])[v]) + dFluxSecondary;
 
 		(rCell[c0])[v] += dFlux;

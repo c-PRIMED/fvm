@@ -18,7 +18,7 @@
 #include "DiagonalMatrix.h"
 #include "GenericBCS.h"
 #include "Vector.h"
-#include "DiffusionDiscretization.h"
+#include "BatteryDiffusionDiscretization.h"
 #include "ConvectionDiscretization.h"
 #include "TimeDerivativeDiscretization.h"
 #include "AMG.h"
@@ -1207,7 +1207,7 @@ void initThermalLinearization(LinearSystem& ls)
     DiscrList discretizations;
 
     /*shared_ptr<Discretization>
-      dd(new DiffusionDiscretization<T,T,T>
+      dd(new BatteryDiffusionDiscretization<T,T,T>
 	 (_meshes,_geomFields,
 	  sFields.concentration,
 	  sFields.diffusivity,
@@ -1236,7 +1236,7 @@ void initThermalLinearization(LinearSystem& ls)
     */
 
     shared_ptr<Discretization>
-      dd(new DiffusionDiscretization<T,T,T>
+      dd(new BatteryDiffusionDiscretization<T,T,T>
 	 (_realMeshes,_geomFields,
 	  sFields.concentration,
 	  sFields.diffusivity,
@@ -1437,7 +1437,7 @@ void linearizePotential(LinearSystem& ls)
     DiscrList discretizations;
     
     shared_ptr<Discretization>
-      dd(new DiffusionDiscretization<T,T,T>(_meshes,_geomFields,
+      dd(new BatteryDiffusionDiscretization<T,T,T>(_meshes,_geomFields,
                                             _batteryModelFields.potential,
                                             _batteryModelFields.conductivity,
                                             _batteryModelFields.potential_gradient));
@@ -1663,7 +1663,7 @@ void linearizeThermal(LinearSystem& ls)
     DiscrList discretizations;
     
     shared_ptr<Discretization>
-      dd(new DiffusionDiscretization<T,T,T>(_meshes,_geomFields,
+      dd(new BatteryDiffusionDiscretization<T,T,T>(_meshes,_geomFields,
                                             _batteryModelFields.temperature,
                                             _batteryModelFields.thermalConductivity,
                                             _batteryModelFields.temperatureGradient));
@@ -2685,13 +2685,17 @@ T getAverageConcentration(const Mesh& mesh, const int m)
 	
 
 	//updateShellGhosts();  not useful right now
-	lsShell.initSolve();
-	MFRPtr rNorm2(_options.getLinearSolverSpecies().solve(lsShell));
-        _options.getLinearSolverSpecies().cleanup();
-	lsShell.postSolve();
-	lsShell.updateSolution();
-	cout << _niters << ": " << *rNorm2 << endl;
 	
+	//not solving lsShell for now as I have abandoned the unconnected shell 
+	//idea for the time being
+	/*
+	    lsShell.initSolve();
+	    MFRPtr rNorm2(_options.getLinearSolverSpecies().solve(lsShell));
+	    _options.getLinearSolverSpecies().cleanup();
+	    lsShell.postSolve();
+	    lsShell.updateSolution();
+	    cout << _niters << ": " << *rNorm2 << endl;
+	*/
 
 
         _niters++;

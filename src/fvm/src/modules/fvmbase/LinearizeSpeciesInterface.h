@@ -117,6 +117,7 @@ template<class X, class Diag, class OffDiag>
     const T_Scalar Temp = 300.0; //  K
     const T_Scalar C_a = alpha_a*F/R/Temp;
     const T_Scalar C_c = alpha_c*F/R/Temp;
+    const T_Scalar transportNumber = 0.363;
 
     for (int f=0; f<faces.getCount(); f++)
       {
@@ -219,11 +220,11 @@ template<class X, class Diag, class OffDiag>
 	OffDiag& offdiagC0_C2 = matrix.getCoeff(c0,  c2);
 	OffDiag& offdiagC0_C3 = matrix.getCoeff(c0,  c3);
 
-	rCell[c0] = F*otherFlux + F*parentFlux;
+	rCell[c0] = F*otherFlux + F*transportNumber*parentFlux;
 	offdiagC0_C1 = F*dRC0dXC1;
-	offdiagC0_C3 = F*dRC0dXC3;
+	offdiagC0_C3 = F*transportNumber*dRC0dXC3;
 	offdiagC0_C2 = F*dRC0dXC2;
-	diag[c0] = F*dRC0dXC0;
+	diag[c0] = F*transportNumber*dRC0dXC0;
 
 	// right(other) shell cell - 2 neighbors
 	// jump condition

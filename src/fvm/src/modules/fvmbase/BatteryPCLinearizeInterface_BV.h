@@ -104,6 +104,7 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
     const T_Scalar R = 8.314; //  J/mol/K
     const T_Scalar dU_dT = -0.0011; // V/K
     const T_Scalar Peltier = 0.0;
+    const T_Scalar transportNumber = 0.363;
 
     for (int f=0; f<faces.getCount(); f++)
       {
@@ -256,24 +257,30 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
 
 	// left(parent) shell cell - 3 neighbors
 	// flux balance for all equations
+	// species is multiplied by F to make the shell mesh equations on a similar order of magnitude
 	OffDiag& offdiagC0_C1 = matrix.getCoeff(c0,  c1);
 	OffDiag& offdiagC0_C2 = matrix.getCoeff(c0,  c2);
 	OffDiag& offdiagC0_C3 = matrix.getCoeff(c0,  c3);
 
-	rCell[c0] = otherFlux + parentFlux;
-	offdiagC0_C1 = dRC0dXC1;
-	offdiagC0_C3 = dRC0dXC3;
-	offdiagC0_C2 = dRC0dXC2;
-	diag[c0] = dRC0dXC0;
+	////////////////////////
+	//       SPECIES      //
+	////////////////////////
 
-	//Fix for species equations so that both shell cells 
-	//residuals and coeffs are on same order of magnitude	
-	
-	(rCell[c0])[1] *= F;
-	(offdiagC0_C1)(1,1) *= F;
-	(offdiagC0_C3)(1,1) *= F;
-	(offdiagC0_C2)(1,1) *= F;
-	(diag[c0])(1,1) *= F;
+	(rCell[c0])[1] = F*(otherFlux[1] + transportNumber*parentFlux[1]);
+	offdiagC0_C1(1,1) = F*dRC0dXC1(1,1);
+	offdiagC0_C3(1,1) = F*transportNumber*dRC0dXC3(1,1);
+	offdiagC0_C2(1,1) = F*dRC0dXC2(1,1);
+	(diag[c0])(1,1) = F*transportNumber*dRC0dXC0(1,1);
+
+	////////////////////////
+	//      POTENTIAL     //
+	////////////////////////
+
+	(rCell[c0])[0] = otherFlux[0] + parentFlux[0];
+	offdiagC0_C1(0,0) = dRC0dXC1(0,0);
+	offdiagC0_C3(0,0) = dRC0dXC3(0,0);
+	offdiagC0_C2(0,0) = dRC0dXC2(0,0);
+	(diag[c0])(0,0) = dRC0dXC0(0,0);
 
 	//include interface heating if thermal model turned on
 	//if (_bInterfaceHeatSource)

@@ -59,8 +59,6 @@ template<class X, class Diag, class OffDiag>
     //    interface ghost cells instead of them holding the value from the interior 
     //    cell of the adjacent mesh.
 
-    cout << "BATTERY FIX INTEFACE GHOST" << endl;
-
     const int numMeshes = _meshes.size();
 
     for (int n=0; n<numMeshes; n++)
@@ -70,6 +68,8 @@ template<class X, class Diag, class OffDiag>
 	//only do process if it is an unconnected doubleShell
 	if ((mesh.isDoubleShell())&&(!(mesh.isConnectedShell())))
 	  {
+	    cout << "BATTERY FIX INTEFACE GHOST" << endl;
+
 	    const StorageSite& cells = mesh.getCells();
 	    const CRConnectivity& cellCells = mesh.getCellCells();
 	    const XArray& varCell = dynamic_cast<const XArray&>(_varField[cells]);

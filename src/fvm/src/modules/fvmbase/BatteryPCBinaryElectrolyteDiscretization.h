@@ -117,6 +117,7 @@ template<class X, class Diag, class OffDiag>
 		  T_Scalar vol1 = cellVolume[c1];
         
 		  VectorT3 ds=cellCentroid[c1]-cellCentroid[c0];
+		  T_Scalar dsMag = mag(ds);
 
 		  // for ib faces ignore the solid cell and use the face centroid for diff metric
 		  /*
@@ -158,7 +159,7 @@ template<class X, class Diag, class OffDiag>
 
 
 		  //convert diffusivity for ln term in battery equation
-		  const T_Scalar transportNumber = 0.4;
+		  const T_Scalar transportNumber = 0.363;
 		  const T_Scalar R = 8.314;
 		  const T_Scalar F = 96485.0; 
 		  faceDiffusivity = faceDiffusivity*(-2.0)*R*faceTemp/F*(1.0-transportNumber);
@@ -169,7 +170,10 @@ template<class X, class Diag, class OffDiag>
         
 		  const TGrad gradF = (lnSpecConcGradCell[c0]*vol0+lnSpecConcGradCell[c1]*vol1)/(vol0+vol1);
 
-		  const T_Scalar dFluxSecondary = gradF*secondaryCoeff;
+		  T_Scalar dFluxSecondary = gradF*secondaryCoeff;
+
+		  if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
+		    dFluxSecondary = NumTypeTraits<T_Scalar>::getZero();
 	
 		  const T_Scalar dFlux = diffCoeff*(lnSpecConcCell[c1]-lnSpecConcCell[c0]) + dFluxSecondary;
 

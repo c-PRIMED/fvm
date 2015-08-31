@@ -1,0 +1,67 @@
+# config file for Hansen gcc builds
+Testing:
+	PBS=True
+	queue=normal
+	walltime=2:00:00
+	nodes=1
+	ncpus=48
+
+fvm:
+	Build=1
+
+	# build using MPI
+	# default is False
+	parallel=True
+
+	# 'release' or 'debug'
+	# release is built with optimization on
+	# default is release
+	version=release
+
+	# compiler. 'intelc' or 'gcc'
+	# default is gcc
+	compiler=gcc
+
+MEMOSA:
+	Build=0
+
+# REQUIRED until hansen gets a stable python module
+#module swap mvapich2 openmpi/1.4.3
+#module load mkl hdf5 cmake boost/1.49.0 scalapack gotoblas
+python:
+	Build=1
+boost:
+	Build=1
+
+#pymc:
+#	Build=1
+
+before:
+	module swap intel gcc/4.4.5
+	#module load boost/1.49.0 cmake
+	#export BOOST_HOME=$TACC_BOOST_DIR
+	#export BOOST_ROOT=$TACC_BOOST_DIR		
+	#export BOOST_LIB=$TACC_BOOST_LIB
+	#export BOOST_INCLUDE=-I$TACC_BOOST_INC
+	#export MKLROOT=/opt/apps/intel/11.1/mkl
+	#export MKL_HOME=/opt/apps/intel/11.1/mkl
+	#export MKL_LIB=$TACC_MKL_LIB
+	#export MKL_INC=-I$TACC_MKL_INC
+	#export MKL_INCLUDE=-I$TACC_MKL_INC
+	#export MKL_DIR=$TACC_MKL_DIR
+	#export ATLAS_DIR=-L$TACC_ATLAS_DIR
+	#export ATLAS_INC=-I$TACC_ATLAS_INC
+	#export ATLAS_INCLUDE=-I$TACC_ATLAS_INC
+	#export ATLAS_LIB=-L$TACC_ATLAS_LIB
+	#export ATLAS=-L$TACC_ATLAS_DIR
+	#export BLAS=-L$TACC_MKL_LIB/em64t/libmkl_intel_ilp64.a
+	#export BLAS_SRC=-L$TACC_MKL_LIB/em64t/libmkl_intel_ilp64.a
+	#export LAPACK=-L$TACC_ATLAS_DIR
+	#export LAPACK_INCLUDE=-I$TACC_ATLAS_INC
+	#export BLAS_INCLUDE=-I$TACC_MKL_INC
+	#export LIBS_BLAS=-L$TACC_MKL_LIB/em64t/libmkl_intel_ilp64.a
+	#export BLAS=/work/02639/btrembac/build/BLAS/libblas.a
+	#export BLAS_SRC=-L/work/02639/btrembac/build/BLAS
+	#export BLAS_INCLUDE_DIR=-I/work/02639/btrembac/build/BLAS
+	#export BLAS_LIBRARIES_DIR=-L/work/02639/btrembac/build/BLAS
+	#export LD_LIBRARY_PATH=/work/02639/btrembac/build/BLAS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
