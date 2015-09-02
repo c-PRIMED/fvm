@@ -172,13 +172,16 @@ template<class X, class Diag, class OffDiag>
 
 		  T_Scalar dFluxSecondary = gradF*secondaryCoeff;
 
-		  if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
-		    dFluxSecondary = NumTypeTraits<T_Scalar>::getZero();
+		  //remove secondary gradient from highly skewed cells
+		  //if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
+		  //  dFluxSecondary = NumTypeTraits<T_Scalar>::getZero();
 	
 		  const T_Scalar dFlux = diffCoeff*(lnSpecConcCell[c1]-lnSpecConcCell[c0]) + dFluxSecondary;
 
+		  
 		  (rCell[c0])[0] += dFlux;
 		  (rCell[c1])[0] -= dFlux;
+		  
 
 		  //assembler.getCoeff01(f) +=diffCoeff;
 		  //assembler.getCoeff10(f) +=diffCoeff;

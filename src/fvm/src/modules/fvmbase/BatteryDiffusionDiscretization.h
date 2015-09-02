@@ -143,8 +143,9 @@ public:
 
 	    X dFluxSecondary = gradF*secondaryCoeff;
 	
-	    if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
-	      dFluxSecondary = NumTypeTraits<X>::getZero();
+	    //remove secondary gradient from highly skewed cells
+	    //if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
+	    //dFluxSecondary = NumTypeTraits<X>::getZero();
 
 	    const X dFlux = diffCoeff*(xCell[c1]-xCell[c0]) + dFluxSecondary;
 

@@ -183,8 +183,9 @@ public:
 
 		T_Scalar dFluxSecondary = gradF*secondaryCoeff;
 		
-		if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
-		  dFluxSecondary = NumTypeTraits<T_Scalar>::getZero();
+		//remove secondary gradient from highly skewed cells
+		//if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
+		//dFluxSecondary = NumTypeTraits<T_Scalar>::getZero();
 
 		const T_Scalar dFlux = diffCoeff*((xCell[c1])[v]-(xCell[c0])[v]) + dFluxSecondary;
 

@@ -104,7 +104,7 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
     const T_Scalar R = 8.314; //  J/mol/K
     const T_Scalar dU_dT = -0.0011; // V/K
     const T_Scalar Peltier = 0.0;
-    const T_Scalar transportNumber = 0.363;
+    const T_Scalar transferenceFactor = (1.0 - 0.363);
 
     for (int f=0; f<faces.getCount(); f++)
       {
@@ -266,11 +266,11 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
 	//       SPECIES      //
 	////////////////////////
 
-	(rCell[c0])[1] = F*(otherFlux[1] + transportNumber*parentFlux[1]);
-	offdiagC0_C1(1,1) = F*dRC0dXC1(1,1);
-	offdiagC0_C3(1,1) = F*transportNumber*dRC0dXC3(1,1);
-	offdiagC0_C2(1,1) = F*dRC0dXC2(1,1);
-	(diag[c0])(1,1) = F*transportNumber*dRC0dXC0(1,1);
+	(rCell[c0])[1] = F*(transferenceFactor*otherFlux[1] + parentFlux[1]);
+	offdiagC0_C1(1,1) = F*transferenceFactor*dRC0dXC1(1,1);
+	offdiagC0_C3(1,1) = F*dRC0dXC3(1,1);
+	offdiagC0_C2(1,1) = F*transferenceFactor*dRC0dXC2(1,1);
+	(diag[c0])(1,1) = F*dRC0dXC0(1,1);
 
 	////////////////////////
 	//      POTENTIAL     //
@@ -308,7 +308,7 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
 	//       SPECIES      //
 	////////////////////////
 
-	(rCell[c1])[1] = F*otherFlux[1]  - i_star;
+	(rCell[c1])[1] = F*otherFlux[1] - i_star;
 	offdiagC1_C0(1,1) = -1*dIdCE_star;
 	offdiagC1_C2(1,1) = F*dRC0dXC2(1,1);
 
@@ -353,6 +353,7 @@ template<class X, class Diag, class OffDiag, class otherMeshDiag>
 
 	// Point-coupled inclusions(off diagonal terms in square tensors)
 	// Cell c1
+	
 	(diag[c1])(0,1) = -1*dIdCS_star;
 	(diag[c1])(1,0) = -1*dIdPhiS_star;
 	offdiagC1_C0(0,1) = -1*dIdCE_star;

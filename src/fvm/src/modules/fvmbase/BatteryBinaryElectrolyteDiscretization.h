@@ -174,8 +174,9 @@ template<class X, class Diag, class OffDiag>
 
 		  X dFluxSecondary = gradF*secondaryCoeff;
 
-		  if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
-		    dFluxSecondary = NumTypeTraits<X>::getZero();
+		  //remove secondary gradient from highly skewed cells
+		  //if (diffMetric/(faceAreaMag[f]/dsMag) > 2.0)
+		  //  dFluxSecondary = NumTypeTraits<X>::getZero();
 	
 		  const X dFlux = diffCoeff*(lnSpecConcCell[c1]-lnSpecConcCell[c0]) + dFluxSecondary;
 

@@ -79,7 +79,7 @@ struct BatteryModelOptions : public FloatVarDict<T>
 {
   BatteryModelOptions()
   {
-    this->defineVar("ButlerVolmerRRConstant",T(5.0e-7));
+    this->defineVar("ButlerVolmerRRConstant",T(1.0e-11));
     this->defineVar("ButlerVolmerAnodeShellMeshID", int(-1));
     this->defineVar("ButlerVolmerCathodeShellMeshID", int(-1));
     this->defineVar("BatteryElectrolyteMeshID", int(-1));
@@ -102,8 +102,8 @@ struct BatteryModelOptions : public FloatVarDict<T>
     this->linearSolverPC = 0;
     this->useCentralDifference=false;
     this->transient = true;
-    this->ButlerVolmer = false;
-    this->thermalModelPC = true;
+    this->ButlerVolmer = true;
+    this->thermalModelPC = false;
     this->timeDiscretizationOrder=2;
     this->advanceVerbosity=1;
   }

@@ -118,6 +118,8 @@ template<class X, class Diag, class OffDiag>
     const T_Scalar alpha_c = 0.5;
     const T_Scalar R = 8.314; //  J/mol/K
     const T_Scalar dU_dT = -0.0011; // V/K
+    const T_Scalar transferenceFactor = (1.0 - 0.363);
+
 
     for (int f=0; f<faces.getCount(); f++)
       {
@@ -224,10 +226,10 @@ template<class X, class Diag, class OffDiag>
 	OffDiag& offdiagC0_C2 = matrix.getCoeff(c0,  c2);
 	OffDiag& offdiagC0_C3 = matrix.getCoeff(c0,  c3);
 
-	rCell[c0] = F*otherFlux + F*parentFlux;
-	offdiagC0_C1 = F*dRC0dXC1;
+	rCell[c0] = F*transferenceFactor*otherFlux + F*parentFlux;
+	offdiagC0_C1 = transferenceFactor*F*dRC0dXC1;
 	offdiagC0_C3 = F*dRC0dXC3;
-	offdiagC0_C2 = F*dRC0dXC2;
+	offdiagC0_C2 = transferenceFactor*F*dRC0dXC2;
 	diag[c0] = F*dRC0dXC0;
 
 	// right(other) shell cell - 2 neighbors
@@ -268,7 +270,7 @@ template<class X, class Diag, class OffDiag>
 	  if (_Cathode)
 	    {
 	      //cout << "UrefAnode: " << U_ref << endl;
-	      //cout << "Cs0: " << cs_star << endl;
+	      cout << "Cs0: " << cs_star << endl;
 	    }
 	  }
 
