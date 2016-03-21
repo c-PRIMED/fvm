@@ -22,10 +22,6 @@ fvm:
 	# default is gcc
 	compiler=gcc
 
-MPM:
-	Build=1
-	configname=gnu-linux
-
 hdf5:
 	env[CC]=gcc
 	env[CXX]=g++
@@ -35,17 +31,9 @@ netcdf:
 	env[FC]=gfortran
 	env[CC]=gcc
 
-MEMOSA:
-	Build=1
-
-# REQUIRED until hansen gets a stable python module
-python:
-	Build=1
-
-pymc:
-	Build=1
-
 before:
-	module load tcl cmake boost/1.47.0 openmpi/1.6.3_gcc-4.5.1 hdf5/1.8.5_gcc-4.5.1 swig atlas cgal/3.6
-	export HDF5_DIR=/apps/rhel5/graphics/x86_64/gnu/gcc-4.5.1/hdf5-1.8.5-patch1
+	module load boost/1.49.0 
+ 	module unload python/2.7.2
+ 	module load cmake/3.1.1 swig atlas/3.11.30 openmpi/1.8.1_gcc-4.7.2 anaconda
+
 
